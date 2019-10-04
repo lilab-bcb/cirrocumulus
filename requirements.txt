@@ -1,0 +1,9 @@
+google-oauth
+cachecontrol
+pyarrow
+gcsfs
+ujson
+pandas
+numpy
+flask
+google-cloud-datastore

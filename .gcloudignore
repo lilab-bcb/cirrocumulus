@@ -1,0 +1,10 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+node_modules
+public
+LICENSE
+README.md
+.idea
+service-account-file.json
