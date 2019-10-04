@@ -4,7 +4,7 @@ from os import path
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
-with open(path.join(here, "README.md"), encoding="utf-8") as f:
+with open(path.join(here, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 requires = [
@@ -20,6 +20,7 @@ setup(
     name="cirrocumulus",
     description="scRNA-Seq visualization tool",
     long_description=long_description,
+    long_description_content_type="text/x-rst",
     url="https://github.com/klarman-cell-observatory/cirrocumulus",
     author="Joshua Gould",
     author_email='jgould@broadinstitute.org',
