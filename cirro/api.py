@@ -6,13 +6,12 @@ from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
-from .parquet_backend import ParquetBackend
 from .util import *
 
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
-dataset_api.add(['pq', 'parquet'], ParquetBackend())
+
 auth_api = AuthAPI()
 database_api = DatabaseAPI()
 

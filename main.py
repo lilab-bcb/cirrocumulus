@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 
-from cirro.api import blueprint, auth_api, database_api
+from cirro.api import blueprint, auth_api, database_api, dataset_api
+from cirro.parquet_backend import ParquetBackend
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -20,5 +21,6 @@ else:
     from cirro.google_auth import GoogleAuth
     from cirro.datastore_api import DatastoreAPI
 
+    dataset_api.add(['pq', 'parquet'], ParquetBackend())
     auth_api.provider = GoogleAuth()
     database_api.provider = DatastoreAPI()
