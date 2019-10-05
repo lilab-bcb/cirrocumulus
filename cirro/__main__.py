@@ -1,14 +1,13 @@
 def main():
-    from flask import Flask, render_template
+    from flask import Flask, send_from_directory
     import argparse
     from cirro.api import blueprint, auth_api, database_api
-    app = Flask(__name__, static_folder='client/')
+    app = Flask(__name__, static_folder='../client/')
     app.register_blueprint(blueprint, url_prefix='/api')
 
-    @app.route('/index.html')
     @app.route('/')
     def root():
-        return render_template('index.html')
+        return send_from_directory(os.path.join(app.root_path, "../client"), "index.html")
 
     parser = argparse.ArgumentParser(
         description='Run cirrocumulus locally')
