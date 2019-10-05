@@ -7,7 +7,7 @@ def main():
 
     @app.route('/')
     def root():
-        return send_from_directory(os.path.join(app.root_path, "../client"), "index.html")
+        return send_from_directory(os.path.abspath(os.path.join(app.root_path, '..', "client")), "index.html")
 
     parser = argparse.ArgumentParser(
         description='Run cirrocumulus locally')
