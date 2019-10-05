@@ -1,1 +1,1 @@
-recursive-include client/ *
+recursive-include cirro/client/ *
