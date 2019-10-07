@@ -81,7 +81,7 @@ class App extends PureComponent {
     };
 
     handleMessageClose = () => {
-        this.props.handleMessageClose();
+        this.props.setMessage(null);
     };
     handleUserMenuOpen = (event) => {
         this.setState({userMenuOpen: true, userMenuAnchorEl: event.currentTarget});
@@ -104,6 +104,7 @@ class App extends PureComponent {
         this.linkRef.current.focus();
         this.linkRef.current.select();
         document.execCommand('copy');
+        this.props.setMessage('Link copied');
     };
 
     handleLinkMenuOpen = (event) => {
@@ -210,6 +211,7 @@ class App extends PureComponent {
                                 open={this.state.linkMenuOpen}
                                 anchorEl={this.state.linkMenuAnchorEl}
                                 onClose={this.handleLinkMenuClose}
+
                                 anchorOrigin={{
                                     vertical: 'bottom',
                                     horizontal: 'right',
@@ -219,12 +221,13 @@ class App extends PureComponent {
                                     horizontal: 'right',
                                 }}
                             >
-                                <h4>Copy link to share your current view</h4>
-                                <Button variant="contained" onClick={this.copyLink}>
-                                    Copy
-                                </Button> <Input autoFocus={true} inputRef={this.linkRef} readOnly={true}
-                                                 value={this.state.linkText}></Input>
-
+                                <div style={{padding: 10}}>
+                                    <h4>Copy link to share your current view</h4>
+                                    <Button variant="outlined" onClick={this.copyLink}>
+                                        Copy
+                                    </Button> <Input autoFocus={true} inputRef={this.linkRef} readOnly={true}
+                                                     value={this.state.linkText}></Input>
+                                </div>
                             </Popover>
                             }
                             {this.props.email != null &&
@@ -353,8 +356,8 @@ const mapDispatchToProps = dispatch => {
         handleDialog: (value) => {
             dispatch(setDialog(value));
         },
-        handleMessageClose: () => {
-            dispatch(setMessage(null));
+        setMessage: (value) => {
+            dispatch(setMessage(value));
         },
     };
 };
