@@ -1,17 +1,27 @@
 cirrocumulus
-============
+===============
 
 Local Usage
 -----------
 
--  Launch via the command line using the command
-   ``cirro <path to dataset>``
+- Install using pip::
 
-Deployment Instructions
+   pip install cirrocumulus
+
+-  Launch via the command line::
+
+    cirro <path to dataset>
+
+Google Cloud Platform (GCP) Deployment Instructions
 -----------------------
 
+-  Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+
 -  Create or use an existing GCP project
--  Create OAuth client id
+
+-  Create an OAuth client id
 
    -  In Google Console, navigate to APIs and Services > OAuth consent
       screen. Set the OAuth consent screen application name and add
@@ -20,23 +30,26 @@ Deployment Instructions
       ID”. Enter “Web application” for “Application Type” and
       https://PROJECT.appspot.com for “Authorized JavaScript origins”.
       Click “Create” to create the credentials.
-   -  Copy OAuth client id into cumulus/config.json.
+   -  Copy OAuth client id into ``cirrocumulus/cirro/config.json``.
 
 -  Create App Engine by navigating to App Engine > Dashboard. You may
    choose the region where your application is hosted. Select the Python
    3 Standard Environment.
--  Install the `Google Cloud SDK`_ Type ``gcloud init`` if this is your
-   first time using the Google Cloud SDK
+-  Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your
+   first time using the Google Cloud SDK.
 -  Deploy the application using the command below. Remember to replace
-   PROJECT with your project ID.
-   ``gcloud app deploy app.yaml --project=PROJECT`` Your project is
-   available at https://PROJECT.appspot.com
+   PROJECT with your project ID.::
+
+    gcloud app deploy app.yaml --project=PROJECT
+
+   Your project is available at https://PROJECT.appspot.com.
+
 -  Go to https://PROJECT.appspot.com in your web browser and login.
 
    -  By default, no one is allowed to add datasets to your application.
    -  In Google Console, navigate to Data Store > Entities and click on
-      your email address. Add the property ``importer`` of type boolean
-      and set to ``true``.
+      your email address. Add the property ``importer`` of type ``boolean``
+      and set it to ``true``.
    -  Go back to https://PROJECT.appspot.com and import datasets.
 
 -  Read more about `App Engine`_, such as how you can limit spending.
@@ -44,14 +57,24 @@ Deployment Instructions
 Developer Instructions
 ----------------------
 
--  Install JavaScript dependencies ``npm i``
--  Build the client ``npm run-script build``
--  Install Python dependencies ``pip install -r requirements.txt``
+-  Install JavaScript dependencies::
+
+    npm i
+
+-  Build the client::
+
+    npm run-script build
+
+-  Install Python dependencies::
+
+    pip install -r requirements.txt
+
 -  Add http://localhost:5000 to your Web application Outh client ID
    authorized JavaScript origins
 -  Download the App Engine service account JSON key (DO NOT SHARE THIS!)
-   and set the environment variable GOOGLE_APPLICATION_CREDENTIALS.
-   ``export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”``
+   and set the environment variable GOOGLE_APPLICATION_CREDENTIALS::
+
+    export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
