@@ -1,6 +1,5 @@
 import {color} from 'd3-color';
 import {scaleLinear, scaleSequential} from 'd3-scale';
-import {interpolateViridis} from 'd3-scale-chromatic';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -32,7 +31,14 @@ import {
     SET_VIEW_NAME,
     UPDATE_DATASET,
 } from '../actions';
-import PlotUtil from '../PlotUtil';
+import PlotUtil, {getInterpolator} from '../PlotUtil';
+
+export const DEFAULT_MARKER_SIZE = 5;
+export const DEFAULT_MARKER_OPACITY = 1;
+export const DEFAULT_BIN_SUMMARY = 'mean'
+export const DEFAULT_NUMBER_BINS = 500;
+export const DEFAULT_INTERPOLATOR = 'Viridis';
+const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)}
 
 function features(state = [], action) {
     switch (action.type) {
@@ -41,7 +47,7 @@ function features(state = [], action) {
         case SET_DATASET:
             return [];
         case RESTORE_VIEW:
-            return action.payload.c || [];
+            return action.payload.features || [];
         default:
             return state;
     }
@@ -54,7 +60,7 @@ function groupBy(state = [], action) {
         case SET_DATASET:
             return [];
         case RESTORE_VIEW:
-            return action.payload.g || [];
+            return action.payload.groupBy || [];
         default:
             return state;
     }
@@ -67,7 +73,7 @@ function viewName(state = '', action) {
         case SET_DATASET:
             return '';
         case RESTORE_VIEW:
-            return action.payload.v;
+            return action.payload.layout != null ? action.payload.layout : state;
         default:
             return state;
     }
@@ -80,18 +86,18 @@ function view3d(state = false, action) {
         case SET_DATASET:
             return false;
         case RESTORE_VIEW:
-            return action.payload.view3d;
+            return action.payload['3d'] || false;
         default:
             return state;
     }
 }
 
-function binSummary(state = 'mean', action) {
+function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
     switch (action.type) {
         case SET_BIN_SUMMARY:
             return action.payload;
         case SET_DATASET:
-            return 'mean';
+            return DEFAULT_BIN_SUMMARY;
         case RESTORE_VIEW:
             return action.payload.binSummary != null ? action.payload.binSummary : state;
         default:
@@ -115,18 +121,18 @@ function binValues(state = false, action) {
         case SET_DATASET:
             return false;
         case RESTORE_VIEW:
-            return action.payload.binValues;
+            return action.payload.binValues != null ? action.payload.binValues : state;
         default:
             return state;
     }
 }
 
-function markerSize(state = 5, action) {
+function markerSize(state = DEFAULT_MARKER_SIZE, action) {
     switch (action.type) {
         case SET_MARKER_SIZE:
             return action.payload;
         case SET_DATASET:
-            return 5;
+            return DEFAULT_MARKER_SIZE;
         case RESTORE_VIEW:
             return action.payload.markerSize != null ? action.payload.markerSize : state;
         default:
@@ -134,26 +140,26 @@ function markerSize(state = 5, action) {
     }
 }
 
-function numberOfBins(state = 500, action) {
+function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
         case SET_NUMBER_OF_BINS:
             return action.payload;
         case SET_DATASET:
-            return 500;
+            return DEFAULT_NUMBER_BINS;
         case RESTORE_VIEW:
-            return action.payload.numberOfBins != null != null ? action.payload.numberOfBins : state;
+            return action.payload.numberOfBins != null ? action.payload.numberOfBins : state;
         default:
             return state;
     }
 }
 
-function numberOfBinsUI(state = 500, action) {
+function numberOfBinsUI(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
         case SET_NUMBER_OF_BINS:
         case SET_NUMBER_OF_BINS_UI:
             return action.payload;
         case SET_DATASET:
-            return 500;
+            return DEFAULT_NUMBER_BINS;
         case RESTORE_VIEW:
             return action.payload.numberOfBins != null ? action.payload.numberOfBins : state;
         default:
@@ -167,7 +173,7 @@ function markerSizeUI(state = null, action) {
         case SET_MARKER_SIZE_UI:
             return action.payload;
         case SET_DATASET:
-            return 5;
+            return DEFAULT_MARKER_SIZE;
         case RESTORE_VIEW:
             return action.payload.markerSize != null ? action.payload.markerSize : state;
         default:
@@ -175,12 +181,12 @@ function markerSizeUI(state = null, action) {
     }
 }
 
-function markerOpacity(state = 1, action) {
+function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
     switch (action.type) {
         case SET_MARKER_OPACITY:
             return action.payload;
         case SET_DATASET:
-            return 1;
+            return DEFAULT_MARKER_OPACITY;
         case RESTORE_VIEW:
             return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
 
@@ -195,7 +201,7 @@ function markerOpacityUI(state = 1, action) {
         case SET_MARKER_OPACITY_UI:
             return action.payload;
         case SET_DATASET:
-            return 1;
+            return DEFAULT_MARKER_OPACITY;
         case RESTORE_VIEW:
             return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
         default:
@@ -319,6 +325,7 @@ function embeddingData(state = [], action) {
             });
             return state.slice();
         case SET_INTERPOLATOR:
+            // update colors for existing traces
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
             state.forEach(item => {
                 item.data.forEach(trace => {
@@ -368,7 +375,7 @@ function plotConfig(state = null, action) {
     }
 }
 
-function interpolator(state = {name: 'interpolateViridis', value: interpolateViridis}, action) {
+function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
     switch (action.type) {
         case SET_INTERPOLATOR:
             return action.payload;

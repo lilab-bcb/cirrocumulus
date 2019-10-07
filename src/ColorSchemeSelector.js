@@ -9,6 +9,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {setInterpolator} from './actions';
 import ColorSchemeLegend from './ColorSchemeLegend';
+import {getInterpolator, interpolators} from "./PlotUtil";
 
 const styles = theme => ({
     root: {
@@ -26,54 +27,11 @@ const styles = theme => ({
     },
 });
 
-let interpolators = {};
-interpolators['Diverging'] = [
-    'interpolateBrBG',
-    'interpolatePRGn',
-    'interpolatePiYG',
-    'interpolatePuOr',
-    'interpolateRdBu',
-    'interpolateRdGy',
-    'interpolateRdYlBu',
-    'interpolateRdYlGn',
-    'interpolateSpectral'];
-
-interpolators['Sequential (Single Hue)'] = [
-    'interpolateBlues',
-    'interpolateGreens',
-    'interpolateGreys',
-    'interpolateOranges',
-    'interpolatePurples',
-    'interpolateReds'];
-
-interpolators['Sequential (Multi-Hue)'] = [
-    'interpolateViridis',
-    'interpolateInferno',
-    'interpolateMagma',
-    'interpolatePlasma',
-    'interpolateWarm',
-    'interpolateCool',
-    'interpolateCubehelixDefault',
-    'interpolateBuGn',
-    'interpolateBuPu',
-    'interpolateGnBu',
-    'interpolateOrRd',
-    'interpolatePuBuGn',
-    'interpolatePuBu',
-    'interpolatePuRd',
-    'interpolateRdPu',
-    'interpolateYlGnBu',
-    'interpolateYlGn',
-    'interpolateYlOrBr',
-    'interpolateYlOrRd'];
-
-interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 
 class ColorSchemeSelector extends React.PureComponent {
     handleInterpolatorChange = (event) => {
         let name = event.target.value;
-        let value = scaleChromatic[name];
-        this.props.handleInterpolator({name: name, value: value});
+        this.props.handleInterpolator({name: name, value: getInterpolator(name)});
     };
 
     getScale(name) {

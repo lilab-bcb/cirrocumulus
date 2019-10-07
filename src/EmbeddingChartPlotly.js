@@ -68,7 +68,6 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
     return {
         onSelect: (e) => {
-            console.log(e)
 
         },
         onDeselect: () => {

@@ -32,6 +32,14 @@ import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingChartPlotly from './EmbeddingChartPlotly';
 import EmbedForm from './EmbedForm';
 import withStyles from "@material-ui/core/styles/withStyles";
+import {
+    DEFAULT_BIN_SUMMARY,
+    DEFAULT_INTERPOLATOR,
+    DEFAULT_MARKER_OPACITY,
+    DEFAULT_MARKER_SIZE,
+    DEFAULT_NUMBER_BINS
+} from "./reducers";
+
 
 const drawerWidth = 240;
 
@@ -110,19 +118,36 @@ class App extends PureComponent {
     handleLinkMenuOpen = (event) => {
         let linkText = window.location.protocol + '//' + window.location.host;
 
+
         let json = {
-            ds: this.props.dataset.id,
-            c: this.props.features,
-            g: this.props.groupBy,
-            v: this.props.viewName,
-            markerSize: this.props.markerSize,
-            markerOpacity: this.props.markerOpacity,
-            binValues: this.props.binValues,
-            binSummary: this.props.binSummary,
-            view3d: this.props.view3d,
-            numberOfBins: this.props.numberOfBins,
-            colorScheme: this.props.interpolator.name,
+            dataset: this.props.dataset.id,
+            features: this.props.features,
+            groupBy: this.props.groupBy,
+            layout: this.props.viewName
         };
+        if (this.props.markerSize !== DEFAULT_MARKER_SIZE) {
+            json.markerSize = this.props.markerSize;
+        }
+        if (this.props.markerOpacity !== DEFAULT_MARKER_OPACITY) {
+            json.markerOpacity = this.props.markerOpacity;
+        }
+        if (this.props.binValues) {
+            json.binValues = true;
+            if (this.props.binSummary !== DEFAULT_BIN_SUMMARY) {
+                json.binSummary = this.props.binSummary;
+            }
+            if (this.props.numberOfBins !== DEFAULT_NUMBER_BINS) {
+                json.numberOfBins = this.props.numberOfBins;
+            }
+        }
+        if (this.props.view3d) {
+            json['3d'] = true;
+        }
+
+        if (this.props.interpolator.name !== DEFAULT_INTERPOLATOR) {
+            json.colorScheme = this.props.interpolator.name;
+        }
+
         linkText += '?q=' + JSON.stringify(json);
         this.setState({linkMenuOpen: true, linkMenuAnchorEl: event.currentTarget, linkText: linkText});
 

@@ -71,7 +71,7 @@ class ColorSchemeLegend extends React.PureComponent {
     };
 
     handleDrag = (e, data) => {
-        console.log(data.x);
+
 
     };
 

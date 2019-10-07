@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import CustomError from '../CustomError';
-import PlotUtil from '../PlotUtil';
+import PlotUtil, {getInterpolator} from '../PlotUtil';
 
 export const API = 'http://localhost:5000/api';
 const authScopes = [
@@ -92,7 +92,9 @@ export function initGapi() {
             if (serverInfo.clientId == '') { // serving files locally, no login required
                 dispatch(_setLoadingApp(false));
                 dispatch(_setEmail(''));
-                dispatch(listDatasets())
+                dispatch(listDatasets()).then(() => {
+                    dispatch(_loadSavedView());
+                });
             } else {
                 let script = document.createElement('script');
                 script.type = 'text/javascript';
@@ -158,6 +160,42 @@ export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};
 }
 
+function _loadSavedView() {
+    return function (dispatch, getState) {
+        let q = window.location.search.substring(3);
+        if (q.length === 0) {
+            return;
+        }
+        let savedView;
+        try {
+            savedView = JSON.parse(window.decodeURIComponent(q));
+        } catch (err) {
+            return dispatch(setMessage('Unable to restore saved view.'));
+        }
+        if (savedView.dataset != null) {
+            if (savedView.colorScheme != null) {
+                let interp = getInterpolator(savedView.colorScheme);
+                if (interp != null) {
+                    savedView.colorScheme = {
+                        name: savedView.colorScheme,
+                        value: interp
+                    };
+                }
+            }
+            dispatch(setDataset(savedView.dataset))
+                .then(() => dispatch(restoreView(savedView)))
+                .then(() => dispatch(_updateEmbedding({
+                    embedding: true,
+                    dotPlot: true,
+                    clear: true
+                }))).catch(err => {
+                console.log(err)
+                dispatch(setMessage('Unable to restore saved view.'));
+            });
+
+        }
+    }
+}
 
 export function initLogin(loadSavedView) {
     return function (dispatch, getState) {
@@ -169,28 +207,7 @@ export function initLogin(loadSavedView) {
             dispatch(getUser());
             dispatch(listDatasets()).then(() => {
                 if (loadSavedView) {
-                    try {
-                        let q = window.location.search.substring(3);
-                        if (q.length === 0) {
-                            return;
-                        }
-                        let savedView = JSON.parse(window.decodeURIComponent(q));
-                        if (savedView.ds != null) {
-                            dispatch(setDataset(savedView.ds))
-                                .then(() => dispatch(restoreView(savedView)))
-                                .then(() => dispatch(_updateEmbedding({
-                                    embedding: true,
-                                    dotPlot: true,
-                                    clear: true
-                                }))).catch(err => {
-                                dispatch(setMessage('Unable to restore saved view.'));
-                            });
-
-                        }
-                    } catch (err) {
-                        dispatch(setMessage('Unable to restore saved view.'));
-                        // ignore json parse errors
-                    }
+                    dispatch(_loadSavedView());
                 }
             });
 

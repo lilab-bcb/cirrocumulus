@@ -109,7 +109,6 @@ function Control(props) {
 }
 
 function Option(props) {
-    console.log(props)
     return (
         <MenuItem
             buttonRef={props.innerRef}

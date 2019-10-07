@@ -1,3 +1,55 @@
+import * as scaleChromatic from 'd3-scale-chromatic';
+
+export const interpolators = {};
+interpolators['Diverging'] = [
+    'interpolateBrBG',
+    'interpolatePRGn',
+    'interpolatePiYG',
+    'interpolatePuOr',
+    'interpolateRdBu',
+    'interpolateRdGy',
+    'interpolateRdYlBu',
+    'interpolateRdYlGn',
+    'interpolateSpectral'];
+
+interpolators['Sequential (Single Hue)'] = [
+    'interpolateBlues',
+    'interpolateGreens',
+    'interpolateGreys',
+    'interpolateOranges',
+    'interpolatePurples',
+    'interpolateReds'];
+
+interpolators['Sequential (Multi-Hue)'] = [
+    'interpolateViridis',
+    'interpolateInferno',
+    'interpolateMagma',
+    'interpolatePlasma',
+    'interpolateWarm',
+    'interpolateCool',
+    'interpolateCubehelixDefault',
+    'interpolateBuGn',
+    'interpolateBuPu',
+    'interpolateGnBu',
+    'interpolateOrRd',
+    'interpolatePuBuGn',
+    'interpolatePuBu',
+    'interpolatePuRd',
+    'interpolateRdPu',
+    'interpolateYlGnBu',
+    'interpolateYlGn',
+    'interpolateYlOrBr',
+    'interpolateYlOrRd'];
+
+interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
+
+export function getInterpolator(name) {
+    if (!name.startsWith("interpolate")) {
+        name = "interpolate" + name;
+    }
+    return scaleChromatic[name];
+}
+
 class PlotUtil {
 
     static createPlotConfig() {
