@@ -62,7 +62,7 @@ def __bin_coords(df, nbins, coordinate_columns, coordinate_column_to_range=None)
 
 
 def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_range=None):
-    __bin_coords(df, nbins, coordinate_column_to_range)
+    __bin_coords(df, nbins, coordinate_columns, coordinate_column_to_range)
     agg_func = {}
     for column in df:
         if column not in coordinate_columns:
@@ -113,17 +113,18 @@ def handle_slice():
     basis = request.args.get('layout', None)
     reduce_function = request.args.get('reduce_function', 'mean')
     keys = list(request.args.getlist('key'))
+    layout_ndim = 2
     if basis is not None:
-        layout_dim = int(request.args.get('layout_dim', '2'))
-        if layout_dim > 3:
-            layout_dim = 3
+        layout_ndim = int(request.args.get('layout_dim', '2'))
+        if layout_ndim > 3:
+            layout_ndim = 3
         nbins = request.args.get('nbins', None)
         if nbins is not None:
             nbins = int(nbins)
             nbins = min(1000, nbins)
             if nbins <= 0:
                 nbins = None
-    df = dataset_api.get_df(url, keys, {'name': basis, 'dimensions': layout_dim} if basis is not None else None)
+    df = dataset_api.get_df(url, keys, {'name': basis, 'dimensions': layout_ndim} if basis is not None else None)
 
     if basis is not None and (nbins is not None or len(keys) == 0):
         df['count'] = 1.0
@@ -154,7 +155,7 @@ def handle_slice():
         return_count = len(keys) == 0
         if nbins is not None:
             coordinate_columns = []
-            for i in range(layout_dim):
+            for i in range(layout_ndim):
                 coordinate_columns.append(basis + '_' + str(i + 1))
             df, df_with_coords = __bin(df, nbins, coordinate_columns, reduce_function)
         embedding_result = {}
