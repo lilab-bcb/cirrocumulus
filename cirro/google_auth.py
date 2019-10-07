@@ -10,7 +10,7 @@ from google.oauth2 import id_token
 class GoogleAuth:
 
     def __init__(self):
-        with open('cumulus/config.json', 'r') as f:
+        with open('cirro/config.json', 'r') as f:
             self.config = json.load(f)
         session = requests.session()
         cached_session = cachecontrol.CacheControl(session)
