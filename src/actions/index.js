@@ -4,7 +4,7 @@ import {schemeCategory10} from 'd3-scale-chromatic';
 import CustomError from '../CustomError';
 import PlotUtil from '../PlotUtil';
 
-export const API = '/api';
+export const API = 'http://localhost:5000/api';
 const authScopes = [
     'email',
     'profile',

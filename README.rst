@@ -36,8 +36,8 @@ Deployment Instructions
    -  By default, no one is allowed to add datasets to your application.
    -  In Google Console, navigate to Data Store > Entities and click on
       your email address. Add the property ``importer`` of type boolean
-      and set to true.
-   -  Import datasets into your application.
+      and set to ``true``.
+   -  Go back to https://PROJECT.appspot.com and import datasets.
 
 -  Read more about `App Engine`_, such as how you can limit spending.
 
@@ -50,9 +50,8 @@ Developer Instructions
 -  Add http://localhost:5000 to your Web application Outh client ID
    authorized JavaScript origins
 -  Download the App Engine service account JSON key (DO NOT SHARE THIS!)
-   and set the environment variable GOOGLE_APPLICATION_CREDENTIALS
-   export
-   GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”
+   and set the environment variable GOOGLE_APPLICATION_CREDENTIALS.
+   ``export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”``
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/

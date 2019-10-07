@@ -129,8 +129,13 @@ class EmbedForm extends React.PureComponent {
             return {label: item, value: item};
         });
         metadataOptions = metadataOptions.concat(obsCat.map(item => {
-            return {label: item, value: item};
+            return {label: item, value: item, categorical: true};
         }));
+        metadataOptions.sort((a, b) => {
+            a = a.label.toLowerCase();
+            b = b.label.toLowerCase();
+            return a < b ? -1 : (a == b ? 0 : 1);
+        });
 
         let allOptions = [{label: 'Annotations', options: metadataOptions}, {
             label: 'Variables',

@@ -5,8 +5,10 @@ import React from 'react';
 import {connect} from 'react-redux';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import PlotUtil from './PlotUtil';
-import Plot from 'react-plotly.js';
 import SizeLegend from './SizeLegend';
+import createPlotlyComponent from 'react-plotly.js/factory';
+
+const Plot = createPlotlyComponent(window.Plotly);
 
 class DotPlot extends React.PureComponent {
 

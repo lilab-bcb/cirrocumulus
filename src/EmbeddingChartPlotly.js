@@ -1,14 +1,17 @@
 import {scaleSequential} from 'd3-scale';
 import React from 'react';
-import Plot from 'react-plotly.js';
+
 import {connect} from 'react-redux';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import PlotUtil from './PlotUtil';
+import createPlotlyComponent from 'react-plotly.js/factory';
 
+const Plot = createPlotlyComponent(window.Plotly);
 
 class EmbeddingChartPlotly extends React.PureComponent {
 
     onRelayout = (eventdata) => {
+        console.log('onRelayout')
         if (eventdata.xaxis) {
             if (eventdata.xaxis.autorange) {
 
@@ -38,6 +41,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
                 data={traceInfo.data}
                 layout={traceInfo.layout}
                 config={this.props.config}
+                onRelayout={this.onRelayout}
                 onDeselect={this.props.onDeselect}
                 onSelected={this.props.onSelect}
                 onUpdate={this.fixLegend}
@@ -63,7 +67,8 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
-        onSelect: () => {
+        onSelect: (e) => {
+            console.log(e)
 
         },
         onDeselect: () => {

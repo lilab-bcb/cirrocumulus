@@ -10,7 +10,7 @@ def main():
         return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
     parser = argparse.ArgumentParser(
-        description='Run cirrocumulus locally')
+        description='Run cirrocumulus')
     parser.add_argument('dataset', help='Path to an h5ad file', action='append')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host', help='Host IP address', default="127.0.0.1")
@@ -18,8 +18,8 @@ def main():
     parser.add_argument('--debug', help='Run in debug mode', action='store_true')
     args = parser.parse_args()
 
-    # from flask_cors import CORS
-    # CORS(app)
+    from flask_cors import CORS
+    CORS(app)
     from cirro.api import dataset_api
     from cirro.h5ad_backend import H5ADBackend
     from cirro.local_db_api import LocalDbAPI
