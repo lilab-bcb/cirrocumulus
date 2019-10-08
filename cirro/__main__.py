@@ -18,8 +18,8 @@ def main():
     parser.add_argument('--debug', help='Run in debug mode', action='store_true')
     args = parser.parse_args()
 
-    from flask_cors import CORS
-    CORS(app)
+    # from flask_cors import CORS
+    # CORS(app)
     from cirro.api import dataset_api
     from cirro.h5ad_backend import H5ADBackend
     from cirro.local_db_api import LocalDbAPI
@@ -29,6 +29,11 @@ def main():
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI(args.dataset)
     dataset_api.add(['h5ad'], H5ADBackend('r' if args.backed else None))
+    try:
+        from cirro.parquet_backend import ParquetBackend
+        dataset_api.add(['pq', 'parquet'], ParquetBackend())
+    except ImportError:
+        pass
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 
