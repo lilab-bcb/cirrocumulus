@@ -14,7 +14,7 @@ const authScopes = [
 ];
 
 
-export const SET_SERVER_INFO = "SET_SERVER_INFO"
+export const SET_SERVER_INFO = "SET_SERVER_INFO";
 
 export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
@@ -23,10 +23,10 @@ export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 // update chart
+export const SET_SELECTED_POINTS = 'SET_SELECTED_POINTS';
 export const SET_FEATURES = 'SET_FEATURES';
 export const SET_GROUP_BY = 'SET_GROUP_BY';
-export const SET_VIEW_NAME = 'SET_VIEW_NAME';
-export const SET_VIEW3D = 'SET_VIEW3D';
+export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_NUMBER_OF_BINS = 'SET_NUMBER_OF_BINS';
 export const SET_BIN_VALUES = 'SET_BIN_VALUES';
 export const SET_BIN_SUMMARY = 'SET_BIN_SUMMARY';
@@ -82,7 +82,7 @@ function getUser() {
                 'Authorization': 'Bearer ' + getIdToken(),
                 'Content-Type': 'application/json'
             }
-        }).then(result => result.json()).then(user => dispatch(setUser(user)))
+        }).then(result => result.json()).then(user => dispatch(setUser(user)));
     };
 }
 
@@ -134,6 +134,16 @@ export function login() {
             dispatch(initLogin());
         });
     };
+}
+
+export function setSelection(payload) {
+    let selectedpoints = payload == null ? [] : payload.points[0].data.selectedpoints;
+    return {type: SET_SELECTED_POINTS, payload: selectedpoints};
+    // return function (dispatch, getState) {
+    //     // TODO linked brushing across embeddings
+    //
+    // };
+
 }
 
 export function restoreView(payload) {
@@ -189,12 +199,12 @@ function _loadSavedView() {
                     dotPlot: true,
                     clear: true
                 }))).catch(err => {
-                console.log(err)
+                console.log(err);
                 dispatch(setMessage('Unable to restore saved view.'));
             });
 
         }
-    }
+    };
 }
 
 export function initLogin(loadSavedView) {
@@ -234,8 +244,8 @@ export function saveDataset(payload) {
         }
         let bucket = url.substring('gs://'.length);
         let slash = bucket.indexOf('/');
-        let object = encodeURIComponent(bucket.substring(slash + 1));
-        bucket = encodeURIComponent(bucket.substring(0, slash));
+        // let object = encodeURIComponent(bucket.substring(slash + 1));
+        // bucket = encodeURIComponent(bucket.substring(0, slash));
         let isEdit = payload.dataset != null;
         dispatch(_setLoading(true));
         let updateDatasetPermissionPromise = null;
@@ -416,25 +426,16 @@ function _setGroupBy(payload) {
     };
 }
 
-export function setViewName(payload) {
+export function setSelectedEmbedding(payload) {
     return function (dispatch, getState) {
-        let prior = getState().viewName;
-        dispatch({type: SET_VIEW_NAME, payload: payload});
+        let prior = getState().embeddings;
+        dispatch({type: SET_SELECTED_EMBEDDING, payload: payload});
         dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
-            dispatch({type: SET_VIEW_NAME, payload: prior});
+            dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
         }));
     };
 }
 
-export function setView3d(payload) {
-    return function (dispatch, getState) {
-        let prior = getState().view3d;
-        dispatch({type: SET_VIEW3D, payload: payload});
-        dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
-            dispatch({type: SET_VIEW3D, payload: prior});
-        }));
-    };
-}
 
 export function setNumberOfBins(payload) {
     return function (dispatch, getState) {
@@ -484,12 +485,12 @@ export function setDataset(id) {
             dispatch(setMessage('Unable to find dataset'));
             return;
         }
-        // re-render selected dataset dropdown
+        // force re-render selected dataset dropdown
         dispatch(_setDataset({
             owner: choice.owner,
             name: choice.name,
             id: id,
-            views: [],
+            embeddings: [],
             features: [],
             obs: [],
             obsCat: []
@@ -506,9 +507,10 @@ export function setDataset(id) {
                     owner: choice.owner,
                     name: choice.name,
                     id: id,
-                    views: result.layouts,
+                    embeddings: result.embeddings,
                     features: result.var,
                     obsCat: result.obs_cat,
+                    nObs: result.n_obs,
                     obs: result.obs
                 };
             }
@@ -526,7 +528,7 @@ export function setDataset(id) {
 }
 
 // dot plot depends on features, groupBy
-// embedding chart depends on groupBy, features, viewName, view3d (also markerSize, colorScale which don't require API
+// embedding chart depends on groupBy, features, embedding (also markerSize, colorScale which don't require API
 // call)
 /**
  *
@@ -548,8 +550,8 @@ function _updateEmbedding(options, onError) {
         dispatch(_setLoading(true));
         const datasetId = getState().dataset.id;
         const obs = getState().dataset.obs;
-        const viewName = getState().viewName;
-        if (options.embedding && viewName === '') {
+        const selectedEmbeddings = getState().embeddings;
+        if (options.embedding && selectedEmbeddings.length === 0) {
             options.embedding = false;
         }
         if (options.dotPlot && continuousFeatures.length === 0) {
@@ -565,15 +567,15 @@ function _updateEmbedding(options, onError) {
         let requestedFeatures = [];
         const markerSize = getState().markerSize;
         const markerOpacity = getState().markerOpacity;
-        const view3d = getState().view3d;
 
         embeddingData.forEach(trace => {
+            // get cached traces
             cachedFeatureNames[trace.name] = true;
             let active = currentFeatures.indexOf(trace.name) !== -1;
             if (active) {
                 trace.date = new Date();
                 trace.layout = PlotUtil.createPlotLayout(
-                    {embedding: true, is3d: view3d, legend: trace.isCategorical ? 200 : 130, title: trace.name});
+                    {embedding: true, is3d: selectedEmbeddings[0].endsWith('3d'), legend: false, title: trace.name});
             }
             trace.active = active;
         });
@@ -612,16 +614,12 @@ function _updateEmbedding(options, onError) {
             embeddingUrl.push('&reduce_function=' + getState().binSummary);
         }
 
-        if (options.embedding && viewName !== '') {
-            embeddingUrl.push('&layout=' + viewName);
-
-            if (view3d) {
-                embeddingUrl.push('&layout_' + viewName + '=3');
-            }
-
+        if (options.embedding && selectedEmbeddings.length > 0) {
+            selectedEmbeddings.forEach(selectedEmbedding => embeddingUrl.push('&embedding=' + selectedEmbedding));
         }
 
         let interpolator = getState().interpolator;
+        let selectedpoints = getState().selectedpoints;
         let promises = [];
         if (options.dotPlot) {
             let dotPlotPromise = null;
@@ -654,126 +652,97 @@ function _updateEmbedding(options, onError) {
             }
             promises.push(embeddingPromise);
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
-            embeddingPromise.then(result => {
-                    let viewData = {};
+            embeddingPromise.then(embeddingResult => {
+                    const embeddingValues = embeddingResult.embedding.values;
+                    const categories = embeddingResult.embedding.categories;
+                    let coordinates = {};
+                    const is3d = selectedEmbeddings[0].endsWith('3d');
                     if (requestedFeatures.length > 0) {
-
-                        viewData[viewName + '_1'] = new Float32Array(result.embedding[viewName + '_1']);
-                        viewData[viewName + '_2'] = new Float32Array(result.embedding[viewName + '_2']);
-                        if (view3d) {
-                            viewData[viewName + '_3'] = new Float32Array(result.embedding[viewName + '_3']);
+                        // TODO > 1 embedding
+                        coordinates[selectedEmbeddings[0] + '_1'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_1']);
+                        coordinates[selectedEmbeddings[0] + '_2'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_2']);
+                        if (is3d) {
+                            coordinates[selectedEmbeddings[0] + '_3'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_3']);
                         }
                     }
 
-                    for (let name in result.embedding) {
-                        if (name in viewData) {
+                    for (let name in embeddingValues) {
+                        if (name in coordinates) { // skip coordinate columns and cell ids
                             continue;
                         }
+
+                        let x = coordinates[selectedEmbeddings[0] + '_1'];
+                        let y = coordinates[selectedEmbeddings[0] + '_2'];
+                        let z = coordinates[selectedEmbeddings[0] + '_3'];
+                        let values = embeddingValues[name];
                         let isCategorical = categoricalFeatures.indexOf(name) !== -1;
-                        let x = viewData[viewName + '_1'];
-                        let y = viewData[viewName + '_2'];
-                        let z = viewData[viewName + '_3'];
-                        let chartData = null;
-                        let values = result.embedding[name];
-                        if (isCategorical) { // generate a separate trace for each unique value
-                            let valueToTrace = {};
-                            for (let i = 0; i < values.length; i++) {
-                                let value = values[i];
-                                let trace = valueToTrace[value];
-                                if (trace === undefined) {
-                                    trace = {
-                                        hoverinfo: 'name',
-                                        name: '' + value,
-                                        mode: 'markers',
-                                        type: view3d ? 'scatter3d' : 'scattergl',
-                                        hoveron: 'points',
-                                        x: [],
-                                        y: [],
-                                        marker: {
-                                            opacity: markerOpacity,
-                                            size: markerSize,
-                                        },
-                                    };
-                                    if (view3d) {
-                                        trace.z = [];
-                                    }
-                                    valueToTrace[value] = trace;
-                                }
-                                trace.x.push(x[i]);
-                                trace.y.push(y[i]);
-                                if (view3d) {
-                                    trace.z.push(z[i]);
-                                }
-                            }
-                            chartData = Object.values(valueToTrace);
-                            chartData.sort((a, b) => {
-                                return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
-                            });
-                            let colorScale = scaleOrdinal(
-                                chartData.length <= 10 ? schemeCategory10 : (chartData.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
-                                    CATEGORY_20C)));
-                            for (let i = 0; i < chartData.length; i++) {
-                                let rgb = color(colorScale(i));
-                                if (chartData[i].name === 'null') { // force null to light grey
-
-                                    chartData[i].marker.color = 'rgb(220,220,220)';
-                                } else {
-                                    chartData[i].marker.color = 'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
-
-                                }
-                            }
-                        } else {
-                            let min = Number.MAX_VALUE;
-                            let max = -Number.MAX_VALUE;
+                        let colorScale = null;
+                        let traceUniqueValues = null;
+                        let min = null;
+                        let max = null;
+                        if (!isCategorical) {
+                            min = Number.MAX_VALUE;
+                            max = -Number.MAX_VALUE;
                             for (let i = 0, n = values.length; i < n; i++) {
                                 let value = values[i];
                                 min = value < min ? value : min;
                                 max = value > max ? value : max;
                             }
-                            let colorScale = scaleSequential(interpolator.value).domain([min, max]);
-                            let colors = [];
-                            for (let i = 0, n = values.length; i < n; i++) {
-                                let rgb = color(colorScale(values[i]));
-                                // colors.push('rgb(' + rgbScale(rgb.r) + ',' + rgbScale(rgb.g) + ',' + rgbScale(rgb.b) + ')');
-                                colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
-                            }
-
-                            // TODO show tooltips, plot higher values on top
-                            chartData = {
-                                hoverinfo: 'text',
-                                showlegend: false,
-                                name: name,
-                                mode: 'markers',
-                                type: view3d ? 'scatter3d' : 'scattergl',
-                                hoveron: 'points',
-                                x: x,
-                                y: y,
-                                domain: [min, max],
-                                marker: {
-                                    opacity: markerOpacity,
-                                    size: markerSize,
-                                    color: colors,
-                                    showscale: false,
-                                },
-                                values: values,
-                                text: values,
-                            };
-                            if (view3d) {
-                                chartData.z = z;
-                            }
-
-                            // chartData.marker.colorbar = { thickness: 12 };
-                            // chartData.marker.autocolorscale = false;
-
-                            chartData = [chartData];
+                            colorScale = scaleSequential(interpolator.value).domain([min, max]);
+                        } else {
+                            traceUniqueValues = categories[name];
+                            colorScale = scaleOrdinal(
+                                traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
+                                    CATEGORY_20C)));
                         }
 
+
+                        let colors = [];
+                        // if (chartData[i].name === 'null') { // force null to light grey
+                        //     chartData[i].marker.color = 'rgb(220,220,220)';
+                        // }
+                        for (let i = 0, n = values.length; i < n; i++) {
+                            let rgb = color(colorScale(values[i]));
+                            // colors.push('rgb(' + rgbScale(rgb.r) + ',' + rgbScale(rgb.g) + ',' + rgbScale(rgb.b) + ')');
+                            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+                        }
+
+                        // TODO show tooltips, plot higher values on top?
+                        let chartData = {
+                            hoverinfo: 'text',
+                            showlegend: false,
+                            name: name,
+                            mode: 'markers',
+                            type: is3d ? 'scatter3d' : 'scattergl',
+                            hoveron: 'points',
+                            x: x,
+                            y: y,
+                            domain: isCategorical ? null : [min, max],
+                            marker: {
+                                opacity: markerOpacity,
+                                size: markerSize,
+                                color: colors,
+                                showscale: false,
+                            },
+                            selectedpoints: selectedpoints,
+                            values: values,
+                            text: values,
+                        };
+                        if (is3d) {
+                            chartData.z = z;
+                        }
+
+
+                        chartData = [chartData];
+
                         let layout = PlotUtil.createPlotLayout(
-                            {embedding: true, is3d: view3d, legend: isCategorical ? 200 : 0, title: name});
+                            {embedding: true, is3d: is3d, legend: false, title: name});
                         embeddingData.push(
                             {
                                 date: new Date(),
+                                colorScale: colorScale,
                                 active: true,
+                                continuous: !isCategorical,
                                 data: chartData,
                                 name: name,
                                 layout: layout,
@@ -785,7 +754,6 @@ function _updateEmbedding(options, onError) {
                         b = b.name.toLowerCase();
                         return a < b ? -1 : 1;
                     });
-
                     dispatch(_setEmbeddingData(embeddingData.slice(0)));
 
                 },

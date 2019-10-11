@@ -21,8 +21,7 @@ import {
     setMarkerSizeUI,
     setNumberOfBins,
     setNumberOfBinsUI,
-    setView3d,
-    setViewName,
+    setSelectedEmbedding
 } from './actions';
 
 import Autocomplete from './Autocomplete';
@@ -94,28 +93,18 @@ class EmbedForm extends React.PureComponent {
     };
 
     handleViewChange = (event) => {
-        const viewName = event.target.value;
-        this.props.handleViewName(viewName);
-    };
-
-    handle3dChange = (event) => {
-        const is3d = event.target.checked;
-        this.props.handleView3d(is3d);
+        this.props.handleViewName(event.target.value);
     };
 
 
     render() {
-        const {classes, selectedFeatures, selectedGroupBy, viewName, view3d, numberOfBins, markerSize, markerOpacity, binValues, binSummary, features, views, obsCat, obs} = this.props;
-        let selectedView = {dimensions: 2};
-        for (let i = 0; i < views.length; i++) {
-            if (views[i].name === viewName) {
-                selectedView = views[i];
-                break;
-            }
-        }
+        const {classes, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, binValues, binSummary, dataset} = this.props;
+        const features = dataset == null ? [] : dataset.features;
+        const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
+        const obsCat = dataset == null ? [] : dataset.obsCat;
+        const obs = dataset == null ? [] : dataset.obs;
 
 
-        let is3dAvailable = selectedView.dimensions > 2;
         const summaryOptions = [
             {value: 'min', label: 'Minimum'},
             {value: 'max', label: 'Maximum'},
@@ -148,7 +137,7 @@ class EmbedForm extends React.PureComponent {
         }, {
             label: 'Variables',
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
-        }]
+        }];
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
@@ -157,9 +146,9 @@ class EmbedForm extends React.PureComponent {
                         className={classes.select}
                         input={<Input id="view"/>}
                         onChange={this.handleViewChange}
-                        value={viewName}
+                        value={selectedEmbeddings.length === 0 ? '' : selectedEmbeddings[0]}
                         multiple={false}>
-                        {views.map(view => (
+                        {availableEmbeddings.map(view => (
                             <MenuItem key={view.name} value={view.name}>
                                 <ListItemText primary={view.name}/>
                             </MenuItem>
@@ -174,19 +163,6 @@ class EmbedForm extends React.PureComponent {
                                   onChange={this.props.handleFeatures}
                                   isMulti={true}/>
                 </FormControl>
-
-
-                {is3dAvailable && <FormControlLabel
-                    disabled={!is3dAvailable}
-                    control={
-                        <Switch
-                            checked={view3d}
-                            onChange={this.handle3dChange}
-                        />
-                    }
-                    label="3-d"
-                />}
-
 
                 <TextField type="number" step="2" min="0.1" max="30" onKeyPress={this.onMarkerSizeKeyPress}
                            onChange={this.onMarkerSizeChange} label="Marker Size"
@@ -240,17 +216,13 @@ const mapStateToProps = state => {
     return {
         selectedFeatures: state.features,
         selectedGroupBy: state.groupBy,
-        viewName: state.viewName,
-        view3d: state.view3d,
+        selectedEmbeddings: state.embeddings,
         numberOfBins: state.numberOfBinsUI,
         markerSize: state.markerSizeUI,
         markerOpacity: state.markerOpacityUI,
         binValues: state.binValues,
         binSummary: state.binSummary,
-        features: state.dataset == null ? [] : state.dataset.features,
-        views: state.dataset == null ? [] : state.dataset.views,
-        obsCat: state.dataset == null ? [] : state.dataset.obsCat,
-        obs: state.dataset == null ? [] : state.dataset.obs,
+        dataset: state.dataset
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
@@ -280,14 +252,11 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             dispatch(setBinValues(value));
         },
         handleViewName: value => {
-            dispatch(setViewName(value));
+            dispatch(setSelectedEmbedding(value == null ? [] : [value]));
         },
         handleFeatures: value => {
             dispatch(setFeatures(value == null ? [] : value));
-        },
-        handleView3d: value => {
-            dispatch(setView3d(value));
-        },
+        }
     };
 };
 

@@ -1,21 +1,23 @@
 import {IconButton, Menu, Snackbar, Tooltip} from '@material-ui/core';
+import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import Drawer from '@material-ui/core/Drawer';
 import Input from '@material-ui/core/Input';
 import MenuItem from '@material-ui/core/MenuItem';
 import Popover from '@material-ui/core/Popover';
 import Select from '@material-ui/core/Select';
+import withStyles from "@material-ui/core/styles/withStyles";
+import Toolbar from '@material-ui/core/Toolbar';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import CloseIcon from '@material-ui/icons/Close';
 import CloudIcon from '@material-ui/icons/Cloud';
-import Drawer from '@material-ui/core/Drawer';
-import Toolbar from '@material-ui/core/Toolbar';
 import DeleteIcon from '@material-ui/icons/Delete';
 import LinkIcon from '@material-ui/icons/Link';
 import SettingsIcon from '@material-ui/icons/Settings';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import {format} from 'd3-format';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
-import AppBar from '@material-ui/core/AppBar';
 import {
     DELETE_DATASET_DIALOG,
     EDIT_DATASET_DIALOG,
@@ -31,7 +33,6 @@ import DotPlot from './DotPlot';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingChartPlotly from './EmbeddingChartPlotly';
 import EmbedForm from './EmbedForm';
-import withStyles from "@material-ui/core/styles/withStyles";
 import {
     DEFAULT_BIN_SUMMARY,
     DEFAULT_INTERPOLATOR,
@@ -40,7 +41,7 @@ import {
     DEFAULT_NUMBER_BINS
 } from "./reducers";
 
-
+const intFormat = format(',');
 const drawerWidth = 240;
 
 const styles = theme => ({
@@ -62,7 +63,7 @@ const styles = theme => ({
     content: {
         flexGrow: 1,
         backgroundColor: theme.palette.background.default,
-        paddingTop: theme.spacing(10),
+        paddingTop: theme.spacing(6.5),
         paddingLeft: theme.spacing(1)
     },
 });
@@ -123,7 +124,7 @@ class App extends PureComponent {
             dataset: this.props.dataset.id,
             features: this.props.features,
             groupBy: this.props.groupBy,
-            layout: this.props.viewName
+            embedding: this.props.embedding
         };
         if (this.props.markerSize !== DEFAULT_MARKER_SIZE) {
             json.markerSize = this.props.markerSize;
@@ -297,6 +298,11 @@ class App extends PureComponent {
                 </Drawer>
                 <div/>
                 <main className={classes.content}>
+                    <h5>
+                        {this.props.dataset != null && this.props.selectedpoints.length > 0 &&
+                        intFormat(this.props.selectedpoints.length) + ' / ' + intFormat(this.props.dataset.nObs) + ' selected'}
+                        {this.props.dataset != null && this.props.selectedpoints.length === 0 && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
+                    </h5>
                     {this.props.dataset != null && <EmbeddingChartPlotly/>}
                     {this.props.dataset != null && <DotPlot/>}
                 </main>
@@ -357,12 +363,13 @@ const mapStateToProps = state => {
         groupBy: state.groupBy,
         markerSize: state.markerSize,
         markerOpacity: state.markerOpacity,
-        viewName: state.viewName,
+        embedding: state.embedding,
         view3d: state.view3d,
         numberOfBins: state.numberOfBins,
         binSummary: state.binSummary,
         binValues: state.binValues,
         interpolator: state.interpolator,
+        selectedpoints: state.selectedpoints,
         user: state.user
 
     };

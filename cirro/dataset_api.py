@@ -1,3 +1,5 @@
+import pandas as pd
+
 from .file_system import FileSystem
 
 
@@ -14,6 +16,10 @@ class DatasetAPI:
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
         return provider.schema(self.fs, path)
 
-    def get_df(self, path, keys, layout):
+    def get_df(self, path, keys, embedding):
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        return provider.get_df(self.fs, path, keys, layout)
+        df = provider.get_df(self.fs, path, keys, embedding)
+        for column in df:
+            if not pd.api.types.is_numeric_dtype(df[column]) and not pd.api.types.is_categorical_dtype(df[column]):
+                df[column] = df[column].astype('category')
+        return df

@@ -1,5 +1,6 @@
 cirrocumulus
 ===============
+Interactive single cell visualization in the cloud or on your desktop.
 
 Local Usage
 -----------
@@ -13,7 +14,7 @@ Local Usage
     cirro <path to dataset>
 
 Google Cloud Platform (GCP) Deployment Instructions
------------------------
+-----------------------------------------------------
 
 -  Clone the cirrocumulus repository::
 

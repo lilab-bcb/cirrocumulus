@@ -25,20 +25,20 @@ import {
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
+    SET_SELECTED_EMBEDDING,
+    SET_SELECTED_POINTS,
     SET_SERVER_INFO,
     SET_USER,
-    SET_VIEW3D,
-    SET_VIEW_NAME,
     UPDATE_DATASET,
 } from '../actions';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
 export const DEFAULT_MARKER_SIZE = 5;
 export const DEFAULT_MARKER_OPACITY = 1;
-export const DEFAULT_BIN_SUMMARY = 'mean'
+export const DEFAULT_BIN_SUMMARY = 'mean';
 export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
-const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)}
+const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)};
 
 function features(state = [], action) {
     switch (action.type) {
@@ -66,31 +66,20 @@ function groupBy(state = [], action) {
     }
 }
 
-function viewName(state = '', action) {
+// set the selected embeddings
+function embeddings(state = [], action) {
     switch (action.type) {
-        case SET_VIEW_NAME:
+        case SET_SELECTED_EMBEDDING:
             return action.payload;
         case SET_DATASET:
-            return '';
+            return [];
         case RESTORE_VIEW:
-            return action.payload.layout != null ? action.payload.layout : state;
+            return action.payload.embeddings != null ? action.payload.embeddings : state;
         default:
             return state;
     }
 }
 
-function view3d(state = false, action) {
-    switch (action.type) {
-        case SET_VIEW3D:
-            return action.payload;
-        case SET_DATASET:
-            return false;
-        case RESTORE_VIEW:
-            return action.payload['3d'] || false;
-        default:
-            return state;
-    }
-}
 
 function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
     switch (action.type) {
@@ -139,6 +128,22 @@ function markerSize(state = DEFAULT_MARKER_SIZE, action) {
             return state;
     }
 }
+
+function selectedpoints(state = [], action) {
+    switch (action.type) {
+        case SET_SELECTED_POINTS:
+            return action.payload;
+        case SET_DATASET:
+            return [];
+        case SET_SELECTED_EMBEDDING:
+            return []; // TODO persist
+        case RESTORE_VIEW:
+            return action.payload.selectedpoints != null ? action.payload.selectedpoints : state;
+        default:
+            return state;
+    }
+}
+
 
 function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
@@ -324,8 +329,18 @@ function embeddingData(state = [], action) {
                 item.data = item.data.slice();
             });
             return state.slice();
+        case SET_SELECTED_POINTS:
+            state.forEach(item => {
+                item.data.forEach(trace => {
+                    trace.selectedpoints = action.payload;
+                });
+
+                item.data = item.data.slice();
+            });
+            return state.slice();
         case SET_INTERPOLATOR:
             // update colors for existing traces
+            // TODO custom categorical colors
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
             state.forEach(item => {
                 item.data.forEach(trace => {
@@ -334,7 +349,7 @@ function embeddingData(state = [], action) {
                         let colors = [];
                         for (let i = 0, n = trace.values.length; i < n; i++) {
                             let rgb = color(colorScale(trace.values[i]));
-                            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b), 1]);
+                            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
                         }
                         trace.marker.color = colors;
                     }
@@ -389,8 +404,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     features,
     groupBy,
-    viewName,
-    view3d,
+    embeddings,
     numberOfBins,
     binSummary,
     email,
@@ -406,6 +420,7 @@ export default combineReducers({
     loading,
     plotConfig,
     message,
+    selectedpoints,
     markerOpacity,
     markerOpacityUI,
     numberOfBinsUI,

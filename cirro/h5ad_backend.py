@@ -10,12 +10,12 @@ class H5ADBackend:
         self.backed = backed
         # only works with local files
 
-    def get_df(self, filesystem, path, keys, layout_key=None):
+    def get_df(self, filesystem, path, keys, embedding_key=None):
         adata = self.path_to_data.get(path, None)
         if adata is None:
             adata = anndata.read(path, backed=self.backed)
             self.path_to_data[path] = adata
-        return self.__get_df(adata, keys, layout_key)
+        return self.__get_df(adata, keys, embedding_key)
 
     def schema(self, filesystem, path):
         adata = self.path_to_data.get(path, None)
@@ -33,14 +33,15 @@ class H5ADBackend:
         result['var'] = adata.var_names
         result['obs'] = obs
         result['obs_cat'] = obs_cat
-        layouts = []
+        result['n_obs'] = adata.shape[0]
+        embeddings = []
         for key in adata.obsm_keys():
             if key.startswith('X_'):
-                layouts.append(dict(name=key, dimensions=adata.obsm[key].shape[1]))
-        result['layouts'] = layouts
+                embeddings.append(dict(name=key, dimensions=adata.obsm[key].shape[1]))
+        result['embeddings'] = embeddings
         return result
 
-    def __get_df(self, adata, keys, layout_key=None):
+    def __get_df(self, adata, keys, embedding_key=None):
         is_obs = True
         df = pd.DataFrame(index=adata.obs.index.values if is_obs else adata.var.index.values)
         for i in range(len(keys)):
@@ -55,11 +56,10 @@ class H5ADBackend:
             else:
                 raise ValueError('{} not found'.format(key))
             df[key] = values
-        if layout_key is not None:
-            layout_name = layout_key['name']
-            layout_data = adata.obsm[layout_name]
-            dimensions = layout_key['dimensions']
+        if embedding_key is not None:
+            embedding_name = embedding_key['name']
+            embedding_data = adata.obsm[embedding_name]
+            dimensions = embedding_key['dimensions']
             for i in range(dimensions):
-                df[layout_name + '_' + str(i + 1)] = layout_data[:, i]
-
+                df[embedding_name + '_' + str(i + 1)] = embedding_data[:, i]
         return df

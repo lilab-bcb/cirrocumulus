@@ -8,7 +8,7 @@ DATASET = 'Dataset'
 USER = 'User'
 
 
-class DatastoreAPI:
+class FirestoreDatastore:
 
     def __init__(self):
         self.datastore_client = datastore.Client()

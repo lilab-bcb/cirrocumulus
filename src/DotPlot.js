@@ -2,11 +2,11 @@ import {format} from 'd3-format';
 import {scaleLinear} from 'd3-scale';
 import PropTypes from 'prop-types';
 import React from 'react';
+import createPlotlyComponent from 'react-plotly.js/factory';
 import {connect} from 'react-redux';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import PlotUtil from './PlotUtil';
 import SizeLegend from './SizeLegend';
-import createPlotlyComponent from 'react-plotly.js/factory';
 
 const Plot = createPlotlyComponent(window.Plotly);
 
@@ -29,13 +29,13 @@ class DotPlot extends React.PureComponent {
                 let values = data[key];
                 let min;
                 let max;
-                let index = key.indexOf(',')
+                let index = key.indexOf(',');
                 let name = key.substring(2, index - 1);
-                let type = key.substring(index + 3, key.length - 2)
+                let type = key.substring(index + 3, key.length - 2);
 
                 let featureValues = featureNameToValues[name];
                 if (featureValues === undefined) {
-                    featureValues = {}
+                    featureValues = {};
                     featureNameToValues[name] = featureValues;
                 }
                 if (type === 'non_zero') {
@@ -47,7 +47,7 @@ class DotPlot extends React.PureComponent {
                     max = colorMax;
                     featureValues.summary = values;
                 } else {
-                    console.log('Unknown type: ' + type + '.')
+                    console.log('Unknown type: ' + type + '.');
                 }
                 for (let j = 0; j < values.length; j++) {
                     min = Math.min(min, values[j]);
@@ -111,17 +111,17 @@ class DotPlot extends React.PureComponent {
         };
         let traces = [trace];
         let config = PlotUtil.createPlotConfig();
-        let layout = PlotUtil.createPlotLayout({embedding: false});
-        layout.xaxis.type = 'category';
-        layout.yaxis.type = 'category';
+        let embedding = PlotUtil.createPlotLayout({embedding: false});
+        embedding.xaxis.type = 'category';
+        embedding.yaxis.type = 'category';
 
-        layout.height = 100 + names.length * (maxDiameter + 2);
-        layout.width = Math.max(300, 70 + index.length * (maxDiameter + 2));
+        embedding.height = 100 + names.length * (maxDiameter + 2);
+        embedding.width = Math.max(300, 70 + index.length * (maxDiameter + 2));
 
-        return (<div style={{border: '1px solid LightGrey'}}>
+        return (<div style={{maxWidth: 800, overflow: 'auto', border: '1px solid LightGrey'}}>
             <Plot
                 data={traces}
-                layout={layout}
+                embedding={embedding}
                 config={config}
             />
             <ColorSchemeLegend style={{display: 'block'}}

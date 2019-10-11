@@ -39,6 +39,15 @@ def handle_schema():
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset['url'])
+    embeddings = schema['embeddings']
+    additional_embeddings = []
+    for embedding in embeddings:
+        if embedding['dimensions'] == 3:
+            additional_embeddings.append({'name': embedding['name'], 'dimensions': 2})
+            embedding['name'] += ' 3d'
+    embeddings += additional_embeddings
+    embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
+    schema['embeddings'] = embeddings
     return to_json(schema), 200, get_json_headers()
 
 
@@ -72,6 +81,8 @@ def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_r
                 agg_func[column] = reduce_function
             else:  # pd.api.types.is_categorical_dtype(df[column]):
                 agg_func[column] = lambda x: x.mode()[0]
+    if 'index' in df:
+        agg_func['index'] = lambda x: x.values.tolist()
     return df.groupby(coordinate_columns, as_index=False).agg(agg_func), df[coordinate_columns]
 
 
@@ -84,7 +95,7 @@ def handle_selection():
 
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
-    basis = request.args['layout']
+    basis = request.args['embedding']
     nbins = request.args.get('nbins', None)
     xmin = request.args['xmin']
     xmax = request.args['xmax']
@@ -94,11 +105,13 @@ def handle_selection():
     for i in range(2):
         coordinate_columns.append(basis + '_' + str(i + 1))
     df = dataset_api.get_df(url, [], {'name': basis, 'dimensions': 2})
+    df = df.reset_index()
     if nbins is not None:
         __bin_coords(df, nbins, df.columns, None)
-    df = df[(df[coordinate_columns[0] >= xmin]) & (df[coordinate_columns[0] <= xmax]) & (
-            df[coordinate_columns[1] >= ymin]) & (df[coordinate_columns[1] <= ymax])]
-    return to_json(df.index.values.tolist()), 200, get_json_headers()
+
+    df['selected'] = (df[coordinate_columns[0] >= xmin]) & (df[coordinate_columns[0] <= xmax]) & (
+            df[coordinate_columns[1] >= ymin]) & (df[coordinate_columns[1] <= ymax])
+    return to_json(df['index'].values.tolist()), 200, get_json_headers()
 
 
 @blueprint.route('/slice', methods=['GET'])
@@ -110,21 +123,21 @@ def handle_slice():
 
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
-    basis = request.args.get('layout', None)
+    basis = request.args.get('embedding', None)
     reduce_function = request.args.get('reduce_function', 'mean')
     keys = list(request.args.getlist('key'))
-    layout_ndim = 2
+    embedding_ndim = 2
     if basis is not None:
-        layout_ndim = int(request.args.get('layout_dim', '2'))
-        if layout_ndim > 3:
-            layout_ndim = 3
+        if basis.endswith('3d'):
+            basis = basis[0:len(basis) - 3]
+            embedding_ndim = 3
         nbins = request.args.get('nbins', None)
         if nbins is not None:
             nbins = int(nbins)
             nbins = min(1000, nbins)
             if nbins <= 0:
                 nbins = None
-    df = dataset_api.get_df(url, keys, {'name': basis, 'dimensions': layout_ndim} if basis is not None else None)
+    df = dataset_api.get_df(url, keys, {'name': basis, 'dimensions': embedding_ndim} if basis is not None else None)
 
     if basis is not None and (nbins is not None or len(keys) == 0):
         df['count'] = 1.0
@@ -153,16 +166,20 @@ def handle_slice():
         result['dotplot'] = dotplot_result
     if basis is not None:
         return_count = len(keys) == 0
+        embedding_result = {'values': {}, 'categories': {}}
+        for column in df:
+            if pd.api.types.is_categorical_dtype(df[column]):
+                embedding_result['categories'][column] = df[column].dtype.categories.values.tolist()
         if nbins is not None:
             coordinate_columns = []
-            for i in range(layout_ndim):
+            for i in range(embedding_ndim):
                 coordinate_columns.append(basis + '_' + str(i + 1))
             df, df_with_coords = __bin(df, nbins, coordinate_columns, reduce_function)
-        embedding_result = {}
+
         for column in df:
             if column == 'count' and not return_count:
                 continue
-            embedding_result[column] = df[column].values.tolist()
+            embedding_result['values'][column] = df[column].values.tolist()
         result['embedding'] = embedding_result
     return to_json(result), 200, get_json_headers()
 
