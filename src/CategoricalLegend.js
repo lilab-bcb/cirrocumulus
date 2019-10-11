@@ -17,16 +17,15 @@ class CategoricalLegend extends React.PureComponent {
         //     })
         //     }</List>);
         return (
-            <div style={{display: 'inline-block', padding: 10}}>{domain.map(d => {
+            <div style={{display: 'inline-block', padding: 10, verticalAlign: 'top'}}>{domain.map(d => {
                 return <div key={d}>
                     <div style={{
                         display: 'inline-block',
-                        paddingRight: 4,
                         width: 10,
                         height: 10,
                         background: scale(d)
                     }}/>
-                    <label>{d}</label></div>;
+                    <label style={{marginLeft: 4}}>{d}</label></div>;
             })
             }</div>);
     }

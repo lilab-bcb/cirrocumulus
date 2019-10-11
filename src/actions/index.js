@@ -693,17 +693,12 @@ function _updateEmbedding(options, onError) {
                             traceUniqueValues = categories[name];
                             colorScale = scaleOrdinal(
                                 traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
-                                    CATEGORY_20C)));
+                                    CATEGORY_20C))).domain(traceUniqueValues);
                         }
 
-
                         let colors = [];
-                        // if (chartData[i].name === 'null') { // force null to light grey
-                        //     chartData[i].marker.color = 'rgb(220,220,220)';
-                        // }
                         for (let i = 0, n = values.length; i < n; i++) {
                             let rgb = color(colorScale(values[i]));
-                            // colors.push('rgb(' + rgbScale(rgb.r) + ',' + rgbScale(rgb.g) + ',' + rgbScale(rgb.b) + ')');
                             colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
                         }
 

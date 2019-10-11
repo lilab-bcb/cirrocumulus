@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from flask import Blueprint, Response, request
+from natsort import natsorted
 
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
@@ -169,7 +170,7 @@ def handle_slice():
         embedding_result = {'values': {}, 'categories': {}}
         for column in df:
             if pd.api.types.is_categorical_dtype(df[column]):
-                embedding_result['categories'][column] = df[column].dtype.categories.values.tolist()
+                embedding_result['categories'][column] = natsorted(df[column].dtype.categories.values.tolist())
         if nbins is not None:
             coordinate_columns = []
             for i in range(embedding_ndim):
