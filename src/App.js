@@ -299,9 +299,7 @@ class App extends PureComponent {
                 <div/>
                 <main className={classes.content}>
                     <h5>
-                        {this.props.dataset != null && this.props.selectedpoints.length > 0 &&
-                        intFormat(this.props.selectedpoints.length) + ' / ' + intFormat(this.props.dataset.nObs) + ' selected'}
-                        {this.props.dataset != null && this.props.selectedpoints.length === 0 && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
+                        {this.props.dataset != null && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
                     </h5>
                     {this.props.dataset != null && <EmbeddingChartPlotly/>}
                     {this.props.dataset != null && <DotPlot/>}
