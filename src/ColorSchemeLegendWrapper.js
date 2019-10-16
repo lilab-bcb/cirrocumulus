@@ -1,10 +1,8 @@
-import {format} from 'd3-format';
 import React from 'react';
 
 import ColorSchemeLegend from './ColorSchemeLegend';
 import {getLegendSizeHelper, getLegendSizeScale} from './PlotUtil';
 
-const intFormat = format(',');
 
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
