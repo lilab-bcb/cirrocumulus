@@ -25,6 +25,9 @@ class ColorSchemeLegend extends React.PureComponent {
             return;
         }
         let domain = colorScale.domain();
+        if (domain[0] === domain[1]) {
+            return;
+        }
         let value = domain[0];
         let nsteps = this.props.nsteps || 10;
 
