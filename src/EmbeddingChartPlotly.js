@@ -4,7 +4,7 @@ import createPlotlyComponent from 'react-plotly.js/factory';
 import {connect} from 'react-redux';
 import {setSelection} from './actions';
 import CategoricalLegend from './CategoricalLegend';
-import ColorSchemeLegend from './ColorSchemeLegend';
+import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 
 const Plot = createPlotlyComponent(window.Plotly);
 
@@ -21,11 +21,16 @@ class EmbeddingChartPlotly extends React.PureComponent {
                 onDeselect={this.props.onDeselect}
                 onSelected={this.props.onSelect}
             />
-                {traceInfo.continuous ? <ColorSchemeLegend style={{display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
-                                         width={300}
-                                         label={true} height={40}
-                                         scale={traceInfo.colorScale}/> :
-                    <CategoricalLegend scale={traceInfo.colorScale}/>}</div>);
+                {traceInfo.continuous ?
+                    <ColorSchemeLegendWrapper style={{display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
+                                              width={300}
+                                              label={true} height={40}
+                                              scale={traceInfo.colorScale}
+                                              name={traceInfo.name}
+                                              selectedValueCounts={this.props.selectedValueCounts}/> :
+                    <CategoricalLegend name={traceInfo.name}
+                                       scale={traceInfo.colorScale}
+                                       selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
         });
     }
 
@@ -37,7 +42,8 @@ class EmbeddingChartPlotly extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         data: state.embeddingData,
-        config: state.plotConfig
+        config: state.plotConfig,
+        selectedValueCounts: state.selectedValueCounts
     };
 };
 const mapDispatchToProps = dispatch => {

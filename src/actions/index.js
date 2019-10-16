@@ -22,8 +22,13 @@ export const UPDATE_DATASET = 'UPDATE_DATASET';
 
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
+
+
+export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
+
 // update chart
 export const SET_SELECTED_POINTS = 'SET_SELECTED_POINTS';
+export const SET_SELECTED_VALUE_COUNTS = 'SET_SELECTED_VALUE_COUNTS';
 export const SET_FEATURES = 'SET_FEATURES';
 export const SET_GROUP_BY = 'SET_GROUP_BY';
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
@@ -57,6 +62,7 @@ export const SET_LOADING_APP = 'LOADING_APP';
 export const SET_NUMBER_OF_BINS_UI = 'SET_NUMBER_OF_BINS_UI';
 export const SET_MARKER_SIZE_UI = 'SET_MARKER_SIZE_UI';
 export const SET_MARKER_OPACITY_UI = 'SET_MARKER_OPACITY_UI';
+export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_UI';
 
 const TWENTY_COLORS = [
     '#1f77b4', '#aec7e8', '#ff7f0e',
@@ -94,6 +100,7 @@ export function initGapi() {
                 dispatch(_setEmail(''));
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
+                    dispatch(loadDefaultDataset());
                 });
             } else {
                 let script = document.createElement('script');
@@ -136,13 +143,47 @@ export function login() {
     };
 }
 
+function setSelectedPoints(payload) {
+    return {type: SET_SELECTED_POINTS, payload: payload};
+}
+
+function setSelectedValueCounts(payload) {
+    return {type: SET_SELECTED_VALUE_COUNTS, payload: payload};
+}
+
+function selectedValueCountsPromise(selectedpoints, dispatch, getState) {
+    const datasetId = getState().dataset.id;
+    const continuousFeatures = getState().features;
+    const categoricalFeatures = getState().groupBy;
+    const selectedEmbeddings = getState().embeddings;
+    if (selectedEmbeddings.length === 0 || selectedpoints.length === 0) {
+        return Promise.resolve({});
+    }
+    let url = [API + '/selected_value_counts?id=' + datasetId];
+    url.push('&embedding=' + selectedEmbeddings[0]);
+    continuousFeatures.forEach(f => url.push('&key=' + f));
+    categoricalFeatures.forEach(f => url.push('&key=' + f));
+
+    selectedpoints.forEach(p => url.push('&p=' + p));
+    return fetch(
+        url.join(''),
+        {
+            headers: {'Authorization': 'Bearer ' + getIdToken()},
+        }).then(result => result.json()).then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
+}
+
 export function setSelection(payload) {
     let selectedpoints = payload == null ? [] : payload.points[0].data.selectedpoints;
-    return {type: SET_SELECTED_POINTS, payload: selectedpoints};
-    // return function (dispatch, getState) {
-    //     // TODO linked brushing across embeddings
-    //
-    // };
+    return function (dispatch, getState) {
+        dispatch(setSelectedPoints(selectedpoints));
+        if (selectedpoints.length === 0) {
+            dispatch(setSelectedValueCounts({count: 0, categories: {}}));
+        } else {
+            selectedValueCountsPromise(selectedpoints, dispatch, getState);
+        }
+    };
+    // TODO linked brushing across embeddings
+
 
 }
 
@@ -166,8 +207,38 @@ export function setMarkerOpacityUI(payload) {
     return {type: SET_MARKER_OPACITY_UI, payload: payload};
 }
 
+export function setUnselectedMarkerOpacityUI(payload) {
+    return {type: SET_UNSELECTED_MARKER_OPACITY_UI, payload: payload};
+}
+
 export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};
+}
+
+function loadDefaultDatasetEmbedding() {
+    return function (dispatch, getState) {
+        const dataset = getState().dataset;
+        const names = dataset.embeddings.map(e => e.name);
+        let priority = {'X_fle': 1, 'X_umap': 2, 'X_tsne': 3, 'X_fitsne': 4};
+        names.sort((a, b) => {
+            a = priority[a] || Number.MAX_VALUE;
+            b = priority[b] || Number.MAX_VALUE;
+            return a - b;
+        });
+
+        if (names.length > 0) {
+            dispatch(setSelectedEmbedding([names[0]]));
+        }
+
+    };
+}
+
+function loadDefaultDataset() {
+    return function (dispatch, getState) {
+        if (getState().dataset == null && getState().datasetChoices.length === 1) {
+            dispatch(setDataset(getState().datasetChoices[0].id));
+        }
+    };
 }
 
 function _loadSavedView() {
@@ -371,6 +442,11 @@ export function setMarkerOpacity(payload) {
     return {type: SET_MARKER_OPACITY, payload: payload};
 }
 
+export function setUnselectedMarkerOpacity(payload) {
+    return {type: SET_UNSELECTED_MARKER_OPACITY, payload: payload};
+}
+
+
 function _setDotPlotData(payload) {
     return {type: SET_DOT_PLOT_DATA, payload: payload};
 }
@@ -453,6 +529,7 @@ export function setBinSummary(payload) {
     return function (dispatch, getState) {
         let prior = getState().binSummary;
         dispatch({type: SET_BIN_SUMMARY, payload: payload});
+
         dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
             dispatch({type: SET_BIN_SUMMARY, payload: prior});
         }));
@@ -463,6 +540,7 @@ export function setBinValues(payload) {
 
     return function (dispatch, getState) {
         let prior = getState().binValues;
+        dispatch(setSelection(null)); // clear selection
         dispatch({type: SET_BIN_VALUES, payload: payload});
         dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
             dispatch({type: SET_BIN_VALUES, payload: prior});
@@ -515,6 +593,7 @@ export function setDataset(id) {
                 };
             }
             dispatch(_setDataset(newDataset));
+            dispatch(loadDefaultDatasetEmbedding());
             return newDataset;
 
 
@@ -567,6 +646,7 @@ function _updateEmbedding(options, onError) {
         let requestedFeatures = [];
         const markerSize = getState().markerSize;
         const markerOpacity = getState().markerOpacity;
+        const unselectedMarkerOpacity = getState().unselectedMarkerOpacity;
 
         embeddingData.forEach(trace => {
             // get cached traces
@@ -640,31 +720,28 @@ function _updateEmbedding(options, onError) {
         }
 
         if (options.embedding) {
+            let valueCountsPromise = selectedValueCountsPromise(selectedpoints, dispatch, getState);
+            let embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
+                .then(response => {
+                    return response.json();
+                });
 
-            let embeddingPromise = null;
-            if (requestedFeatures.length > 0) {
-                embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-                    .then(response => {
-                        return response.json();
-                    });
-            } else {
-                embeddingPromise = Promise.resolve({embedding: {}});
-            }
             promises.push(embeddingPromise);
+            promises.push(valueCountsPromise);
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
             embeddingPromise.then(embeddingResult => {
                     const embeddingValues = embeddingResult.embedding.values;
                     const categories = embeddingResult.embedding.categories;
                     let coordinates = {};
                     const is3d = selectedEmbeddings[0].endsWith('3d');
-                    if (requestedFeatures.length > 0) {
-                        // TODO > 1 embedding
-                        coordinates[selectedEmbeddings[0] + '_1'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_1']);
-                        coordinates[selectedEmbeddings[0] + '_2'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_2']);
-                        if (is3d) {
-                            coordinates[selectedEmbeddings[0] + '_3'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_3']);
-                        }
+
+                    // TODO > 1 embedding
+                    coordinates[selectedEmbeddings[0] + '_1'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_1']);
+                    coordinates[selectedEmbeddings[0] + '_2'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_2']);
+                    if (is3d) {
+                        coordinates[selectedEmbeddings[0] + '_3'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_3']);
                     }
+
 
                     for (let name in embeddingValues) {
                         if (name in coordinates) { // skip coordinate columns and cell ids
@@ -675,9 +752,9 @@ function _updateEmbedding(options, onError) {
                         let y = coordinates[selectedEmbeddings[0] + '_2'];
                         let z = coordinates[selectedEmbeddings[0] + '_3'];
                         let values = embeddingValues[name];
-                        let isCategorical = categoricalFeatures.indexOf(name) !== -1;
+                        let isCategorical = categories[name] != null;
                         let colorScale = null;
-                        let traceUniqueValues = null;
+
                         let min = null;
                         let max = null;
                         if (!isCategorical) {
@@ -689,11 +766,14 @@ function _updateEmbedding(options, onError) {
                                 max = value > max ? value : max;
                             }
                             colorScale = scaleSequential(interpolator.value).domain([min, max]);
+                            colorScale.valueCounts = embeddingResult.embedding.obs[name];
                         } else {
-                            traceUniqueValues = categories[name];
+                            let traceUniqueValues = categories[name].values;
                             colorScale = scaleOrdinal(
                                 traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
                                     CATEGORY_20C))).domain(traceUniqueValues);
+                            colorScale.valueCounts = categories[name];
+
                         }
 
                         let colors = [];
@@ -712,14 +792,14 @@ function _updateEmbedding(options, onError) {
                             hoveron: 'points',
                             x: x,
                             y: y,
-                            domain: isCategorical ? null : [min, max],
                             marker: {
-                                opacity: markerOpacity,
                                 size: markerSize,
                                 color: colors,
+                                opacity: markerOpacity,
                                 showscale: false,
                             },
-                            selectedpoints: selectedpoints,
+                            unselected: {marker: {opacity: unselectedMarkerOpacity}},
+                            selectedpoints: selectedpoints.length === 0 ? null : selectedpoints,
                             values: values,
                             text: values,
                         };
@@ -735,8 +815,9 @@ function _updateEmbedding(options, onError) {
                         embeddingData.push(
                             {
                                 date: new Date(),
-                                colorScale: colorScale,
                                 active: true,
+                                domain: isCategorical ? null : [min, max],
+                                colorScale: colorScale,
                                 continuous: !isCategorical,
                                 data: chartData,
                                 name: name,

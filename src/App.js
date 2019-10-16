@@ -213,6 +213,11 @@ class App extends PureComponent {
                                     Import...
                                 </MenuItem>}
                             </Select>}
+                            <div style={{display: 'inline-block', marginLeft: '10px'}}>
+                                {this.props.dataset != null && this.props.dataset.nObs > 0 && this.props.selectedValueCounts.count > 0
+                                && intFormat(this.props.selectedValueCounts.count) + ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
+                                {this.props.dataset != null && !(this.props.selectedValueCounts.count > 0) && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
+                            </div>
                         </div>
                         <div style={{marginLeft: 'auto'}}>
                             {this.props.dataset != null &&
@@ -298,9 +303,7 @@ class App extends PureComponent {
                 </Drawer>
                 <div/>
                 <main className={classes.content}>
-                    <h5>
-                        {this.props.dataset != null && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
-                    </h5>
+
                     {this.props.dataset != null && <EmbeddingChartPlotly/>}
                     {this.props.dataset != null && <DotPlot/>}
                 </main>
@@ -357,6 +360,7 @@ const mapStateToProps = state => {
         email: state.email,
         dataset: state.dataset,
         datasetChoices: state.datasetChoices,
+        selectedValueCounts: state.selectedValueCounts,
         features: state.features,
         groupBy: state.groupBy,
         markerSize: state.markerSize,

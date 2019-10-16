@@ -1,4 +1,6 @@
 import React from 'react';
+import {getLegendSizeHelper, getLegendSizeScale} from './PlotUtil';
+
 
 class CategoricalLegend extends React.PureComponent {
 
@@ -9,23 +11,24 @@ class CategoricalLegend extends React.PureComponent {
     render() {
         const scale = this.props.scale;
         const domain = scale.domain();
-        // return (
-        //     <List dense={true}>{domain.map(d => {
-        //         return <ListItem key={d}>
-        //             <div style={{width: 10, height: 10, background: scale(d)}}/>
-        //             <ListItemText>{d}</ListItemText></ListItem>;
-        //     })
-        //     }</List>);
+
+        const selectedValueCounts = this.props.selectedValueCounts;
+        const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[this.props.name] : null;
+        let sizeScale = getLegendSizeScale(selectedCountMap, scale.valueCounts.values, scale.valueCounts.counts);
         return (
-            <div style={{display: 'inline-block', padding: 10, verticalAlign: 'top'}}>{domain.map(d => {
+            <div style={{display: 'inline-block', padding: 10, verticalAlign: 'top'}}>{domain.map((d, i) => {
+                let legend = getLegendSizeHelper(selectedCountMap, scale, sizeScale, i);
                 return <div key={d}>
+
                     <div style={{
                         display: 'inline-block',
-                        width: 10,
+                        width: legend.width,
                         height: 10,
                         background: scale(d)
                     }}/>
-                    <label style={{marginLeft: 4}}>{d}</label></div>;
+                    <label
+                        style={{marginLeft: 4}}>{d + ' - ' + legend.text}</label>
+                </div>;
             })
             }</div>);
     }

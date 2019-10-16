@@ -21,7 +21,9 @@ import {
     setMarkerSizeUI,
     setNumberOfBins,
     setNumberOfBinsUI,
-    setSelectedEmbedding
+    setSelectedEmbedding,
+    setUnselectedMarkerOpacity,
+    setUnselectedMarkerOpacityUI
 } from './actions';
 
 import Autocomplete from './Autocomplete';
@@ -71,6 +73,19 @@ class EmbedForm extends React.PureComponent {
         }
     };
 
+    onUnselectedMarkerOpacityChange = (event) => {
+        this.props.handleUnselectedMarkerOpacityUI(event.target.value);
+    };
+
+    onUnselectedMarkerOpacityKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            let opacity = parseFloat(event.target.value);
+            if (opacity > 0 && opacity <= 1) {
+                this.props.handleUnselectedMarkerOpacity(opacity);
+            }
+        }
+    };
+
     onNumberOfBinsChange = (event) => {
         this.props.handleNumberOfBinsUI(event.target.value);
     };
@@ -98,7 +113,7 @@ class EmbedForm extends React.PureComponent {
 
 
     render() {
-        const {classes, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, binValues, binSummary, dataset} = this.props;
+        const {classes, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
         const features = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const obsCat = dataset == null ? [] : dataset.obsCat;
@@ -170,6 +185,10 @@ class EmbedForm extends React.PureComponent {
                 <TextField step="0.1" type="number" min="0.01" max="1" onKeyPress={this.onMarkerOpacityKeyPress}
                            onChange={this.onMarkerOpacityChange} label="Marker Opacity"
                            className={classes.formControl} value={markerOpacity}/>
+                <TextField step="0.1" type="number" min="0.01" max="1"
+                           onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
+                           onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
+                           className={classes.formControl} value={unselectedMarkerOpacity}/>
 
                 <FormControlLabel
                     control={
@@ -220,6 +239,7 @@ const mapStateToProps = state => {
         numberOfBins: state.numberOfBinsUI,
         markerSize: state.markerSizeUI,
         markerOpacity: state.markerOpacityUI,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
         binValues: state.binValues,
         binSummary: state.binSummary,
         dataset: state.dataset
@@ -244,6 +264,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleMarkerOpacityUI: value => {
             dispatch(setMarkerOpacityUI(value));
+        },
+        handleUnselectedMarkerOpacity: value => {
+            dispatch(setUnselectedMarkerOpacity(value));
+        },
+        handleUnselectedMarkerOpacityUI: value => {
+            dispatch(setUnselectedMarkerOpacityUI(value));
         },
         handleBinSummary: value => {
             dispatch(setBinSummary(value));

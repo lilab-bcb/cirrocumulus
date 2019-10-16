@@ -30,7 +30,7 @@ class H5ADBackend:
                 obs_cat.append(key)
             else:
                 obs.append(key)
-        result['var'] = adata.var_names
+        result['var'] = adata.var_names.values
         result['obs'] = obs
         result['obs_cat'] = obs_cat
         result['n_obs'] = adata.shape[0]

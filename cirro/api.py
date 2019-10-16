@@ -17,6 +17,24 @@ auth_api = AuthAPI()
 database_api = DatabaseAPI()
 
 
+def check_bin_input(nbins):
+    if nbins is not None:
+        nbins = int(nbins)
+        nbins = min(1000, nbins)
+        if nbins <= 0:
+            nbins = None
+    return nbins
+
+
+def get_basis(basis):
+    if basis is not None:
+        embedding_ndim = 2
+        if basis.endswith('3d'):
+            basis = basis[0:len(basis) - 3]
+            embedding_ndim = 3
+        return {'name': basis, 'dimensions': embedding_ndim}
+
+
 @blueprint.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
     return Response(error.message, error.status_code)
@@ -27,7 +45,7 @@ def handle_server():
     # no login required
     server = database_api.server()
     server['clientId'] = auth_api.client_id
-    return to_json(server), 200, get_json_headers()
+    return to_json(server)
 
 
 @blueprint.route('/schema', methods=['GET'])
@@ -49,14 +67,14 @@ def handle_schema():
     embeddings += additional_embeddings
     embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
     schema['embeddings'] = embeddings
-    return to_json(schema), 200, get_json_headers()
+    return to_json(schema)
 
 
 @blueprint.route('/user', methods=['GET'])
 def handle_user():
     email = auth_api.auth()['email']
     user = database_api.user(email)
-    return to_json(user), 200, get_json_headers()
+    return to_json(user)
 
 
 def __bin_coords(df, nbins, coordinate_columns, coordinate_column_to_range=None):
@@ -87,8 +105,42 @@ def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_r
     return df.groupby(coordinate_columns, as_index=False).agg(agg_func), df[coordinate_columns]
 
 
-@blueprint.route('/selection', methods=['GET'])
-def handle_selection():
+def selected_value_counts(basis, nbins, url, selectedpoints, keys):
+    df = dataset_api.get_df(url, keys, basis, binary=True)
+    coordinate_columns = []
+    for i in range(basis['dimensions']):
+        coordinate_columns.append(basis['name'] + '_' + str(i + 1))
+    if selectedpoints is not None and len(selectedpoints) > 0:
+        if nbins is not None:
+
+            bin_df = df[coordinate_columns]
+            # get indices of selected bins
+            __bin_coords(bin_df, nbins, coordinate_columns, None)
+            g = bin_df.groupby(coordinate_columns)
+            keys = g.groups.keys()
+            keys = keys[selectedpoints]
+            indices = []
+            for key in keys:
+                indices.append(g[key].values)
+            df = df.iloc[np.hstack(indices)]
+        else:
+            df = df.iloc[selectedpoints]
+    else:
+        raise ValueError('No points selected')
+    result = {'count': len(df), 'categories': {}}
+
+    for column in df:
+        if column not in coordinate_columns:
+            value_counts = df[column].value_counts()
+            # value_count_dict = {}
+            # for i in range(len(value_counts)):
+            #     value_count_dict[value_counts.index[i]] = value_counts.values[i]
+            result['categories'][column] = value_counts.to_dict()
+    return result
+
+
+@blueprint.route('/selected_value_counts', methods=['GET'])
+def handle_selected_value_counts():
     email = auth_api.auth()['email']
     dataset_id = request.args.get('id', '')
     if dataset_id == '':
@@ -96,23 +148,27 @@ def handle_selection():
 
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
-    basis = request.args['embedding']
-    nbins = request.args.get('nbins', None)
-    xmin = request.args['xmin']
-    xmax = request.args['xmax']
-    ymin = request.args['ymin']
-    ymax = request.args['ymax']
-    coordinate_columns = []
-    for i in range(2):
-        coordinate_columns.append(basis + '_' + str(i + 1))
-    df = dataset_api.get_df(url, [], {'name': basis, 'dimensions': 2})
-    df = df.reset_index()
-    if nbins is not None:
-        __bin_coords(df, nbins, df.columns, None)
+    basis = get_basis(request.args.get('embedding', None))
+    keys = list(request.args.getlist('key'))
+    selectedpoints = list(request.args.getlist('p'))
+    if basis is not None:
+        nbins = check_bin_input(request.args.get('nbins', None))
+    result = selected_value_counts(basis, nbins, url, selectedpoints, keys)
+    return to_json(result)
 
-    df['selected'] = (df[coordinate_columns[0] >= xmin]) & (df[coordinate_columns[0] <= xmax]) & (
-            df[coordinate_columns[1] >= ymin]) & (df[coordinate_columns[1] <= ymax])
-    return to_json(df['index'].values.tolist()), 200, get_json_headers()
+
+# @blueprint.route('/annotate', methods=['POST'])
+# def handle_annotation():
+#     email = auth_api.auth()['email']
+#     content = request.get_json(force=True, cache=False)
+#     dataset_id = content.get('id', '')
+#     if dataset_id == '':
+#         return 'Please provide an id', 400
+#     dataset = database_api.get_dataset(email, dataset_id)
+#     url = dataset['url']
+#     ids = get_selected_cell_ids(embedding=content['embedding'], nbins=content.get('nbins', None),
+#         selectedpoints=content['selectedpoints'], url=url)
+#     return to_json({'id': dataset_id}), 200, get_json_headers()
 
 
 @blueprint.route('/slice', methods=['GET'])
@@ -124,21 +180,14 @@ def handle_slice():
 
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
-    basis = request.args.get('embedding', None)
+    basis = get_basis(request.args.get('embedding', None))
     reduce_function = request.args.get('reduce_function', 'mean')
     keys = list(request.args.getlist('key'))
-    embedding_ndim = 2
+
     if basis is not None:
-        if basis.endswith('3d'):
-            basis = basis[0:len(basis) - 3]
-            embedding_ndim = 3
-        nbins = request.args.get('nbins', None)
-        if nbins is not None:
-            nbins = int(nbins)
-            nbins = min(1000, nbins)
-            if nbins <= 0:
-                nbins = None
-    df = dataset_api.get_df(url, keys, {'name': basis, 'dimensions': embedding_ndim} if basis is not None else None)
+        nbins = check_bin_input(request.args.get('nbins', None))
+
+    df = dataset_api.get_df(url, keys, basis if basis is not None else None)
 
     if basis is not None and (nbins is not None or len(keys) == 0):
         df['count'] = 1.0
@@ -167,14 +216,22 @@ def handle_slice():
         result['dotplot'] = dotplot_result
     if basis is not None:
         return_count = len(keys) == 0
-        embedding_result = {'values': {}, 'categories': {}}
+        coordinate_columns = []
+        for i in range(basis['dimensions']):
+            coordinate_columns.append(basis['name'] + '_' + str(i + 1))
+        embedding_result = {'values': {}, 'categories': {}, 'obs': {}}
         for column in df:
             if pd.api.types.is_categorical_dtype(df[column]):
-                embedding_result['categories'][column] = natsorted(df[column].dtype.categories.values.tolist())
+                value_counts = df[column].value_counts()
+                sorted_unique_values = natsorted(value_counts.index)
+                value_counts = value_counts.loc[sorted_unique_values]
+                embedding_result['categories'][column] = {'values': value_counts.index.tolist(),
+                                                          'counts': value_counts.values.tolist()}
+            elif column not in coordinate_columns:
+                value_counts = (df[column] > 0).astype('category').value_counts()  # TODO custom cut point
+                embedding_result['obs'][column] = {'values': value_counts.index.tolist(),
+                                                   'counts': value_counts.values.tolist()}
         if nbins is not None:
-            coordinate_columns = []
-            for i in range(embedding_ndim):
-                coordinate_columns.append(basis + '_' + str(i + 1))
             df, df_with_coords = __bin(df, nbins, coordinate_columns, reduce_function)
 
         for column in df:
@@ -182,14 +239,14 @@ def handle_slice():
                 continue
             embedding_result['values'][column] = df[column].values.tolist()
         result['embedding'] = embedding_result
-    return to_json(result), 200, get_json_headers()
+    return to_json(result)
 
 
 # List available datasets
 @blueprint.route('/datasets', methods=['GET'])
 def handle_datasets():
     email = auth_api.auth()['email']
-    return to_json(database_api.datasets(email)), 200, get_json_headers()
+    return to_json(database_api.datasets(email))
 
 
 @blueprint.route('/dataset', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -209,15 +266,15 @@ def handle_dataset():
         dataset_id = database_api.upsert_dataset(email=email,
             dataset_id=dataset_id if request.method == 'PUT' else None,
             dataset_name=dataset_name, url=url, readers=readers)
-        return to_json({'id': dataset_id}), 200, get_json_headers()
+        return to_json({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
         dataset_id = content.get('id', '')
         database_api.delete_dataset(email, dataset_id)
-        return '', 204, get_json_headers()
+        return to_json('', 204)
     elif request.method == 'GET':
         dataset_id = request.args.get('id', '')
-        return to_json(database_api.get_dataset(email, dataset_id, True)), 200, get_json_headers()
+        return to_json(database_api.get_dataset(email, dataset_id, True))
 
 
     # if request.method == 'POST' or (request.method == 'PUT' and url != dataset_dict.get('url',

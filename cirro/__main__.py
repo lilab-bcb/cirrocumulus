@@ -2,6 +2,7 @@ def main():
     from flask import Flask, send_from_directory
     import argparse
     from cirro.api import blueprint, auth_api, database_api
+    from flask_compress import Compress
     app = Flask(__name__, static_folder='client/')
     app.register_blueprint(blueprint, url_prefix='/api')
 
@@ -20,6 +21,7 @@ def main():
 
     # from flask_cors import CORS
     # CORS(app)
+    Compress(app)
     from cirro.api import dataset_api
     from cirro.h5ad_backend import H5ADBackend
     from cirro.local_db_api import LocalDbAPI

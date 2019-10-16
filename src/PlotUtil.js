@@ -1,3 +1,5 @@
+import {format} from 'd3-format';
+import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 
 export const interpolators = {};
@@ -42,6 +44,44 @@ interpolators['Sequential (Multi-Hue)'] = [
     'interpolateYlOrRd'];
 
 interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
+const intFormat = format(',');
+const percentFormat = format('.1f');
+
+export function getLegendSizeHelper(selectedCountMap, scale, sizeScale, index) {
+    let text = null;
+    let width = null;
+    if (selectedCountMap != null) {
+        let d = scale.valueCounts.values[index];
+        let count = selectedCountMap[d] || 0;
+        let percent = count / scale.valueCounts.counts[index];
+        width = sizeScale(percent);
+        text = intFormat(selectedCountMap[d] || 0) + ' / ' + intFormat(scale.valueCounts.counts[index]) + ' (' + percentFormat(percent * 100) + '%)';
+    } else {
+        width = sizeScale(scale.valueCounts.counts[index]);
+        text = intFormat(scale.valueCounts.counts[index]);
+    }
+    return {width: width, text: text};
+}
+
+export function getLegendSizeScale(selectedCountMap, values, counts) {
+
+    const sizeRange = [10, 60];
+    const sizeDomain = [Number.MAX_VALUE, -Number.MAX_VALUE];
+    values.forEach((value, i) => {
+        let sizeValue;
+        if (selectedCountMap != null) {
+            let count = selectedCountMap[value];
+            let total = counts[i];
+            sizeValue = count / total;
+        } else {
+            sizeValue = counts[i];
+        }
+        sizeDomain[0] = Math.min(sizeDomain[0], sizeValue);
+        sizeDomain[1] = Math.max(sizeDomain[1], sizeValue);
+    });
+    return scaleLinear().domain(sizeDomain).range(sizeRange);
+
+}
 
 export function getInterpolator(name) {
     if (!name.startsWith("interpolate")) {

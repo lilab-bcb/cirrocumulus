@@ -27,7 +27,10 @@ import {
     SET_NUMBER_OF_BINS_UI,
     SET_SELECTED_EMBEDDING,
     SET_SELECTED_POINTS,
+    SET_SELECTED_VALUE_COUNTS,
     SET_SERVER_INFO,
+    SET_UNSELECTED_MARKER_OPACITY,
+    SET_UNSELECTED_MARKER_OPACITY_UI,
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
@@ -35,6 +38,7 @@ import PlotUtil, {getInterpolator} from '../PlotUtil';
 
 export const DEFAULT_MARKER_SIZE = 5;
 export const DEFAULT_MARKER_OPACITY = 1;
+export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_BIN_SUMMARY = 'mean';
 export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
@@ -200,6 +204,19 @@ function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
     }
 }
 
+function unselectedMarkerOpacity(state = DEFAULT_UNSELECTED_MARKER_OPACITY, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_MARKER_OPACITY:
+            return action.payload;
+        case SET_DATASET:
+            return DEFAULT_UNSELECTED_MARKER_OPACITY;
+        case RESTORE_VIEW:
+            return action.payload.unselectedMarkerOpacity != null ? action.payload.unselectedMarkerOpacity : state;
+        default:
+            return state;
+    }
+}
+
 function markerOpacityUI(state = 1, action) {
     switch (action.type) {
         case SET_MARKER_OPACITY:
@@ -209,6 +226,20 @@ function markerOpacityUI(state = 1, action) {
             return DEFAULT_MARKER_OPACITY;
         case RESTORE_VIEW:
             return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
+        default:
+            return state;
+    }
+}
+
+function unselectedMarkerOpacityUI(state = DEFAULT_UNSELECTED_MARKER_OPACITY, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_MARKER_OPACITY:
+        case SET_UNSELECTED_MARKER_OPACITY_UI:
+            return action.payload;
+        case SET_DATASET:
+            return DEFAULT_UNSELECTED_MARKER_OPACITY;
+        case RESTORE_VIEW:
+            return action.payload.unselectedMarkerOpacity != null ? action.payload.unselectedMarkerOpacity : state;
         default:
             return state;
     }
@@ -241,6 +272,16 @@ function user(state = {}, action) {
     }
 }
 
+function selectedValueCounts(state = {}, action) {
+    switch (action.type) {
+        case SET_SELECTED_VALUE_COUNTS:
+            return action.payload;
+        case SET_DATASET:
+            return {};
+        default:
+            return state;
+    }
+}
 
 function serverInfo(state = {}, action) {
     switch (action.type) {
@@ -329,6 +370,8 @@ function embeddingData(state = [], action) {
                 item.data = item.data.slice();
             });
             return state.slice();
+        case SET_SELECTED_VALUE_COUNTS:
+            return state.slice(); // force update
         case SET_SELECTED_POINTS:
             state.forEach(item => {
                 item.data.forEach(trace => {
@@ -343,17 +386,18 @@ function embeddingData(state = [], action) {
             // TODO custom categorical colors
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
             state.forEach(item => {
-                item.data.forEach(trace => {
-                    if (trace.domain) {
-                        let colorScale = scaleSequential(action.payload.value).domain(trace.domain);
+                if (item.continuous) {
+                    let colorScale = scaleSequential(action.payload.value).domain(item.colorScale.domain());
+                    item.data.forEach(trace => {
                         let colors = [];
                         for (let i = 0, n = trace.values.length; i < n; i++) {
                             let rgb = color(colorScale(trace.values[i]));
                             colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
                         }
                         trace.marker.color = colors;
-                    }
-                });
+                    });
+                    item.colorScale = colorScale;
+                }
                 item.data = item.data.slice();
             });
             return state.slice();
@@ -361,6 +405,14 @@ function embeddingData(state = [], action) {
             state.forEach(item => {
                 item.data.forEach(trace => {
                     trace.marker.opacity = action.payload;
+                });
+                item.data = item.data.slice();
+            });
+            return state.slice();
+        case SET_UNSELECTED_MARKER_OPACITY:
+            state.forEach(item => {
+                item.data.forEach(trace => {
+                    trace.unselected.marker.opacity = action.payload;
                 });
                 item.data = item.data.slice();
             });
@@ -426,5 +478,8 @@ export default combineReducers({
     numberOfBinsUI,
     markerSizeUI,
     interpolator,
-    serverInfo
+    serverInfo,
+    selectedValueCounts,
+    unselectedMarkerOpacity,
+    unselectedMarkerOpacityUI
 });
