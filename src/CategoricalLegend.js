@@ -8,17 +8,24 @@ class CategoricalLegend extends React.PureComponent {
         super(props);
     }
 
+    handleClick = (value, event) => {
+        event.preventDefault();
+        this.props.handleClick({name: this.props.name, value: value});
+    };
+
+
     render() {
         const scale = this.props.scale;
+        const legendVisibilityValues = this.props.legendVisibility[this.props.name] || [];
         const domain = scale.domain();
-
         const selectedValueCounts = this.props.selectedValueCounts;
         const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[this.props.name] : null;
         let sizeScale = getLegendSizeScale(selectedCountMap, scale.valueCounts.values, scale.valueCounts.counts);
         return (
             <div style={{display: 'inline-block', padding: 10, verticalAlign: 'top'}}>{domain.map((d, i) => {
                 let legend = getLegendSizeHelper(selectedCountMap, scale, sizeScale, i);
-                return <div key={d}>
+                let opacity = legendVisibilityValues.indexOf(d) !== -1 ? 0.4 : 1;
+                return <div style={{opacity: opacity}} onClick={(e) => this.handleClick(d, e)} key={d}>
 
                     <div style={{
                         display: 'inline-block',

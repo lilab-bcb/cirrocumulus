@@ -105,29 +105,33 @@ def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_r
     return df.groupby(coordinate_columns, as_index=False).agg(agg_func), df[coordinate_columns]
 
 
-def selected_value_counts(basis, nbins, url, selectedpoints, keys):
+def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
     df = dataset_api.get_df(url, keys, basis, binary=True)
     coordinate_columns = []
     for i in range(basis['dimensions']):
         coordinate_columns.append(basis['name'] + '_' + str(i + 1))
-    if selectedpoints is not None and len(selectedpoints) > 0:
-        if nbins is not None:
 
-            bin_df = df[coordinate_columns]
-            # get indices of selected bins
-            __bin_coords(bin_df, nbins, coordinate_columns, None)
-            g = bin_df.groupby(coordinate_columns)
-            keys = g.groups.keys()
-            keys = keys[selectedpoints]
-            indices = []
-            for key in keys:
-                indices.append(g[key].values)
-            df = df.iloc[np.hstack(indices)]
-        else:
-            df = df.iloc[selectedpoints]
+    if nbins is not None:
+
+        bin_df = df[coordinate_columns]
+        # get indices of selected bins
+        __bin_coords(bin_df, nbins, coordinate_columns, None)
+        g = bin_df.groupby(coordinate_columns)
+        coord_keys = g.groups.keys()
+        if selectedpoints is not None and len(selectedpoints) > 0:
+            coord_keys = coord_keys[selectedpoints]
+        indices = []
+        for coord_key in coord_keys:
+            indices.append(g[coord_key].values)
+        df = df.iloc[np.hstack(indices)]
     else:
-        raise ValueError('No points selected')
-    result = {'count': len(df), 'categories': {}}
+        if selectedpoints is not None and len(selectedpoints) > 0:
+            df = df.iloc[selectedpoints]
+    if categorical_filter is not None:
+        for category in categorical_filter:
+            filtered_values = categorical_filter[category]
+            df = df[~(df[category].isin(filtered_values))]
+    result = {'count': len(df), 'indices': df.index.values.tolist(), 'categories': {}}
 
     for column in df:
         if column not in coordinate_columns:
@@ -139,21 +143,62 @@ def selected_value_counts(basis, nbins, url, selectedpoints, keys):
     return result
 
 
-@blueprint.route('/selected_value_counts', methods=['GET'])
+# @blueprint.route('/selected_points', methods=['GET'])
+# def handle_selected_points():
+#     email = auth_api.auth()['email']
+#     dataset_id = request.args.get('id', '')
+#     if dataset_id == '':
+#         return 'Please provide an id', 400
+#
+#     dataset = database_api.get_dataset(email, dataset_id)
+#     url = dataset['url']
+#     basis = get_basis(request.args.get('embedding', None))
+#     values = [request.args.get('v')]
+#     nbins = check_bin_input(request.args.get('nbins', None))
+#     key = request.args.get('key')
+#     df = dataset_api.get_df(url, [key], basis)
+#
+#     coordinate_columns = []
+#     for i in range(basis['dimensions']):
+#         coordinate_columns.append(basis['name'] + '_' + str(i + 1))
+#
+#     if nbins is not None:
+#
+#         # get indices of selected bins
+#         __bin_coords(df, nbins, coordinate_columns, None)
+#         g = df.groupby(coordinate_columns)
+#         keys = g.groups.keys()
+#         indices = []
+#         for key in keys:
+#             if key in values:
+#                 indices.append(g[key].values)
+#         result = np.hstack(indices)
+#         return to_json(result.tolist())
+#     else:
+#         df = df.reset_index()
+#         result = df[df[key].isin(values)].index.values
+#         return to_json(result.index.values.tolist())
+
+
+@blueprint.route('/selected_value_counts', methods=['POST'])
 def handle_selected_value_counts():
     email = auth_api.auth()['email']
-    dataset_id = request.args.get('id', '')
+
+    content = request.get_json(force=True, cache=False)
+    dataset_id = content.get('id', '')
+
     if dataset_id == '':
         return 'Please provide an id', 400
 
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
-    basis = get_basis(request.args.get('embedding', None))
-    keys = list(request.args.getlist('key'))
-    selectedpoints = list(request.args.getlist('p'))
+    basis = get_basis(content.get('embedding', None))
+    keys = content['keys']
+    selectedpoints = content.get('p', None)
+    categorical_filter = content.get('c', None)
     if basis is not None:
-        nbins = check_bin_input(request.args.get('nbins', None))
-    result = selected_value_counts(basis, nbins, url, selectedpoints, keys)
+        nbins = check_bin_input(content.get('nbins', None))
+    result = selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter)
     return to_json(result)
 
 

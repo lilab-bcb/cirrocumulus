@@ -16,6 +16,7 @@ import {
     SET_FEATURES,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
+    SET_LEGEND_VISIBILITY,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -26,11 +27,12 @@ import {
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
     SET_SELECTED_EMBEDDING,
-    SET_SELECTED_POINTS,
     SET_SELECTED_VALUE_COUNTS,
     SET_SERVER_INFO,
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_MARKER_OPACITY_UI,
+    SET_UNSELECTED_MARKER_SIZE,
+    SET_UNSELECTED_MARKER_SIZE_UI,
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
@@ -133,16 +135,14 @@ function markerSize(state = DEFAULT_MARKER_SIZE, action) {
     }
 }
 
-function selectedpoints(state = [], action) {
+function unselectedMarkerSize(state = DEFAULT_MARKER_SIZE, action) {
     switch (action.type) {
-        case SET_SELECTED_POINTS:
+        case SET_UNSELECTED_MARKER_SIZE:
             return action.payload;
         case SET_DATASET:
-            return [];
-        case SET_SELECTED_EMBEDDING:
-            return []; // TODO persist
+            return DEFAULT_MARKER_SIZE;
         case RESTORE_VIEW:
-            return action.payload.selectedpoints != null ? action.payload.selectedpoints : state;
+            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
         default:
             return state;
     }
@@ -171,6 +171,20 @@ function numberOfBinsUI(state = DEFAULT_NUMBER_BINS, action) {
             return DEFAULT_NUMBER_BINS;
         case RESTORE_VIEW:
             return action.payload.numberOfBins != null ? action.payload.numberOfBins : state;
+        default:
+            return state;
+    }
+}
+
+function unselectedMarkerSizeUI(state = null, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_MARKER_SIZE :
+        case SET_UNSELECTED_MARKER_SIZE_UI:
+            return action.payload;
+        case SET_DATASET:
+            return DEFAULT_MARKER_SIZE;
+        case RESTORE_VIEW:
+            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
         default:
             return state;
     }
@@ -358,6 +372,15 @@ function dotPlotData(state = null, action) {
     }
 }
 
+function legendVisibility(state = {}, action) {
+    switch (action.type) {
+        case SET_LEGEND_VISIBILITY:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
@@ -371,11 +394,11 @@ function embeddingData(state = [], action) {
             });
             return state.slice();
         case SET_SELECTED_VALUE_COUNTS:
-            return state.slice(); // force update
-        case SET_SELECTED_POINTS:
+            let indices = action.payload.indices;
             state.forEach(item => {
+
                 item.data.forEach(trace => {
-                    trace.selectedpoints = action.payload;
+                    trace.selectedpoints = indices;
                 });
 
                 item.data = item.data.slice();
@@ -417,6 +440,14 @@ function embeddingData(state = [], action) {
                 item.data = item.data.slice();
             });
             return state.slice();
+        case SET_UNSELECTED_MARKER_SIZE:
+            state.forEach(item => {
+                item.data.forEach(trace => {
+                    trace.unselected.marker.size = action.payload;
+                });
+                item.data = item.data.slice();
+            });
+            return state.slice();
         case SET_DATASET:
             return [];
         default:
@@ -454,32 +485,34 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 }
 
 export default combineReducers({
-    features,
-    groupBy,
-    embeddings,
-    numberOfBins,
     binSummary,
-    email,
-    user,
-    loadingApp,
-    dataset,
     binValues,
+    dataset,
     datasetChoices,
     dialog,
     dotPlotData,
+    email,
     embeddingData,
-    markerSize,
+    embeddings,
+    features,
+    groupBy,
+    interpolator,
+    legendVisibility,
     loading,
-    plotConfig,
-    message,
-    selectedpoints,
+    loadingApp,
     markerOpacity,
     markerOpacityUI,
-    numberOfBinsUI,
+    markerSize,
     markerSizeUI,
-    interpolator,
-    serverInfo,
+    message,
+    numberOfBins,
+    numberOfBinsUI,
+    plotConfig,
     selectedValueCounts,
+    serverInfo,
     unselectedMarkerOpacity,
-    unselectedMarkerOpacityUI
+    unselectedMarkerSize,
+    unselectedMarkerSizeUI,
+    unselectedMarkerOpacityUI,
+    user
 });

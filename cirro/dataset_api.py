@@ -16,9 +16,9 @@ class DatasetAPI:
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
         return provider.schema(self.fs, path)
 
-    def get_df(self, path, keys, embedding, binary=False):
+    def get_df(self, path, keys, embedding, index=False, binary=False):
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        df = provider.get_df(self.fs, path, keys, embedding)
+        df = provider.get_df(self.fs, path, keys, embedding, index=index)
         embedding_names = []
         if embedding is not None:
             for i in range(embedding['dimensions']):

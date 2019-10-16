@@ -2,7 +2,7 @@ import React from 'react';
 import createPlotlyComponent from 'react-plotly.js/factory';
 
 import {connect} from 'react-redux';
-import {setSelection} from './actions';
+import {handleLegendClick, handleSelectedPoints} from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 
@@ -28,7 +28,8 @@ class EmbeddingChartPlotly extends React.PureComponent {
                                               scale={traceInfo.colorScale}
                                               name={traceInfo.name}
                                               selectedValueCounts={this.props.selectedValueCounts}/> :
-                    <CategoricalLegend name={traceInfo.name}
+                    <CategoricalLegend legendVisibility={this.props.legendVisibility}
+                                       handleClick={this.props.handleLegendClick} name={traceInfo.name}
                                        scale={traceInfo.colorScale}
                                        selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
         });
@@ -43,16 +44,20 @@ const mapStateToProps = state => {
     return {
         data: state.embeddingData,
         config: state.plotConfig,
+        legendVisibility: state.legendVisibility,
         selectedValueCounts: state.selectedValueCounts
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
+        handleLegendClick: (e) => {
+            dispatch(handleLegendClick(e));
+        },
         onSelect: (e) => {
-            dispatch(setSelection(e));
+            dispatch(handleSelectedPoints(e));
         },
         onDeselect: () => {
-            dispatch(setSelection(null));
+            dispatch(handleSelectedPoints(null));
         },
         onZoom: () => {
 

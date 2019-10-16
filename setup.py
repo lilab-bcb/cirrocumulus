@@ -10,7 +10,7 @@ with open(path.join(here, "README.rst"), encoding="utf-8") as f:
 requires = ["ujson", "flask", "anndata", "fsspec", "flask-compress", "natsort"]
 
 setup(
-    version='0.0.8',
+    version='0.0.0b1',
     name="cirrocumulus",
     description="scRNA-Seq visualization tool",
     long_description=long_description,

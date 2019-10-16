@@ -74,7 +74,7 @@ class DotPlot extends React.PureComponent {
         let maxDiameter = 14;
         let numberFormat = format('.1f');
         let colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
-        let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]);
+        let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]).clamp(true);
         let size = [];
         let color = [];
         let x = [];
@@ -94,7 +94,7 @@ class DotPlot extends React.PureComponent {
                 text.push('mean: ' + numberFormat(summary[j]) + ', % non-zero: ' + numberFormat(100 * fraction[j]));
             }
         }
-        ;
+
 
         let trace = {
             type: 'scatter',
@@ -103,6 +103,7 @@ class DotPlot extends React.PureComponent {
             text: text,
             mode: 'markers',
             name: '',
+            sizemode: 'diameter',
             marker: {
                 color: color,
                 symbol: 'circle',

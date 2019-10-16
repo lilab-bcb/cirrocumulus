@@ -10,12 +10,12 @@ class H5ADBackend:
         self.backed = backed
         # only works with local files
 
-    def get_df(self, filesystem, path, keys, embedding_key=None):
+    def get_df(self, filesystem, path, keys, embedding_key=None, index=False):
         adata = self.path_to_data.get(path, None)
         if adata is None:
             adata = anndata.read(path, backed=self.backed)
             self.path_to_data[path] = adata
-        return self.__get_df(adata, keys, embedding_key)
+        return self.__get_df(adata, keys, embedding_key, index=index)
 
     def schema(self, filesystem, path):
         adata = self.path_to_data.get(path, None)
@@ -41,9 +41,10 @@ class H5ADBackend:
         result['embeddings'] = embeddings
         return result
 
-    def __get_df(self, adata, keys, embedding_key=None):
+    def __get_df(self, adata, keys, embedding_key=None, index=False):
         is_obs = True
-        df = pd.DataFrame(index=adata.obs.index.values if is_obs else adata.var.index.values)
+        df = pd.DataFrame(
+            index=adata.obs.index.values if is_obs else adata.var.index.values) if index else pd.DataFrame()
         for i in range(len(keys)):
             key = keys[i]
             if key in adata.var_names and is_obs:

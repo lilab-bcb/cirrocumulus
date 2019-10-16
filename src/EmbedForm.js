@@ -23,7 +23,9 @@ import {
     setNumberOfBinsUI,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
-    setUnselectedMarkerOpacityUI
+    setUnselectedMarkerOpacityUI,
+    setUnselectedMarkerSize,
+    setUnselectedMarkerSizeUI
 } from './actions';
 
 import Autocomplete from './Autocomplete';
@@ -56,6 +58,19 @@ class EmbedForm extends React.PureComponent {
             let markerSize = parseFloat(event.target.value);
             if (markerSize > 0) {
                 this.props.handleMarkerSize(markerSize);
+            }
+        }
+    };
+
+    onUnselectedMarkerSizeChange = (event) => {
+        this.props.handleUnselectedMarkerSizeUI(event.target.value);
+    };
+
+    onUnselectedMarkerSizeKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            let markerSize = parseFloat(event.target.value);
+            if (markerSize > 0) {
+                this.props.handleUnselectedMarkerSize(markerSize);
             }
         }
     };
@@ -113,7 +128,7 @@ class EmbedForm extends React.PureComponent {
 
 
     render() {
-        const {classes, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
+        const {classes, unselectedMarkerSize, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
         const features = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const obsCat = dataset == null ? [] : dataset.obsCat;
@@ -185,10 +200,7 @@ class EmbedForm extends React.PureComponent {
                 <TextField step="0.1" type="number" min="0.01" max="1" onKeyPress={this.onMarkerOpacityKeyPress}
                            onChange={this.onMarkerOpacityChange} label="Marker Opacity"
                            className={classes.formControl} value={markerOpacity}/>
-                <TextField step="0.1" type="number" min="0.01" max="1"
-                           onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
-                           onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
-                           className={classes.formControl} value={unselectedMarkerOpacity}/>
+
 
                 <FormControlLabel
                     control={
@@ -226,6 +238,14 @@ class EmbedForm extends React.PureComponent {
                     </Select>
                 </FormControl>}
 
+                <TextField type="number" step="2" min="0.1" max="30" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
+                           onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
+                           className={classes.formControl} value={unselectedMarkerSize}/>
+                <TextField step="0.1" type="number" min="0.01" max="1"
+                           onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
+                           onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
+                           className={classes.formControl} value={unselectedMarkerOpacity}/>
+
             </div>
         );
     }
@@ -238,6 +258,7 @@ const mapStateToProps = state => {
         selectedEmbeddings: state.embeddings,
         numberOfBins: state.numberOfBinsUI,
         markerSize: state.markerSizeUI,
+        unselectedMarkerSize: state.unselectedMarkerSizeUI,
         markerOpacity: state.markerOpacityUI,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
         binValues: state.binValues,
@@ -258,6 +279,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleMarkerSizeUI: value => {
             dispatch(setMarkerSizeUI(value));
+        },
+        handleUnselectedMarkerSize: value => {
+            dispatch(setUnselectedMarkerSize(value));
+        },
+        handleUnselectedMarkerSizeUI: value => {
+            dispatch(setUnselectedMarkerSizeUI(value));
         },
         handleMarkerOpacity: value => {
             dispatch(setMarkerOpacity(value));

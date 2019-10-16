@@ -39,12 +39,13 @@ class ParquetBackend:
         result['embeddings'] = embeddings
         return result
 
-    def get_df(self, file_system, path, keys, embedding_key=None):
+    def get_df(self, file_system, path, keys, embedding_key=None, index=False):
         if embedding_key is not None:
             embedding_name = embedding_key['name']
             for i in range(embedding_key['dimensions']):
                 keys.append(embedding_name + '_' + str(i + 1))
-        keys += ['index']  # get pandas index
+        if index:
+            keys += ['index']  # get pandas index
         with file_system.open(path) as f:
             table = pq.read_table(f, columns=keys)
         return table.to_pandas()

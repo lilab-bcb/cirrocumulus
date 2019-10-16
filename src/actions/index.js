@@ -4,6 +4,7 @@ import {schemeCategory10} from 'd3-scale-chromatic';
 import CustomError from '../CustomError';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
+
 export const API = '/api';
 const authScopes = [
     'email',
@@ -13,9 +14,10 @@ const authScopes = [
     'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 
-
+export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
+export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
-
+export const SET_LEGEND_VISIBILITY = 'SET_LEGEND_VISIBILITY';
 export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
@@ -27,7 +29,7 @@ export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 
 // update chart
-export const SET_SELECTED_POINTS = 'SET_SELECTED_POINTS';
+
 export const SET_SELECTED_VALUE_COUNTS = 'SET_SELECTED_VALUE_COUNTS';
 export const SET_FEATURES = 'SET_FEATURES';
 export const SET_GROUP_BY = 'SET_GROUP_BY';
@@ -143,44 +145,84 @@ export function login() {
     };
 }
 
-function setSelectedPoints(payload) {
-    return {type: SET_SELECTED_POINTS, payload: payload};
-}
 
 function setSelectedValueCounts(payload) {
     return {type: SET_SELECTED_VALUE_COUNTS, payload: payload};
 }
 
-function selectedValueCountsPromise(selectedpoints, dispatch, getState) {
+function selectedValueCountsPromise(selectedpoints, legendVisibility, dispatch, getState) {
     const datasetId = getState().dataset.id;
     const continuousFeatures = getState().features;
     const categoricalFeatures = getState().groupBy;
     const selectedEmbeddings = getState().embeddings;
-    if (selectedEmbeddings.length === 0 || selectedpoints.length === 0) {
-        return Promise.resolve({});
-    }
-    let url = [API + '/selected_value_counts?id=' + datasetId];
-    url.push('&embedding=' + selectedEmbeddings[0]);
-    continuousFeatures.forEach(f => url.push('&key=' + f));
-    categoricalFeatures.forEach(f => url.push('&key=' + f));
 
-    selectedpoints.forEach(p => url.push('&p=' + p));
-    return fetch(
-        url.join(''),
+    let json = {
+        id: datasetId,
+        embedding: selectedEmbeddings[0],
+        keys: continuousFeatures.concat(categoricalFeatures)
+    };
+    if (getState().binValues) {
+        json.nbins = getState().numberOfBins;
+    }
+    if (selectedpoints.length > 0) {
+        json.p = selectedpoints;
+    }
+    if (Object.keys(legendVisibility).length > 0) {
+        json.c = legendVisibility;
+    }
+    let p;
+    // if (selectedEmbeddings.length === 0 || (selectedpoints.length === 0 && json.c == null)) {
+    //     p = Promise.resolve({});
+    // }
+
+    p = fetch(API + '/selected_value_counts',
         {
+            body: JSON.stringify(json),
+            method: 'POST',
             headers: {'Authorization': 'Bearer ' + getIdToken()},
-        }).then(result => result.json()).then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
+        });
+    p.then(result => result.json()).then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
+    return p;
 }
 
-export function setSelection(payload) {
+
+function setLegendVisibility(payload) {
+    return {type: SET_LEGEND_VISIBILITY, payload: payload};
+}
+
+export function handleLegendClick(payload) {
+    // TODO update selection or just toggle visibility?
+    return function (dispatch, getState) {
+        let name = payload.name;
+        let value = payload.value;
+        // legend visibility, true means hidden : {'leiden':{'1':true, '5':true}}
+        // keep track of hidden values
+        let legendVisibility = getState().legendVisibility;
+        let values = legendVisibility[name];
+        if (values == null) {
+            values = [];
+            legendVisibility[name] = values;
+        }
+        let index = values.indexOf(value);
+        if (index !== -1) {
+            values.splice(index, 1);
+        } else {
+            values.push(value);
+        }
+        if (Object.keys(legendVisibility).length === 0) {
+            delete legendVisibility[name];
+        }
+        console.log(legendVisibility);
+        dispatch(setLegendVisibility(legendVisibility));
+        selectedValueCountsPromise([], legendVisibility, dispatch, getState);
+    };
+}
+
+export function handleSelectedPoints(payload) {
+    // we intentionally don't persist selected points
     let selectedpoints = payload == null ? [] : payload.points[0].data.selectedpoints;
     return function (dispatch, getState) {
-        dispatch(setSelectedPoints(selectedpoints));
-        if (selectedpoints.length === 0) {
-            dispatch(setSelectedValueCounts({count: 0, categories: {}}));
-        } else {
-            selectedValueCountsPromise(selectedpoints, dispatch, getState);
-        }
+        selectedValueCountsPromise(selectedpoints, getState().legendVisibility, dispatch, getState);
     };
     // TODO linked brushing across embeddings
 
@@ -195,8 +237,21 @@ export function setNumberOfBinsUI(payload) {
     return {type: SET_NUMBER_OF_BINS_UI, payload: payload};
 }
 
+export function setMarkerSize(payload) {
+    return {type: SET_MARKER_SIZE, payload: payload};
+}
+
 export function setMarkerSizeUI(payload) {
     return {type: SET_MARKER_SIZE_UI, payload: payload};
+}
+
+
+export function setUnselectedMarkerSize(payload) {
+    return {type: SET_UNSELECTED_MARKER_SIZE, payload: payload};
+}
+
+export function setUnselectedMarkerSizeUI(payload) {
+    return {type: SET_UNSELECTED_MARKER_SIZE_UI, payload: payload};
 }
 
 export function setUser(payload) {
@@ -434,9 +489,6 @@ function _setDataset(payload) {
     return {type: SET_DATASET, payload: payload};
 }
 
-export function setMarkerSize(payload) {
-    return {type: SET_MARKER_SIZE, payload: payload};
-}
 
 export function setMarkerOpacity(payload) {
     return {type: SET_MARKER_OPACITY, payload: payload};
@@ -495,6 +547,17 @@ function _setFeatures(payload) {
 function _setGroupBy(payload) {
     return function (dispatch, getState) {
         let prior = getState().groupBy; // in case of error, restore
+        let legendVisibility = getState().legendVisibility;
+        let legendVisibilityChanged = false;
+        for (let key in legendVisibility) {
+            if (payload.indexOf(key) === -1) {
+                delete legendVisibility[key];
+                legendVisibilityChanged = true;
+            }
+        }
+        if (legendVisibilityChanged) {
+            dispatch({type: SET_LEGEND_VISIBILITY, payload: legendVisibility});
+        }
         dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
         dispatch(_updateEmbedding({embedding: true, dotPlot: true}, err => {
             dispatch({type: SET_GROUP_BY, payload: prior});
@@ -540,7 +603,6 @@ export function setBinValues(payload) {
 
     return function (dispatch, getState) {
         let prior = getState().binValues;
-        dispatch(setSelection(null)); // clear selection
         dispatch({type: SET_BIN_VALUES, payload: payload});
         dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
             dispatch({type: SET_BIN_VALUES, payload: prior});
@@ -646,6 +708,8 @@ function _updateEmbedding(options, onError) {
         let requestedFeatures = [];
         const markerSize = getState().markerSize;
         const markerOpacity = getState().markerOpacity;
+        const unselectedMarkerSize = getState().unselectedMarkerSize;
+
         const unselectedMarkerOpacity = getState().unselectedMarkerOpacity;
 
         embeddingData.forEach(trace => {
@@ -699,7 +763,7 @@ function _updateEmbedding(options, onError) {
         }
 
         let interpolator = getState().interpolator;
-        let selectedpoints = getState().selectedpoints;
+        let selectedValueCounts = getState().selectedValueCounts;
         let promises = [];
         if (options.dotPlot) {
             let dotPlotPromise = null;
@@ -720,7 +784,7 @@ function _updateEmbedding(options, onError) {
         }
 
         if (options.embedding) {
-            let valueCountsPromise = selectedValueCountsPromise(selectedpoints, dispatch, getState);
+            let valueCountsPromise = selectedValueCountsPromise([], getState().legendVisibility, dispatch, getState);
             let embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
                 .then(response => {
                     return response.json();
@@ -798,8 +862,8 @@ function _updateEmbedding(options, onError) {
                                 opacity: markerOpacity,
                                 showscale: false,
                             },
-                            unselected: {marker: {opacity: unselectedMarkerOpacity}},
-                            selectedpoints: selectedpoints.length === 0 ? null : selectedpoints,
+                            unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
+                            selectedpoints: selectedValueCounts.indices && selectedValueCounts.indices.length === 0 ? null : selectedValueCounts.indices,
                             values: values,
                             text: values,
                         };
