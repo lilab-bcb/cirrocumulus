@@ -112,17 +112,16 @@ class DotPlot extends React.PureComponent {
         };
         let traces = [trace];
         let config = PlotUtil.createPlotConfig();
-        let embedding = PlotUtil.createPlotLayout({embedding: false});
-        embedding.xaxis.type = 'category';
-        embedding.yaxis.type = 'category';
+        let layout = PlotUtil.createDotPlotLayout({
+            height: 100 + names.length * (maxDiameter + 2),
+            width: Math.max(300, 70 + index.length * (maxDiameter + 2))
+        });
 
-        embedding.height = 100 + names.length * (maxDiameter + 2);
-        embedding.width = Math.max(300, 70 + index.length * (maxDiameter + 2));
 
         return (<div style={{maxWidth: 800, overflow: 'auto', border: '1px solid LightGrey'}}>
             <Plot
                 data={traces}
-                embedding={embedding}
+                layout={layout}
                 config={config}
             />
             <ColorSchemeLegend style={{display: 'block'}}

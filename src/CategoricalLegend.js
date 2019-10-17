@@ -1,43 +1,110 @@
 import React from 'react';
-import {getLegendSizeHelper, getLegendSizeScale} from './PlotUtil';
+import {getLegendSizeHelper} from './PlotUtil';
 
 
 class CategoricalLegend extends React.PureComponent {
 
-    constructor(props) {
-        super(props);
-    }
 
     handleClick = (value, event) => {
-        event.preventDefault();
-        this.props.handleClick({name: this.props.name, value: value});
+        if (this.props.clickEnabled) {
+            event.preventDefault();
+            this.props.handleClick({name: this.props.name, value: value});
+        }
     };
 
 
     render() {
-        const scale = this.props.scale;
-        const legendVisibilityValues = this.props.legendVisibility[this.props.name] || [];
-        const domain = scale.domain();
-        const selectedValueCounts = this.props.selectedValueCounts;
-        const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[this.props.name] : null;
-        let sizeScale = getLegendSizeScale(selectedCountMap, scale.valueCounts.values, scale.valueCounts.counts);
-        return (
-            <div style={{display: 'inline-block', padding: 10, verticalAlign: 'top'}}>{domain.map((d, i) => {
-                let legend = getLegendSizeHelper(selectedCountMap, scale, sizeScale, i);
-                let opacity = legendVisibilityValues.indexOf(d) !== -1 ? 0.4 : 1;
-                return <div style={{opacity: opacity}} onClick={(e) => this.handleClick(d, e)} key={d}>
+        const {scale, legendVisibility, name, selectedValueCounts, maxHeight, clickEnabled} = this.props;
+        const legendVisibilityValues = legendVisibility[name] || [];
+        const domain = this.props.domain != null ? this.props.domain : scale.domain();
+        const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
+        let maxSize = 60;
 
-                    <div style={{
-                        display: 'inline-block',
-                        width: legend.width,
-                        height: 10,
-                        background: scale(d)
-                    }}/>
-                    <label
-                        style={{marginLeft: 4}}>{d + ' - ' + legend.text}</label>
-                </div>;
-            })
-            }</div>);
+        return (
+            <div style={{
+                display: 'inline-block',
+                padding: 10,
+                verticalAlign: 'top',
+                maxHeight: maxHeight,
+                overflow: 'auto'
+            }}>
+                {name}
+                <table>
+                    <tbody>
+                    {domain.map((d, i) => {
+                        let legend = getLegendSizeHelper(selectedCountMap, scale, i);
+                        let opacity = legendVisibilityValues.indexOf(d) !== -1 ? 0.4 : 1;
+                        let groupSize = legend.percentTotal * maxSize;
+                        let selectedSize = legend.percentSelected * maxSize;
+                        return <tr title={d + ' -  ' + legend.title}
+                                   style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
+                                   onClick={(e) => this.handleClick(d, e)} key={d}>
+                            {clickEnabled && <td>
+                                <div style={{
+                                    display: 'inline-block',
+                                    width: 10,
+                                    height: 10,
+                                    background: scale(d)
+                                }}/>
+                            </td>}
+                            <td style={{
+                                maxWidth: 100,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}>
+                                <label>{'' + d}</label>
+                            </td>
+                            {!isNaN(selectedSize) ?
+                                <td>
+                                    <div style={{
+                                        display: 'inline-block',
+                                        position: 'relative',
+                                        width: maxSize,
+                                        border: '1px solid black',
+                                        height: 9
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            width: selectedSize,
+                                            left: 0,
+                                            top: 0,
+                                            backgroundColor: 'LightGrey',
+                                            height: 9
+                                        }}/>
+                                    </div>
+                                </td> : null}
+                            <td>
+                                <div style={{
+                                    display: 'inline-block',
+                                    position: 'relative',
+                                    width: maxSize,
+                                    border: '1px solid black',
+                                    height: 9
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        width: groupSize,
+                                        left: 0,
+                                        top: 0,
+                                        backgroundColor: 'LightGrey',
+                                        height: 9
+                                    }}/>
+                                </div>
+                            </td>
+                        </tr>;
+                    })
+                    }</tbody>
+                    <tfoot>
+                    <tr>
+                        {clickEnabled && <td></td>}
+                        <td></td>
+                        {selectedCountMap != null ?
+                            <td><small>selection</small></td> : null}
+                        <td><small>{selectedCountMap != null ? 'group' : null}</small></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>);
     }
 }
 

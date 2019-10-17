@@ -12,6 +12,7 @@ import {
     SET_DIALOG,
     SET_DOT_PLOT_DATA,
     SET_EMAIL,
+    SET_EMBEDDING_CHART_SIZE,
     SET_EMBEDDING_DATA,
     SET_FEATURES,
     SET_GROUP_BY,
@@ -149,6 +150,18 @@ function unselectedMarkerSize(state = DEFAULT_MARKER_SIZE, action) {
 }
 
 
+function embeddingChartSize(state = 2, action) {
+    switch (action.type) {
+        case SET_EMBEDDING_CHART_SIZE:
+            return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.embeddingChartSize != null ? action.payload.embeddingChartSize : state;
+        default:
+            return state;
+    }
+}
+
+
 function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
         case SET_NUMBER_OF_BINS:
@@ -258,6 +271,7 @@ function unselectedMarkerOpacityUI(state = DEFAULT_UNSELECTED_MARKER_OPACITY, ac
             return state;
     }
 }
+
 
 function message(state = null, action) {
     switch (action.type) {
@@ -385,6 +399,16 @@ function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
             return action.payload;
+        case SET_EMBEDDING_CHART_SIZE:
+            const size = PlotUtil.getEmbeddingChartSize(action.payload);
+            state.forEach(item => {
+                let layout = Object.assign({}, item.layout);
+                layout.width = size;
+                layout.height = size;
+                item.layout = layout;
+            });
+
+            return state.slice();
         case SET_MARKER_SIZE:
             state.forEach(item => {
                 item.data.forEach(trace => {
@@ -492,6 +516,7 @@ export default combineReducers({
     dialog,
     dotPlotData,
     email,
+    embeddingChartSize,
     embeddingData,
     embeddings,
     features,

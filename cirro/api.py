@@ -127,18 +127,17 @@ def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_f
     else:
         if selectedpoints is not None and len(selectedpoints) > 0:
             df = df.iloc[selectedpoints]
+
     if categorical_filter is not None:
         for category in categorical_filter:
             filtered_values = categorical_filter[category]
             df = df[~(df[category].isin(filtered_values))]
+
     result = {'count': len(df), 'indices': df.index.values.tolist(), 'categories': {}}
 
     for column in df:
         if column not in coordinate_columns:
             value_counts = df[column].value_counts()
-            # value_count_dict = {}
-            # for i in range(len(value_counts)):
-            #     value_count_dict[value_counts.index[i]] = value_counts.values[i]
             result['categories'][column] = value_counts.to_dict()
     return result
 

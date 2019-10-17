@@ -371,7 +371,6 @@ const mapStateToProps = state => {
         binSummary: state.binSummary,
         binValues: state.binValues,
         interpolator: state.interpolator,
-        selectedpoints: state.selectedpoints,
         user: state.user
 
     };

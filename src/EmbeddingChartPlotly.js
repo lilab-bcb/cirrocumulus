@@ -5,6 +5,7 @@ import {connect} from 'react-redux';
 import {handleLegendClick, handleSelectedPoints} from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
+import PlotUtil from './PlotUtil';
 
 const Plot = createPlotlyComponent(window.Plotly);
 
@@ -12,7 +13,15 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
 
     getPlots() {
-        return this.props.data.filter(traceInfo => traceInfo.active).map(traceInfo => {
+        const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
+        let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : this.props.embeddingChartSize);
+        console.log(activeTraces.map(t => t.name));
+        return activeTraces.map(traceInfo => {
+            if (size !== traceInfo.layout.width) {
+                traceInfo.layout = Object.assign({}, traceInfo.layout);
+                traceInfo.layout.width = size;
+                traceInfo.layout.height = size;
+            }
             return (<div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={traceInfo.name}><Plot
                 key={traceInfo.name}
                 data={traceInfo.data}
@@ -22,15 +31,20 @@ class EmbeddingChartPlotly extends React.PureComponent {
                 onSelected={this.props.onSelect}
             />
                 {traceInfo.continuous ?
-                    <ColorSchemeLegendWrapper style={{display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
-                                              width={300}
-                                              label={true} height={40}
-                                              scale={traceInfo.colorScale}
-                                              name={traceInfo.name}
-                                              selectedValueCounts={this.props.selectedValueCounts}/> :
+                    <ColorSchemeLegendWrapper
+                        width={186}
+                        label={true}
+                        height={40}
+                        scale={traceInfo.colorScale}
+                        selectedValueCounts={this.props.selectedValueCounts}
+                        maxHeight={traceInfo.layout.height}
+                        name={traceInfo.name}
+                        selectedValueCounts={this.props.selectedValueCounts}/> :
                     <CategoricalLegend legendVisibility={this.props.legendVisibility}
                                        handleClick={this.props.handleLegendClick} name={traceInfo.name}
                                        scale={traceInfo.colorScale}
+                                       maxHeight={traceInfo.layout.height}
+                                       clickEnabled={true}
                                        selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
         });
     }
@@ -43,6 +57,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         data: state.embeddingData,
+        embeddingChartSize: state.embeddingChartSize,
         config: state.plotConfig,
         legendVisibility: state.legendVisibility,
         selectedValueCounts: state.selectedValueCounts

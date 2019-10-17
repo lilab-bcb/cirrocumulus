@@ -1,5 +1,4 @@
 import {format} from 'd3-format';
-import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 
 export const interpolators = {};
@@ -47,41 +46,38 @@ interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 const intFormat = format(',');
 const percentFormat = format('.1f');
 
-export function getLegendSizeHelper(selectedCountMap, scale, sizeScale, index) {
-    let text = null;
-    let width = null;
+export function getLegendSizeHelper(selectedCountMap, scale, index) {
+
+
+    if (scale.valueCounts.total == null) {
+        let total = 0;
+        for (let i = 0, n = scale.valueCounts.counts.length; i < n; i++) {
+            total += scale.valueCounts.counts[i];
+        }
+        scale.valueCounts.total = total;
+    }
+
+    let count = scale.valueCounts.counts[index];
+    let total = scale.valueCounts.total;
+    let percent = count / total;
+    let percentSelected = Number.NaN;
+    let title;
+    let text;
     if (selectedCountMap != null) {
         let d = scale.valueCounts.values[index];
-        let count = selectedCountMap[d] || 0;
-        let percent = count / scale.valueCounts.counts[index];
-        width = sizeScale(percent);
-        text = intFormat(selectedCountMap[d] || 0) + ' / ' + intFormat(scale.valueCounts.counts[index]) + ' (' + percentFormat(percent * 100) + '%)';
+        let selectedCount = selectedCountMap[d] || 0;
+        let groupTotal = scale.valueCounts.counts[index];
+        percentSelected = selectedCount / groupTotal;
+        title = intFormat(selectedCount) + ' / ' + intFormat(groupTotal) + ' within group selected (' + percentFormat(100 * percentSelected) + '%)';
+        text = intFormat(selectedCount) + ' / ' + intFormat(groupTotal);
     } else {
-        width = sizeScale(scale.valueCounts.counts[index]);
-        text = intFormat(scale.valueCounts.counts[index]);
+        title = intFormat(count) + ' (' + percentFormat(100 * percent) + '% of total)';
+        text = intFormat(count);
     }
-    return {width: width, text: text};
+
+    return {percentTotal: percent, text: text, percentSelected: percentSelected, title: title, total: intFormat(total)};
 }
 
-export function getLegendSizeScale(selectedCountMap, values, counts) {
-
-    const sizeRange = [10, 60];
-    const sizeDomain = [Number.MAX_VALUE, -Number.MAX_VALUE];
-    values.forEach((value, i) => {
-        let sizeValue;
-        if (selectedCountMap != null) {
-            let count = selectedCountMap[value];
-            let total = counts[i];
-            sizeValue = count / total;
-        } else {
-            sizeValue = counts[i];
-        }
-        sizeDomain[0] = Math.min(sizeDomain[0], sizeValue);
-        sizeDomain[1] = Math.max(sizeDomain[1], sizeValue);
-    });
-    return scaleLinear().domain(sizeDomain).range(sizeRange);
-
-}
 
 export function getInterpolator(name) {
     if (!name.startsWith("interpolate")) {
@@ -94,79 +90,102 @@ class PlotUtil {
 
     static createPlotConfig() {
         return {
-            showLink: true,
-            responsive: true,
+            showLink: false,
+            responsive: false,
             displaylogo: false,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines'],// 'sendDataToCloud'
         };
     }
 
-    static fixLegend(node) {
-        requestAnimationFrame(() => {
-            if (node) {
-                const scatterpts = node.querySelectorAll('.scatterpts');
-                if (scatterpts) {
-                    scatterpts.forEach(pt => {
-                        pt.setAttribute('d', 'M6,0A6,6 0 1,1 0,-6A6,6 0 0,1 6,0Z');
-                        pt.style.opacity = 1;
-                    });
-                }
-            }
-        });
-    }
 
-    static createAxis(options) {
-        return options.embedding ? {
+    static createEmbeddingAxis() {
+        return {
             showbackground: false,
             autorange: true,
             showgrid: false,
             zeroline: false,
             showline: false,
+            title: '',
             autotick: false,
             ticks: '',
             showticklabels: false,
-            title: '',
-        } : {
+
+        };
+    }
+
+    static createDotPlotAxis() {
+        return {
             showbackground: false,
             autorange: true,
             showgrid: false,
             zeroline: false,
             showline: false,
             title: '',
+            type: 'category'
         };
     }
 
-    static createPlotLayout(options) {
-        let legendWidth = options.legend || 0;
-        let size = Math.floor(Math.min(window.screen.availWidth - 220, window.screen.availHeight * .95));
+    static getEmbeddingChartSize(size) {
+        let maxSize = Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
+        return Math.floor(maxSize / size);
+    }
+
+    static createEmbeddingLayout(options) {
+        let {size, is3d} = options;
+        size = PlotUtil.getEmbeddingChartSize(size);
+
         let layout = {
             hovermode: 'closest',
             dragmode: 'select',
-            title: {text: options.title, font: {size: 12}},
-            width: size + legendWidth,
+            width: size,
             height: size,
             margin: {
-                l: !options.embedding ? 50 : 0,
-                b: !options.embedding ? 50 : 0,
-                r: legendWidth + (!options.embedding ? 100 : 0),
-                t: options.title ? 22 : 0,
+                l: 0,
+                b: 0,
+                r: 0,
+                t: 0,
+                autoexpand: false
+            },
+            legend: {yanchor: 'top'},
+            autosize: false,
+            displaylogo: false,
+            showlegend: false,
+        };
+        if (is3d) {
+            layout.scene = {
+                xaxis: PlotUtil.createEmbeddingAxis(),
+                yaxis: PlotUtil.createEmbeddingAxis(),
+                zaxis: PlotUtil.createEmbeddingAxis(),
+            };
+        } else {
+            layout.xaxis = PlotUtil.createEmbeddingAxis();
+            layout.yaxis = PlotUtil.createEmbeddingAxis();
+        }
+        return layout;
+    }
+
+    static createDotPlotLayout(options) {
+        let {width, height} = options;
+        let layout = {
+            hovermode: 'closest',
+            dragmode: 'select',
+            width: width,
+            height: height,
+            margin: {
+                l: 50,
+                b: 50,
+                r: 100,
+                t: 0,
                 autoexpand: true
             },
             legend: {yanchor: 'top'},
-            autosize: !options.embedding,
+            autosize: true,
             displaylogo: false,
-            showlegend: options.legend > 0 ? true : false,
+            showlegend: false,
         };
-        if (options.is3d) {
-            layout.scene = {
-                xaxis: PlotUtil.createAxis(options),
-                yaxis: PlotUtil.createAxis(options),
-                zaxis: PlotUtil.createAxis(options),
-            };
-        } else {
-            layout.xaxis = PlotUtil.createAxis(options);
-            layout.yaxis = PlotUtil.createAxis(options);
-        }
+
+        layout.xaxis = PlotUtil.createDotPlotAxis();
+        layout.yaxis = PlotUtil.createDotPlotAxis();
         return layout;
     }
 }

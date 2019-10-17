@@ -1,26 +1,14 @@
 import React from 'react';
+import CategoricalLegend from './CategoricalLegend';
 
 import ColorSchemeLegend from './ColorSchemeLegend';
-import {getLegendSizeHelper, getLegendSizeScale} from './PlotUtil';
-
 
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
-
-        const style = this.props.style;
-        const scale = this.props.scale;
-        const name = this.props.name;
-
-
-        let values = scale.valueCounts.values;
-        let domain = scale.domain();
-        if (domain[0] === domain[1]) {
-            values = [];
-        }
-
-        const selectedValueCounts = this.props.selectedValueCounts;
+        const {scale, name, selectedValueCounts, maxHeight, style} = this.props;
         const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
+        const domain = scale.valueCounts.values;
         if (selectedCountMap) {
             // TODO fix hack below
             if (selectedCountMap['True'] != null) {
@@ -31,32 +19,21 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
             }
         }
 
-        let sizeScale = getLegendSizeScale(selectedCountMap, scale.valueCounts.values, scale.valueCounts.counts);
-
-
         return (
-            <div style={style}>{values.map((d, i) => {
-                let label = d;
-                if (label == true) {
-                    label = 'expressed';
-                } else if (label == false) {
-                    label = 'not expressed';
-                }
-                let legend = getLegendSizeHelper(selectedCountMap, scale, sizeScale, i);
-                return <div key={d}>
-
-                    <div style={{
-                        display: 'inline-block',
-                        width: legend.width,
-                        height: 10,
-                        background: 'LightGrey'
-                    }}/>
-                    <label
-                        style={{marginLeft: 4}}>{label + ' - ' + legend.text}</label>
-                </div>;
-            })
-            }<ColorSchemeLegend width={this.props.width} height={this.props.height} style={style} scale={scale}
-                                label={this.props.label}></ColorSchemeLegend></div>);
+            <div style={{
+                display: 'inline-block',
+                padding: 10,
+                verticalAlign: 'top',
+                maxHeight: maxHeight,
+                overflow: 'auto'
+            }}>
+                <CategoricalLegend scale={scale} name={name}
+                                   selectedValueCounts={selectedValueCounts}
+                                   maxHeight={maxHeight}
+                                   domain={domain} clickEnabled={false}
+                                   legendVisibility={{}}></CategoricalLegend>
+                <ColorSchemeLegend width={this.props.width} height={this.props.height} style={style} scale={scale}
+                                   label={this.props.label}></ColorSchemeLegend></div>);
 
     }
 }

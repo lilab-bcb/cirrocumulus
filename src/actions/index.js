@@ -25,6 +25,7 @@ export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
+export const SET_EMBEDDING_CHART_SIZE = "SET_EMBEDDING_CHART_SIZE";
 
 export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 
@@ -171,17 +172,17 @@ function selectedValueCountsPromise(selectedpoints, legendVisibility, dispatch, 
         json.c = legendVisibility;
     }
     let p;
-    // if (selectedEmbeddings.length === 0 || (selectedpoints.length === 0 && json.c == null)) {
-    //     p = Promise.resolve({});
-    // }
-
-    p = fetch(API + '/selected_value_counts',
-        {
-            body: JSON.stringify(json),
-            method: 'POST',
-            headers: {'Authorization': 'Bearer ' + getIdToken()},
-        });
-    p.then(result => result.json()).then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
+    if (selectedEmbeddings.length === 0 || (selectedpoints.length === 0 && json.c == null)) {
+        p = Promise.resolve({});
+    } else {
+        p = fetch(API + '/selected_value_counts',
+            {
+                body: JSON.stringify(json),
+                method: 'POST',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json());
+    }
+    p.then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
     return p;
 }
 
@@ -191,7 +192,6 @@ function setLegendVisibility(payload) {
 }
 
 export function handleLegendClick(payload) {
-    // TODO update selection or just toggle visibility?
     return function (dispatch, getState) {
         let name = payload.name;
         let value = payload.value;
@@ -206,13 +206,13 @@ export function handleLegendClick(payload) {
         let index = values.indexOf(value);
         if (index !== -1) {
             values.splice(index, 1);
+            if (values.length === 0) {
+                delete legendVisibility[name];
+            }
         } else {
             values.push(value);
         }
-        if (Object.keys(legendVisibility).length === 0) {
-            delete legendVisibility[name];
-        }
-        console.log(legendVisibility);
+
         dispatch(setLegendVisibility(legendVisibility));
         selectedValueCountsPromise([], legendVisibility, dispatch, getState);
     };
@@ -243,6 +243,11 @@ export function setMarkerSize(payload) {
 
 export function setMarkerSizeUI(payload) {
     return {type: SET_MARKER_SIZE_UI, payload: payload};
+}
+
+
+export function setEmbeddingChartSize(payload) {
+    return {type: SET_EMBEDDING_CHART_SIZE, payload: payload};
 }
 
 
@@ -700,28 +705,34 @@ function _updateEmbedding(options, onError) {
         }
 
         let embeddingData = getState().embeddingData;
+        const embeddingChartSize = getState().embeddingChartSize;
         if (options.clear) {
             embeddingData = [];
         }
         let cachedFeatureNames = {};
         const currentFeatures = continuousFeatures.concat(categoricalFeatures);
-        let requestedFeatures = [];
+
+        let nRequestedFeatures = 0;
         const markerSize = getState().markerSize;
         const markerOpacity = getState().markerOpacity;
         const unselectedMarkerSize = getState().unselectedMarkerSize;
 
         const unselectedMarkerOpacity = getState().unselectedMarkerOpacity;
 
-        embeddingData.forEach(trace => {
-            // get cached traces
-            cachedFeatureNames[trace.name] = true;
-            let active = currentFeatures.indexOf(trace.name) !== -1;
+        // reuse existing traces
+        embeddingData.forEach(traceInfo => {
+            cachedFeatureNames[traceInfo.name] = true;
+            let active = currentFeatures.indexOf(traceInfo.name) !== -1;
             if (active) {
-                trace.date = new Date();
-                trace.layout = PlotUtil.createPlotLayout(
-                    {embedding: true, is3d: selectedEmbeddings[0].endsWith('3d'), legend: false, title: trace.name});
+                traceInfo.date = new Date();
+                traceInfo.layout = PlotUtil.createEmbeddingLayout(
+                    {
+                        size: embeddingChartSize,
+                        is3d: selectedEmbeddings[0].endsWith('3d'),
+                        title: traceInfo.name
+                    });
             }
-            trace.active = active;
+            traceInfo.active = active;
         });
 
         let embeddingUrl = [API + '/slice?id=' + datasetId];
@@ -736,7 +747,7 @@ function _updateEmbedding(options, onError) {
             }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
-                requestedFeatures.push(feature);
+                nRequestedFeatures++;
                 embeddingUrl.push('&key=' + feature);
             }
         });
@@ -746,7 +757,7 @@ function _updateEmbedding(options, onError) {
                 dotPlotUrl.push('&key=' + feature);
                 let isCached = cachedFeatureNames[feature] != null;
                 if (!isCached) {
-                    requestedFeatures.push(feature);
+                    nRequestedFeatures++;
                     embeddingUrl.push('&key=' + feature);
                 }
             });
@@ -785,11 +796,15 @@ function _updateEmbedding(options, onError) {
 
         if (options.embedding) {
             let valueCountsPromise = selectedValueCountsPromise([], getState().legendVisibility, dispatch, getState);
-            let embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-                .then(response => {
-                    return response.json();
-                });
-
+            let embeddingPromise;
+            if (nRequestedFeatures === 0 && embeddingData.filter(d => d.active).length > 0) {
+                embeddingPromise = Promise.resolve({embedding: {values: {}}});
+            } else {
+                embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
+                    .then(response => {
+                        return response.json();
+                    });
+            }
             promises.push(embeddingPromise);
             promises.push(valueCountsPromise);
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
@@ -806,7 +821,6 @@ function _updateEmbedding(options, onError) {
                         coordinates[selectedEmbeddings[0] + '_3'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_3']);
                     }
 
-
                     for (let name in embeddingValues) {
                         if (name in coordinates) { // skip coordinate columns and cell ids
                             continue;
@@ -818,7 +832,6 @@ function _updateEmbedding(options, onError) {
                         let values = embeddingValues[name];
                         let isCategorical = categories[name] != null;
                         let colorScale = null;
-
                         let min = null;
                         let max = null;
                         if (!isCategorical) {
@@ -873,19 +886,16 @@ function _updateEmbedding(options, onError) {
 
 
                         chartData = [chartData];
-
-                        let layout = PlotUtil.createPlotLayout(
-                            {embedding: true, is3d: is3d, legend: false, title: name});
                         embeddingData.push(
                             {
                                 date: new Date(),
                                 active: true,
-                                domain: isCategorical ? null : [min, max],
                                 colorScale: colorScale,
                                 continuous: !isCategorical,
                                 data: chartData,
                                 name: name,
-                                layout: layout,
+                                layout: PlotUtil.createEmbeddingLayout(
+                                    {size: embeddingChartSize, is3d: is3d, title: name}),
                                 isCategorical: isCategorical,
                             });
                     }
