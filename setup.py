@@ -3,15 +3,16 @@ from os import path
 
 from setuptools import setup, find_packages
 
-here = path.abspath(path.dirname(__file__))
-with open(path.join(here, "README.rst"), encoding="utf-8") as f:
+
+with open(path.join(path.abspath(path.dirname(__file__)), "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 requires = ["ujson", "flask", "anndata", "fsspec", "flask-compress", "natsort"]
 
 setup(
-    version='0.0.0b1',
     name="cirrocumulus",
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     description="scRNA-Seq visualization tool",
     long_description=long_description,
     long_description_content_type="text/x-rst",
