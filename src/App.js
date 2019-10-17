@@ -190,7 +190,7 @@ class App extends PureComponent {
                         <div>
                             <CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>
                             <h3
-                                style={{display: 'inline', marginRight: 20}}>Cirrocumulus</h3>
+                                style={{display: 'inline', marginRight: 20}}>Cirro</h3>
                             {this.props.loadingApp && <span>Loading...</span>}
                             {this.props.email != null &&
                             <Select
