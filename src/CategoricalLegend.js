@@ -28,7 +28,7 @@ class CategoricalLegend extends React.PureComponent {
                 maxHeight: maxHeight,
                 overflow: 'auto'
             }}>
-                {name}
+                <b>{name}</b>
                 <table>
                     <tbody>
                     {domain.map((d, i) => {
