@@ -21,9 +21,9 @@ def main():
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
     args = parser.parse_args()
 
-    from flask_cors import CORS
+    # from flask_cors import CORS
     # CORS(app)
-    # Compress(app)
+    Compress(app)
     from cirro.api import dataset_api
     from cirro.h5ad_backend import H5ADBackend
     from cirro.local_db_api import LocalDbAPI
