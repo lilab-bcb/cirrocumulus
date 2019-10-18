@@ -418,11 +418,13 @@ function embeddingData(state = [], action) {
             });
             return state.slice();
         case SET_SELECTED_VALUE_COUNTS:
-            let indices = action.payload.indices;
+            let selectedpoints = action.payload.indices;
+            if (action.payload.bins != null) {
+                selectedpoints = PlotUtil.convertBinsToPoints(state[0].data[0].bins, action.payload.bins);
+            }
             state.forEach(item => {
-
                 item.data.forEach(trace => {
-                    trace.selectedpoints = indices;
+                    trace.selectedpoints = selectedpoints;
                 });
 
                 item.data = item.data.slice();

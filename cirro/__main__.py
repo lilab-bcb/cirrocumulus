@@ -1,6 +1,7 @@
 def main():
     from flask import Flask, send_from_directory
     import argparse
+    import webbrowser
     from cirro.api import blueprint, auth_api, database_api
     from flask_compress import Compress
     app = Flask(__name__, static_folder='client/')
@@ -17,11 +18,12 @@ def main():
     parser.add_argument('--host', help='Host IP address', default="127.0.0.1")
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--debug', help='Run in debug mode', action='store_true')
+    parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
     args = parser.parse_args()
 
-    # from flask_cors import CORS
+    from flask_cors import CORS
     # CORS(app)
-    Compress(app)
+    # Compress(app)
     from cirro.api import dataset_api
     from cirro.h5ad_backend import H5ADBackend
     from cirro.local_db_api import LocalDbAPI
@@ -36,6 +38,9 @@ def main():
         dataset_api.add(['pq', 'parquet'], ParquetBackend())
     except ImportError:
         pass
+    if not args.no_open:
+        url = args.host + ':' + str(args.port)
+        webbrowser.open(url)
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 

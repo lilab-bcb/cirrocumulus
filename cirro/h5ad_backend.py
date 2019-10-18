@@ -62,5 +62,5 @@ class H5ADBackend:
             embedding_data = adata.obsm[embedding_name]
             dimensions = embedding_key['dimensions']
             for i in range(dimensions):
-                df[embedding_name + '_' + str(i + 1)] = embedding_data[:, i]
+                df[embedding_key['coordinate_columns'][i]] = embedding_data[:, i]
         return df

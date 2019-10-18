@@ -15,7 +15,6 @@ class EmbeddingChartPlotly extends React.PureComponent {
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : this.props.embeddingChartSize);
-        console.log(activeTraces.map(t => t.name));
         return activeTraces.map(traceInfo => {
             if (size !== traceInfo.layout.width) {
                 traceInfo.layout = Object.assign({}, traceInfo.layout);

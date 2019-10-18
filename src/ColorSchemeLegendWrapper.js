@@ -8,7 +8,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
     render() {
         const {scale, name, selectedValueCounts, maxHeight, style} = this.props;
         const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
-        const domain = scale.valueCounts.values;
+        const domain = scale.valueCounts != null ? scale.valueCounts.values : [];
         if (selectedCountMap) {
             // TODO fix hack below
             if (selectedCountMap['True'] != null) {

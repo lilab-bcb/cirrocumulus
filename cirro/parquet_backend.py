@@ -41,9 +41,7 @@ class ParquetBackend:
 
     def get_df(self, file_system, path, keys, embedding_key=None, index=False):
         if embedding_key is not None:
-            embedding_name = embedding_key['name']
-            for i in range(embedding_key['dimensions']):
-                keys.append(embedding_name + '_' + str(i + 1))
+            keys += embedding_key['coordinate_columns']
         if index:
             keys += ['index']  # get pandas index
         with file_system.open(path) as f:

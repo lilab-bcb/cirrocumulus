@@ -32,13 +32,13 @@ class CategoricalLegend extends React.PureComponent {
                 <table>
                     <tbody>
                     {domain.map((d, i) => {
-                        let legend = getLegendSizeHelper(selectedCountMap, scale, i);
+                        let legend = getLegendSizeHelper(selectedCountMap, scale, i, selectedValueCounts.count);
                         let opacity = legendVisibilityValues.indexOf(d) !== -1 ? 0.4 : 1;
                         let groupSize = legend.percentTotal * maxSize;
                         let selectedSize = legend.percentSelected * maxSize;
-                        return <tr title={d + ' -  ' + legend.title}
-                                   style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
-                                   onClick={(e) => this.handleClick(d, e)} key={d}>
+                        return <tr
+                            style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
+                            onClick={(e) => this.handleClick(d, e)} key={d}>
                             {clickEnabled && <td>
                                 <div style={{
                                     display: 'inline-block',
@@ -52,11 +52,11 @@ class CategoricalLegend extends React.PureComponent {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
                             }}>
-                                <label>{'' + d}</label>
+                                <label title={'' + d}>{'' + d}</label>
                             </td>
                             {!isNaN(selectedSize) ?
                                 <td>
-                                    <div style={{
+                                    <div title={legend.selectionTitle} style={{
                                         display: 'inline-block',
                                         position: 'relative',
                                         width: maxSize,
@@ -74,7 +74,7 @@ class CategoricalLegend extends React.PureComponent {
                                     </div>
                                 </td> : null}
                             <td>
-                                <div style={{
+                                <div title={legend.title} style={{
                                     display: 'inline-block',
                                     position: 'relative',
                                     width: maxSize,

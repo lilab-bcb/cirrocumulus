@@ -32,7 +32,10 @@ def get_basis(basis):
         if basis.endswith('3d'):
             basis = basis[0:len(basis) - 3]
             embedding_ndim = 3
-        return {'name': basis, 'dimensions': embedding_ndim}
+        coordinate_columns = []
+        for i in range(embedding_ndim):
+            coordinate_columns.append(basis + '_' + str(i + 1))
+        return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns}
 
 
 @blueprint.errorhandler(InvalidUsage)
@@ -77,20 +80,24 @@ def handle_user():
     return to_json(user)
 
 
-def __bin_coords(df, nbins, coordinate_columns, coordinate_column_to_range=None):
+def __convert_coords(df, nbins, coordinate_columns, coordinate_column_to_range=None):
     # replace coordinates with bin
-    for view_column_name in coordinate_columns:  # add view column _bin
-        values = df[view_column_name].values
-        view_column_range = coordinate_column_to_range.get(view_column_name,
+    for name in coordinate_columns:
+        values = df[name].values
+        view_column_range = coordinate_column_to_range.get(name,
             None) if coordinate_column_to_range is not None else None
         column_min = values.min() if view_column_range is None else view_column_range[0]
         column_max = values.max() if view_column_range is None else view_column_range[1]
-        df[view_column_name] = np.floor(
-            np.interp(values, [column_min, column_max], [0, nbins - 1])).astype(int)
+        df[name] = np.floor(np.interp(values, [column_min, column_max], [0, nbins - 1])).astype(int)
+    if len(coordinate_columns) == 2:
+        df['__bin'] = df[coordinate_columns[0]] * nbins + df[coordinate_columns[1]]
+    else:
+        df['__bin'] = df[coordinate_columns[2]] + nbins * (
+                df[coordinate_columns[1]] + nbins * df[coordinate_columns[0]])
 
 
-def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_range=None):
-    __bin_coords(df, nbins, coordinate_columns, coordinate_column_to_range)
+def __bin_df(df, nbins, coordinate_columns, reduce_function='mean', coordinate_column_to_range=None):
+    __convert_coords(df, nbins, coordinate_columns, coordinate_column_to_range)
     agg_func = {}
     for column in df:
         if column not in coordinate_columns:
@@ -100,83 +107,47 @@ def __bin(df, nbins, coordinate_columns, reduce_function, coordinate_column_to_r
                 agg_func[column] = reduce_function
             else:  # pd.api.types.is_categorical_dtype(df[column]):
                 agg_func[column] = lambda x: x.mode()[0]
-    if 'index' in df:
-        agg_func['index'] = lambda x: x.values.tolist()
-    return df.groupby(coordinate_columns, as_index=False).agg(agg_func), df[coordinate_columns]
+        else:
+            agg_func[column] = 'max'
+    return df.groupby('__bin').aggregate(agg_func)
 
 
 def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
     df = dataset_api.get_df(url, keys, basis, binary=True)
-    coordinate_columns = []
-    for i in range(basis['dimensions']):
-        coordinate_columns.append(basis['name'] + '_' + str(i + 1))
-
     if nbins is not None:
-
-        bin_df = df[coordinate_columns]
-        # get indices of selected bins
-        __bin_coords(bin_df, nbins, coordinate_columns, None)
-        g = bin_df.groupby(coordinate_columns)
-        coord_keys = g.groups.keys()
-        if selectedpoints is not None and len(selectedpoints) > 0:
-            coord_keys = coord_keys[selectedpoints]
-        indices = []
-        for coord_key in coord_keys:
-            indices.append(g[coord_key].values)
-        df = df.iloc[np.hstack(indices)]
-    else:
-        if selectedpoints is not None and len(selectedpoints) > 0:
+        __convert_coords(df, nbins, basis['coordinate_columns'])
+        df = df.set_index('__bin')
+    filters = []
+    if selectedpoints is not None:
+        if nbins is not None:
+            df = df[df.index.isin(selectedpoints)]
+        else:
             df = df.iloc[selectedpoints]
 
     if categorical_filter is not None:
         for category in categorical_filter:
             filtered_values = categorical_filter[category]
-            df = df[~(df[category].isin(filtered_values))]
+            filters.append(~(df[category].isin(filtered_values)))
 
-    result = {'count': len(df), 'indices': df.index.values.tolist(), 'categories': {}}
+        df = df[np.logical_and(*filters) if len(filters) > 1 else filters[0]]
 
+    if nbins is not None:
+        indices = df.index.unique().values
+        indices.sort()
+        indices = indices.tolist()
+    else:
+        indices = df.index.values.tolist()
+    result = {'count': len(df), 'categories': {}}
+    if nbins is not None:
+        result['bins'] = indices
+    else:
+        result['indices'] = indices
     for column in df:
-        if column not in coordinate_columns:
+        if column not in basis['coordinate_columns'] and column != '__bin':
             value_counts = df[column].value_counts()
             result['categories'][column] = value_counts.to_dict()
+
     return result
-
-
-# @blueprint.route('/selected_points', methods=['GET'])
-# def handle_selected_points():
-#     email = auth_api.auth()['email']
-#     dataset_id = request.args.get('id', '')
-#     if dataset_id == '':
-#         return 'Please provide an id', 400
-#
-#     dataset = database_api.get_dataset(email, dataset_id)
-#     url = dataset['url']
-#     basis = get_basis(request.args.get('embedding', None))
-#     values = [request.args.get('v')]
-#     nbins = check_bin_input(request.args.get('nbins', None))
-#     key = request.args.get('key')
-#     df = dataset_api.get_df(url, [key], basis)
-#
-#     coordinate_columns = []
-#     for i in range(basis['dimensions']):
-#         coordinate_columns.append(basis['name'] + '_' + str(i + 1))
-#
-#     if nbins is not None:
-#
-#         # get indices of selected bins
-#         __bin_coords(df, nbins, coordinate_columns, None)
-#         g = df.groupby(coordinate_columns)
-#         keys = g.groups.keys()
-#         indices = []
-#         for key in keys:
-#             if key in values:
-#                 indices.append(g[key].values)
-#         result = np.hstack(indices)
-#         return to_json(result.tolist())
-#     else:
-#         df = df.reset_index()
-#         result = df[df[key].isin(values)].index.values
-#         return to_json(result.index.values.tolist())
 
 
 @blueprint.route('/selected_value_counts', methods=['POST'])
@@ -260,10 +231,7 @@ def handle_slice():
         result['dotplot'] = dotplot_result
     if basis is not None:
         return_count = len(keys) == 0
-        coordinate_columns = []
-        for i in range(basis['dimensions']):
-            coordinate_columns.append(basis['name'] + '_' + str(i + 1))
-        embedding_result = {'values': {}, 'categories': {}, 'obs': {}}
+        embedding_result = {'values': {}, 'categories': {}, 'obs': {}, 'coordinates': {}}
         for column in df:
             if pd.api.types.is_categorical_dtype(df[column]):
                 value_counts = df[column].value_counts()
@@ -271,17 +239,21 @@ def handle_slice():
                 value_counts = value_counts.loc[sorted_unique_values]
                 embedding_result['categories'][column] = {'values': value_counts.index.tolist(),
                                                           'counts': value_counts.values.tolist()}
-            elif column not in coordinate_columns:
+            elif column not in basis['coordinate_columns']:
                 value_counts = (df[column] > 0).astype('category').value_counts()  # TODO custom cut point
                 embedding_result['obs'][column] = {'values': value_counts.index.tolist(),
                                                    'counts': value_counts.values.tolist()}
         if nbins is not None:
-            df, df_with_coords = __bin(df, nbins, coordinate_columns, reduce_function)
+            df = __bin_df(df, nbins, basis['coordinate_columns'], reduce_function)
+            embedding_result['bins'] = df.index.values.tolist()
 
         for column in df:
-            if column == 'count' and not return_count:
-                continue
-            embedding_result['values'][column] = df[column].values.tolist()
+            if column in basis['coordinate_columns']:
+                embedding_result['coordinates'][column] = df[column].values.tolist()
+            elif column != '__bin':
+                if column == 'count' and not return_count:
+                    continue
+                embedding_result['values'][column] = df[column].values.tolist()
         result['embedding'] = embedding_result
     return to_json(result)
 

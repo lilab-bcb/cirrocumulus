@@ -46,9 +46,8 @@ interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 const intFormat = format(',');
 const percentFormat = format('.1f');
 
-export function getLegendSizeHelper(selectedCountMap, scale, index) {
 
-
+export function getLegendSizeHelper(selectedCountMap, scale, index, selectionCount) {
     if (scale.valueCounts.total == null) {
         let total = 0;
         for (let i = 0, n = scale.valueCounts.counts.length; i < n; i++) {
@@ -61,21 +60,22 @@ export function getLegendSizeHelper(selectedCountMap, scale, index) {
     let total = scale.valueCounts.total;
     let percent = count / total;
     let percentSelected = Number.NaN;
-    let title;
-    let text;
+    let title = intFormat(count) + ' / ' + intFormat(total) + ' (' + percentFormat(100 * percent) + '% of total)';
+    let selectionTitle;
     if (selectedCountMap != null) {
         let d = scale.valueCounts.values[index];
         let selectedCount = selectedCountMap[d] || 0;
-        let groupTotal = scale.valueCounts.counts[index];
-        percentSelected = selectedCount / groupTotal;
-        title = intFormat(selectedCount) + ' / ' + intFormat(groupTotal) + ' within group selected (' + percentFormat(100 * percentSelected) + '%)';
-        text = intFormat(selectedCount) + ' / ' + intFormat(groupTotal);
-    } else {
-        title = intFormat(count) + ' (' + percentFormat(100 * percent) + '% of total)';
-        text = intFormat(count);
+        percentSelected = selectedCount / selectionCount;
+        selectionTitle = intFormat(selectedCount) + ' / ' + intFormat(selectionCount) + ' % of selection (' + percentFormat(100 * percentSelected) + '%)';
     }
 
-    return {percentTotal: percent, text: text, percentSelected: percentSelected, title: title, total: intFormat(total)};
+    return {
+        percentTotal: percent,
+        percentSelected: percentSelected,
+        title: title,
+        total: intFormat(total),
+        selectionTitle: selectionTitle
+    };
 }
 
 
@@ -88,9 +88,38 @@ export function getInterpolator(name) {
 
 class PlotUtil {
 
+    static convertPointsToBins(points, allBins) {
+        let bins = [];
+        for (let i = 0, n = points.length; i < n; i++) {
+            bins.push(allBins[points[i]]);
+        }
+        return bins;
+    }
+
+    static convertBinsToPoints(bins, selectedBins) {
+        let points = [];
+        let binIndex = 0;
+
+        for (let i = 0, n = bins.length; i < n; i++) {
+            if (bins[i] === selectedBins[binIndex]) {
+                points.push(i);
+                binIndex++;
+            }
+        }
+
+        // selectedBins = new Set(selectedBins);
+        // for (let i = 0, n = bins.length; i < n; i++) {
+        //     if (selectedBins.has(bins[i])) {
+        //         points.push(i);
+        //     }
+        // }
+
+        return points;
+    }
+
     static createPlotConfig() {
         return {
-            showLink: false,
+            showLink: true,
             responsive: false,
             displaylogo: false,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines'],// 'sendDataToCloud'

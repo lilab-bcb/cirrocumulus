@@ -221,6 +221,11 @@ export function handleLegendClick(payload) {
 export function handleSelectedPoints(payload) {
     // we intentionally don't persist selected points
     let selectedpoints = payload == null ? [] : payload.points[0].data.selectedpoints;
+
+    if (payload.points[0].data.bins != null) {
+        selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
+
+    }
     return function (dispatch, getState) {
         selectedValueCountsPromise(selectedpoints, getState().legendVisibility, dispatch, getState);
     };
@@ -798,7 +803,7 @@ function _updateEmbedding(options, onError) {
             let valueCountsPromise = selectedValueCountsPromise([], getState().legendVisibility, dispatch, getState);
             let embeddingPromise;
             if (nRequestedFeatures === 0 && embeddingData.filter(d => d.active).length > 0) {
-                embeddingPromise = Promise.resolve({embedding: {values: {}}});
+                embeddingPromise = Promise.resolve({embedding: {coordinates: {}, values: {}}});
             } else {
                 embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
                     .then(response => {
@@ -809,23 +814,23 @@ function _updateEmbedding(options, onError) {
             promises.push(valueCountsPromise);
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
             embeddingPromise.then(embeddingResult => {
+
                     const embeddingValues = embeddingResult.embedding.values;
                     const categories = embeddingResult.embedding.categories;
-                    let coordinates = {};
+                    let coordinates = embeddingResult.embedding.coordinates;
+                    let bins = embeddingResult.embedding.bins;
                     const is3d = selectedEmbeddings[0].endsWith('3d');
-
-                    // TODO > 1 embedding
-                    coordinates[selectedEmbeddings[0] + '_1'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_1']);
-                    coordinates[selectedEmbeddings[0] + '_2'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_2']);
-                    if (is3d) {
-                        coordinates[selectedEmbeddings[0] + '_3'] = new Float32Array(embeddingValues[selectedEmbeddings[0] + '_3']);
+                    let selectedpoints = selectedValueCounts.indices;
+                    if (selectedValueCounts.bins != null) {
+                        selectedpoints = PlotUtil.convertBinsToPoints(bins, selectedValueCounts.bins);
+                    }
+                    if (selectedpoints != null && selectedpoints.length === 0) {
+                        selectedpoints = null;
                     }
 
-                    for (let name in embeddingValues) {
-                        if (name in coordinates) { // skip coordinate columns and cell ids
-                            continue;
-                        }
+                    // TODO > 1 embedding
 
+                    for (let name in embeddingValues) {
                         let x = coordinates[selectedEmbeddings[0] + '_1'];
                         let y = coordinates[selectedEmbeddings[0] + '_2'];
                         let z = coordinates[selectedEmbeddings[0] + '_3'];
@@ -850,7 +855,6 @@ function _updateEmbedding(options, onError) {
                                 traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
                                     CATEGORY_20C))).domain(traceUniqueValues);
                             colorScale.valueCounts = categories[name];
-
                         }
 
                         let colors = [];
@@ -869,6 +873,7 @@ function _updateEmbedding(options, onError) {
                             hoveron: 'points',
                             x: x,
                             y: y,
+                            bins: bins,
                             marker: {
                                 size: markerSize,
                                 color: colors,
@@ -876,7 +881,7 @@ function _updateEmbedding(options, onError) {
                                 showscale: false,
                             },
                             unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
-                            selectedpoints: selectedValueCounts.indices && selectedValueCounts.indices.length === 0 ? null : selectedValueCounts.indices,
+                            selectedpoints: selectedpoints,
                             values: values,
                             text: values,
                         };
