@@ -258,7 +258,6 @@ export function handleSelectedPoints(payload) {
     // we intentionally don't persist selected points
     let isEmpty = payload == null || payload.points.length === 0;
     let selectedpoints = isEmpty ? [] : payload.points[0].data.selectedpoints;
-
     if (!isEmpty && payload.points[0].data.bins != null) {
         selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
 
@@ -816,7 +815,7 @@ function _updateEmbedding(options, onError) {
         }
 
         let interpolator = getState().interpolator;
-        let selectedValueCounts = getState().selectedValueCounts;
+
         let promises = [];
         if (options.dotPlot) {
             let dotPlotPromise = null;
@@ -850,8 +849,9 @@ function _updateEmbedding(options, onError) {
             promises.push(embeddingPromise);
             promises.push(valueCountsPromise);
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
-            embeddingPromise.then(embeddingResult => {
-
+            Promise.all([embeddingPromise, valueCountsPromise]).then(allResults => {
+                    let embeddingResult = allResults[0];
+                    let selectedValueCounts = getState().selectedValueCounts;
                     const embeddingValues = embeddingResult.embedding.values;
                     const categories = embeddingResult.embedding.categories;
                     let coordinates = embeddingResult.embedding.coordinates;

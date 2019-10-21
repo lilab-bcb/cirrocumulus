@@ -15,6 +15,13 @@ class EmbeddingChartPlotly extends React.PureComponent {
         super(props);
     }
 
+    getKey(traceInfo) {
+        let key = traceInfo.name;
+        if (this.props.binValues) {
+            key += '-' + this.props.numberOfBins;
+        }
+        return key;
+    }
 
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
@@ -26,43 +33,44 @@ class EmbeddingChartPlotly extends React.PureComponent {
                 traceInfo.layout.width = size;
                 traceInfo.layout.height = size;
             }
-
-            return (<div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={traceInfo.name}><Plot
-                key={traceInfo.name}
-                data={traceInfo.data}
-                layout={traceInfo.layout}
-                config={this.props.config}
-                onDeselect={this.props.onDeselect}
-                onSelected={this.props.onSelect}
-            />
-                {traceInfo.continuous ?
-                    <ColorSchemeLegendWrapper
-                        width={186}
-                        label={true}
-                        height={40}
-                        scale={traceInfo.colorScale}
-                        selectedValueCounts={this.props.selectedValueCounts}
-                        maxHeight={traceInfo.layout.height}
-                        name={traceInfo.name}
-                    /> :
-                    <CategoricalLegend categoricalFilter={this.props.categoricalFilter}
-                                       handleClick={this.props.handleLegendClick}
-                                       name={traceInfo.name}
-                                       scale={traceInfo.colorScale}
-                                       maxHeight={traceInfo.layout.height}
-                                       clickEnabled={true}
-                                       selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
+            return (
+                <div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={traceInfo.name}><Plot
+                    data={traceInfo.data}
+                    layout={traceInfo.layout}
+                    config={this.props.config}
+                    onDeselect={this.props.onDeselect}
+                    onSelected={this.props.onSelect}
+                />
+                    {traceInfo.continuous ?
+                        <ColorSchemeLegendWrapper
+                            width={186}
+                            label={true}
+                            height={40}
+                            scale={traceInfo.colorScale}
+                            selectedValueCounts={this.props.selectedValueCounts}
+                            maxHeight={traceInfo.layout.height}
+                            name={traceInfo.name}
+                        /> :
+                        <CategoricalLegend categoricalFilter={this.props.categoricalFilter}
+                                           handleClick={this.props.handleLegendClick}
+                                           name={traceInfo.name}
+                                           scale={traceInfo.colorScale}
+                                           maxHeight={traceInfo.layout.height}
+                                           clickEnabled={true}
+                                           selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
         });
     }
 
     render() {
-        return <div ref={this.ref}>{this.getPlots()}</div>;
+        return this.getPlots();
     }
 }
 
 const mapStateToProps = state => {
     return {
         data: state.embeddingData,
+        numberOfBins: state.numberOfBins,
+        binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
         config: state.plotConfig,
         categoricalFilter: state.categoricalFilter,

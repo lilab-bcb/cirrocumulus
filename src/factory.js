@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
-import {isPlotlyBug} from './PlotUtil';
 
 // The naming convention is:
 //   - events are attached as `'plotly_' + eventName.toLowerCase()`
@@ -78,21 +77,12 @@ export default function plotComponentFactory(Plotly) {
                         }
                         throw error;
                     }
-                    if (isPlotlyBug(this.el, this.props.data)) {
-                        return Plotly.newPlot(this.el, {
-                            data: this.props.data,
-                            layout: this.props.layout,
-                            config: this.props.config,
-                            frames: this.props.frames,
-                        });
-                    } else {
-                        return Plotly.react(this.el, {
-                            data: this.props.data,
-                            layout: this.props.layout,
-                            config: this.props.config,
-                            frames: this.props.frames,
-                        });
-                    }
+                    return Plotly.newPlot(this.el, {
+                        data: this.props.data,
+                        layout: this.props.layout,
+                        config: this.props.config,
+                        frames: this.props.frames,
+                    });
                 })
                 .then(() => this.syncWindowResize(shouldInvokeResizeHandler))
                 .then(this.syncEventHandlers)
@@ -138,7 +128,7 @@ export default function plotComponentFactory(Plotly) {
                 return;
             }
 
-            this.updatePlotly(false, this.props.onUpdate, false);
+            this.updatePlotly(true, this.props.onUpdate, true);
         }
 
         componentWillUnmount() {
@@ -220,17 +210,22 @@ export default function plotComponentFactory(Plotly) {
                 const prop = this.props['on' + eventName];
                 const handler = this.handlers[eventName];
                 const hasHandler = Boolean(handler);
-
-                if (prop && !hasHandler) {
-                    this.addEventHandler(eventName, prop);
-                } else if (!prop && hasHandler) {
-                    // Needs to be removed:
+                if (hasHandler) {
                     this.removeEventHandler(eventName);
-                } else if (prop && hasHandler && prop !== handler) {
-                    // replace the handler
-                    this.removeEventHandler(eventName);
+                }
+                if (prop) {
                     this.addEventHandler(eventName, prop);
                 }
+                // if (prop && !hasHandler) {
+                //     this.addEventHandler(eventName, prop);
+                // } else if (!prop && hasHandler) {
+                //     // Needs to be removed:
+                //     this.removeEventHandler(eventName);
+                // } else if (prop && hasHandler && prop !== handler) {
+                //     // replace the handler
+                //     this.removeEventHandler(eventName);
+                //     this.addEventHandler(eventName, prop);
+                // }
             });
         }
 
