@@ -47,6 +47,15 @@ const intFormat = format(',');
 const percentFormat = format('.1f');
 
 
+export function isPlotlyBug(el, newTrace) {
+    // https://github.com/plotly/plotly.js/issues/3405
+    const threshold = 100000;
+    const oldData = el.data;
+    const oldSize = oldData != null ? oldData[0].x.length : 0;
+    const newSize = newTrace.x != null ? newTrace.x.length : 0;
+    return ((oldSize > threshold) && (newSize <= threshold));
+}
+
 export function getLegendSizeHelper(selectedCountMap, scale, index, selectionCount) {
     if (scale.valueCounts.total == null) {
         // set total lazily
