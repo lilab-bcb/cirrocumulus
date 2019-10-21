@@ -2,6 +2,8 @@ import {IconButton, Menu, Snackbar, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import Input from '@material-ui/core/Input';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -214,7 +216,7 @@ class App extends PureComponent {
                                 </MenuItem>}
                             </Select>}
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
-                                {this.props.dataset != null && this.props.dataset.nObs > 0 && this.props.selectedValueCounts.count > 0
+                                {this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selectedValueCounts.count)
                                 && intFormat(this.props.selectedValueCounts.count) + ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
                                 {this.props.dataset != null && !(this.props.selectedValueCounts.count > 0) && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
                             </div>
@@ -308,18 +310,10 @@ class App extends PureComponent {
                     {this.props.dataset != null && <DotPlot/>}
                 </main>
 
+                {this.props.loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
+                    <DialogTitle id="loading-dialog-title"><CircularProgress size={20}/> Loading...</DialogTitle>
+                </Dialog>}
 
-                {this.props.loading && <Snackbar
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center',
-                    }}
-                    ContentProps={{
-                        'aria-describedby': 'loading-id',
-                    }}
-                    open={true}
-                    message={<span id="loading-id"><CircularProgress size={20}/> Loading...</span>}
-                />}
 
                 {this.props.message != null && <Snackbar
                     anchorOrigin={{

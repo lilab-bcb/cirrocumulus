@@ -31,7 +31,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                                    selectedValueCounts={selectedValueCounts}
                                    maxHeight={maxHeight}
                                    domain={domain} clickEnabled={false}
-                                   legendVisibility={{}}></CategoricalLegend>
+                                   categoricalFilter={{}}></CategoricalLegend>
                 <ColorSchemeLegend width={this.props.width} height={this.props.height} style={style} scale={scale}
                                    label={this.props.label}></ColorSchemeLegend></div>);
 

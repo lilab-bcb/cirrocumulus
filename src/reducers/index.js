@@ -17,7 +17,7 @@ import {
     SET_FEATURES,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
-    SET_LEGEND_VISIBILITY,
+    SET_CATEGORICAL_FILTER,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -386,9 +386,9 @@ function dotPlotData(state = null, action) {
     }
 }
 
-function legendVisibility(state = {}, action) {
+function categoricalFilter(state = {}, action) {
     switch (action.type) {
-        case SET_LEGEND_VISIBILITY:
+        case SET_CATEGORICAL_FILTER:
             return action.payload;
         default:
             return state;
@@ -524,7 +524,7 @@ export default combineReducers({
     features,
     groupBy,
     interpolator,
-    legendVisibility,
+    categoricalFilter,
     loading,
     loadingApp,
     markerOpacity,

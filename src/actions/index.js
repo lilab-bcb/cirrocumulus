@@ -17,7 +17,7 @@ const authScopes = [
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
-export const SET_LEGEND_VISIBILITY = 'SET_LEGEND_VISIBILITY';
+export const SET_CATEGORICAL_FILTER = 'SET_CATEGORICAL_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
@@ -151,7 +151,7 @@ function setSelectedValueCounts(payload) {
     return {type: SET_SELECTED_VALUE_COUNTS, payload: payload};
 }
 
-function selectedValueCountsPromise(selectedpoints, legendVisibility, dispatch, getState) {
+function selectedValueCountsPromise(selectedpoints, categoricalFilter, dispatch, getState) {
     const datasetId = getState().dataset.id;
     const continuousFeatures = getState().features;
     const categoricalFeatures = getState().groupBy;
@@ -168,8 +168,8 @@ function selectedValueCountsPromise(selectedpoints, legendVisibility, dispatch, 
     if (selectedpoints.length > 0) {
         json.p = selectedpoints;
     }
-    if (Object.keys(legendVisibility).length > 0) {
-        json.c = legendVisibility;
+    if (Object.keys(categoricalFilter).length > 0) {
+        json.c = categoricalFilter;
     }
     let p;
     if (selectedEmbeddings.length === 0 || (selectedpoints.length === 0 && json.c == null)) {
@@ -187,47 +187,84 @@ function selectedValueCountsPromise(selectedpoints, legendVisibility, dispatch, 
 }
 
 
-function setLegendVisibility(payload) {
-    return {type: SET_LEGEND_VISIBILITY, payload: payload};
+function setCategoricalFilter(payload) {
+    return {type: SET_CATEGORICAL_FILTER, payload: payload};
 }
 
 export function handleLegendClick(payload) {
     return function (dispatch, getState) {
         let name = payload.name;
         let value = payload.value;
-        // legend visibility, true means hidden : {'leiden':{'1':true, '5':true}}
-        // keep track of hidden values
-        let legendVisibility = getState().legendVisibility;
-        let values = legendVisibility[name];
-        if (values == null) {
-            values = [];
-            legendVisibility[name] = values;
-        }
-        let index = values.indexOf(value);
-        if (index !== -1) {
-            values.splice(index, 1);
-            if (values.length === 0) {
-                delete legendVisibility[name];
+        let shiftKey = payload.shiftKey;
+        let metaKey = payload.metaKey;
+        let categoricalFilter = getState().categoricalFilter;
+        let embeddingData = getState().embeddingData;
+        let categories;
+        for (let i = 0; i < embeddingData.length; i++) {
+            if (embeddingData[i].data[0].name === name) {
+                categories = embeddingData[i].colorScale.domain();
+                break;
             }
-        } else {
-            values.push(value);
+        }
+        let selectedValues = categoricalFilter[name];
+        if (selectedValues == null) {
+            selectedValues = [];
+            categoricalFilter[name] = selectedValues;
         }
 
-        dispatch(setLegendVisibility(legendVisibility));
-        selectedValueCountsPromise([], legendVisibility, dispatch, getState);
+        if (shiftKey && selectedValues.length > 0) {
+            // add last click to current
+            let lastIndex = categories.indexOf(selectedValues[selectedValues.length - 1]);
+            let currentIndex = categories.indexOf(value);
+            // put clicked category at end of array
+            if (currentIndex > lastIndex) {
+                for (let i = lastIndex; i <= currentIndex; i++) {
+                    let index = selectedValues.indexOf(value);
+                    if (index !== -1) {
+                        selectedValues.splice(index, 1);
+                    }
+                    selectedValues.push(categories[i]);
+                }
+            } else {
+                for (let i = lastIndex; i >= currentIndex; i--) {
+                    let index = selectedValues.indexOf(value);
+                    if (index !== -1) {
+                        selectedValues.splice(index, 1);
+                    }
+                    selectedValues.push(categories[i]);
+                }
+            }
+        } else {
+            let selectedIndex = selectedValues.indexOf(value);
+            if (!metaKey) { // clear and toggle current
+                selectedValues = [];
+                categoricalFilter[name] = selectedValues;
+            }
+            if (selectedIndex !== -1) { // exists, remove
+                selectedValues.splice(selectedIndex, 1);
+                if (selectedValues.length === 0) {
+                    delete categoricalFilter[name];
+                }
+            } else {
+                selectedValues.push(value);
+            }
+        }
+        dispatch(setCategoricalFilter(categoricalFilter));
+        selectedValueCountsPromise([], categoricalFilter, dispatch, getState);
     };
 }
 
 export function handleSelectedPoints(payload) {
     // we intentionally don't persist selected points
-    let selectedpoints = payload == null ? [] : payload.points[0].data.selectedpoints;
+    let isEmpty = payload == null || payload.points.length === 0;
+    let selectedpoints = isEmpty ? [] : payload.points[0].data.selectedpoints;
 
-    if (payload.points[0].data.bins != null) {
+    if (!isEmpty && payload.points[0].data.bins != null) {
         selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
 
     }
     return function (dispatch, getState) {
-        selectedValueCountsPromise(selectedpoints, getState().legendVisibility, dispatch, getState);
+        selectedValueCountsPromise(selectedpoints, getState().categoricalFilter, dispatch, getState);
     };
     // TODO linked brushing across embeddings
 
@@ -378,8 +415,8 @@ export function saveDataset(payload) {
         if (name == '' || url === '') {
             return;
         }
-        let bucket = url.substring('gs://'.length);
-        let slash = bucket.indexOf('/');
+        // let bucket = url.substring('gs://'.length);
+        // let slash = bucket.indexOf('/');
         // let object = encodeURIComponent(bucket.substring(slash + 1));
         // bucket = encodeURIComponent(bucket.substring(0, slash));
         let isEdit = payload.dataset != null;
@@ -557,16 +594,16 @@ function _setFeatures(payload) {
 function _setGroupBy(payload) {
     return function (dispatch, getState) {
         let prior = getState().groupBy; // in case of error, restore
-        let legendVisibility = getState().legendVisibility;
-        let legendVisibilityChanged = false;
-        for (let key in legendVisibility) {
+        let categoricalFilter = getState().categoricalFilter;
+        let categoricalFilterChanged = false;
+        for (let key in categoricalFilter) {
             if (payload.indexOf(key) === -1) {
-                delete legendVisibility[key];
-                legendVisibilityChanged = true;
+                delete categoricalFilter[key];
+                categoricalFilterChanged = true;
             }
         }
-        if (legendVisibilityChanged) {
-            dispatch({type: SET_LEGEND_VISIBILITY, payload: legendVisibility});
+        if (categoricalFilterChanged) {
+            dispatch({type: SET_CATEGORICAL_FILTER, payload: categoricalFilter});
         }
         dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
         dispatch(_updateEmbedding({embedding: true, dotPlot: true}, err => {
@@ -800,7 +837,7 @@ function _updateEmbedding(options, onError) {
         }
 
         if (options.embedding) {
-            let valueCountsPromise = selectedValueCountsPromise([], getState().legendVisibility, dispatch, getState);
+            let valueCountsPromise = selectedValueCountsPromise([], getState().categoricalFilter, dispatch, getState);
             let embeddingPromise;
             if (nRequestedFeatures === 0 && embeddingData.filter(d => d.active).length > 0) {
                 embeddingPromise = Promise.resolve({embedding: {coordinates: {}, values: {}}});

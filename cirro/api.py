@@ -127,7 +127,7 @@ def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_f
     if categorical_filter is not None:
         for category in categorical_filter:
             filtered_values = categorical_filter[category]
-            filters.append(~(df[category].isin(filtered_values)))
+            filters.append((df[category].isin(filtered_values)))
 
         df = df[np.logical_and(*filters) if len(filters) > 1 else filters[0]]
 

@@ -49,6 +49,7 @@ const percentFormat = format('.1f');
 
 export function getLegendSizeHelper(selectedCountMap, scale, index, selectionCount) {
     if (scale.valueCounts.total == null) {
+        // set total lazily
         let total = 0;
         for (let i = 0, n = scale.valueCounts.counts.length; i < n; i++) {
             total += scale.valueCounts.counts[i];
@@ -87,6 +88,7 @@ export function getInterpolator(name) {
 }
 
 class PlotUtil {
+
 
     static convertPointsToBins(points, allBins) {
         let bins = [];

@@ -38,9 +38,10 @@ class EmbeddingChartPlotly extends React.PureComponent {
                         selectedValueCounts={this.props.selectedValueCounts}
                         maxHeight={traceInfo.layout.height}
                         name={traceInfo.name}
-                        selectedValueCounts={this.props.selectedValueCounts}/> :
-                    <CategoricalLegend legendVisibility={this.props.legendVisibility}
-                                       handleClick={this.props.handleLegendClick} name={traceInfo.name}
+                    /> :
+                    <CategoricalLegend categoricalFilter={this.props.categoricalFilter}
+                                       handleClick={this.props.handleLegendClick}
+                                       name={traceInfo.name}
                                        scale={traceInfo.colorScale}
                                        maxHeight={traceInfo.layout.height}
                                        clickEnabled={true}
@@ -58,7 +59,7 @@ const mapStateToProps = state => {
         data: state.embeddingData,
         embeddingChartSize: state.embeddingChartSize,
         config: state.plotConfig,
-        legendVisibility: state.legendVisibility,
+        categoricalFilter: state.categoricalFilter,
         selectedValueCounts: state.selectedValueCounts
     };
 };
@@ -72,10 +73,7 @@ const mapDispatchToProps = dispatch => {
         },
         onDeselect: () => {
             dispatch(handleSelectedPoints(null));
-        },
-        onZoom: () => {
-
-        },
+        }
     };
 };
 

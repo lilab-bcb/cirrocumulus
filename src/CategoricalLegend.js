@@ -5,17 +5,17 @@ import {getLegendSizeHelper} from './PlotUtil';
 class CategoricalLegend extends React.PureComponent {
 
 
-    handleClick = (value, event) => {
+    handleClick = (value, index, e) => {
         if (this.props.clickEnabled) {
-            event.preventDefault();
-            this.props.handleClick({name: this.props.name, value: value});
+            e.preventDefault();
+            this.props.handleClick({name: this.props.name, value: value, shiftKey: e.shiftKey, metaKey: e.metaKey});
         }
     };
 
 
     render() {
-        const {scale, legendVisibility, name, selectedValueCounts, maxHeight, clickEnabled} = this.props;
-        const legendVisibilityValues = legendVisibility[name] || [];
+        const {scale, categoricalFilter, name, selectedValueCounts, maxHeight, clickEnabled} = this.props;
+        const categoricalFilterValues = categoricalFilter[name];
         const domain = this.props.domain != null ? this.props.domain : scale.domain();
         const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
         let maxSize = 60;
@@ -33,12 +33,12 @@ class CategoricalLegend extends React.PureComponent {
                     <tbody>
                     {domain.map((d, i) => {
                         let legend = getLegendSizeHelper(selectedCountMap, scale, i, selectedValueCounts.count);
-                        let opacity = legendVisibilityValues.indexOf(d) !== -1 ? 0.4 : 1;
+                        let opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(d) !== -1 ? 1 : 0.4;
                         let groupSize = legend.percentTotal * maxSize;
                         let selectedSize = legend.percentSelected * maxSize;
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
-                            onClick={(e) => this.handleClick(d, e)} key={d}>
+                            onClick={(e) => this.handleClick(d, i, e)} key={d}>
                             {clickEnabled && <td>
                                 <div style={{
                                     display: 'inline-block',
@@ -47,22 +47,27 @@ class CategoricalLegend extends React.PureComponent {
                                     background: scale(d)
                                 }}/>
                             </td>}
-                            <td style={{
-                                maxWidth: 100,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                            }}>
-                                <label title={'' + d}>{'' + d}</label>
+                            <td>
+                                <div style={{
+                                    maxWidth: 140,
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    display: 'inline-block',
+                                    userSelect: 'none'
+                                }} title={'' + d}>{'' + d}</div>
                             </td>
                             {!isNaN(selectedSize) ?
                                 <td>
-                                    <div title={legend.selectionTitle} style={{
-                                        display: 'inline-block',
-                                        position: 'relative',
-                                        width: maxSize,
-                                        border: '1px solid black',
-                                        height: 9
-                                    }}>
+                                    <div
+                                        title={legend.selectionTitle}
+                                        style={{
+                                            display: 'inline-block',
+                                            position: 'relative',
+                                            width: maxSize,
+                                            border: '1px solid black',
+                                            height: 9
+                                        }}>
+
                                         <div style={{
                                             position: 'absolute',
                                             width: selectedSize,
