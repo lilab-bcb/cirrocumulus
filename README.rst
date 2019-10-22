@@ -2,6 +2,7 @@ cirrocumulus
 ===============
 Interactive single cell visualization in the cloud or on your desktop.
 
+
 Local Usage
 -----------
 
@@ -26,10 +27,10 @@ Google Cloud Platform (GCP) Deployment Instructions
 
    -  In Google Console, navigate to APIs and Services > OAuth consent
       screen. Set the OAuth consent screen application name and add
-      PROJECT.appspot.com to the list of “Authorized domains”
+      <PROJECT>.appspot.com to the list of “Authorized domains”
    -  Go to Credentials and click “Create Credentials > OAuth client
       ID”. Enter “Web application” for “Application Type” and
-      https://PROJECT.appspot.com for “Authorized JavaScript origins”.
+      https://<PROJECT>.appspot.com for “Authorized JavaScript origins”.
       Click “Create” to create the credentials.
    -  Copy OAuth client id into ``cirrocumulus/cirro/config.json``.
 
@@ -39,24 +40,24 @@ Google Cloud Platform (GCP) Deployment Instructions
 -  Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your
    first time using the Google Cloud SDK.
 -  Deploy the application using the command below. Remember to replace
-   PROJECT with your project ID.::
+   <PROJECT> with your project ID.::
 
-    gcloud app deploy app.yaml --project=PROJECT
+    gcloud app deploy app.yaml --project=<PROJECT>
 
-   Your project is available at https://PROJECT.appspot.com.
+   Your project is available at https://<PROJECT>.appspot.com.
 
--  Go to https://PROJECT.appspot.com in your web browser and login.
+-  Go to https://<PROJECT>.appspot.com in your web browser and login.
 
    -  By default, no one is allowed to add datasets to your application.
    -  In Google Console, navigate to Data Store > Entities and click on
       your email address. Add the property ``importer`` of type ``boolean``
       and set it to ``true``.
-   -  Go back to https://PROJECT.appspot.com and import datasets.
+   -  Go back to https://<PROJECT>.appspot.com and start adding datasets.
 
 -  Read more about `App Engine`_, such as how you can limit spending.
 
 Developer Instructions
-----------------------
+--------------------------
 
 -  Install JavaScript dependencies::
 
@@ -66,9 +67,9 @@ Developer Instructions
 
     npm run-script build
 
--  Install Python dependencies::
+-  Install Python module in editable mode::
 
-    pip install -r requirements.txt
+    pip install -r requirements.txt -e .
 
 -  Add http://localhost:5000 to your Web application Outh client ID
    authorized JavaScript origins

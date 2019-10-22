@@ -114,7 +114,7 @@ class EditDatasetDialog extends React.PureComponent {
                         onChange={this.onUrlChanged}
                         margin="dense"
                         helperText={"Please ensure that " + this.props.serverEmail + " has \"Storage Object Viewer\" permissions"}
-                        label="Dataset URL (e.g. gs://my_bucket/my_dataset.parquet)"
+                        label="Dataset URL (gs://my_bucket/my_dataset.parquet)"
                         fullWidth
                     />}
 
