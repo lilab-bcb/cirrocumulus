@@ -1,3 +1,6 @@
+import os
+
+
 class LocalDbAPI:
 
     def __init__(self, paths):
@@ -12,8 +15,8 @@ class LocalDbAPI:
     def datasets(self, email):
         results = []
         for path in self.paths:
-            results.append({'id': path, 'name': path})
+            results.append({'id': path, 'name': os.path.splitext(os.path.basename(path))[0]})
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        return {'id': dataset_id, 'name': dataset_id, 'url': dataset_id}
+        return {'id': dataset_id, 'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id}
