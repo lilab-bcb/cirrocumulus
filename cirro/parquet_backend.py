@@ -14,12 +14,16 @@ class ParquetBackend:
 
         var = []
         obs_cat = []
+        obs = []
         str_type = pyarrow.lib.string()
         embedding_to_dimensions = {}
+        # var names, then obsm names, then obs
+        in_obsm = False
         for i in range(len(names)):
             key = names[i]
             if key.startswith('X_') and (
                     key.endswith('_1') or key.endswith('_2') or key.endswith('_3')):  # assume embedding (e.g. X_PCA_1)
+                in_obsm = True
                 basis = key[0:len(key) - 2]
                 dimension = int(key[len(key) - 1:])
                 max_dim = embedding_to_dimensions.get(basis, 0)
@@ -27,10 +31,12 @@ class ParquetBackend:
                     embedding_to_dimensions[basis] = dimension
             elif types[i] == str_type:
                 obs_cat.append(key)
+            elif in_obsm:
+                obs.append(key)
             else:
                 var.append(key)
         result['var'] = var
-        result['obs'] = []
+        result['obs'] = obs
         result['obs_cat'] = obs_cat
         result['n_obs'] = parquet_file.metadata.num_rows
         embeddings = []

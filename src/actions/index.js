@@ -1,9 +1,9 @@
 import {color} from 'd3-color';
 import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
+import {saveAs} from 'file-saver';
 import CustomError from '../CustomError';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
-
 
 export const API = '/api';
 const authScopes = [
@@ -151,28 +151,53 @@ function setSelectedValueCounts(payload) {
     return {type: SET_SELECTED_VALUE_COUNTS, payload: payload};
 }
 
-function selectedValueCountsPromise(selectedpoints, categoricalFilter, dispatch, getState) {
-    const datasetId = getState().dataset.id;
-    const continuousFeatures = getState().features;
-    const categoricalFeatures = getState().groupBy;
-    const selectedEmbeddings = getState().embeddings;
+
+function getSelectedDatasetJson(state) {
+    const datasetId = state.dataset.id;
+    const continuousFeatures = state.features;
+    const categoricalFeatures = state.groupBy;
+    const selectedEmbeddings = state.embeddings;
 
     let json = {
         id: datasetId,
-        embedding: selectedEmbeddings[0],
+        embedding: selectedEmbeddings.length > 0 ? selectedEmbeddings[0] : null,
         keys: continuousFeatures.concat(categoricalFeatures)
     };
-    if (getState().binValues) {
-        json.nbins = getState().numberOfBins;
+    if (state.binValues) {
+        json.nbins = state.numberOfBins;
     }
+
+    if (Object.keys(state.categoricalFilter).length > 0) {
+        json.c = state.categoricalFilter;
+    }
+    return json;
+}
+
+export function downloadSelectedIds() {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        let json = getSelectedDatasetJson(getState());
+        fetch(API + '/selected_ids',
+            {
+                body: JSON.stringify(json),
+                method: 'POST',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json()).then(result => {
+            const blob = new Blob([result.join('\n')], {type: "text/plain;charset=utf-8"});
+            saveAs(blob, "selection.txt");
+        }).finally(() => {
+            dispatch(_setLoading(false));
+        });
+    };
+}
+
+function selectedValueCountsPromise(selectedpoints, dispatch, getState) {
+    let json = getSelectedDatasetJson(getState());
     if (selectedpoints.length > 0) {
         json.p = selectedpoints;
     }
-    if (Object.keys(categoricalFilter).length > 0) {
-        json.c = categoricalFilter;
-    }
     let p;
-    if (selectedEmbeddings.length === 0 || (selectedpoints.length === 0 && json.c == null)) {
+    if (json.embedding == null || (selectedpoints.length === 0 && json.c == null)) {
         p = Promise.resolve({});
     } else {
         p = fetch(API + '/selected_value_counts',
@@ -250,7 +275,7 @@ export function handleLegendClick(payload) {
             }
         }
         dispatch(setCategoricalFilter(categoricalFilter));
-        selectedValueCountsPromise([], categoricalFilter, dispatch, getState);
+        selectedValueCountsPromise([], dispatch, getState);
     };
 }
 
@@ -263,7 +288,7 @@ export function handleSelectedPoints(payload) {
 
     }
     return function (dispatch, getState) {
-        selectedValueCountsPromise(selectedpoints, getState().categoricalFilter, dispatch, getState);
+        selectedValueCountsPromise(selectedpoints, dispatch, getState);
     };
     // TODO linked brushing across embeddings
 
@@ -836,7 +861,7 @@ function _updateEmbedding(options, onError) {
         }
 
         if (options.embedding) {
-            let valueCountsPromise = selectedValueCountsPromise([], getState().categoricalFilter, dispatch, getState);
+            let valueCountsPromise = selectedValueCountsPromise([], dispatch, getState);
             let embeddingPromise;
             if (nRequestedFeatures === 0 && embeddingData.filter(d => d.active).length > 0) {
                 embeddingPromise = Promise.resolve({embedding: {coordinates: {}, values: {}}});

@@ -6,6 +6,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import Input from '@material-ui/core/Input';
+import Link from '@material-ui/core/Link';
 import MenuItem from '@material-ui/core/MenuItem';
 import Popover from '@material-ui/core/Popover';
 import Select from '@material-ui/core/Select';
@@ -21,7 +22,7 @@ import {format} from 'd3-format';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
-    DELETE_DATASET_DIALOG,
+    DELETE_DATASET_DIALOG, downloadSelectedIds,
     EDIT_DATASET_DIALOG,
     IMPORT_DATASET_DIALOG,
     login,
@@ -118,16 +119,30 @@ class App extends PureComponent {
         this.props.setMessage('Link copied');
     };
 
+    handleSelectedCellsClick = (event) => {
+        event.preventDefault();
+        this.props.downloadSelectedIds();
+    };
+
     handleLinkMenuOpen = (event) => {
         let linkText = window.location.protocol + '//' + window.location.host;
 
 
         let json = {
             dataset: this.props.dataset.id,
-            features: this.props.features,
-            groupBy: this.props.groupBy,
             embedding: this.props.embedding
         };
+        if (this.props.features.length > 0) {
+            json.features = this.props.features;
+        }
+        if (this.props.groupBy.length > 0) {
+            json.groupBy = this.props.groupBy;
+        }
+        let categoricalFilter = this.props.categoricalFilter;
+        if (Object.keys(categoricalFilter).length > 0) {
+            json.categoricalFilter = this.props.categoricalFilter;
+        }
+
         if (this.props.markerSize !== DEFAULT_MARKER_SIZE) {
             json.markerSize = this.props.markerSize;
         }
@@ -181,6 +196,8 @@ class App extends PureComponent {
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
         const {classes} = this.props;
+        const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selectedValueCounts.count);
+        const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selectedValueCounts.count > 0) && this.props.dataset.nObs > 0;
         return (
             <div className={classes.root}>
 
@@ -216,9 +233,10 @@ class App extends PureComponent {
                                 </MenuItem>}
                             </Select>}
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
-                                {this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selectedValueCounts.count)
-                                && intFormat(this.props.selectedValueCounts.count) + ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
-                                {this.props.dataset != null && !(this.props.selectedValueCounts.count > 0) && this.props.dataset.nObs > 0 && intFormat(this.props.dataset.nObs) + ' cells'}
+                                {hasSelection && (<Link title="Download selected ids" href="#"
+                                                        onClick={this.handleSelectedCellsClick}>{intFormat(this.props.selectedValueCounts.count)}</Link>)}
+                                {hasSelection && ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
+                                {showNumberOfCells && intFormat(this.props.dataset.nObs) + ' cells'}
                             </div>
                         </div>
                         <div style={{marginLeft: 'auto'}}>
@@ -256,7 +274,7 @@ class App extends PureComponent {
                             >
                                 <div style={{padding: 10}}>
                                     <h4>Copy link to share your current view</h4>
-                                    <Button variant="outlined" onClick={this.copyLink}>
+                                    <Button size="small" variant="outlined" onClick={this.copyLink}>
                                         Copy
                                     </Button> <Input autoFocus={true} inputRef={this.linkRef} readOnly={true}
                                                      value={this.state.linkText}></Input>
@@ -347,25 +365,26 @@ class App extends PureComponent {
 
 const mapStateToProps = state => {
     return {
-        message: state.message,
-        loadingApp: state.loadingApp,
-        loading: state.loading,
-        dialog: state.dialog,
-        email: state.email,
-        dataset: state.dataset,
-        datasetChoices: state.datasetChoices,
-        selectedValueCounts: state.selectedValueCounts,
-        features: state.features,
-        groupBy: state.groupBy,
-        markerSize: state.markerSize,
-        markerOpacity: state.markerOpacity,
-        embedding: state.embedding,
-        view3d: state.view3d,
-        numberOfBins: state.numberOfBins,
         binSummary: state.binSummary,
         binValues: state.binValues,
+        categoricalFilter: state.categoricalFilter,
+        dataset: state.dataset,
+        datasetChoices: state.datasetChoices,
+        dialog: state.dialog,
+        email: state.email,
+        embedding: state.embedding,
+        features: state.features,
+        groupBy: state.groupBy,
         interpolator: state.interpolator,
-        user: state.user
+        loading: state.loading,
+        loadingApp: state.loadingApp,
+        markerOpacity: state.markerOpacity,
+        markerSize: state.markerSize,
+        message: state.message,
+        numberOfBins: state.numberOfBins,
+        selectedValueCounts: state.selectedValueCounts,
+        user: state.user,
+        view3d: state.view3d
 
     };
 };
@@ -386,6 +405,10 @@ const mapDispatchToProps = dispatch => {
         setMessage: (value) => {
             dispatch(setMessage(value));
         },
+        downloadSelectedIds: () => {
+            dispatch(downloadSelectedIds());
+        },
+
     };
 };
 

@@ -43,8 +43,9 @@ class H5ADBackend:
 
     def __get_df(self, adata, keys, embedding_key=None, index=False):
         is_obs = True
-        df = pd.DataFrame(
-            index=adata.obs.index.values if is_obs else adata.var.index.values) if index else pd.DataFrame()
+        df = pd.DataFrame()
+        if index:
+            df['index'] = adata.obs.index.values if is_obs else adata.var.index.values
         for i in range(len(keys)):
             key = keys[i]
             if key in adata.var_names and is_obs:

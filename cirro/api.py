@@ -70,6 +70,8 @@ def handle_schema():
     embeddings += additional_embeddings
     embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
     schema['embeddings'] = embeddings
+    # custom_annotations = database_api.list_annotations(dataset_id)
+    # schema['custom_annotations'] = custom_annotations
     return to_json(schema)
 
 
@@ -112,8 +114,12 @@ def __bin_df(df, nbins, coordinate_columns, reduce_function='mean', coordinate_c
     return df.groupby('__bin').aggregate(agg_func)
 
 
-def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
-    df = dataset_api.get_df(url, keys, basis, binary=True)
+def get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter, index=False):
+    if categorical_filter is not None:
+        for key in categorical_filter:
+            if key not in keys:
+                keys.append(key)
+    df = dataset_api.get_df(url, keys, basis, binary=True, index=index)
     if nbins is not None:
         __convert_coords(df, nbins, basis['coordinate_columns'])
         df = df.set_index('__bin')
@@ -123,20 +129,27 @@ def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_f
             df = df[df.index.isin(selectedpoints)]
         else:
             df = df.iloc[selectedpoints]
-
     if categorical_filter is not None:
         for category in categorical_filter:
             filtered_values = categorical_filter[category]
             filters.append((df[category].isin(filtered_values)))
-
         df = df[np.logical_and(*filters) if len(filters) > 1 else filters[0]]
+    return df
 
+
+def get_selected_indices_or_bins(df, nbins):
     if nbins is not None:
         indices = df.index.unique().values
         indices.sort()
         indices = indices.tolist()
     else:
         indices = df.index.values.tolist()
+    return indices
+
+
+def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
+    df = get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter)
+    indices = get_selected_indices_or_bins(df, nbins)
     result = {'count': len(df), 'categories': {}}
     if nbins is not None:
         result['bins'] = indices
@@ -148,6 +161,29 @@ def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_f
             result['categories'][column] = value_counts.to_dict()
 
     return result
+
+
+@blueprint.route('/selected_ids', methods=['POST'])
+def handle_selected_ids():
+    email = auth_api.auth()['email']
+
+    content = request.get_json(force=True, cache=False)
+    dataset_id = content.get('id', '')
+
+    if dataset_id == '':
+        return 'Please provide an id', 400
+
+    dataset = database_api.get_dataset(email, dataset_id)
+    url = dataset['url']
+    basis = get_basis(content.get('embedding', None))
+    keys = content['keys']
+    selectedpoints = content.get('p', None)
+    categorical_filter = content.get('c', None)
+    # numerical_filter = content.get('n', None)
+    if basis is not None:
+        nbins = check_bin_input(content.get('nbins', None))
+    df = get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter, index=True)
+    return to_json(df['index'].values.tolist())
 
 
 @blueprint.route('/selected_value_counts', methods=['POST'])
@@ -170,20 +206,6 @@ def handle_selected_value_counts():
         nbins = check_bin_input(content.get('nbins', None))
     result = selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter)
     return to_json(result)
-
-
-# @blueprint.route('/annotate', methods=['POST'])
-# def handle_annotation():
-#     email = auth_api.auth()['email']
-#     content = request.get_json(force=True, cache=False)
-#     dataset_id = content.get('id', '')
-#     if dataset_id == '':
-#         return 'Please provide an id', 400
-#     dataset = database_api.get_dataset(email, dataset_id)
-#     url = dataset['url']
-#     ids = get_selected_cell_ids(embedding=content['embedding'], nbins=content.get('nbins', None),
-#         selectedpoints=content['selectedpoints'], url=url)
-#     return to_json({'id': dataset_id}), 200, get_json_headers()
 
 
 @blueprint.route('/slice', methods=['GET'])

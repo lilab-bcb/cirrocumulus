@@ -7,6 +7,7 @@ import {
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
+    SET_CATEGORICAL_FILTER,
     SET_DATASET,
     SET_DATASET_CHOICES,
     SET_DIALOG,
@@ -17,7 +18,6 @@ import {
     SET_FEATURES,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
-    SET_CATEGORICAL_FILTER,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -390,6 +390,8 @@ function categoricalFilter(state = {}, action) {
     switch (action.type) {
         case SET_CATEGORICAL_FILTER:
             return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.categoricalFilter != null ? action.payload.categoricalFilter : state;
         default:
             return state;
     }
@@ -513,6 +515,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
+    categoricalFilter,
     dataset,
     datasetChoices,
     dialog,
@@ -524,7 +527,6 @@ export default combineReducers({
     features,
     groupBy,
     interpolator,
-    categoricalFilter,
     loading,
     loadingApp,
     markerOpacity,
@@ -538,8 +540,8 @@ export default combineReducers({
     selectedValueCounts,
     serverInfo,
     unselectedMarkerOpacity,
+    unselectedMarkerOpacityUI,
     unselectedMarkerSize,
     unselectedMarkerSizeUI,
-    unselectedMarkerOpacityUI,
     user
 });
