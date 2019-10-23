@@ -135,7 +135,7 @@ class PlotUtil {
 
     static createPlotConfig() {
         return {
-            showLink: true,
+            showLink: false,
             responsive: false,
             displaylogo: false,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
