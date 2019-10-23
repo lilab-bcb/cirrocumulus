@@ -1,24 +1,12 @@
 import React from 'react';
-import CategoricalLegend from './CategoricalLegend';
 
 import ColorSchemeLegend from './ColorSchemeLegend';
+import ContinuousLegend from './ContinuousLegend';
 
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
-        const {scale, name, selectedValueCounts, maxHeight, style} = this.props;
-        const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
-        const domain = scale.valueCounts != null ? scale.valueCounts.values : [];
-        if (selectedCountMap) {
-            // TODO fix hack below
-            if (selectedCountMap['True'] != null) {
-                selectedCountMap['true'] = selectedCountMap['True'];
-            }
-            if (selectedCountMap['False'] != null) {
-                selectedCountMap['false'] = selectedCountMap['False'];
-            }
-        }
-
+        const {scale, name, selectedValueCounts, maxHeight, nTotal, style} = this.props;
         return (
             <div style={{
                 display: 'inline-block',
@@ -27,11 +15,11 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                 maxHeight: maxHeight,
                 overflow: 'auto'
             }}>
-                <CategoricalLegend scale={scale} name={name}
-                                   selectedValueCounts={selectedValueCounts}
-                                   maxHeight={maxHeight}
-                                   domain={domain} clickEnabled={false}
-                                   categoricalFilter={{}}></CategoricalLegend>
+                <ContinuousLegend name={name}
+                                  nTotal={nTotal}
+                                  summary={scale.summary}
+                                  selectedValueCounts={selectedValueCounts}
+                                  maxHeight={maxHeight}></ContinuousLegend>
                 <ColorSchemeLegend width={this.props.width} height={this.props.height} style={style} scale={scale}
                                    label={this.props.label}></ColorSchemeLegend></div>);
 

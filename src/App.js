@@ -18,11 +18,11 @@ import CloudIcon from '@material-ui/icons/Cloud';
 import DeleteIcon from '@material-ui/icons/Delete';
 import LinkIcon from '@material-ui/icons/Link';
 import SettingsIcon from '@material-ui/icons/Settings';
-import {format} from 'd3-format';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
-    DELETE_DATASET_DIALOG, downloadSelectedIds,
+    DELETE_DATASET_DIALOG,
+    downloadSelectedIds,
     EDIT_DATASET_DIALOG,
     IMPORT_DATASET_DIALOG,
     login,
@@ -36,6 +36,7 @@ import DotPlot from './DotPlot';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingChartPlotly from './EmbeddingChartPlotly';
 import EmbedForm from './EmbedForm';
+import {intFormat} from './formatters';
 import {
     DEFAULT_BIN_SUMMARY,
     DEFAULT_INTERPOLATOR,
@@ -44,7 +45,7 @@ import {
     DEFAULT_NUMBER_BINS
 } from "./reducers";
 
-const intFormat = format(',');
+
 const drawerWidth = 240;
 
 const styles = theme => ({

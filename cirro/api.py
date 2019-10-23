@@ -119,7 +119,7 @@ def get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter,
         for key in categorical_filter:
             if key not in keys:
                 keys.append(key)
-    df = dataset_api.get_df(url, keys, basis, binary=True, index=index)
+    df = dataset_api.get_df(url, keys, basis, index=index)
     if nbins is not None:
         __convert_coords(df, nbins, basis['coordinate_columns'])
         df = df.set_index('__bin')
@@ -150,16 +150,19 @@ def get_selected_indices_or_bins(df, nbins):
 def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
     df = get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter)
     indices = get_selected_indices_or_bins(df, nbins)
-    result = {'count': len(df), 'categories': {}}
+    result = {'count': len(df), 'summary': {}}
     if nbins is not None:
         result['bins'] = indices
     else:
         result['indices'] = indices
     for column in df:
         if column not in basis['coordinate_columns'] and column != '__bin':
-            value_counts = df[column].value_counts()
-            result['categories'][column] = value_counts.to_dict()
-
+            if pd.api.types.is_numeric_dtype(df[column]):
+                result['summary'][column] = {'num_expressed': len(df[df[column] > 0]),
+                                             'variance': float(df[column].var()),
+                                             'mean': float(df[column].mean())}
+            else:
+                result['summary'][column] = df[column].value_counts().to_dict()
     return result
 
 
@@ -252,23 +255,28 @@ def handle_slice():
             dotplot_result[column] = summarized_df[column].values.tolist()
         result['dotplot'] = dotplot_result
     if basis is not None:
-        return_count = len(keys) == 0
-        embedding_result = {'values': {}, 'categories': {}, 'obs': {}, 'coordinates': {}}
+
+        embedding_result = {'values': {}, 'summary': {}, 'coordinates': {}}
+
         for column in df:
             if pd.api.types.is_categorical_dtype(df[column]):
                 value_counts = df[column].value_counts()
                 sorted_unique_values = natsorted(value_counts.index)
                 value_counts = value_counts.loc[sorted_unique_values]
-                embedding_result['categories'][column] = {'values': value_counts.index.tolist(),
-                                                          'counts': value_counts.values.tolist()}
-            elif column not in basis['coordinate_columns']:
-                value_counts = (df[column] > 0).astype('category').value_counts()  # TODO custom cut point
-                embedding_result['obs'][column] = {'values': value_counts.index.tolist(),
-                                                   'counts': value_counts.values.tolist()}
+                embedding_result['summary'][column] = {'values': value_counts.index.tolist(),
+                                                       'counts': value_counts.values.tolist()}
+            elif column not in basis['coordinate_columns'] and column != '__bin' and column != 'count':
+
+                embedding_result['summary'][column] = {'num_expressed': len(df[df[column] > 0]),
+                                                       'variance': float(df[column].var()),
+                                                       'mean': float(df[column].mean())}
+
         if nbins is not None:
             df = __bin_df(df, nbins, basis['coordinate_columns'], reduce_function)
+            # return bins to client so that client can keep track of selected bins
             embedding_result['bins'] = df.index.values.tolist()
 
+        return_count = len(keys) == 0
         for column in df:
             if column in basis['coordinate_columns']:
                 embedding_result['coordinates'][column] = df[column].values.tolist()
@@ -276,6 +284,7 @@ def handle_slice():
                 if column == 'count' and not return_count:
                     continue
                 embedding_result['values'][column] = df[column].values.tolist()
+
         result['embedding'] = embedding_result
     return to_json(result)
 

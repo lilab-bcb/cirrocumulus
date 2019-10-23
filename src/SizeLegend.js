@@ -1,6 +1,6 @@
-import {format} from 'd3-format';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
+import {numberFormat0} from './formatters';
 
 class SizeLegend extends React.PureComponent {
 
@@ -33,7 +33,7 @@ class SizeLegend extends React.PureComponent {
         let margin = 25;
         let valueToX = scaleLinear().range([margin, width - margin]).domain([0, nsteps - 1]).clamp(true);
         let valueToRadius = scaleLinear().range([2, 10]).domain(domain).clamp(true);
-        let numberFormat = format('.0f');
+
         context.font = '12px Helvetica';
         context.textBaseline = 'top';
         context.fillStyle = 'black';
@@ -50,7 +50,7 @@ class SizeLegend extends React.PureComponent {
             context.arc(pix, 10, radius, 0, Math.PI * 2);
             context.stroke();
 
-            context.fillText(numberFormat(100 * value), pix, legendHeight + 2);
+            context.fillText(numberFormat0(100 * value), pix, legendHeight + 2);
 
             value += stepSize;
         }

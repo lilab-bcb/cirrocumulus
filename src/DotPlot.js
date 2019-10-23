@@ -1,10 +1,11 @@
-import {format} from 'd3-format';
+
 import {scaleLinear} from 'd3-scale';
 import PropTypes from 'prop-types';
 import React from 'react';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import {connect} from 'react-redux';
 import ColorSchemeLegend from './ColorSchemeLegend';
+import {numberFormat} from './formatters';
 import PlotUtil from './PlotUtil';
 import SizeLegend from './SizeLegend';
 
@@ -72,7 +73,7 @@ class DotPlot extends React.PureComponent {
         }
 
         let maxDiameter = 14;
-        let numberFormat = format('.1f');
+
         let colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
         let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]).clamp(true);
         let size = [];

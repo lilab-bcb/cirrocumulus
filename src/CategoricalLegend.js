@@ -17,7 +17,7 @@ class CategoricalLegend extends React.PureComponent {
         const {scale, categoricalFilter, name, selectedValueCounts, maxHeight, clickEnabled} = this.props;
         const categoricalFilterValues = categoricalFilter[name];
         const domain = this.props.domain != null ? this.props.domain : scale.domain();
-        const selectedCountMap = selectedValueCounts.categories != null ? selectedValueCounts.categories[name] : null;
+        const selectionSummary = selectedValueCounts.summary != null ? selectedValueCounts.summary[name] : null;
         let maxSize = 60;
 
         return (
@@ -32,7 +32,7 @@ class CategoricalLegend extends React.PureComponent {
                 <table>
                     <tbody>
                     {domain.map((d, i) => {
-                        let legend = getLegendSizeHelper(selectedCountMap, scale, i, selectedValueCounts.count);
+                        let legend = getLegendSizeHelper(selectionSummary, scale, i, selectedValueCounts.count);
                         let opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(d) !== -1 ? 1 : 0.4;
                         let groupSize = legend.percentTotal * maxSize;
                         let selectedSize = legend.percentSelected * maxSize;
@@ -103,9 +103,9 @@ class CategoricalLegend extends React.PureComponent {
                     <tr>
                         {clickEnabled && <td></td>}
                         <td></td>
-                        {selectedCountMap != null ?
+                        {selectionSummary != null ?
                             <td><small>selection</small></td> : null}
-                        <td><small>{selectedCountMap != null ? 'group' : null}</small></td>
+                        <td><small>{selectionSummary != null ? 'group' : null}</small></td>
                     </tr>
                     </tfoot>
                 </table>

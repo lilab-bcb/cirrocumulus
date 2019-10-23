@@ -72,8 +72,8 @@ Developer Instructions
     pip install -r requirements.txt -e .
 
 -  Add http://localhost:5000 to your Web application Outh client ID
-   authorized JavaScript origins
--  Download the App Engine service account JSON key (DO NOT SHARE THIS!)
+   authorized JavaScript origins at APIs and Services > Credentials
+-  Download the App Engine service account JSON key from IAM & admin > Service accounts (DO NOT SHARE THIS!)
    and set the environment variable GOOGLE_APPLICATION_CREDENTIALS::
 
     export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”

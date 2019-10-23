@@ -25,6 +25,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
+        const nObs = this.props.nObs;
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : this.props.embeddingChartSize);
         return activeTraces.map(traceInfo => {
 
@@ -46,6 +47,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
                             width={186}
                             label={true}
                             height={40}
+                            nTotal={nObs}
                             scale={traceInfo.colorScale}
                             selectedValueCounts={this.props.selectedValueCounts}
                             maxHeight={traceInfo.layout.height}
@@ -68,6 +70,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        nObs: state.dataset.nObs,
         data: state.embeddingData,
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,

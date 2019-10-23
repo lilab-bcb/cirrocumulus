@@ -9,7 +9,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {setInterpolator} from './actions';
 import ColorSchemeLegend from './ColorSchemeLegend';
-import {getInterpolator, interpolators} from "./PlotUtil";
+import {fixInterpolatorName, getInterpolator, interpolators} from "./PlotUtil";
 
 const styles = theme => ({
     root: {
@@ -40,12 +40,14 @@ class ColorSchemeSelector extends React.PureComponent {
 
     render() {
         const {classes} = this.props;
+        let interpolator = fixInterpolatorName(this.props.interpolator.name);
+
         return (
             <Select
                 input={<Input id="color-scheme"/>}
                 className={classes.select}
                 onChange={this.handleInterpolatorChange}
-                value={this.props.interpolator.name}
+                value={interpolator}
                 multiple={false}>
                 <MenuItem key="Diverging" value="Diverging" divider disabled>
                     Diverging

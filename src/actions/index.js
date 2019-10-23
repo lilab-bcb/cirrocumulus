@@ -5,6 +5,7 @@ import {saveAs} from 'file-saver';
 import CustomError from '../CustomError';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 const authScopes = [
     'email',
@@ -878,7 +879,7 @@ function _updateEmbedding(options, onError) {
                     let embeddingResult = allResults[0];
                     let selectedValueCounts = getState().selectedValueCounts;
                     const embeddingValues = embeddingResult.embedding.values;
-                    const categories = embeddingResult.embedding.categories;
+                    const summary = embeddingResult.embedding.summary;
                     let coordinates = embeddingResult.embedding.coordinates;
                     let bins = embeddingResult.embedding.bins;
                     const is3d = selectedEmbeddings[0].endsWith('3d');
@@ -891,13 +892,13 @@ function _updateEmbedding(options, onError) {
                     }
 
                     // TODO > 1 embedding
-
                     for (let name in embeddingValues) {
                         let x = coordinates[selectedEmbeddings[0] + '_1'];
                         let y = coordinates[selectedEmbeddings[0] + '_2'];
                         let z = coordinates[selectedEmbeddings[0] + '_3'];
                         let values = embeddingValues[name];
-                        let isCategorical = categories[name] != null;
+
+                        let isCategorical = name !== 'count' && summary[name] != null && summary[name].mean == null;
                         let colorScale = null;
                         let min = null;
                         let max = null;
@@ -910,13 +911,13 @@ function _updateEmbedding(options, onError) {
                                 max = value > max ? value : max;
                             }
                             colorScale = scaleSequential(interpolator.value).domain([min, max]);
-                            colorScale.valueCounts = embeddingResult.embedding.obs[name];
+                            colorScale.summary = embeddingResult.embedding.summary[name];
                         } else {
-                            let traceUniqueValues = categories[name].values;
+                            let traceUniqueValues = summary[name].values;
                             colorScale = scaleOrdinal(
                                 traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
                                     CATEGORY_20C))).domain(traceUniqueValues);
-                            colorScale.valueCounts = categories[name];
+                            colorScale.summary = summary[name];
                         }
 
                         let colors = [];

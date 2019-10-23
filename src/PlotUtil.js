@@ -1,6 +1,5 @@
-import {format} from 'd3-format';
 import * as scaleChromatic from 'd3-scale-chromatic';
-
+import {intFormat, numberFormat} from './formatters';
 export const interpolators = {};
 interpolators['Diverging'] = [
     'interpolateBrBG',
@@ -43,8 +42,6 @@ interpolators['Sequential (Multi-Hue)'] = [
     'interpolateYlOrRd'];
 
 interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
-const intFormat = format(',');
-const percentFormat = format('.1f');
 
 
 export function isPlotlyBug(el, newTrace) {
@@ -56,27 +53,32 @@ export function isPlotlyBug(el, newTrace) {
     return ((oldSize > threshold) && (newSize <= threshold));
 }
 
-export function getLegendSizeHelper(selectedCountMap, scale, index, selectionCount) {
-    if (scale.valueCounts.total == null) {
+export function getLegendSizeHelper(selectionSummary, scale, index, selectionCount) {
+    if (scale.summary.total == null) {
         // set total lazily
         let total = 0;
-        for (let i = 0, n = scale.valueCounts.counts.length; i < n; i++) {
-            total += scale.valueCounts.counts[i];
+        for (let i = 0, n = scale.summary.counts.length; i < n; i++) {
+            total += scale.summary.counts[i];
         }
-        scale.valueCounts.total = total;
+        scale.summary.total = total;
     }
 
-    let count = scale.valueCounts.counts[index];
-    let total = scale.valueCounts.total;
+    let count = scale.summary.counts[index];
+    let total = scale.summary.total;
     let percent = count / total;
     let percentSelected = Number.NaN;
-    let title = intFormat(count) + ' / ' + intFormat(total) + ' (' + percentFormat(100 * percent) + '% of total)';
+    let title = intFormat(count) + ' / ' + intFormat(total) + ' (' + numberFormat(100 * percent) + '% of total)';
     let selectionTitle;
-    if (selectedCountMap != null) {
-        let d = scale.valueCounts.values[index];
-        let selectedCount = selectedCountMap[d] || 0;
-        percentSelected = selectedCount / selectionCount;
-        selectionTitle = intFormat(selectedCount) + ' / ' + intFormat(selectionCount) + ' % of selection (' + percentFormat(100 * percentSelected) + '%)';
+    if (selectionSummary != null) {
+        if (selectionSummary.mean != null) {
+            selectionTitle = 'mean ' + selectionSummary.mean;
+        } else {
+            let d = scale.summary.values[index];
+            let selectedCount = selectionSummary[d] || 0;
+            percentSelected = selectedCount / selectionCount;
+            selectionTitle = intFormat(selectedCount) + ' / ' + intFormat(selectionCount) + ' (' + numberFormat(100 * percentSelected) + '%)';
+        }
+
     }
 
     return {
@@ -88,12 +90,15 @@ export function getLegendSizeHelper(selectedCountMap, scale, index, selectionCou
     };
 }
 
-
-export function getInterpolator(name) {
+export function fixInterpolatorName(name) {
     if (!name.startsWith("interpolate")) {
         name = "interpolate" + name;
     }
-    return scaleChromatic[name];
+    return name;
+}
+
+export function getInterpolator(name) {
+    return scaleChromatic[fixInterpolatorName(name)];
 }
 
 class PlotUtil {
@@ -133,7 +138,7 @@ class PlotUtil {
             showLink: true,
             responsive: false,
             displaylogo: false,
-            modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines'],// 'sendDataToCloud'
+            modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
         };
     }
 

@@ -1,6 +1,6 @@
-import {format} from 'd3-format';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
+import {numberFormat} from './formatters';
 
 class ColorSchemeLegend extends React.PureComponent {
 
@@ -51,7 +51,7 @@ class ColorSchemeLegend extends React.PureComponent {
         context.strokeStyle = 'LightGrey';
         context.strokeRect(0, 0, width, legendHeight);
         if (this.props.label > 0) {
-            let numberFormat = format('.1f');
+
             context.font = '12px Helvetica';
             context.textBaseline = 'top';
             context.fillStyle = 'black';

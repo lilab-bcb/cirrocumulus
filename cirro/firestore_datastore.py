@@ -31,10 +31,10 @@ class FirestoreDatastore:
     def datasets(self, email):
         client = self.datastore_client
         query = client.query(kind=DATASET)
-        query.add_filter('roles.{}'.format(email), '>', '')
+        query.add_filter('readers'.format(email), '>', '')
         results = []
         for result in query.fetch():
-            results.append({'id': result.id, 'name': result['name'], 'owner': result['roles'][email] == 'owner'})
+            results.append({'id': result.id, 'name': result['name'], 'owner': result['owner'] == email})
         return results
 
     def __get_key_dataset(self, email, dataset_id, ensure_owner):
@@ -43,10 +43,10 @@ class FirestoreDatastore:
         dataset = client.get(key)
         if dataset is None:
             raise InvalidUsage('Please provide a valid id', 400)
-        roles = dataset.get('roles')
-        if email not in roles:
+        readers = dataset.get('readers')
+        if email not in readers:
             raise InvalidUsage('Not authorized', 403)
-        if ensure_owner and roles.get(email, '') != 'owner':
+        if ensure_owner and dataset['owner'] != email:
             raise InvalidUsage('Not authorized', 403)
         return key, dataset
 
@@ -67,16 +67,14 @@ class FirestoreDatastore:
             dataset = datastore.Entity(client.key(DATASET))
             # if request_util.dataset_writer_collection.document(email) is None:
             #     return 'Not authorized to create datasets', 403
+        readers = set(readers)
         if email in readers:
             readers.remove(email)
-        roles = {}
-        for user in readers:
-            roles[user] = 'reader'
-        roles[email] = 'owner'
-
+        readers.add(email)
         dataset.update({
                 'name': dataset_name,
-                'roles': roles,
+                'owner': email,
+                'readers': list(readers),
                 'url': url
         })
         client.put(dataset)

@@ -339,12 +339,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleUnselectedMarkerOpacity: value => {
             dispatch(setUnselectedMarkerOpacity(value));
         },
-
-
         handleEmbeddingChartSize: value => {
             dispatch(setEmbeddingChartSize(value));
         },
-
         handleUnselectedMarkerOpacityUI: value => {
             dispatch(setUnselectedMarkerOpacityUI(value));
         },

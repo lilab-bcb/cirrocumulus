@@ -8,13 +8,13 @@ from flask import Flask, send_from_directory
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
-app = Flask(__name__, static_folder='cirro/client')
+app = Flask(__name__, static_folder='cirro/client/')
 app.register_blueprint(blueprint, url_prefix='/api')
 
 
 @app.route('/')
 def root():
-    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "cirro", "client")), "index.html")
+    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
 
 dataset_api.add(['pq', 'parquet'], ParquetBackend())
