@@ -29,13 +29,11 @@ class EditDatasetDialog extends React.PureComponent {
                     method: 'GET',
                     headers: {'Authorization': 'Bearer ' + getIdToken()},
                 }).then(result => result.json()).then(datasetInfo => {
-                let readers = [];
-                for (let email in datasetInfo.roles) {
-                    if (datasetInfo[email] === 'reader') {
-                        readers.push(email);
-                    }
+                let readers = datasetInfo.readers;
+                let myIndex = readers.indexOf(this.props.email);
+                if (myIndex !== -1) {
+                    readers.splice(myIndex, 1);
                 }
-
                 this.setState({
                     datasetName: datasetInfo.name,
                     loading: false,
@@ -146,7 +144,8 @@ class EditDatasetDialog extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dialog === EDIT_DATASET_DIALOG ? state.dataset : null,
-        serverEmail: state.serverInfo.email
+        serverEmail: state.serverInfo.email,
+        email: state.email
     };
 };
 const mapDispatchToProps = dispatch => {
