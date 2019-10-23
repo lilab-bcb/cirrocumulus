@@ -37,7 +37,7 @@ class FirestoreDatastore:
             results.append({'id': result.id, 'name': result['name'], 'owner': result['owner'] == email})
         return results
 
-    def __get_key_dataset(self, email, dataset_id, ensure_owner):
+    def __get_key_and_dataset(self, email, dataset_id, ensure_owner):
         client = self.datastore_client
         key = client.key(DATASET, int(dataset_id))
         dataset = client.get(key)
@@ -52,17 +52,17 @@ class FirestoreDatastore:
 
     def delete_dataset(self, email, dataset_id):
         client = self.datastore_client
-        key, dataset = self.__get_key_dataset(email, dataset_id, True)
+        key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         client.delete(key)
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        key, dataset = self.__get_key_dataset(email, dataset_id, ensure_owner)
+        key, dataset = self.__get_key_and_dataset(email, dataset_id, ensure_owner)
         return dataset
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         client = self.datastore_client
         if dataset_id is not None:
-            key, dataset = self.__get_key_dataset(email, dataset_id, True)
+            key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
             dataset = datastore.Entity(client.key(DATASET))
             # if request_util.dataset_writer_collection.document(email) is None:
