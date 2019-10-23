@@ -1,5 +1,6 @@
 import * as scaleChromatic from 'd3-scale-chromatic';
 import {intFormat, numberFormat} from './formatters';
+
 export const interpolators = {};
 interpolators['Diverging'] = [
     'interpolateBrBG',
@@ -217,9 +218,9 @@ class PlotUtil {
             width: width,
             height: height,
             margin: {
-                l: 50,
-                b: 50,
-                r: 100,
+                l: 0,
+                b: 0,
+                r: 0,
                 t: 0,
                 autoexpand: true
             },
