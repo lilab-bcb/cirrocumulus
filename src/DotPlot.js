@@ -1,4 +1,3 @@
-
 import {scaleLinear} from 'd3-scale';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -81,9 +80,10 @@ class DotPlot extends React.PureComponent {
         let x = [];
         let y = [];
         let text = [];
-        let names = [];
+        const features = [];
+
         for (let feature in featureNameToValues) {
-            names.push(feature);
+            features.push(feature);
             let featureValues = featureNameToValues[feature];
             let summary = featureValues.summary;
             let fraction = featureValues.fraction;
@@ -113,11 +113,23 @@ class DotPlot extends React.PureComponent {
         };
         let traces = [trace];
         let config = PlotUtil.createPlotConfig();
-        let layout = PlotUtil.createDotPlotLayout({
-            height: 100 + names.length * (maxDiameter + 2),
-            width: Math.max(300, 70 + index.length * (maxDiameter + 2))
+        let maxFeatureLength = 0;
+        features.forEach(value => {
+            maxFeatureLength = Math.max(maxFeatureLength, value.length);
         });
 
+        let maxCategoryLength = 0;
+        index.forEach(value => {
+            maxCategoryLength = Math.max(maxCategoryLength, value.length);
+        });
+        const maxFeatureWidth = 14 + maxFeatureLength * 14;
+        const maxCategoryWidth = 14 + maxCategoryLength * 14;
+        let layout = PlotUtil.createDotPlotLayout({
+            height: 50 + maxCategoryWidth + features.length * (maxDiameter + 2),
+            width: Math.max(300, 20 + maxFeatureWidth + index.length * (maxDiameter + 2))
+        });
+        // features on y axis
+        layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: 20, r: 0};
 
         return (<div style={{maxWidth: 800, overflow: 'auto', border: '1px solid LightGrey'}}>
             <Plot
