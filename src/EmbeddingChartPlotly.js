@@ -28,7 +28,6 @@ class EmbeddingChartPlotly extends React.PureComponent {
         const nObs = this.props.nObs;
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : this.props.embeddingChartSize);
         return activeTraces.map(traceInfo => {
-
             if (size !== traceInfo.layout.width) {
                 traceInfo.layout = Object.assign({}, traceInfo.layout);
                 traceInfo.layout.width = size;
@@ -63,7 +62,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
                                            handleClick={this.props.handleLegendClick}
                                            name={traceInfo.name}
                                            scale={traceInfo.colorScale}
-                                           maxHeight={traceInfo.layout.height}
+                                           maxHeight={traceInfo.layout.height - 24}
                                            clickEnabled={true}
                                            selectedValueCounts={this.props.selectedValueCounts}/>}</div>);
         });
