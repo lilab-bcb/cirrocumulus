@@ -61,7 +61,7 @@ def handle_schema():
     if dataset_id == '':
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.schema(dataset['url'])
+    schema = dataset_api.schema(dataset)
     embeddings = schema['embeddings']
     additional_embeddings = []
     for embedding in embeddings:
@@ -115,12 +115,12 @@ def __bin_df(df, nbins, coordinate_columns, reduce_function='mean', coordinate_c
     return df.groupby('__bin').aggregate(agg_func)
 
 
-def get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter, index=False):
+def get_selected_df(basis, nbins, dataset, selectedpoints, keys, categorical_filter, index=False):
     if categorical_filter is not None:
         for key in categorical_filter:
             if key not in keys:
                 keys.append(key)
-    df = dataset_api.get_df(url, keys, basis, index=index)
+    df = dataset_api.get_df(dataset, keys, basis, index=index)
     if nbins is not None:
         __convert_coords(df, nbins, basis['coordinate_columns'])
         df = df.set_index('__bin')
@@ -148,8 +148,8 @@ def get_selected_indices_or_bins(df, nbins):
     return indices
 
 
-def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
-    df = get_selected_df(basis if nbins is not None else None, nbins, url, selectedpoints, keys, categorical_filter)
+def selected_value_counts(basis, nbins, dataset, selectedpoints, keys, categorical_filter):
+    df = get_selected_df(basis if nbins is not None else None, nbins, dataset, selectedpoints, keys, categorical_filter)
     indices = get_selected_indices_or_bins(df, nbins)
     result = {'count': len(df), 'summary': {}}
     if nbins is not None:
@@ -178,7 +178,6 @@ def handle_selected_ids():
         return 'Please provide an id', 400
 
     dataset = database_api.get_dataset(email, dataset_id)
-    url = dataset['url']
     basis = get_basis(content.get('embedding', None))
     keys = content['keys']
     selectedpoints = content.get('p', None)
@@ -186,7 +185,7 @@ def handle_selected_ids():
     # numerical_filter = content.get('n', None)
     if basis is not None:
         nbins = check_bin_input(content.get('nbins', None))
-    df = get_selected_df(basis if nbins is not None else None, nbins, url, selectedpoints, keys, categorical_filter,
+    df = get_selected_df(basis if nbins is not None else None, nbins, dataset, selectedpoints, keys, categorical_filter,
         index=True)
     return to_json(df.index.values.tolist())
 
@@ -202,14 +201,13 @@ def handle_selected_value_counts():
         return 'Please provide an id', 400
 
     dataset = database_api.get_dataset(email, dataset_id)
-    url = dataset['url']
     basis = get_basis(content.get('embedding', None))
     keys = content['keys']
     selectedpoints = content.get('p', None)
     categorical_filter = content.get('c', None)
     if basis is not None:
         nbins = check_bin_input(content.get('nbins', None))
-    result = selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter)
+    result = selected_value_counts(basis, nbins, dataset, selectedpoints, keys, categorical_filter)
     return to_json(result)
 
 
@@ -220,7 +218,6 @@ def handle_slice():
     if dataset_id == '':
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
-    url = dataset['url']
     basis = get_basis(request.args.get('embedding', None))
     reduce_function = request.args.get('reduce_function', 'mean')
     keys = list(request.args.getlist('key'))
@@ -228,7 +225,7 @@ def handle_slice():
     if basis is not None:
         nbins = check_bin_input(request.args.get('nbins', None))
 
-    df = dataset_api.get_df(url, keys, basis if basis is not None else None)
+    df = dataset_api.get_df(dataset, keys, basis if basis is not None else None)
 
     if basis is not None and (nbins is not None or len(keys) == 0):
         df['count'] = 1.0
