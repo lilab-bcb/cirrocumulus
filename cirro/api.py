@@ -234,24 +234,15 @@ def handle_slice():
         def non_zero(g):
             return np.count_nonzero(g) / g.shape[0]
 
-        group_by_column_names = []
+        dotplot_results = []
         for column in df:
-            if not pd.api.types.is_numeric_dtype(df[column]):
-                group_by_column_names.append(column)
-
-        if len(group_by_column_names) > 1:
-            df['_g'] = df[group_by_column_names].apply(lambda row: '_'.join(row.values.astype(str)), axis=1)
-            df = df.drop(group_by_column_names, axis=1)
-        elif len(group_by_column_names) == 1:
-            df = df.rename(columns={group_by_column_names[0]: "_g"})
-        else:
-            df['_g'] = 'A'
-
-        summarized_df = df.groupby('_g').aggregate([reduce_function, non_zero])
-        dotplot_result = {'index': summarized_df.index.values.tolist()}
-        for column in summarized_df:
-            dotplot_result[column] = summarized_df[column].values.tolist()
-        result['dotplot'] = dotplot_result
+            if pd.api.types.is_categorical_dtype(df[column]):
+                summarized_df = df.groupby(column).aggregate([reduce_function, non_zero])
+                dotplot_result = {'index': summarized_df.index.values.tolist(), 'name': column, 'values': {}}
+                for summarized_column in summarized_df:
+                    dotplot_result['values'][summarized_column] = summarized_df[summarized_column].values.tolist()
+                dotplot_results.append(dotplot_result)
+        result['dotplots'] = dotplot_results
     if basis is not None:
 
         embedding_result = {'values': {}, 'summary': {}, 'coordinates': {}}

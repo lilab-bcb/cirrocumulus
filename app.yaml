@@ -1,5 +1,5 @@
 runtime: python37
-instance_class: F4
+instance_class: F4_HIGHMEM
 handlers:
   - url: /api/.*
     script: auto

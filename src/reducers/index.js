@@ -375,12 +375,12 @@ function dialog(state = null, action) {
     }
 }
 
-function dotPlotData(state = null, action) {
+function dotPlotData(state = [], action) {
     switch (action.type) {
         case SET_DOT_PLOT_DATA:
             return action.payload;
         case SET_DATASET:
-            return null;
+            return [];
         default:
             return state;
     }

@@ -32,7 +32,7 @@ import {
     setMessage,
 } from './actions';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
-import DotPlot from './DotPlot';
+import DotPlotsPlotly from './DotPlotsPlotly';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingChartPlotly from './EmbeddingChartPlotly';
 import EmbedForm from './EmbedForm';
@@ -326,7 +326,7 @@ class App extends PureComponent {
                 <main className={classes.content}>
 
                     {this.props.dataset != null && <EmbeddingChartPlotly/>}
-                    {this.props.dataset != null && <DotPlot/>}
+                    {this.props.dataset != null && <DotPlotsPlotly/>}
                 </main>
 
                 {this.props.loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>

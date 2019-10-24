@@ -2,7 +2,6 @@ import {scaleLinear} from 'd3-scale';
 import PropTypes from 'prop-types';
 import React from 'react';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import {connect} from 'react-redux';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
 import PlotUtil from './PlotUtil';
@@ -16,7 +15,7 @@ class DotPlot extends React.PureComponent {
         if (this.props.data == null) {
             return <div/>;
         }
-        let data = this.props.data;
+        const data = this.props.data;
         let index = data.index || [''];
         let colorMin = Number.MAX_VALUE;
         let colorMax = -Number.MAX_VALUE;
@@ -24,9 +23,9 @@ class DotPlot extends React.PureComponent {
         let sizeMax = -Number.MAX_VALUE;
         // set min and max values
         let featureNameToValues = {};
-        for (let key in data) {
+        for (let key in data.values) {
             if (key !== 'index') {
-                let values = data[key];
+                let values = data.values[key];
                 let min;
                 let max;
                 let index = key.indexOf(',');
@@ -103,7 +102,6 @@ class DotPlot extends React.PureComponent {
             y: y,
             text: text,
             mode: 'markers',
-            name: '',
             sizemode: 'diameter',
             marker: {
                 color: color,
@@ -128,6 +126,7 @@ class DotPlot extends React.PureComponent {
             height: 50 + maxCategoryWidth + features.length * (maxDiameter + 2),
             width: Math.max(300, 20 + maxFeatureWidth + index.length * (maxDiameter + 2))
         });
+        layout.title = {text: data.name, font: {size: 12}};
         // features on y axis
         layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: 20, r: 0};
 
@@ -151,19 +150,9 @@ class DotPlot extends React.PureComponent {
 }
 
 DotPlot.propTypes = {
-    traces: PropTypes.array,
+    data: PropTypes.object,
 };
 
-const mapStateToProps = state => {
-    return {
-        data: state.dotPlotData,
-    };
-};
-const mapDispatchToProps = dispatch => {
-    return {};
-};
 
-export default (connect(
-    mapStateToProps, mapDispatchToProps,
-)(DotPlot));
+export default DotPlot;
 

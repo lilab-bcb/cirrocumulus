@@ -856,7 +856,7 @@ function _updateEmbedding(options, onError) {
             }
             promises.push(dotPlotPromise);
             dotPlotPromise.then(result => { // TODO cache
-                dispatch(_setDotPlotData(result.dotplot || null));
+                dispatch(_setDotPlotData(result.dotplots || []));
 
             });
         }
