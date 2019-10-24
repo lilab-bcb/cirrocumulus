@@ -15,19 +15,20 @@ class DatasetAPI:
             self.suffix_to_provider[suffix.lower()] = provider
 
     def schema(self, dataset):
-        cached_schema = self.caching_api.get_schema(dataset['id'])
+
+        cached_schema = self.caching_api.get_schema(dataset.id)
         if cached_schema is not None:
             return cached_schema
         path = dataset['url']
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
         value = provider.schema(self.fs, path)
-        self.caching_api.cache_schema(dataset['id'], value)
+        self.caching_api.cache_schema(dataset.id, value)
         return value
 
     def get_df(self, dataset, keys, embedding, index=False):
         path = dataset['url']
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        cached_dict = self.caching_api.get_df(dataset['id'], keys, embedding, index=index)
+        cached_dict = self.caching_api.get_df(dataset.id, keys, embedding, index=index)
         if keys is not None:
             keys = keys.copy()
         for column in cached_dict:
@@ -56,5 +57,5 @@ class DatasetAPI:
         for column in df:
             if not pd.api.types.is_numeric_dtype(df[column]) and not pd.api.types.is_categorical_dtype(df[column]):
                 df[column] = df[column].astype('category')
-        self.caching_api.cache_df(dataset['id'], df.drop(cached_dict.keys(), axis=1))
+        self.caching_api.cache_df(dataset.id, df.drop(cached_dict.keys(), axis=1))
         return df

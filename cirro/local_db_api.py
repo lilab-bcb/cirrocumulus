@@ -1,6 +1,15 @@
 import os
 
 
+class Entity:
+    def __init__(self, id, d):
+        self.id = id
+        self.d = d
+
+    def __getitem__(self, item):
+        return self.d[item]
+
+
 class LocalDbAPI:
 
     def __init__(self, paths):
@@ -19,4 +28,5 @@ class LocalDbAPI:
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        return {'id': dataset_id, 'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id}
+        result = Entity(dataset_id, {'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id})
+        return result
