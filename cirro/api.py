@@ -57,6 +57,7 @@ def handle_schema():
     """
     email = auth_api.auth()['email']
     dataset_id = request.args.get('id', '')
+
     if dataset_id == '':
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
@@ -128,7 +129,7 @@ def get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter,
         if nbins is not None:
             df = df[df.index.isin(selectedpoints)]
         else:
-            df = df.iloc[selectedpoints]
+            df = df.iloc[np.array(selectedpoints)]
     if categorical_filter is not None:
         for category in categorical_filter:
             filtered_values = categorical_filter[category]
@@ -148,7 +149,7 @@ def get_selected_indices_or_bins(df, nbins):
 
 
 def selected_value_counts(basis, nbins, url, selectedpoints, keys, categorical_filter):
-    df = get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter)
+    df = get_selected_df(basis if nbins is not None else None, nbins, url, selectedpoints, keys, categorical_filter)
     indices = get_selected_indices_or_bins(df, nbins)
     result = {'count': len(df), 'summary': {}}
     if nbins is not None:
@@ -185,8 +186,9 @@ def handle_selected_ids():
     # numerical_filter = content.get('n', None)
     if basis is not None:
         nbins = check_bin_input(content.get('nbins', None))
-    df = get_selected_df(basis, nbins, url, selectedpoints, keys, categorical_filter, index=True)
-    return to_json(df['index'].values.tolist())
+    df = get_selected_df(basis if nbins is not None else None, nbins, url, selectedpoints, keys, categorical_filter,
+        index=True)
+    return to_json(df.index.values.tolist())
 
 
 @blueprint.route('/selected_value_counts', methods=['POST'])
@@ -217,7 +219,6 @@ def handle_slice():
     dataset_id = request.args.get('id', '')
     if dataset_id == '':
         return 'Please provide an id', 400
-
     dataset = database_api.get_dataset(email, dataset_id)
     url = dataset['url']
     basis = get_basis(request.args.get('embedding', None))
@@ -286,6 +287,7 @@ def handle_slice():
                 embedding_result['values'][column] = df[column].values.tolist()
 
         result['embedding'] = embedding_result
+
     return to_json(result)
 
 

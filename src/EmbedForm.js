@@ -58,7 +58,7 @@ class EmbedForm extends React.PureComponent {
     onMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
             let markerSize = parseFloat(event.target.value);
-            if (markerSize > 0) {
+            if (markerSize >= 0) {
                 this.props.handleMarkerSize(markerSize);
             }
         }
@@ -69,15 +69,6 @@ class EmbedForm extends React.PureComponent {
     };
 
 
-    onMarkerSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let markerSize = parseFloat(event.target.value);
-            if (markerSize > 0) {
-                this.props.handleMarkerSize(markerSize);
-            }
-        }
-    };
-
     onUnselectedMarkerSizeChange = (event) => {
         this.props.handleUnselectedMarkerSizeUI(event.target.value);
     };
@@ -85,7 +76,7 @@ class EmbedForm extends React.PureComponent {
     onUnselectedMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
             let markerSize = parseFloat(event.target.value);
-            if (markerSize > 0) {
+            if (markerSize >= 0) {
                 this.props.handleUnselectedMarkerSize(markerSize);
             }
         }
@@ -98,7 +89,7 @@ class EmbedForm extends React.PureComponent {
     onMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
             let opacity = parseFloat(event.target.value);
-            if (opacity > 0 && opacity <= 1) {
+            if (opacity >= 0 && opacity <= 1) {
                 this.props.handleMarkerOpacity(opacity);
             }
         }
@@ -111,7 +102,7 @@ class EmbedForm extends React.PureComponent {
     onUnselectedMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
             let opacity = parseFloat(event.target.value);
-            if (opacity > 0 && opacity <= 1) {
+            if (opacity >= 0 && opacity <= 1) {
                 this.props.handleUnselectedMarkerOpacity(opacity);
             }
         }
@@ -124,7 +115,7 @@ class EmbedForm extends React.PureComponent {
     onNumberOfBinsKeyPress = (event) => {
         if (event.key === 'Enter') {
             let numberOfBins = parseInt(event.target.value);
-            if (numberOfBins > 0) {
+            if (numberOfBins >= 0) {
                 this.props.handleNumberOfBins(numberOfBins);
             }
         }

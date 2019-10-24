@@ -1,4 +1,5 @@
 runtime: python37
+instance_class: F4
 handlers:
   - url: /api/.*
     script: auto

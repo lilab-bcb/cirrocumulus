@@ -34,6 +34,12 @@ class EmbeddingChartPlotly extends React.PureComponent {
                 traceInfo.layout.width = size;
                 traceInfo.layout.height = size;
             }
+            if (traceInfo.data[0].marker.size === 0) {
+                traceInfo.data[0].marker.size = 1e-8;
+            }
+            if (traceInfo.data[0].unselected.marker.size === 0) {
+                traceInfo.data[0].unselected.marker.size = 1e-8;
+            }
             return (
                 <div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={traceInfo.name}><Plot
                     data={traceInfo.data}
