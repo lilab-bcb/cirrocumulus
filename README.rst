@@ -25,6 +25,8 @@ Google Cloud Platform (GCP) Deployment Instructions
 
     cd cirrocumulus
 
+-  Install `Node.js`_.
+
 -  Install JavaScript dependencies::
 
     npm i
@@ -92,3 +94,4 @@ Developer Instructions
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
+.. _Node.js: https://nodejs.org/
