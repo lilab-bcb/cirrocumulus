@@ -21,6 +21,18 @@ Google Cloud Platform (GCP) Deployment Instructions
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
+-  Change your current working directory to cirrocumulus::
+
+    cd cirrocumulus
+
+-  Install JavaScript dependencies::
+
+    npm i
+
+-  Build the client::
+
+    npm run-script build
+
 -  Create or use an existing GCP project
 
 -  Create an OAuth client id
