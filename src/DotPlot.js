@@ -16,7 +16,6 @@ class DotPlot extends React.PureComponent {
             return <div/>;
         }
         const dotplot = this.props.data;
-        console.log(dotplot);
         let categories = dotplot.categories || [''];
         let colorMin = Number.MAX_VALUE;
         let colorMax = -Number.MAX_VALUE;
