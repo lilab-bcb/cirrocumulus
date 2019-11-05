@@ -11,7 +11,6 @@ class H5ADDataset:
         self.backed = backed
         # only works with local files
 
-
     def schema(self, filesystem, path):
         adata = self.path_to_data.get(path, None)
         if adata is None:
@@ -36,30 +35,23 @@ class H5ADDataset:
         result['embeddings'] = embeddings
         return result
 
-    def get_df(self, filesystem, path, keys, basis=None):
+    def statistics(self, file_system, path, keys):
+        py_dict = self.get_py_dict(file_system, path, keys)
+        key_to_stats = {}
+        for key in py_dict:
+            key_to_stats[key] = (py_dict[key].min(), py_dict[key].max())
+        return key_to_stats
+
+    def tables(self, file_system, path, keys, basis=None):
+        yield pa.Table.from_pydict(self.get_py_dict(file_system, path, keys, basis=basis))
+
+    def get_py_dict(self, file_system, path, keys, basis=None):
+        is_obs = True
+        py_dict = {}
         adata = self.path_to_data.get(path, None)
         if adata is None:
             adata = anndata.read(path, backed=self.backed)
             self.path_to_data[path] = adata
-        return self.__get_df(adata, keys, basis)
-
-    def statistics(self, file_system, path, keys):
-        df = self.get_df(file_system, path, keys)
-        key_to_stats = {}
-        for column in df:
-            key_to_stats[column] = (df[column].min(), df[column].max())
-        return key_to_stats
-
-    def tables(self, file_system, path, keys, basis=None):
-        df = self.get_df(file_system, path, keys, basis=basis)
-        py_dict = {}
-        for column in df:
-            py_dict[column] = df[column].values
-        yield pa.Table.from_pydict(py_dict)
-
-    def __get_df(self, adata, keys, basis=None):
-        is_obs = True
-        df = pd.DataFrame(index=pd.RangeIndex(adata.shape[0 if is_obs else 1]))
         for i in range(len(keys)):
             key = keys[i]
             if key == 'index':
@@ -74,11 +66,11 @@ class H5ADDataset:
                     values = adata.obs[key].values
                 else:
                     raise ValueError('{} not found'.format(key))
-            df[key] = values
+            py_dict[key] = values
         if basis is not None:
             embedding_name = basis['name']
             embedding_data = adata.obsm[embedding_name]
             dimensions = basis['dimensions']
             for i in range(dimensions):
-                df[basis['coordinate_columns'][i]] = embedding_data[:, i]
-        return df
+                py_dict[basis['coordinate_columns'][i]] = embedding_data[:, i]
+        return py_dict
