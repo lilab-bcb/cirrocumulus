@@ -7,4 +7,5 @@ public
 LICENSE
 README.md
 .idea
+test-data
 service-account-file.json
