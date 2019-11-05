@@ -52,17 +52,19 @@ class H5ADDataset:
 
     def tables(self, file_system, path, keys, basis=None):
         df = self.get_df(file_system, path, keys, basis=basis)
-        yield pa.Table.from_pandas(df)
+        py_dict = {}
+        for column in df:
+            py_dict[column] = df[column].values
+        yield pa.Table.from_pydict(py_dict)
 
     def __get_df(self, adata, keys, basis=None):
         is_obs = True
-        if 'index' in keys:
-            df = pd.DataFrame(index=(adata.obs.index.values if is_obs else adata.var.index.values))
-        else:
-            df = pd.DataFrame(index=pd.RangeIndex(adata.shape[0 if is_obs else 1]))
+        df = pd.DataFrame(index=pd.RangeIndex(adata.shape[0 if is_obs else 1]))
         for i in range(len(keys)):
             key = keys[i]
-            if key != 'index':
+            if key == 'index':
+                values = adata.obs.index.values if is_obs else adata.var.index.values
+            else:
                 if key in adata.var_names and is_obs:
                     X = adata.obs_vector(key)
                     if scipy.sparse.issparse(X):
