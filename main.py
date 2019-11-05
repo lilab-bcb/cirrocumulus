@@ -1,10 +1,11 @@
 import os
 
+from flask import Flask, send_from_directory
+
 from cirro.api import blueprint, auth_api, database_api, dataset_api
 from cirro.firestore_datastore import FirestoreDatastore
 from cirro.google_auth import GoogleAuth
-from cirro.parquet_backend import ParquetBackend
-from flask import Flask, send_from_directory
+from cirro.parquet_dataset import ParquetDataset
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -17,7 +18,7 @@ def root():
     return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
 
-dataset_api.add(['pq', 'parquet'], ParquetBackend())
+dataset_api.add(['pq', 'parquet'], ParquetDataset())
 auth_api.provider = GoogleAuth()
 database_api.provider = FirestoreDatastore()
 

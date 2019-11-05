@@ -1,5 +1,4 @@
 import * as scaleChromatic from 'd3-scale-chromatic';
-import {intFormat, numberFormat} from './formatters';
 
 export const interpolators = {};
 interpolators['Diverging'] = [
@@ -54,42 +53,6 @@ export function isPlotlyBug(el, newTrace) {
     return ((oldSize > threshold) && (newSize <= threshold));
 }
 
-export function getLegendSizeHelper(selectionSummary, scale, index, selectionCount) {
-    if (scale.summary.total == null) {
-        // set total lazily
-        let total = 0;
-        for (let i = 0, n = scale.summary.counts.length; i < n; i++) {
-            total += scale.summary.counts[i];
-        }
-        scale.summary.total = total;
-    }
-
-    let count = scale.summary.counts[index];
-    let total = scale.summary.total;
-    let percent = count / total;
-    let percentSelected = Number.NaN;
-    let title = intFormat(count) + ' / ' + intFormat(total) + ' (' + numberFormat(100 * percent) + '% of total)';
-    let selectionTitle;
-    if (selectionSummary != null) {
-        if (selectionSummary.mean != null) {
-            selectionTitle = 'mean ' + selectionSummary.mean;
-        } else {
-            let d = scale.summary.values[index];
-            let selectedCount = selectionSummary[d] || 0;
-            percentSelected = selectedCount / selectionCount;
-            selectionTitle = intFormat(selectedCount) + ' / ' + intFormat(selectionCount) + ' (' + numberFormat(100 * percentSelected) + '%)';
-        }
-
-    }
-
-    return {
-        percentTotal: percent,
-        percentSelected: percentSelected,
-        title: title,
-        total: intFormat(total),
-        selectionTitle: selectionTitle
-    };
-}
 
 export function fixInterpolatorName(name) {
     if (!name.startsWith("interpolate")) {

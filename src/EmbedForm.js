@@ -30,7 +30,7 @@ import {
     setUnselectedMarkerSizeUI
 } from './actions';
 
-import Autocomplete from './Autocomplete';
+import AutocompleteSelect from './AutocompleteSelect';
 import ColorSchemeSelector from './ColorSchemeSelector';
 
 const styles = theme => ({
@@ -196,7 +196,7 @@ class EmbedForm extends React.PureComponent {
 
 
                 <FormControl className={classes.formControl}>
-                    <Autocomplete label="Features" options={allOptions}
+                    <AutocompleteSelect label="Features" options={allOptions}
                                   defaultOptions={defaultOptions} value={featureValue}
                                   onChange={this.props.handleFeatures}
                                   isMulti={true}/>

@@ -5,7 +5,7 @@ import {saveAs} from 'file-saver';
 import CustomError from '../CustomError';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 const authScopes = [
     'email',
@@ -32,8 +32,10 @@ export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 
 // update chart
 
-export const SET_SELECTED_VALUE_COUNTS = 'SET_SELECTED_VALUE_COUNTS';
+export const SET_SELECTION = 'SET_SELECTION';
+export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
 export const SET_FEATURES = 'SET_FEATURES';
+export const SET_FEATURES_UI = 'SET_FEATURES_UI';
 export const SET_GROUP_BY = 'SET_GROUP_BY';
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_NUMBER_OF_BINS = 'SET_NUMBER_OF_BINS';
@@ -148,28 +150,26 @@ export function login() {
 }
 
 
-function setSelectedValueCounts(payload) {
-    return {type: SET_SELECTED_VALUE_COUNTS, payload: payload};
-}
-
-
-function getSelectedDatasetJson(state) {
+function getSliceJson(state, includeFilter = true) {
     const datasetId = state.dataset.id;
-    const continuousFeatures = state.features;
-    const categoricalFeatures = state.groupBy;
     const selectedEmbeddings = state.embeddings;
-
     let json = {
         id: datasetId,
         embedding: selectedEmbeddings.length > 0 ? selectedEmbeddings[0] : null,
-        keys: continuousFeatures.concat(categoricalFeatures)
     };
+
     if (state.binValues) {
         json.nbins = state.numberOfBins;
+        json.agg = state.binSummary;
     }
 
-    if (Object.keys(state.categoricalFilter).length > 0) {
-        json.c = state.categoricalFilter;
+    if (includeFilter && Object.keys(state.categoricalFilter).length > 0) {
+        json.filter = {filters: []};
+        for (let key in state.categoricalFilter) {
+            let f = [key, 'in', state.categoricalFilter[key]];
+            json.filter.filters.push(f);
+        }
+
     }
     return json;
 }
@@ -177,8 +177,9 @@ function getSelectedDatasetJson(state) {
 export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        let json = getSelectedDatasetJson(getState());
-        fetch(API + '/selected_ids',
+        let json = getSliceJson(getState());
+        json['types'] = ['ids'];
+        fetch(API + '/slice',
             {
                 body: JSON.stringify(json),
                 method: 'POST',
@@ -192,29 +193,71 @@ export function downloadSelectedIds() {
     };
 }
 
-function selectedValueCountsPromise(selectedpoints, dispatch, getState) {
-    let json = getSelectedDatasetJson(getState());
-    if (selectedpoints.length > 0) {
-        json.p = selectedpoints;
-    }
-    let p;
-    if (json.embedding == null || (selectedpoints.length === 0 && json.c == null)) {
-        p = Promise.resolve({});
-    } else {
-        p = fetch(API + '/selected_value_counts',
-            {
-                body: JSON.stringify(json),
-                method: 'POST',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json());
-    }
-    p.then(selectedValueCounts => dispatch(setSelectedValueCounts(selectedValueCounts)));
-    return p;
-}
-
 
 function setCategoricalFilter(payload) {
     return {type: SET_CATEGORICAL_FILTER, payload: payload};
+}
+
+function setSelection(payload) {
+    return {type: SET_SELECTION, payload: payload};
+}
+
+function setFeatureSummary(payload) {
+    return {type: SET_FEATURE_SUMMARY, payload: payload};
+}
+
+/**
+ *
+ * @param selectedPoints Selected chart points if selection was updated or null.
+ * @returns {Function}
+ */
+function handleFilterUpdated(selectedPoints) {
+    return function (dispatch, getState) {
+        let json = getSliceJson(getState());
+        const binValues = getState().binValues;
+        const traceBins = binValues ? getState().embeddingData[0].data[0].bins : null;
+        json.types = ['summary'];
+        json.summary_measures = getState().features;
+        json.summary_dimensions = getState().groupBy;
+        if (selectedPoints != null && selectedPoints.length > 0) {
+            if (json.filter == null) {
+                json.filter = {};
+            }
+            json.filter.selected_points = selectedPoints;
+        }
+        if (json.filter != null) {
+            json.types.push('selection');
+        }
+        fetch(API + '/slice',
+            {
+                body: JSON.stringify(json),
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json()).then(result => {
+
+            const selection = result.selection;
+            if (selection != null) {
+
+                const selectedIndicesOrBins = selection.indices_or_bins;
+                let selectedPoints = selectedIndicesOrBins;
+                if (binValues) {
+                    selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                }
+
+                dispatch(setSelection({
+                    userPoints: selectedPoints,
+                    points: selectedIndicesOrBins,
+                    count: selection.count
+                }));
+            } else {
+                dispatch(setSelection({}));
+            }
+            // userPoints are in chart space, points are in server space, count is total number of cells selected
+            dispatch(setFeatureSummary(result.summary));
+
+
+        });
+    };
 }
 
 export function handleLegendClick(payload) {
@@ -276,24 +319,20 @@ export function handleLegendClick(payload) {
             }
         }
         dispatch(setCategoricalFilter(categoricalFilter));
-        selectedValueCountsPromise([], dispatch, getState);
+        dispatch(handleFilterUpdated());
     };
 }
 
 export function handleSelectedPoints(payload) {
-    // we intentionally don't persist selected points
-    let isEmpty = payload == null || payload.points.length === 0;
-    let selectedpoints = isEmpty ? [] : payload.points[0].data.selectedpoints;
-    if (!isEmpty && payload.points[0].data.bins != null) {
-        selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
-
-    }
     return function (dispatch, getState) {
-        selectedValueCountsPromise(selectedpoints, dispatch, getState);
+        let isEmpty = payload == null || payload.points.length === 0;
+        let selectedpoints = isEmpty ? [] : payload.points[0].data.selectedpoints;
+        if (!isEmpty && payload.points[0].data.bins != null) {
+            selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
+        }
+        dispatch(handleFilterUpdated(selectedpoints));
+
     };
-    // TODO linked brushing across embeddings
-
-
 }
 
 export function restoreView(payload) {
@@ -392,9 +431,8 @@ function _loadSavedView() {
             }
             dispatch(setDataset(savedView.dataset))
                 .then(() => dispatch(restoreView(savedView)))
-                .then(() => dispatch(_updateEmbedding({
-                    embedding: true,
-                    dotPlot: true,
+                .then(() => dispatch(_updateCharts({
+                    dotplot: true,
                     clear: true
                 }))).catch(err => {
                 console.log(err);
@@ -446,7 +484,7 @@ export function saveDataset(payload) {
         // bucket = encodeURIComponent(bucket.substring(0, slash));
         let isEdit = payload.dataset != null;
         dispatch(_setLoading(true));
-        let updateDatasetPermissionPromise = null;
+
         const serverEmail = getState().serverInfo.email;
         const updatePermissions = !isEdit || url !== payload.dataset.url;
         // if (updatePermissions) {
@@ -465,7 +503,7 @@ export function saveDataset(payload) {
         //     });
 
         // } else {
-        updateDatasetPermissionPromise = Promise.resolve({ok: true});
+        let updateDatasetPermissionPromise = Promise.resolve({ok: true});
         // }
         updateDatasetPermissionPromise.then(permissionsResponse => {
 
@@ -475,13 +513,18 @@ export function saveDataset(payload) {
         }).then(() => fetch(API + '/dataset',
             {
                 body: JSON.stringify(
-                    {id: payload.dataset != null ? payload.dataset.id : null, url: url, name: name, readers: readers}),
+                    {
+                        id: payload.dataset != null ? payload.dataset.id : null,
+                        url: url,
+                        name: name,
+                        readers: readers
+                    }),
                 method: isEdit ? 'PUT' : 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             })).then(importDatasetResponse => importDatasetResponse.json()).then(importDatasetResult => {
             if (isEdit) {
                 dispatch(updateDataset({name: name, id: importDatasetResult.id, owner: true}));
-                dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverEmail + ' is a "Storage Object Viewer"' : 'Dataset updated'));
+                dispatch(setMessage('Dataset updated'));
             } else {
                 dispatch(_addDataset({name: name, id: importDatasetResult.id, owner: true}));
                 dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverEmail + ' is a "Storage Object Viewer"' : 'Dataset created'));
@@ -579,6 +622,9 @@ function _setEmail(payload) {
     return {type: SET_EMAIL, payload: payload};
 }
 
+export function setFeaturesUI(payload) {
+    return {type: SET_FEATURES_UI, payload: payload};
+}
 
 export function setFeatures(payload) {
     const value = payload;
@@ -605,12 +651,13 @@ export function setFeatures(payload) {
     };
 }
 
+
 function _setFeatures(payload) {
 
     return function (dispatch, getState) {
         let prior = getState().features;
         dispatch({type: SET_FEATURES, payload: payload});
-        dispatch(_updateEmbedding({embedding: true, dotPlot: true}, err => {
+        dispatch(_updateCharts({dotplot: true}, err => {
             dispatch({type: SET_FEATURES, payload: prior});
         }));
     };
@@ -631,7 +678,7 @@ function _setGroupBy(payload) {
             dispatch({type: SET_CATEGORICAL_FILTER, payload: categoricalFilter});
         }
         dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
-        dispatch(_updateEmbedding({embedding: true, dotPlot: true}, err => {
+        dispatch(_updateCharts({dotplot: true}, err => {
             dispatch({type: SET_GROUP_BY, payload: prior});
         }));
     };
@@ -641,7 +688,7 @@ export function setSelectedEmbedding(payload) {
     return function (dispatch, getState) {
         let prior = getState().embeddings;
         dispatch({type: SET_SELECTED_EMBEDDING, payload: payload});
-        dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
+        dispatch(_updateCharts({clear: true}, err => {
             dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
         }));
     };
@@ -653,7 +700,7 @@ export function setNumberOfBins(payload) {
         if (getState().numberOfBins !== payload) {
             let prior = getState().numberOfBins;
             dispatch({type: SET_NUMBER_OF_BINS, payload: payload});
-            dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
+            dispatch(_updateCharts({clear: true}, err => {
                 dispatch({type: SET_NUMBER_OF_BINS, payload: prior});
             }));
         }
@@ -665,7 +712,7 @@ export function setBinSummary(payload) {
         let prior = getState().binSummary;
         dispatch({type: SET_BIN_SUMMARY, payload: payload});
 
-        dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
+        dispatch(_updateCharts({clear: true}, err => {
             dispatch({type: SET_BIN_SUMMARY, payload: prior});
         }));
     };
@@ -676,7 +723,7 @@ export function setBinValues(payload) {
     return function (dispatch, getState) {
         let prior = getState().binValues;
         dispatch({type: SET_BIN_VALUES, payload: payload});
-        dispatch(_updateEmbedding({embedding: true, clear: true}, err => {
+        dispatch(_updateCharts({clear: true}, err => {
             dispatch({type: SET_BIN_VALUES, payload: prior});
         }));
 
@@ -742,49 +789,43 @@ export function setDataset(id) {
 
 // dot plot depends on features, groupBy
 // embedding chart depends on groupBy, features, embedding (also markerSize, colorScale which don't require API
-// call)
+// call). Also need to updated embedding when selection changes.
 /**
  *
- * @param options.embedding
- * @param options.dotPlot
- * @param options.clear Clear cached data
+ * @param sliceOptions.dotplot
+ * @param sliceOptions.clear Clear cached data
  * @returns {function(*, *): Promise<any | never>}
  */
-function _updateEmbedding(options, onError) {
+function _updateCharts(sliceOptions, onError) {
 
     return function (dispatch, getState) {
+        const state = getState();
+        const continuousFeatures = state.features;
+        const categoricalFeatures = state.groupBy;
 
-        const continuousFeatures = getState().features;
-        const categoricalFeatures = getState().groupBy;
-
-        if (getState().dataset == null) {
+        if (state.dataset == null) {
             return;
         }
         dispatch(_setLoading(true));
-        const datasetId = getState().dataset.id;
-        const obs = getState().dataset.obs;
-        const selectedEmbeddings = getState().embeddings;
-        if (options.embedding && selectedEmbeddings.length === 0) {
-            options.embedding = false;
-        }
-        if (options.dotPlot && continuousFeatures.length === 0) {
-            options.dotPlot = false;
+        const obs = state.dataset.obs;
+        const selectedEmbeddings = state.embeddings;
+
+        if (sliceOptions.dotplot && continuousFeatures.length === 0) {
+            sliceOptions.dotplot = false;
         }
 
-        let embeddingData = getState().embeddingData;
-        const embeddingChartSize = getState().embeddingChartSize;
-        if (options.clear) {
+        let embeddingData = state.embeddingData;
+        const embeddingChartSize = state.embeddingChartSize;
+        if (sliceOptions.clear) {
             embeddingData = [];
         }
         let cachedFeatureNames = {};
         const currentFeatures = continuousFeatures.concat(categoricalFeatures);
+        const markerSize = state.markerSize;
+        const markerOpacity = state.markerOpacity;
+        const unselectedMarkerSize = state.unselectedMarkerSize;
 
-        let nRequestedFeatures = 0;
-        const markerSize = getState().markerSize;
-        const markerOpacity = getState().markerOpacity;
-        const unselectedMarkerSize = getState().unselectedMarkerSize;
-
-        const unselectedMarkerOpacity = getState().unselectedMarkerOpacity;
+        const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
 
         // reuse existing traces
         embeddingData.forEach(traceInfo => {
@@ -802,189 +843,190 @@ function _updateEmbedding(options, onError) {
             traceInfo.active = active;
         });
 
-        let embeddingUrl = [API + '/slice?id=' + datasetId];
-        let dotPlotUrl = [API + '/slice?id=' + datasetId];
+        let json = getSliceJson(state, false);
+        json.embedding_measures = [];
+        json.embedding_dimensions = [];
         // TODO only get new features for dot plot
-        // only get new features for embedding plot
-        let ngenes = 0;
+        if (sliceOptions.dotplot) {
+            json.dotplot_measures = [];
+            json.dotplot_dimensions = [];
+        }
+
         continuousFeatures.forEach(feature => {
-            if (obs.indexOf(feature) === -1) {
-                dotPlotUrl.push('&key=' + feature);
-                ngenes++;
+            if (sliceOptions.dotplot) {
+                if (obs.indexOf(feature) === -1) {
+                    json.dotplot_measures.push(feature);
+                }
             }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
-                nRequestedFeatures++;
-                embeddingUrl.push('&key=' + feature);
+                json.embedding_measures.push(feature);
             }
         });
 
-        if ((options.embedding || options.dotPlot)) {
-            categoricalFeatures.forEach(feature => {
-                dotPlotUrl.push('&key=' + feature);
-                let isCached = cachedFeatureNames[feature] != null;
-                if (!isCached) {
-                    nRequestedFeatures++;
-                    embeddingUrl.push('&key=' + feature);
-                }
-            });
-        }
 
-        let binValues = getState().numberOfBins > 0 && getState().binValues;
-        if (options.embedding && binValues) {
-            embeddingUrl.push('&nbins=' + getState().numberOfBins);
-            embeddingUrl.push('&reduce_function=' + getState().binSummary);
-        }
+        categoricalFeatures.forEach(feature => {
+            if (sliceOptions.dotplot) {
+                json.dotplot_dimensions.push(feature);
+            }
+            let isCached = cachedFeatureNames[feature] != null;
+            if (!isCached) {
+                json.embedding_dimensions.push(feature);
+            }
+        });
 
-        if (options.embedding && selectedEmbeddings.length > 0) {
-            selectedEmbeddings.forEach(selectedEmbedding => embeddingUrl.push('&embedding=' + selectedEmbedding));
-        }
 
         let interpolator = getState().interpolator;
-
-        let promises = [];
-        if (options.dotPlot) {
-            let dotPlotPromise = null;
-            if (ngenes > 0 && categoricalFeatures.length > 0) {
-                dotPlotPromise = fetch(dotPlotUrl.join(''),
-                    {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-                    .then(response => {
-                        return response.json();
-                    });
-            } else {
-                dotPlotPromise = Promise.resolve({stats: {}});
-            }
-            promises.push(dotPlotPromise);
-            dotPlotPromise.then(result => { // TODO cache
-                dispatch(_setDotPlotData(result.dotplots || []));
-
-            });
+        let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
+        json.types = [];
+        if (sliceOptions.dotplot && json.dotplot_dimensions.length > 0 && json.dotplot_measures.length > 0) {
+            json.types.push('dotplot');
         }
+        json.types.push('embedding');
+        json.types.push('summary');
+        json.summary_measures = json.embedding_measures;
+        json.summary_dimensions = json.embedding_dimensions;
 
-        if (options.embedding) {
-            let valueCountsPromise = selectedValueCountsPromise([], dispatch, getState);
-            let embeddingPromise;
-            if (nRequestedFeatures === 0 && embeddingData.filter(d => d.active).length > 0) {
-                embeddingPromise = Promise.resolve({embedding: {coordinates: {}, values: {}}});
-            } else {
-                embeddingPromise = fetch(embeddingUrl.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-                    .then(response => {
-                        return response.json();
-                    });
-            }
-            promises.push(embeddingPromise);
-            promises.push(valueCountsPromise);
-            let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
-            Promise.all([embeddingPromise, valueCountsPromise]).then(allResults => {
-                    let embeddingResult = allResults[0];
-                    let selectedValueCounts = getState().selectedValueCounts;
-                    const embeddingValues = embeddingResult.embedding.values;
-                    const summary = embeddingResult.embedding.summary;
-                    let coordinates = embeddingResult.embedding.coordinates;
-                    let bins = embeddingResult.embedding.bins;
-                    const is3d = selectedEmbeddings[0].endsWith('3d');
-                    let selectedpoints = selectedValueCounts.indices;
-                    if (selectedValueCounts.bins != null) {
-                        selectedpoints = PlotUtil.convertBinsToPoints(bins, selectedValueCounts.bins);
-                    }
-                    if (selectedpoints != null && selectedpoints.length === 0) {
-                        selectedpoints = null;
-                    }
-
-                    // TODO > 1 embedding
-                    for (let name in embeddingValues) {
-                        let x = coordinates[selectedEmbeddings[0] + '_1'];
-                        let y = coordinates[selectedEmbeddings[0] + '_2'];
-                        let z = coordinates[selectedEmbeddings[0] + '_3'];
-                        let values = embeddingValues[name];
-
-                        let isCategorical = name !== 'count' && summary[name] != null && summary[name].mean == null;
-                        let colorScale = null;
-                        let min = null;
-                        let max = null;
-                        if (!isCategorical) {
-                            min = Number.MAX_VALUE;
-                            max = -Number.MAX_VALUE;
-                            for (let i = 0, n = values.length; i < n; i++) {
-                                let value = values[i];
-                                min = value < min ? value : min;
-                                max = value > max ? value : max;
-                            }
-                            colorScale = scaleSequential(interpolator.value).domain([min, max]);
-                            colorScale.summary = embeddingResult.embedding.summary[name];
-                        } else {
-                            let traceUniqueValues = summary[name].values;
-                            colorScale = scaleOrdinal(
-                                traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
-                                    CATEGORY_20C))).domain(traceUniqueValues);
-                            colorScale.summary = summary[name];
-                        }
-
-                        let colors = [];
-                        for (let i = 0, n = values.length; i < n; i++) {
-                            let rgb = color(colorScale(values[i]));
-                            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
-                        }
-
-                        // TODO show tooltips, plot higher values on top?
-                        let chartData = {
-                            hoverinfo: 'text',
-                            showlegend: false,
-                            name: name,
-                            mode: 'markers',
-                            type: is3d ? 'scatter3d' : 'scattergl',
-                            hoveron: 'points',
-                            x: x,
-                            y: y,
-                            bins: bins,
-                            marker: {
-                                size: markerSize,
-                                color: colors,
-                                opacity: markerOpacity,
-                                showscale: false,
-                            },
-                            unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
-                            selectedpoints: selectedpoints,
-                            values: values,
-                            text: values,
-                        };
-                        if (is3d) {
-                            chartData.z = z;
-                        }
-
-
-                        chartData = [chartData];
-                        embeddingData.push(
-                            {
-                                date: new Date(),
-                                active: true,
-                                colorScale: colorScale,
-                                continuous: !isCategorical,
-                                data: chartData,
-                                name: name,
-                                layout: PlotUtil.createEmbeddingLayout(
-                                    {size: embeddingChartSize, is3d: is3d, title: name}),
-                                isCategorical: isCategorical,
-                            });
-                    }
-                    embeddingData.sort((a, b) => {
-                        a = a.name.toLowerCase();
-                        b = b.name.toLowerCase();
-                        return a < b ? -1 : 1;
-                    });
-                    dispatch(_setEmbeddingData(embeddingData.slice(0)));
-
-                },
-            );
-        }
-        Promise.all(promises).finally(() => {
+        fetch(API + '/slice',
+            {
+                body: JSON.stringify(json),
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+            }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve data. Please try again.');
             if (onError) {
                 onError(err);
             }
-        });
+        }).then(result => result.json()).then(allResults => {
+
+                const embeddingResult = allResults.embedding;
+                const embeddingBins = embeddingResult.bins;
+                const embeddingValues = embeddingResult.values;
+                const summary = allResults.summary || {};
+                const coordinates = embeddingResult.coordinates;
+                const is3d = selectedEmbeddings[0].endsWith('3d');
+                const selectedPoints = state.selection.points;
+                let newFeatureSummary = allResults.summary;
+                let featureSummary = state.featureSummary;
+                for (let measureOrDimensionKey in newFeatureSummary) {
+                    let newMeasureOrDimension = newFeatureSummary[measureOrDimensionKey];
+                    let measureOrDimension = featureSummary[measureOrDimensionKey];
+                    if (measureOrDimension == null) {
+                        measureOrDimension = {};
+                        featureSummary[measureOrDimensionKey] = measureOrDimension;
+                    }
+                    for (let key in newMeasureOrDimension) {
+                        measureOrDimension[key] = newMeasureOrDimension[key];
+                    }
+                }
+
+
+                // add new embedding values
+                for (let name in embeddingValues) {
+                    let x = coordinates[selectedEmbeddings[0] + '_1'];
+                    let y = coordinates[selectedEmbeddings[0] + '_2'];
+                    let z = coordinates[selectedEmbeddings[0] + '_3'];
+                    let values = embeddingValues[name];
+
+                    let isCategorical = name !== '__count' && name in summary['dimensions'];
+                    let colorScale = null;
+
+
+                    if (!isCategorical) {
+                        // TODO get min, max from server
+
+                        let _summary = summary['measures'];
+                        let traceSummary = _summary == null ? null : _summary[name];
+                        let min = Number.MAX_VALUE;
+                        let max = -Number.MAX_VALUE;
+                        if (traceSummary == null) {
+
+                            for (let i = 0, n = values.length; i < n; i++) {
+                                let value = values[i];
+                                min = value < min ? value : min;
+                                max = value > max ? value : max;
+                            }
+                        } else {
+                            for (let i = 0; i < traceSummary.min.length; i++) {
+                                min = traceSummary.min[i] < min ? traceSummary.min[i] : min;
+                                max = traceSummary.max[i] > max ? traceSummary.max[i] : max;
+                            }
+
+                        }
+                        colorScale = scaleSequential(interpolator.value).domain([min, max]);
+                        colorScale.summary = traceSummary;
+                    } else {
+                        let traceSummary = summary['dimensions'][name];
+                        let traceUniqueValues = traceSummary.categories;
+                        colorScale = scaleOrdinal(
+                            traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
+                                CATEGORY_20C))).domain(traceUniqueValues);
+                        colorScale.summary = traceSummary;
+                    }
+
+                    let colors = [];
+                    for (let i = 0, n = values.length; i < n; i++) {
+                        let rgb = color(colorScale(values[i]));
+                        colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+                    }
+
+                    let chartData = {
+                        hoverinfo: 'text',
+                        showlegend: false,
+                        name: name,
+                        mode: 'markers',
+                        type: is3d ? 'scatter3d' : 'scattergl',
+                        hoveron: 'points',
+                        x: x,
+                        y: y,
+                        bins: embeddingBins,
+                        marker: {
+                            size: markerSize,
+                            color: colors,
+                            opacity: markerOpacity,
+                            showscale: false,
+                        },
+                        unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
+                        selectedpoints: selectedPoints,
+                        values: values,
+                        text: values,
+                    };
+                    if (is3d) {
+                        chartData.z = z;
+                    }
+
+                    chartData = [chartData];
+                    embeddingData.push(
+                        {
+                            date: new Date(),
+                            active: true,
+                            colorScale: colorScale,
+                            continuous: !isCategorical,
+                            data: chartData,
+                            name: name,
+                            layout: PlotUtil.createEmbeddingLayout(
+                                {size: embeddingChartSize, is3d: is3d, title: name}),
+                            isCategorical: isCategorical,
+                        });
+                }
+                embeddingData.sort((a, b) => {
+                    a = a.name.toLowerCase();
+                    b = b.name.toLowerCase();
+                    return a < b ? -1 : 1;
+                });
+
+                dispatch(setFeatureSummary(featureSummary));
+                dispatch(_setEmbeddingData(embeddingData.slice(0)));
+                if (allResults.dotplot != null) {
+                    dispatch(_setDotPlotData(allResults.dotplot));
+                }
+
+
+            },
+        );
+
     };
 
 }

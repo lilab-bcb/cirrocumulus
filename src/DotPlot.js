@@ -15,53 +15,27 @@ class DotPlot extends React.PureComponent {
         if (this.props.data == null) {
             return <div/>;
         }
-        const data = this.props.data;
-        let index = data.index || [''];
+        const dotplot = this.props.data;
+        console.log(dotplot);
+        let categories = dotplot.categories || [''];
         let colorMin = Number.MAX_VALUE;
         let colorMax = -Number.MAX_VALUE;
         let sizeMin = Number.MAX_VALUE;
         let sizeMax = -Number.MAX_VALUE;
-        // set min and max values
-        let featureNameToValues = {};
-        for (let key in data.values) {
-            if (key !== 'index') {
-                let values = data.values[key];
-                let min;
-                let max;
-                let index = key.indexOf(',');
-                let name = key.substring(2, index - 1);
-                let type = key.substring(index + 3, key.length - 2);
+        // set min and max values for color and size
+        dotplot.values.forEach(datum => {
+            datum.fraction_expressed.forEach(value => {
+                sizeMin = Math.min(sizeMin, value);
+                sizeMax = Math.max(sizeMax, value);
+            });
+            datum.mean.forEach(value => {
+                colorMin = Math.min(colorMin, value);
+                colorMax = Math.max(colorMax, value);
+            });
 
-                let featureValues = featureNameToValues[name];
-                if (featureValues === undefined) {
-                    featureValues = {};
-                    featureNameToValues[name] = featureValues;
-                }
-                if (type === 'non_zero') {
-                    min = sizeMin;
-                    max = sizeMax;
-                    featureValues.fraction = values;
-                } else if (type === 'mean') {
-                    min = colorMin;
-                    max = colorMax;
-                    featureValues.summary = values;
-                } else {
-                    console.log('Unknown type: ' + type + '.');
-                }
-                for (let j = 0; j < values.length; j++) {
-                    min = Math.min(min, values[j]);
-                    max = Math.max(max, values[j]);
-                }
-                if (type === 'non_zero') {
-                    sizeMin = min;
-                    sizeMax = max;
-                } else {
-                    colorMin = min;
-                    colorMax = max;
-                }
-            }
-        }
-        ;
+        });
+
+
         if (colorMin === colorMax) {
             colorMax++;
         }
@@ -69,47 +43,44 @@ class DotPlot extends React.PureComponent {
             sizeMin = 0;
             sizeMax = 1;
         }
-
         let maxDiameter = 14;
 
         let colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
         let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]).clamp(true);
-        let size = [];
-        let color = [];
-        let x = [];
-        let y = [];
-        let text = [];
+
         const features = [];
-
-        for (let feature in featureNameToValues) {
-            features.push(feature);
-            let featureValues = featureNameToValues[feature];
-            let summary = featureValues.summary;
-            let fraction = featureValues.fraction;
-            for (let j = 0; j < summary.length; j++) {
-                color.push(colorScale(summary[j]));
-                size.push(sizeScale(fraction[j]));
-                y.push(feature);
-                x.push(index[j]);
-                text.push('mean: ' + numberFormat(summary[j]) + ', % non-zero: ' + numberFormat(100 * fraction[j]));
+        dotplot.values.forEach(datum => {
+            features.push(datum.name);
+        });
+        let traces = [];
+        dotplot.values.forEach(datum => {
+            const text = [];
+            const color = [];
+            const size = [];
+            const y = [];
+            for (let i = 0; i < datum.mean.length; i++) {
+                y.push(datum.name);
+                color.push(colorScale(datum.mean[i]));
+                size.push(sizeScale(datum.fraction_expressed[i]));
+                text.push('mean: ' + numberFormat(datum.mean[i]) + ', % expressed: ' + numberFormat(100 * datum.fraction_expressed[i]));
             }
-        }
+            let trace = {
+                x: categories,
+                y: y,
+                name: datum.name,
+                type: 'scatter',
+                text: text,
+                mode: 'markers',
+                sizemode: 'diameter',
+                marker: {
+                    color: color,
+                    symbol: 'circle',
+                    size: size,
+                },
+            };
+            traces.push(trace);
+        });
 
-
-        let trace = {
-            type: 'scatter',
-            x: x,
-            y: y,
-            text: text,
-            mode: 'markers',
-            sizemode: 'diameter',
-            marker: {
-                color: color,
-                symbol: 'circle',
-                size: size,
-            },
-        };
-        let traces = [trace];
         let config = PlotUtil.createPlotConfig();
         let maxFeatureLength = 0;
         features.forEach(value => {
@@ -117,16 +88,16 @@ class DotPlot extends React.PureComponent {
         });
 
         let maxCategoryLength = 0;
-        index.forEach(value => {
+        categories.forEach(value => {
             maxCategoryLength = Math.max(maxCategoryLength, value.length);
         });
         const maxFeatureWidth = 14 + maxFeatureLength * 14;
         const maxCategoryWidth = 14 + maxCategoryLength * 14;
         let layout = PlotUtil.createDotPlotLayout({
             height: 50 + maxCategoryWidth + features.length * (maxDiameter + 2),
-            width: Math.max(300, 20 + maxFeatureWidth + index.length * (maxDiameter + 2))
+            width: Math.max(300, 20 + maxFeatureWidth + categories.length * (maxDiameter + 2))
         });
-        layout.title = {text: data.name, font: {size: 12}};
+        layout.title = {text: dotplot.name, font: {size: 12}};
         // features on y axis
         layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: 20, r: 0};
 

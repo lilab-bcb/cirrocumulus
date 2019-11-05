@@ -5,21 +5,25 @@ import {intFormat, numberFormat} from './formatters';
 class ContinuousLegend extends React.PureComponent {
 
 
+    getValues(measureSummary, statistic) {
+        if (statistic === 'Mean') {
+            return measureSummary.mean.map((value, i) => {
+                return <td key={i}>{numberFormat(value)}</td>;
+            });
+
+        } else if (statistic === '% Expressed') {
+            return measureSummary.fraction_expressed.map((value, i) => {
+                return <td key={i}>{intFormat(100 * value)}</td>;
+            });
+        }
+    }
+
     render() {
-        const {name, selectedValueCounts, maxHeight, summary, nTotal} = this.props;
-        const selectionSummary = selectedValueCounts.summary != null ? selectedValueCounts.summary[name] : null;
-        let summaries = [];
-        let totals = [nTotal];
-        let names = [''];
-        if (summary) {
-            summaries.push(summary);
-        }
-        if (selectionSummary) {
-            names[0] = 'All';
-            names.push('Selection');
-            summaries.push(selectionSummary);
-            totals.push(selectedValueCounts.count);
-        }
+        const {name, featureSummary, maxHeight} = this.props;
+        const displayName = name === '__count' ? 'count' : name;
+        const measureSummary = featureSummary.measures[name];
+        const summaryNames = measureSummary != null && measureSummary.mean.length === 2 ? ['selection', 'rest'] : [''];
+        const statistics = ['Mean', '% Expressed'];
 
         return (
             <div style={{
@@ -29,31 +33,25 @@ class ContinuousLegend extends React.PureComponent {
                 maxHeight: maxHeight,
                 overflow: 'auto'
             }}>
-                <b>{name}</b>
-                {/*{summaries.length > 0 && <Plot*/}
-                {/*    data={chartData.data}*/}
-                {/*    layout={chartData.layout}*/}
-                {/*    config={chartData.config}*/}
-                {/*/>}*/}
-                {summaries.length > 0 && <table>
-                    <thead>
-                    <tr>
-                        <td></td>
-                        <td>Mean</td>
-                        <td>Variance</td>
-                        <td>% Expressed</td>
-                    </tr>
-                    </thead>
+                <b>{displayName}</b>
+
+                {measureSummary && <table>
+
                     <tbody>
-                    {summaries.map((summary, i) => {
+                    {statistics.map((statistic, i) => {
                         return <tr key={i}>
-                            <td>{names[i]}</td>
-                            <td>{numberFormat(summary.mean)}</td>
-                            <td>{numberFormat(summary.variance)}</td>
-                            <td>{intFormat(Math.round(100 * (summary.num_expressed / totals[i])))}</td>
+                            <td style={{textAlign: 'right'}}>{statistic}:</td>
+                            {this.getValues(measureSummary, statistic)}
                         </tr>;
                     })}
                     </tbody>
+                    <tfoot>
+                    <tr>
+                        <td></td>
+                        <td><small>{summaryNames.length === 2 ? 'selection' : null}</small></td>
+                        <td><small>{summaryNames.length === 2 ? 'rest' : null}</small></td>
+                    </tr>
+                    </tfoot>
                 </table>}
             </div>);
     }

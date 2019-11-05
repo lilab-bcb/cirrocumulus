@@ -6,9 +6,8 @@ import DotPlot from './DotPlot';
 
 class DotPlotsPlotly extends React.PureComponent {
     render() {
-        console.log(this.props.dotPlotData);
         return (<div>{this.props.dotPlotData.map((data, i) => {
-            return <DotPlot key={i} data={data}/>;
+            return <DotPlot key={data.name} data={data}/>;
         })}</div>);
     }
 }

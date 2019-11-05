@@ -15,7 +15,9 @@ import {
     SET_EMAIL,
     SET_EMBEDDING_CHART_SIZE,
     SET_EMBEDDING_DATA,
+    SET_FEATURE_SUMMARY,
     SET_FEATURES,
+    SET_FEATURES_UI,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
     SET_LOADING,
@@ -28,7 +30,7 @@ import {
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
     SET_SELECTED_EMBEDDING,
-    SET_SELECTED_VALUE_COUNTS,
+    SET_SELECTION,
     SET_SERVER_INFO,
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_MARKER_OPACITY_UI,
@@ -59,6 +61,21 @@ function features(state = [], action) {
             return state;
     }
 }
+
+function featuresUI(state = [], action) {
+    switch (action.type) {
+        case SET_FEATURES:
+        case SET_FEATURES_UI:
+            return action.payload;
+        case SET_DATASET:
+            return [];
+        case RESTORE_VIEW:
+            return action.payload.features || [];
+        default:
+            return state;
+    }
+}
+
 
 function groupBy(state = [], action) {
     switch (action.type) {
@@ -300,9 +317,27 @@ function user(state = {}, action) {
     }
 }
 
-function selectedValueCounts(state = {}, action) {
+/**
+ * Object that contains count, userPoints, the selected points in chart space, and points
+ */
+function selection(state = {}, action) {
     switch (action.type) {
-        case SET_SELECTED_VALUE_COUNTS:
+        case SET_SELECTION:
+            return action.payload;
+        case SET_DATASET:
+            return {};
+        default:
+            return state;
+    }
+}
+
+/**
+ * Feature summary has two keys: dimensions and measures. Each of these keys maps to another object containing
+ * categories and counts for dimensions, and statistics such as min, max for measures.
+ */
+function featureSummary(state = {}, action) {
+    switch (action.type) {
+        case SET_FEATURE_SUMMARY:
             return action.payload;
         case SET_DATASET:
             return {};
@@ -419,14 +454,10 @@ function embeddingData(state = [], action) {
                 item.data = item.data.slice();
             });
             return state.slice();
-        case SET_SELECTED_VALUE_COUNTS:
-            let selectedpoints = action.payload.indices;
-            if (action.payload.bins != null) {
-                selectedpoints = PlotUtil.convertBinsToPoints(state[0].data[0].bins, action.payload.bins);
-            }
+        case SET_SELECTION:
             state.forEach(item => {
                 item.data.forEach(trace => {
-                    trace.selectedpoints = selectedpoints;
+                    trace.selectedpoints = action.payload.userPoints;
                 });
 
                 item.data = item.data.slice();
@@ -525,6 +556,8 @@ export default combineReducers({
     embeddingData,
     embeddings,
     features,
+    featureSummary,
+    featuresUI,
     groupBy,
     interpolator,
     loading,
@@ -537,7 +570,7 @@ export default combineReducers({
     numberOfBins,
     numberOfBinsUI,
     plotConfig,
-    selectedValueCounts,
+    selection,
     serverInfo,
     unselectedMarkerOpacity,
     unselectedMarkerOpacityUI,

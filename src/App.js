@@ -197,8 +197,8 @@ class App extends PureComponent {
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
         const {classes} = this.props;
-        const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selectedValueCounts.count);
-        const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selectedValueCounts.count > 0) && this.props.dataset.nObs > 0;
+        const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selection.count);
+        const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && this.props.dataset.nObs > 0 && (this.props.selection.count !== this.props.dataset.nObs);
         return (
             <div className={classes.root}>
 
@@ -235,7 +235,7 @@ class App extends PureComponent {
                             </Select>}
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
                                 {hasSelection && (<Link title="Download selected ids" href="#"
-                                                        onClick={this.handleSelectedCellsClick}>{intFormat(this.props.selectedValueCounts.count)}</Link>)}
+                                                        onClick={this.handleSelectedCellsClick}>{intFormat(this.props.selection.count)}</Link>)}
                                 {hasSelection && ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
                                 {showNumberOfCells && intFormat(this.props.dataset.nObs) + ' cells'}
                             </div>
@@ -383,7 +383,7 @@ const mapStateToProps = state => {
         markerSize: state.markerSize,
         message: state.message,
         numberOfBins: state.numberOfBins,
-        selectedValueCounts: state.selectedValueCounts,
+        selection: state.selection,
         user: state.user,
         view3d: state.view3d
 

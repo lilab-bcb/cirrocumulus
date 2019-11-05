@@ -6,7 +6,7 @@ import ContinuousLegend from './ContinuousLegend';
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
-        const {scale, name, selectedValueCounts, maxHeight, nTotal, style} = this.props;
+        const {scale, name, featureSummary, maxHeight, nTotal, style} = this.props;
         return (
             <div style={{
                 display: 'inline-block',
@@ -18,7 +18,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                 <ContinuousLegend name={name}
                                   nTotal={nTotal}
                                   summary={scale.summary}
-                                  selectedValueCounts={selectedValueCounts}
+                                  featureSummary={featureSummary}
                                   maxHeight={maxHeight}></ContinuousLegend>
                 <ColorSchemeLegend width={this.props.width} height={this.props.height} style={style} scale={scale}
                                    label={this.props.label}></ColorSchemeLegend></div>);

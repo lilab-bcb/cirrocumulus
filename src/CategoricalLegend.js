@@ -1,6 +1,6 @@
+import {scaleLinear} from 'd3-scale';
 import React from 'react';
-import {getLegendSizeHelper} from './PlotUtil';
-
+import {intFormat, numberFormat} from './formatters';
 
 class CategoricalLegend extends React.PureComponent {
 
@@ -14,11 +14,25 @@ class CategoricalLegend extends React.PureComponent {
 
 
     render() {
-        const {scale, categoricalFilter, name, selectedValueCounts, maxHeight, clickEnabled} = this.props;
+        const {scale, categoricalFilter, name, featureSummary, maxHeight, clickEnabled} = this.props;
         const categoricalFilterValues = categoricalFilter[name];
-        const domain = this.props.domain != null ? this.props.domain : scale.domain();
-        const selectionSummary = selectedValueCounts.summary != null ? selectedValueCounts.summary[name] : null;
+        const dimensionSummary = featureSummary.dimensions[name];
+        const domain = dimensionSummary.categories;
+        let selectedCounts = dimensionSummary.selected_counts;
+        let unselectedCounts = dimensionSummary.unselected_counts;
+        if (selectedCounts == null && unselectedCounts != null) {
+            selectedCounts = unselectedCounts;
+        }
+        let selectedTotal = 0;
+        selectedCounts.forEach(value => selectedTotal += value);
+
+        let unselectedTotal = 0;
         let maxSize = 60;
+        const fractionScale = scaleLinear().domain([0, 1]).range([0, maxSize]).clamp(true);
+        if (unselectedCounts != null) {
+            unselectedCounts.forEach(value => unselectedTotal += value);
+        }
+
 
         return (
             <div style={{
@@ -32,10 +46,16 @@ class CategoricalLegend extends React.PureComponent {
                 <table>
                     <tbody>
                     {domain.map((d, i) => {
-                        let legend = getLegendSizeHelper(selectionSummary, scale, i, selectedValueCounts.count);
-                        let opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(d) !== -1 ? 1 : 0.4;
-                        let groupSize = legend.percentTotal * maxSize;
-                        let selectedSize = legend.percentSelected * maxSize;
+
+                        const opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(d) !== -1 ? 1 : 0.4;
+                        const fractionUnselected = unselectedCounts != null ? unselectedCounts[i] / unselectedTotal : null;
+                        const unselectedSize = unselectedCounts == null ? 0 : fractionScale(fractionUnselected);
+                        const unselectedTitle = unselectedCounts == null ? null : intFormat(unselectedCounts[i]) + ' / ' + intFormat(unselectedTotal) + (unselectedCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionUnselected) + '%)') : '');
+
+
+                        const fractionSelected = selectedCounts[i] / selectedTotal;
+                        const selectedSize = fractionScale(fractionSelected);
+                        const selectionTitle = intFormat(selectedCounts[i]) + ' / ' + intFormat(selectedTotal) + (selectedCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionSelected) + '%)') : '');
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
                             onClick={(e) => this.handleClick(d, i, e)} key={d}>
@@ -56,30 +76,30 @@ class CategoricalLegend extends React.PureComponent {
                                     userSelect: 'none'
                                 }} title={'' + d}>{'' + d}</div>
                             </td>
-                            {!isNaN(selectedSize) ?
-                                <td>
-                                    <div
-                                        title={legend.selectionTitle}
-                                        style={{
-                                            display: 'inline-block',
-                                            position: 'relative',
-                                            width: maxSize,
-                                            border: '1px solid black',
-                                            height: 9
-                                        }}>
 
-                                        <div style={{
-                                            position: 'absolute',
-                                            width: selectedSize,
-                                            left: 0,
-                                            top: 0,
-                                            backgroundColor: 'LightGrey',
-                                            height: 9
-                                        }}/>
-                                    </div>
-                                </td> : null}
                             <td>
-                                <div title={legend.title} style={{
+                                <div
+                                    title={selectionTitle}
+                                    style={{
+                                        display: 'inline-block',
+                                        position: 'relative',
+                                        width: maxSize,
+                                        border: '1px solid black',
+                                        height: 9
+                                    }}>
+
+                                    <div style={{
+                                        position: 'absolute',
+                                        width: selectedSize,
+                                        left: 0,
+                                        top: 0,
+                                        backgroundColor: 'LightGrey',
+                                        height: 9
+                                    }}/>
+                                </div>
+                            </td>
+                            {unselectedCounts != null && <td>
+                                <div title={unselectedTitle} style={{
                                     display: 'inline-block',
                                     position: 'relative',
                                     width: maxSize,
@@ -88,14 +108,14 @@ class CategoricalLegend extends React.PureComponent {
                                 }}>
                                     <div style={{
                                         position: 'absolute',
-                                        width: groupSize,
+                                        width: unselectedSize,
                                         left: 0,
                                         top: 0,
                                         backgroundColor: 'LightGrey',
                                         height: 9
                                     }}/>
                                 </div>
-                            </td>
+                            </td>}
                         </tr>;
                     })
                     }</tbody>
@@ -103,9 +123,8 @@ class CategoricalLegend extends React.PureComponent {
                     <tr>
                         {clickEnabled && <td></td>}
                         <td></td>
-                        {selectionSummary != null ?
-                            <td><small>selection</small></td> : null}
-                        <td><small>{selectionSummary != null ? 'group' : null}</small></td>
+                        <td><small>{unselectedCounts != null ? 'selection' : null}</small></td>
+                        <td><small>{unselectedCounts != null ? 'rest' : null}</small></td>
                     </tr>
                     </tfoot>
                 </table>
