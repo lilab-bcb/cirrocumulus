@@ -77,7 +77,7 @@ export default function plotComponentFactory(Plotly) {
                         }
                         throw error;
                     }
-                    return Plotly.newPlot(this.el, {
+                    return Plotly.react(this.el, {
                         data: this.props.data,
                         layout: this.props.layout,
                         config: this.props.config,
@@ -128,7 +128,7 @@ export default function plotComponentFactory(Plotly) {
                 return;
             }
 
-            this.updatePlotly(true, this.props.onUpdate, true);
+            this.updatePlotly(false, this.props.onUpdate, false);
         }
 
         componentWillUnmount() {
@@ -210,22 +210,17 @@ export default function plotComponentFactory(Plotly) {
                 const prop = this.props['on' + eventName];
                 const handler = this.handlers[eventName];
                 const hasHandler = Boolean(handler);
-                if (hasHandler) {
+
+                if (prop && !hasHandler) {
+                    this.addEventHandler(eventName, prop);
+                } else if (!prop && hasHandler) {
+                    // Needs to be removed:
                     this.removeEventHandler(eventName);
-                }
-                if (prop) {
+                } else if (prop && hasHandler && prop !== handler) {
+                    // replace the handler
+                    this.removeEventHandler(eventName);
                     this.addEventHandler(eventName, prop);
                 }
-                // if (prop && !hasHandler) {
-                //     this.addEventHandler(eventName, prop);
-                // } else if (!prop && hasHandler) {
-                //     // Needs to be removed:
-                //     this.removeEventHandler(eventName);
-                // } else if (prop && hasHandler && prop !== handler) {
-                //     // replace the handler
-                //     this.removeEventHandler(eventName);
-                //     this.addEventHandler(eventName, prop);
-                // }
             });
         }
 

@@ -58,7 +58,8 @@ class ParquetDataset:
             keys = keys + ['index']  # get pandas index
         return keys
 
-    def statistics(self, file_system, path, keys):
+    def statistics(self, file_system, path, keys, basis):
+        keys = ParquetDataset.get_keys(keys, basis=basis)
         parquet_file = self.get_file(file_system, path)
         schema = parquet_file.schema.to_arrow_schema()
         indices = []
@@ -84,6 +85,12 @@ class ParquetDataset:
 
         for i in range(parquet_file.num_row_groups):
             yield parquet_file.read_row_group(i, columns=keys)
+        # yield self.table(file_system, path, keys, basis, index)
+
+    def table(self, file_system, path, keys, basis=None, index=False):
+        keys = ParquetDataset.get_keys(keys, basis=basis, index=index)
+        parquet_file = self.get_file(file_system, path)
+        return parquet_file.read(columns=keys)
 
     def get_df(self, file_system, path, keys, basis=None, index=False):
         keys = ParquetDataset.get_keys(keys, basis=basis, index=index)

@@ -5,7 +5,7 @@ import {saveAs} from 'file-saver';
 import CustomError from '../CustomError';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 const authScopes = [
     'email',
@@ -18,7 +18,7 @@ const authScopes = [
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
-export const SET_CATEGORICAL_FILTER = 'SET_CATEGORICAL_FILTER';
+export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
@@ -98,6 +98,7 @@ function getUser() {
     };
 }
 
+
 export function initGapi() {
     return function (dispatch, state) {
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
@@ -106,7 +107,7 @@ export function initGapi() {
                 dispatch(_setEmail(''));
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
-                    dispatch(loadDefaultDataset());
+
                 });
             } else {
                 let script = document.createElement('script');
@@ -150,6 +151,43 @@ export function login() {
 }
 
 
+export function removeDatasetFilter(filter) {
+
+    return function (dispatch, getState) {
+        if (filter == null) {
+            // clear all
+            dispatch(setSelection({}));
+            setDatasetFilter({});
+        } else if (filter[0] === 'selection') {
+            dispatch(setSelection({}));
+        } else {
+            let datasetFilter = getState().datasetFilter;
+            delete datasetFilter[filter[0]];
+            dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
+        }
+        dispatch(handleFilterUpdated());
+    };
+}
+
+export function getDatasetFilterArray(datasetFilter) {
+    let filters = [];
+    for (let key in datasetFilter) {
+        const value = datasetFilter[key];
+        let f = null;
+        if (window.Array.isArray(value)) {
+            f = [key, 'in', value];
+        } else {
+            if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
+                f = [key, value.operation, value.value];
+            }
+        }
+        if (f != null) {
+            filters.push(f);
+        }
+    }
+    return filters;
+}
+
 function getSliceJson(state, includeFilter = true) {
     const datasetId = state.dataset.id;
     const selectedEmbeddings = state.embeddings;
@@ -163,11 +201,10 @@ function getSliceJson(state, includeFilter = true) {
         json.agg = state.binSummary;
     }
 
-    if (includeFilter && Object.keys(state.categoricalFilter).length > 0) {
-        json.filter = {filters: []};
-        for (let key in state.categoricalFilter) {
-            let f = [key, 'in', state.categoricalFilter[key]];
-            json.filter.filters.push(f);
+    if (includeFilter && Object.keys(state.datasetFilter).length > 0) {
+        let filters = getDatasetFilterArray(state.datasetFilter);
+        if (filters.length > 0) {
+            json.filter = {filters: filters};
         }
 
     }
@@ -194,8 +231,8 @@ export function downloadSelectedIds() {
 }
 
 
-function setCategoricalFilter(payload) {
-    return {type: SET_CATEGORICAL_FILTER, payload: payload};
+function setDatasetFilter(payload) {
+    return {type: SET_DATASET_FILTER, payload: payload};
 }
 
 function setSelection(payload) {
@@ -219,10 +256,14 @@ function handleFilterUpdated(selectedPoints) {
         json.types = ['summary'];
         json.summary_measures = getState().features;
         json.summary_dimensions = getState().groupBy;
+        let userSelection = getState().selection.userSelection;
+        // TODO selection persistence
+
         if (selectedPoints != null && selectedPoints.length > 0) {
             if (json.filter == null) {
                 json.filter = {};
             }
+            userSelection = true;
             json.filter.selected_points = selectedPoints;
         }
         if (json.filter != null) {
@@ -247,7 +288,8 @@ function handleFilterUpdated(selectedPoints) {
                 dispatch(setSelection({
                     userPoints: selectedPoints,
                     points: selectedIndicesOrBins,
-                    count: selection.count
+                    count: selection.count,
+                    userSelection: userSelection
                 }));
             } else {
                 dispatch(setSelection({}));
@@ -260,13 +302,50 @@ function handleFilterUpdated(selectedPoints) {
     };
 }
 
-export function handleLegendClick(payload) {
+export function handleMeasureFilterUpdated(payload) {
+    return function (dispatch, getState) {
+        const name = payload.name;
+        const operation = payload.operation;
+        const value = payload.value;
+        let update = payload.update;
+
+        let datasetFilter = getState().datasetFilter;
+        let filter = datasetFilter[name];
+
+        if (filter == null) {
+            filter = {operation: '>', value: NaN};
+            datasetFilter[name] = filter;
+        }
+        if (update) {
+
+            if (value != null) {
+                update = (!isNaN(value) ? value !== filter.value : isNaN(value) !== isNaN(filter.value));
+            }
+            if (operation != null) {
+                update = update || (operation !== filter.operation && !isNaN(filter.value));
+            }
+        }
+
+        if (operation != null) {
+            filter.operation = operation;
+        }
+        if (value != null) {
+            filter.value = value;
+        }
+        dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
+        if (update) {
+            dispatch(handleFilterUpdated());
+        }
+    };
+}
+
+export function handleDimensionFilterUpdated(payload) {
     return function (dispatch, getState) {
         let name = payload.name;
         let value = payload.value;
         let shiftKey = payload.shiftKey;
         let metaKey = payload.metaKey;
-        let categoricalFilter = getState().categoricalFilter;
+        let datasetFilter = getState().datasetFilter;
         let embeddingData = getState().embeddingData;
         let categories;
         for (let i = 0; i < embeddingData.length; i++) {
@@ -275,10 +354,10 @@ export function handleLegendClick(payload) {
                 break;
             }
         }
-        let selectedValues = categoricalFilter[name];
+        let selectedValues = datasetFilter[name];
         if (selectedValues == null) {
             selectedValues = [];
-            categoricalFilter[name] = selectedValues;
+            datasetFilter[name] = selectedValues;
         }
 
         if (shiftKey && selectedValues.length > 0) {
@@ -307,18 +386,18 @@ export function handleLegendClick(payload) {
             let selectedIndex = selectedValues.indexOf(value);
             if (!metaKey) { // clear and toggle current
                 selectedValues = [];
-                categoricalFilter[name] = selectedValues;
+                datasetFilter[name] = selectedValues;
             }
             if (selectedIndex !== -1) { // exists, remove
                 selectedValues.splice(selectedIndex, 1);
                 if (selectedValues.length === 0) {
-                    delete categoricalFilter[name];
+                    delete datasetFilter[name];
                 }
             } else {
                 selectedValues.push(value);
             }
         }
-        dispatch(setCategoricalFilter(categoricalFilter));
+        dispatch(setDatasetFilter(datasetFilter));
         dispatch(handleFilterUpdated());
     };
 }
@@ -429,7 +508,15 @@ function _loadSavedView() {
                     };
                 }
             }
-            dispatch(setDataset(savedView.dataset))
+            if (savedView.datasetFilter != null) {
+                for (let key in savedView.datasetFilter) {
+                    let value = savedView.datasetFilter[key];
+                    if (!window.Array.isArray(value)) {
+                        value.uiValue = value.value;
+                    }
+                }
+            }
+            dispatch(setDataset(savedView.dataset, false))
                 .then(() => dispatch(restoreView(savedView)))
                 .then(() => dispatch(_updateCharts({
                     dotplot: true,
@@ -438,7 +525,8 @@ function _loadSavedView() {
                 console.log(err);
                 dispatch(setMessage('Unable to restore saved view.'));
             });
-
+        } else {
+            dispatch(loadDefaultDataset());
         }
     };
 }
@@ -622,9 +710,6 @@ function _setEmail(payload) {
     return {type: SET_EMAIL, payload: payload};
 }
 
-export function setFeaturesUI(payload) {
-    return {type: SET_FEATURES_UI, payload: payload};
-}
 
 export function setFeatures(payload) {
     const value = payload;
@@ -666,16 +751,16 @@ function _setFeatures(payload) {
 function _setGroupBy(payload) {
     return function (dispatch, getState) {
         let prior = getState().groupBy; // in case of error, restore
-        let categoricalFilter = getState().categoricalFilter;
+        let datasetFilter = getState().datasetFilter;
         let categoricalFilterChanged = false;
-        for (let key in categoricalFilter) {
+        for (let key in datasetFilter) {
             if (payload.indexOf(key) === -1) {
-                delete categoricalFilter[key];
+                delete datasetFilter[key];
                 categoricalFilterChanged = true;
             }
         }
         if (categoricalFilterChanged) {
-            dispatch({type: SET_CATEGORICAL_FILTER, payload: categoricalFilter});
+            dispatch({type: SET_DATASET_FILTER, payload: datasetFilter});
         }
         dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
         dispatch(_updateCharts({dotplot: true}, err => {
@@ -730,7 +815,7 @@ export function setBinValues(payload) {
     };
 }
 
-export function setDataset(id) {
+export function setDataset(id, loadDefaultView = true) {
     return function (dispatch, getState) {
         const datasetChoices = getState().datasetChoices;
         let choice = null;
@@ -774,10 +859,10 @@ export function setDataset(id) {
                 };
             }
             dispatch(_setDataset(newDataset));
-            dispatch(loadDefaultDatasetEmbedding());
+            if (loadDefaultView) {
+                dispatch(loadDefaultDatasetEmbedding());
+            }
             return newDataset;
-
-
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -899,16 +984,16 @@ function _updateCharts(sliceOptions, onError) {
             if (onError) {
                 onError(err);
             }
-        }).then(result => result.json()).then(allResults => {
+        }).then(result => result.json()).then(sliceResult => {
 
-                const embeddingResult = allResults.embedding;
+                const embeddingResult = sliceResult.embedding;
                 const embeddingBins = embeddingResult.bins;
                 const embeddingValues = embeddingResult.values;
-                const summary = allResults.summary || {};
+                const summary = sliceResult.summary || {};
                 const coordinates = embeddingResult.coordinates;
                 const is3d = selectedEmbeddings[0].endsWith('3d');
                 const selectedPoints = state.selection.points;
-                let newFeatureSummary = allResults.summary;
+                let newFeatureSummary = sliceResult.summary;
                 let featureSummary = state.featureSummary;
                 for (let measureOrDimensionKey in newFeatureSummary) {
                     let newMeasureOrDimension = newFeatureSummary[measureOrDimensionKey];
@@ -1019,8 +1104,8 @@ function _updateCharts(sliceOptions, onError) {
 
                 dispatch(setFeatureSummary(featureSummary));
                 dispatch(_setEmbeddingData(embeddingData.slice(0)));
-                if (allResults.dotplot != null) {
-                    dispatch(_setDotPlotData(allResults.dotplot));
+                if (sliceResult.dotplot != null) {
+                    dispatch(_setDotPlotData(sliceResult.dotplot));
                 }
 
 

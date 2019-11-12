@@ -1,6 +1,7 @@
 import {IconButton, Menu, Snackbar, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import Chip from '@material-ui/core/Chip';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
@@ -24,9 +25,11 @@ import {
     DELETE_DATASET_DIALOG,
     downloadSelectedIds,
     EDIT_DATASET_DIALOG,
+    getDatasetFilterArray,
     IMPORT_DATASET_DIALOG,
     login,
     logout,
+    removeDatasetFilter,
     setDataset,
     setDialog,
     setMessage,
@@ -93,6 +96,14 @@ class App extends PureComponent {
         this.setState({userMenuOpen: false});
     };
 
+    onDatasetFilterChipDeleted = (name) => {
+        this.props.removeDatasetFilter(name);
+    };
+
+    onDatasetFilterCleared = () => {
+        this.props.removeDatasetFilter(null);
+    };
+
     handleMessageClose = () => {
         this.props.setMessage(null);
     };
@@ -128,10 +139,9 @@ class App extends PureComponent {
     handleLinkMenuOpen = (event) => {
         let linkText = window.location.protocol + '//' + window.location.host;
 
-
         let json = {
             dataset: this.props.dataset.id,
-            embedding: this.props.embedding
+            embeddings: this.props.embeddings
         };
         if (this.props.features.length > 0) {
             json.features = this.props.features;
@@ -139,11 +149,19 @@ class App extends PureComponent {
         if (this.props.groupBy.length > 0) {
             json.groupBy = this.props.groupBy;
         }
-        let categoricalFilter = this.props.categoricalFilter;
-        if (Object.keys(categoricalFilter).length > 0) {
-            json.categoricalFilter = this.props.categoricalFilter;
-        }
 
+        let datasetFilter = {};
+        for (let key in this.props.datasetFilter) {
+            let value = this.props.datasetFilter[key];
+            if (window.Array.isArray(value)) {
+                datasetFilter[key] = value;
+            } else {
+                if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
+                    datasetFilter[key] = {operation: value.operation, value: value.value};
+                }
+            }
+        }
+        json.datasetFilter = datasetFilter;
         if (this.props.markerSize !== DEFAULT_MARKER_SIZE) {
             json.markerSize = this.props.markerSize;
         }
@@ -166,7 +184,6 @@ class App extends PureComponent {
         if (this.props.interpolator.name !== DEFAULT_INTERPOLATOR) {
             json.colorScheme = this.props.interpolator.name;
         }
-
         linkText += '?q=' + JSON.stringify(json);
         this.setState({linkMenuOpen: true, linkMenuAnchorEl: event.currentTarget, linkText: linkText});
 
@@ -197,6 +214,11 @@ class App extends PureComponent {
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
         const {classes} = this.props;
+        let datasetFilters = getDatasetFilterArray(this.props.datasetFilter);
+        const brushSelection = this.props.selection.count;
+        if (this.props.selection.userSelection && brushSelection > 0) {
+            datasetFilters.push(['selection', brushSelection]);
+        }
         const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selection.count);
         const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && this.props.dataset.nObs > 0 && (this.props.selection.count !== this.props.dataset.nObs);
         return (
@@ -238,6 +260,28 @@ class App extends PureComponent {
                                                         onClick={this.handleSelectedCellsClick}>{intFormat(this.props.selection.count)}</Link>)}
                                 {hasSelection && ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
                                 {showNumberOfCells && intFormat(this.props.dataset.nObs) + ' cells'}
+
+
+                            </div>
+
+                            <div style={{display: 'inline-block', marginLeft: '10px'}}>
+
+                                {datasetFilters.map(f => {
+                                    return <Chip
+                                        size="small"
+                                        onDelete={() => {
+                                            this.onDatasetFilterChipDeleted(f);
+                                        }}
+                                        style={{marginRight: 2}}
+                                        key={f[0]}
+                                        label={f[0]}
+                                        variant={'outlined'}
+                                    />;
+                                })}
+                                {datasetFilters.length > 1 &&
+                                <div style={{display: 'inline-block', marginLeft: '10px'}}><Link title="Clear" href="#"
+                                                                                                 onClick={this.onDatasetFilterCleared}>Clear</Link>
+                                </div>}
                             </div>
                         </div>
                         <div style={{marginLeft: 'auto'}}>
@@ -368,12 +412,12 @@ const mapStateToProps = state => {
     return {
         binSummary: state.binSummary,
         binValues: state.binValues,
-        categoricalFilter: state.categoricalFilter,
+        datasetFilter: state.datasetFilter,
         dataset: state.dataset,
         datasetChoices: state.datasetChoices,
         dialog: state.dialog,
         email: state.email,
-        embedding: state.embedding,
+        embeddings: state.embeddings,
         features: state.features,
         groupBy: state.groupBy,
         interpolator: state.interpolator,
@@ -409,6 +453,10 @@ const mapDispatchToProps = dispatch => {
         downloadSelectedIds: () => {
             dispatch(downloadSelectedIds());
         },
+        removeDatasetFilter: (filter) => {
+            dispatch(removeDatasetFilter(filter));
+        },
+
 
     };
 };

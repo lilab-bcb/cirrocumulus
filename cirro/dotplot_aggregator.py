@@ -41,6 +41,8 @@ class DotPlotAggregator:
             summarized_df = df.groupby(column).aggregate(['sum', non_zero, count])
             summarized_df.index = summarized_df.index.astype('object')
             prior_df = self.category_to_df.get(column, None)
+            first_time = prior_df is None
             summarized_df = pd.concat((prior_df, summarized_df)) if prior_df is not None else summarized_df
-            summarized_df = summarized_df.groupby(summarized_df.index).agg('sum')
+            if not first_time:
+                summarized_df = summarized_df.groupby(summarized_df.index).agg('sum')
             self.category_to_df[column] = summarized_df

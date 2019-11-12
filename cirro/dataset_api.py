@@ -16,10 +16,10 @@ class DatasetAPI:
         value = provider.schema(self.fs, path)
         return value
 
-    def statistics(self, dataset, keys):
+    def statistics(self, dataset, keys, basis):
         path = dataset['url']
         provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        return provider.statistics(self.fs, path, keys)
+        return provider.statistics(self.fs, path, keys, basis)
 
     def tables(self, dataset, keys, basis=None):
         path = dataset['url']

@@ -10,10 +10,8 @@ from cirro.selection_aggregator import SelectionAggregator
 
 def mark_selected(df, data_filter):
     if data_filter is not None:
-        selected_points = data_filter.get('selected_points', None) if data_filter is not None else None
+        selected_points = data_filter.get('selected_points', None)
         filters = []
-        if selected_points is not None:
-            filters.append(df.index.isin(selected_points))
         user_filters = data_filter.get('filters', [])
         for filter_obj in user_filters:
             field = filter_obj[0]
@@ -27,9 +25,16 @@ def mark_selected(df, data_filter):
                 filters.append((df[field] == value))
             elif op == '<':
                 filters.append((df[field] < value))
+            elif op == '!=':
+                filters.append((df[field] != value))
+            elif op == '>=':
+                filters.append((df[field] >= value))
+            elif op == '<=':
+                filters.append((df[field] <= value))
             else:
                 raise ValueError('Unknown filter')
-
+        if selected_points is not None:
+            filters.append(df.index.isin(selected_points))
         df['__selected'] = np.logical_and(*filters) if len(filters) > 1 else filters[0]
     else:
         df['__selected'] = True
@@ -51,9 +56,11 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
         extra_keys + embedding_dimensions + embedding_measures + dotplot_dimensions + dotplot_measures + summary_dimensions + summary_measures))
     result = {}
     coordinate_column_to_range = None
+    is_prebinned = False
+    need_bin_data = 'ids' in return_types or 'selection' in return_types or 'embedding' in return_types
 
-    if nbins is not None:
-        coordinate_column_to_range = dataset_api.statistics(dataset, basis['coordinate_columns'])
+    if nbins is not None and not is_prebinned:
+        coordinate_column_to_range = dataset_api.statistics(dataset, keys=[], basis=basis)
     if 'summary' in return_types:  # summary by selection and feature
         result['summary'] = FeatureAggregator(summary_measures, summary_dimensions)
     if 'embedding' in return_types:  # uses all data
@@ -68,8 +75,7 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
         result['ids'] = IdsAggregator()
 
     nrows = 0
-    add_bin = nbins is not None and (
-            'ids' in return_types or 'selection' in return_types or 'embedding' in return_types)
+    add_bin = not is_prebinned and nbins is not None and need_bin_data
     for table in dataset_api.tables(dataset, all_keys, basis):
         df = table.to_pandas()
         df['__count'] = 1.0

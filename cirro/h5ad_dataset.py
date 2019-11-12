@@ -35,8 +35,8 @@ class H5ADDataset:
         result['embeddings'] = embeddings
         return result
 
-    def statistics(self, file_system, path, keys):
-        py_dict = self.get_py_dict(file_system, path, keys)
+    def statistics(self, file_system, path, keys, basis):
+        py_dict = self.get_py_dict(file_system, path, keys, basis)
         key_to_stats = {}
         for key in py_dict:
             key_to_stats[key] = (py_dict[key].min(), py_dict[key].max())

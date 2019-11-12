@@ -143,7 +143,6 @@ class EmbedForm extends React.PureComponent {
 
 
         const summaryOptions = [
-            {value: 'min', label: 'Minimum'},
             {value: 'max', label: 'Maximum'},
             {value: 'mean', label: 'Mean'},
             {value: 'sum', label: 'Sum'}];

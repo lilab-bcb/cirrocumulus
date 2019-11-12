@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {handleLegendClick, handleSelectedPoints} from './actions';
+import {handleDimensionFilterUpdated, handleMeasureFilterUpdated, handleSelectedPoints} from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import createPlotlyComponent from './factory';
@@ -25,7 +25,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
-        const {config, embeddingChartSize, onDeselect, onSelect, featureSummary, nObs, categoricalFilter, handleLegendClick} = this.props;
+        const {config, embeddingChartSize, onDeselect, onSelect, featureSummary, datasetFilter, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : embeddingChartSize);
         return activeTraces.map(traceInfo => {
             if (size !== traceInfo.layout.width) {
@@ -52,13 +52,15 @@ class EmbeddingChartPlotly extends React.PureComponent {
                             width={186}
                             label={true}
                             height={40}
+                            handleUpdate={handleMeasureFilterUpdated}
+                            datasetFilter={datasetFilter}
                             scale={traceInfo.colorScale}
                             featureSummary={featureSummary}
                             maxHeight={traceInfo.layout.height}
                             name={traceInfo.name}
                         /> :
-                        <CategoricalLegend categoricalFilter={categoricalFilter}
-                                           handleClick={handleLegendClick}
+                        <CategoricalLegend datasetFilter={datasetFilter}
+                                           handleClick={handleDimensionFilterUpdated}
                                            name={traceInfo.name}
                                            scale={traceInfo.colorScale}
                                            maxHeight={traceInfo.layout.height - 24}
@@ -79,14 +81,17 @@ const mapStateToProps = state => {
         binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
         config: state.plotConfig,
-        categoricalFilter: state.categoricalFilter,
+        datasetFilter: state.datasetFilter,
         featureSummary: state.featureSummary
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handleLegendClick: (e) => {
-            dispatch(handleLegendClick(e));
+        handleDimensionFilterUpdated: (e) => {
+            dispatch(handleDimensionFilterUpdated(e));
+        },
+        handleMeasureFilterUpdated: (e) => {
+            dispatch(handleMeasureFilterUpdated(e));
         },
         onSelect: (e) => {
             dispatch(handleSelectedPoints(e));

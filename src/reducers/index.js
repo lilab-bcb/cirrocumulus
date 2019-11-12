@@ -7,7 +7,7 @@ import {
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
-    SET_CATEGORICAL_FILTER,
+    SET_DATASET_FILTER,
     SET_DATASET,
     SET_DATASET_CHOICES,
     SET_DIALOG,
@@ -44,7 +44,7 @@ import PlotUtil, {getInterpolator} from '../PlotUtil';
 export const DEFAULT_MARKER_SIZE = 5;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
-export const DEFAULT_BIN_SUMMARY = 'mean';
+export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
 const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)};
@@ -421,12 +421,12 @@ function dotPlotData(state = [], action) {
     }
 }
 
-function categoricalFilter(state = {}, action) {
+function datasetFilter(state = {}, action) {
     switch (action.type) {
-        case SET_CATEGORICAL_FILTER:
+        case SET_DATASET_FILTER:
             return action.payload;
         case RESTORE_VIEW:
-            return action.payload.categoricalFilter != null ? action.payload.categoricalFilter : state;
+            return action.payload.datasetFilter != null ? action.payload.datasetFilter : state;
         default:
             return state;
     }
@@ -546,7 +546,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
-    categoricalFilter,
+    datasetFilter,
     dataset,
     datasetChoices,
     dialog,

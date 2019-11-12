@@ -42,7 +42,7 @@ class EmbeddingAggregator:
             else:
                 agg_func[column] = agg_function
         for column in coordinate_columns:
-            agg_func[column] = lambda x: x.values[0]
+            agg_func[column] = 'min'
         return agg_func
 
 
@@ -73,7 +73,7 @@ class EmbeddingAggregator:
         if self.nbins is not None and len(self.dimensions) > 0:
             agg_dict = {}
             for column in self.basis['coordinate_columns']:
-                agg_dict[column] = lambda x: x.values[0]
+                agg_dict[column] = 'min'
             for column in self.dimensions:
                 agg_dict[column] = lambda x: x.mode()[0]
             self.dimension_df = self.dimension_df.groupby(self.dimension_df.index).agg(agg_dict)
@@ -90,6 +90,7 @@ class EmbeddingAggregator:
             df = df.groupby(df.index).agg(self.agg_dict)
         else:
             df = df[self.measures + self.dimensions + self.basis['coordinate_columns']]
+        first_time = self.measure_df is None
         self.measure_df = pd.concat((self.measure_df, df)) if self.measure_df is not None else df
-        if self.nbins is not None:
+        if self.nbins is not None and not first_time:
             self.measure_df = self.measure_df.groupby(self.measure_df.index).agg(self.agg_dict)

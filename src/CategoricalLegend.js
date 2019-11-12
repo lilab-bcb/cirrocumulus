@@ -14,8 +14,8 @@ class CategoricalLegend extends React.PureComponent {
 
 
     render() {
-        const {scale, categoricalFilter, name, featureSummary, maxHeight, clickEnabled} = this.props;
-        const categoricalFilterValues = categoricalFilter[name];
+        const {scale, datasetFilter, name, featureSummary, maxHeight, clickEnabled} = this.props;
+        const categoricalFilterValues = datasetFilter[name];
         const dimensionSummary = featureSummary.dimensions[name];
         const domain = dimensionSummary.categories;
         let selectedCounts = dimensionSummary.selected_counts;

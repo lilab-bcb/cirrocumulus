@@ -1,9 +1,9 @@
 import pandas as pd
-from cirro.data_processing import process_data
-from cirro.embedding_aggregator import get_basis
 from flask import Blueprint, Response, request
 from natsort import natsorted
 
+from cirro.data_processing import process_data
+from cirro.embedding_aggregator import get_basis
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -77,6 +77,7 @@ def _handle_slice(content):
     dataset_id = content.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
     basis = get_basis(content.get('embedding', None))
+    nbins = None
     if basis is not None:
         nbins = check_bin_input(content.get('nbins', None))
     return_types = set(content.get('types'))
