@@ -3,7 +3,7 @@ import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import CustomError from '../CustomError';
-import PlotUtil, {getInterpolator} from '../PlotUtil';
+import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator} from '../PlotUtil';
 
 //export const API = 'http://localhost:5000/api';
 export const API = '/api';
@@ -70,22 +70,6 @@ export const SET_MARKER_SIZE_UI = 'SET_MARKER_SIZE_UI';
 export const SET_MARKER_OPACITY_UI = 'SET_MARKER_OPACITY_UI';
 export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_UI';
 
-const TWENTY_COLORS = [
-    '#1f77b4', '#aec7e8', '#ff7f0e',
-    '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896', '#9467bd',
-    '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-    '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
-
-const CATEGORY_20B = [
-    '#393b79', '#5254a3', '#6b6ecf',
-    '#9c9ede', '#637939', '#8ca252', '#b5cf6b', '#cedb9c', '#8c6d31',
-    '#bd9e39', '#e7ba52', '#e7cb94', '#843c39', '#ad494a', '#d6616b',
-    '#e7969c', '#7b4173', '#a55194', '#ce6dbd', '#de9ed6'];
-const CATEGORY_20C = [
-    '#3182bd', '#6baed6', '#9ecae1',
-    '#c6dbef', '#e6550d', '#fd8d3c', '#fdae6b', '#fdd0a2', '#31a354',
-    '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
-    '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
 function getUser() {
     return function (dispatch, state) {
@@ -128,7 +112,8 @@ export function initGapi() {
                 };
                 document.getElementsByTagName('head')[0].appendChild(script);
             }
-
+        }).catch(err => {
+            handleError(dispatch, err);
         });
     };
 }
@@ -226,6 +211,8 @@ export function downloadSelectedIds() {
             saveAs(blob, "selection.txt");
         }).finally(() => {
             dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err);
         });
     };
 }
@@ -296,8 +283,8 @@ function handleFilterUpdated(selectedPoints) {
             }
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             dispatch(setFeatureSummary(result.summary));
-
-
+        }).catch(err => {
+            handleError(dispatch, err);
         });
     };
 }
@@ -474,7 +461,6 @@ function loadDefaultDatasetEmbedding() {
         if (names.length > 0) {
             dispatch(setSelectedEmbedding([names[0]]));
         }
-
     };
 }
 
@@ -524,6 +510,7 @@ function _loadSavedView() {
                 }))).catch(err => {
                 console.log(err);
                 dispatch(setMessage('Unable to restore saved view.'));
+                dispatch(loadDefaultDataset());
             });
         } else {
             dispatch(loadDefaultDataset());
@@ -1123,7 +1110,6 @@ function handleError(dispatch, err, message) {
         return dispatch(logout());
     }
     if (message == null) {
-
         message = err instanceof CustomError ? err.message : 'An unexpected error occurred. Please try again.';
     }
     dispatch(setMessage(new Error(message)));
