@@ -14,10 +14,12 @@ class CategoricalLegend extends React.PureComponent {
 
 
     render() {
-        const {scale, datasetFilter, name, featureSummary, maxHeight, clickEnabled} = this.props;
+        const {scale, datasetFilter, name, featureSummary, maxHeight} = this.props;
+        let clickEnabled = this.props.clickEnabled;
         const categoricalFilterValues = datasetFilter[name];
         const dimensionSummary = featureSummary.dimensions[name];
         const domain = dimensionSummary.categories;
+        clickEnabled = clickEnabled && domain.length > 1;
         let selectedCounts = dimensionSummary.selected_counts;
         let unselectedCounts = dimensionSummary.unselected_counts;
         if (selectedCounts == null && unselectedCounts != null) {
