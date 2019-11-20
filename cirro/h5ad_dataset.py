@@ -26,8 +26,8 @@ class H5ADDataset:
                 obs.append(key)
         result['var'] = adata.var_names.values
         result['obs'] = obs
-        result['obs_cat'] = obs_cat
-        result['n_obs'] = adata.shape[0]
+        result['obsCat'] = obs_cat
+        result['nObs'] = adata.shape[0]
         embeddings = []
         for key in adata.obsm_keys():
             if key.startswith('X_'):
@@ -42,8 +42,11 @@ class H5ADDataset:
             key_to_stats[key] = (py_dict[key].min(), py_dict[key].max())
         return key_to_stats
 
+    def table(self, file_system, path, keys, basis=None):
+        return pa.Table.from_pydict(self.get_py_dict(file_system, path, keys, basis=basis))
+
     def tables(self, file_system, path, keys, basis=None):
-        yield pa.Table.from_pydict(self.get_py_dict(file_system, path, keys, basis=basis))
+        yield self.table(file_system, path, keys, basis)
 
     def get_py_dict(self, file_system, path, keys, basis=None):
         is_obs = True
@@ -52,8 +55,10 @@ class H5ADDataset:
         if adata is None:
             adata = anndata.read(path, backed=self.backed)
             self.path_to_data[path] = adata
+
         for i in range(len(keys)):
             key = keys[i]
+            values = None
             if key == 'index':
                 values = adata.obs.index.values if is_obs else adata.var.index.values
             else:
@@ -65,8 +70,9 @@ class H5ADDataset:
                 elif key in adata.obs and is_obs:
                     values = adata.obs[key].values
                 else:
-                    raise ValueError('{} not found'.format(key))
-            py_dict[key] = values
+                    print('{} not found'.format(key))
+            if values is not None:
+                py_dict[key] = values
         if basis is not None:
             embedding_name = basis['name']
             embedding_data = adata.obsm[embedding_name]

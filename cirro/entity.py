@@ -3,5 +3,8 @@ class Entity:
         self.id = id
         self.d = d
 
+    def __contains__(self, item):
+        return item in self.d
+
     def __getitem__(self, item):
         return self.d[item]

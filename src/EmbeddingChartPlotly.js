@@ -11,9 +11,6 @@ const Plot = createPlotlyComponent(window.Plotly);
 
 class EmbeddingChartPlotly extends React.PureComponent {
 
-    constructor(props) {
-        super(props);
-    }
 
     getKey(traceInfo) {
         let key = traceInfo.name;
@@ -25,7 +22,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
-        const {config, embeddingChartSize, onDeselect, onSelect, featureSummary, datasetFilter, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
+        const {config, nObs, nObsSelected, embeddingChartSize, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : embeddingChartSize);
         return activeTraces.map(traceInfo => {
             if (size !== traceInfo.layout.width) {
@@ -56,6 +53,9 @@ class EmbeddingChartPlotly extends React.PureComponent {
                             datasetFilter={datasetFilter}
                             scale={traceInfo.colorScale}
                             featureSummary={featureSummary}
+                            globalFeatureSummary={globalFeatureSummary}
+                            nObs={nObs}
+                            nObsSelected={nObsSelected}
                             maxHeight={traceInfo.layout.height}
                             name={traceInfo.name}
                         /> :
@@ -65,6 +65,9 @@ class EmbeddingChartPlotly extends React.PureComponent {
                                            scale={traceInfo.colorScale}
                                            maxHeight={traceInfo.layout.height - 24}
                                            clickEnabled={true}
+                                           nObs={nObs}
+                                           nObsSelected={nObsSelected}
+                                           globalFeatureSummary={globalFeatureSummary}
                                            featureSummary={featureSummary}/>}</div>);
         });
     }
@@ -82,7 +85,10 @@ const mapStateToProps = state => {
         embeddingChartSize: state.embeddingChartSize,
         config: state.plotConfig,
         datasetFilter: state.datasetFilter,
-        featureSummary: state.featureSummary
+        featureSummary: state.featureSummary,
+        nObs: state.dataset.nObs,
+        nObsSelected: state.selection.count,
+        globalFeatureSummary: state.globalFeatureSummary
     };
 };
 const mapDispatchToProps = dispatch => {

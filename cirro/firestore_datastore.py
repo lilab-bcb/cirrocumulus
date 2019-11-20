@@ -65,8 +65,6 @@ class FirestoreDatastore:
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
             dataset = datastore.Entity(client.key(DATASET))
-            # if request_util.dataset_writer_collection.document(email) is None:
-            #     return 'Not authorized to create datasets', 403
         readers = set(readers)
         if email in readers:
             readers.remove(email)

@@ -23,7 +23,7 @@ class DotPlot extends React.PureComponent {
         let sizeMax = -Number.MAX_VALUE;
         // set min and max values for color and size
         dotplot.values.forEach(datum => {
-            datum.fraction_expressed.forEach(value => {
+            datum.fractionExpressed.forEach(value => {
                 sizeMin = Math.min(sizeMin, value);
                 sizeMax = Math.max(sizeMax, value);
             });
@@ -60,8 +60,8 @@ class DotPlot extends React.PureComponent {
             for (let i = 0; i < datum.mean.length; i++) {
                 y.push(datum.name);
                 color.push(colorScale(datum.mean[i]));
-                size.push(sizeScale(datum.fraction_expressed[i]));
-                text.push('mean: ' + numberFormat(datum.mean[i]) + ', % expressed: ' + numberFormat(100 * datum.fraction_expressed[i]));
+                size.push(sizeScale(datum.fractionExpressed[i]));
+                text.push('mean: ' + numberFormat(datum.mean[i]) + ', % expressed: ' + numberFormat(100 * datum.fractionExpressed[i]));
             }
             let trace = {
                 x: categories,

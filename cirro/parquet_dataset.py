@@ -41,21 +41,17 @@ class ParquetDataset:
                 obs_cat.append(name)
             else:
                 obs.append(name)
-
-        obsm = metadata['obsm']
         result['var'] = metadata['var']
         result['obs'] = obs
-        result['obs_cat'] = obs_cat
-        result['n_obs'] = parquet_file.metadata.num_rows
-        result['embeddings'] = obsm
+        result['obsCat'] = obs_cat
+        result['nObs'] = parquet_file.metadata.num_rows
+        result['embeddings'] = metadata['obsm']
         return result
 
     @staticmethod
-    def get_keys(keys, basis=None, index=False):
+    def get_keys(keys, basis=None):
         if basis is not None:
             keys = keys + basis['coordinate_columns']
-        if index:
-            keys = keys + ['index']  # get pandas index
         return keys
 
     def statistics(self, file_system, path, keys, basis):
@@ -79,21 +75,21 @@ class ParquetDataset:
                 min_max[1] = max(stats.max, min_max[1])
         return key_to_stats
 
-    def tables(self, file_system, path, keys, basis=None, index=False):
-        keys = ParquetDataset.get_keys(keys, basis=basis, index=index)
+    def tables(self, file_system, path, keys, basis=None):
+        keys = ParquetDataset.get_keys(keys, basis=basis)
         parquet_file = self.get_file(file_system, path)
 
         for i in range(parquet_file.num_row_groups):
             yield parquet_file.read_row_group(i, columns=keys)
         # yield self.table(file_system, path, keys, basis, index)
 
-    def table(self, file_system, path, keys, basis=None, index=False):
-        keys = ParquetDataset.get_keys(keys, basis=basis, index=index)
+    def table(self, file_system, path, keys, basis=None):
+        keys = ParquetDataset.get_keys(keys, basis=basis)
         parquet_file = self.get_file(file_system, path)
         return parquet_file.read(columns=keys)
 
-    def get_df(self, file_system, path, keys, basis=None, index=False):
-        keys = ParquetDataset.get_keys(keys, basis=basis, index=index)
+    def get_df(self, file_system, path, keys, basis=None):
+        keys = ParquetDataset.get_keys(keys, basis=basis)
         parquet_file = self.get_file(file_system, path)
         if len(keys) == 0:
             return pd.DataFrame(index=pd.RangeIndex(parquet_file.metadata.num_rows))

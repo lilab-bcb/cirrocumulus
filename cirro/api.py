@@ -1,9 +1,7 @@
-import pandas as pd
-from flask import Blueprint, Response, request
-from natsort import natsorted
-
 from cirro.data_processing import process_data
 from cirro.embedding_aggregator import get_basis
+from flask import Blueprint, Response, request
+
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -99,62 +97,7 @@ def _handle_slice(content):
 @blueprint.route('/slice', methods=['POST'])
 def handle_slice():
     data_processing_result = _handle_slice(request.get_json(cache=False))
-    json_result = {}
-    if 'summary' in data_processing_result:
-        measure_feature_summary, dimensions_feature_summary = data_processing_result['summary'].collect()
-        json_result['summary'] = {'measures': {}, 'dimensions': {}}
-        if measure_feature_summary is not None:
-            unique_features = measure_feature_summary.columns.unique(0)
-            features = measure_feature_summary.columns.get_level_values(0)
-            for feature in unique_features:
-                feature_stat = {}
-                feature_df = measure_feature_summary.iloc[:, features == feature]
-                for column in feature_df:
-                    statistic_name = column[1]
-                    feature_stat[statistic_name] = feature_df[column].values.tolist()
-                json_result['summary']['measures'][feature] = feature_stat
-
-        for dimension_name in dimensions_feature_summary:
-            dimension_df = dimensions_feature_summary[dimension_name]
-            dimension_df.index = pd.MultiIndex.from_tuples(dimension_df.index)
-            dimension_df = dimension_df.reset_index()
-            dimension_df = dimension_df.pivot(index='level_1', columns='level_0')
-            sorted_categories = natsorted(dimension_df.index)
-            dimension_df = dimension_df.loc[sorted_categories]
-            key = (dimension_name, True)
-            dimension_summary = {'categories': dimension_df.index.values.tolist()}
-            if key in dimension_df:
-                dimension_summary['selected_counts'] = dimension_df[key].values.tolist()
-            key = (dimension_name, False)
-            if key in dimension_df:
-                dimension_summary['unselected_counts'] = dimension_df[key].values.tolist()
-            json_result['summary']['dimensions'][dimension_name] = dimension_summary
-
-    if 'embedding' in data_processing_result:
-        embedding_summary = data_processing_result['embedding']
-        measure_df, dimension_df = embedding_summary.collect()
-        embedding_json = {'coordinates': {}, 'values': {}}
-        json_result['embedding'] = embedding_json
-        if embedding_summary.nbins is not None:
-            embedding_json['bins'] = measure_df.index.values.tolist()
-        for column in embedding_summary.basis['coordinate_columns']:
-            embedding_json['coordinates'][column] = measure_df[column].values.tolist()
-        for column in embedding_summary.measures:
-            if column == '__count' and not embedding_summary.count:
-                continue
-            embedding_json['values'][column] = measure_df[column].values.tolist()
-        for column in embedding_summary.dimensions:
-            embedding_json['values'][column] = dimension_df[
-                column].values.tolist() if embedding_summary.nbins is not None else measure_df[column].values.tolist()
-
-    if 'dotplot' in data_processing_result:
-        json_result['dotplot'] = data_processing_result['dotplot'].collect()
-    if 'selection' in data_processing_result:
-        indices_or_bins, count = data_processing_result['selection'].collect()
-        json_result['selection'] = {'indices_or_bins': indices_or_bins.values.tolist(), 'count': count}
-    if 'ids' in data_processing_result:
-        json_result['ids'] = data_processing_result['ids'].collect()
-    return to_json(json_result)
+    return to_json(data_processing_result)
 
 
 # List available datasets

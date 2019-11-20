@@ -21,5 +21,9 @@ class LocalDbAPI:
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        result = Entity(dataset_id, {'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id})
+        info = {'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id}
+        # TODO check if prepared summaries
+        # if dataset_id.lower().endswith('.parquet') or dataset_id.lower().endswith('.pq'):
+        #     info['summary'] = {'embeddings': [{'basis': 'umap', 'nbins': 500, 'agg': 'max'}]}
+        result = Entity(dataset_id, info)
         return result

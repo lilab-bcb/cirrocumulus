@@ -77,7 +77,7 @@ export default function plotComponentFactory(Plotly) {
                         }
                         throw error;
                     }
-                    return Plotly.react(this.el, {
+                    return Plotly.newPlot(this.el, {
                         data: this.props.data,
                         layout: this.props.layout,
                         config: this.props.config,
@@ -128,7 +128,7 @@ export default function plotComponentFactory(Plotly) {
                 return;
             }
 
-            this.updatePlotly(false, this.props.onUpdate, false);
+            this.updatePlotly(true, this.props.onUpdate, true);
         }
 
         componentWillUnmount() {
@@ -210,17 +210,22 @@ export default function plotComponentFactory(Plotly) {
                 const prop = this.props['on' + eventName];
                 const handler = this.handlers[eventName];
                 const hasHandler = Boolean(handler);
-
-                if (prop && !hasHandler) {
-                    this.addEventHandler(eventName, prop);
-                } else if (!prop && hasHandler) {
-                    // Needs to be removed:
+                if (hasHandler) {
                     this.removeEventHandler(eventName);
-                } else if (prop && hasHandler && prop !== handler) {
-                    // replace the handler
-                    this.removeEventHandler(eventName);
+                }
+                if (prop) {
                     this.addEventHandler(eventName, prop);
                 }
+                // if (prop && !hasHandler) {
+                //     this.addEventHandler(eventName, prop);
+                // } else if (!prop && hasHandler) {
+                //     // Needs to be removed:
+                //     this.removeEventHandler(eventName);
+                // } else if (prop && hasHandler && prop !== handler) {
+                //     // replace the handler
+                //     this.removeEventHandler(eventName);
+                //     this.addEventHandler(eventName, prop);
+                // }
             });
         }
 
@@ -267,9 +272,11 @@ export default function plotComponentFactory(Plotly) {
         divId: PropTypes.string,
     };
 
-    eventNames.forEach(eventName => {
-        PlotlyComponent.propTypes['on' + eventName] = PropTypes.func;
-    });
+    if (PlotlyComponent.propTypes) {
+        eventNames.forEach(eventName => {
+            PlotlyComponent.propTypes['on' + eventName] = PropTypes.func;
+        });
+    }
 
     PlotlyComponent.defaultProps = {
         debug: false,

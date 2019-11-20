@@ -7,9 +7,9 @@ import {
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
-    SET_DATASET_FILTER,
     SET_DATASET,
     SET_DATASET_CHOICES,
+    SET_DATASET_FILTER,
     SET_DIALOG,
     SET_DOT_PLOT_DATA,
     SET_EMAIL,
@@ -17,7 +17,7 @@ import {
     SET_EMBEDDING_DATA,
     SET_FEATURE_SUMMARY,
     SET_FEATURES,
-    SET_FEATURES_UI,
+    SET_FEATURES_UI, SET_GLOBAL_FEATURE_SUMMARY,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
     SET_LOADING,
@@ -332,12 +332,29 @@ function selection(state = {}, action) {
 }
 
 /**
- * Feature summary has two keys: dimensions and measures. Each of these keys maps to another object containing
+ * Feature summary maps measure and dimension names to another object containing
  * categories and counts for dimensions, and statistics such as min, max for measures.
+ * Features summaries are in the space of un/selected cells.
  */
 function featureSummary(state = {}, action) {
     switch (action.type) {
         case SET_FEATURE_SUMMARY:
+            return action.payload;
+        case SET_DATASET:
+            return {};
+        default:
+            return state;
+    }
+}
+
+/**
+ * Feature summary maps measure and dimension names to another object containing
+ * categories and counts for dimensions, and statistics such as min, max for measures.
+ * Features summaries are in the space of all cells.
+ */
+function globalFeatureSummary(state = {}, action) {
+    switch (action.type) {
+        case SET_GLOBAL_FEATURE_SUMMARY:
             return action.payload;
         case SET_DATASET:
             return {};
@@ -420,6 +437,7 @@ function dotPlotData(state = [], action) {
             return state;
     }
 }
+
 
 function datasetFilter(state = {}, action) {
     switch (action.type) {
@@ -558,6 +576,7 @@ export default combineReducers({
     features,
     featureSummary,
     featuresUI,
+    globalFeatureSummary,
     groupBy,
     interpolator,
     loading,

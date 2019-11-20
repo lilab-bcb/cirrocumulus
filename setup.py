@@ -7,7 +7,14 @@ from setuptools import setup, find_packages
 with open(path.join(path.abspath(path.dirname(__file__)), "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
-requires = ["ujson", "flask", "anndata", "fsspec", "flask-compress", "natsort"]
+requires = [
+        "anndata",
+        "flask",
+        "flask-compress",
+        "fsspec",
+        "natsort",
+        "ujson"
+]
 
 setup(
     name="cirrocumulus",

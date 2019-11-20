@@ -19,17 +19,18 @@ class DotPlotAggregator:
 
     def collect(self):
         results = []
+        # {categories:[], name:'', values:[{name:'', fractionExpressed:0, mean:0}]}
         for key in self.category_to_df:
             df = self.category_to_df[key]
-            values = []
             sorted_categories = natsorted(df.index)
             df = df.loc[sorted_categories]
+            values = []
             dotplot_result = {'categories': df.index.values.tolist(), 'name': key, 'values': values}
             for column in self.measures:
                 series = df[column]
                 mean = series['sum'].values / series['count'].values
                 fraction_expressed = series['non_zero'].values / series['count'].values
-                values.append({'name': column, 'fraction_expressed': fraction_expressed.tolist(),
+                values.append({'name': column, 'fractionExpressed': fraction_expressed.tolist(),
                                'mean': mean.tolist()})
             results.append(dotplot_result)
         return results

@@ -138,10 +138,9 @@ class EmbedForm extends React.PureComponent {
         const {classes, embeddingChartSize, unselectedMarkerSize, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
         const features = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
+        const isSummarized = dataset == null ? false : dataset.summary != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
-
-
         const summaryOptions = [
             {value: 'max', label: 'Maximum'},
             {value: 'mean', label: 'Mean'},
@@ -196,9 +195,9 @@ class EmbedForm extends React.PureComponent {
 
                 <FormControl className={classes.formControl}>
                     <AutocompleteSelect label="Features" options={allOptions}
-                                  defaultOptions={defaultOptions} value={featureValue}
-                                  onChange={this.props.handleFeatures}
-                                  isMulti={true}/>
+                                        defaultOptions={defaultOptions} value={featureValue}
+                                        onChange={this.props.handleFeatures}
+                                        isMulti={true}/>
                 </FormControl>
 
                 <FormControl className={classes.formControl}>
@@ -225,8 +224,12 @@ class EmbedForm extends React.PureComponent {
                            onChange={this.onMarkerOpacityChange} label="Marker Opacity"
                            className={classes.formControl} value={markerOpacity}/>
 
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
+                    <ColorSchemeSelector/>
+                </FormControl>
 
-                <FormControlLabel
+                {!isSummarized && <FormControlLabel
                     control={
                         <Switch
                             checked={binValues}
@@ -235,18 +238,15 @@ class EmbedForm extends React.PureComponent {
                         />
                     }
                     label="Bin Plot"
-                />
-                <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
-                    <ColorSchemeSelector/>
-                </FormControl>
-                {binValues &&
+                />}
+
+                {!isSummarized && binValues &&
                 <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
                            value={numberOfBins}
                            onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"
                            className={classes.formControl}/>}
 
-                {binValues && <FormControl className={classes.formControl}>
+                {!isSummarized && binValues && <FormControl className={classes.formControl}>
                     <InputLabel htmlFor="summary">Bin Summary</InputLabel>
                     <Select
                         className={classes.select}
@@ -261,6 +261,7 @@ class EmbedForm extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>}
+
 
                 <Divider/>
 

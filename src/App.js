@@ -114,7 +114,6 @@ class App extends PureComponent {
     handleLinkMenuClose = (event) => {
         this.setState({linkMenuOpen: false, linkMenuAnchorEl: null});
     };
-
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.state.linkMenuOpen) {
             window.requestAnimationFrame(() => {
@@ -123,7 +122,6 @@ class App extends PureComponent {
             });
         }
     }
-
     copyLink = () => {
         this.linkRef.current.focus();
         this.linkRef.current.select();

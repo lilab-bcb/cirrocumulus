@@ -7,7 +7,7 @@ import MeasureFilter from './MeasureFilter';
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
-        const {scale, name, featureSummary, maxHeight, nTotal, style, datasetFilter, handleUpdate} = this.props;
+        const {scale, name, nObs, nObsSelected, featureSummary, globalFeatureSummary, maxHeight, style, datasetFilter, handleUpdate} = this.props;
         return (
             <div style={{
                 display: 'inline-block',
@@ -17,9 +17,11 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                 overflow: 'auto'
             }}>
                 <ContinuousLegend name={name}
-                                  nTotal={nTotal}
                                   summary={scale.summary}
                                   featureSummary={featureSummary}
+                                  nObs={nObs}
+                                  nObsSelected={nObsSelected}
+                                  globalFeatureSummary={globalFeatureSummary}
                                   maxHeight={maxHeight}></ContinuousLegend>
                 {name !== '__count' &&
                 <MeasureFilter datasetFilter={datasetFilter} name={name} handleUpdate={handleUpdate}/>}

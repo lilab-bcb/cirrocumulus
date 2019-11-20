@@ -1,30 +1,69 @@
 import React from 'react';
-import {intFormat, numberFormat} from './formatters';
+import {numberFormat0, numberFormat} from './formatters';
 
 
 class ContinuousLegend extends React.PureComponent {
 
 
-    getValues(measureSummary, statistic) {
+    getSelectedAndUnselectedTds(measureSummary, statistic) {
         if (statistic === 'Mean') {
             return measureSummary.mean.map((value, i) => {
-                return <td key={i}>{numberFormat(value)}</td>;
+                return <td key={i}>{numberFormat0(value)}</td>;
             });
 
         } else if (statistic === '% Expressed') {
             return measureSummary.fraction_expressed.map((value, i) => {
-                return <td key={i}>{intFormat(100 * value)}</td>;
+                return <td key={i}>{numberFormat0(100 * value)}</td>;
             });
         }
     }
 
-    render() {
-        const {name, featureSummary, maxHeight} = this.props;
-        const displayName = name === '__count' ? 'count' : name;
-        const measureSummary = featureSummary.measures[name];
-        const summaryNames = measureSummary != null && measureSummary.mean.length === 2 ? ['selection', 'rest'] : [''];
-        const statistics = ['Mean', '% Expressed'];
+    getGlobalSummaryTd(measureSummary, statistic) {
+        if (statistic === 'Mean') {
+            return <td>{numberFormat(measureSummary.mean)}</td>;
+        } else if (statistic === '% Expressed') {
+            return <td>{}</td>;
+        }
+    }
 
+    getTable(statistics, summaryNames, selectionSummary, globalSummary) {
+        return (<table>
+            <tbody>
+            <tr>
+                <td style={{textAlign: 'right'}}>{'Mean'}:</td>
+                <td>{numberFormat(globalSummary.mean)}</td>
+                {selectionSummary && <td>{numberFormat(selectionSummary.mean)}</td>}
+            </tr>
+            <tr>
+                <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
+                <td>{numberFormat0(100 * globalSummary.num_expressed / this.props.nObs)}</td>
+                {selectionSummary &&
+                <td>{numberFormat0(100 * selectionSummary.num_expressed / this.props.nObsSelected)}</td>}
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <td></td>
+                {summaryNames.map(summaryName => {
+                    return <td key={summaryName}><small>{summaryName}</small></td>;
+                })}
+            </tr>
+            </tfoot>
+        </table>);
+    }
+
+    render() {
+        const {name, featureSummary, globalFeatureSummary, maxHeight} = this.props;
+        const displayName = name === '__count' ? 'count' : name;
+        const selectionSummary = featureSummary[name];
+        const globalSummary = globalFeatureSummary[name];
+        const summaryNames = ['all'];
+        // TODO compute unselected mean and % expressed from globals
+        if (selectionSummary != null) {
+            summaryNames.push('selection');
+            //  summaryNames.push('rest');
+        }
+        const statistics = ['Mean', '% Expressed'];
         return (
             <div style={{
                 display: 'inline-block',
@@ -34,25 +73,7 @@ class ContinuousLegend extends React.PureComponent {
                 overflow: 'auto'
             }}>
                 <b>{displayName}</b>
-
-                {measureSummary && <table>
-
-                    <tbody>
-                    {statistics.map((statistic, i) => {
-                        return <tr key={i}>
-                            <td style={{textAlign: 'right'}}>{statistic}:</td>
-                            {this.getValues(measureSummary, statistic)}
-                        </tr>;
-                    })}
-                    </tbody>
-                    <tfoot>
-                    <tr>
-                        <td></td>
-                        <td><small>{summaryNames.length === 2 ? 'selection' : null}</small></td>
-                        <td><small>{summaryNames.length === 2 ? 'rest' : null}</small></td>
-                    </tr>
-                    </tfoot>
-                </table>}
+                {globalSummary != null && name !== '__count' && this.getTable(statistics, summaryNames, selectionSummary, globalSummary)}
             </div>);
     }
 }

@@ -13,7 +13,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='Run cirrocumulus')
-    parser.add_argument('dataset', help='Path to an h5ad file')
+    parser.add_argument('dataset', help='Path to an h5ad file or parquet file')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host', help='Host IP address', default="127.0.0.1")
     parser.add_argument('--port', help='Server port', default=5000, type=int)
@@ -21,7 +21,6 @@ def main():
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
     args = parser.parse_args()
 
-    # from flask_cors import CORS
     # CORS(app)
     Compress(app)
     from cirro.api import dataset_api
@@ -36,7 +35,7 @@ def main():
     try:
         from cirro.parquet_dataset import ParquetDataset
         dataset_api.add(['pq', 'parquet'], ParquetDataset())
-    except ImportError:
+    except ModuleNotFoundError:
         pass
     if not args.no_open:
         url = args.host + ':' + str(args.port)

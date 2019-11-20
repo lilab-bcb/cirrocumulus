@@ -22,6 +22,7 @@ export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
+export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
 
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
@@ -86,12 +87,12 @@ function getUser() {
 export function initGapi() {
     return function (dispatch, state) {
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
+
             if (serverInfo.clientId == '') { // serving files locally, no login required
                 dispatch(_setLoadingApp(false));
                 dispatch(_setEmail(''));
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
-
                 });
             } else {
                 let script = document.createElement('script');
@@ -137,12 +138,15 @@ export function login() {
 
 
 export function removeDatasetFilter(filter) {
-
     return function (dispatch, getState) {
         if (filter == null) {
+            let datasetFilter = getState().datasetFilter;
+            for (let key in datasetFilter) {
+                delete datasetFilter[key];
+            }
             // clear all
+            dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
             dispatch(setSelection({}));
-            setDatasetFilter({});
         } else if (filter[0] === 'selection') {
             dispatch(setSelection({}));
         } else {
@@ -173,6 +177,17 @@ export function getDatasetFilterArray(datasetFilter) {
     return filters;
 }
 
+function getBinInfo(state) {
+    if (state.dataset.summary != null) {
+        // TODO handle more than one precomputed embedding
+        const precomputedEmbedding = state.dataset.summary.embeddings[0];
+        //json.embedding = precomputedEmbedding.basis;
+        return {nbins: precomputedEmbedding.nbins, agg: precomputedEmbedding.agg};
+    } else if (state.binValues) {
+        return {nbins: state.numberOfBins, agg: state.binSummary};
+    }
+}
+
 function getSliceJson(state, includeFilter = true) {
     const datasetId = state.dataset.id;
     const selectedEmbeddings = state.embeddings;
@@ -180,10 +195,10 @@ function getSliceJson(state, includeFilter = true) {
         id: datasetId,
         embedding: selectedEmbeddings.length > 0 ? selectedEmbeddings[0] : null,
     };
-
-    if (state.binValues) {
-        json.nbins = state.numberOfBins;
-        json.agg = state.binSummary;
+    let binInfo = getBinInfo(state);
+    if (binInfo != null) {
+        json.nbins = binInfo.nbins;
+        json.agg = binInfo.agg;
     }
 
     if (includeFilter && Object.keys(state.datasetFilter).length > 0) {
@@ -191,7 +206,6 @@ function getSliceJson(state, includeFilter = true) {
         if (filters.length > 0) {
             json.filter = {filters: filters};
         }
-
     }
     return json;
 }
@@ -218,6 +232,10 @@ export function downloadSelectedIds() {
 }
 
 
+function setGlobalFeatureSummary(payload) {
+    return {type: SET_GLOBAL_FEATURE_SUMMARY, payload: payload};
+}
+
 function setDatasetFilter(payload) {
     return {type: SET_DATASET_FILTER, payload: payload};
 }
@@ -237,13 +255,17 @@ function setFeatureSummary(payload) {
  */
 function handleFilterUpdated(selectedPoints) {
     return function (dispatch, getState) {
-        let json = getSliceJson(getState());
-        const binValues = getState().binValues;
-        const traceBins = binValues ? getState().embeddingData[0].data[0].bins : null;
-        json.types = ['summary'];
-        json.summary_measures = getState().features;
-        json.summary_dimensions = getState().groupBy;
-        let userSelection = getState().selection.userSelection;
+
+        // whenever filter is updated, we need to get selection statistics
+        // if filter is not brush filter, we also need to get coordinates of selected cells
+        const state = getState();
+        let json = getSliceJson(state);
+        const binInfo = getBinInfo(state);
+        const traceBins = binInfo && state.embeddingData.length > 0 ? state.embeddingData[0].data[0].bins : null;
+        json.types = ['selectionSummary', 'selectionCoordinates'];
+        json.summary_measures = state.features;
+        json.summary_dimensions = state.groupBy;
+        let userSelection = state.selection.userSelection;
         // TODO selection persistence
 
         if (selectedPoints != null && selectedPoints.length > 0) {
@@ -253,9 +275,11 @@ function handleFilterUpdated(selectedPoints) {
             userSelection = true;
             json.filter.selected_points = selectedPoints;
         }
-        if (json.filter != null) {
-            json.types.push('selection');
+        if (json.filter == null) {
+            dispatch(setSelection({}));
+            return dispatch(setFeatureSummary({}));
         }
+        dispatch(_setLoading(true));
         fetch(API + '/slice',
             {
                 body: JSON.stringify(json),
@@ -263,29 +287,29 @@ function handleFilterUpdated(selectedPoints) {
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(result => result.json()).then(result => {
 
-            const selection = result.selection;
-            if (selection != null) {
-
-                const selectedIndicesOrBins = selection.indices_or_bins;
+            const selectionSummary = result.selectionSummary;
+            const selectionCoordinates = result.selectionCoordinates;
+            if (selectionCoordinates != null) {
+                const selectedIndicesOrBins = selectionCoordinates.indices_or_bins;
                 let selectedPoints = selectedIndicesOrBins;
-                if (binValues) {
-                    selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                if (binInfo != null) {
+                    selectedPoints = traceBins == null ? null : PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
                 }
 
                 dispatch(setSelection({
                     userPoints: selectedPoints,
                     points: selectedIndicesOrBins,
-                    count: selection.count,
+                    count: selectionCoordinates.count,
                     userSelection: userSelection
                 }));
             } else {
                 dispatch(setSelection({}));
             }
             // userPoints are in chart space, points are in server space, count is total number of cells selected
-            dispatch(setFeatureSummary(result.summary));
+            dispatch(setFeatureSummary(selectionSummary));
         }).catch(err => {
             handleError(dispatch, err);
-        });
+        }).finally(() => dispatch(_setLoading(false)));
     };
 }
 
@@ -304,7 +328,6 @@ export function handleMeasureFilterUpdated(payload) {
             datasetFilter[name] = filter;
         }
         if (update) {
-
             if (value != null) {
                 update = (!isNaN(value) ? value !== filter.value : isNaN(value) !== isNaN(filter.value));
             }
@@ -312,7 +335,6 @@ export function handleMeasureFilterUpdated(payload) {
                 update = update || (operation !== filter.operation && !isNaN(filter.value));
             }
         }
-
         if (operation != null) {
             filter.operation = operation;
         }
@@ -474,16 +496,16 @@ function loadDefaultDataset() {
 
 function _loadSavedView() {
     return function (dispatch, getState) {
+        let savedView = {dataset: null};
         let q = window.location.search.substring(3);
-        if (q.length === 0) {
-            return;
+        if (q.length > 0) {
+            try {
+                savedView = JSON.parse(window.decodeURIComponent(q));
+            } catch (err) {
+                return dispatch(setMessage('Unable to restore saved view.'));
+            }
         }
-        let savedView;
-        try {
-            savedView = JSON.parse(window.decodeURIComponent(q));
-        } catch (err) {
-            return dispatch(setMessage('Unable to restore saved view.'));
-        }
+
         if (savedView.dataset != null) {
             if (savedView.colorScheme != null) {
                 let interp = getInterpolator(savedView.colorScheme);
@@ -501,17 +523,21 @@ function _loadSavedView() {
                         value.uiValue = value.value;
                     }
                 }
+            } else {
+                savedView.datasetFilter = {};
             }
-            dispatch(setDataset(savedView.dataset, false))
+            dispatch(_setLoading(true));
+            dispatch(setDataset(savedView.dataset, false, false))
+                .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
                 .then(() => dispatch(restoreView(savedView)))
-                .then(() => dispatch(_updateCharts({
-                    dotplot: true,
-                    clear: true
-                }))).catch(err => {
-                console.log(err);
-                dispatch(setMessage('Unable to restore saved view.'));
-                dispatch(loadDefaultDataset());
-            });
+                .then(() => dispatch(_updateCharts({dotplot: true, clear: true})))
+                .then(() => dispatch(handleFilterUpdated()))
+                .finally(() => dispatch(_setLoading(false)))
+                .catch(err => {
+                    console.log(err);
+                    dispatch(setMessage('Unable to restore saved view.'));
+                    dispatch(loadDefaultDataset());
+                });
         } else {
             dispatch(loadDefaultDataset());
         }
@@ -791,7 +817,6 @@ export function setBinSummary(payload) {
 }
 
 export function setBinValues(payload) {
-
     return function (dispatch, getState) {
         let prior = getState().binValues;
         dispatch({type: SET_BIN_VALUES, payload: payload});
@@ -802,7 +827,7 @@ export function setBinValues(payload) {
     };
 }
 
-export function setDataset(id, loadDefaultView = true) {
+export function setDataset(id, loadDefaultView = true, setLoading = true) {
     return function (dispatch, getState) {
         const datasetChoices = getState().datasetChoices;
         let choice = null;
@@ -814,7 +839,7 @@ export function setDataset(id, loadDefaultView = true) {
         }
         if (choice == null) {
             dispatch(setMessage('Unable to find dataset'));
-            return;
+            return Promise.reject('Unable to find dataset');
         }
         // force re-render selected dataset dropdown
         dispatch(_setDataset({
@@ -826,38 +851,31 @@ export function setDataset(id, loadDefaultView = true) {
             obs: [],
             obsCat: []
         }));
-        dispatch(_setLoading(true));
-        let url = [API + '/schema?id=' + id];
-
-        return fetch(url.join(''), {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+        if (setLoading) {
+            dispatch(_setLoading(true));
+        }
+        return fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         }).then(result => {
-            let newDataset;
-            if (result.version === '1') {
-                newDataset = {
-                    owner: choice.owner,
-                    name: choice.name,
-                    id: id,
-                    embeddings: result.embeddings,
-                    features: result.var,
-                    obsCat: result.obs_cat,
-                    nObs: result.n_obs,
-                    obs: result.obs
-                };
-            }
+            let newDataset = result;
+            newDataset.owner = choice.owner;
+            newDataset.name = choice.name;
+            newDataset.features = result.var;
+            newDataset.id = id;
             dispatch(_setDataset(newDataset));
             if (loadDefaultView) {
                 dispatch(loadDefaultDatasetEmbedding());
             }
-            return newDataset;
         }).finally(() => {
-            dispatch(_setLoading(false));
+            if (setLoading) {
+                dispatch(_setLoading(false));
+            }
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve dataset. Please try again.');
-            // dispatch(_setDataset(null));
         });
     };
 }
+
 
 // dot plot depends on features, groupBy
 // embedding chart depends on groupBy, features, embedding (also markerSize, colorScale which don't require API
@@ -865,7 +883,7 @@ export function setDataset(id, loadDefaultView = true) {
 /**
  *
  * @param sliceOptions.dotplot
- * @param sliceOptions.clear Clear cached data
+ * @param sliceOptions.clear Clear cached data, such as when # of bins changes
  * @returns {function(*, *): Promise<any | never>}
  */
 function _updateCharts(sliceOptions, onError) {
@@ -881,24 +899,27 @@ function _updateCharts(sliceOptions, onError) {
         dispatch(_setLoading(true));
         const obs = state.dataset.obs;
         const selectedEmbeddings = state.embeddings;
-
         if (sliceOptions.dotplot && continuousFeatures.length === 0) {
             sliceOptions.dotplot = false;
         }
 
+        let interpolator = state.interpolator;
+        let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
+        const markerSize = state.markerSize;
+        const markerOpacity = state.markerOpacity;
+        const unselectedMarkerSize = state.unselectedMarkerSize;
+        const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
+        const obsCat = state.dataset.obsCat;
         let embeddingData = state.embeddingData;
         const embeddingChartSize = state.embeddingChartSize;
         if (sliceOptions.clear) {
             embeddingData = [];
         }
         let cachedFeatureNames = {};
-        const currentFeatures = continuousFeatures.concat(categoricalFeatures);
-        const markerSize = state.markerSize;
-        const markerOpacity = state.markerOpacity;
-        const unselectedMarkerSize = state.unselectedMarkerSize;
-
-        const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
-
+        let currentFeatures = continuousFeatures.concat(categoricalFeatures);
+        if (currentFeatures.length === 0) {
+            currentFeatures = ['__count'];
+        }
         // reuse existing traces
         embeddingData.forEach(traceInfo => {
             cachedFeatureNames[traceInfo.name] = true;
@@ -914,123 +935,121 @@ function _updateCharts(sliceOptions, onError) {
             }
             traceInfo.active = active;
         });
-
-        let json = getSliceJson(state, false);
-        json.embedding_measures = [];
-        json.embedding_dimensions = [];
+        let embeddingJson = getSliceJson(state, false);
+        embeddingJson.types = [];
+        embeddingJson.embedding_measures = [];
+        embeddingJson.embedding_dimensions = [];
+        let dotPlotJson = getSliceJson(state, false);
+        dotPlotJson.types = [];
         // TODO only get new features for dot plot
         if (sliceOptions.dotplot) {
-            json.dotplot_measures = [];
-            json.dotplot_dimensions = [];
+            dotPlotJson.dotplot_measures = [];
+            dotPlotJson.dotplot_dimensions = [];
         }
 
         continuousFeatures.forEach(feature => {
             if (sliceOptions.dotplot) {
                 if (obs.indexOf(feature) === -1) {
-                    json.dotplot_measures.push(feature);
+                    dotPlotJson.dotplot_measures.push(feature);
                 }
             }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
-                json.embedding_measures.push(feature);
+                embeddingJson.embedding_measures.push(feature);
             }
         });
-
 
         categoricalFeatures.forEach(feature => {
             if (sliceOptions.dotplot) {
-                json.dotplot_dimensions.push(feature);
+                dotPlotJson.dotplot_dimensions.push(feature);
             }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
-                json.embedding_dimensions.push(feature);
+                embeddingJson.embedding_dimensions.push(feature);
             }
         });
 
-
-        let interpolator = getState().interpolator;
-        let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
-        json.types = [];
-        if (sliceOptions.dotplot && json.dotplot_dimensions.length > 0 && json.dotplot_measures.length > 0) {
-            json.types.push('dotplot');
+        if (sliceOptions.dotplot && dotPlotJson.dotplot_dimensions.length > 0 && dotPlotJson.dotplot_measures.length > 0) {
+            dotPlotJson.types = ['dotplot'];
         }
-        json.types.push('embedding');
-        json.types.push('summary');
-        json.summary_measures = json.embedding_measures;
-        json.summary_dimensions = json.embedding_dimensions;
-
-        fetch(API + '/slice',
-            {
-                body: JSON.stringify(json),
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).finally(() => {
-            dispatch(_setLoading(false));
-        }).catch(err => {
-            handleError(dispatch, err, 'Unable to retrieve data. Please try again.');
-            if (onError) {
-                onError(err);
+        const numEmbeddingFeaturesRequested = embeddingJson.embedding_measures.length + embeddingJson.embedding_dimensions.length;
+        if (numEmbeddingFeaturesRequested > 0 || cachedFeatureNames['__count'] == null) {
+            embeddingJson.types = ['embedding', 'summary'];
+            if (numEmbeddingFeaturesRequested === 0) {
+                embeddingJson.embedding_measures = ['__count'];
             }
-        }).then(result => result.json()).then(sliceResult => {
+            embeddingJson.summary_measures = embeddingJson.embedding_measures;
+            embeddingJson.summary_dimensions = embeddingJson.embedding_dimensions;
+        }
+        let embeddingPromise;
+        let dotPlotPromise;
+        if (embeddingJson.types.length === 0) {
+            embeddingPromise = Promise.resolve({});
+        } else {
+            embeddingPromise = fetch(API + '/slice',
+                {
+                    body: JSON.stringify(embeddingJson),
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                }).then(r => r.json());
+        }
+        if (dotPlotJson.types.length === 0) {
+            dotPlotPromise = Promise.resolve({});
+        } else {
+            dotPlotPromise = fetch(API + '/slice',
+                {
+                    body: JSON.stringify(dotPlotJson),
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                }).then(r => r.json());
+        }
 
-                const embeddingResult = sliceResult.embedding;
+
+        dotPlotPromise.then(dotPlotResult => {
+            if (dotPlotResult.dotplot != null) {
+                dispatch(_setDotPlotData(dotPlotResult.dotplot));
+            }
+        });
+        embeddingPromise.then(sliceResult => {
+                const embeddingResult = sliceResult.embedding || {};
                 const embeddingBins = embeddingResult.bins;
                 const embeddingValues = embeddingResult.values;
-                const summary = sliceResult.summary || {};
+                const newSummary = sliceResult.summary || {};
+                const globalFeatureSummary = state.globalFeatureSummary;
+                for (let key in newSummary) {
+                    globalFeatureSummary[key] = newSummary[key];
+                }
                 const coordinates = embeddingResult.coordinates;
                 const is3d = selectedEmbeddings[0].endsWith('3d');
                 const selectedPoints = state.selection.points;
-                let newFeatureSummary = sliceResult.summary;
-                let featureSummary = state.featureSummary;
-                for (let measureOrDimensionKey in newFeatureSummary) {
-                    let newMeasureOrDimension = newFeatureSummary[measureOrDimensionKey];
-                    let measureOrDimension = featureSummary[measureOrDimensionKey];
-                    if (measureOrDimension == null) {
-                        measureOrDimension = {};
-                        featureSummary[measureOrDimensionKey] = measureOrDimension;
-                    }
-                    for (let key in newMeasureOrDimension) {
-                        measureOrDimension[key] = newMeasureOrDimension[key];
-                    }
-                }
-
 
                 // add new embedding values
                 for (let name in embeddingValues) {
+                    let traceSummary = globalFeatureSummary[name];
                     let x = coordinates[selectedEmbeddings[0] + '_1'];
                     let y = coordinates[selectedEmbeddings[0] + '_2'];
                     let z = coordinates[selectedEmbeddings[0] + '_3'];
                     let values = embeddingValues[name];
 
-                    let isCategorical = name !== '__count' && name in summary['dimensions'];
+                    let isCategorical = name !== '__count' && obsCat.indexOf(name) !== -1;
                     let colorScale = null;
 
-
                     if (!isCategorical) {
-                        // TODO get min, max from server
-
-                        let _summary = summary['measures'];
-                        let traceSummary = _summary == null ? null : _summary[name];
-                        let min = Number.MAX_VALUE;
-                        let max = -Number.MAX_VALUE;
-                        if (traceSummary == null) {
-
+                        if (traceSummary == null) { // __count is not currently precomputed
+                            console.log('Computing range for ' + name);
+                            let min = Number.MAX_VALUE;
+                            let max = -Number.MAX_VALUE;
                             for (let i = 0, n = values.length; i < n; i++) {
                                 let value = values[i];
                                 min = value < min ? value : min;
                                 max = value > max ? value : max;
                             }
-                        } else {
-                            for (let i = 0; i < traceSummary.min.length; i++) {
-                                min = traceSummary.min[i] < min ? traceSummary.min[i] : min;
-                                max = traceSummary.max[i] > max ? traceSummary.max[i] : max;
-                            }
-
+                            traceSummary = {min: min, max: max};
+                            globalFeatureSummary[name] = traceSummary;
                         }
-                        colorScale = scaleSequential(interpolator.value).domain([min, max]);
+                        colorScale = scaleSequential(interpolator.value).domain([traceSummary.min, traceSummary.max]);
                         colorScale.summary = traceSummary;
                     } else {
-                        let traceSummary = summary['dimensions'][name];
                         let traceUniqueValues = traceSummary.categories;
                         colorScale = scaleOrdinal(
                             traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
@@ -1089,15 +1108,18 @@ function _updateCharts(sliceOptions, onError) {
                     return a < b ? -1 : 1;
                 });
 
-                dispatch(setFeatureSummary(featureSummary));
+                dispatch(setGlobalFeatureSummary(globalFeatureSummary));
                 dispatch(_setEmbeddingData(embeddingData.slice(0)));
-                if (sliceResult.dotplot != null) {
-                    dispatch(_setDotPlotData(sliceResult.dotplot));
-                }
-
-
             },
         );
+        return Promise.all([embeddingPromise, dotPlotPromise]).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to retrieve data. Please try again.');
+            if (onError) {
+                onError(err);
+            }
+        });
 
     };
 
