@@ -34,7 +34,7 @@ class FirestoreDatastore:
         query.add_filter('readers'.format(email), '>', '')
         results = []
         for result in query.fetch():
-            results.append({'id': result.id, 'name': result['name'], 'owner': result['owner'] == email})
+            results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
         return results
 
     def __get_key_and_dataset(self, email, dataset_id, ensure_owner):
@@ -46,7 +46,7 @@ class FirestoreDatastore:
         readers = dataset.get('readers')
         if email not in readers:
             raise InvalidUsage('Not authorized', 403)
-        if ensure_owner and dataset['owner'] != email:
+        if ensure_owner and email not in dataset['owners']:
             raise InvalidUsage('Not authorized', 403)
         return key, dataset
 
@@ -64,17 +64,25 @@ class FirestoreDatastore:
         if dataset_id is not None:
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
-            dataset = datastore.Entity(client.key(DATASET))
+            dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url', 'summary'])
         readers = set(readers)
         if email in readers:
             readers.remove(email)
         readers.add(email)
-        dataset.update({
-                'name': dataset_name,
-                'owner': email,
-                'readers': list(readers),
-                'url': url
-        })
+        if dataset_id is None:  # new dataset
+            dataset.update({
+                    'name': dataset_name,
+                    'owners': [email],
+                    'readers': list(readers),
+                    'url': url,
+                    'summary': []  # for precomputed data-array of {'name':'', 'basis':'', 'nbins':0, 'agg':''}
+            })
+        else:
+            dataset.update({
+                    'name': dataset_name,
+                    'readers': list(readers),
+                    'url': url
+            })
         client.put(dataset)
         dataset_id = dataset.id
         return dataset_id
