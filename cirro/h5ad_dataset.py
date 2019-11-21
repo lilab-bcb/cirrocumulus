@@ -24,7 +24,7 @@ class H5ADDataset:
                 obs_cat.append(key)
             else:
                 obs.append(key)
-        result['var'] = adata.var_names.values
+        result['var'] = adata.var_names.values.tolist()
         result['obs'] = obs
         result['obsCat'] = obs_cat
         result['nObs'] = adata.shape[0]
