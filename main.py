@@ -18,7 +18,9 @@ def root():
     return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
 
-dataset_api.add(['pq', 'parquet'], ParquetDataset())
+pq_ds = ParquetDataset()
+dataset_api.add(pq_ds)
+dataset_api.default_provider = pq_ds
 auth_api.provider = GoogleAuth()
 database_api.provider = FirestoreDatastore()
 

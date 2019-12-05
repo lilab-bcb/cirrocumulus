@@ -170,6 +170,7 @@ export function getDatasetFilterArray(datasetFilter) {
                 f = [key, value.operation, value.value];
             }
         }
+
         if (f != null) {
             filters.push(f);
         }
@@ -178,7 +179,7 @@ export function getDatasetFilterArray(datasetFilter) {
 }
 
 function getBinInfo(state) {
-    if (state.dataset.summary != null) {
+    if (state.dataset != null && state.dataset.summary != null && state.dataset.summary.embeddings != null) {
         // TODO handle more than one precomputed embedding
         const precomputedEmbedding = state.dataset.summary.embeddings[0];
         //json.embedding = precomputedEmbedding.basis;
@@ -204,6 +205,13 @@ function getSliceJson(state, includeFilter = true) {
     if (includeFilter && Object.keys(state.datasetFilter).length > 0) {
         let filters = getDatasetFilterArray(state.datasetFilter);
         if (filters.length > 0) {
+            const obs = state.dataset.obs;
+            const obsCat = state.dataset.obsCat;
+            for (let i = 0; i < filters.length; i++) {
+                if (obsCat.indexOf(filters[i][0]) !== -1 || obs.indexOf(filters[i][0]) !== -1) {
+                    filters[i][0] = 'obs.' + filters[i][0];
+                }
+            }
             json.filter = {filters: filters};
         }
     }
@@ -764,17 +772,17 @@ function _setFeatures(payload) {
 function _setGroupBy(payload) {
     return function (dispatch, getState) {
         let prior = getState().groupBy; // in case of error, restore
-        let datasetFilter = getState().datasetFilter;
-        let categoricalFilterChanged = false;
-        for (let key in datasetFilter) {
-            if (payload.indexOf(key) === -1) {
-                delete datasetFilter[key];
-                categoricalFilterChanged = true;
-            }
-        }
-        if (categoricalFilterChanged) {
-            dispatch({type: SET_DATASET_FILTER, payload: datasetFilter});
-        }
+        // let datasetFilter = getState().datasetFilter;
+        // let categoricalFilterChanged = false;
+        // for (let key in datasetFilter) {
+        //     if (payload.indexOf(key) === -1) {
+        //         delete datasetFilter[key];
+        //         categoricalFilterChanged = true;
+        //     }
+        // }
+        // if (categoricalFilterChanged) {
+        //     dispatch({type: SET_DATASET_FILTER, payload: datasetFilter});
+        // }
         dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
         dispatch(_updateCharts({dotplot: true}, err => {
             dispatch({type: SET_GROUP_BY, payload: prior});
@@ -910,6 +918,7 @@ function _updateCharts(sliceOptions, onError) {
         const unselectedMarkerSize = state.unselectedMarkerSize;
         const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
         const obsCat = state.dataset.obsCat;
+
         let embeddingData = state.embeddingData;
         const embeddingChartSize = state.embeddingChartSize;
         if (sliceOptions.clear) {
@@ -948,14 +957,15 @@ function _updateCharts(sliceOptions, onError) {
         }
 
         continuousFeatures.forEach(feature => {
+            let isObs = obs.indexOf(feature) !== -1;
             if (sliceOptions.dotplot) {
-                if (obs.indexOf(feature) === -1) {
+                if (!isObs) {
                     dotPlotJson.dotplot_measures.push(feature);
                 }
             }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
-                embeddingJson.embedding_measures.push(feature);
+                embeddingJson.embedding_measures.push(isObs ? 'obs.' + feature : feature);
             }
         });
 
@@ -1011,6 +1021,7 @@ function _updateCharts(sliceOptions, onError) {
             }
         });
         embeddingPromise.then(sliceResult => {
+
                 const embeddingResult = sliceResult.embedding || {};
                 const embeddingBins = embeddingResult.bins;
                 const embeddingValues = embeddingResult.values;

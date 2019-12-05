@@ -1,3 +1,4 @@
+import json
 import os
 
 from cirro.entity import Entity
@@ -14,16 +15,21 @@ class LocalDbAPI:
     def user(self, email):
         return {}
 
+    def create_dataset_meta(self, path):
+        result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
+        json_file = os.path.join(path, 'index.json')
+        if os.path.isdir(path) and os.path.exists(json_file):
+            result['url'] = json_file
+            with open(json_file, 'rt') as f:
+                result.update(json.load(f))
+        return result
+
     def datasets(self, email):
         results = []
         for path in self.paths:
-            results.append({'id': path, 'name': os.path.splitext(os.path.basename(path))[0]})
+            results.append(self.create_dataset_meta(path))
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        info = {'name': os.path.splitext(os.path.basename(dataset_id))[0], 'url': dataset_id}
-        # TODO check if prepared summaries
-        # if dataset_id.lower().endswith('.parquet') or dataset_id.lower().endswith('.pq'):
-        #     info['summary'] = {'embeddings': [{'basis': 'umap', 'nbins': 500, 'agg': 'max'}]}
-        result = Entity(dataset_id, info)
+        result = Entity(dataset_id, self.create_dataset_meta(dataset_id))
         return result

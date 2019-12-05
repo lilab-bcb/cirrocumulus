@@ -1,46 +1,43 @@
 import pandas as pd
+from cirro.simple_data import SimpleData
 from natsort.natsort import natsorted
-
-
-def sum(x):
-    return x.values.sum(dtype='f8')
-
-
-def num_expressed(x):
-    return (x > 0).sum()
 
 
 class FeatureAggregator:
 
-    def __init__(self, measures, dimensions):
+    def __init__(self, obs_measures, var_measures, dimensions):
         self.measure_df = None
         self.dimension_value_counts = {}
-        self.measures = measures
+        self.obs_measures = obs_measures
+        self.var_measures = var_measures
         self.dimensions = dimensions
         self.nrows = 0
 
-    def __add(self, df):
+    def __add(self, adata):
         dimension_dict = {}
         measure_df = None
 
-        if len(df) > 0:
+        if adata.shape[0] > 0:
             for column in self.dimensions:
-                value_counts = df.agg({column: lambda x: x.value_counts(sort=False)})
+                value_counts = adata.obs.agg({column: lambda x: x.value_counts(sort=False)})
                 value_counts = value_counts[value_counts[column] > 0]
                 dimension_dict[column] = value_counts
-            if len(self.measures) > 0:
-                measure_df = df[self.measures].agg(['min', 'max', sum, num_expressed]).T
-                # measures on columns, stats on rows, transpose so that stats are on columns
+            measure_df = None
+            if len(self.var_measures) > 0:
+                measure_df = SimpleData.X_stats(adata, self.var_measures)
+            if len(self.obs_measures) > 0:
+                obs_stats = SimpleData.obs_stats(adata, self.obs_measures)
+                measure_df = obs_stats if measure_df is None else pd.concat((measure_df, obs_stats))
+
         return measure_df, dimension_dict
 
-    def add(self, df):
-        self.nrows += len(df)
-        df = df[self.dimensions + self.measures]
-        measure_df, dimension_value_counts = self.__add(df)
+    def add(self, adata):
+        self.nrows += adata.shape[0]
+        measure_df, dimension_value_counts = self.__add(adata)
         if measure_df is not None:
             if self.measure_df is not None:
                 self.measure_df = pd.concat((self.measure_df, measure_df))
-                agg_dict = {'min': 'min', 'max': 'max', 'sum': 'sum', 'num_expressed': 'sum'}
+                agg_dict = {'min': 'min', 'max': 'max', 'sum': 'sum', 'numExpressed': 'sum'}
                 self.measure_df = self.measure_df.groupby(self.measure_df.index).agg(agg_dict)
             else:
                 self.measure_df = measure_df
@@ -73,5 +70,5 @@ class FeatureAggregator:
                                    'max': float(values.loc['max']),
                                    'sum': float(values.loc['sum']),
                                    'mean': float(values.loc['sum'] / self.nrows),
-                                   'num_expressed': int(values.loc['num_expressed'])}
+                                   'numExpressed': int(values.loc['numExpressed'])}
         return result

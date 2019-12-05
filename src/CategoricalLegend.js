@@ -41,12 +41,8 @@ class CategoricalLegend extends React.PureComponent {
         let maxSize = 60;
         const fractionScale = scaleLinear().domain([0, 1]).range([0, maxSize]).clamp(true);
         return (
-            <div style={{
-                display: 'inline-block',
-                padding: 10,
-                verticalAlign: 'top',
-                maxHeight: maxHeight,
-                overflow: 'auto'
+            <div className="cirro-chart-legend" style={{
+                maxHeight: maxHeight
             }}>
                 <b>{name}</b>
                 <table>

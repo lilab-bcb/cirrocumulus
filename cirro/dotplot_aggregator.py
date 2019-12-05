@@ -1,4 +1,5 @@
 import pandas as pd
+from cirro.simple_data import SimpleData
 from natsort import natsorted
 
 
@@ -12,9 +13,10 @@ def non_zero(g):
 
 class DotPlotAggregator:
 
-    def __init__(self, measures, dimensions):
+    def __init__(self, obs_measures, var_measures, dimensions):
         self.category_to_df = {}
-        self.measures = measures
+        self.obs_measures = obs_measures
+        self.var_measures = var_measures
         self.dimensions = dimensions
 
     def collect(self):
@@ -35,9 +37,10 @@ class DotPlotAggregator:
             results.append(dotplot_result)
         return results
 
-    def add(self, df):
-        df = df[self.measures + self.dimensions + ['__count']]
 
+    def add(self, adata):
+        df = SimpleData.to_df(adata, self.obs_measures, self.var_measures, self.dimensions)
+        df['__count'] = 1.0
         for column in self.dimensions:
             summarized_df = df.groupby(column).aggregate(['sum', non_zero, count])
             summarized_df.index = summarized_df.index.astype('object')

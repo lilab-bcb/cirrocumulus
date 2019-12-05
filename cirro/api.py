@@ -1,7 +1,7 @@
-from cirro.data_processing import process_data
-from cirro.embedding_aggregator import get_basis
 from flask import Blueprint, Response, request
 
+from cirro.data_processing import process_data
+from cirro.embedding_aggregator import get_basis
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -87,10 +87,10 @@ def _handle_slice(content):
     summary_measures = content.get('summary_measures', [])
     summary_dimensions = content.get('summary_dimensions', [])
     data_filter = content.get('filter', None)
-    return process_data(dataset_api=dataset_api, dataset=dataset, basis=basis, nbins=nbins,
+    return process_data(dataset_api=dataset_api, dataset=dataset, return_types=return_types, basis=basis, nbins=nbins,
         embedding_measures=embedding_measures, embedding_dimensions=embedding_dimensions,
-        dotplot_measures=dotplot_measures, dotplot_dimensions=dotplot_dimensions, return_types=return_types,
-        agg_function=agg_function, summary_dimensions=summary_dimensions, summary_measures=summary_measures,
+        dotplot_measures=dotplot_measures, dotplot_dimensions=dotplot_dimensions, summary_measures=summary_measures,
+        summary_dimensions=summary_dimensions, agg_function=agg_function,
         data_filter=data_filter)
 
 

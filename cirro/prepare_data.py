@@ -1,136 +1,221 @@
 import argparse
-import math
+import json
+import logging
 import os
-import tempfile
 
+import anndata
+import numpy as np
 import pandas as pd
-import pyarrow
 import pyarrow as pa
 import pyarrow.parquet as pq
+import scipy.sparse
 from natsort import natsorted
 
 from cirro.data_processing import process_data
 from cirro.dataset_api import DatasetAPI
-from cirro.embedding_aggregator import get_basis
+from cirro.embedding_aggregator import get_basis, EmbeddingAggregator
 from cirro.entity import Entity
+from cirro.h5ad_dataset import H5ADDataset
 from cirro.parquet_dataset import ParquetDataset
+from cirro.simple_data import SimpleData
+
+logger = logging.getLogger("cirro")
+
+
+def write_table(d, output_dir, name, write_statistics=True, row_group_size=None):
+    os.makedirs(output_dir, exist_ok=True)
+    pq.write_table(pa.Table.from_pydict(d), output_dir + os.path.sep + name + '.parquet',
+        write_statistics=write_statistics, row_group_size=row_group_size)
+
+
+def fraction_expressed(x):
+    return (x > 0).sum() / len(x)
 
 
 class PrepareData:
 
-    def __init__(self, input_path):
+    def __init__(self, input_path, backed):
         self.input_path = input_path
-        self.parquet_file = pq.ParquetFile(input_path)
-        self.schema = self.parquet_file.metadata.schema.to_arrow_schema()
-        measures = []
+        self.adata = anndata.read(input_path, backed='r' if backed else None)
         dimensions = []
-        for i in range(len(self.schema.names)):
-            name = self.schema.names[i]
-            data_type = self.schema.types[i]
-            if isinstance(data_type, pyarrow.lib.DictionaryType):
-                dimensions.append(name)
-            elif not pyarrow.types.is_string(data_type):
+        measures = []
+        others = []
+        for i in range(len(self.adata.obs.columns)):
+            name = self.adata.obs.columns[i]
+            c = self.adata.obs[name]
+            if pd.api.types.is_categorical_dtype(c):
+                if 1 < len(c.cat.categories) < 5000:
+                    dimensions.append(name)
+                else:
+                    others.append(name)
+            elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
                 measures.append(name)
-        self.measures = measures
-        self.dimensions = dimensions
-
-    def summary_stats(self):
-        # compute min, max, mean, sum for measures
-        # compute value counts for categories
-        schema = self.schema
-        parquet_file = self.parquet_file
-        input_path = self.input_path
-        measure_df = pd.DataFrame(
-            index=['min', 'max', 'sum', 'mean', 'num_expressed'])  # rows are min, max, etc, columns are measures
-        for i in range(len(schema.names)):
-            data_type = schema.types[i]
-            name = schema.names[i]
-            if isinstance(data_type, pyarrow.lib.DictionaryType):
-                df = parquet_file.read([name]).to_pandas()
-                result = df[name].value_counts()
-                result = pd.DataFrame(index=result.index, data=dict(counts=result.values))
-                table = pa.Table.from_pandas(result)
-                pq.write_table(table,
-                    os.path.splitext(os.path.basename(input_path))[0] + '_counts_' + name + '.parquet')
-            elif not pyarrow.types.is_string(data_type):
-                df = parquet_file.read([name]).to_pandas()
-                measure_df[name] = (df[name].min(), df[name].max(), df[name].sum(), df[name].mean(),
-                                    (df[name] > 0).sum())
             else:
-                print('Skipped {}'.format(name))
+                others.append(name)
+        self.others = others
+        self.dimensions = dimensions
+        self.measures = measures
+        self.base_name = os.path.splitext(os.path.basename(input_path))[0]
 
-        pq.write_table(pa.Table.from_pandas(measure_df),
-            os.path.splitext(os.path.basename(input_path))[0] + '_measure_summary.parquet')
-
-    def dimension_stats(self, column_batch_size=1000):
+    def summary_stats(self, column_batch_size=500):
+        logger.info('writing summary statistics')
+        # compute min, max, mean, sum for X, data.obs
+        # compute value counts for data.obs categoricals
+        adata = self.adata
         dimensions = self.dimensions
         measures = self.measures
-        parquet_file = self.parquet_file
-        input_path = self.input_path
+        output_directory = os.path.join(self.base_name, 'counts')
 
-        def fraction_expressed(x):
-            return (x > 0).sum() / len(x)
+        for i in range(len(dimensions)):
+            name = dimensions[i]
+            result = adata.obs[name].value_counts()
+            logging.info('cat obs summary: {}/{}'.format(i + 1, len(dimensions)))
+            write_table(dict(index=result.index, value=result.values),
+                output_directory, name, write_statistics=False)
+        # measure_summary_df has stats on index, measures on columns
+        output_directory = os.path.join(self.base_name, 'statistics')
+        measure_summary_df = adata.obs[measures].agg(['min', 'max', 'sum', 'mean'])
+        for c in measure_summary_df.columns:
+            write_table(dict(min=[measure_summary_df.loc['min', c]], max=[measure_summary_df.loc['max', c]],
+                sum=[measure_summary_df.loc['sum', c]], mean=[measure_summary_df.loc['mean', c]]),
+                output_directory, c, write_statistics=False)
 
-        print('{} dimensions'.format(len(dimensions)))
+        for i in range(0, adata.shape[1], column_batch_size):
+            end = i + column_batch_size
+            end = min(end, adata.shape[1])
+            names = adata.var_names[slice(i, end)]
+            X = adata.X[:, slice(i, end)]
+            min_values = X.min(axis=0)
+            max_values = X.max(axis=0)
+            sums = X.sum(axis=0)
+            means = X.mean(axis=0)
+            num_expressed = (X > 0).sum(axis=0)
+            if scipy.sparse.issparse(X):
+                min_values = min_values.toarray().flatten()
+                max_values = max_values.toarray().flatten()
+                sums = sums.A1
+                means = means.A1
+                num_expressed = num_expressed.A1
+
+            logging.info('X summary: {}/{}'.format(i + 1, adata.shape[1]))
+            for j in range(len(names)):
+                write_table(
+                    dict(min=min_values[[j]], max=max_values[[j]], sum=sums[[j]], mean=means[[j]],
+                        num_expressed=num_expressed[[j]]),
+                    output_directory, names[j], write_statistics=False)
+
+
+    # stats, grouped by categories in adata.obs for dot plot
+    def grouped_stats(self, column_batch_size=500):
+        dimensions = self.dimensions
+        n_features = self.adata.shape[1]
+        adata = self.adata
+
         for dimension in dimensions:
-            dimension_summary = None
-            for i in range(0, len(measures), column_batch_size):
+            logger.info('computing grouped stats for {}'.format(dimension))
+            output_directory = os.path.join(self.base_name, 'grouped_statistics', dimension)
+
+            for i in range(0, n_features, column_batch_size):
                 end = i + column_batch_size
-                end = min(end, len(measures))
-                print('{} {}-{}/'.format(dimension, i, end, len(measures)))
-                df = parquet_file.read([dimension] + measures[slice(i, end)]).to_pandas()
-                df = df.groupby(dimension).agg(['mean', fraction_expressed])
-                dimension_summary = df if dimension_summary is None else dimension_summary.join(df)
-            sorted_categories = natsorted(dimension_summary.index)
-            dimension_summary = dimension_summary.loc[sorted_categories]
-            pq.write_table(pa.Table.from_pandas(dimension_summary),
-                os.path.splitext(os.path.basename(input_path))[0] + '_statistics_' + dimension + '.parquet')
+                end = min(end, n_features)
+                logger.info('grouped stats for {} {}-{}/{}'.format(dimension, i, end, n_features))
+                X = adata.X[:, slice(i, end)]
+                if scipy.sparse.issparse(X):
+                    X = X.toarray()
+                df = pd.DataFrame(index=adata.obs[dimension], data=X, columns=adata.var_names[slice(i, end)].tolist())
+                df = df.groupby(df.index).agg(['mean', fraction_expressed])
+                summary_df = df
+                sorted_categories = natsorted(summary_df.index)
+                summary_df = summary_df.loc[sorted_categories]
+                write_table(dict(index=summary_df.index),
+                    output_directory, 'index')
+                for feature in summary_df.columns.get_level_values(0):
+                    write_table(dict(mean=summary_df[(feature, 'mean')],
+                        fraction_expressed=summary_df[(feature, 'fraction_expressed')]),
+                        output_directory, feature)
 
-    def grid_embedding(self, basis_name, summary, nbins, column_batch_size, n_row_groups):
-        input_path = self.input_path
-        full_parquet_file = self.parquet_file
-        full_schema = self.schema
-        output = os.path.splitext(os.path.basename(input_path))[0] + '_' + basis_name + '_' + str(nbins) + '_' + str(
-            summary) + '.parquet'
+    def save_adata_X_chunk(self, start, end):
+        adata = self.adata
+        X_slice = adata.X[:, slice(start, end)]
+        output_directory = os.path.join(self.base_name, 'data')
+        names = adata.var_names[slice(start, end)]
+        logger.info('writing adata X {}-{}'.format(start, end))
+        for j in range(len(names)):
+            X = X_slice[:, j]
+            if scipy.sparse.issparse(X):
+                X = X.toarray()
+            indices = np.where(X != 0)[0]
+            values = X[indices]
 
-        # backed = args.backed
+            write_table(dict(index=indices, value=values), output_directory, names[j])
 
+    def save_adata(self, column_batch_size=500):
+        logger.info('writing adata')
+        adata = self.adata
+        for i in range(0, adata.shape[1], column_batch_size):
+            end = i + column_batch_size
+            end = min(end, adata.shape[1])
+            self.save_adata_X_chunk(i, end)
+
+        logger.info('writing adata obs')
+        output_directory = os.path.join(self.base_name, 'data')
+        for name in adata.obs:
+            # TODO sort?, row group size?
+            write_table(dict(index=np.arange(adata.shape[0]), value=adata.obs[name]),
+                output_directory, name, row_group_size=1000000)
+        logger.info('writing adata obsm')
+
+        for name in adata.obsm.keys():
+            m = adata.obsm[name]
+            ndim = 2  # TODO 3d
+            d = {}
+            for i in range(ndim):
+                d[str(i)] = m[:, i].astype('float32')
+            write_table(d, output_directory, name)
+
+    def write_schema(self, basis_names, summary, nbins):
+        output_file = os.path.join(self.base_name, 'index.json')
+        result = SimpleData.schema(self.adata)
+        del result['embeddings']
+        result['summary'] = {'nObs': self.adata.shape[0], 'embeddings': []}
+        for basis_name in basis_names:
+            result['summary']['embeddings'].append({'basis': basis_name, 'nbins': nbins, 'agg': summary})
+        with open(output_file, 'wt') as f:
+            json.dump(result, f)
+
+    def grid_embedding(self, basis_name, summary, nbins, column_batch_size=500):
+        logger.info('writing embedding for {}'.format(basis_name))
+        path = basis_name + '_' + str(nbins) + '_' + str(summary)
+        output_directory = os.path.join(self.base_name, 'obsm_summary', path)
         return_types = ['embedding']
-
         basis = get_basis(basis_name)
-        dataset = Entity(input_path, {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path})
+        dataset = Entity(self.input_path, {'name': self.base_name, 'url': self.input_path})
         dataset_api = DatasetAPI()
         dataset_api.add(['pq', 'parquet'], ParquetDataset())
-        # dataset_api.add(['h5ad'], H5ADDataset('r' if backed else None))
-
-        full_columns = full_schema.names
-        nobs = full_parquet_file.metadata.num_rows
-
-        if n_row_groups is None:
-            n_row_groups = max(1, math.ceil(nobs / 100000))
-        row_group_size = math.ceil(nobs / n_row_groups)
-        n_row_groups = math.ceil(row_group_size / nobs)
-        tmp_files = []
-        first_batch = True
-
-        # write parquet files in batches of column_batch_size
-
-        for i in range(0, len(full_columns), column_batch_size):
+        ds = H5ADDataset()
+        ds.path_to_data[self.base_name] = self.adata
+        dataset_api.add(['h5ad'], ds)
+        # write bin and coords to data
+        df_with_coords = SimpleData.to_df(self.adata, [], [], [], basis=basis)
+        EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'], None)
+        dict_with_coords = df_with_coords.to_dict(orient='list')
+        dict_with_coords['index'] = df_with_coords.index
+        write_table(dict_with_coords, os.path.join(self.base_name, 'data'), path)
+        all_names = self.dimensions + self.measures + self.adata.var_names.tolist()
+        first_time = True
+        for i in range(0, len(all_names), column_batch_size):
             end = i + column_batch_size
-            end = min(end, len(full_columns))
-            print('{}-{}/{}'.format(i, end, len(full_columns)))
-            columns_in_batch = full_columns[slice(i, end)]
+            end = min(end, len(all_names))
+            logger.info('{} embedding {}-{}/{}'.format(basis_name, i, end, len(all_names)))
+            columns_in_batch = all_names[slice(i, end)]
             embedding_measures = []
             embedding_dimensions = []
 
             for column in columns_in_batch:
-                data_type = full_schema.types[full_schema.get_field_index(column)]
-                if isinstance(data_type, pyarrow.lib.DictionaryType):
+                if column in self.dimensions:
                     embedding_dimensions.append(column)
-                elif not pyarrow.types.is_string(data_type):
-                    embedding_measures.append(column)
                 else:
-                    print('Skipped {}'.format(column))
+                    embedding_measures.append(column)
             data_processing_result = process_data(dataset_api=dataset_api, dataset=dataset,
                 return_types=return_types,
                 basis=basis,
@@ -138,58 +223,56 @@ class PrepareData:
                 embedding_dimensions=embedding_dimensions, agg_function=summary, dotplot_measures=[],
                 dotplot_dimensions=[])
 
-            embedding_summary = data_processing_result['embedding']
-            measure_df, dimension_df = embedding_summary.collect()
+            result = data_processing_result['embedding']
 
-            # save __count, coordinate columns if first batch, bins are measure_df.index
+            for column in result['values']:
+                if column == '__count' and not first_time:
+                    continue
+                write_table(dict(value=result['values'][column]),
+                    output_directory, column)
 
-            for column in embedding_summary.dimensions:
-                measure_df[column] = dimension_df[column].values
-            columns = measure_df.columns.to_list()
-            if not first_batch:
-                columns.remove('__count')
+            # write bins and coordinates
+            if first_time:
+                first_time = False
+                bin_dict = dict(index=result['bins'])
                 for column in basis['coordinate_columns']:
-                    columns.remove(column)
-
-            table = pa.Table.from_pandas(measure_df, columns=columns)
-            first_batch = False
-            _, tmp_file = tempfile.mkstemp()
-            tmp_files.append(tmp_file)
-            pq.write_table(table, tmp_file, row_group_size=row_group_size)
-
-        # join files
-        writer = None
-        for row_group in range(n_row_groups):
-            df = None
-            print('Group {}/{}'.format(row_group + 1, n_row_groups))
-            for tmp_file in tmp_files:
-                parquet_file = pq.ParquetFile(tmp_file)
-                table = parquet_file.read_row_group(row_group)
-                df = table.to_pandas() if df is None else pd.concat((df, table.to_pandas()), axis=1)
-            table = pa.Table.from_pandas(df)
-            if writer is None:
-                writer = pq.ParquetWriter(output, schema=table.schema)
-            writer.write_table(table)
-        writer.close()
-        for tmp_file in tmp_files:
-            os.unlink(tmp_file)
+                    bin_dict[column] = result['coordinates'][column]
+                write_table(bin_dict, output_directory, 'index')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Prepare a dataset by binning on a grid using an embedding, computing global feature statistics, and statistics within each category')
-    parser.add_argument('dataset', help='Path to a parquet file')
-    parser.add_argument('--output', help='Output file')
-    # parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--basis', help='Embedding basis', action='append')
+        description='Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
+    parser.add_argument('dataset', help='Path to a h5ad file')
+    parser.add_argument('commands', help='List of commands to execute',
+        choices=['adata', 'stats', 'grouped_stats', 'basis', 'schema'],
+        action='append')
+    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
+    parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--nbins', help='Number of bins', default=500, type=int)
-    parser.add_argument('--row_groups', help='Number row groups', type=int)
-    parser.add_argument('--column_batch_size', help='Column batch size', default=2000, type=int)
     parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     args = parser.parse_args()
-
-    p = PrepareData(args.dataset)
-    p.dimension_stats()
-    p.summary_stats()
-    for b in args.basis:
-        p.grid_embedding(b, args.summary, args.nbins, args.column_batch_size, args.row_groups)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+    commands = args.commands
+    prepare_data = PrepareData(args.dataset, args.backed)
+    logger.info('preparing ' + args.dataset + '...')
+    if 'adata' in commands:
+        prepare_data.save_adata()
+    if 'stats' in commands:
+        prepare_data.summary_stats()
+    if 'grouped_stats' in commands:
+        prepare_data.grouped_stats()
+    if 'basis' in commands:
+        if args.basis is None:
+            obsm_keys = list(prepare_data.adata.obsm_keys())
+            blacklist = ['X_pca']
+            for key in obsm_keys:
+                if key in blacklist or p.adata.obsm[key].shape[1] >= 10:
+                    obsm_keys.remove(key)
+        else:
+            obsm_keys = args.basis
+        for b in obsm_keys:
+            prepare_data.grid_embedding(b, args.summary, args.nbins)
+    if 'schema' in commands:
+        prepare_data.write_schema(obsm_keys, args.summary, args.nbins)

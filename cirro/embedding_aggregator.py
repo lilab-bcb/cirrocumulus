@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from cirro.simple_data import SimpleData
 
 
 def get_basis(basis):
@@ -16,21 +17,20 @@ def get_basis(basis):
 
 class EmbeddingAggregator:
 
-    def __init__(self, measures, dimensions, count, nbins, basis, agg_function, pre_binned):
+    def __init__(self, obs_measures, var_measures, dimensions, count, nbins, basis, agg_function):
         self.nbins = nbins
         self.agg_function = agg_function
-        self.measures = measures
+        self.obs_measures = obs_measures
+        self.var_measures = var_measures
         self.dimensions = dimensions
         self.count = count
-        if count or nbins is not None:
-            self.measures = self.measures + ['__count']
+        self.add_count = count or nbins is not None
         self.basis = basis
         self.measure_df = None
         self.binned_categorical_value_counts_dict = {}
         self.agg_dict = EmbeddingAggregator.get_bin_level_agg_dict(self.measures, self.basis['coordinate_columns'],
             'sum' if agg_function == 'mean' else agg_function)
         self.dimension_df = None
-        self.pre_binned = pre_binned
 
 
     @staticmethod
@@ -47,7 +47,7 @@ class EmbeddingAggregator:
 
 
     @staticmethod
-    def convert_coords_to_bin(df, nbins, coordinate_columns, coordinate_column_to_range):
+    def convert_coords_to_bin(df, nbins, coordinate_columns, coordinate_column_to_range=None):
         # replace coordinates with bin, set df index to bin
         for name in coordinate_columns:
             values = df[name].values
@@ -93,20 +93,21 @@ class EmbeddingAggregator:
                 column].values.tolist()
         return result
 
-    def add(self, df):
-        if self.pre_binned is not None:
-            self.measure_df = df
+    def add(self, adata):
+        df = SimpleData.to_df(adata, self.obs_measures, self.var_measures, self.dimensions, self.basis)
+        if self.add_count:
+            df['__count'] = 1.0
+
+        if self.nbins is not None:
+            if len(self.dimensions) > 0:
+                dimension_df = df[self.dimensions + self.basis['coordinate_columns']]
+                self.dimension_df = pd.concat(
+                    (self.dimension_df, dimension_df)) if self.dimension_df is not None else dimension_df
+            # bin level summary, coordinates have already been converted
+            df = df.groupby(df.index).agg(self.agg_dict)
         else:
-            if self.nbins is not None:
-                if len(self.dimensions) > 0:
-                    dimension_df = df[self.dimensions + self.basis['coordinate_columns']]
-                    self.dimension_df = pd.concat(
-                        (self.dimension_df, dimension_df)) if self.dimension_df is not None else dimension_df
-                # bin level summary, coordinates have already been converted
-                df = df.groupby(df.index).agg(self.agg_dict)
-            else:
-                df = df[self.measures + self.dimensions + self.basis['coordinate_columns']]
-            first_time = self.measure_df is None
-            self.measure_df = pd.concat((self.measure_df, df)) if self.measure_df is not None else df
-            if self.nbins is not None and not first_time:
-                self.measure_df = self.measure_df.groupby(self.measure_df.index).agg(self.agg_dict)
+            df = df[self.measures + self.dimensions + self.basis['coordinate_columns']]
+        first_time = self.measure_df is None
+        self.measure_df = pd.concat((self.measure_df, df)) if self.measure_df is not None else df
+        if self.nbins is not None and not first_time:
+            self.measure_df = self.measure_df.groupby(self.measure_df.index).agg(self.agg_dict)

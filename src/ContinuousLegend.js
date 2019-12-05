@@ -1,30 +1,9 @@
 import React from 'react';
-import {numberFormat0, numberFormat} from './formatters';
+import {numberFormat, numberFormat0} from './formatters';
 
 
 class ContinuousLegend extends React.PureComponent {
 
-
-    getSelectedAndUnselectedTds(measureSummary, statistic) {
-        if (statistic === 'Mean') {
-            return measureSummary.mean.map((value, i) => {
-                return <td key={i}>{numberFormat0(value)}</td>;
-            });
-
-        } else if (statistic === '% Expressed') {
-            return measureSummary.fraction_expressed.map((value, i) => {
-                return <td key={i}>{numberFormat0(100 * value)}</td>;
-            });
-        }
-    }
-
-    getGlobalSummaryTd(measureSummary, statistic) {
-        if (statistic === 'Mean') {
-            return <td>{numberFormat(measureSummary.mean)}</td>;
-        } else if (statistic === '% Expressed') {
-            return <td>{}</td>;
-        }
-    }
 
     getTable(statistics, summaryNames, selectionSummary, globalSummary) {
         return (<table>
@@ -36,9 +15,9 @@ class ContinuousLegend extends React.PureComponent {
             </tr>
             <tr>
                 <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
-                <td>{numberFormat0(100 * globalSummary.num_expressed / this.props.nObs)}</td>
+                <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
                 {selectionSummary &&
-                <td>{numberFormat0(100 * selectionSummary.num_expressed / this.props.nObsSelected)}</td>}
+                <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
             </tr>
             </tbody>
             <tfoot>

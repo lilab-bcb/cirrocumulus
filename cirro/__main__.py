@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
     args = parser.parse_args()
 
+    # from flask_cors import CORS
     # CORS(app)
     Compress(app)
     from cirro.api import dataset_api
@@ -31,12 +32,15 @@ def main():
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI([args.dataset])
-    dataset_api.add(['h5ad'], H5ADDataset('r' if args.backed else None))
+
     try:
         from cirro.parquet_dataset import ParquetDataset
-        dataset_api.add(['pq', 'parquet'], ParquetDataset())
+        pq = ParquetDataset()
+        dataset_api.add(pq)
+        dataset_api.default_provider = pq
     except ModuleNotFoundError:
         pass
+    dataset_api.add(H5ADDataset('r' if args.backed else None))
     if not args.no_open:
         url = args.host + ':' + str(args.port)
         webbrowser.open(url)

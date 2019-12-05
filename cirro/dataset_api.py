@@ -1,14 +1,15 @@
+import os
+
 from .file_system import FileSystem
 
 
-def get_path(dataset, dataset_key):
+def get_path(dataset, dataset_path):
     path = dataset['url']
-    if dataset_key is not None:
-        slash_index = path.rfind('/')
-        base_url = path[0:slash_index + 1]
-        file_name = path[slash_index + 1:]
-        file_name = file_name[0:file_name.rfind('.')] + '_' + dataset_key
-        path = base_url + file_name + '.parquet'
+    if path[len(path) - 1] == '/':  # remove trailing slash
+        path = path[0:len(path) - 1]
+    if path.endswith('.json'):
+        path = os.path.dirname(path)
+    path = path + '/' + dataset_path
     return path
 
 
@@ -16,14 +17,23 @@ class DatasetAPI:
     def __init__(self):
         self.suffix_to_provider = {}
         self.fs = FileSystem()
+        self.default_provider = None
 
-    def add(self, suffixes, provider):
+    def get_provider(self, path):
+        index = path.rfind('.')
+        if index == -1:
+            return self.default_provider
+        suffix = path[index + 1:].lower()
+        return self.suffix_to_provider[suffix]
+
+    def add(self, provider):
+        suffixes = provider.get_suffixes()
         for suffix in suffixes:
             self.suffix_to_provider[suffix.lower()] = provider
 
     def schema(self, dataset):
         path = dataset['url']
-        provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
+        provider = self.get_provider(path)
         value = provider.schema(self.fs, path)
         if 'summary' in dataset:
             value['summary'] = dataset['summary']
@@ -31,15 +41,17 @@ class DatasetAPI:
 
     def statistics(self, dataset, keys, basis):
         path = dataset['url']
-        provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
+        provider = self.get_provider(path)
         return provider.statistics(self.fs, path, keys, basis)
 
-    def table(self, dataset, keys, basis=None, dataset_key=None):
-        path = get_path(dataset, dataset_key)
-        provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        return provider.table(self.fs, path, keys, basis=basis)
+    def read_summarized(self, dataset, obs_keys=[], var_keys=[], index=False, rename=False,
+                        path=None):
+        path = get_path(dataset, path)
+        provider = self.get_provider(path)
+        return provider.read_summarized(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, index=index,
+            rename=rename, dataset=dataset)
 
-    def tables(self, dataset, keys, basis=None):
+    def read(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']
-        provider = self.suffix_to_provider[path[path.rfind('.') + 1:].lower()]
-        return provider.tables(self.fs, path, keys, basis=basis)
+        provider = self.get_provider(path)
+        return provider.read(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, basis=basis, dataset=dataset)
