@@ -7,6 +7,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 import sys
+
 from cirro.simple_data import SimpleData
 
 
@@ -16,6 +17,8 @@ class ParquetDataset:
         self.cached_path = None
         self.cached_parquet_file = None
         self.cached_stream = None
+        self.cached_dataset_id = None
+        self.cached_data = {}
 
     def get_suffixes(self):
         return ['parquet', 'pq', 'json']
@@ -40,10 +43,10 @@ class ParquetDataset:
             self.cached_stream.close()
 
     def schema(self, file_system, path):
-        self.get_cached_stream(file_system, path)
         if path.endswith('.json'):  # prepared dataset
-            return json.load(self.cached_stream)
-
+            with file_system.open(path) as s:
+                return json.load(s)
+        self.get_cached_stream(file_system, path)
         parquet_file = self.get_file(file_system, path)
         schema = parquet_file.schema.to_arrow_schema()
         metadata = json.loads(schema.metadata[b'pegasus'])
@@ -112,7 +115,6 @@ class ParquetDataset:
         # path is path to index.json
         # if path ends with /data then X is stored as index, value pairs
         # if basis, read index to get bins, x, and y
-        # # scipy.sparse.csr_matrix((data, (row, col)), shape=(100, 1)).toarray()
         path = os.path.dirname(path)
         data_path = os.path.join(path, 'data')
         data = []
@@ -120,6 +122,7 @@ class ParquetDataset:
         col = []
         X = None
         nobs = dataset['nObs']
+
         if len(var_keys) > 0:
             for i in range(len(var_keys)):
                 key = var_keys[i]
@@ -127,21 +130,38 @@ class ParquetDataset:
                 data.append(df['value'])
                 row.append(df['index'])
                 col.append(np.repeat(i, len(df)))
+
             data = np.concatenate(data)
             row = np.concatenate(row)
             col = np.concatenate(col)
             X = scipy.sparse.csr_matrix((data, (row, col)), shape=(nobs, len(var_keys)))
         obs = pd.DataFrame()
+        dataset_id = dataset.id
+        if self.cached_dataset_id != dataset_id:
+            self.cached_dataset_id = dataset_id
+            self.cached_data = {}
+
         for key in obs_keys:
-            df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet'),
-                columns=['value']).to_pandas()  # ignore index in obs for now
-            obs[key] = df['value']
+            cache_key = str(dataset_id) + '-' + key
+            cached_value = self.cached_data.get(cache_key)
+            if cached_value is None:
+                df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet'),
+                    columns=['value']).to_pandas()  # ignore index in obs for now
+                cached_value = df['value']
+            obs[key] = cached_value
+            self.cached_data[cache_key] = cached_value
 
         if basis is not None:
-            df = pq.read_table(file_system.open(data_path + '/' + basis['name'] + '.parquet')).to_pandas()
-            for key in df:
-                obs[key] = df[key]
-            obs.index = df['index']
+            # don't need the coordinates, only bins
+            cache_key = str(dataset_id) + '-' + basis['name']
+            cached_value = self.cached_data.get(cache_key)
+            if cached_value is None:
+                df = pq.read_table(file_system.open(data_path + '/' + basis['name'] + '.parquet'),
+                    columns=['index']).to_pandas()
+                cached_value = df['index']
+            self.cached_data[cache_key] = cached_value
+            obs.index = cached_value
+
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
 
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):

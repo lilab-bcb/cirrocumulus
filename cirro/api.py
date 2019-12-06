@@ -49,17 +49,16 @@ def handle_schema():
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset)
-    embeddings = schema['embeddings']
-    additional_embeddings = []
-    for embedding in embeddings:
-        if embedding['dimensions'] == 3:
-            additional_embeddings.append({'name': embedding['name'], 'dimensions': 2})
-            embedding['name'] += ' 3d'
-    embeddings += additional_embeddings
-    embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
-    schema['embeddings'] = embeddings
-    # custom_annotations = database_api.list_annotations(dataset_id)
-    # schema['custom_annotations'] = custom_annotations
+    embeddings = schema.get('embeddings')
+    if embeddings is not None:
+        additional_embeddings = []
+        for embedding in embeddings:
+            if embedding['dimensions'] == 3:
+                additional_embeddings.append({'name': embedding['name'], 'dimensions': 2})
+                embedding['name'] += ' 3d'
+        embeddings += additional_embeddings
+        embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
+        schema['embeddings'] = embeddings
     return to_json(schema)
 
 

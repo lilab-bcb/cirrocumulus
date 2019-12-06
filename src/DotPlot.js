@@ -1,3 +1,9 @@
+import FormControl from '@material-ui/core/FormControl';
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -8,8 +14,21 @@ import PlotUtil from './PlotUtil';
 import SizeLegend from './SizeLegend';
 
 const Plot = createPlotlyComponent(window.Plotly);
+const styles = theme => ({
+    root: {},
+    formControl: {
+        display: 'block',
+        margin: theme.spacing(1),
+    }
+
+});
 
 class DotPlot extends React.PureComponent {
+
+    onSortOrderChanged = (event) => {
+        this.props.onSortOrderChanged({name: this.props.data.name, value: event.target.value});
+    };
+
 
     render() {
         if (this.props.data == null) {
@@ -17,6 +36,40 @@ class DotPlot extends React.PureComponent {
         }
         const dotplot = this.props.data;
         let categories = dotplot.categories || [''];
+        const features = [];
+        dotplot.values.forEach(datum => {
+            features.push(datum.name);
+        });
+        if (dotplot.sortBy == null) {
+            dotplot.sortBy = features[0];
+        }
+        let sortOrder = [];
+        for (let i = 0; i < categories.length; i++) {
+            sortOrder.push(i);
+        }
+        if (dotplot.sortBy !== dotplot.name) {
+            let sortByDatum;
+            for (let i = 0; i < dotplot.values.length; i++) {
+                if (dotplot.values[i].name === dotplot.sortBy) {
+                    sortByDatum = dotplot.values[i];
+                    break;
+                }
+            }
+            if (sortByDatum) {
+                sortOrder.sort((a, b) => {
+                    let val1 = sortByDatum.mean[a];
+                    let val2 = sortByDatum.mean[b];
+                    let c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
+                    if (c === 0) {
+                        val1 = sortByDatum.fractionExpressed[a];
+                        val2 = sortByDatum.fractionExpressed[b];
+                        c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
+                    }
+                    return c;
+                });
+
+            }
+        }
         let colorMin = Number.MAX_VALUE;
         let colorMax = -Number.MAX_VALUE;
         let sizeMin = Number.MAX_VALUE;
@@ -47,11 +100,12 @@ class DotPlot extends React.PureComponent {
         let colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
         let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]).clamp(true);
 
-        const features = [];
-        dotplot.values.forEach(datum => {
-            features.push(datum.name);
-        });
+
         let traces = [];
+        let x = [];
+        for (let i = 0; i < categories.length; i++) {
+            x.push(i);
+        }
         dotplot.values.forEach(datum => {
             const text = [];
             const color = [];
@@ -59,12 +113,14 @@ class DotPlot extends React.PureComponent {
             const y = [];
             for (let i = 0; i < datum.mean.length; i++) {
                 y.push(datum.name);
-                color.push(colorScale(datum.mean[i]));
-                size.push(sizeScale(datum.fractionExpressed[i]));
-                text.push('mean: ' + numberFormat(datum.mean[i]) + ', % expressed: ' + numberFormat(100 * datum.fractionExpressed[i]));
+                const mean = datum.mean[sortOrder[i]];
+                const frac = datum.fractionExpressed[sortOrder[i]];
+                color.push(colorScale(mean));
+                size.push(sizeScale(frac));
+                text.push('mean: ' + numberFormat(mean) + ', % expressed: ' + numberFormat(100 * frac));
             }
             let trace = {
-                x: categories,
+                x: x,
                 y: y,
                 name: datum.name,
                 type: 'scatter',
@@ -80,7 +136,7 @@ class DotPlot extends React.PureComponent {
             traces.push(trace);
         });
 
-        let config = PlotUtil.createPlotConfig();
+        let config = PlotUtil.createDotPlotConfig();
         let maxFeatureLength = 0;
         features.forEach(value => {
             maxFeatureLength = Math.max(maxFeatureLength, value.length);
@@ -90,24 +146,46 @@ class DotPlot extends React.PureComponent {
         categories.forEach(value => {
             maxCategoryLength = Math.max(maxCategoryLength, value.length);
         });
-        const maxFeatureWidth = 14 + maxFeatureLength * 14;
-        const maxCategoryWidth = 14 + maxCategoryLength * 14;
+        const maxFeatureWidth = maxFeatureLength * 9;
+        const maxCategoryWidth = maxCategoryLength * 9;
         let layout = PlotUtil.createDotPlotLayout({
-            height: 50 + maxCategoryWidth + features.length * (maxDiameter + 2),
-            width: Math.max(300, 20 + maxFeatureWidth + categories.length * (maxDiameter + 2))
+            height: 80 + maxCategoryWidth + features.length * (maxDiameter + 1),
+            width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
         });
-        layout.title = {text: dotplot.name, font: {size: 12}};
-        // features on y axis
         layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: 20, r: 0};
 
+        layout.xaxis.tickvals = x;
+        layout.xaxis.tickmode = 'array';
+        let ticktext = [];
+        for (let i = 0; i < categories.length; i++) {
+            ticktext.push(categories[sortOrder[i]]);
+        }
+        layout.xaxis.ticktext = ticktext;
+        layout.xaxis.range = [-1, categories.length];
+        const sortByInputId = dotplot.name + 'sort_by';
+        const sortChoices = [dotplot.name].concat(features);
         return (<div style={{maxWidth: 800, overflow: 'auto', border: '1px solid LightGrey'}}>
+            <b>{dotplot.name}</b> <small>({categories.length})</small>
+            <FormControl className={this.props.classes.formControl}>
+                <InputLabel shrink={true} htmlFor={sortByInputId}>Sort By</InputLabel>
+                <Select
+                    input={<Input id={sortByInputId}/>}
+                    onChange={this.onSortOrderChanged}
+                    value={dotplot.sortBy}
+                >
+                    {sortChoices.map(item => (
+                        <MenuItem key={item} value={item}>{item}</MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
             <Plot
                 data={traces}
                 layout={layout}
                 config={config}
             />
-            <ColorSchemeLegend style={{display: 'block'}}
-                               width={300}
+            <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
+                               width={186}
                                label={true} height={40}
                                scale={colorScale}/>
             <SizeLegend style={{display: 'block'}}
@@ -121,8 +199,9 @@ class DotPlot extends React.PureComponent {
 
 DotPlot.propTypes = {
     data: PropTypes.object,
+    onSortOrderChanged: PropTypes.func
 };
 
 
-export default DotPlot;
+export default withStyles(styles)(DotPlot);
 

@@ -44,7 +44,7 @@ class CategoricalLegend extends React.PureComponent {
             <div className="cirro-chart-legend" style={{
                 maxHeight: maxHeight
             }}>
-                <b>{name}</b>
+                <b>{name}</b> <small>({categories.length})</small>
                 <table>
                     <tbody>
                     {categories.map((category, i) => {

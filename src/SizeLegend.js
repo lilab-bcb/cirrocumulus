@@ -34,7 +34,7 @@ class SizeLegend extends React.PureComponent {
         let valueToX = scaleLinear().range([margin, width - margin]).domain([0, nsteps - 1]).clamp(true);
         let valueToRadius = scaleLinear().range([2, 10]).domain(domain).clamp(true);
 
-        context.font = '12px Helvetica';
+        context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
         context.textBaseline = 'top';
         context.fillStyle = 'black';
         context.textAlign = 'center';

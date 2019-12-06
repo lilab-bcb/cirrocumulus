@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
 from cirro.dotplot_aggregator import DotPlotAggregator
 from cirro.embedding_aggregator import EmbeddingAggregator
 from cirro.feature_aggregator import FeatureAggregator
@@ -147,7 +148,7 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     obs_keys = set()
     var_keys = set()
     if 'ids' in return_types:
-        obs_keys.add('index')
+        obs_keys.add('id')
     embedding_obs_measures, embedding_var_measures = split_measures(embedding_measures)
     dotplot_obs_measures, dotplot_var_measures = split_measures(dotplot_measures)
     summary_obs_measures, summary_var_measures = split_measures(summary_measures)
@@ -202,8 +203,7 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     adata = dataset_api.read(dataset, obs_keys=list(obs_keys), var_keys=list(var_keys),
         basis=basis)  # TODO apply filters when reading
     adata.obs['__count'] = 1.0
-    if 'ids' in return_types:
-        adata.obs = adata.obs.reset_index()
+
     if add_bin:  # add bin before filtering since we might need to filter on bin
         EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
             nbins=nbins,

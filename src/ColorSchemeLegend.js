@@ -52,7 +52,7 @@ class ColorSchemeLegend extends React.PureComponent {
         context.strokeRect(0, 0, width, legendHeight);
         if (this.props.label > 0) {
 
-            context.font = '12px Times';
+            context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
             context.textBaseline = 'top';
             context.fillStyle = 'black';
 

@@ -1,13 +1,14 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
+import {setDotPlotSortOrder} from './actions';
 import DotPlot from './DotPlot';
 
 
 class DotPlotsPlotly extends React.PureComponent {
     render() {
         return (<div>{this.props.dotPlotData.map((data, i) => {
-            return <DotPlot key={data.name} data={data}/>;
+            return <DotPlot onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;
         })}</div>);
     }
 }
@@ -18,7 +19,11 @@ const mapStateToProps = state => {
     };
 };
 const mapDispatchToProps = dispatch => {
-    return {};
+    return {
+        onSortOrderChanged: (payload) => {
+            dispatch(setDotPlotSortOrder(payload));
+        },
+    };
 };
 
 export default (connect(

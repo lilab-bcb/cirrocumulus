@@ -12,12 +12,14 @@ import {
     SET_DATASET_FILTER,
     SET_DIALOG,
     SET_DOT_PLOT_DATA,
+    SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
     SET_EMBEDDING_CHART_SIZE,
     SET_EMBEDDING_DATA,
     SET_FEATURE_SUMMARY,
     SET_FEATURES,
-    SET_FEATURES_UI, SET_GLOBAL_FEATURE_SUMMARY,
+    SET_FEATURES_UI,
+    SET_GLOBAL_FEATURE_SUMMARY,
     SET_GROUP_BY,
     SET_INTERPOLATOR,
     SET_LOADING,
@@ -429,6 +431,18 @@ function dialog(state = null, action) {
 
 function dotPlotData(state = [], action) {
     switch (action.type) {
+        case SET_DOT_PLOT_SORT_ORDER:
+            const name = action.payload.name;
+            const sortBy = action.payload.value;
+            for (let i = 0; i < state.length; i++) {
+                let item = state[i];
+                if (item.name === name) {
+                    item.sortBy = sortBy;
+                    state[i] = Object.assign({}, item);
+                    break;
+                }
+            }
+            return state.slice();
         case SET_DOT_PLOT_DATA:
             return action.payload;
         case SET_DATASET:

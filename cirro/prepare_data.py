@@ -161,8 +161,9 @@ class PrepareData:
         output_directory = os.path.join(self.base_name, 'data')
         for name in adata.obs:
             # TODO sort?, row group size?
-            write_table(dict(index=np.arange(adata.shape[0]), value=adata.obs[name]),
-                output_directory, name, row_group_size=1000000)
+            write_table(dict(value=adata.obs[name]),
+                output_directory, name)
+        write_table(dict(value=adata.obs.index), output_directory, 'id')
         logger.info('writing adata obsm')
 
         for name in adata.obsm.keys():

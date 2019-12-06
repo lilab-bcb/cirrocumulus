@@ -9,8 +9,8 @@ class IdsAggregator:
     def collect(self):
         return self.series
 
-    def add(self, df):
+    def add(self, adata):
         # df index can be cell index or bin number
         # keep dataframe in long form
-        series = df['index']
+        series = adata.obs['id']
         self.series = pd.concat((self.series, series)) if self.series is not None else series

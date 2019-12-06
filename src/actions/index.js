@@ -60,6 +60,7 @@ export const SET_DATASET_CHOICES = 'SET_DATASET_CHOICES';
 export const RESTORE_VIEW = 'RESTORE_VIEW';
 
 export const SET_DOT_PLOT_DATA = 'SET_DOT_PLOT_DATA';
+export const SET_DOT_PLOT_SORT_ORDER = 'SET_DOT_PLOT_SORT_ORDER';
 export const SET_EMBEDDING_DATA = 'SET_EMBEDDING_DATA';
 
 export const SET_LOADING = 'SET_LOADING';
@@ -239,6 +240,10 @@ export function downloadSelectedIds() {
     };
 }
 
+
+export function setDotPlotSortOrder(payload) {
+    return {type: SET_DOT_PLOT_SORT_ORDER, payload: payload};
+}
 
 function setGlobalFeatureSummary(payload) {
     return {type: SET_GLOBAL_FEATURE_SUMMARY, payload: payload};
@@ -540,6 +545,13 @@ function _loadSavedView() {
                 .then(() => dispatch(restoreView(savedView)))
                 .then(() => dispatch(_updateCharts({dotplot: true, clear: true})))
                 .then(() => dispatch(handleFilterUpdated()))
+                .then(() => {
+                    if (savedView.sort != null) {
+                        for (let name in savedView.sort) {
+                            dispatch(setDotPlotSortOrder({name: name, value: savedView.sort[name]}));
+                        }
+                    }
+                })
                 .finally(() => dispatch(_setLoading(false)))
                 .catch(err => {
                     console.log(err);
@@ -918,6 +930,7 @@ function _updateCharts(sliceOptions, onError) {
         const unselectedMarkerSize = state.unselectedMarkerSize;
         const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
         const obsCat = state.dataset.obsCat;
+        const dotPlotData = state.dotPlotData;
 
         let embeddingData = state.embeddingData;
         const embeddingChartSize = state.embeddingChartSize;

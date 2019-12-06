@@ -69,7 +69,7 @@ const styles = theme => ({
     toolbar: theme.mixins.toolbar,
     content: {
         flexGrow: 1,
-        backgroundColor: theme.palette.background.default,
+        backgroundColor: 'white',
         paddingTop: theme.spacing(6.5),
         paddingLeft: theme.spacing(1)
     },
@@ -181,6 +181,13 @@ class App extends PureComponent {
             json['3d'] = true;
         }
 
+        if (this.props.dotPlotData && this.props.dotPlotData.length > 0) {
+            let sortOrder = {};
+            this.props.dotPlotData.forEach(data => {
+                sortOrder[data.name] = data.sortBy;
+            });
+            json.sort = sortOrder;
+        }
         if (this.props.interpolator.name !== DEFAULT_INTERPOLATOR) {
             json.colorScheme = this.props.interpolator.name;
         }
@@ -416,6 +423,7 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         datasetChoices: state.datasetChoices,
         dialog: state.dialog,
+        dotPlotData: state.dotPlotData,
         email: state.email,
         embeddings: state.embeddings,
         features: state.features,

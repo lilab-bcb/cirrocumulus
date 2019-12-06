@@ -123,6 +123,15 @@ class PlotUtil {
         };
     }
 
+    static createDotPlotConfig() {
+        return {
+            showLink: false,
+            responsive: false,
+            displaylogo: false,
+            modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+        };
+    }
+
 
     static createEmbeddingAxis() {
         return {
@@ -139,17 +148,6 @@ class PlotUtil {
         };
     }
 
-    static createDotPlotAxis() {
-        return {
-            showbackground: false,
-            autorange: true,
-            showgrid: false,
-            zeroline: false,
-            showline: false,
-            title: '',
-            type: 'category'
-        };
-    }
 
     static getEmbeddingChartSize(size) {
         let maxSize = Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
@@ -176,6 +174,7 @@ class PlotUtil {
             autosize: false,
             displaylogo: false,
             showlegend: false,
+
         };
         if (is3d) {
             layout.scene = {
@@ -190,6 +189,20 @@ class PlotUtil {
         return layout;
     }
 
+    static createDotPlotAxis() {
+        return {
+            showbackground: false,
+            autorange: false,
+            fixedrange: true,
+            showgrid: true,
+            zeroline: false,
+            showline: false,
+            title: '',
+            // type: 'category'
+            autotick: false
+        };
+    }
+
     static createDotPlotLayout(options) {
         let {width, height} = options;
         let layout = {
@@ -202,12 +215,16 @@ class PlotUtil {
                 b: 0,
                 r: 0,
                 t: 0,
-                autoexpand: true
+                autoexpand: false
             },
+            fixedrange: true,
             legend: {yanchor: 'top'},
             autosize: true,
             displaylogo: false,
             showlegend: false,
+            font: {
+                family: 'Roboto Condensed,Helvetica,Arial,sans-serif'
+            }
         };
 
         layout.xaxis = PlotUtil.createDotPlotAxis();
