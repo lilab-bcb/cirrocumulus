@@ -1070,12 +1070,11 @@ function _updateCharts(sliceOptions, onError) {
 
     return function (dispatch, getState) {
         const state = getState();
-        const continuousFeatures = state.features;
-        const categoricalFeatures = state.groupBy;
-
         if (state.dataset == null) {
             return;
         }
+        const continuousFeatures = state.features;
+        const categoricalFeatures = state.groupBy;
         dispatch(_setLoading(true));
         const obs = state.dataset.obs;
         const selectedEmbeddings = state.embeddings;
@@ -1120,36 +1119,52 @@ function _updateCharts(sliceOptions, onError) {
         embeddingJson.types = [];
         embeddingJson.embedding_measures = [];
         embeddingJson.embedding_dimensions = [];
-        let dotPlotJson = getSliceJson(state, false);
+        let dotPlotJson = Object.assign({}, embeddingJson);
         dotPlotJson.types = [];
-        // TODO only get new features for dot plot
+        let dotPlotKeys = {};
         if (sliceOptions.dotplot) {
             dotPlotJson.dotplot_measures = [];
             dotPlotJson.dotplot_dimensions = [];
+            let cachedDotPlotKeys = {};
+            dotPlotData.forEach(dotPlotDataItem => {
+                dotPlotDataItem.values.forEach(datum => {
+                    cachedDotPlotKeys[dotPlotDataItem.name + '-' + datum.name] = true;
+                });
+            });
+
+            categoricalFeatures.forEach(category => {
+                let added = false;
+                continuousFeatures.forEach(feature => {
+                    let isObs = obs.indexOf(feature) !== -1;
+                    if (!isObs) {
+                        let key = category + '-' + feature;
+                        dotPlotKeys[key] = true;
+                        if (cachedDotPlotKeys[key] == null) {
+                            dotPlotJson.dotplot_measures.push(feature);
+                            added = true;
+                        }
+                    }
+                });
+                if (added) {
+                    dotPlotJson.dotplot_dimensions.push(category);
+                }
+            });
         }
+        categoricalFeatures.forEach(feature => {
+            let isCached = cachedFeatureNames[feature] != null;
+            if (!isCached) {
+                embeddingJson.embedding_dimensions.push(feature);
+            }
+        });
 
         continuousFeatures.forEach(feature => {
             let isObs = obs.indexOf(feature) !== -1;
-            if (sliceOptions.dotplot) {
-                if (!isObs) {
-                    dotPlotJson.dotplot_measures.push(feature);
-                }
-            }
             let isCached = cachedFeatureNames[feature] != null;
             if (!isCached) {
                 embeddingJson.embedding_measures.push(isObs ? 'obs.' + feature : feature);
             }
         });
 
-        categoricalFeatures.forEach(feature => {
-            if (sliceOptions.dotplot) {
-                dotPlotJson.dotplot_dimensions.push(feature);
-            }
-            let isCached = cachedFeatureNames[feature] != null;
-            if (!isCached) {
-                embeddingJson.embedding_dimensions.push(feature);
-            }
-        });
 
         if (sliceOptions.dotplot && dotPlotJson.dotplot_dimensions.length > 0 && dotPlotJson.dotplot_measures.length > 0) {
             dotPlotJson.types = ['dotplot'];
@@ -1186,11 +1201,55 @@ function _updateCharts(sliceOptions, onError) {
                 }).then(r => r.json());
         }
 
-
         dotPlotPromise.then(dotPlotResult => {
             if (dotPlotResult.dotplot != null) {
-                dispatch(_setDotPlotData(dotPlotResult.dotplot));
+                let newDotplotData = dotPlotResult.dotplot;
+                // merge with existing data and set active flags
+                newDotplotData.forEach(newDotplotDataItem => {
+                    let existingIndex = -1;
+                    for (let i = 0; i < dotPlotData.length; i++) {
+                        if (dotPlotData[i].name === newDotplotDataItem.name) {
+                            existingIndex = i;
+                            break;
+                        }
+                    }
+                    if (existingIndex === -1) {
+                        dotPlotData.push(newDotplotDataItem);
+                    } else {
+                        newDotplotDataItem.values.forEach(value => {
+                            dotPlotData[existingIndex].values.push(value);
+                        });
+                    }
+                });
             }
+            dotPlotData.forEach((dotPlotDataItem, dotPlotDataItemIndex) => {
+                let active = categoricalFeatures.indexOf(dotPlotDataItem.name) !== -1;
+                dotPlotDataItem.active = active;
+                if (active) {
+                    let oneActiveFeature = false;
+                    dotPlotDataItem.values.forEach(datum => {
+                        datum.active = dotPlotKeys[dotPlotDataItem.name + '-' + datum.name];
+                        if (datum.active) {
+                            oneActiveFeature = true;
+                        }
+                    });
+                    dotPlotDataItem.active = oneActiveFeature;
+                    if (dotPlotDataItem.active) {
+                        dotPlotData[dotPlotDataItemIndex] = Object.assign({}, dotPlotDataItem);
+                        dotPlotDataItem.values.sort((a, b) => {
+                            a = a.name;
+                            b = b.name;
+                            return (a < b ? -1 : (a === b ? 0 : 1));
+                        });
+                    }
+                }
+            });
+            dotPlotData.sort((a, b) => {
+                a = a.name;
+                b = b.name;
+                return (a < b ? -1 : (a === b ? 0 : 1));
+            });
+            dispatch(_setDotPlotData(dotPlotData.slice()));
         });
         embeddingPromise.then(sliceResult => {
 

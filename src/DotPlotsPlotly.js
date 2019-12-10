@@ -7,7 +7,7 @@ import DotPlot from './DotPlot';
 
 class DotPlotsPlotly extends React.PureComponent {
     render() {
-        return (<div>{this.props.dotPlotData.map((data, i) => {
+        return (<div>{this.props.dotPlotData.filter(data => data.active).map((data, i) => {
             return <DotPlot onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;
         })}</div>);
     }

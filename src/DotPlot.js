@@ -34,7 +34,9 @@ class DotPlot extends React.PureComponent {
         if (this.props.data == null) {
             return <div/>;
         }
-        const dotplot = this.props.data;
+        const dotplot = Object.assign({}, this.props.data);
+        dotplot.values = dotplot.values.filter(item => item.active);
+        console.log(dotplot.values.length);
         let categories = dotplot.categories || [''];
         const features = [];
         dotplot.values.forEach(datum => {
@@ -76,6 +78,7 @@ class DotPlot extends React.PureComponent {
         let sizeMax = -Number.MAX_VALUE;
         // set min and max values for color and size
         dotplot.values.forEach(datum => {
+
             datum.fractionExpressed.forEach(value => {
                 sizeMin = Math.min(sizeMin, value);
                 sizeMax = Math.max(sizeMax, value);
