@@ -1,7 +1,7 @@
-from flask import Blueprint, Response, request
-
 from cirro.data_processing import process_data
 from cirro.embedding_aggregator import get_basis
+from flask import Blueprint, Response, request
+
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -38,6 +38,57 @@ def handle_server():
     return to_json(server)
 
 
+@blueprint.route('/filters', methods=['GET'])
+def handle_dataset_filters():
+    """List filters available for a dataset.
+    """
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+
+    if dataset_id == '':
+        return 'Please provide an id', 400
+
+    dataset = database_api.get_dataset(email, dataset_id)
+    dataset_filters = database_api.dataset_filters(email, dataset_id)
+    return to_json(dataset_filters)
+
+
+@blueprint.route('/filter', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def handle_dataset_filter():
+    """CRUD for a dataset filter.
+    """
+
+    email = auth_api.auth()['email']
+    if request.method == 'GET':
+        dataset_filter_id = request.args.get('id', '')
+        if dataset_filter_id == '':
+            return 'Please provide an id', 400
+        return to_json( database_api.get_dataset_filter(email, dataset_filter_id))
+    content = request.get_json(force=True, cache=False)
+    filter_id = content.get('id')
+    dataset_id = content.get('ds_id')
+    # POST=new, PUT=update , DELETE=delete, GET=get
+    if request.method == 'PUT' or request.method == 'POST':
+        if request.method == 'PUT' and filter_id is None:
+            return 'Please supply an id', 400
+        if request.method == 'POST' and dataset_id is None:
+            return 'Please supply a ds_id', 400
+        dataset_filter = content.get('value')
+        filter_name = content.get('name')
+        filter_notes = content.get('notes')
+        filter_id = database_api.upsert_dataset_filter(
+            email=email,
+            dataset_id=dataset_id,
+            filter_id=filter_id if request.method == 'PUT' else None,
+            dataset_filter=dataset_filter,
+            filter_name=filter_name,
+            filter_notes=filter_notes)
+        return to_json({'id': filter_id})
+    elif request.method == 'DELETE':
+        database_api.delete_dataset_filter(email, filter_id)
+        return to_json('', 204)
+
+
 @blueprint.route('/schema', methods=['GET'])
 def handle_schema():
     """Get dataset schema.
@@ -72,6 +123,8 @@ def handle_user():
 def _handle_slice(content):
     email = auth_api.auth()['email']
     dataset_id = content.get('id', '')
+    if dataset_id is '':
+        return 'Please supply an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     basis = get_basis(content.get('embedding', None))
     nbins = None

@@ -135,7 +135,7 @@ class ParquetDataset:
             row = np.concatenate(row)
             col = np.concatenate(col)
             X = scipy.sparse.csr_matrix((data, (row, col)), shape=(nobs, len(var_keys)))
-        obs = pd.DataFrame()
+        obs = None
         dataset_id = dataset.id
         if self.cached_dataset_id != dataset_id:
             self.cached_dataset_id = dataset_id
@@ -148,6 +148,8 @@ class ParquetDataset:
                 df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet'),
                     columns=['value']).to_pandas()  # ignore index in obs for now
                 cached_value = df['value']
+            if obs is None:
+                obs = pd.DataFrame()
             obs[key] = cached_value
             self.cached_data[cache_key] = cached_value
 
@@ -160,7 +162,10 @@ class ParquetDataset:
                     columns=['index']).to_pandas()
                 cached_value = df['index']
             self.cached_data[cache_key] = cached_value
-            obs.index = cached_value
+            if obs is None:
+                obs = pd.DataFrame(index=cached_value)
+            else:
+                obs.index = cached_value
 
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
 

@@ -2,17 +2,24 @@ import {Switch} from '@material-ui/core';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
+import DeleteIcon from '@material-ui/icons/Delete';
 import React from 'react';
 import {connect} from 'react-redux';
 import {
+    deleteDatasetFilter,
+    openDatasetFilter,
     setBinSummary,
     setBinValues,
     setEmbeddingChartSize,
@@ -54,6 +61,15 @@ class EmbedForm extends React.PureComponent {
     onMarkerSizeChange = (event) => {
         this.props.handleMarkerSizeUI(event.target.value);
     };
+
+    openDatasetFilter = (filterId) => {
+        this.props.handleOpenDatasetFilter(filterId);
+    };
+
+    deleteDatasetFilter = (filterId) => {
+        this.props.handleDeleteDatasetFilter(filterId);
+    };
+
 
     onMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -135,7 +151,11 @@ class EmbedForm extends React.PureComponent {
 
 
     render() {
-        const {classes, embeddingChartSize, unselectedMarkerSize, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
+        const {classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
+        let savedDatasetFilter = this.props.savedDatasetFilter;
+        if (savedDatasetFilter == null) {
+            savedDatasetFilter = {};
+        }
         const features = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const isSummarized = dataset == null ? false : dataset.summary != null;
@@ -280,6 +300,24 @@ class EmbedForm extends React.PureComponent {
                            onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
                            className={classes.formControl} value={unselectedMarkerOpacity}/>
 
+                {datasetFilters.length > 0 && <Divider/>}
+                {datasetFilters.length > 0 && <h3 style={{marginLeft: 8}}>Saved Filters</h3>}
+
+                <List dense={true}>
+                    {datasetFilters.map(item => (
+                        <ListItem key={item.id} data-key={item.id} button
+                                  selected={item.id === savedDatasetFilter.id}
+                                  onClick={e => this.openDatasetFilter(item.id)}>
+                            <ListItemText primary={item.name}/>
+                            <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
+                                <IconButton edge="end" aria-label="delete">
+                                    <DeleteIcon/>
+                                </IconButton>
+                            </ListItemSecondaryAction>
+                        </ListItem>
+                    ))}
+                </List>
+
             </div>
         );
     }
@@ -287,18 +325,20 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        binSummary: state.binSummary,
+        binValues: state.binValues,
+        dataset: state.dataset,
+        datasetFilters: state.datasetFilters,
+        embeddingChartSize: state.embeddingChartSize,
+        markerOpacity: state.markerOpacityUI,
+        markerSize: state.markerSizeUI,
+        numberOfBins: state.numberOfBinsUI,
+        savedDatasetFilter: state.savedDatasetFilter,
+        selectedEmbeddings: state.embeddings,
         selectedFeatures: state.features,
         selectedGroupBy: state.groupBy,
-        selectedEmbeddings: state.embeddings,
-        numberOfBins: state.numberOfBinsUI,
-        markerSize: state.markerSizeUI,
-        unselectedMarkerSize: state.unselectedMarkerSizeUI,
-        markerOpacity: state.markerOpacityUI,
-        embeddingChartSize: state.embeddingChartSize,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
-        binValues: state.binValues,
-        binSummary: state.binSummary,
-        dataset: state.dataset
+        unselectedMarkerSize: state.unselectedMarkerSizeUI
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
@@ -347,7 +387,14 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleFeatures: value => {
             dispatch(setFeatures(value == null ? [] : value));
-        }
+        },
+        handleOpenDatasetFilter: value => {
+            dispatch(openDatasetFilter(value));
+        },
+        handleDeleteDatasetFilter: value => {
+            dispatch(deleteDatasetFilter(value));
+        },
+
     };
 };
 

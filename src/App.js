@@ -30,6 +30,7 @@ import {
     login,
     logout,
     removeDatasetFilter,
+    SAVE_DATASET_FILTER_DIALOG,
     setDataset,
     setDialog,
     setMessage,
@@ -47,6 +48,7 @@ import {
     DEFAULT_MARKER_SIZE,
     DEFAULT_NUMBER_BINS
 } from "./reducers";
+import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
 
 const drawerWidth = 240;
@@ -103,6 +105,10 @@ class App extends PureComponent {
     onDatasetFilterCleared = () => {
         this.props.removeDatasetFilter(null);
     };
+    onDatasetFilterSaved = () => {
+        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
+    };
+
 
     handleMessageClose = () => {
         this.props.setMessage(null);
@@ -221,9 +227,10 @@ class App extends PureComponent {
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
         const {classes} = this.props;
+        const isEdit = this.props.savedDatasetFilter != null;
         let datasetFilters = getDatasetFilterArray(this.props.datasetFilter);
         const brushSelection = this.props.selection.count;
-        if (this.props.selection.userSelection && brushSelection > 0) {
+        if (datasetFilters.length === 0 && brushSelection > 0) {
             datasetFilters.push(['selection', brushSelection]);
         }
         const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selection.count);
@@ -234,6 +241,7 @@ class App extends PureComponent {
                 {(this.props.dialog === EDIT_DATASET_DIALOG || this.props.dialog === IMPORT_DATASET_DIALOG) &&
                 <EditDatasetDialog/>}
                 {this.props.dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
+                {this.props.dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
                 <AppBar position="fixed" color="default" className={classes.appBar}>
                     <Toolbar variant="dense">
                         <div>
@@ -285,9 +293,21 @@ class App extends PureComponent {
                                         variant={'outlined'}
                                     />;
                                 })}
-                                {datasetFilters.length > 1 &&
+                                {datasetFilters.length > 0 &&
                                 <div style={{display: 'inline-block', marginLeft: '10px'}}><Link title="Clear" href="#"
                                                                                                  onClick={this.onDatasetFilterCleared}>Clear</Link>
+                                </div>}
+                                {datasetFilters.length > 0 &&
+                                <div style={{display: 'inline-block', marginLeft: '10px'}}>
+                                    <Link style={{
+                                        textOverflow: 'ellipsis',
+                                        overflow: 'hidden',
+                                        maxWidth: 140,
+                                        display: 'inline-block',
+                                        whiteSpace: 'nowrap',
+                                        verticalAlign: 'text-bottom'
+                                    }} title={isEdit ? 'Edit ' + this.props.savedDatasetFilter.name : 'Save'} href="#"
+                                          onClick={this.onDatasetFilterSaved}>{isEdit ? 'Edit ' + this.props.savedDatasetFilter.name : 'Save'}</Link>
                                 </div>}
                             </div>
                         </div>
@@ -435,6 +455,7 @@ const mapStateToProps = state => {
         markerSize: state.markerSize,
         message: state.message,
         numberOfBins: state.numberOfBins,
+        savedDatasetFilter: state.savedDatasetFilter,
         selection: state.selection,
         user: state.user,
         view3d: state.view3d
@@ -463,8 +484,7 @@ const mapDispatchToProps = dispatch => {
         },
         removeDatasetFilter: (filter) => {
             dispatch(removeDatasetFilter(filter));
-        },
-
+        }
 
     };
 };

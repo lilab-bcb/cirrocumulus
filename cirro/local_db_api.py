@@ -24,6 +24,9 @@ class LocalDbAPI:
                 result.update(json.load(f))
         return result
 
+    def dataset_filters(self, email, dataset_id):
+        return []
+
     def datasets(self, email):
         results = []
         for path in self.paths:

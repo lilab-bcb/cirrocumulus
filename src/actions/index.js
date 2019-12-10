@@ -2,11 +2,13 @@ import {color} from 'd3-color';
 import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
+import {cloneDeep, isEqual} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator} from '../PlotUtil';
 
 //export const API = 'http://localhost:5000/api';
 export const API = '/api';
+
 const authScopes = [
     'email',
     'profile',
@@ -15,6 +17,7 @@ const authScopes = [
     'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 
+export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
@@ -35,6 +38,7 @@ export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 
 export const SET_SELECTION = 'SET_SELECTION';
 export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
+export const SET_SAVED_DATASET_FILTER = 'SET_SAVED_DATASET_FILTER';
 export const SET_FEATURES = 'SET_FEATURES';
 export const SET_FEATURES_UI = 'SET_FEATURES_UI';
 export const SET_GROUP_BY = 'SET_GROUP_BY';
@@ -54,6 +58,7 @@ export const SET_DIALOG = 'SET_DIALOG';
 
 export const EDIT_DATASET_DIALOG = 'EDIT_DATASET_DIALOG';
 export const IMPORT_DATASET_DIALOG = 'IMPORT_DATASET_DIALOG';
+export const SAVE_DATASET_FILTER_DIALOG = 'SAVE_DATASET_FILTER_DIALOG';
 export const DELETE_DATASET_DIALOG = 'DELETE_DATASET_DIALOG';
 
 export const SET_DATASET_CHOICES = 'SET_DATASET_CHOICES';
@@ -137,17 +142,146 @@ export function login() {
     };
 }
 
+export function openDatasetFilter(filterId) {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+
+        fetch(API + '/filter?id=' + filterId,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(response => response.json())
+            .then(result => {
+                result.id = filterId;
+                result.value = JSON.parse(result.value);
+                if (result.value.selected_points) {
+                    dispatch(setDatasetFilter({}));
+                    dispatch(handleFilterUpdated(result.value.selected_points));
+                } else {
+                    dispatch(setDatasetFilter(result.value));
+                    dispatch(handleFilterUpdated());
+                }
+                dispatch(setSavedDatasetFilter(cloneDeep(result)));
+            }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to retrieve filter. Please try again.');
+        });
+    };
+}
+
+export function deleteDatasetFilter(filterId) {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        fetch(API + '/filter',
+            {
+                body: JSON.stringify({id: filterId}),
+                method: 'DELETE',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            })
+            .then(() => {
+                let datasetFilters = getState().datasetFilters;
+                for (let i = 0; i < datasetFilters.length; i++) {
+                    if (datasetFilters[i].id === filterId) {
+                        datasetFilters.splice(i, 1);
+                        break;
+                    }
+                }
+
+                dispatch(setDatasetFilters(datasetFilters.slice()));
+                dispatch(setMessage('Filter deleted'));
+                let savedDatasetFilter = getState().savedDatasetFilter;
+                if (savedDatasetFilter.id === filterId) {
+                    dispatch(setSavedDatasetFilter(null));
+                }
+            }).finally(() => {
+            dispatch(_setLoading(false));
+            dispatch(setDialog(null));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to delete filter. Please try again.');
+        });
+    };
+}
+
+export function saveDatasetFilter(payload) {
+    return function (dispatch, getState) {
+        const state = getState();
+        let filterValue;
+        const datasetId = getState().dataset.id;
+
+        if (Object.keys(state.datasetFilter).length > 0) {
+            filterValue = state.datasetFilter;
+        } else {
+            filterValue = {selected_points: state.selection.points};
+        }
+        let savedDatasetFilter = state.savedDatasetFilter;
+        let isEditFilter = savedDatasetFilter != null;
+        let requestBody = {ds_id: datasetId};
+        if (isEditFilter) {
+            requestBody.id = savedDatasetFilter.id;
+        }
+        if (savedDatasetFilter == null) {
+            savedDatasetFilter = {};
+        }
+        let sendRequest = false;
+        if (payload.name !== savedDatasetFilter.name) {
+            requestBody.name = payload.name;
+            sendRequest = true;
+        }
+        if (payload.notes !== savedDatasetFilter.notes) {
+            requestBody.notes = payload.notes;
+            sendRequest = true;
+        }
+        if (!isEqual(filterValue, savedDatasetFilter.value)) {
+            requestBody.value = filterValue;
+            sendRequest = true;
+        }
+        if (!sendRequest) {
+            dispatch(setDialog(null));
+            return;
+        }
+        for (let key in requestBody) {
+            savedDatasetFilter[key] = requestBody[key];
+        }
+
+        dispatch(_setLoading(true));
+        fetch(API + '/filter',
+            {
+                body: JSON.stringify(requestBody),
+                method: isEditFilter ? 'PUT' : 'POST',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(response => response.json())
+            .then(result => {
+                requestBody.id = result.id;
+                let datasetFilters = getState().datasetFilters;
+                if (isEditFilter) {
+                    for (let i = 0; i < datasetFilters.length; i++) {
+                        if (datasetFilters[i].id === result.id) {
+                            datasetFilters[i] = requestBody;
+                            break;
+                        }
+                    }
+                } else {
+                    datasetFilters.push(requestBody);
+                }
+                dispatch(setDatasetFilters(datasetFilters.slice()));
+                dispatch(setMessage('Filter saved'));
+                dispatch(setSavedDatasetFilter(Object.assign({}, savedDatasetFilter)));
+            }).finally(() => {
+            dispatch(_setLoading(false));
+            dispatch(setDialog(null));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to save filter. Please try again.');
+        });
+    };
+}
 
 export function removeDatasetFilter(filter) {
     return function (dispatch, getState) {
         if (filter == null) {
-            let datasetFilter = getState().datasetFilter;
-            for (let key in datasetFilter) {
-                delete datasetFilter[key];
-            }
             // clear all
-            dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
+            dispatch(setDatasetFilter({}));
             dispatch(setSelection({}));
+            dispatch(setSavedDatasetFilter(null));
         } else if (filter[0] === 'selection') {
             dispatch(setSelection({}));
         } else {
@@ -203,7 +337,7 @@ function getSliceJson(state, includeFilter = true) {
         json.agg = binInfo.agg;
     }
 
-    if (includeFilter && Object.keys(state.datasetFilter).length > 0) {
+    if (includeFilter) {
         let filters = getDatasetFilterArray(state.datasetFilter);
         if (filters.length > 0) {
             const obs = state.dataset.obs;
@@ -214,6 +348,10 @@ function getSliceJson(state, includeFilter = true) {
                 }
             }
             json.filter = {filters: filters};
+        } else {
+            if (state.selection.points != null) {
+                json.filter = {selected_points: state.selection.points};
+            }
         }
     }
     return json;
@@ -261,6 +399,11 @@ function setFeatureSummary(payload) {
     return {type: SET_FEATURE_SUMMARY, payload: payload};
 }
 
+function setSavedDatasetFilter(payload) {
+    return {type: SET_SAVED_DATASET_FILTER, payload: payload};
+}
+
+
 /**
  *
  * @param selectedPoints Selected chart points if selection was updated or null.
@@ -273,21 +416,18 @@ function handleFilterUpdated(selectedPoints) {
         // if filter is not brush filter, we also need to get coordinates of selected cells
         const state = getState();
         let json = getSliceJson(state);
+        if (json.filter != null && json.filter.selected_points != null) {
+            json.filter = null; // do not use current brush selection
+        }
+        if (selectedPoints != null && selectedPoints.length > 0) {
+            json.filter = {selected_points: selectedPoints};
+        }
         const binInfo = getBinInfo(state);
         const traceBins = binInfo && state.embeddingData.length > 0 ? state.embeddingData[0].data[0].bins : null;
         json.types = ['selectionSummary', 'selectionCoordinates'];
         json.summary_measures = state.features;
         json.summary_dimensions = state.groupBy;
-        let userSelection = state.selection.userSelection;
-        // TODO selection persistence
 
-        if (selectedPoints != null && selectedPoints.length > 0) {
-            if (json.filter == null) {
-                json.filter = {};
-            }
-            userSelection = true;
-            json.filter.selected_points = selectedPoints;
-        }
         if (json.filter == null) {
             dispatch(setSelection({}));
             return dispatch(setFeatureSummary({}));
@@ -299,21 +439,23 @@ function handleFilterUpdated(selectedPoints) {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(result => result.json()).then(result => {
-
             const selectionSummary = result.selectionSummary;
             const selectionCoordinates = result.selectionCoordinates;
             if (selectionCoordinates != null) {
                 const selectedIndicesOrBins = selectionCoordinates.indices_or_bins;
                 let selectedPoints = selectedIndicesOrBins;
                 if (binInfo != null) {
-                    selectedPoints = traceBins == null ? null : PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                    if (traceBins != null) {
+                        selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                    } else {
+                        console.log('Unable to convert bins to points');
+                    }
                 }
 
                 dispatch(setSelection({
                     userPoints: selectedPoints,
                     points: selectedIndicesOrBins,
-                    count: selectionCoordinates.count,
-                    userSelection: userSelection
+                    count: selectionCoordinates.count
                 }));
             } else {
                 dispatch(setSelection({}));
@@ -354,6 +496,7 @@ export function handleMeasureFilterUpdated(payload) {
         if (value != null) {
             filter.value = value;
         }
+        dispatch(setSelection({}));
         dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
         if (update) {
             dispatch(handleFilterUpdated());
@@ -419,6 +562,7 @@ export function handleDimensionFilterUpdated(payload) {
                 selectedValues.push(value);
             }
         }
+        dispatch(setSelection({}));
         dispatch(setDatasetFilter(datasetFilter));
         dispatch(handleFilterUpdated());
     };
@@ -431,6 +575,7 @@ export function handleSelectedPoints(payload) {
         if (!isEmpty && payload.points[0].data.bins != null) {
             selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
         }
+        dispatch(setDatasetFilter({}));
         dispatch(handleFilterUpdated(selectedpoints));
 
     };
@@ -847,6 +992,12 @@ export function setBinValues(payload) {
     };
 }
 
+
+function setDatasetFilters(payload) {
+    return {type: SET_DATASET_FILTERS, payload: payload};
+}
+
+
 export function setDataset(id, loadDefaultView = true, setLoading = true) {
     return function (dispatch, getState) {
         const datasetChoices = getState().datasetChoices;
@@ -874,7 +1025,15 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         if (setLoading) {
             dispatch(_setLoading(true));
         }
-        return fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+
+        const filtersPromise = fetch(API + '/filters?id=' + id,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json())
+            .then(results => {
+                dispatch(setDatasetFilters(results));
+            });
+        const schemaPromise = fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         }).then(result => {
             let newDataset = result;
@@ -886,7 +1045,8 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             if (loadDefaultView) {
                 dispatch(loadDefaultDatasetEmbedding());
             }
-        }).finally(() => {
+        });
+        return Promise.all([schemaPromise, filtersPromise]).finally(() => {
             if (setLoading) {
                 dispatch(_setLoading(false));
             }
@@ -931,7 +1091,6 @@ function _updateCharts(sliceOptions, onError) {
         const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
         const obsCat = state.dataset.obsCat;
         const dotPlotData = state.dotPlotData;
-
         let embeddingData = state.embeddingData;
         const embeddingChartSize = state.embeddingChartSize;
         if (sliceOptions.clear) {
@@ -1045,7 +1204,7 @@ function _updateCharts(sliceOptions, onError) {
                 }
                 const coordinates = embeddingResult.coordinates;
                 const is3d = selectedEmbeddings[0].endsWith('3d');
-                const selectedPoints = state.selection.points;
+                const userPoints = state.selection.userPoints;
 
                 // add new embedding values
                 for (let name in embeddingValues) {
@@ -1104,7 +1263,6 @@ function _updateCharts(sliceOptions, onError) {
                             showscale: false,
                         },
                         unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
-                        selectedpoints: selectedPoints,
                         values: values,
                         text: values,
                     };
@@ -1131,7 +1289,11 @@ function _updateCharts(sliceOptions, onError) {
                     b = b.name.toLowerCase();
                     return a < b ? -1 : 1;
                 });
-
+                embeddingData.forEach(item => {
+                    item.data.forEach(trace => {
+                        trace.selectedpoints = userPoints;
+                    });
+                });
                 dispatch(setGlobalFeatureSummary(globalFeatureSummary));
                 dispatch(_setEmbeddingData(embeddingData.slice(0)));
             },

@@ -10,6 +10,7 @@ import {
     SET_DATASET,
     SET_DATASET_CHOICES,
     SET_DATASET_FILTER,
+    SET_DATASET_FILTERS,
     SET_DIALOG,
     SET_DOT_PLOT_DATA,
     SET_DOT_PLOT_SORT_ORDER,
@@ -31,6 +32,7 @@ import {
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
+    SET_SAVED_DATASET_FILTER,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -78,6 +80,15 @@ function featuresUI(state = [], action) {
     }
 }
 
+// Currently loaded dataset filter, used for keeping track of whether filter is modified
+function savedDatasetFilter(state = null, action) {
+    switch (action.type) {
+        case SET_SAVED_DATASET_FILTER:
+            return action.payload;
+        default:
+            return state;
+    }
+}
 
 function groupBy(state = [], action) {
     switch (action.type) {
@@ -336,7 +347,7 @@ function selection(state = {}, action) {
 /**
  * Feature summary maps measure and dimension names to another object containing
  * categories and counts for dimensions, and statistics such as min, max for measures.
- * Features summaries are in the space of un/selected cells.
+ * Features summaries are in the space of selected cells.
  */
 function featureSummary(state = {}, action) {
     switch (action.type) {
@@ -447,6 +458,17 @@ function dotPlotData(state = [], action) {
             return action.payload;
         case SET_DATASET:
             return [];
+        default:
+            return state;
+    }
+}
+
+
+function datasetFilters(state = [], action) {
+    switch (action.type) {
+        case SET_DATASET_FILTERS:
+            //action.payload.sort()
+            return action.payload;
         default:
             return state;
     }
@@ -579,6 +601,7 @@ export default combineReducers({
     binSummary,
     binValues,
     datasetFilter,
+    datasetFilters,
     dataset,
     datasetChoices,
     dialog,
@@ -603,6 +626,7 @@ export default combineReducers({
     numberOfBins,
     numberOfBinsUI,
     plotConfig,
+    savedDatasetFilter,
     selection,
     serverInfo,
     unselectedMarkerOpacity,
