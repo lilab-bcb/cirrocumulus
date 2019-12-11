@@ -9,8 +9,16 @@ class SimpleData:
         self.X = X
         self.obs = obs
         self.var = var
-        n_obs = X.shape[0] if X is not None else (len(obs) if obs is not None else 0)
-        n_var = X.shape[1] if X is not None else (len(var) if var is not None else 0)
+        n_obs = 0
+        n_var = 0
+        if X is not None:
+            n_var = X.shape[1] if len(X.shape) is 2 else 1
+        elif var is not None:
+            n_var = len(var)
+        if X is not None:
+            n_obs = X.shape[0]
+        elif obs is not None:
+            n_obs = len(obs)
         self.shape = (n_obs, n_var)
 
     @staticmethod
@@ -24,23 +32,26 @@ class SimpleData:
     def obs_stats(adata, columns):
         df = adata.obs[columns]
         # variables on columns, stats on rows, transpose so that stats are on columns
-        return df.agg(['min', 'max', 'sum']).T
+        return df.agg(['min', 'max', 'sum', 'mean']).T
 
     @staticmethod
     def X_stats(adata, var_ids):
         indices = SimpleData.get_var_indices(adata, var_ids)
         X = adata.X[:, indices]
         min_values = X.min(axis=0)
+        mean_values = X.mean(axis=0)
         max_values = X.max(axis=0)
         sums = X.sum(axis=0)
         num_expressed = (X > 0).sum(axis=0)
         if scipy.sparse.issparse(X):
             min_values = min_values.toarray().flatten()
             max_values = max_values.toarray().flatten()
+            mean_values = mean_values.A1
             sums = sums.A1
             num_expressed = num_expressed.A1
 
-        return pd.DataFrame(data={'min': min_values, 'max': max_values, 'sum': sums, 'numExpressed': num_expressed},
+        return pd.DataFrame(data={'min': min_values, 'max': max_values, 'sum': sums, 'numExpressed': num_expressed,
+                                  'mean': mean_values},
             index=var_ids)
 
 
@@ -80,18 +91,17 @@ class SimpleData:
     @staticmethod
     def to_df(adata, obs_measures, var_measures, dimensions, basis=None):
         df = pd.DataFrame()
-        for key in obs_measures + dimensions:
+        obs_keys = obs_measures + dimensions
+        if basis is not None:
+            obs_keys += basis['coordinate_columns']
+
+        for key in obs_keys:
             df[key] = adata.obs[key]
-        indices = adata.get_var_indices(var_measures)
+        indices = SimpleData.get_var_indices(adata, var_measures)
         for i in range(len(var_measures)):
             X = adata.X[:, indices[i]]
             if scipy.sparse.issparse(X):
                 X = X.toarray()
-            df[key] = X
-        if basis is not None:
-            embedding_name = basis['name']
-            embedding_data = adata.obsm[embedding_name]
-            dimensions = basis['dimensions']
-            for i in range(dimensions):
-                df[basis['coordinate_columns'][i]] = embedding_data[:, i]
+            df[var_measures[i]] = X
+
         return df

@@ -14,40 +14,20 @@ from cirro.simple_data import SimpleData
 class ParquetDataset:
 
     def __init__(self):
-        self.cached_path = None
-        self.cached_parquet_file = None
-        self.cached_stream = None
         self.cached_dataset_id = None
         self.cached_data = {}
 
     def get_suffixes(self):
         return ['parquet', 'pq', 'json']
 
-    def get_cached_stream(self, file_system, path):
-        if self.cached_path != path:
-            self.cached_path = path
-            if self.cached_stream is not None:
-                self.cached_stream.close()
-            self.cached_stream = file_system.open(path)
-            return self.cached_stream
-        return None
-
-    def get_file(self, file_system, path):
-        stream = self.get_cached_stream(file_system, path)
-        if stream is not None:  # stream updated
-            self.cached_parquet_file = pq.ParquetFile(self.cached_stream)
-        return self.cached_parquet_file
-
-    def close(self, path):
-        if self.cached_path == path and self.cached_stream is not None:
-            self.cached_stream.close()
 
     def schema(self, file_system, path):
         if path.endswith('.json'):  # prepared dataset
             with file_system.open(path) as s:
                 return json.load(s)
-        self.get_cached_stream(file_system, path)
-        parquet_file = self.get_file(file_system, path)
+        with file_system.open(path, 'rb') as s:
+            parquet_file = pq.ParquetFile(s)
+
         schema = parquet_file.schema.to_arrow_schema()
         metadata = json.loads(schema.metadata[b'pegasus'])
         result = {'version': '1'}
@@ -75,7 +55,8 @@ class ParquetDataset:
 
     def statistics(self, file_system, path, keys, basis):
         keys = ParquetDataset.get_keys(keys, basis=basis)
-        parquet_file = self.get_file(file_system, path)
+        with file_system.open(path, 'rb') as s:
+            parquet_file = pq.ParquetFile(s)
         schema = parquet_file.schema.to_arrow_schema()
         indices = []
         key_to_stats = {}
@@ -126,7 +107,7 @@ class ParquetDataset:
         if len(var_keys) > 0:
             for i in range(len(var_keys)):
                 key = var_keys[i]
-                df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet')).to_pandas()
+                df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet', 'rb')).to_pandas()
                 data.append(df['value'])
                 row.append(df['index'])
                 col.append(np.repeat(i, len(df)))
@@ -145,7 +126,7 @@ class ParquetDataset:
             cache_key = str(dataset_id) + '-' + key
             cached_value = self.cached_data.get(cache_key)
             if cached_value is None:
-                df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet'),
+                df = pq.read_table(file_system.open(data_path + '/' + key + '.parquet', 'rb'),
                     columns=['value']).to_pandas()  # ignore index in obs for now
                 cached_value = df['value']
             if obs is None:
@@ -158,7 +139,7 @@ class ParquetDataset:
             cache_key = str(dataset_id) + '-' + basis['name']
             cached_value = self.cached_data.get(cache_key)
             if cached_value is None:
-                df = pq.read_table(file_system.open(data_path + '/' + basis['name'] + '.parquet'),
+                df = pq.read_table(file_system.open(data_path + '/' + basis['name'] + '.parquet', 'rb'),
                     columns=['index']).to_pandas()
                 cached_value = df['index']
             self.cached_data[cache_key] = cached_value
@@ -173,16 +154,14 @@ class ParquetDataset:
         # path is path to index.json
         if path.endswith('.json'):
             return self.read_data_sparse(file_system, path, obs_keys, var_keys, basis, dataset)
-        parquet_file = self.get_file(file_system, path)
+
         keys = ParquetDataset.get_keys(obs_keys + var_keys, basis=basis)
         if len(keys) == 0:
-            return SimpleData(None, pd.DataFrame(index=pd.RangeIndex(parquet_file.metadata.num_rows)),
-                pd.Index([]), {})
-        df = pq.read_table(parquet_file, keys).to_pandas()
+            return SimpleData(None, pd.DataFrame(), pd.Index([]))
+        with file_system.open(path, 'rb') as s:
+            df = pq.read_table(s, keys).to_pandas()
         X = df[var_keys].values
-        obs = df[obs_keys]
-
         if basis is not None:
-            for key in basis['coordinate_columns']:
-                df[obs] = df[key]
+            obs_keys = obs_keys + basis['coordinate_columns']
+        obs = df[obs_keys]
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))

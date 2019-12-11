@@ -4,9 +4,10 @@ import unittest
 import anndata
 import numpy as np
 import pandas as pd
+
 from cirro.data_processing import process_data
 from cirro.dataset_api import DatasetAPI
-from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirro.embedding_aggregator import get_basis, EmbeddingAggregator
 from cirro.entity import Entity
 from cirro.parquet_dataset import ParquetDataset
 
@@ -24,7 +25,7 @@ class TestEmbedding(unittest.TestCase):
 
     def setUp(self):
         self.dataset_api = DatasetAPI()
-        self.dataset_api.add(['pq'], pq_dataset)
+        self.dataset_api.add(pq_dataset)
         df = pd.DataFrame(data[:, measures].X.toarray(), columns=measures)
         df = df.join(data.obs[dimensions].reset_index())
         df = df.join(pd.DataFrame(data.obsm['X_umap'][:, 0:2], columns=basis['coordinate_columns']))
@@ -35,23 +36,15 @@ class TestEmbedding(unittest.TestCase):
             embedding_measures=measures, embedding_dimensions=dimensions,
             return_types=['embedding'])
 
-        measure_df, _ = process_results['embedding'].collect()
+        results = process_results['embedding']
 
         for key in basis['coordinate_columns']:
-            np.testing.assert_array_equal(measure_df[key].values, self.df[key].values, err_msg=key)
+            np.testing.assert_array_equal(results['coordinates'][key], self.df[key].values, err_msg=key)
         for key in measures:
-            np.testing.assert_array_equal(measure_df[key].values, self.df[key].values, err_msg=key)
-
+            np.testing.assert_array_equal(results['values'][key], self.df[key].values, err_msg=key)
         for key in dimensions:
-            np.testing.assert_array_equal(data.obs[key].values, measure_df[key].values, err_msg=key)
+            np.testing.assert_array_equal(results['values'][key], data.obs[key].values, err_msg=key)
 
-    def test_coordinate_range(self):
-        coordinate_column_to_range = self.dataset_api.statistics(dataset, basis['coordinate_columns'])
-        df = self.df
-        self.assertEqual(df['X_umap_1'].min(), coordinate_column_to_range['X_umap_1'][0])
-        self.assertEqual(df['X_umap_1'].max(), coordinate_column_to_range['X_umap_1'][1])
-        self.assertEqual(df['X_umap_2'].min(), coordinate_column_to_range['X_umap_2'][0])
-        self.assertEqual(df['X_umap_2'].max(), coordinate_column_to_range['X_umap_2'][1])
 
     def test_binning(self):
         nbins = 100
@@ -76,14 +69,20 @@ class TestEmbedding(unittest.TestCase):
             embedding_measures=measures, embedding_dimensions=dimensions,
             return_types=['embedding'], agg_function=agg_function)
 
-        measure_df, dimension_df = process_results['embedding'].collect()
+        results = process_results['embedding']
 
+        # for key in basis['coordinate_columns']:
+        #     np.testing.assert_allclose(measure_df[key].values, df[key].values, atol=0.0000001, err_msg=key)
+        # for key in measures:
+        #     np.testing.assert_allclose(measure_df[key].values, df[key].values, atol=0.0000001, err_msg=key)
+        # for key in dimensions:
+        #     np.testing.assert_array_equal(df[key].values, dimension_df[key].values, err_msg=key)
         for key in basis['coordinate_columns']:
-            np.testing.assert_allclose(measure_df[key].values, df[key].values, atol=0.0000001, err_msg=key)
+            np.testing.assert_array_equal(results['coordinates'][key], df[key].values, err_msg=key)
         for key in measures:
-            np.testing.assert_allclose(measure_df[key].values, df[key].values, atol=0.0000001, err_msg=key)
+            np.testing.assert_array_equal(results['values'][key], df[key].values, err_msg=key)
         for key in dimensions:
-            np.testing.assert_array_equal(df[key].values, dimension_df[key].values, err_msg=key)
+            np.testing.assert_array_equal(results['values'][key]['mode'], df[key].values, err_msg=key)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ class FirestoreDatastore:
 
     def server(self):
         client = self.datastore_client
-        server = dict(email=client.project + '@appspot.gserviceaccount.com')
+        server = dict(email=client.project + '@appspot.gserviceaccount.com', canWrite=True)
         return server
 
     def user(self, email):

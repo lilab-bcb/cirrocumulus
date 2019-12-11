@@ -19,7 +19,11 @@ def filter_adata(adata, data_filter):
             field = filter_obj[0]
             op = filter_obj[1]
             value = filter_obj[2]
-            X = adata.obs[field] if field in adata.obs else adata.X[:, SimpleData.get_var_index(adata, field)]
+            if field in adata.obs:
+                X = adata.obs[field]
+            else:
+                X = adata.X
+                X = X[:, SimpleData.get_var_index(adata, field)] if len(X.shape) == 2 else X
             if op == 'in':
                 keep = (X.isin(value))
             elif op == '>':
@@ -45,6 +49,7 @@ def filter_adata(adata, data_filter):
         if selected_points is not None:
             keep = adata.obs.index.isin(selected_points)
             keep_expr = keep_expr & keep if keep_expr is not None else keep
+
         adata = SimpleData.view(adata, keep_expr)
     return adata
 
@@ -152,9 +157,21 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     embedding_obs_measures, embedding_var_measures = split_measures(embedding_measures)
     dotplot_obs_measures, dotplot_var_measures = split_measures(dotplot_measures)
     summary_obs_measures, summary_var_measures = split_measures(summary_measures)
-    obs_keys.update(summary_dimensions)
+
+    obs_keys.update(embedding_obs_measures)
+    var_keys.update(embedding_var_measures)
+    obs_keys.update(embedding_dimensions)
+
+    obs_keys.update(dotplot_obs_measures)
+    var_keys.update(dotplot_var_measures)
+    obs_keys.update(dotplot_dimensions)
+
     obs_keys.update(summary_obs_measures)
     var_keys.update(summary_var_measures)
+    obs_keys.update(summary_dimensions)
+
+    var_keys.update(summary_var_measures)
+
     if data_filter is not None:
         user_filters = data_filter.get('filters', [])
         selected_points = data_filter.get('selected_points', None)
@@ -188,11 +205,14 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     if 'summary' in return_types:
         result['summary'] = FeatureAggregator(summary_obs_measures, summary_var_measures, summary_dimensions)
     if 'embedding' in return_types:  # uses all data
-        result['embedding'] = EmbeddingAggregator(embedding_obs_measures, embedding_var_measures, embedding_dimensions,
-            len(embedding_measures) + len(embedding_dimensions) == 0,
-            nbins, basis, agg_function, None)
+
+        result['embedding'] = EmbeddingAggregator(obs_measures=embedding_obs_measures,
+            var_measures=embedding_var_measures, dimensions=embedding_dimensions,
+            count=len(embedding_measures) + len(embedding_dimensions) == 0,
+            nbins=nbins, basis=basis, agg_function=agg_function)
     if 'dotplot' in return_types:  # uses all data
-        result['dotplot'] = DotPlotAggregator(dotplot_obs_measures, dotplot_var_measures, dotplot_dimensions)
+        result['dotplot'] = DotPlotAggregator(obs_measures=dotplot_obs_measures, var_measures=dotplot_var_measures,
+            dimensions=dotplot_dimensions)
     if 'selectionSummary' in return_types:  # summary by selection and feature
         result['selectionSummary'] = FeatureAggregator(summary_obs_measures, summary_var_measures, summary_dimensions)
     if 'selectionCoordinates' in return_types:  # return selected bins or indices
@@ -200,19 +220,17 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     if 'ids' in return_types:  # uses selection only
         result['ids'] = IdsAggregator()
 
-    adata = dataset_api.read(dataset, obs_keys=list(obs_keys), var_keys=list(var_keys),
+    adata = dataset_api.read(dataset=dataset, obs_keys=list(obs_keys), var_keys=list(var_keys),
         basis=basis)  # TODO apply filters when reading
-    adata.obs['__count'] = 1.0
 
+    adata.obs['__count'] = 1.0
     if add_bin:  # add bin before filtering since we might need to filter on bin
         EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
             nbins=nbins,
             coordinate_columns=basis['coordinate_columns'],
             coordinate_column_to_range=None)
     adata = filter_adata(adata, data_filter)
+
     for key in result:
-        result[key].add(adata)
-    collected_results = {}
-    for key in result:
-        collected_results[key] = result[key].collect()
-    return collected_results
+        result[key] = result[key].execute(adata)
+    return result

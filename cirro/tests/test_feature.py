@@ -2,7 +2,7 @@ import os
 import unittest
 
 import anndata
-import numpy as np
+import pandas as pd
 
 from cirro.data_processing import process_data
 from cirro.dataset_api import DatasetAPI
@@ -21,52 +21,49 @@ class TestFeature(unittest.TestCase):
 
     def setUp(self):
         self.dataset_api = DatasetAPI()
-        self.dataset_api.add(['pq'], pq_dataset)
+        self.dataset_api.add(pq_dataset)
 
-    def diff_measures(self, measures_summary):
-        mean = data[:, measures].X.mean(axis=0)
-        min = data[:, measures].X.min(axis=0)
-        max = data[:, measures].X.max(axis=0)
-        fraction_expressed = (data[:, measures].X > 0).sum(axis=0) / data.shape[0]
-        np.testing.assert_allclose(
-            measures_summary.iloc[:, measures_summary.columns.get_level_values(1) == 'min'].values.flatten(), min,
-            err_msg='min')
-        np.testing.assert_allclose(
-            measures_summary.iloc[:, measures_summary.columns.get_level_values(1) == 'max'].values.flatten(), max,
-            err_msg='max')
-        np.testing.assert_allclose(
-            measures_summary.iloc[:,
-            measures_summary.columns.get_level_values(1) == 'fraction_expressed'].values.flatten(),
-            fraction_expressed, err_msg='fraction_expressed')
-        np.testing.assert_allclose(
-            measures_summary.iloc[:, measures_summary.columns.get_level_values(1) == 'mean'].values.flatten(), mean,
-            err_msg='mean', atol=0.0000001)
+    def diff_measures(self, summary, fields):
+        for field in fields:
+            my_mean = data[:, field].X.mean()
+            my_min = data[:, field].X.min()
+            my_max = data[:, field].X.max()
+            my_expressed = (data[:, field].X > 0).sum()
+            field_summary = summary[field]
+            self.assertAlmostEqual(my_mean, field_summary['mean'])
+            self.assertAlmostEqual(my_min, field_summary['min'])
+            self.assertAlmostEqual(my_max, field_summary['max'])
+            self.assertEqual(my_expressed, field_summary['numExpressed'])
 
-    def diff_dimensions(self, dimension_value_counts):
-        for key in dimensions:
+    def diff_dimensions(self, summary, fields):
+        for key in fields:
             value_counts = data.obs[key].value_counts()
-            computed_values_counts = dimension_value_counts[key]
-            self.assertEqual((computed_values_counts[computed_values_counts.columns[0]] - value_counts).sum(), 0, key)
+            dimension_summary = summary[key]
+            df = pd.DataFrame.from_dict(dimension_summary)
+            df['categories'] = df['categories'].astype('category')
+            df = df.set_index('categories')
+            df = df.iloc[df.index.get_indexer_for(value_counts.index)]
+            self.assertEqual((df['counts'] - value_counts).sum(), 0, key)
 
     def test_measure_and_dimension(self):
         process_results = process_data(dataset_api=self.dataset_api, dataset=dataset, summary_measures=measures,
             summary_dimensions=dimensions, return_types=['summary'])
 
-        measures_summary, dimension_value_counts = process_results['summary'].collect()
-        self.diff_measures(measures_summary)
-        self.diff_dimensions(dimension_value_counts)
+        summary = process_results['summary']
+        self.diff_measures(summary, measures)
+        self.diff_dimensions(summary, dimensions)
 
     def test_measure(self):
         process_results = process_data(dataset_api=self.dataset_api, dataset=dataset, summary_measures=measures,
             return_types=['summary'])
-        measures_summary, dimension_value_counts = process_results['summary'].collect()
-        self.diff_measures(measures_summary)
+        summary = process_results['summary']
+        self.diff_measures(summary, measures)
 
     def test_dimension(self):
         process_results = process_data(dataset_api=self.dataset_api, dataset=dataset,
             summary_dimensions=dimensions, return_types=['summary'])
-        measures_summary, dimension_value_counts = process_results['summary'].collect()
-        self.diff_dimensions(dimension_value_counts)
+        summary = process_results['summary']
+        self.diff_dimensions(summary, dimensions)
 
 
 if __name__ == "__main__":

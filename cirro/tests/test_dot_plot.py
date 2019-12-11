@@ -22,7 +22,7 @@ class TestDotPlot(unittest.TestCase):
 
     def setUp(self):
         self.dataset_api = DatasetAPI()
-        self.dataset_api.add(['pq'], pq_dataset)
+        self.dataset_api.add(pq_dataset)
 
     def test_dot_plot(self):
         X = data[:, measures].X
@@ -33,21 +33,24 @@ class TestDotPlot(unittest.TestCase):
         def fraction_expressed(g):
             return (g > 0).sum() / len(g)
 
-        summarized_df = df.groupby(by).aggregate(['mean', fraction_expressed])
+        summarized_df = df.groupby(by).agg(['mean', fraction_expressed])
         process_results = process_data(dataset_api=self.dataset_api, dataset=dataset, dotplot_measures=measures,
             dotplot_dimensions=[by], return_types=['dotplot'])
-        dotplot_results = process_results['dotplot'].collect()[0]
-        values = dotplot_results['values']
+        dotplot_result = process_results['dotplot']
+        dotplot_result = dotplot_result[0]
+        values = dotplot_result['values']
         for key in measures:
             index = -1
             for i in range(len(values)):
                 if values[i]['name'] == key:
                     index = i
                     break
+            if index == -1:
+                raise ValueError(key + ' not found')
             np.testing.assert_allclose(summarized_df[key]['mean'].values, values[index]['mean'],
                 atol=0.0000001, err_msg='mean')
             np.testing.assert_allclose(summarized_df[key]['fraction_expressed'].values,
-                values[index]['fraction_expressed'], err_msg='fraction_expressed')
+                values[index]['fractionExpressed'], err_msg='fractionExpressed')
 
 
 if __name__ == "__main__":

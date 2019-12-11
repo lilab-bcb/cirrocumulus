@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+
 from cirro.simple_data import SimpleData
 
 
@@ -15,6 +15,13 @@ def get_basis(basis):
         return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns}
 
 
+def agg_cat(x):
+    value_counts = x.value_counts(sort=False)
+    largest = value_counts.nlargest(1)
+    purity = largest[0] / value_counts.sum()
+    return largest.index[0], purity
+
+
 class EmbeddingAggregator:
 
     def __init__(self, obs_measures, var_measures, dimensions, count, nbins, basis, agg_function):
@@ -26,12 +33,6 @@ class EmbeddingAggregator:
         self.count = count
         self.add_count = count or nbins is not None
         self.basis = basis
-        self.measure_df = None
-        self.binned_categorical_value_counts_dict = {}
-        self.agg_dict = EmbeddingAggregator.get_bin_level_agg_dict(self.measures, self.basis['coordinate_columns'],
-            'sum' if agg_function == 'mean' else agg_function)
-        self.dimension_df = None
-
 
     @staticmethod
     def get_bin_level_agg_dict(measures, coordinate_columns, agg_function):
@@ -65,49 +66,28 @@ class EmbeddingAggregator:
             df.index = df[coordinate_columns[2]] + nbins * (
                     df[coordinate_columns[1]] + nbins * df[coordinate_columns[0]])
 
-    def collect(self):
-        if self.pre_binned is not None:
-            return self.measure_df
-        if self.nbins is not None and self.agg_function == 'mean':
-            count = self.measure_df['__count']
-            self.measure_df = self.measure_df.apply(
-                lambda x: x / count if x.name != '__count' and x.name not in self.basis['coordinate_columns'] else x)
-        if self.nbins is not None and len(self.dimensions) > 0:
-            agg_dict = {}
-            for column in self.basis['coordinate_columns']:
-                agg_dict[column] = 'min'
-            for column in self.dimensions:
-                agg_dict[column] = lambda x: x.mode()[0]
-            self.dimension_df = self.dimension_df.groupby(self.dimension_df.index).agg(agg_dict)
+    def execute(self, adata):
         result = {'coordinates': {}, 'values': {}}
 
-        if self.nbins is not None:
-            result['bins'] = self.measure_df.index.values.tolist()
-        for column in self.basis['coordinate_columns']:
-            result['coordinates'][column] = self.measure_df[column].values.tolist()
-        for column in self.measures:
-            result['values'][column] = self.measure_df[column].values.tolist()
-        for column in self.dimensions:
-            result['values'][column] = self.dimension_df[
-                column].values.tolist() if column not in self.measure_df is not None else self.measure_df[
-                column].values.tolist()
-        return result
-
-    def add(self, adata):
         df = SimpleData.to_df(adata, self.obs_measures, self.var_measures, self.dimensions, self.basis)
         if self.add_count:
             df['__count'] = 1.0
-
         if self.nbins is not None:
-            if len(self.dimensions) > 0:
-                dimension_df = df[self.dimensions + self.basis['coordinate_columns']]
-                self.dimension_df = pd.concat(
-                    (self.dimension_df, dimension_df)) if self.dimension_df is not None else dimension_df
             # bin level summary, coordinates have already been converted
-            df = df.groupby(df.index).agg(self.agg_dict)
-        else:
-            df = df[self.measures + self.dimensions + self.basis['coordinate_columns']]
-        first_time = self.measure_df is None
-        self.measure_df = pd.concat((self.measure_df, df)) if self.measure_df is not None else df
-        if self.nbins is not None and not first_time:
-            self.measure_df = self.measure_df.groupby(self.measure_df.index).agg(self.agg_dict)
+            agg_dict = EmbeddingAggregator.get_bin_level_agg_dict(self.obs_measures + self.var_measures,
+                self.basis['coordinate_columns'], self.agg_function)
+            for column in self.dimensions:
+                agg_dict[column] = agg_cat
+            df = df.groupby(df.index).agg(agg_dict)
+            result['bins'] = df.index.to_list()
+        for column in self.basis['coordinate_columns']:
+            result['coordinates'][column] = df[column].to_list()
+        for column in self.var_measures + self.obs_measures:
+            result['values'][column] = df[column].to_list()
+        for column in self.dimensions:
+            if self.nbins is not None:
+                mode, purity = df[column].str
+                result['values'][column] = dict(mode=mode.astype('category').to_list(), purity=purity.to_list())
+            else:
+                result['values'][column] = df[column].to_list()
+        return result

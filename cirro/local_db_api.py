@@ -10,7 +10,7 @@ class LocalDbAPI:
         self.paths = paths
 
     def server(self):
-        return {}
+        return dict(canWrite=True)
 
     def user(self, email):
         return {}
