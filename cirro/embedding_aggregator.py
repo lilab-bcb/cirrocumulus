@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.sparse
 
 from cirro.simple_data import SimpleData
 
@@ -13,13 +14,6 @@ def get_basis(basis):
         for i in range(embedding_ndim):
             coordinate_columns.append(basis + '_' + str(i + 1))
         return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns}
-
-
-def agg_cat(x):
-    value_counts = x.value_counts(sort=False)
-    largest = value_counts.nlargest(1)
-    purity = largest[0] / value_counts.sum()
-    return largest.index[0], purity
 
 
 class EmbeddingAggregator:
@@ -68,26 +62,87 @@ class EmbeddingAggregator:
 
     def execute(self, adata):
         result = {'coordinates': {}, 'values': {}}
+        var_measures = self.var_measures
+        obs_measures = self.obs_measures
+        dimensions = self.dimensions
+        add_count = self.add_count
+        basis = self.basis
 
-        df = SimpleData.to_df(adata, self.obs_measures, self.var_measures, self.dimensions, self.basis)
-        if self.add_count:
-            df['__count'] = 1.0
         if self.nbins is not None:
+            agg_function = self.agg_function
+            df = adata.obs
+            if add_count:
+                df['__count'] = 1.0
             # bin level summary, coordinates have already been converted
-            agg_dict = EmbeddingAggregator.get_bin_level_agg_dict(self.obs_measures + self.var_measures,
-                self.basis['coordinate_columns'], self.agg_function)
-            for column in self.dimensions:
-                agg_dict[column] = agg_cat
-            df = df.groupby(df.index).agg(agg_dict)
-            result['bins'] = df.index.to_list()
-        for column in self.basis['coordinate_columns']:
-            result['coordinates'][column] = df[column].to_list()
-        for column in self.var_measures + self.obs_measures:
-            result['values'][column] = df[column].to_list()
-        for column in self.dimensions:
-            if self.nbins is not None:
-                mode, purity = df[column].str
-                result['values'][column] = dict(mode=mode.astype('category').to_list(), purity=purity.to_list())
-            else:
-                result['values'][column] = df[column].to_list()
+            obs_measure_agg_dict = {}
+            for column in basis['coordinate_columns']:
+                obs_measure_agg_dict[column] = 'min'
+            for column in obs_measures:
+                obs_measure_agg_dict[column] = agg_function
+            grouped = df.groupby(df.index)
+            X_output = None
+            has_var_measures = len(var_measures) > 0
+            has_dimensions = len(dimensions) > 0
+            if has_var_measures:
+                X = adata.X[:, SimpleData.get_var_indices(adata, var_measures)]
+                is_sparse = scipy.sparse.issparse(X)
+            obs_summary = grouped.agg(obs_measure_agg_dict)
+            dimension_purity_output = {}
+            dimension_mode_output = {}
+            for column in dimensions:
+                dimension_purity_output[column] = []
+                dimension_mode_output[column] = []
+            if has_var_measures or len(dimensions) > 0:
+                for key, g in grouped:
+                    indices = grouped.indices[key]
+                    if has_dimensions:
+                        group_df = df.iloc[indices]
+                        for dimension in dimensions:
+                            value_counts = group_df[dimension].value_counts(sort=False)
+                            largest = value_counts.nlargest(1)
+                            purity = largest[0] / value_counts.sum()
+                            dimension_mode_output[dimension].append(largest.index[0])
+                            dimension_purity_output[dimension].append(purity)
+                    if has_var_measures:
+                        X_group = X[indices]
+                        if agg_function == 'max':
+                            X_summary = X_group.max(axis=0)
+                            if is_sparse:
+                                X_summary = X_summary.toarray().flatten()
+                        elif agg_function == 'min':
+                            X_summary = X_group.min(axis=0)
+                            if is_sparse:
+                                X_summary = X_summary.toarray().flatten()
+                        elif agg_function == 'mean':
+                            X_summary = X_group.mean(axis=0)
+                            if is_sparse:
+                                X_summary = X_summary.A1
+                        elif agg_function == 'sum':
+                            X_summary = X_group.sum(axis=0)
+                            if is_sparse:
+                                X_summary = X_summary.A1
+                        X_output = np.vstack((X_output, X_summary)) if X_output is not None else X_summary
+                for i in range(len(var_measures)):
+                    result['values'][var_measures[i]] = X_output[:, i].tolist()
+            for i in range(len(obs_measures)):
+                result['values'][obs_measures[i]] = obs_summary[obs_measures[i]].tolist()
+            for column in dimensions:
+                result['values'][column] = dict(mode=dimension_mode_output[column],
+                    purity=dimension_purity_output[column])
+            result['bins'] = obs_summary.index.to_list()
+            for column in basis['coordinate_columns']:
+                result['coordinates'][column] = obs_summary[column].tolist()
+        else:
+            if add_count:
+                result['values']['__count'] = np.ones(adata.shape[0]).tolist()
+            if len(var_measures) > 0:
+                X = adata.X[:, SimpleData.get_var_indices(adata, var_measures)]
+                is_sparse = scipy.sparse.issparse(X)
+                for i in range(len(var_measures)):
+                    result['values'][var_measures[i]] = X[:, i].tolist() if not is_sparse else X[:,
+                                                                                               i].toarray().flatten().tolist()
+            for column in obs_measures + dimensions:
+                result['values'][column] = adata.obs[column].to_list()
+            for column in basis['coordinate_columns']:
+                result['coordinates'][column] = adata.obs[column].to_list()
         return result

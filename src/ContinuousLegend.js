@@ -7,6 +7,14 @@ class ContinuousLegend extends React.PureComponent {
 
     getTable(statistics, summaryNames, selectionSummary, globalSummary) {
         return (<table>
+            <thead>
+            <tr>
+                <td></td>
+                {summaryNames.map(summaryName => {
+                    return <td key={summaryName}><small>{summaryName}</small></td>;
+                })}
+            </tr>
+            </thead>
             <tbody>
             <tr>
                 <td style={{textAlign: 'right'}}>{'Mean'}:</td>
@@ -20,14 +28,7 @@ class ContinuousLegend extends React.PureComponent {
                 <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
             </tr>
             </tbody>
-            <tfoot>
-            <tr>
-                <td></td>
-                {summaryNames.map(summaryName => {
-                    return <td key={summaryName}><small>{summaryName}</small></td>;
-                })}
-            </tr>
-            </tfoot>
+
         </table>);
     }
 

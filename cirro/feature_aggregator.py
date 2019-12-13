@@ -1,6 +1,7 @@
 import pandas as pd
-from cirro.simple_data import SimpleData
 from natsort.natsort import natsorted
+
+from cirro.simple_data import SimpleData
 
 
 class FeatureAggregator:
@@ -30,9 +31,11 @@ class FeatureAggregator:
                 measure_df = measure_df.T
                 for feature in measure_df:
                     values = measure_df[feature]
-                    result[feature] = {'min': float(values.loc['min']),
-                                       'max': float(values.loc['max']),
-                                       'sum': float(values.loc['sum']),
-                                       'mean': float(values.loc['mean']),
-                                       'numExpressed': int(values.loc['numExpressed'])}
+                    feature_result = {'min': float(values.loc['min']),
+                                      'max': float(values.loc['max']),
+                                      'sum': float(values.loc['sum']),
+                                      'mean': float(values.loc['mean'])}
+                    result[feature] = feature_result
+                    if 'numExpressed' in values.index:
+                        feature_result['numExpressed'] = int(values.loc['numExpressed'])
         return result

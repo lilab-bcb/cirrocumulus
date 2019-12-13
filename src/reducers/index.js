@@ -376,7 +376,7 @@ function globalFeatureSummary(state = {}, action) {
     }
 }
 
-function serverInfo(state = {}, action) {
+function serverInfo(state = {canWrite: false}, action) {
     switch (action.type) {
         case SET_SERVER_INFO:
             return action.payload;

@@ -226,7 +226,7 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {classes} = this.props;
+        const {classes, serverInfo} = this.props;
         const isEdit = this.props.savedDatasetFilter != null;
         let datasetFilters = getDatasetFilterArray(this.props.datasetFilter);
         const brushSelection = this.props.selection.count;
@@ -293,11 +293,13 @@ class App extends PureComponent {
                                         variant={'outlined'}
                                     />;
                                 })}
+
+
                                 {datasetFilters.length > 0 &&
                                 <div style={{display: 'inline-block', marginLeft: '10px'}}><Link title="Clear" href="#"
                                                                                                  onClick={this.onDatasetFilterCleared}>Clear</Link>
                                 </div>}
-                                {datasetFilters.length > 0 &&
+                                {datasetFilters.length > 0 && serverInfo.canWrite &&
                                 <div style={{display: 'inline-block', marginLeft: '10px'}}>
                                     <Link style={{
                                         textOverflow: 'ellipsis',
@@ -457,6 +459,7 @@ const mapStateToProps = state => {
         numberOfBins: state.numberOfBins,
         savedDatasetFilter: state.savedDatasetFilter,
         selection: state.selection,
+        serverInfo: state.serverInfo,
         user: state.user,
         view3d: state.view3d
 

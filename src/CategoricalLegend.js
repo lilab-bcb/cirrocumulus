@@ -46,6 +46,14 @@ class CategoricalLegend extends React.PureComponent {
             }}>
                 <b>{name}</b> <small>({categories.length})</small>
                 <table>
+                    <thead>
+                    <tr>
+                        {clickEnabled && <td></td>}
+                        <td></td>
+                        <td><small>{'all'}</small></td>
+                        <td><small>{selectionSummary != null ? 'selection' : null}</small></td>
+                    </tr>
+                    </thead>
                     <tbody>
                     {categories.map((category, i) => {
 
@@ -127,14 +135,7 @@ class CategoricalLegend extends React.PureComponent {
                         </tr>;
                     })
                     }</tbody>
-                    <tfoot>
-                    <tr>
-                        {clickEnabled && <td></td>}
-                        <td></td>
-                        <td><small>{'all'}</small></td>
-                        <td><small>{selectionSummary != null ? 'selection' : null}</small></td>
-                    </tr>
-                    </tfoot>
+
                 </table>
             </div>);
     }

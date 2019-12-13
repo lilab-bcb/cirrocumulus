@@ -1,24 +1,23 @@
+import numpy as np
 import pandas as pd
-
 import scipy.sparse
 
 
 class SimpleData:
 
     def __init__(self, X, obs, var):
-        self.X = X
+
         self.obs = obs
         self.var = var
-        n_obs = 0
-        n_var = 0
         if X is not None:
-            n_var = X.shape[1] if len(X.shape) is 2 else 1
-        elif var is not None:
-            n_var = len(var)
-        if X is not None:
+            if len(X.shape) == 1:
+                X = np.array([X]).T
+            n_var = X.shape[1]
             n_obs = X.shape[0]
-        elif obs is not None:
-            n_obs = len(obs)
+        else:
+            n_var = len(var) if var is not None else 0
+            n_obs = len(obs) if obs is not None else 0
+        self.X = X
         self.shape = (n_obs, n_var)
 
     @staticmethod
@@ -37,35 +36,29 @@ class SimpleData:
     @staticmethod
     def X_stats(adata, var_ids):
         indices = SimpleData.get_var_indices(adata, var_ids)
+
         X = adata.X[:, indices]
         min_values = X.min(axis=0)
         mean_values = X.mean(axis=0)
         max_values = X.max(axis=0)
         sums = X.sum(axis=0)
-        num_expressed = (X > 0).sum(axis=0)
+
         if scipy.sparse.issparse(X):
             min_values = min_values.toarray().flatten()
             max_values = max_values.toarray().flatten()
             mean_values = mean_values.A1
             sums = sums.A1
-            num_expressed = num_expressed.A1
+            num_expressed = X.getnnz(axis=0)
+        else:
+            num_expressed = (X != 0).sum(axis=0)
 
         return pd.DataFrame(data={'min': min_values, 'max': max_values, 'sum': sums, 'numExpressed': num_expressed,
-                                  'mean': mean_values},
-            index=var_ids)
-
-
-    # @staticmethod
-    # def filter(adata, filter_expr):
-    #     return adata.var_index.get_indexer_for(names)
+                                  'mean': mean_values}, index=var_ids)
 
     @staticmethod
     def get_var_indices(adata, names):
         return adata.var.index.get_indexer_for(names)
 
-    @staticmethod
-    def get_var_index(adata, name):
-        return adata.var.index.get_loc(name)
 
     @staticmethod
     def schema(adata):
@@ -103,5 +96,4 @@ class SimpleData:
             if scipy.sparse.issparse(X):
                 X = X.toarray()
             df[var_measures[i]] = X
-
         return df

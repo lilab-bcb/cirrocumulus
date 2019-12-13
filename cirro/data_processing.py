@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import scipy.sparse
 
 from cirro.dotplot_aggregator import DotPlotAggregator
@@ -22,10 +21,10 @@ def filter_adata(adata, data_filter):
             if field in adata.obs:
                 X = adata.obs[field]
             else:
-                X = adata.X
-                X = X[:, SimpleData.get_var_index(adata, field)] if len(X.shape) == 2 else X
+                X = adata.X[:, SimpleData.get_var_indices(adata, [field])]
+
             if op == 'in':
-                keep = (X.isin(value))
+                keep = (X.isin(value)).values
             elif op == '>':
                 keep = (X > value)
             elif op == '=':
@@ -40,10 +39,10 @@ def filter_adata(adata, data_filter):
                 keep = (X <= value)
             else:
                 raise ValueError('Unknown filter')
+
             if scipy.sparse.issparse(keep):
                 keep = keep.toarray().flatten()
-            if isinstance(keep, pd.Series):
-                keep = keep.values
+
             keep_expr = keep_expr & keep if keep_expr is not None else keep
 
         if selected_points is not None:
@@ -75,16 +74,16 @@ def precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimens
     return result
 
 
-def precomputed_dotplot(dataset_api, dataset, obs_measures, var_measures, dimensions):
+def precomputed_dotplot(dataset_api, dataset, var_measures, dimensions):
     result = []
-    if (len(obs_measures) + len(var_measures)) > 0 and len(dimensions) > 0:
+    if (len(var_measures)) > 0 and len(dimensions) > 0:
         for dimension in dimensions:
-            df = dataset_api.read_summarized(dataset, index=True, rename=True, obs_keys=obs_measures,
+            df = dataset_api.read_summarized(dataset, index=True, rename=True, obs_keys=[],
                 var_keys=var_measures, path='grouped_statistics/' + dimension)
             values = []
             dimension_result = dict(categories=df['index'].values.tolist(), name=dimension, values=values)
             result.append(dimension_result)
-            for measure in obs_measures + var_measures:
+            for measure in var_measures:
                 fraction_expressed = df[measure + '_fraction_expressed'].values.tolist()
                 mean = df[measure + '_mean'].values.tolist()
                 values.append(dict(name=measure, fractionExpressed=fraction_expressed, mean=mean))
@@ -117,7 +116,7 @@ precomputed_return_types = set(['embedding', 'summary', 'dotplot'])
 
 
 def get_var_name_type(key):
-    index = key.find('.')
+    index = key.find('/')
     if index == -1:
         return key, 'X'
     else:
@@ -136,7 +135,7 @@ def split_measures(measures):
         elif key_type == 'obs':
             obs_measures.append(name)
         else:
-            raise ValueError('Unknown key type')
+            raise ValueError('Unknown key type: ' + key_type)
     return obs_measures, var_measures
 
 
@@ -153,17 +152,18 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     obs_keys = set()
     var_keys = set()
     if 'ids' in return_types:
-        obs_keys.add('id')
+        obs_keys.add('index')
     embedding_obs_measures, embedding_var_measures = split_measures(embedding_measures)
-    dotplot_obs_measures, dotplot_var_measures = split_measures(dotplot_measures)
     summary_obs_measures, summary_var_measures = split_measures(summary_measures)
+    if '__count' in summary_obs_measures:
+        summary_obs_measures.remove('__count')
 
     obs_keys.update(embedding_obs_measures)
     var_keys.update(embedding_var_measures)
     obs_keys.update(embedding_dimensions)
 
-    obs_keys.update(dotplot_obs_measures)
-    var_keys.update(dotplot_var_measures)
+    # obs_keys.update(dotplot_obs_measures)
+    var_keys.update(dotplot_measures)
     obs_keys.update(dotplot_dimensions)
 
     obs_keys.update(summary_obs_measures)
@@ -196,7 +196,7 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
             result['summary'] = precomputed_summary(dataset_api, dataset, summary_obs_measures, summary_var_measures,
                 summary_dimensions)
         if 'dotplot' in return_types:
-            result['dotplot'] = precomputed_dotplot(dataset_api, dataset, dotplot_obs_measures, dotplot_var_measures,
+            result['dotplot'] = precomputed_dotplot(dataset_api, dataset, dotplot_measures,
                 dotplot_dimensions)
         return result
 
@@ -211,7 +211,7 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
             count=len(embedding_measures) + len(embedding_dimensions) == 0,
             nbins=nbins, basis=basis, agg_function=agg_function)
     if 'dotplot' in return_types:  # uses all data
-        result['dotplot'] = DotPlotAggregator(obs_measures=dotplot_obs_measures, var_measures=dotplot_var_measures,
+        result['dotplot'] = DotPlotAggregator(var_measures=dotplot_measures,
             dimensions=dotplot_dimensions)
     if 'selectionSummary' in return_types:  # summary by selection and feature
         result['selectionSummary'] = FeatureAggregator(summary_obs_measures, summary_var_measures, summary_dimensions)
@@ -223,7 +223,6 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
     adata = dataset_api.read(dataset=dataset, obs_keys=list(obs_keys), var_keys=list(var_keys),
         basis=basis)  # TODO apply filters when reading
 
-    adata.obs['__count'] = 1.0
     if add_bin:  # add bin before filtering since we might need to filter on bin
         EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
             nbins=nbins,

@@ -4,42 +4,43 @@ import logging
 import os
 
 import anndata
-import numpy as np
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-import scipy.sparse
-from natsort import natsorted
 
 from cirro.data_processing import process_data
 from cirro.dataset_api import DatasetAPI
-from cirro.embedding_aggregator import get_basis, EmbeddingAggregator
+from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
-from cirro.parquet_dataset import ParquetDataset
+from cirro.io import write_table, save_adata
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
 
 
-def write_table(d, output_dir, name, write_statistics=True, row_group_size=None):
-    os.makedirs(output_dir, exist_ok=True)
-    pq.write_table(pa.Table.from_pydict(d), output_dir + os.path.sep + name + '.parquet',
-        write_statistics=write_statistics, row_group_size=row_group_size)
-
-
-def fraction_expressed(x):
-    return (x > 0).sum() / len(x)
-
-
 class PrepareData:
 
-    def __init__(self, input_path, backed):
+    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, column_batch_size=1000):
         self.input_path = input_path
-        self.adata = anndata.read(input_path, backed='r' if backed else None)
+        self.column_batch_size = column_batch_size
+        self.adata = anndata.read(input_path, backed=backed)
         dimensions = []
         measures = []
         others = []
+        if basis_list is None:
+            basis_list = list(self.adata.obsm_keys())
+            for key in basis_list:
+                if self.adata.obsm[key].shape[1] >= 10:
+                    basis_list.remove(key)
+        self.basis_list = basis_list
+        self.nbins = nbins
+        self.dataset_api = DatasetAPI()
+        self.bin_agg_function = bin_agg_function
+        ds = H5ADDataset()
+        ds.path_to_data[input_path] = self.adata
+        self.dataset_api.add(ds)
+
+        self.input_dataset = Entity(input_path,
+            {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path})
         for i in range(len(self.adata.obs.columns)):
             name = self.adata.obs.columns[i]
             c = self.adata.obs[name]
@@ -49,7 +50,7 @@ class PrepareData:
                 else:
                     others.append(name)
             elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
-                measures.append(name)
+                measures.append('obs/' + name)
             else:
                 others.append(name)
         self.others = others
@@ -57,197 +58,152 @@ class PrepareData:
         self.measures = measures
         self.base_name = os.path.splitext(os.path.basename(input_path))[0]
 
-    def summary_stats(self, column_batch_size=500):
-        logger.info('writing summary statistics')
-        # compute min, max, mean, sum for X, data.obs
-        # compute value counts for data.obs categoricals
-        adata = self.adata
+    def execute(self):
+        basis_list = self.basis_list
+        nbins = self.nbins
+        bin_agg_function = self.bin_agg_function
+        save_adata(self.adata, os.path.join(self.base_name, 'data'))
+        self.summary_stats()
+        self.grouped_stats()
+        for basis_name in basis_list:
+            self.grid_embedding(basis_name, bin_agg_function, nbins)
+        self.schema()
+
+    def summary_stats(self):
         dimensions = self.dimensions
         measures = self.measures
-        output_directory = os.path.join(self.base_name, 'counts')
+        dimension_output_directory = os.path.join(self.base_name, 'counts')
+        measure_output_directory = os.path.join(self.base_name, 'statistics')
+        dataset_api = self.dataset_api
+        input_dataset = self.input_dataset
+        adata = self.adata
+        column_batch_size = self.column_batch_size
 
-        for i in range(len(dimensions)):
-            name = dimensions[i]
-            result = adata.obs[name].value_counts()
-            logging.info('cat obs summary: {}/{}'.format(i + 1, len(dimensions)))
-            write_table(dict(index=result.index, value=result.values),
-                output_directory, name, write_statistics=False)
-        # measure_summary_df has stats on index, measures on columns
-        output_directory = os.path.join(self.base_name, 'statistics')
-        measure_summary_df = adata.obs[measures].agg(['min', 'max', 'sum', 'mean'])
-        for c in measure_summary_df.columns:
-            write_table(dict(min=[measure_summary_df.loc['min', c]], max=[measure_summary_df.loc['max', c]],
-                sum=[measure_summary_df.loc['sum', c]], mean=[measure_summary_df.loc['mean', c]]),
-                output_directory, c, write_statistics=False)
-
-        for i in range(0, adata.shape[1], column_batch_size):
+        process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, summary_measures=measures,
+            summary_dimensions=dimensions, return_types=['summary'])
+        summary = process_results['summary']
+        for column in summary:
+            dimension_or_measure_summary = summary[column]
+            if 'categories' in dimension_or_measure_summary:
+                write_table(dict(index=dimension_or_measure_summary['categories'],
+                    value=dimension_or_measure_summary['counts']),
+                    dimension_output_directory, column, write_statistics=False)
+            else:
+                write_table(dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
+                    sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
+                    measure_output_directory, column, write_statistics=False)
+        for i in range(0, self.adata.shape[1], column_batch_size):
             end = i + column_batch_size
             end = min(end, adata.shape[1])
-            names = adata.var_names[slice(i, end)]
-            X = adata.X[:, slice(i, end)]
-            min_values = X.min(axis=0)
-            max_values = X.max(axis=0)
-            sums = X.sum(axis=0)
-            means = X.mean(axis=0)
-            num_expressed = (X > 0).sum(axis=0)
-            if scipy.sparse.issparse(X):
-                min_values = min_values.toarray().flatten()
-                max_values = max_values.toarray().flatten()
-                sums = sums.A1
-                means = means.A1
-                num_expressed = num_expressed.A1
-
-            logging.info('X summary: {}/{}'.format(i + 1, adata.shape[1]))
-            for j in range(len(names)):
-                write_table(
-                    dict(min=min_values[[j]], max=max_values[[j]], sum=sums[[j]], mean=means[[j]],
-                        num_expressed=num_expressed[[j]]),
-                    output_directory, names[j], write_statistics=False)
+            logger.info('Summary stats {}-{}'.format(i, end))
+            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
+                summary_measures=adata.var_names[i:end],
+                summary_dimensions=[], return_types=['summary'])
+            summary = process_results['summary']
+            for column in summary:
+                measure_summary = summary[column]
+                write_table(dict(min=[measure_summary['min']], max=[measure_summary['max']],
+                    sum=[measure_summary['sum']],
+                    numExpressed=[measure_summary['numExpressed']],
+                    mean=[measure_summary['mean']]),
+                    measure_output_directory, column, write_statistics=False)
 
 
     # stats, grouped by categories in adata.obs for dot plot
-    def grouped_stats(self, column_batch_size=500):
+    def grouped_stats(self):
         dimensions = self.dimensions
-        n_features = self.adata.shape[1]
+        dataset_api = self.dataset_api
+        input_dataset = self.input_dataset
         adata = self.adata
+        column_batch_size = self.column_batch_size
 
-        for dimension in dimensions:
-            logger.info('computing grouped stats for {}'.format(dimension))
-            output_directory = os.path.join(self.base_name, 'grouped_statistics', dimension)
-
-            for i in range(0, n_features, column_batch_size):
-                end = i + column_batch_size
-                end = min(end, n_features)
-                logger.info('grouped stats for {} {}-{}/{}'.format(dimension, i, end, n_features))
-                X = adata.X[:, slice(i, end)]
-                if scipy.sparse.issparse(X):
-                    X = X.toarray()
-                df = pd.DataFrame(index=adata.obs[dimension], data=X, columns=adata.var_names[slice(i, end)].tolist())
-                df = df.groupby(df.index).agg(['mean', fraction_expressed])
-                summary_df = df
-                sorted_categories = natsorted(summary_df.index)
-                summary_df = summary_df.loc[sorted_categories]
-                write_table(dict(index=summary_df.index),
-                    output_directory, 'index')
-                for feature in summary_df.columns.get_level_values(0):
-                    write_table(dict(mean=summary_df[(feature, 'mean')],
-                        fraction_expressed=summary_df[(feature, 'fraction_expressed')]),
-                        output_directory, feature)
-
-    def save_adata_X_chunk(self, start, end):
-        adata = self.adata
-        X_slice = adata.X[:, slice(start, end)]
-        output_directory = os.path.join(self.base_name, 'data')
-        names = adata.var_names[slice(start, end)]
-        logger.info('writing adata X {}-{}'.format(start, end))
-        for j in range(len(names)):
-            X = X_slice[:, j]
-            if scipy.sparse.issparse(X):
-                X = X.toarray()
-            indices = np.where(X != 0)[0]
-            values = X[indices]
-
-            write_table(dict(index=indices, value=values), output_directory, names[j])
-
-    def save_adata(self, column_batch_size=500):
-        logger.info('writing adata')
-        adata = self.adata
-        for i in range(0, adata.shape[1], column_batch_size):
+        for i in range(0, self.adata.shape[1], column_batch_size):
             end = i + column_batch_size
             end = min(end, adata.shape[1])
-            self.save_adata_X_chunk(i, end)
+            logger.info('Grouped stats {}-{}'.format(i, end))
+            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
+                summary_measures=adata.var_names[i:end],
+                summary_dimensions=dimensions, return_types=['dotplot'])
+            dotplot_results = process_results['dotplot']
 
-        logger.info('writing adata obs')
-        output_directory = os.path.join(self.base_name, 'data')
-        for name in adata.obs:
-            # TODO sort?, row group size?
-            write_table(dict(value=adata.obs[name]),
-                output_directory, name)
-        write_table(dict(value=adata.obs.index), output_directory, 'id')
-        logger.info('writing adata obsm')
+            for dotplot_result in dotplot_results:
+                output_directory = os.path.join(self.base_name, 'grouped_statistics', dotplot_result['name'])
+                write_table(dict(index=dotplot_result['categories']),
+                    output_directory, 'index')
+                values = dotplot_result['values']
+                for value in values:
+                    write_table(dict(mean=[value['mean']],
+                        fractionExpressed=[value['fractionExpressed']]),
+                        output_directory, value['name'])
 
-        for name in adata.obsm.keys():
-            m = adata.obsm[name]
-            ndim = 2  # TODO 3d
-            d = {}
-            for i in range(ndim):
-                d[str(i)] = m[:, i].astype('float32')
-            write_table(d, output_directory, name)
+    def grid_embedding(self, basis_name, summary, nbins):
+        logger.info('{} embedding'.format(basis_name))
+        basis = get_basis(basis_name)
+        path = basis_name + '_' + str(nbins) + '_' + str(summary)
+        dimensions = self.dimensions
+        measures = self.measures
+        dataset_api = self.dataset_api
+        input_dataset = self.input_dataset
+        adata = self.adata
+        column_batch_size = self.column_batch_size
+        output_directory = os.path.join(self.base_name, 'obsm_summary', path)
 
-    def write_schema(self, basis_names, summary, nbins):
+        # write cell level bin to /data
+        df_with_coords = pd.DataFrame()
+        obsm = adata.obsm[basis_name]
+        for i in range(len(basis['coordinate_columns'])):
+            df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
+        EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'], None)
+        dict_with_coords = df_with_coords.to_dict(orient='list')
+        dict_with_coords['index'] = df_with_coords.index.values
+        write_table(dict_with_coords, os.path.join(self.base_name, 'data'), path)
+
+        process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
+            return_types=['embedding'], embedding_dimensions=dimensions, embedding_measures=measures,
+            basis=basis, nbins=nbins, agg_function=summary)
+        result = process_results['embedding']
+
+        # write bins and coordinates
+        bin_dict = dict(index=result['bins'])
+        for column in result['coordinates']:
+            bin_dict[column] = result['coordinates'][column]
+        write_table(bin_dict, output_directory, 'index')
+
+        for column in result['values']:
+            write_table(dict(value=result['values'][column]),
+                output_directory, column)
+
+        for i in range(0, self.adata.shape[1], column_batch_size):
+            end = i + column_batch_size
+            end = min(end, adata.shape[1])
+            logger.info('{} embedding {}-{}'.format(basis_name, i, end))
+            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
+                return_types=['embedding'], embedding_dimensions=[], embedding_measures=adata.var_names[i:end],
+                basis=basis, nbins=nbins, agg_function=summary)
+            result = process_results['embedding']
+            for column in result['values']:
+                write_table(dict(value=result['values'][column]),
+                    output_directory, column)
+
+    def schema(self):
+        basis_list = self.basis_list
+        nbins = self.nbins
+        bin_agg_function = self.bin_agg_function
         output_file = os.path.join(self.base_name, 'index.json')
         result = SimpleData.schema(self.adata)
         del result['embeddings']
         result['summary'] = {'nObs': self.adata.shape[0], 'embeddings': []}
-        for basis_name in basis_names:
-            result['summary']['embeddings'].append({'basis': basis_name, 'nbins': nbins, 'agg': summary})
+        for basis_name in basis_list:
+            result['summary']['embeddings'].append({'basis': basis_name, 'nbins': nbins, 'agg': bin_agg_function})
         with open(output_file, 'wt') as f:
             json.dump(result, f)
-
-    def grid_embedding(self, basis_name, summary, nbins, column_batch_size=500):
-        logger.info('writing embedding for {}'.format(basis_name))
-        path = basis_name + '_' + str(nbins) + '_' + str(summary)
-        output_directory = os.path.join(self.base_name, 'obsm_summary', path)
-        return_types = ['embedding']
-        basis = get_basis(basis_name)
-        dataset = Entity(self.input_path, {'name': self.base_name, 'url': self.input_path})
-        dataset_api = DatasetAPI()
-        dataset_api.add(['pq', 'parquet'], ParquetDataset())
-        ds = H5ADDataset()
-        ds.path_to_data[self.base_name] = self.adata
-        dataset_api.add(['h5ad'], ds)
-        # write bin and coords to data
-        df_with_coords = SimpleData.to_df(self.adata, [], [], [], basis=basis)
-        EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'], None)
-        dict_with_coords = df_with_coords.to_dict(orient='list')
-        dict_with_coords['index'] = df_with_coords.index
-        write_table(dict_with_coords, os.path.join(self.base_name, 'data'), path)
-        all_names = self.dimensions + self.measures + self.adata.var_names.tolist()
-        first_time = True
-        for i in range(0, len(all_names), column_batch_size):
-            end = i + column_batch_size
-            end = min(end, len(all_names))
-            logger.info('{} embedding {}-{}/{}'.format(basis_name, i, end, len(all_names)))
-            columns_in_batch = all_names[slice(i, end)]
-            embedding_measures = []
-            embedding_dimensions = []
-
-            for column in columns_in_batch:
-                if column in self.dimensions:
-                    embedding_dimensions.append(column)
-                else:
-                    embedding_measures.append(column)
-            data_processing_result = process_data(dataset_api=dataset_api, dataset=dataset,
-                return_types=return_types,
-                basis=basis,
-                nbins=nbins, embedding_measures=embedding_measures,
-                embedding_dimensions=embedding_dimensions, agg_function=summary, dotplot_measures=[],
-                dotplot_dimensions=[])
-
-            result = data_processing_result['embedding']
-
-            for column in result['values']:
-                if column == '__count' and not first_time:
-                    continue
-                write_table(dict(value=result['values'][column]),
-                    output_directory, column)
-
-            # write bins and coordinates
-            if first_time:
-                first_time = False
-                bin_dict = dict(index=result['bins'])
-                for column in basis['coordinate_columns']:
-                    bin_dict[column] = result['coordinates'][column]
-                write_table(bin_dict, output_directory, 'index')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
     parser.add_argument('dataset', help='Path to a h5ad file')
-    parser.add_argument('commands', help='List of commands to execute',
-        choices=['adata', 'stats', 'grouped_stats', 'basis', 'schema'],
-        action='append')
+
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--nbins', help='Number of bins', default=500, type=int)
@@ -255,25 +211,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
-    commands = args.commands
-    prepare_data = PrepareData(args.dataset, args.backed)
+
     logger.info('preparing ' + args.dataset + '...')
-    if 'adata' in commands:
-        prepare_data.save_adata()
-    if 'stats' in commands:
-        prepare_data.summary_stats()
-    if 'grouped_stats' in commands:
-        prepare_data.grouped_stats()
-    if 'basis' in commands:
-        if args.basis is None:
-            obsm_keys = list(prepare_data.adata.obsm_keys())
-            blacklist = ['X_pca']
-            for key in obsm_keys:
-                if key in blacklist or p.adata.obsm[key].shape[1] >= 10:
-                    obsm_keys.remove(key)
-        else:
-            obsm_keys = args.basis
-        for b in obsm_keys:
-            prepare_data.grid_embedding(b, args.summary, args.nbins)
-    if 'schema' in commands:
-        prepare_data.write_schema(obsm_keys, args.summary, args.nbins)
+    prepare_data = PrepareData(args.dataset, args.backed, args.basis, args.nbins, args.summary)
+    prepare_data.execute()

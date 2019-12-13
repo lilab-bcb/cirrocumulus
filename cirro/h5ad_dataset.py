@@ -1,13 +1,17 @@
 import anndata
+import numpy as np
 import pandas as pd
+import scipy.sparse
+
 from cirro.simple_data import SimpleData
 
 
 class H5ADDataset:
 
-    def __init__(self, backed='r'):
+    def __init__(self, backed='r', force_sparse=True):
         self.path_to_data = {}
         self.backed = backed
+        self.force_sparse = force_sparse
         # only works with local files
 
     def get_suffixes(self):
@@ -36,9 +40,17 @@ class H5ADDataset:
         X = None
 
         if len(var_keys) > 0:
-            X = adata[:, var_keys].X
+            indexer = adata.var.index.get_indexer_for(var_keys)
+            indexer_sort = np.argsort(indexer)
+            X = adata[:, indexer[indexer_sort]].X
+            if len(X.shape) == 1:
+                X = np.array([X]).T
+
+            var_keys = np.array(var_keys)[indexer_sort]
+            if self.force_sparse and not scipy.sparse.issparse(X):
+                X = scipy.sparse.csr_matrix(X)
         for key in obs_keys:
-            if key == 'id':
+            if key == 'index':
                 values = adata.obs.index.values
             else:
                 values = adata.obs[key].values

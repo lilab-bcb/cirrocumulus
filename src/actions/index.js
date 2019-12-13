@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {cloneDeep, isEqual} from 'lodash';
+import {cloneDeep, isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator} from '../PlotUtil';
 
@@ -93,7 +93,7 @@ function getUser() {
 export function initGapi() {
     return function (dispatch, state) {
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
-
+            dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId == '') { // serving files locally, no login required
                 dispatch(_setLoadingApp(false));
                 dispatch(_setEmail(''));
@@ -104,7 +104,6 @@ export function initGapi() {
                 let script = document.createElement('script');
                 script.type = 'text/javascript';
                 script.src = 'https://apis.google.com/js/api.js';
-                dispatch(setServerInfo(serverInfo));
                 script.onload = (e) => {
                     window.gapi.load('client:auth2', () => {
                         window.gapi.client.init({
@@ -344,7 +343,7 @@ function getSliceJson(state, includeFilter = true) {
             const obsCat = state.dataset.obsCat;
             for (let i = 0; i < filters.length; i++) {
                 if (obsCat.indexOf(filters[i][0]) !== -1 || obs.indexOf(filters[i][0]) !== -1) {
-                    filters[i][0] = 'obs.' + filters[i][0];
+                    filters[i][0] = 'obs/' + filters[i][0];
                 }
             }
             json.filter = {filters: filters};
@@ -1180,9 +1179,26 @@ function _updateCharts(sliceOptions, onError) {
         }
         let embeddingPromise;
         let dotPlotPromise;
+        let selectionSummaryPromise;
         if (embeddingJson.types.length === 0) {
             embeddingPromise = Promise.resolve({});
+            selectionSummaryPromise = Promise.resolve({});
         } else {
+            let selectionSummaryJson = getSliceJson(state);
+            selectionSummaryJson.types = ['selectionSummary'];
+            selectionSummaryJson.summary_measures = embeddingJson.embedding_measures;
+            selectionSummaryJson.summary_dimensions = embeddingJson.embedding_dimensions;
+            if ((selectionSummaryJson.summary_measures.length == 1 && selectionSummaryJson.summary_measures[0] === '__count') || selectionSummaryJson.filter == null) {
+                selectionSummaryPromise = Promise.resolve({});
+            } else {
+
+                selectionSummaryPromise = fetch(API + '/slice',
+                    {
+                        body: JSON.stringify(selectionSummaryJson),
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                    }).then(r => r.json());
+            }
             embeddingPromise = fetch(API + '/slice',
                 {
                     body: JSON.stringify(embeddingJson),
@@ -1200,6 +1216,13 @@ function _updateCharts(sliceOptions, onError) {
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
                 }).then(r => r.json());
         }
+
+        selectionSummaryPromise.then(result => {
+            if (result.selectionSummary) {
+                let selectionSummary = Object.assign(getState().featureSummary, result.selectionSummary);
+                dispatch(setFeatureSummary(selectionSummary));
+            }
+        });
 
         dotPlotPromise.then(dotPlotResult => {
             if (dotPlotResult.dotplot != null) {
@@ -1272,6 +1295,11 @@ function _updateCharts(sliceOptions, onError) {
                     let y = coordinates[selectedEmbeddings[0] + '_2'];
                     let z = coordinates[selectedEmbeddings[0] + '_3'];
                     let values = embeddingValues[name];
+                    let purity = null;
+                    if (isPlainObject(values)) {
+                        values = values.mode;
+                        purity = values.purity;
+                    }
 
                     let isCategorical = name !== '__count' && obsCat.indexOf(name) !== -1;
                     let colorScale = null;
@@ -1323,6 +1351,7 @@ function _updateCharts(sliceOptions, onError) {
                         },
                         unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
                         values: values,
+                        purity: purity,
                         text: values,
                     };
                     if (is3d) {
@@ -1357,7 +1386,7 @@ function _updateCharts(sliceOptions, onError) {
                 dispatch(_setEmbeddingData(embeddingData.slice(0)));
             },
         );
-        return Promise.all([embeddingPromise, dotPlotPromise]).finally(() => {
+        return Promise.all([embeddingPromise, dotPlotPromise, selectionSummaryPromise]).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve data. Please try again.');
