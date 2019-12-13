@@ -40,6 +40,11 @@ setup(
             "Operating System :: POSIX :: Linux",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
+    extras_require=dict(
+        test=[
+                'pytest'
+        ]
+    ),
     keywords="single cell/nucleus genomics visualization",
     packages=find_packages(),
     include_package_data=True,
