@@ -61,9 +61,10 @@ class H5ADDataset:
         if basis is not None:
             if obs is None:
                 obs = pd.DataFrame()
-            embedding_name = basis['name']
-            embedding_data = adata.obsm[embedding_name]
-            dimensions = basis['dimensions']
-            for i in range(dimensions):
-                obs[basis['coordinate_columns'][i]] = embedding_data[:, i]
+            for b in basis:
+                embedding_name = b['name']
+                embedding_data = adata.obsm[embedding_name]
+                dimensions = b['dimensions']
+                for i in range(dimensions):
+                    obs[b['coordinate_columns'][i]] = embedding_data[:, i]
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))

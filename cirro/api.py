@@ -1,7 +1,7 @@
-from cirro.data_processing import process_data
-from cirro.embedding_aggregator import get_basis
 from flask import Blueprint, Response, request
 
+import cirro.data_processing as data_processing
+from cirro.embedding_aggregator import get_basis
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -48,7 +48,7 @@ def handle_dataset_filters():
     if dataset_id == '':
         return 'Please provide an id', 400
 
-    dataset = database_api.get_dataset(email, dataset_id)
+    database_api.get_dataset(email, dataset_id)
     dataset_filters = database_api.dataset_filters(email, dataset_id)
     return to_json(dataset_filters)
 
@@ -63,7 +63,7 @@ def handle_dataset_filter():
         dataset_filter_id = request.args.get('id', '')
         if dataset_filter_id == '':
             return 'Please provide an id', 400
-        return to_json( database_api.get_dataset_filter(email, dataset_filter_id))
+        return to_json(database_api.get_dataset_filter(email, dataset_filter_id))
     content = request.get_json(force=True, cache=False)
     filter_id = content.get('id')
     dataset_id = content.get('ds_id')
@@ -120,36 +120,67 @@ def handle_user():
     return to_json(user)
 
 
-def _handle_slice(content):
+def get_email_and_dataset(content):
     email = auth_api.auth()['email']
     dataset_id = content.get('id', '')
     if dataset_id is '':
         return 'Please supply an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
-    basis = get_basis(content.get('embedding', None))
-    nbins = None
-    if basis is not None:
-        nbins = check_bin_input(content.get('nbins', None))
-    return_types = set(content.get('types'))
-    agg_function = content.get('agg', 'mean')
-    embedding_dimensions = content.get('embedding_dimensions', [])
-    embedding_measures = content.get('embedding_measures', [])
-    dotplot_dimensions = content.get('dotplot_dimensions', [])
-    dotplot_measures = content.get('dotplot_measures', [])
-    summary_measures = content.get('summary_measures', [])
-    summary_dimensions = content.get('summary_dimensions', [])
-    data_filter = content.get('filter', None)
-    return process_data(dataset_api=dataset_api, dataset=dataset, return_types=return_types, basis=basis, nbins=nbins,
-        embedding_measures=embedding_measures, embedding_dimensions=embedding_dimensions,
-        dotplot_measures=dotplot_measures, dotplot_dimensions=dotplot_dimensions, summary_measures=summary_measures,
-        summary_dimensions=summary_dimensions, agg_function=agg_function,
-        data_filter=data_filter)
+    return email, dataset
 
 
-@blueprint.route('/slice', methods=['POST'])
-def handle_slice():
-    data_processing_result = _handle_slice(request.get_json(cache=False))
-    return to_json(data_processing_result)
+@blueprint.route('/embedding', methods=['POST'])
+def handle_embedding():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+
+    nbins = check_bin_input(content.get('nbins', None))
+    agg_function = content.get('agg', 'max')
+    precomputed = content.get('precomputed', False)
+    dimensions = content.get('dimensions', [])
+    measures = content.get('measures', [])
+    basis = get_basis(content.get('basis'), nbins=nbins, agg=agg_function, precomputed=precomputed)
+    return data_processing.handle_embedding(dataset_api=dataset_api, dataset=dataset, basis=basis, measures=measures,
+        dimensions=dimensions)
+
+
+@blueprint.route('/selection', methods=['POST'])
+def handle_selection():
+    # selection includes stats, coordinates
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    data_filter = content.get('filter')
+    return data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+        measures=content.get('measures', []), dimensions=content.get('dimensions', []),
+        embeddings=content.get('embeddings', []))
+
+
+@blueprint.route('/stats', methods=['POST'])
+def handle_stats():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    measures = content.get('measures', [])
+    dimensions = content.get('dimensions', [])
+    return data_processing.handle_stats(dataset_api=dataset_api, dataset=dataset,
+        measures=measures, dimensions=dimensions)
+
+
+@blueprint.route('/grouped_stats', methods=['POST'])
+def handle_grouped_stats():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    dimensions = content.get('dimensions', [])
+    measures = content.get('measures', [])
+    return data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=dataset,
+        measures=measures, dimensions=dimensions)
+
+
+@blueprint.route('/selected_ids', methods=['POST'])
+def handle_selected_ids():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    data_filter = content.get('filter')
+    return data_processing.handle_selection_ids(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter)
 
 
 # List available datasets

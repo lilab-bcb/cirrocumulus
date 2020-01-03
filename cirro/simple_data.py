@@ -59,7 +59,6 @@ class SimpleData:
     def get_var_indices(adata, names):
         return adata.var.index.get_indexer_for(names)
 
-
     @staticmethod
     def schema(adata):
         obs_cat = []
@@ -76,7 +75,7 @@ class SimpleData:
         result['nObs'] = adata.shape[0]
         embeddings = []
         for key in adata.obsm_keys():
-            if key.startswith('X_') and adata.obsm[key].shape[1] <= 10:
+            if key.startswith('X_'):
                 embeddings.append(dict(name=key, dimensions=adata.obsm[key].shape[1]))
         result['embeddings'] = embeddings
         return result

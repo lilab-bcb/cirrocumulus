@@ -41,13 +41,7 @@ import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingChartPlotly from './EmbeddingChartPlotly';
 import EmbedForm from './EmbedForm';
 import {intFormat} from './formatters';
-import {
-    DEFAULT_BIN_SUMMARY,
-    DEFAULT_INTERPOLATOR,
-    DEFAULT_MARKER_OPACITY,
-    DEFAULT_MARKER_SIZE,
-    DEFAULT_NUMBER_BINS
-} from "./reducers";
+import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_MARKER_SIZE} from "./reducers";
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
 
@@ -173,18 +167,6 @@ class App extends PureComponent {
         }
         if (this.props.markerOpacity !== DEFAULT_MARKER_OPACITY) {
             json.markerOpacity = this.props.markerOpacity;
-        }
-        if (this.props.binValues) {
-            json.binValues = true;
-            if (this.props.binSummary !== DEFAULT_BIN_SUMMARY) {
-                json.binSummary = this.props.binSummary;
-            }
-            if (this.props.numberOfBins !== DEFAULT_NUMBER_BINS) {
-                json.numberOfBins = this.props.numberOfBins;
-            }
-        }
-        if (this.props.view3d) {
-            json['3d'] = true;
         }
 
         if (this.props.dotPlotData && this.props.dotPlotData.length > 0) {

@@ -21,12 +21,12 @@ class ContinuousLegend extends React.PureComponent {
                 <td>{numberFormat(globalSummary.mean)}</td>
                 {selectionSummary && <td>{numberFormat(selectionSummary.mean)}</td>}
             </tr>
-            <tr>
+            {globalSummary.numExpressed != null && <tr>
                 <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
                 <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
                 {selectionSummary &&
                 <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
-            </tr>
+            </tr>}
             </tbody>
 
         </table>);

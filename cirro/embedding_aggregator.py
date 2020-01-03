@@ -4,16 +4,17 @@ import scipy.sparse
 from cirro.simple_data import SimpleData
 
 
-def get_basis(basis):
-    if basis is not None:
-        embedding_ndim = 2
-        if basis.endswith('3d'):
-            basis = basis[0:len(basis) - 3]
-            embedding_ndim = 3
-        coordinate_columns = []
-        for i in range(embedding_ndim):
-            coordinate_columns.append(basis + '_' + str(i + 1))
-        return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns}
+def get_basis(basis, nbins=None, agg=None, precomputed=False):
+    embedding_ndim = 2
+    if basis.endswith('3d'):
+        basis = basis[0:len(basis) - 3]
+        embedding_ndim = 3
+    coordinate_columns = []
+    for i in range(embedding_ndim):
+        coordinate_columns.append(basis + '_' + str(i + 1))
+    full_name = basis if nbins is None else basis + '_' + str(nbins) + '_' + str(agg)
+    return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
+            'agg': agg, 'full_name': full_name, 'precomputed': precomputed}
 
 
 class EmbeddingAggregator:
@@ -42,8 +43,8 @@ class EmbeddingAggregator:
 
 
     @staticmethod
-    def convert_coords_to_bin(df, nbins, coordinate_columns, coordinate_column_to_range=None):
-        # replace coordinates with bin, set df index to bin
+    def convert_coords_to_bin(df, nbins, coordinate_columns, bin_name, coordinate_column_to_range=None):
+        # replace coordinates with bin, set df[name] to bin
         for name in coordinate_columns:
             values = df[name].values
             if coordinate_column_to_range is not None:
@@ -55,9 +56,9 @@ class EmbeddingAggregator:
                 column_max = values.max()
             df[name] = np.floor(np.interp(values, [column_min, column_max], [0, nbins - 1])).astype(int)
         if len(coordinate_columns) == 2:
-            df.index = df[coordinate_columns[0]] * nbins + df[coordinate_columns[1]]
+            df[bin_name] = df[coordinate_columns[0]] * nbins + df[coordinate_columns[1]]
         else:
-            df.index = df[coordinate_columns[2]] + nbins * (
+            df[bin_name] = df[coordinate_columns[2]] + nbins * (
                     df[coordinate_columns[1]] + nbins * df[coordinate_columns[0]])
 
     def execute(self, adata):
@@ -67,19 +68,21 @@ class EmbeddingAggregator:
         dimensions = self.dimensions
         add_count = self.add_count
         basis = self.basis
-
-        if self.nbins is not None:
-            agg_function = self.agg_function
+        nbins = self.nbins
+        agg_function = self.agg_function
+        if nbins is not None:
             df = adata.obs
             if add_count:
                 df['__count'] = 1.0
+
             # bin level summary, coordinates have already been converted
             obs_measure_agg_dict = {}
+            full_basis_name = basis['full_name']
             for column in basis['coordinate_columns']:
                 obs_measure_agg_dict[column] = 'min'
             for column in obs_measures:
                 obs_measure_agg_dict[column] = agg_function
-            grouped = df.groupby(df.index)
+            grouped = df.groupby(full_basis_name)
             X_output = None
             has_var_measures = len(var_measures) > 0
             has_dimensions = len(dimensions) > 0
@@ -127,7 +130,7 @@ class EmbeddingAggregator:
             for i in range(len(obs_measures)):
                 result['values'][obs_measures[i]] = obs_summary[obs_measures[i]].tolist()
             for column in dimensions:
-                result['values'][column] = dict(mode=dimension_mode_output[column],
+                result['values'][column] = dict(value=dimension_mode_output[column],
                     purity=dimension_purity_output[column])
             result['bins'] = obs_summary.index.to_list()
             for column in basis['coordinate_columns']:

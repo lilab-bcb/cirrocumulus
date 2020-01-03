@@ -8,3 +8,6 @@ class Entity:
 
     def __getitem__(self, item):
         return self.d[item]
+
+    def get(self, key, default):
+        return self.d.get(key, default)
