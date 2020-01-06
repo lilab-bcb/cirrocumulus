@@ -1,6 +1,8 @@
 import datetime
 import json
+from urllib.parse import urlparse
 
+import fsspec
 from google.cloud import datastore
 
 from .invalid_usage import InvalidUsage
@@ -122,20 +124,21 @@ class FirestoreDatastore:
         if email in readers:
             readers.remove(email)
         readers.add(email)
+        update_dict = {'name': dataset_name,
+                       'readers': list(readers),
+                       'url': url}
+        if url.endswith('.json'):
+            pr = urlparse(url)
+            fs = fsspec.filesystem(pr.scheme if not pr.scheme == '' else 'file')
+            with fs.open(url) as s:
+                s = json.load(s)
+                update_dict['precomputed'] = s.get('precomputed', False)
+                update_dict['nObs'] = s.get('nObs')
+
         if dataset_id is None:  # new dataset
-            dataset.update({
-                    'name': dataset_name,
-                    'owners': [email],
-                    'readers': list(readers),
-                    'url': url,
-                    'precomputed': False  # also add nObs
-            })
-        else:
-            dataset.update({
-                    'name': dataset_name,
-                    'readers': list(readers),
-                    'url': url
-            })
+            update_dict['owners'] = [email]
+
+        dataset.update(update_dict)
         client.put(dataset)
         dataset_id = dataset.id
         return dataset_id
