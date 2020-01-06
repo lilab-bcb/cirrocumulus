@@ -4,13 +4,14 @@ import logging
 import os
 
 import anndata
-import cirro.data_processing as data_processing
 import pandas as pd
+
+import cirro.data_processing as data_processing
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
-from cirro.io import write_table
+from cirro.io import write_table, save_adata
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
@@ -70,9 +71,9 @@ class PrepareData:
         basis_list = self.basis_list
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
-        # save_adata(self.adata, os.path.join(self.base_name, 'data'), column_batch_size=self.column_batch_size)
-        # self.summary_stats()
-        # self.grouped_stats()
+        save_adata(self.adata, os.path.join(self.base_name, 'data'), column_batch_size=self.column_batch_size)
+        self.summary_stats()
+        self.grouped_stats()
         for basis_name in basis_list:
             self.grid_embedding(basis_name, bin_agg_function, nbins)
         self.schema()
@@ -154,7 +155,6 @@ class PrepareData:
         adata = self.adata
         column_batch_size = self.column_batch_size
         full_basis_name = basis['full_name']
-        output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
 
         # write cell level bin to /data
         df_with_coords = pd.DataFrame()
@@ -165,11 +165,14 @@ class PrepareData:
             bin_name=full_basis_name)
         dict_with_coords = df_with_coords.to_dict(orient='list')
         write_table(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
-
+        if nbins <= 0:
+            return
         result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
             measures=measures + ['__count'], dimensions=dimensions)
 
-        # write bins and coordinates
+        # write bins and coordinates to obsm_summary/name
+        output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
+
         bin_dict = dict(index=result['bins'])
         for column in result['coordinates']:
             bin_dict[column] = result['coordinates'][column]
@@ -198,9 +201,11 @@ class PrepareData:
         output_file = os.path.join(self.base_name, 'index.json')
         result = SimpleData.schema(self.adata)
         result['precomputed'] = True
-        result['embeddings'] = []
-        for basis_name in basis_list:
-            result['embeddings'].append({'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function, 'dimensions': 2})
+        if nbins > 0:
+            result['embeddings'] = []
+            for basis_name in basis_list:
+                result['embeddings'].append(
+                    {'precomputed': True, 'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function, 'dimensions': 2})
         with open(output_file, 'wt') as f:
             json.dump(result, f)
 
@@ -212,7 +217,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
-    parser.add_argument('--nbins', help='Number of bins', default=500, type=int)
+    parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG)
