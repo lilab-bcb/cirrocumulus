@@ -16,10 +16,11 @@ def write_table(d, output_dir, name, write_statistics=True, row_group_size=None)
 
 
 def save_adata(adata, output_directory, column_batch_size=1000):
-    logger.info('writing adata')
+    logger.info('Save adata')
     for i in range(0, adata.shape[1], column_batch_size):
         end = i + column_batch_size
         end = min(end, adata.shape[1])
+        logger.info('Save adata {}-{}'.format(i, end))
         save_adata_X_chunk(adata, slice(i, end), output_directory)
     save_data_obsm(adata, output_directory)
     save_data_obs(adata, output_directory)
@@ -52,7 +53,7 @@ def save_adata_X_chunk(adata, adata_col_slice, output_directory):
     for j in range(X_slice.shape[1]):
         X = X_slice[:, j]
         if scipy.sparse.issparse(X):
-            X = X.toarray()
+            X = X.toarray().flatten()
         indices = np.where(X != 0)[0]
         values = X[indices]
         write_table(dict(index=indices, value=values), output_directory, names[j])

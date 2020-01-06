@@ -36,7 +36,6 @@ class DotPlot extends React.PureComponent {
         }
         const dotplot = Object.assign({}, this.props.data);
         dotplot.values = dotplot.values.filter(item => item.active);
-        console.log(dotplot.values.length);
         let categories = dotplot.categories || [''];
         const features = [];
         dotplot.values.forEach(datum => {

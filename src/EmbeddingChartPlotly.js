@@ -1,7 +1,12 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {handleDimensionFilterUpdated, handleMeasureFilterUpdated, handleSelectedPoints} from './actions';
+import {
+    getEmbeddingKey,
+    handleDimensionFilterUpdated,
+    handleMeasureFilterUpdated,
+    handleSelectedPoints
+} from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import createPlotlyComponent from './factory';
@@ -11,14 +16,6 @@ const Plot = createPlotlyComponent(window.Plotly);
 
 class EmbeddingChartPlotly extends React.PureComponent {
 
-
-    getKey(traceInfo) {
-        let key = traceInfo.name;
-        if (this.props.binValues) {
-            key += '-' + this.props.numberOfBins;
-        }
-        return key;
-    }
 
     getPlots() {
         const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
@@ -36,8 +33,9 @@ class EmbeddingChartPlotly extends React.PureComponent {
             if (traceInfo.data[0].unselected.marker.size === 0) {
                 traceInfo.data[0].unselected.marker.size = 1e-8;
             }
+            const key = traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding);
             return (
-                <div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={traceInfo.name}><Plot
+                <div style={{display: 'inline-block', border: '1px solid LightGrey'}} key={key}><Plot
                     data={traceInfo.data}
                     layout={traceInfo.layout}
                     config={config}

@@ -4,6 +4,7 @@ import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
     DELETE_DATASET,
+    getEmbeddingKey,
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
@@ -45,11 +46,11 @@ import {
 } from '../actions';
 import PlotUtil, {getInterpolator} from '../PlotUtil';
 
+export const DEFAULT_BIN_SUMMARY = 'max';
+export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_MARKER_SIZE = 5;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
-export const DEFAULT_BIN_SUMMARY = 'max';
-export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
 const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)};
 
@@ -103,7 +104,17 @@ function groupBy(state = [], action) {
     }
 }
 
-// set the selected embeddings
+
+function dataset(state = null, action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
+// set the selected embeddings, each embedding has name (str) e.g X_umap, nbins (int), _nbins (str), agg (str), bin (boolean), dimensions (int), precomputed (bool)
 function embeddings(state = [], action) {
     switch (action.type) {
         case SET_SELECTED_EMBEDDING:
@@ -116,7 +127,6 @@ function embeddings(state = [], action) {
             return state;
     }
 }
-
 
 function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
     switch (action.type) {
@@ -131,14 +141,6 @@ function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
     }
 }
 
-function dataset(state = null, action) {
-    switch (action.type) {
-        case SET_DATASET:
-            return action.payload;
-        default:
-            return state;
-    }
-}
 
 function binValues(state = false, action) {
     switch (action.type) {
@@ -152,6 +154,7 @@ function binValues(state = false, action) {
             return state;
     }
 }
+
 
 function markerSize(state = DEFAULT_MARKER_SIZE, action) {
     switch (action.type) {
@@ -190,7 +193,6 @@ function embeddingChartSize(state = 2, action) {
             return state;
     }
 }
-
 
 function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
@@ -331,9 +333,10 @@ function user(state = {}, action) {
 }
 
 /**
- * Object that contains count, userPoints, the selected points in chart space, and points
+ * Object that contains count (number), chart (object). Each key in chart is the full layout name. Each value contains
+ * userPoints (selected points in chart space) and points (the selected points in bin space if binning)
  */
-function selection(state = {}, action) {
+function selection(state = {chart: {}}, action) {
     switch (action.type) {
         case SET_SELECTION:
             return action.payload;
@@ -510,8 +513,12 @@ function embeddingData(state = [], action) {
             return state.slice();
         case SET_SELECTION:
             state.forEach(item => {
+                const embedding = item.data[0].embedding;
+                let fullName = getEmbeddingKey(embedding);
+                const selection = action.payload.chart && action.payload.chart[fullName];
+                const userPoints = selection ? selection.userPoints : null;
                 item.data.forEach(trace => {
-                    trace.selectedpoints = action.payload.userPoints;
+                    trace.selectedpoints = userPoints;
                 });
 
                 item.data = item.data.slice();
@@ -622,9 +629,9 @@ export default combineReducers({
     markerOpacityUI,
     markerSize,
     markerSizeUI,
-    message,
     numberOfBins,
     numberOfBinsUI,
+    message,
     plotConfig,
     savedDatasetFilter,
     selection,

@@ -4,14 +4,13 @@ import logging
 import os
 
 import anndata
+import cirro.data_processing as data_processing
 import pandas as pd
-
-from cirro.data_processing import process_data
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
-from cirro.io import write_table, save_adata
+from cirro.io import write_table
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
@@ -19,18 +18,27 @@ logger = logging.getLogger("cirro")
 
 class PrepareData:
 
-    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, column_batch_size=1000):
+    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function):
         self.input_path = input_path
-        self.column_batch_size = column_batch_size
         self.adata = anndata.read(input_path, backed=backed)
+        if self.adata.shape[0] < 50000:
+            self.column_batch_size = 10000
+        elif self.adata.shape[0] < 150000:
+            self.column_batch_size = 5000
+        else:
+            self.column_batch_size = 1000
+
+        logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         dimensions = []
         measures = []
         others = []
         if basis_list is None:
             basis_list = list(self.adata.obsm_keys())
-            for key in basis_list:
-                if self.adata.obsm[key].shape[1] >= 10:
-                    basis_list.remove(key)
+            # for key in basis_list:
+            #     if self.adata.obsm[key].shape[1] >= 10:
+            #         logger.info('Skipping {} for embedding visualization'.format(key))
+            #         basis_list.remove(key)
+            logger.info('Basis {}'.format(basis_list))
         self.basis_list = basis_list
         self.nbins = nbins
         self.dataset_api = DatasetAPI()
@@ -62,9 +70,9 @@ class PrepareData:
         basis_list = self.basis_list
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
-        save_adata(self.adata, os.path.join(self.base_name, 'data'))
-        self.summary_stats()
-        self.grouped_stats()
+        # save_adata(self.adata, os.path.join(self.base_name, 'data'), column_batch_size=self.column_batch_size)
+        # self.summary_stats()
+        # self.grouped_stats()
         for basis_name in basis_list:
             self.grid_embedding(basis_name, bin_agg_function, nbins)
         self.schema()
@@ -78,9 +86,9 @@ class PrepareData:
         input_dataset = self.input_dataset
         adata = self.adata
         column_batch_size = self.column_batch_size
+        process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+            measures=measures, dimensions=dimensions)
 
-        process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, summary_measures=measures,
-            summary_dimensions=dimensions, return_types=['summary'])
         summary = process_results['summary']
         for column in summary:
             dimension_or_measure_summary = summary[column]
@@ -96,13 +104,13 @@ class PrepareData:
             end = i + column_batch_size
             end = min(end, adata.shape[1])
             logger.info('Summary stats {}-{}'.format(i, end))
-            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
-                summary_measures=adata.var_names[i:end],
-                summary_dimensions=[], return_types=['summary'])
+            process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+                measures=adata.var_names[i:end], dimensions=[])
             summary = process_results['summary']
             for column in summary:
                 measure_summary = summary[column]
-                write_table(dict(min=[measure_summary['min']], max=[measure_summary['max']],
+                write_table(dict(min=[measure_summary['min']],
+                    max=[measure_summary['max']],
                     sum=[measure_summary['sum']],
                     numExpressed=[measure_summary['numExpressed']],
                     mean=[measure_summary['mean']]),
@@ -116,52 +124,50 @@ class PrepareData:
         input_dataset = self.input_dataset
         adata = self.adata
         column_batch_size = self.column_batch_size
-
+        logger.info('Grouped stats for {}'.format(dimensions))
         for i in range(0, self.adata.shape[1], column_batch_size):
             end = i + column_batch_size
             end = min(end, adata.shape[1])
             logger.info('Grouped stats {}-{}'.format(i, end))
-            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
-                summary_measures=adata.var_names[i:end],
-                summary_dimensions=dimensions, return_types=['dotplot'])
+            process_results = data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset,
+                measures=adata.var_names[i:end], dimensions=dimensions)
+
             dotplot_results = process_results['dotplot']
 
             for dotplot_result in dotplot_results:
                 output_directory = os.path.join(self.base_name, 'grouped_statistics', dotplot_result['name'])
-                write_table(dict(index=dotplot_result['categories']),
-                    output_directory, 'index')
+                write_table(dict(index=dotplot_result['categories']), output_directory, 'index')
                 values = dotplot_result['values']
                 for value in values:
-                    write_table(dict(mean=[value['mean']],
-                        fractionExpressed=[value['fractionExpressed']]),
+                    write_table(dict(mean=value['mean'],
+                        fractionExpressed=value['fractionExpressed']),
                         output_directory, value['name'])
 
     def grid_embedding(self, basis_name, summary, nbins):
         logger.info('{} embedding'.format(basis_name))
-        basis = get_basis(basis_name)
-        path = basis_name + '_' + str(nbins) + '_' + str(summary)
+        basis = get_basis(basis_name, nbins, summary, False)
+
         dimensions = self.dimensions
         measures = self.measures
         dataset_api = self.dataset_api
         input_dataset = self.input_dataset
         adata = self.adata
         column_batch_size = self.column_batch_size
-        output_directory = os.path.join(self.base_name, 'obsm_summary', path)
+        full_basis_name = basis['full_name']
+        output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
 
         # write cell level bin to /data
         df_with_coords = pd.DataFrame()
         obsm = adata.obsm[basis_name]
         for i in range(len(basis['coordinate_columns'])):
             df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
-        EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'], None)
+        EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
+            bin_name=full_basis_name)
         dict_with_coords = df_with_coords.to_dict(orient='list')
-        dict_with_coords['index'] = df_with_coords.index.values
-        write_table(dict_with_coords, os.path.join(self.base_name, 'data'), path)
+        write_table(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
 
-        process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
-            return_types=['embedding'], embedding_dimensions=dimensions, embedding_measures=measures,
-            basis=basis, nbins=nbins, agg_function=summary)
-        result = process_results['embedding']
+        result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
+            measures=measures + ['__count'], dimensions=dimensions)
 
         # write bins and coordinates
         bin_dict = dict(index=result['bins'])
@@ -170,17 +176,17 @@ class PrepareData:
         write_table(bin_dict, output_directory, 'index')
 
         for column in result['values']:
-            write_table(dict(value=result['values'][column]),
-                output_directory, column)
+            vals = result['values'][column]
+            if not isinstance(vals, dict):
+                vals = dict(value=vals)
+            write_table(vals, output_directory, column)
 
         for i in range(0, self.adata.shape[1], column_batch_size):
             end = i + column_batch_size
             end = min(end, adata.shape[1])
             logger.info('{} embedding {}-{}'.format(basis_name, i, end))
-            process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
-                return_types=['embedding'], embedding_dimensions=[], embedding_measures=adata.var_names[i:end],
-                basis=basis, nbins=nbins, agg_function=summary)
-            result = process_results['embedding']
+            result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
+                measures=adata.var_names[i:end], dimensions=[])
             for column in result['values']:
                 write_table(dict(value=result['values'][column]),
                     output_directory, column)
@@ -191,10 +197,10 @@ class PrepareData:
         bin_agg_function = self.bin_agg_function
         output_file = os.path.join(self.base_name, 'index.json')
         result = SimpleData.schema(self.adata)
-        del result['embeddings']
-        result['summary'] = {'nObs': self.adata.shape[0], 'embeddings': []}
+        result['precomputed'] = True
+        result['embeddings'] = []
         for basis_name in basis_list:
-            result['summary']['embeddings'].append({'basis': basis_name, 'nbins': nbins, 'agg': bin_agg_function})
+            result['embeddings'].append({'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function, 'dimensions': 2})
         with open(output_file, 'wt') as f:
             json.dump(result, f)
 

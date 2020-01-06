@@ -117,7 +117,7 @@ class FirestoreDatastore:
         if dataset_id is not None:
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
-            dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url', 'summary'])
+            dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url', 'precomputed'])
         readers = set(readers)
         if email in readers:
             readers.remove(email)
@@ -128,7 +128,7 @@ class FirestoreDatastore:
                     'owners': [email],
                     'readers': list(readers),
                     'url': url,
-                    'summary': []  # for precomputed data-array of {'name':'', 'basis':'', 'nbins':0, 'agg':''}
+                    'precomputed': False  # also add nObs
             })
         else:
             dataset.update({

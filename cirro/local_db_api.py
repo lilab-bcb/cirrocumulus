@@ -8,6 +8,8 @@ class LocalDbAPI:
 
     def __init__(self, paths):
         self.paths = paths
+        self.dataset_filter = {}
+        self.counter = 0
 
     def server(self):
         return dict(canWrite=True)
@@ -17,10 +19,8 @@ class LocalDbAPI:
 
     def create_dataset_meta(self, path):
         result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
-        json_file = os.path.join(path, 'index.json')
-        if os.path.isdir(path) and os.path.exists(json_file):
-            result['url'] = json_file
-            with open(json_file, 'rt') as f:
+        if os.path.basename(path).endswith('.json'):
+            with open(path, 'rt') as f:
                 result.update(json.load(f))
         return result
 
@@ -36,3 +36,37 @@ class LocalDbAPI:
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         result = Entity(dataset_id, self.create_dataset_meta(dataset_id))
         return result
+
+    def dataset_filters(self, email, dataset_id):
+        results = []
+        for key in self.dataset_filter:
+            results.append({'id': key, 'name': self.dataset_filter[key]['name']})
+        return results
+
+    def delete_dataset_filter(self, email, filter_id):
+        del self.dataset_filter[filter_id]
+
+    def get_dataset_filter(self, email, filter_id):
+        return self.dataset_filter[filter_id]
+
+    def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
+
+        if filter_id is None:
+            self.counter += 1
+            filter_id = str(self.counter)
+
+        entity = self.dataset_filter.get(filter_id)
+        if entity is None:
+            entity = {}
+            self.dataset_filter[filter_id] = entity
+        if filter_name is not None:
+            entity['name'] = filter_name
+        if dataset_filter is not None:
+            entity['value'] = json.dumps(dataset_filter)
+        if email is not None:
+            entity['email'] = email
+        if dataset_id is not None:
+            entity['dataset_id'] = dataset_id
+        if filter_notes is not None:
+            entity['notes'] = filter_notes
+        return filter_id

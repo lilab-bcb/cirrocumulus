@@ -24,7 +24,8 @@ class DatasetAPI:
         if index == -1:
             return self.default_provider
         suffix = path[index + 1:].lower()
-        return self.suffix_to_provider[suffix]
+        provider = self.suffix_to_provider.get(suffix)
+        return provider if provider is not None else self.default_provider
 
     def add(self, provider):
         suffixes = provider.get_suffixes()

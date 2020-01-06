@@ -1,17 +1,16 @@
-import numpy as np
+import pandas as pd
 import scipy.sparse
 
 from cirro.dotplot_aggregator import DotPlotAggregator
-from cirro.embedding_aggregator import EmbeddingAggregator
+from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.feature_aggregator import FeatureAggregator
 from cirro.ids_aggregator import IdsAggregator
 from cirro.simple_data import SimpleData
-from cirro.unique_index_aggregator import UniqueIndexAggregator
+from cirro.unique_aggregator import UniqueAggregator
 
 
 def filter_adata(adata, data_filter):
     if data_filter is not None:
-        selected_points = data_filter.get('selected_points', None)
         keep_expr = None
         user_filters = data_filter.get('filters', [])
         for filter_obj in user_filters:
@@ -21,8 +20,8 @@ def filter_adata(adata, data_filter):
             if field in adata.obs:
                 X = adata.obs[field]
             else:
-                X = adata.X[:, SimpleData.get_var_indices(adata, [field])]
-
+                indices = SimpleData.get_var_indices(adata, [field])
+                X = adata.X[:, indices[0]]
             if op == 'in':
                 keep = (X.isin(value)).values
             elif op == '>':
@@ -42,11 +41,18 @@ def filter_adata(adata, data_filter):
 
             if scipy.sparse.issparse(keep):
                 keep = keep.toarray().flatten()
-
+            if isinstance(keep, pd.Series):
+                keep = keep.values
             keep_expr = keep_expr & keep if keep_expr is not None else keep
-
+        selected_points = data_filter.get('selectedPoints')
         if selected_points is not None:
-            keep = adata.obs.index.isin(selected_points)
+            selected_points_basis = get_basis(selected_points['basis'], selected_points.get('nbins'),
+                selected_points.get('agg'), selected_points.get('precomputed', False))
+            field = selected_points_basis['full_name'] if selected_points_basis['nbins'] is not None else 'index'
+            if field == 'index':
+                keep = adata.obs.index.isin(selected_points.get('value'))
+            else:
+                keep = adata.obs[field].isin(selected_points.get('value'))
             keep_expr = keep_expr & keep if keep_expr is not None else keep
 
         adata = SimpleData.view(adata, keep_expr)
@@ -69,12 +75,12 @@ def precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimens
                               'max': float(df['{}_max'.format(column)][0]),
                               'sum': float(df['{}_sum'.format(column)][0]),
                               'mean': float(df['{}_mean'.format(column)][0])}
-            if '{}_num_expressed'.format(column) in df:
-                result[column]['numExpressed'] = int(df['{}_num_expressed'.format(column)][0])
+            if '{}_numExpressed'.format(column) in df:
+                result[column]['numExpressed'] = int(df['{}_numExpressed'.format(column)][0])
     return result
 
 
-def precomputed_dotplot(dataset_api, dataset, var_measures, dimensions):
+def precomputed_grouped_stats(dataset_api, dataset, var_measures, dimensions):
     result = []
     if (len(var_measures)) > 0 and len(dimensions) > 0:
         for dimension in dimensions:
@@ -84,21 +90,22 @@ def precomputed_dotplot(dataset_api, dataset, var_measures, dimensions):
             dimension_result = dict(categories=df['index'].values.tolist(), name=dimension, values=values)
             result.append(dimension_result)
             for measure in var_measures:
-                fraction_expressed = df[measure + '_fraction_expressed'].values.tolist()
+                fraction_expressed = df[measure + '_fractionExpressed'].values.tolist()
                 mean = df[measure + '_mean'].values.tolist()
+                print(measure)
+                print(fraction_expressed)
+                print(mean)
                 values.append(dict(name=measure, fractionExpressed=fraction_expressed, mean=mean))
+
     return result
 
 
-def precomputed_embedding(dataset_api, dataset, basis, agg_function, nbins, obs_measures, var_measures,
+def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures,
                           dimensions):
-    if basis is None or agg_function is None or nbins is None:
-        raise ValueError('basis, agg, and nbins must be provided')
-
     if (len(obs_measures) + len(var_measures) + len(dimensions)) == 0:
         obs_measures = ['__count']
 
-    path = 'obsm_summary/' + basis['name']
+    path = 'obsm_summary/' + basis['full_name']
     df = dataset_api.read_summarized(dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures,
         index=True, rename=True, path=path)
     result = {'coordinates': {}, 'values': {}, 'bins': df['index'].values.tolist()}
@@ -106,13 +113,12 @@ def precomputed_embedding(dataset_api, dataset, basis, agg_function, nbins, obs_
     for column in basis['coordinate_columns']:
         result['coordinates'][column] = df[column].values.tolist()
 
-    for key in obs_measures + dimensions + var_measures:
+    for key in obs_measures + var_measures:
         result['values'][key] = df[key + '_value'].values.tolist()
+    for key in dimensions:
+        result['values'][key] = dict(value=df[key + '_value'].values.tolist(),
+            purity=df[key + '_purity'].values.tolist())
     return result
-
-
-return_type_choices = set(['ids', 'selectionCoordinates', 'embedding', 'selectionSummary', 'summary', 'dotplot'])
-precomputed_return_types = set(['embedding', 'summary', 'dotplot'])
 
 
 def get_var_name_type(key):
@@ -139,44 +145,117 @@ def split_measures(measures):
     return obs_measures, var_measures
 
 
-# measures start with X.name or obs.name to distinguish obs and X, dimensions must be obs
-def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, embedding_measures=[],
-                 embedding_dimensions=[], dotplot_measures=[], dotplot_dimensions=[], summary_measures=[],
-                 summary_dimensions=[], agg_function='max', data_filter=None):
-    precomputed_dataset_summary = None
-    if 'summary' in dataset:
-        precomputed_dataset_summary = dataset['summary']  # {embeddings:[{nbins:500, agg:'max'}]}
-        if basis is not None:
-            basis['name'] = basis['name'] + '_' + str(nbins) + '_' + str(agg_function)
-    return_types = set(return_types)
-    obs_keys = set()
+def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
+    obs_measures, var_measures = split_measures(measures)
+    if basis['precomputed']:
+        result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
+    else:
+        adata = dataset_api.read(dataset=dataset, obs_keys=dimensions + obs_measures,
+            var_keys=var_measures, basis=[basis])
+        if basis['nbins'] is not None:
+            EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
+                nbins=basis['nbins'],
+                coordinate_columns=basis['coordinate_columns'],
+                bin_name=basis['full_name'])
+        result = EmbeddingAggregator(obs_measures=obs_measures,
+            var_measures=var_measures, dimensions=dimensions,
+            count='__count' in var_measures,
+            nbins=basis['nbins'], basis=basis, agg_function=basis['agg']).execute(adata)
+    return result
+
+
+def handle_grouped_stats(dataset_api, dataset, measures=[], dimensions=[]):
+    # all dot plot measures are in X
+    result = {}
+    if dataset.get('precomputed', False):
+        result['dotplot'] = precomputed_grouped_stats(dataset_api, dataset, measures, dimensions)
+    else:
+        adata = dataset_api.read(dataset=dataset, obs_keys=dimensions, var_keys=measures)
+        result['dotplot'] = DotPlotAggregator(var_measures=measures,
+            dimensions=dimensions).execute(adata)
+    return result
+
+
+def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
+    result = {}
+    obs_measures, var_measures = split_measures(measures)
+    if dataset.get('precomputed', False):
+        result['summary'] = precomputed_summary(dataset_api, dataset, obs_measures, var_measures,
+            dimensions)
+    else:
+        adata = dataset_api.read(dataset=dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures)
+        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
+    return result
+
+
+def handle_selection_ids(dataset_api, dataset, data_filter):
+    selection_info = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
+    return {'ids': IdsAggregator().execute(selection_info['adata'])}
+
+
+def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
+    obs_measures, var_measures = split_measures(measures)
+    var_keys_filter, obs_keys_filter, selected_points_filter_basis = data_filter_keys(data_filter)
+    obs_keys = list(set(obs_measures + obs_keys_filter))
+    var_keys = list(set(var_measures + var_keys_filter))
+    basis_objs = []
+    selected_points_filter_basis_found = False
+    for embedding in embeddings:
+        basis_obj = get_basis(embedding['basis'], embedding.get('nbins'), embedding.get('agg'),
+            embedding.get('precomputed', False))
+        basis_objs.append(basis_obj)
+        if selected_points_filter_basis is not None and not selected_points_filter_basis_found and basis_obj[
+            'full_name'] == selected_points_filter_basis['full_name']:
+            selected_points_filter_basis_found = True
+    # add selected_points_filter_basis is not included
+    if selected_points_filter_basis is not None and not selected_points_filter_basis_found:
+        basis_objs.append(selected_points_filter_basis)
+    adata = dataset_api.read(dataset=dataset, obs_keys=obs_keys, var_keys=var_keys, basis=basis_objs)
+    for basis_obj in basis_objs:
+        if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
+            EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
+                nbins=basis_obj['nbins'],
+                bin_name=basis_obj['full_name'],
+                coordinate_columns=basis_obj['coordinate_columns'])
+    adata = filter_adata(adata, data_filter)
+    return {'adata': adata, 'basis': basis_objs, 'obs_measures': obs_measures, 'var_measures': var_measures,
+            'dimensions': dimensions}
+
+
+def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
+    result = {}
+    selection_info = get_selected_data(dataset_api, dataset, embeddings=embeddings, measures=measures,
+        dimensions=dimensions,
+        data_filter=data_filter)
+    basis_objs = selection_info['basis']
+    obs_measures = selection_info['obs_measures']
+    var_measures = selection_info['var_measures']
+    adata = selection_info['adata']
+
+    if len(basis_objs) > 0:
+        result['selectionCoordinates'] = {}
+        for basis_obj in basis_objs:
+            result['selectionCoordinates'][basis_obj['full_name']] = UniqueAggregator(
+                basis_obj['full_name'] if basis_obj['nbins'] is not None else 'index').execute(
+                adata)
+    if stats:
+        result['selectionSummary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
+    result['count'] = adata.shape[0]
+    return result
+
+
+def data_filter_keys(data_filter):
     var_keys = set()
-    if 'ids' in return_types:
-        obs_keys.add('index')
-    embedding_obs_measures, embedding_var_measures = split_measures(embedding_measures)
-    summary_obs_measures, summary_var_measures = split_measures(summary_measures)
-    if '__count' in summary_obs_measures:
-        summary_obs_measures.remove('__count')
-
-    obs_keys.update(embedding_obs_measures)
-    var_keys.update(embedding_var_measures)
-    obs_keys.update(embedding_dimensions)
-
-    # obs_keys.update(dotplot_obs_measures)
-    var_keys.update(dotplot_measures)
-    obs_keys.update(dotplot_dimensions)
-
-    obs_keys.update(summary_obs_measures)
-    var_keys.update(summary_var_measures)
-    obs_keys.update(summary_dimensions)
-
-    var_keys.update(summary_var_measures)
-
+    obs_keys = set()
+    basis = None
     if data_filter is not None:
         user_filters = data_filter.get('filters', [])
-        selected_points = data_filter.get('selected_points', None)
-        if selected_points is not None:
-            data_filter['selected_points'] = np.array(selected_points)
+        selected_points_filter = data_filter.get('selectedPoints')
+        if selected_points_filter is not None:
+            basis_name = selected_points_filter.get('basis')
+            basis = get_basis(basis_name, selected_points_filter.get('nbins'), selected_points_filter.get('agg'),
+                selected_points_filter.get('precomputed', False))
+           
         for i in range(len(user_filters)):
             user_filter = user_filters[i]
             key = user_filter[0]
@@ -186,50 +265,4 @@ def process_data(dataset_api, dataset, return_types, basis=None, nbins=None, emb
                 var_keys.add(name)
             else:
                 obs_keys.add(name)
-    result = {}
-
-    if precomputed_dataset_summary is not None and len(precomputed_return_types.intersection(return_types)) > 0:
-        if 'embedding' in return_types:
-            result['embedding'] = precomputed_embedding(dataset_api, dataset, basis, agg_function, nbins,
-                embedding_obs_measures, embedding_var_measures, embedding_dimensions)
-        if 'summary' in return_types:
-            result['summary'] = precomputed_summary(dataset_api, dataset, summary_obs_measures, summary_var_measures,
-                summary_dimensions)
-        if 'dotplot' in return_types:
-            result['dotplot'] = precomputed_dotplot(dataset_api, dataset, dotplot_measures,
-                dotplot_dimensions)
-        return result
-
-    add_bin = nbins is not None and precomputed_dataset_summary is None and (
-            'ids' in return_types or 'selectionCoordinates' in return_types or 'embedding' in return_types or 'selectionSummary' in return_types)
-    if 'summary' in return_types:
-        result['summary'] = FeatureAggregator(summary_obs_measures, summary_var_measures, summary_dimensions)
-    if 'embedding' in return_types:  # uses all data
-
-        result['embedding'] = EmbeddingAggregator(obs_measures=embedding_obs_measures,
-            var_measures=embedding_var_measures, dimensions=embedding_dimensions,
-            count=len(embedding_measures) + len(embedding_dimensions) == 0,
-            nbins=nbins, basis=basis, agg_function=agg_function)
-    if 'dotplot' in return_types:  # uses all data
-        result['dotplot'] = DotPlotAggregator(var_measures=dotplot_measures,
-            dimensions=dotplot_dimensions)
-    if 'selectionSummary' in return_types:  # summary by selection and feature
-        result['selectionSummary'] = FeatureAggregator(summary_obs_measures, summary_var_measures, summary_dimensions)
-    if 'selectionCoordinates' in return_types:  # return selected bins or indices
-        result['selectionCoordinates'] = UniqueIndexAggregator()
-    if 'ids' in return_types:  # uses selection only
-        result['ids'] = IdsAggregator()
-
-    adata = dataset_api.read(dataset=dataset, obs_keys=list(obs_keys), var_keys=list(var_keys),
-        basis=basis)  # TODO apply filters when reading
-
-    if add_bin:  # add bin before filtering since we might need to filter on bin
-        EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
-            nbins=nbins,
-            coordinate_columns=basis['coordinate_columns'],
-            coordinate_column_to_range=None)
-    adata = filter_adata(adata, data_filter)
-
-    for key in result:
-        result[key] = result[key].execute(adata)
-    return result
+    return list(var_keys), list(obs_keys), basis

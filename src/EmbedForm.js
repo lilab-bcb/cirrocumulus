@@ -1,4 +1,5 @@
 import {Switch} from '@material-ui/core';
+import Checkbox from '@material-ui/core/Checkbox';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -58,6 +59,7 @@ const styles = theme => ({
 
 class EmbedForm extends React.PureComponent {
 
+
     onMarkerSizeChange = (event) => {
         this.props.handleMarkerSizeUI(event.target.value);
     };
@@ -69,7 +71,6 @@ class EmbedForm extends React.PureComponent {
     deleteDatasetFilter = (filterId) => {
         this.props.handleDeleteDatasetFilter(filterId);
     };
-
 
     onMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -130,42 +131,84 @@ class EmbedForm extends React.PureComponent {
 
     onNumberOfBinsKeyPress = (event) => {
         if (event.key === 'Enter') {
-            let numberOfBins = parseInt(event.target.value);
-            if (numberOfBins >= 0) {
-                this.props.handleNumberOfBins(numberOfBins);
+            let value = parseInt(event.target.value);
+            if (value >= 0) {
+                this.props.handleNumberOfBins(event.target.value);
+                let embeddings = this.props.embeddings;
+                for (let i = 0; i < embeddings.length; i++) {
+                    if (!embeddings[i].precomputed) {
+                        embeddings[i] = Object.assign(embeddings[i], {nbins: value, _nbins: value});
+                    }
+                }
+                this.props.handleEmbeddings(embeddings.slice(0));
             }
         }
     };
 
     onBinSummaryChange = (event) => {
-        this.props.handleBinSummary(event.target.value);
+        const value = event.target.value;
+        this.props.handleBinSummary(value);
+        let embeddings = this.props.embeddings;
+        for (let i = 0; i < embeddings.length; i++) {
+            if (!embeddings[i].precomputed) {
+                embeddings[i] = Object.assign(embeddings[i], {agg: value});
+            }
+        }
+        this.props.handleEmbeddings(embeddings.slice(0));
     };
 
     handleBinValuesChange = (event) => {
-        this.props.handleBinValues(event.target.checked);
+        const value = event.target.checked;
+        this.props.handleBinValues(value);
+        let embeddings = this.props.embeddings;
+        for (let i = 0; i < embeddings.length; i++) {
+            if (!embeddings[i].precomputed) {
+                embeddings[i] = Object.assign(embeddings[i], {bin: value});
+            }
+        }
+        this.props.handleEmbeddings(embeddings.slice(0));
     };
 
     handleViewChange = (event) => {
-        this.props.handleViewName(event.target.value);
+        const dataset = this.props.dataset;
+        const embeddings = dataset.embeddings;
+        const names = event.target.value;
+        let selection = [];
+        embeddings.forEach(embedding => {
+            if (names.indexOf(embedding.name) !== -1) {
+                if (!embedding.precomputed) {
+                    embedding = Object.assign(embedding, {
+                        bin: this.props.binValues,
+                        nbins: this.props.numberOfBins,
+                        _nbins: this.props.numberOfBinsUI,
+                        agg: this.props.binSummary
+                    });
+                }
+                selection.push(embedding);
+            }
+        });
+
+        this.props.handleEmbeddings(selection);
     };
 
 
     render() {
-        const {classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, selectedFeatures, selectedGroupBy, selectedEmbeddings, numberOfBins, markerSize, markerOpacity, unselectedMarkerOpacity, binValues, binSummary, dataset} = this.props;
+        const {numberOfBinsUI, binValues, binSummary, embeddings, classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, unselectedMarkerOpacity, dataset} = this.props;
+
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
             savedDatasetFilter = {};
         }
-        const features = dataset == null ? [] : dataset.features;
+        const availableFeatures = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
-        const isSummarized = dataset == null ? false : dataset.summary != null;
+        const isSummarized = dataset == null ? false : dataset.precomputed != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
         const summaryOptions = [
             {value: 'max', label: 'Maximum'},
             {value: 'mean', label: 'Mean'},
             {value: 'sum', label: 'Sum'}];
-        let featureValue = selectedFeatures.concat(selectedGroupBy);
+        let featureValue = features.concat(groupBy);
         featureValue = featureValue.map(item => {
             return {label: item, value: item};
         });
@@ -183,7 +226,7 @@ class EmbedForm extends React.PureComponent {
 
         let allOptions = [{label: 'Annotations', options: metadataOptions}, {
             label: 'Variables',
-            options: features.map(item => {
+            options: availableFeatures.map(item => {
                 return {label: item, value: item};
             })
         }];
@@ -193,23 +236,29 @@ class EmbedForm extends React.PureComponent {
             label: 'Variables',
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
         }];
+        const embeddingNames = embeddings.map(e => e.name);
         const chartSizes = [{label: 'Small', value: 3}, {label: 'Medium', value: 2}, {label: 'Large', value: 1}];
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="view">Embedding</InputLabel>
+                    <InputLabel id="embedding-label">Embedding</InputLabel>
                     <Select
                         className={classes.select}
-                        input={<Input id="view"/>}
+                        labelId="embedding-label"
+                        multiple
+                        value={embeddingNames}
                         onChange={this.handleViewChange}
-                        value={selectedEmbeddings.length === 0 ? '' : selectedEmbeddings[0]}
-                        multiple={false}>
-                        {availableEmbeddings.map(view => (
-                            <MenuItem key={view.name} value={view.name}>
-                                <ListItemText primary={view.name}/>
+                        input={<Input/>}
+                        renderValue={selected => selected.join(', ')}
+                    >
+                        {availableEmbeddings.map(embedding => (
+                            <MenuItem key={embedding.name} value={embedding.name}>
+                                <Checkbox checked={embeddingNames.indexOf(embedding.name) > -1}/>
+                                <ListItemText primary={embedding.name}/>
                             </MenuItem>
                         ))}
                     </Select>
+
                 </FormControl>
 
 
@@ -262,9 +311,10 @@ class EmbedForm extends React.PureComponent {
 
                 {!isSummarized && binValues &&
                 <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
-                           value={numberOfBins}
+                           value={numberOfBinsUI}
                            onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"
                            className={classes.formControl}/>}
+
 
                 {!isSummarized && binValues && <FormControl className={classes.formControl}>
                     <InputLabel htmlFor="summary">Bin Summary</InputLabel>
@@ -325,24 +375,28 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        binSummary: state.binSummary,
-        binValues: state.binValues,
         dataset: state.dataset,
+        binValues: state.binValues,
+        binSummary: state.binSummary,
+        numberOfBins: state.numberOfBins,
+        numberOfBinsUI: state.numberOfBinsUI,
         datasetFilters: state.datasetFilters,
         embeddingChartSize: state.embeddingChartSize,
         markerOpacity: state.markerOpacityUI,
         markerSize: state.markerSizeUI,
-        numberOfBins: state.numberOfBinsUI,
         savedDatasetFilter: state.savedDatasetFilter,
-        selectedEmbeddings: state.embeddings,
-        selectedFeatures: state.features,
-        selectedGroupBy: state.groupBy,
+        embeddings: state.embeddings,
+        features: state.features,
+        groupBy: state.groupBy,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
         unselectedMarkerSize: state.unselectedMarkerSizeUI
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
+        handleEmbeddings: value => {
+            dispatch(setSelectedEmbedding(value));
+        },
         handleNumberOfBins: value => {
             dispatch(setNumberOfBins(value));
         },
@@ -382,9 +436,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleBinValues: value => {
             dispatch(setBinValues(value));
         },
-        handleViewName: value => {
-            dispatch(setSelectedEmbedding(value == null ? [] : [value]));
-        },
         handleFeatures: value => {
             dispatch(setFeatures(value == null ? [] : value));
         },
@@ -393,8 +444,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleDeleteDatasetFilter: value => {
             dispatch(deleteDatasetFilter(value));
-        },
-
+        }
     };
 };
 
