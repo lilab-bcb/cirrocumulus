@@ -1,4 +1,5 @@
 import {Switch} from '@material-ui/core';
+import Checkbox from '@material-ui/core/Checkbox';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -235,7 +236,7 @@ class EmbedForm extends React.PureComponent {
             label: 'Variables',
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
         }];
-
+        const embeddingNames = embeddings.map(e => e.name);
         const chartSizes = [{label: 'Small', value: 3}, {label: 'Medium', value: 2}, {label: 'Large', value: 1}];
         return (
             <div className={classes.root}>
@@ -245,13 +246,15 @@ class EmbedForm extends React.PureComponent {
                         className={classes.select}
                         labelId="embedding-label"
                         multiple
-                        value={embeddings.map(e => e.name)}
+                        value={embeddingNames}
                         onChange={this.handleViewChange}
                         input={<Input/>}
+                        renderValue={selected => selected.join(', ')}
                     >
                         {availableEmbeddings.map(embedding => (
                             <MenuItem key={embedding.name} value={embedding.name}>
-                                {embedding.name}
+                                <Checkbox checked={embeddingNames.indexOf(embedding.name) > -1}/>
+                                <ListItemText primary={embedding.name}/>
                             </MenuItem>
                         ))}
                     </Select>

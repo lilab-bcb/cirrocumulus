@@ -152,6 +152,13 @@ export function login() {
 
 export function openDatasetFilter(filterId) {
     return function (dispatch, getState) {
+        const savedDatasetFilter = getState().savedDatasetFilter;
+        if (savedDatasetFilter != null && filterId === savedDatasetFilter.id) { // toggle
+            dispatch(setSavedDatasetFilter(null));
+            dispatch(setDatasetFilter({}));
+            dispatch(handleFilterUpdated());
+            return;
+        }
         dispatch(_setLoading(true));
 
         fetch(API + '/filter?id=' + filterId,
@@ -200,7 +207,7 @@ export function deleteDatasetFilter(filterId) {
                 dispatch(setDatasetFilters(datasetFilters.slice()));
                 dispatch(setMessage('Filter deleted'));
                 let savedDatasetFilter = getState().savedDatasetFilter;
-                if (savedDatasetFilter.id === filterId) {
+                if (savedDatasetFilter != null && savedDatasetFilter.id === filterId) {
                     dispatch(setSavedDatasetFilter(null));
                 }
             }).finally(() => {
@@ -412,6 +419,37 @@ function getEmbeddingJson(embedding) {
     return value;
 }
 
+function updateChartSelection(selectionCoordinates, chartSelection, state) {
+    for (let key in selectionCoordinates) {
+        const selectedIndicesOrBins = selectionCoordinates[key].indices_or_bins;
+        const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
+        if (embedding == null) {
+            console.log(key + ' missing');
+        }
+        let selectedPoints = selectedIndicesOrBins;
+        if (embedding.bin) {
+            // find embedding data with matching layout
+            for (let i = 0; i < state.embeddingData.length; i++) {
+                const embedding = state.embeddingData[i].data[0].embedding;
+                let fullName = getEmbeddingKey(embedding);
+                if (fullName === key) {
+                    const traceBins = state.embeddingData[i].data[0].bins;
+                    if (traceBins != null) {
+                        selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        chartSelection[key] = {
+            userPoints: selectedPoints,
+            points: selectedIndicesOrBins
+        };
+    }
+}
+
 /**
  *
  * @param selectedPoints Selected chart points if selection was updated or null.
@@ -471,42 +509,11 @@ function handleFilterUpdated(selectedPoints, embedding) {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(result => result.json()).then(result => {
-            const selectionSummary = result.selectionSummary;
             const selectionCoordinates = result.selectionCoordinates;
             const count = result.count;
             if (selectionCoordinates != null) {
                 let chartSelection = {};
-                for (let key in selectionCoordinates) {
-                    const selectedIndicesOrBins = selectionCoordinates[key].indices_or_bins;
-                    const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
-                    if (embedding == null) {
-                        console.log(key + ' missing');
-                    }
-                    let selectedPoints = selectedIndicesOrBins;
-                    if (embedding.bin) {
-
-                        // find embedding data with matching layout
-                        for (let i = 0; i < state.embeddingData.length; i++) {
-                            const embedding = state.embeddingData[i].data[0].embedding;
-                            let fullName = getEmbeddingKey(embedding);
-                            if (fullName === key) {
-                                const traceBins = state.embeddingData[i].data[0].bins;
-                                if (traceBins != null) {
-                                    selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
-                                    break;
-                                }
-                            }
-                        }
-
-                    }
-
-                    chartSelection[key] = {
-                        userPoints: selectedPoints,
-                        points: selectedIndicesOrBins
-                    };
-                }
-
-
+                updateChartSelection(selectionCoordinates, chartSelection, state);
                 dispatch(setSelection({
                     count: count,
                     chart: chartSelection
@@ -515,7 +522,7 @@ function handleFilterUpdated(selectedPoints, embedding) {
                 dispatch(setSelection({chart: {}}));
             }
             // userPoints are in chart space, points are in server space, count is total number of cells selected
-            dispatch(setFeatureSummary(selectionSummary));
+            dispatch(setFeatureSummary(result.selectionSummary));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
@@ -630,7 +637,11 @@ export function handleSelectedPoints(payload) {
             selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
         }
         dispatch(setDatasetFilter({}));
-        dispatch(handleFilterUpdated(selectedpoints, payload.points[0].data.embedding));
+        if (isEmpty) {
+            dispatch(handleFilterUpdated());
+        } else {
+            dispatch(handleFilterUpdated(selectedpoints, payload.points[0].data.embedding));
+        }
 
     };
 }
@@ -1146,7 +1157,7 @@ function _updateCharts(sliceOptions, onError) {
             continuousFeatures = ['__count'];
         }
 
-        const datasetFilter = state.datasetFilter;
+
         const obs = state.dataset.obs;
         const selectedEmbeddings = state.embeddings;
         if (sliceOptions.dotplot && continuousFeatures.length === 0) {
@@ -1274,7 +1285,7 @@ function _updateCharts(sliceOptions, onError) {
                 globalFeatureSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
             }
             if (featureSummary[feature] == null) {
-                selectionSummaryDimensions.push(isObs ? 'obs/' + feature : feature);
+                selectionSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
             }
         });
 
@@ -1367,13 +1378,28 @@ function _updateCharts(sliceOptions, onError) {
             updateActiveDotPlotItems();
         }
 
+        const filterJson = getFilterJson(state);
+        // TODO update selection in new embedding space
+        if (filterJson != null && (selectionSummaryMeasures.length > 0 || selectionSummaryDimensions.length > 0)) {
 
-        if ((selectionSummaryMeasures.length > 0 || selectionSummaryDimensions.length > 0) && datasetFilter != null && false) { // FIXME
+
+            // let selectedEmbeddings = state.embeddings;
+            // json.embeddings = selectedEmbeddings.map(e => {
+            //     let value = {
+            //         basis: e.name,
+            //     };
+            //     if (e.bin) {
+            //         value.nbins = e.nbins;
+            //         value.agg = e.agg;
+            //     }
+            //     return value;
+            // });
 
             let p = fetch(API + '/selection',
                 {
                     body: JSON.stringify({
                         id: state.dataset.id,
+                        filter: filterJson,
                         measures: selectionSummaryMeasures,
                         dimensions: selectionSummaryDimensions
                     }),
@@ -1381,9 +1407,15 @@ function _updateCharts(sliceOptions, onError) {
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
                 }).then(r => r.json()).then(result => {
                 if (result.selectionSummary) {
+                    // merge selection
                     let selectionSummary = Object.assign(getState().featureSummary, result.selectionSummary);
                     dispatch(setFeatureSummary(selectionSummary));
                 }
+                // dispatch(setSelection({
+                //     count: count,
+                //     chart: chartSelection
+                // }));
+                //updateChartSelection(selectionCoordinates, chartSelection, state);
             });
             promises.push(p);
         }
