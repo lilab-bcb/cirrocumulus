@@ -1,11 +1,12 @@
-import json
 import os
 
+import json
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
+
 from cirro.simple_data import SimpleData
 
 
@@ -14,15 +15,21 @@ class ParquetDataset:
     def __init__(self):
         self.cached_dataset_id = None
         self.cached_data = {}
+        self.cached_schema = None
+        self.cached_schema_path = None
 
     def get_suffixes(self):
         return ['parquet', 'pq', 'json']
 
     def schema(self, file_system, path):
+        if path == self.cached_schema_path:
+            return self.cached_schema
         if path.endswith('.json'):  # precomputed dataset
-            print(path)
             with file_system.open(path) as s:
-                return json.load(s)
+                s = json.load(s)
+                self.cached_schema = s
+                self.cached_schema_path = path
+                return s
         with file_system.open(path, 'rb') as s:
             parquet_file = pq.ParquetFile(s)
             schema = parquet_file.schema.to_arrow_schema()
@@ -113,7 +120,7 @@ class ParquetDataset:
         if basis is not None and len(basis) > 0:
             for b in basis:
                 cache_key = str(dataset_id) + '-' + b['full_name']
-                columns_to_fetch = b['full_name']
+                columns_to_fetch = [b['full_name']]
                 if not b['precomputed']:  # need coordinates and bins
                     columns_to_fetch += b['coordinate_columns']
                 cached_value = self.cached_data.get(cache_key)

@@ -100,16 +100,35 @@ function getUser() {
 
 
 export function initGapi() {
-    return function (dispatch, state) {
+    return function (dispatch, getState) {
+        dispatch(_setLoadingApp({loading: true, progress: 0}));
+        let startTime = new Date().getTime();
+        let loadingTime = 32;
+
+        function loadingAppProgress() {
+            if (getState().loadingApp.loading) {
+                let elapsed = (new Date().getTime() - startTime) / 1000;
+                let p = Math.min(100, 100 * (elapsed / loadingTime));
+                dispatch(_setLoadingApp({loading: true, progress: p}));
+                if (p < 100) {
+                    window.setTimeout(loadingAppProgress, 300);
+                }
+            }
+        }
+
+        window.setTimeout(loadingAppProgress, 500);
+
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId == '') { // serving files locally, no login required
-                dispatch(_setLoadingApp(false));
-                dispatch(_setEmail(''));
+                dispatch(_setLoadingApp({loading: false}));
+                dispatch(_setEmail(null));
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
                 });
             } else {
+
+
                 let script = document.createElement('script');
                 script.type = 'text/javascript';
                 script.src = 'https://apis.google.com/js/api.js';
@@ -120,7 +139,7 @@ export function initGapi() {
                             discoveryDocs: [],
                             scope: authScopes.join(' '),
                         }).then(() => {
-                            dispatch(_setLoadingApp(false));
+                            dispatch(_setLoadingApp({loading: false, progress: 0}));
                             dispatch(initLogin(true));
                         });
                     });
@@ -128,7 +147,8 @@ export function initGapi() {
                 document.getElementsByTagName('head')[0].appendChild(script);
             }
         }).catch(err => {
-            handleError(dispatch, err);
+            dispatch(_setLoadingApp({loading: false, progress: 0}));
+            handleError(dispatch, 'Unable to load app. Please try again.');
         });
     };
 }
@@ -488,14 +508,7 @@ function handleFilterUpdated(selectedPoints, embedding) {
         }
         let selectedEmbeddings = state.embeddings;
         json.embeddings = selectedEmbeddings.map(e => {
-            let value = {
-                basis: e.name,
-            };
-            if (e.bin) {
-                value.nbins = e.nbins;
-                value.agg = e.agg;
-            }
-            return value;
+            return getEmbeddingJson(e);
         });
 
         if (filter == null) {
@@ -1280,12 +1293,14 @@ function _updateCharts(sliceOptions, onError) {
         });
         let globalFeatureSummaryMeasures = [];
         continuousFeatures.forEach(feature => {
-            let isObs = obs.indexOf(feature) !== -1;
-            if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
-            }
-            if (featureSummary[feature] == null) {
-                selectionSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
+            if (feature !== '__count') {
+                let isObs = obs.indexOf(feature) !== -1;
+                if (globalFeatureSummary[feature] == null) {
+                    globalFeatureSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
+                }
+                if (featureSummary[feature] == null) {
+                    selectionSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
+                }
             }
         });
 

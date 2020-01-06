@@ -7,6 +7,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import Input from '@material-ui/core/Input';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Link from '@material-ui/core/Link';
 import MenuItem from '@material-ui/core/MenuItem';
 import Popover from '@material-ui/core/Popover';
@@ -230,7 +231,7 @@ class App extends PureComponent {
                             <CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>
                             <h3
                                 style={{display: 'inline', marginRight: 20}}>Cirro</h3>
-                            {this.props.loadingApp && <span>Loading...</span>}
+
                             {this.props.email != null &&
                             <Select
                                 disableUnderline={true}
@@ -361,7 +362,7 @@ class App extends PureComponent {
                             </Menu>}
 
 
-                            {!this.props.loadingApp && this.props.email == null &&
+                            {!this.props.loadingApp.loading && this.props.email == null && serverInfo.clientId !== '' &&
                             <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
                                     onClick={this.props.handleLogin}>Sign In</Button>}
                         </div>
@@ -379,7 +380,10 @@ class App extends PureComponent {
                 </Drawer>
                 <div/>
                 <main className={classes.content}>
-
+                    {this.props.loadingApp.loading &&
+                    <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
+                                                    value={this.props.loadingApp.progress}/></h2>
+                    </div>}
                     {this.props.dataset != null && <EmbeddingChartPlotly/>}
                     {this.props.dataset != null && <DotPlotsPlotly/>}
                 </main>

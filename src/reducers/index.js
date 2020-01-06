@@ -389,7 +389,7 @@ function serverInfo(state = {canWrite: false}, action) {
 }
 
 
-function loadingApp(state = true, action) {
+function loadingApp(state = {loading: false, progress: 0}, action) {
     switch (action.type) {
         case SET_LOADING_APP:
             return action.payload;
