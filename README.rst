@@ -1,7 +1,11 @@
 cirrocumulus
 ===============
-Interactive single cell visualization in the cloud or on your desktop.
-
+Interactive single cell visualization application.
+ - Run on Google App Engine or your desktop
+ - Scales to > 6 million cells on commodity hardware
+ - Share datasets with collaborators
+ - Interactively create and share cell annotations
+ - Explore multiple features and embeddings simultaneously
 
 Local Usage
 -----------

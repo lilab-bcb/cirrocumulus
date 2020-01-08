@@ -4,9 +4,8 @@ import logging
 import os
 
 import anndata
-import pandas as pd
-
 import cirro.data_processing as data_processing
+import pandas as pd
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
@@ -71,11 +70,12 @@ class PrepareData:
         basis_list = self.basis_list
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
+        for basis_name in basis_list:
+            self.grid_embedding(basis_name, bin_agg_function, nbins)
         save_adata(self.adata, os.path.join(self.base_name, 'data'), column_batch_size=self.column_batch_size)
         self.summary_stats()
         self.grouped_stats()
-        for basis_name in basis_list:
-            self.grid_embedding(basis_name, bin_agg_function, nbins)
+
         self.schema()
 
     def summary_stats(self):
@@ -167,12 +167,10 @@ class PrepareData:
         write_table(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
         if nbins <= 0:
             return
+        # write bins and coordinates to obsm_summary/name
         result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
             measures=measures + ['__count'], dimensions=dimensions)
-
-        # write bins and coordinates to obsm_summary/name
         output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
-
         bin_dict = dict(index=result['bins'])
         for column in result['coordinates']:
             bin_dict[column] = result['coordinates'][column]
@@ -183,11 +181,12 @@ class PrepareData:
             if not isinstance(vals, dict):
                 vals = dict(value=vals)
             write_table(vals, output_directory, column)
-
+        logger.info('{} embedding finished writing obs'.format(basis_name))
+        # write X to obsm_summary/name
         for i in range(0, self.adata.shape[1], column_batch_size):
             end = i + column_batch_size
             end = min(end, adata.shape[1])
-            logger.info('{} embedding {}-{}'.format(basis_name, i, end))
+            logger.info('{} embedding X {}-{}'.format(basis_name, i, end))
             result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
                 measures=adata.var_names[i:end], dimensions=[])
             for column in result['values']:
