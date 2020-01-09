@@ -494,7 +494,7 @@ function handleFilterUpdated(selectedPoints, embedding) {
 
         let json = {
             id: state.dataset.id,
-            measures: state.features,
+            measures: state.features.slice(),
             dimensions: state.groupBy,
         };
         for (let i = 0; i < json.measures.length; i++) {
