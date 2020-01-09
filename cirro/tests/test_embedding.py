@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from cirro.data_processing import process_data
-from cirro.embedding_aggregator import EmbeddingAggregator
+from cirro.data_processing import handle_embedding
+from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 
 
 def create_df(test_data, measures, dimensions, basis):
@@ -12,11 +12,10 @@ def create_df(test_data, measures, dimensions, basis):
 
 
 def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions, basis):
-    process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
-        embedding_measures=measures, embedding_dimensions=dimensions,
-        return_types=['embedding'])
+    basis = get_basis(basis)
+    results = handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
+        measures=measures, dimensions=dimensions)
 
-    results = process_results['embedding']
     df = create_df(test_data, measures, dimensions, basis)
     for key in basis['coordinate_columns']:
         np.testing.assert_array_equal(results['coordinates'][key], df[key].values, err_msg=key)
@@ -29,7 +28,7 @@ def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions,
 def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, basis):
     nbins = 100
     agg_function = 'max'
-
+    basis = get_basis(basis, nbins, agg_function)
     agg_dict = {}
     df = create_df(test_data, measures, dimensions, basis)
     for key in basis['coordinate_columns']:
@@ -40,19 +39,18 @@ def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, ba
         agg_dict[key] = lambda x: x.mode()[0]
     EmbeddingAggregator.convert_coords_to_bin(df, nbins=nbins,
         coordinate_columns=basis['coordinate_columns'],
-        coordinate_column_to_range=None)
+        bin_name=basis['full_name'])
     # group by bin then agg
 
-    grouped_df = df.groupby(df.index).agg(agg_dict)
+    grouped_df = df.groupby(basis['full_name']).agg(agg_dict)
 
-    process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, basis=basis, nbins=nbins,
-        embedding_measures=measures, embedding_dimensions=dimensions,
-        return_types=['embedding'], agg_function=agg_function)
+    results = handle_embedding(dataset_api=dataset_api, dataset=input_dataset,
+        basis=basis,
+        measures=measures, dimensions=dimensions)
 
-    results = process_results['embedding']
     for key in basis['coordinate_columns']:
         np.testing.assert_array_equal(results['coordinates'][key], grouped_df[key].values, err_msg=key)
     for key in measures:
         np.testing.assert_array_equal(results['values'][key], grouped_df[key].values, err_msg=key)
     for key in dimensions:
-        np.testing.assert_array_equal(results['values'][key]['mode'], grouped_df[key].values, err_msg=key)
+        np.testing.assert_array_equal(results['values'][key]['value'], grouped_df[key].values, err_msg=key)

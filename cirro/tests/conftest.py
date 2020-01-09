@@ -4,7 +4,6 @@ import anndata
 import pytest
 
 from cirro.dataset_api import DatasetAPI
-from cirro.embedding_aggregator import get_basis
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
 from cirro.parquet_dataset import ParquetDataset
@@ -30,9 +29,9 @@ def dimensions():
     return ['louvain']
 
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope='module')
 def basis():
-    return get_basis('X_umap')
+    return 'X_umap'
 
 
 @pytest.fixture(scope='module', params=['r', None])
