@@ -96,6 +96,9 @@ Developer Instructions
 
     export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”
 
+
+[![Build Status](https://travis-ci.org/klarman-cell-observatory/cirrocumulus.svg?branch=master)](https://travis-ci.org/klarman-cell-observatory/cirrocumulus)
+
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
 .. _Node.js: https://nodejs.org/
