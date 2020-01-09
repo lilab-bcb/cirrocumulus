@@ -6,7 +6,6 @@ import pytest
 from cirro.dataset_api import DatasetAPI
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
-from cirro.parquet_dataset import ParquetDataset
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -47,7 +46,6 @@ def h5_dataset_force_sparse(request):
 @pytest.fixture(scope='module', autouse=True)
 def dataset_api(h5_dataset_backed, h5_dataset_force_sparse):
     dataset_api = DatasetAPI()
-    dataset_api.add(ParquetDataset())
     dataset_api.add(H5ADDataset(backed=h5_dataset_backed, force_sparse=h5_dataset_force_sparse))
     return dataset_api
 
