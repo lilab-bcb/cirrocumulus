@@ -26,19 +26,18 @@ setup(
     url="https://github.com/klarman-cell-observatory/cirrocumulus",
     author="Joshua Gould",
     author_email='jgould@broadinstitute.org',
-    classifiers=[  # https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    classifiers=[
             "Intended Audience :: Developers",
             "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: BSD License",
-            "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.5",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Framework :: Jupyter",
             "Natural Language :: English",
             "Operating System :: MacOS :: MacOS X",
+            "Operating System :: Microsoft :: Windows",
             "Operating System :: POSIX :: Linux",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
+            "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
         test=[
@@ -49,7 +48,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=requires,
-    python_requires="~=3.5",
+    python_requires=">=3.6",
     package_data={
     },
     entry_points={"console_scripts": ["cirro=cirro.__main__:main"]},
