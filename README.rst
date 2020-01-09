@@ -16,7 +16,7 @@ Local Usage
 
 -  Launch via the command line::
 
-    cirro <path to dataset>
+    cirro launch <path to dataset>
 
 Google Cloud Platform (GCP) Deployment Instructions
 -----------------------------------------------------
