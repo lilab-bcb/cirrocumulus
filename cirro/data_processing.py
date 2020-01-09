@@ -147,6 +147,9 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
     if basis['precomputed']:
         result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
     else:
+        count = '__count' in var_measures
+        if count:
+            var_measures.remove('__count')
         adata = dataset_api.read(dataset=dataset, obs_keys=dimensions + obs_measures,
             var_keys=var_measures, basis=[basis])
         if basis['nbins'] is not None:
@@ -157,7 +160,7 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
 
         result = EmbeddingAggregator(obs_measures=obs_measures,
             var_measures=var_measures, dimensions=dimensions,
-            count='__count' in var_measures,
+            count=count,
             nbins=basis['nbins'], basis=basis, agg_function=basis['agg']).execute(adata)
     return result
 
