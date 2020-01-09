@@ -6,6 +6,7 @@ Interactive single cell visualization application.
  - Share datasets with collaborators
  - Interactively create and share cell annotations
  - Explore multiple features and embeddings simultaneously
+ - Visualize 3-d embeddings
 
 Local Usage
 -----------

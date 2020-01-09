@@ -20,6 +20,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
+    getEmbeddingKey,
     openDatasetFilter,
     setBinSummary,
     setBinValues,
@@ -169,25 +170,23 @@ class EmbedForm extends React.PureComponent {
         this.props.handleEmbeddings(embeddings.slice(0));
     };
 
-    handleViewChange = (event) => {
-        const dataset = this.props.dataset;
-        const embeddings = dataset.embeddings;
-        const names = event.target.value;
-        let selection = [];
-        embeddings.forEach(embedding => {
-            if (names.indexOf(embedding.name) !== -1) {
-                if (!embedding.precomputed) {
-                    embedding = Object.assign(embedding, {
-                        bin: this.props.binValues,
-                        nbins: this.props.numberOfBins,
-                        _nbins: this.props.numberOfBinsUI,
-                        agg: this.props.binSummary
-                    });
-                }
-                selection.push(embedding);
-            }
-        });
+    handleEmbeddingsChange = (event) => {
 
+        const embeddings = event.target.value;
+        const selection = [];
+        embeddings.forEach(embedding => {
+
+            if (!embedding.precomputed) {
+                embedding = Object.assign(embedding, {
+                    bin: this.props.binValues,
+                    nbins: this.props.numberOfBins,
+                    _nbins: this.props.numberOfBinsUI,
+                    agg: this.props.binSummary
+                });
+            }
+            selection.push(embedding);
+
+        });
         this.props.handleEmbeddings(selection);
     };
 
@@ -236,7 +235,8 @@ class EmbedForm extends React.PureComponent {
             label: 'Variables',
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
         }];
-        const embeddingNames = embeddings.map(e => e.name);
+        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
+
         const chartSizes = [{label: 'Small', value: 3}, {label: 'Medium', value: 2}, {label: 'Large', value: 1}];
         return (
             <div className={classes.root}>
@@ -246,21 +246,20 @@ class EmbedForm extends React.PureComponent {
                         className={classes.select}
                         labelId="embedding-label"
                         multiple
-                        value={embeddingNames}
-                        onChange={this.handleViewChange}
+                        value={embeddings}
+                        onChange={this.handleEmbeddingsChange}
                         input={<Input/>}
-                        renderValue={selected => selected.join(', ')}
+                        renderValue={selected => selected.map(e => e.name + (e.dimensions === 3 ? ' 3d' : '')).join(', ')}
                     >
                         {availableEmbeddings.map(embedding => (
-                            <MenuItem key={embedding.name} value={embedding.name}>
-                                <Checkbox checked={embeddingNames.indexOf(embedding.name) > -1}/>
-                                <ListItemText primary={embedding.name}/>
+                            <MenuItem key={getEmbeddingKey(embedding)}
+                                      value={embedding}>
+                                <Checkbox checked={embeddingKeys.indexOf(getEmbeddingKey(embedding)) > -1}/>
+                                <ListItemText primary={embedding.name + (embedding.dimensions === 3 ? ' 3d' : '')}/>
                             </MenuItem>
                         ))}
                     </Select>
-
                 </FormControl>
-
 
                 <FormControl className={classes.formControl}>
                     <AutocompleteSelect label="Features" options={allOptions}

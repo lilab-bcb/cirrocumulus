@@ -76,7 +76,12 @@ class SimpleData:
         embeddings = []
         for key in adata.obsm_keys():
             if key.startswith('X_'):
-                embeddings.append(dict(name=key, dimensions=adata.obsm[key].shape[1]))
+                dim = min(3, adata.obsm[key].shape[1])
+                if dim == 3:
+                    embeddings.append(dict(name=key, dimensions=dim))
+                    embeddings.append(dict(name=key, dimensions=2))
+                else:
+                    embeddings.append(dict(name=key, dimensions=dim))
         result['embeddings'] = embeddings
         return result
 

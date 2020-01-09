@@ -47,7 +47,7 @@ def filter_adata(adata, data_filter):
         selected_points = data_filter.get('selectedPoints')
         if selected_points is not None:
             selected_points_basis = get_basis(selected_points['basis'], selected_points.get('nbins'),
-                selected_points.get('agg'), selected_points.get('precomputed', False))
+                selected_points.get('agg'), selected_points.get('ndim', '2'), selected_points.get('precomputed', False))
             field = selected_points_basis['full_name'] if selected_points_basis['nbins'] is not None else 'index'
             if field == 'index':
                 keep = adata.obs.index.isin(selected_points.get('value'))
@@ -203,7 +203,7 @@ def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensio
     selected_points_filter_basis_found = False
     for embedding in embeddings:
         basis_obj = get_basis(embedding['basis'], embedding.get('nbins'), embedding.get('agg'),
-            embedding.get('precomputed', False))
+            embedding.get('ndim', '2'), embedding.get('precomputed', False))
         basis_objs.append(basis_obj)
         if selected_points_filter_basis is not None and not selected_points_filter_basis_found and basis_obj[
             'full_name'] == selected_points_filter_basis['full_name']:
@@ -254,6 +254,7 @@ def data_filter_keys(data_filter):
         if selected_points_filter is not None:
             basis_name = selected_points_filter.get('basis')
             basis = get_basis(basis_name, selected_points_filter.get('nbins'), selected_points_filter.get('agg'),
+                selected_points_filter.get('ndim', '2'),
                 selected_points_filter.get('precomputed', False))
 
         for i in range(len(user_filters)):

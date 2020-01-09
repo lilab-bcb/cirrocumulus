@@ -518,7 +518,29 @@ function embeddingData(state = [], action) {
                 const selection = action.payload.chart && action.payload.chart[fullName];
                 const userPoints = selection ? selection.userPoints : null;
                 item.data.forEach(trace => {
-                    trace.selectedpoints = userPoints;
+                    if (trace.type === 'scatter3d') {
+
+                        trace.marker.size = action.payload.marker.markerSize;
+                        trace.marker.opacity = action.payload.marker.markerOpacity;
+                        if (userPoints != null && userPoints.length > 0) {
+                            let size = [];
+                            //  let color = trace.marker.color;
+
+                            for (let i = 0, n = trace.x.length; i < n; i++) {
+                                size.push(action.payload.marker.unselectedMarkerSize);
+                                //   color[i][3] = action.payload.marker.unselectedMarkerOpacity;
+                            }
+                            for (let i = 0, n = userPoints.length; i < n; i++) {
+                                let index = userPoints[i];
+                                size[index] = action.payload.marker.markerSize;
+                                // color[i][3] = action.payload.marker.markerOpacity;
+                            }
+                            //trace.marker.color = color;
+                            trace.marker.size = size;
+                        }
+                    } else {
+                        trace.selectedpoints = userPoints;
+                    }
                 });
 
                 item.data = item.data.slice();

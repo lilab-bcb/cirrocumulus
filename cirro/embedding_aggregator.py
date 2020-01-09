@@ -4,16 +4,16 @@ import scipy.sparse
 from cirro.simple_data import SimpleData
 
 
-def get_basis(basis, nbins=None, agg=None, precomputed=False):
-    embedding_ndim = 2
-    if basis.endswith('3d'):
-        basis = basis[0:len(basis) - 3]
-        embedding_ndim = 3
+def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False):
+    if isinstance(dimensions, str):
+        dimensions = int(dimensions)
     coordinate_columns = []
-    for i in range(embedding_ndim):
+    for i in range(dimensions):
         coordinate_columns.append(basis + '_' + str(i + 1))
-    full_name = basis if nbins is None else basis + '_' + str(nbins) + '_' + str(agg)
-    return {'name': basis, 'dimensions': embedding_ndim, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
+    full_name = basis + '_' + str(dimensions)
+    if nbins is not None:
+        full_name = full_name + '_' + str(nbins) + '_' + str(agg)
+    return {'name': basis, 'dimensions': dimensions, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
             'agg': agg, 'full_name': full_name, 'precomputed': precomputed}
 
 

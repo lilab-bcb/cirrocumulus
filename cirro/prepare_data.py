@@ -4,8 +4,9 @@ import logging
 import os
 
 import anndata
-import cirro.data_processing as data_processing
 import pandas as pd
+
+import cirro.data_processing as data_processing
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
@@ -146,7 +147,7 @@ class PrepareData:
 
     def grid_embedding(self, basis_name, summary, nbins):
         logger.info('{} embedding'.format(basis_name))
-        basis = get_basis(basis_name, nbins, summary, False)
+        basis = get_basis(basis_name, nbins, summary, 2, False)
 
         dimensions = self.dimensions
         measures = self.measures

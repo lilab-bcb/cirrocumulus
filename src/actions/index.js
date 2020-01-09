@@ -80,7 +80,7 @@ export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_U
 
 export function getEmbeddingKey(embedding) {
 
-    let fullName = embedding.name;
+    let fullName = embedding.name + '_' + embedding.dimensions;
     if (embedding.bin || embedding.precomputed) {
         fullName = fullName + '_' + embedding.nbins + '_' + embedding.agg;
     }
@@ -414,7 +414,16 @@ function setDatasetFilter(payload) {
 }
 
 function setSelection(payload) {
-    return {type: SET_SELECTION, payload: payload};
+    return function (dispatch, getState) {
+        const state = getState();
+        payload.marker = {
+            markerSize: state.markerSize,
+            markerOpacity: state.markerOpacity,
+            unselectedMarkerSize: state.unselectedMarkerSize,
+            unselectedMarkerOpacity: state.unselectedMarkerOpacity
+        };
+        dispatch({type: SET_SELECTION, payload: payload});
+    };
 }
 
 function setFeatureSummary(payload) {
@@ -427,7 +436,7 @@ function setSavedDatasetFilter(payload) {
 
 
 function getEmbeddingJson(embedding) {
-    let value = {basis: embedding.name};
+    let value = {basis: embedding.name, ndim: embedding.dimensions};
     if (embedding.precomputed) {
         value.precomputed = true;
     }
@@ -1196,7 +1205,7 @@ function _updateCharts(sliceOptions, onError) {
                 traceInfo.layout = PlotUtil.createEmbeddingLayout(
                     {
                         size: embeddingChartSize,
-                        is3d: traceInfo.layout.is3d,
+                        is3d: traceInfo.data[0].embedding.dimensions === 3,
                         title: traceInfo.name
                     });
             }
@@ -1464,7 +1473,7 @@ function handleEmbeddingResult(result) {
         const embeddingBins = embeddingResult.bins;
         const embeddingValues = embeddingResult.values;
         const coordinates = embeddingResult.coordinates;
-        const is3d = selectedEmbedding.name.endsWith('3d');
+        const is3d = selectedEmbedding.dimensions === 3;
 
         // add new embedding values
         for (let name in embeddingValues) {
@@ -1512,6 +1521,7 @@ function handleEmbeddingResult(result) {
                 let rgb = color(colorScale(values[i]));
                 colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
             }
+
 
             let chartData = {
                 embedding: Object.assign({}, selectedEmbedding),

@@ -100,16 +100,6 @@ def handle_schema():
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset)
-    embeddings = schema.get('embeddings')
-    if embeddings is not None:
-        additional_embeddings = []
-        for embedding in embeddings:
-            if embedding['dimensions'] == 3:
-                additional_embeddings.append({'name': embedding['name'], 'dimensions': 2})
-                embedding['name'] += ' 3d'
-        embeddings += additional_embeddings
-        embeddings = sorted(embeddings, key=lambda x: (x['name'], x['dimensions']))
-        schema['embeddings'] = embeddings
     return to_json(schema)
 
 
@@ -136,10 +126,11 @@ def handle_embedding():
 
     nbins = check_bin_input(content.get('nbins', None))
     agg_function = content.get('agg', 'max')
+    ndim = content.get('ndim', '2')
     precomputed = content.get('precomputed', False)
     dimensions = content.get('dimensions', [])
     measures = content.get('measures', [])
-    basis = get_basis(content.get('basis'), nbins=nbins, agg=agg_function, precomputed=precomputed)
+    basis = get_basis(content.get('basis'), nbins=nbins, agg=agg_function, dimensions=ndim, precomputed=precomputed)
     return data_processing.handle_embedding(dataset_api=dataset_api, dataset=dataset, basis=basis, measures=measures,
         dimensions=dimensions)
 
