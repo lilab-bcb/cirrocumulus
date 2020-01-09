@@ -15,12 +15,27 @@ class H5ADDataset:
         # only works with local files
 
     def get_suffixes(self):
-        return ['h5ad']
+        return ['h5ad', 'loom']
+
+    def read_adata(self, path):
+        path_lc = path.lower()
+        if path_lc.endswith('.loom'):
+            return anndata.read_loom(path)
+        return anndata.read(path, backed=self.backed)
+        # elif path.endswith('.mtx'):
+        #
+        #     return anndata.read_mtx(path, backed=self.backed)
+        # elif path.endswith('.txt'):
+        #
+        #     return anndata.read_text(path, backed=self.backed)
+        # elif path.endswith('.csv'):
+        #
+        #     return anndata.read_csv(path, backed=self.backed)
 
     def get_data(self, path):
         adata = self.path_to_data.get(path)
         if adata is None:
-            adata = anndata.read(path, backed=self.backed)
+            adata = self.read_adata(path)
             self.path_to_data[path] = adata
         return adata
 
