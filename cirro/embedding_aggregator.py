@@ -117,6 +117,8 @@ class EmbeddingAggregator:
                     result['values'][var_measures[i]] = X_output[:, i].tolist()
             for i in range(len(obs_measures)):
                 result['values'][obs_measures[i]] = obs_summary[obs_measures[i]].tolist()
+            if add_count:
+                result['values']['__count'] = obs_summary['__count'].tolist()
             for column in dimensions:
                 result['values'][column] = dict(value=dimension_mode_output[column],
                     purity=dimension_purity_output[column])
