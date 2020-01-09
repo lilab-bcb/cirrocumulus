@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 import scipy.sparse
-from cirro.data_processing import process_data
 from natsort import natsorted
+
+from cirro.data_processing import handle_grouped_stats
 
 
 def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
@@ -18,8 +19,8 @@ def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
     summarized_df = df.groupby(by).agg(['mean', fraction_expressed])
     sorted_categories = natsorted(summarized_df.index)
     summarized_df = summarized_df.loc[sorted_categories]
-    process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, dotplot_measures=measures,
-        dotplot_dimensions=[by], return_types=['dotplot'])
+    process_results = handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset, measures=measures,
+        dimensions=[by])
     dotplot_result = process_results['dotplot']
     dotplot_result = dotplot_result[0]
     values = dotplot_result['values']

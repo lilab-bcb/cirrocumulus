@@ -1,7 +1,7 @@
 import pandas as pd
 from pytest import approx
 
-from cirro.data_processing import process_data
+from cirro.data_processing import handle_stats
 
 
 def diff_measures(test_data, summary, fields):
@@ -33,23 +33,21 @@ def diff_dimensions(test_data, summary, fields):
 
 
 def test_measure(dataset_api, input_dataset, test_data, measures):
-    process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, summary_measures=measures,
-        return_types=['summary'])
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset, measures=measures)
     summary = process_results['summary']
     diff_measures(test_data, summary, measures)
 
 
-# def test_dimension(dataset_api, input_dataset, test_data, dimensions):
-#     process_results = process_data(dataset_api=dataset_api, dataset=input_dataset,
-#         summary_dimensions=dimensions, return_types=['summary'])
-#     summary = process_results['summary']
-#     diff_dimensions(test_data, summary, dimensions)
-#
-#
-# def test_measure_and_dimension(dataset_api, input_dataset, test_data, measures, dimensions):
-#     process_results = process_data(dataset_api=dataset_api, dataset=input_dataset, summary_measures=measures,
-#         summary_dimensions=dimensions, return_types=['summary'])
-#
-#     summary = process_results['summary']
-#     diff_measures(test_data, summary, measures)
-#     diff_dimensions(test_data, summary, dimensions)
+def test_dimension(dataset_api, input_dataset, test_data, dimensions):
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+        dimensions=dimensions, )
+    summary = process_results['summary']
+    diff_dimensions(test_data, summary, dimensions)
+
+
+def test_measure_and_dimension(dataset_api, input_dataset, test_data, measures, dimensions):
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset, measures=measures,
+        dimensions=dimensions, )
+    summary = process_results['summary']
+    diff_measures(test_data, summary, measures)
+    diff_dimensions(test_data, summary, dimensions)
