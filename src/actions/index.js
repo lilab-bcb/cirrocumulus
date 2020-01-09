@@ -494,7 +494,7 @@ function handleFilterUpdated(selectedPoints, embedding) {
 
         let json = {
             id: state.dataset.id,
-            measures: state.features,
+            measures: state.features.slice(),
             dimensions: state.groupBy,
         };
         for (let i = 0; i < json.measures.length; i++) {
@@ -1040,34 +1040,21 @@ export function setSelectedEmbedding(payload) {
 export function setNumberOfBins(payload) {
     return function (dispatch, getState) {
         if (getState().numberOfBins !== payload) {
-            let prior = getState().numberOfBins;
             dispatch({type: SET_NUMBER_OF_BINS, payload: payload});
-            dispatch(_updateCharts({clear: true}, err => {
-                dispatch({type: SET_NUMBER_OF_BINS, payload: prior});
-            }));
         }
     };
 }
 
 export function setBinSummary(payload) {
     return function (dispatch, getState) {
-        let prior = getState().binSummary;
         dispatch({type: SET_BIN_SUMMARY, payload: payload});
 
-        dispatch(_updateCharts({clear: true}, err => {
-            dispatch({type: SET_BIN_SUMMARY, payload: prior});
-        }));
     };
 }
 
 export function setBinValues(payload) {
     return function (dispatch, getState) {
-        let prior = getState().binValues;
         dispatch({type: SET_BIN_VALUES, payload: payload});
-        dispatch(_updateCharts({clear: true}, err => {
-            dispatch({type: SET_BIN_VALUES, payload: prior});
-        }));
-
     };
 }
 
@@ -1172,7 +1159,7 @@ function _updateCharts(sliceOptions, onError) {
 
 
         const obs = state.dataset.obs;
-        const selectedEmbeddings = state.embeddings;
+        const embeddings = state.embeddings;
         if (sliceOptions.dotplot && continuousFeatures.length === 0) {
             sliceOptions.dotplot = false;
         }
@@ -1187,7 +1174,7 @@ function _updateCharts(sliceOptions, onError) {
         }
 
         let embeddingToVisibleFeatures = {};
-        selectedEmbeddings.forEach(selectedEmbedding => {
+        embeddings.forEach(selectedEmbedding => {
             let embeddingKey = getEmbeddingKey(selectedEmbedding);
             let features = {};
             continuousFeatures.forEach(feature => {
@@ -1199,9 +1186,10 @@ function _updateCharts(sliceOptions, onError) {
             embeddingToVisibleFeatures[embeddingKey] = features;
         });
 
-        // set active flag on existing data
+        // set active flag on cached data
         embeddingData.forEach(traceInfo => {
-            let visibleFeatures = embeddingToVisibleFeatures[getEmbeddingKey(traceInfo.data[0].embedding)] || {};
+            const embeddingKey = getEmbeddingKey(traceInfo.data[0].embedding);
+            let visibleFeatures = embeddingToVisibleFeatures[embeddingKey] || {};
             let active = visibleFeatures[traceInfo.name];
             if (active) {
                 traceInfo.date = new Date();
@@ -1212,7 +1200,7 @@ function _updateCharts(sliceOptions, onError) {
                         title: traceInfo.name
                     });
             }
-
+            // data is cached so delete from visibleFeatures
             delete visibleFeatures[traceInfo.name];
             traceInfo.active = active;
         });
@@ -1250,7 +1238,7 @@ function _updateCharts(sliceOptions, onError) {
 
         for (let embeddingName in embeddingToVisibleFeatures) {
             let visibleFeatures = embeddingToVisibleFeatures[embeddingName];
-            let embedding = selectedEmbeddings[selectedEmbeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingName)];
+            let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingName)];
             let measures = [];
             let dimensions = [];
             for (let feature in visibleFeatures) {
@@ -1495,8 +1483,9 @@ function handleEmbeddingResult(result) {
             let colorScale = null;
 
             if (!isCategorical) {
-                if (traceSummary == null) { // __count is not currently precomputed
-                    console.log('Computing range for ' + name);
+                // __count range is per embedding so we always recompute for now
+                if (traceSummary == null || name === '__count') {
+
                     let min = Number.MAX_VALUE;
                     let max = -Number.MAX_VALUE;
                     for (let i = 0, n = values.length; i < n; i++) {
@@ -1504,6 +1493,7 @@ function handleEmbeddingResult(result) {
                         min = value < min ? value : min;
                         max = value > max ? value : max;
                     }
+                    //  console.log(name + ' range: ' + min + ' to ' + max);
                     traceSummary = {min: min, max: max};
                     globalFeatureSummary[name] = traceSummary;
                 }

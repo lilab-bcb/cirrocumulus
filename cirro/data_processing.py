@@ -92,9 +92,6 @@ def precomputed_grouped_stats(dataset_api, dataset, var_measures, dimensions):
             for measure in var_measures:
                 fraction_expressed = df[measure + '_fractionExpressed'].values.tolist()
                 mean = df[measure + '_mean'].values.tolist()
-                print(measure)
-                print(fraction_expressed)
-                print(mean)
                 values.append(dict(name=measure, fractionExpressed=fraction_expressed, mean=mean))
 
     return result
@@ -150,6 +147,9 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
     if basis['precomputed']:
         result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
     else:
+        count = '__count' in var_measures
+        if count:
+            var_measures.remove('__count')
         adata = dataset_api.read(dataset=dataset, obs_keys=dimensions + obs_measures,
             var_keys=var_measures, basis=[basis])
         if basis['nbins'] is not None:
@@ -157,9 +157,10 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
                 nbins=basis['nbins'],
                 coordinate_columns=basis['coordinate_columns'],
                 bin_name=basis['full_name'])
+
         result = EmbeddingAggregator(obs_measures=obs_measures,
             var_measures=var_measures, dimensions=dimensions,
-            count='__count' in var_measures,
+            count=count,
             nbins=basis['nbins'], basis=basis, agg_function=basis['agg']).execute(adata)
     return result
 
@@ -196,7 +197,7 @@ def handle_selection_ids(dataset_api, dataset, data_filter):
 def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
     obs_measures, var_measures = split_measures(measures)
     var_keys_filter, obs_keys_filter, selected_points_filter_basis = data_filter_keys(data_filter)
-    obs_keys = list(set(obs_measures + obs_keys_filter))
+    obs_keys = list(set(obs_measures + obs_keys_filter + dimensions))
     var_keys = list(set(var_measures + var_keys_filter))
     basis_objs = []
     selected_points_filter_basis_found = False
@@ -225,8 +226,7 @@ def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensio
 def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
     result = {}
     selection_info = get_selected_data(dataset_api, dataset, embeddings=embeddings, measures=measures,
-        dimensions=dimensions,
-        data_filter=data_filter)
+        dimensions=dimensions, data_filter=data_filter)
     basis_objs = selection_info['basis']
     obs_measures = selection_info['obs_measures']
     var_measures = selection_info['var_measures']
@@ -255,7 +255,7 @@ def data_filter_keys(data_filter):
             basis_name = selected_points_filter.get('basis')
             basis = get_basis(basis_name, selected_points_filter.get('nbins'), selected_points_filter.get('agg'),
                 selected_points_filter.get('precomputed', False))
-           
+
         for i in range(len(user_filters)):
             user_filter = user_filters[i]
             key = user_filter[0]

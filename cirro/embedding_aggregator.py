@@ -25,22 +25,8 @@ class EmbeddingAggregator:
         self.obs_measures = obs_measures
         self.var_measures = var_measures
         self.dimensions = dimensions
-        self.count = count
-        self.add_count = count or nbins is not None
+        self.add_count = count
         self.basis = basis
-
-    @staticmethod
-    def get_bin_level_agg_dict(measures, coordinate_columns, agg_function):
-        agg_func = {}
-        for column in measures:
-            if column == '__count':
-                agg_func[column] = 'sum'
-            else:
-                agg_func[column] = agg_function
-        for column in coordinate_columns:
-            agg_func[column] = 'min'
-        return agg_func
-
 
     @staticmethod
     def convert_coords_to_bin(df, nbins, coordinate_columns, bin_name, coordinate_column_to_range=None):
@@ -82,6 +68,8 @@ class EmbeddingAggregator:
                 obs_measure_agg_dict[column] = 'min'
             for column in obs_measures:
                 obs_measure_agg_dict[column] = agg_function
+            if add_count:
+                obs_measure_agg_dict['__count'] = 'sum'
             grouped = df.groupby(full_basis_name)
             X_output = None
             has_var_measures = len(var_measures) > 0
@@ -129,6 +117,8 @@ class EmbeddingAggregator:
                     result['values'][var_measures[i]] = X_output[:, i].tolist()
             for i in range(len(obs_measures)):
                 result['values'][obs_measures[i]] = obs_summary[obs_measures[i]].tolist()
+            if add_count:
+                result['values']['__count'] = obs_summary['__count'].tolist()
             for column in dimensions:
                 result['values'][column] = dict(value=dimension_mode_output[column],
                     purity=dimension_purity_output[column])

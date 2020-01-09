@@ -8,5 +8,5 @@ natsort==6.2.0
 numpy
 pandas
 pyarrow===0.15.1
-scipy==1.2.2
+scipy
 ujson==1.35
