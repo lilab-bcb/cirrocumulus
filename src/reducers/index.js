@@ -49,6 +49,7 @@ import PlotUtil, {getInterpolator} from '../PlotUtil';
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
 export const DEFAULT_MARKER_SIZE = 5;
+export const DEFAULT_UNSELECTED_MARKER_SIZE = 2;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
@@ -169,7 +170,7 @@ function markerSize(state = DEFAULT_MARKER_SIZE, action) {
     }
 }
 
-function unselectedMarkerSize(state = DEFAULT_MARKER_SIZE, action) {
+function unselectedMarkerSize(state = DEFAULT_UNSELECTED_MARKER_SIZE, action) {
     switch (action.type) {
         case SET_UNSELECTED_MARKER_SIZE:
             return action.payload;
@@ -182,6 +183,19 @@ function unselectedMarkerSize(state = DEFAULT_MARKER_SIZE, action) {
     }
 }
 
+function unselectedMarkerSizeUI(state = null, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_MARKER_SIZE :
+        case SET_UNSELECTED_MARKER_SIZE_UI:
+            return action.payload;
+        case SET_DATASET:
+            return DEFAULT_UNSELECTED_MARKER_SIZE;
+        case RESTORE_VIEW:
+            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
+        default:
+            return state;
+    }
+}
 
 function embeddingChartSize(state = 2, action) {
     switch (action.type) {
@@ -221,19 +235,6 @@ function numberOfBinsUI(state = DEFAULT_NUMBER_BINS, action) {
     }
 }
 
-function unselectedMarkerSizeUI(state = null, action) {
-    switch (action.type) {
-        case SET_UNSELECTED_MARKER_SIZE :
-        case SET_UNSELECTED_MARKER_SIZE_UI:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_MARKER_SIZE;
-        case RESTORE_VIEW:
-            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
-        default:
-            return state;
-    }
-}
 
 function markerSizeUI(state = null, action) {
     switch (action.type) {
@@ -489,6 +490,7 @@ function datasetFilter(state = {}, action) {
     }
 }
 
+// each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
@@ -503,10 +505,52 @@ function embeddingData(state = [], action) {
             });
 
             return state.slice();
+        case SET_UNSELECTED_MARKER_OPACITY:
+            state.forEach(item => {
+                item.data.forEach((trace, index) => {
+                    trace.unselected.marker.opacity = action.payload;
+                    if (trace.type === 'scatter3d' && index === 2) {
+                        trace.marker.opacity = action.payload;
+                        trace.visible = action.payload > 0;
+                    }
+                });
+                item.data = item.data.slice();
+            });
+            return state.slice();
+        case SET_UNSELECTED_MARKER_SIZE:
+            state.forEach(item => {
+                item.data.forEach((trace, index) => {
+                    trace.unselected.marker.size = action.payload;
+                    if (trace.type === 'scatter3d' && index === 2) {
+                        trace.marker.size = action.payload;
+                        trace.visible = action.payload > 0;
+                    }
+                });
+                item.data = item.data.slice();
+            });
+            return state.slice();
+        case SET_MARKER_OPACITY:
+            state.forEach(item => {
+                item.data.forEach((trace, index) => {
+                    if (trace.type !== 'scatter3d' || index < 2) {
+                        trace.marker.opacity = action.payload;
+                    }
+                    if (trace.type === 'scatter3d' && index === 1) {
+                        trace.visible = action.payload > 0;
+                    }
+                });
+                item.data = item.data.slice();
+            });
+            return state.slice();
         case SET_MARKER_SIZE:
             state.forEach(item => {
-                item.data.forEach(trace => {
-                    trace.marker.size = action.payload;
+                item.data.forEach((trace, index) => {
+                    if (trace.type !== 'scatter3d' || index < 2) {
+                        trace.marker.size = action.payload;
+                    }
+                    if (trace.type === 'scatter3d' && index === 1) {
+                        trace.visible = action.payload > 0;
+                    }
                 });
                 item.data = item.data.slice();
             });
@@ -517,32 +561,60 @@ function embeddingData(state = [], action) {
                 let fullName = getEmbeddingKey(embedding);
                 const selection = action.payload.chart && action.payload.chart[fullName];
                 const userPoints = selection ? selection.userPoints : null;
-                item.data.forEach(trace => {
-                    if (trace.type === 'scatter3d') {
-
-                        trace.marker.size = action.payload.marker.markerSize;
-                        trace.marker.opacity = action.payload.marker.markerOpacity;
-                        if (userPoints != null && userPoints.length > 0) {
-                            let size = [];
-                            //  let color = trace.marker.color;
-
-                            for (let i = 0, n = trace.x.length; i < n; i++) {
-                                size.push(action.payload.marker.unselectedMarkerSize);
-                                //   color[i][3] = action.payload.marker.unselectedMarkerOpacity;
-                            }
-                            for (let i = 0, n = userPoints.length; i < n; i++) {
-                                let index = userPoints[i];
-                                size[index] = action.payload.marker.markerSize;
-                                // color[i][3] = action.payload.marker.markerOpacity;
-                            }
-                            //trace.marker.color = color;
-                            trace.marker.size = size;
+                if (item.data[0].type === 'scatter3d') {
+                    // plotly bug workaround split into 2 traces, 1st trace contains selected, 2nd trace contains unselected
+                    // see https://github.com/plotly/plotly.js/issues/4481
+                    if (userPoints != null && userPoints.length > 0) {
+                        let fullTrace = item.data[0];
+                        fullTrace.visible = false;
+                        let selectedTrace = Object.assign({}, fullTrace);
+                        selectedTrace.visible = true;
+                        selectedTrace.x = [];
+                        selectedTrace.y = [];
+                        selectedTrace.z = [];
+                        selectedTrace.text = [];
+                        selectedTrace.marker = {opacity: fullTrace.marker.opacity, size: fullTrace.size, color: []};
+                        let unselectedTrace = Object.assign({}, fullTrace);
+                        unselectedTrace.visible = true;
+                        unselectedTrace.x = [];
+                        unselectedTrace.y = [];
+                        unselectedTrace.z = [];
+                        unselectedTrace.text = [];
+                        unselectedTrace.marker = {
+                            opacity: fullTrace.unselected.marker.opacity,
+                            size: fullTrace.unselected.marker.size,
+                            color: []
+                        };
+                        for (let i = 0, n = userPoints.length; i < n; i++) {
+                            let index = userPoints[i];
+                            selectedTrace.x.push(fullTrace.x[index]);
+                            selectedTrace.y.push(fullTrace.y[index]);
+                            selectedTrace.z.push(fullTrace.z[index]);
+                            selectedTrace.text.push(fullTrace.text[index]);
+                            selectedTrace.marker.color.push(fullTrace.marker.color[index]);
                         }
-                    } else {
-                        trace.selectedpoints = userPoints;
-                    }
-                });
+                        const userPointsSet = new Set(userPoints);
+                        for (let i = 0, n = fullTrace.x.length; i < n; i++) {
+                            if (!userPointsSet.has(i)) {
+                                unselectedTrace.x.push(fullTrace.x[i]);
+                                unselectedTrace.y.push(fullTrace.y[i]);
+                                unselectedTrace.z.push(fullTrace.z[i]);
+                                unselectedTrace.text.push(fullTrace.text[i]);
+                                unselectedTrace.marker.color.push(fullTrace.marker.color[i]);
+                            }
+                        }
 
+                        item.data = [fullTrace, selectedTrace, unselectedTrace];
+                    } else {
+                        item.data = [item.data[0]];
+                        item.data[0].visible = true;
+                    }
+                } else {
+                    item.data.forEach(trace => {
+                        trace.selectedpoints = userPoints;
+                    });
+
+                }
                 item.data = item.data.slice();
             });
             return state.slice();
@@ -563,30 +635,6 @@ function embeddingData(state = [], action) {
                     });
                     item.colorScale = colorScale;
                 }
-                item.data = item.data.slice();
-            });
-            return state.slice();
-        case SET_MARKER_OPACITY:
-            state.forEach(item => {
-                item.data.forEach(trace => {
-                    trace.marker.opacity = action.payload;
-                });
-                item.data = item.data.slice();
-            });
-            return state.slice();
-        case SET_UNSELECTED_MARKER_OPACITY:
-            state.forEach(item => {
-                item.data.forEach(trace => {
-                    trace.unselected.marker.opacity = action.payload;
-                });
-                item.data = item.data.slice();
-            });
-            return state.slice();
-        case SET_UNSELECTED_MARKER_SIZE:
-            state.forEach(item => {
-                item.data.forEach(trace => {
-                    trace.unselected.marker.size = action.payload;
-                });
                 item.data = item.data.slice();
             });
             return state.slice();

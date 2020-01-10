@@ -15,10 +15,8 @@ import PlotUtil from './PlotUtil';
 const Plot = createPlotlyComponent(window.Plotly);
 
 class EmbeddingChartPlotly extends React.PureComponent {
-
-
     getPlots() {
-        const activeTraces = this.props.data.filter(traceInfo => traceInfo.active);
+        const activeTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         const {config, nObs, nObsSelected, embeddingChartSize, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
         let size = PlotUtil.getEmbeddingChartSize(activeTraces.length === 1 ? 1 : embeddingChartSize);
         return activeTraces.map(traceInfo => {
@@ -77,7 +75,7 @@ class EmbeddingChartPlotly extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        data: state.embeddingData,
+        embeddingData: state.embeddingData,
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
