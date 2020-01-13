@@ -6,10 +6,13 @@ from cirro.entity import Entity
 
 class LocalDbAPI:
 
-    def __init__(self, paths):
-        self.paths = paths
+    def __init__(self, path):
+        self.path = path
+        self.dataset_filter_path = os.path.splitext(path)[0] + '_filters.json'
         self.dataset_filter = {}
-        self.counter = 0
+        if os.path.exists(self.dataset_filter_path) and os.path.getsize(self.dataset_filter_path) > 0:
+            with open(self.dataset_filter_path, 'rt') as f:
+                self.dataset_filter.update(json.load(f))
 
     def server(self):
         return dict(canWrite=True)
@@ -24,13 +27,9 @@ class LocalDbAPI:
                 result.update(json.load(f))
         return result
 
-    def dataset_filters(self, email, dataset_id):
-        return []
-
     def datasets(self, email):
         results = []
-        for path in self.paths:
-            results.append(self.create_dataset_meta(path))
+        results.append(self.create_dataset_meta(self.path))
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
@@ -43,8 +42,13 @@ class LocalDbAPI:
             results.append({'id': key, 'name': self.dataset_filter[key]['name']})
         return results
 
+    def write_dataset_filter(self):
+        with open(self.dataset_filter_path, 'wt') as f:
+            json.dump(self.dataset_filter, f)
+
     def delete_dataset_filter(self, email, filter_id):
         del self.dataset_filter[filter_id]
+        self.write_dataset_filter()
 
     def get_dataset_filter(self, email, filter_id):
         return self.dataset_filter[filter_id]
@@ -52,8 +56,8 @@ class LocalDbAPI:
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
 
         if filter_id is None:
-            self.counter += 1
-            filter_id = str(self.counter)
+            import uuid
+            filter_id = str(uuid.uuid4())
 
         entity = self.dataset_filter.get(filter_id)
         if entity is None:
@@ -69,4 +73,5 @@ class LocalDbAPI:
             entity['dataset_id'] = dataset_id
         if filter_notes is not None:
             entity['notes'] = filter_notes
+        self.write_dataset_filter()
         return filter_id

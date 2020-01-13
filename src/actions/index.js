@@ -414,16 +414,7 @@ function setDatasetFilter(payload) {
 }
 
 function setSelection(payload) {
-    return function (dispatch, getState) {
-        const state = getState();
-        payload.marker = {
-            markerSize: state.markerSize,
-            markerOpacity: state.markerOpacity,
-            unselectedMarkerSize: state.unselectedMarkerSize,
-            unselectedMarkerOpacity: state.unselectedMarkerOpacity
-        };
-        dispatch({type: SET_SELECTION, payload: payload});
-    };
+    return {type: SET_SELECTION, payload: payload};
 }
 
 function setFeatureSummary(payload) {
