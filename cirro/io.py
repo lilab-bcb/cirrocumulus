@@ -31,11 +31,14 @@ def save_data_obsm(adata, output_directory):
 
     for name in adata.obsm.keys():
         m = adata.obsm[name]
-        ndim = 2  # TODO 3d
+        dimensions = [2]
+        if m.shape[1] > 2:
+            dimensions.append(3)
         d = {}
-        for i in range(ndim):
-            d[str(i)] = m[:, i].astype('float32')
-        write_table(d, output_directory, name)
+        for ndim in dimensions:
+            for i in range(ndim):
+                d[str(i)] = m[:, i].astype('float32')
+            write_table(d, output_directory, name)
 
 
 def save_data_obs(adata, output_directory):
