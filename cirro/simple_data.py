@@ -63,7 +63,7 @@ class SimpleData:
     def schema(adata):
         obs_cat = []
         obs = []
-        result = {'version': '1'}
+        result = {'version': '1.0.0'}
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]):
                 obs_cat.append(key)
