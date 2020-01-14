@@ -76,7 +76,6 @@ class PrepareData:
         save_adata(self.adata, os.path.join(self.base_name, 'data'), column_batch_size=self.column_batch_size)
         self.summary_stats()
         self.grouped_stats()
-
         self.schema()
 
     def summary_stats(self):
@@ -212,9 +211,8 @@ class PrepareData:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
+        description='(BETA!) Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
     parser.add_argument('dataset', help='Path to a h5ad file')
-
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
@@ -222,7 +220,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
-
     logger.info('preparing ' + args.dataset + '...')
     prepare_data = PrepareData(args.dataset, args.backed, args.basis, args.nbins, args.summary)
     prepare_data.execute()
