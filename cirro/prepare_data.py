@@ -19,7 +19,7 @@ logger = logging.getLogger("cirro")
 
 class PrepareData:
 
-    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function):
+    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output):
         self.input_path = input_path
         self.adata = anndata.read(input_path, backed=backed)
         if self.adata.shape[0] < 50000:
@@ -65,7 +65,7 @@ class PrepareData:
         self.others = others
         self.dimensions = dimensions
         self.measures = measures
-        self.base_name = os.path.splitext(os.path.basename(input_path))[0]
+        self.base_name = output
 
     def execute(self):
         basis_list = self.basis_list
@@ -213,6 +213,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='(BETA!) Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
     parser.add_argument('dataset', help='Path to a h5ad file')
+    parser.add_argument('out', help='Path to output directory')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
@@ -221,5 +222,5 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
     logger.info('preparing ' + args.dataset + '...')
-    prepare_data = PrepareData(args.dataset, args.backed, args.basis, args.nbins, args.summary)
+    prepare_data = PrepareData(args.dataset, args.backed, args.basis, args.nbins, args.summary, args.out)
     prepare_data.execute()
