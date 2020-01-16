@@ -138,6 +138,7 @@ class PlotUtil {
             showbackground: false,
             autorange: true,
             showgrid: is3d,
+            gridwidth: 0.5,
             zeroline: false,
             showline: false,
             title: '',
