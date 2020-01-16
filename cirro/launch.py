@@ -31,7 +31,7 @@ def main(argsv):
     import os
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
-    database_api.provider = LocalDbAPI([args.dataset])
+    database_api.provider = LocalDbAPI(args.dataset)
 
     try:
         from cirro.parquet_dataset import ParquetDataset
