@@ -32,11 +32,14 @@ class H5ADDataset:
         #
         #     return anndata.read_csv(path, backed=self.backed)
 
+    def add_data(self, path, data):
+        self.path_to_data[path] = data
+
     def get_data(self, path):
         adata = self.path_to_data.get(path)
         if adata is None:
             adata = self.read_adata(path)
-            self.path_to_data[path] = adata
+            self.add_data(path, adata)
         return adata
 
     def schema(self, filesystem, path):
