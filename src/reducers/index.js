@@ -497,41 +497,43 @@ function embeddingData(state = [], action) {
             return action.payload;
         case SET_EMBEDDING_CHART_SIZE:
             const size = PlotUtil.getEmbeddingChartSize(action.payload);
-            state.forEach(item => {
-                let layout = Object.assign({}, item.layout);
+            state.forEach(traceInfo => {
+                let layout = Object.assign({}, traceInfo.layout);
                 layout.width = size;
                 layout.height = size;
-                item.layout = layout;
+                traceInfo.layout = layout;
             });
 
             return state.slice();
         case SET_UNSELECTED_MARKER_OPACITY:
-            state.forEach(item => {
-                item.data.forEach((trace, index) => {
+            state.forEach((traceInfo, stateIndex) => {
+                traceInfo.data.forEach((trace, index) => {
                     trace.unselected.marker.opacity = action.payload;
                     if (trace.type === 'scatter3d' && index === 2) {
                         trace.marker.opacity = action.payload;
                         trace.visible = action.payload > 0;
                     }
                 });
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_UNSELECTED_MARKER_SIZE:
-            state.forEach(item => {
-                item.data.forEach((trace, index) => {
+            state.forEach((traceInfo, stateIndex) => {
+                traceInfo.data.forEach((trace, index) => {
                     trace.unselected.marker.size = action.payload;
                     if (trace.type === 'scatter3d' && index === 2) {
                         trace.marker.size = action.payload;
                         trace.visible = action.payload > 0;
                     }
                 });
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_MARKER_OPACITY:
-            state.forEach(item => {
-                item.data.forEach((trace, index) => {
+            state.forEach((traceInfo, stateIndex) => {
+                traceInfo.data.forEach((trace, index) => {
                     if (trace.type !== 'scatter3d' || index < 2) {
                         trace.marker.opacity = action.payload;
                     }
@@ -539,12 +541,13 @@ function embeddingData(state = [], action) {
                         trace.visible = action.payload > 0;
                     }
                 });
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_MARKER_SIZE:
-            state.forEach(item => {
-                item.data.forEach((trace, index) => {
+            state.forEach((traceInfo, stateIndex) => {
+                traceInfo.data.forEach((trace, index) => {
                     if (trace.type !== 'scatter3d' || index < 2) {
                         trace.marker.size = action.payload;
                     }
@@ -552,20 +555,21 @@ function embeddingData(state = [], action) {
                         trace.visible = action.payload > 0;
                     }
                 });
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_SELECTION:
-            state.forEach(item => {
-                const embedding = item.data[0].embedding;
+            state.forEach((traceInfo, stateIndex) => {
+                const embedding = traceInfo.data[0].embedding;
                 let fullName = getEmbeddingKey(embedding);
                 const selection = action.payload.chart && action.payload.chart[fullName];
                 const userPoints = selection ? selection.userPoints : null;
-                if (item.data[0].type === 'scatter3d') {
+                if (traceInfo.data[0].type === 'scatter3d') {
                     // plotly bug workaround split into 2 traces, 1st trace contains selected, 2nd trace contains unselected
                     // see https://github.com/plotly/plotly.js/issues/4481
                     if (userPoints != null && userPoints.length > 0) {
-                        let fullTrace = item.data[0];
+                        let fullTrace = traceInfo.data[0];
                         fullTrace.visible = false;
                         let selectedTrace = Object.assign({}, fullTrace);
                         selectedTrace.visible = true;
@@ -604,28 +608,29 @@ function embeddingData(state = [], action) {
                             }
                         }
 
-                        item.data = [fullTrace, selectedTrace, unselectedTrace];
+                        traceInfo.data = [fullTrace, selectedTrace, unselectedTrace];
                     } else {
-                        item.data = [item.data[0]];
-                        item.data[0].visible = true;
+                        traceInfo.data = [traceInfo.data[0]];
+                        traceInfo.data[0].visible = true;
                     }
                 } else {
-                    item.data.forEach(trace => {
+                    traceInfo.data.forEach(trace => {
                         trace.selectedpoints = userPoints;
                     });
 
                 }
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_INTERPOLATOR:
             // update colors for existing traces
             // TODO custom categorical colors
             let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
-            state.forEach(item => {
-                if (item.continuous) {
-                    let colorScale = scaleSequential(action.payload.value).domain(item.colorScale.domain());
-                    item.data.forEach(trace => {
+            state.forEach((traceInfo, stateIndex) => {
+                if (traceInfo.continuous) {
+                    let colorScale = scaleSequential(action.payload.value).domain(traceInfo.colorScale.domain());
+                    traceInfo.data.forEach(trace => {
                         let colors = [];
                         for (let i = 0, n = trace.values.length; i < n; i++) {
                             let rgb = color(colorScale(trace.values[i]));
@@ -633,9 +638,10 @@ function embeddingData(state = [], action) {
                         }
                         trace.marker.color = colors;
                     });
-                    item.colorScale = colorScale;
+                    traceInfo.colorScale = colorScale;
                 }
-                item.data = item.data.slice();
+                traceInfo.data = traceInfo.data.slice();
+                state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
         case SET_DATASET:

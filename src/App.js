@@ -37,9 +37,9 @@ import {
     setMessage,
 } from './actions';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
-import DotPlotsPlotly from './DotPlotsPlotly';
+import DotPlotsPlotly from './DotPlots';
 import EditDatasetDialog from './EditDatasetDialog';
-import EmbeddingChartPlotly from './EmbeddingChartPlotly';
+import EmbeddingChartPlotly from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
 import {intFormat} from './formatters';
 import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_MARKER_SIZE} from "./reducers";

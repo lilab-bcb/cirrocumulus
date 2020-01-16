@@ -5,7 +5,7 @@ import {setDotPlotSortOrder} from './actions';
 import DotPlot from './DotPlot';
 
 
-class DotPlotsPlotly extends React.PureComponent {
+class DotPlots extends React.PureComponent {
     render() {
         return (<div>{this.props.dotPlotData.filter(data => data.active).map((data, i) => {
             return <DotPlot onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;
@@ -28,5 +28,5 @@ const mapDispatchToProps = dispatch => {
 
 export default (connect(
     mapStateToProps, mapDispatchToProps,
-)(DotPlotsPlotly));
+)(DotPlots));
 

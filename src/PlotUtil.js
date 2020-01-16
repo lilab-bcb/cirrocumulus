@@ -133,18 +133,17 @@ class PlotUtil {
     }
 
 
-    static createEmbeddingAxis() {
+    static createEmbeddingAxis(is3d = false) {
         return {
             showbackground: false,
             autorange: true,
-            showgrid: false,
+            showgrid: is3d,
             zeroline: false,
             showline: false,
             title: '',
             autotick: false,
             ticks: '',
             showticklabels: false,
-
         };
     }
 
@@ -178,9 +177,10 @@ class PlotUtil {
         };
         if (is3d) {
             layout.scene = {
-                xaxis: PlotUtil.createEmbeddingAxis(),
-                yaxis: PlotUtil.createEmbeddingAxis(),
-                zaxis: PlotUtil.createEmbeddingAxis(),
+                camera: {eye: {x: 1, y: 1, z: 1}},
+                xaxis: PlotUtil.createEmbeddingAxis(true),
+                yaxis: PlotUtil.createEmbeddingAxis(true),
+                zaxis: PlotUtil.createEmbeddingAxis(true),
             };
         } else {
             layout.xaxis = PlotUtil.createEmbeddingAxis();
