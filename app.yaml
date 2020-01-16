@@ -1,5 +1,10 @@
 runtime: python37
 instance_class: F4_HIGHMEM
+automatic_scaling:
+  target_cpu_utilization: 0.95
+  target_throughput_utilization: 0.95
+  max_instances: 1
+  max_concurrent_requests: 80
 handlers:
   - url: /api/.*
     script: auto
