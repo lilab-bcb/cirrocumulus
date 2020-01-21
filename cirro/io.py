@@ -15,15 +15,15 @@ def write_table(d, output_dir, name, write_statistics=True, row_group_size=None)
         write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata(adata, output_directory, column_batch_size=1000):
+def save_adata(adata, output_directory, X_range=None):
     logger.info('Save adata')
-    for i in range(0, adata.shape[1], column_batch_size):
-        end = i + column_batch_size
-        end = min(end, adata.shape[1])
-        logger.info('Save adata {}-{}'.format(i, end))
-        save_adata_X_chunk(adata, slice(i, end), output_directory)
-    save_data_obsm(adata, output_directory)
-    save_data_obs(adata, output_directory)
+    if X_range is None:
+        X_range = (0, adata.shape[1])
+    logger.info('Save adata {}-{}'.format(X_range[0], X_range[1]))
+    save_adata_X_chunk(adata, slice(X_range[0], X_range[1]), output_directory)
+    if X_range[0] == 0:
+        save_data_obsm(adata, output_directory)
+        save_data_obs(adata, output_directory)
 
 
 def save_data_obsm(adata, output_directory):
