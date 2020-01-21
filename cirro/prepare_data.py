@@ -4,9 +4,8 @@ import logging
 import os
 
 import anndata
-import pandas as pd
-
 import cirro.data_processing as data_processing
+import pandas as pd
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
@@ -222,5 +221,8 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
     logger.info('preparing ' + args.dataset + '...')
-    prepare_data = PrepareData(args.dataset, args.backed, args.basis, args.nbins, args.summary, args.out)
+    input_basis = []  # check if specified as comma delimited list
+    for b in args.basis:
+        input_basis.extend(b.split(','))
+    prepare_data = PrepareData(args.dataset, args.backed, input_basis, args.nbins, args.summary, args.out)
     prepare_data.execute()
