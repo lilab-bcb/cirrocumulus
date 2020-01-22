@@ -1,9 +1,48 @@
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 
 class CategoricalLegend extends React.PureComponent {
 
+    constructor(props) {
+        super(props);
+        this.state = {contextmenuEl: null, anchorEl: null, color: null, colorValue: null};
+
+    }
+
+
+    handlePopoverClose = (e) => {
+        this.setState({contextmenuEl: null, anchorEl: null});
+    };
+
+
+    handleColorChange = (e) => {
+        this.setState({color: e.target.value});
+    };
+
+    handleColorChangeApply = (e) => {
+        this.props.handleColorChange({name: this.props.name, value: this.state.colorValue, color: this.state.color});
+    };
+
+    handleEditColor = (e) => {
+        this.setState((prevState, props) => ({
+            anchorEl: prevState.contextmenuEl,
+            contextmenuEl: null
+        }), () => {
+            // this.inputElement.click();
+        });
+    };
+
+    handleContextmenuClose = (e) => {
+        this.setState({contextmenuEl: null});
+    };
 
     handleClick = (value, index, e) => {
         if (this.props.clickEnabled) {
@@ -12,6 +51,12 @@ class CategoricalLegend extends React.PureComponent {
         }
     };
 
+    handleContextmenu = (value, index, e) => {
+        if (this.props.clickEnabled) {
+            e.preventDefault();
+            this.setState({contextmenuEl: e.target, colorValue: value, color: this.props.scale(value)});
+        }
+    };
 
     render() {
         const {scale, datasetFilter, name, featureSummary, maxHeight, globalFeatureSummary, nObs, nObsSelected} = this.props;
@@ -44,7 +89,55 @@ class CategoricalLegend extends React.PureComponent {
             <div className="cirro-chart-legend" style={{
                 maxHeight: maxHeight
             }}>
+                <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
+                        aria-labelledby="edit-category-color-dialog-title">
+                    <DialogTitle id="edit-category-color-dialog-title">Edit {this.state.colorValue} Color</DialogTitle>
+                    <DialogContent>
+                        <input type="color" value={this.state.color}
+                               onChange={this.handleColorChange} style={{width: 100}}/>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handlePopoverClose} color="primary">
+                            Close
+                        </Button>
+                        <Button onClick={this.handleColorChangeApply} color="primary">
+                            Apply
+                        </Button>
+                    </DialogActions>
+                </Dialog>
                 <b>{name}</b> <small>({categories.length})</small>
+
+
+                {/*<Popover*/}
+                {/*    open={Boolean(this.state.anchorEl)}*/}
+                {/*    anchorEl={this.state.anchorEl}*/}
+                {/*    onClose={this.handlePopoverClose}*/}
+                {/*    anchorOrigin={{*/}
+                {/*        vertical: 'bottom',*/}
+                {/*        horizontal: 'center',*/}
+                {/*    }}*/}
+                {/*    transformOrigin={{*/}
+                {/*        vertical: 'top',*/}
+                {/*        horizontal: 'center',*/}
+                {/*    }}*/}
+                {/*>*/}
+                {/*    <Typography>Edit {this.state.colorValue} Color</Typography>*/}
+                {/*    <input ref={input => this.inputElement = input} type="color" value={this.state.color}*/}
+                {/*           onChange={this.handleColorChange} style={{width: 100}}/>*/}
+                {/*    <Button onClick={handleClose} color="primary">*/}
+                {/*        Cancel*/}
+                {/*    </Button>*/}
+                {/*    <Button onClick={handleClose} color="primary">*/}
+                {/*        Apply*/}
+                {/*    </Button>*/}
+                {/*</Popover>*/}
+                <Menu
+                    anchorEl={this.state.contextmenuEl}
+                    open={Boolean(this.state.contextmenuEl)}
+                    onClose={this.handleContextmenuClose}
+                >
+                    <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
+                </Menu>
                 <table>
                     <thead>
                     <tr>
@@ -71,6 +164,7 @@ class CategoricalLegend extends React.PureComponent {
                         const selectionTitle = selectionSummary == null ? null : intFormat(selectedCount) + ' / ' + intFormat(nObsSelected) + (selectedCount > 0 ? (' (' + numberFormat(100 * fractionSelected) + '%)') : '');
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
+                            onContextMenu={(e) => this.handleContextmenu(category, i, e)}
                             onClick={(e) => this.handleClick(category, i, e)} key={category}>
                             {clickEnabled && <td>
                                 <div style={{
@@ -137,7 +231,8 @@ class CategoricalLegend extends React.PureComponent {
                     }</tbody>
 
                 </table>
-            </div>);
+            </div>
+        );
     }
 }
 

@@ -4,7 +4,12 @@ import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {handleDimensionFilterUpdated, handleMeasureFilterUpdated, handleSelectedPoints} from './actions';
+import {
+    handleColorChange,
+    handleDimensionFilterUpdated,
+    handleMeasureFilterUpdated,
+    handleSelectedPoints
+} from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import createPlotlyComponent from './factory';
@@ -72,7 +77,7 @@ class EmbeddingChart extends React.PureComponent {
     };
 
     render() {
-        const {traceInfo, config, nObs, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
+        const {traceInfo, config, nObs, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
 
         return (
             <div style={{display: 'inline-block', border: '1px solid LightGrey'}}>
@@ -112,6 +117,7 @@ class EmbeddingChart extends React.PureComponent {
                     /> :
                     <CategoricalLegend datasetFilter={datasetFilter}
                                        handleClick={handleDimensionFilterUpdated}
+                                       handleColorChange={handleColorChange}
                                        name={traceInfo.name}
                                        scale={traceInfo.colorScale}
                                        maxHeight={traceInfo.layout.height - 24}
@@ -143,6 +149,10 @@ const mapDispatchToProps = dispatch => {
         handleDimensionFilterUpdated: (e) => {
             dispatch(handleDimensionFilterUpdated(e));
         },
+        handleColorChange: (e) => {
+            dispatch(handleColorChange(e));
+        },
+
         handleMeasureFilterUpdated: (e) => {
             dispatch(handleMeasureFilterUpdated(e));
         },

@@ -1,3 +1,4 @@
+import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 
 export const interpolators = {};
@@ -70,6 +71,10 @@ export function isPlotlyBug(el, newTrace) {
     return ((oldSize > threshold) && (newSize <= threshold));
 }
 
+
+export function getRgbScale() {
+    return scaleLinear().domain([0, 255]).range([0, 1]);
+}
 
 export function fixInterpolatorName(name) {
     if (!name.startsWith("interpolate")) {

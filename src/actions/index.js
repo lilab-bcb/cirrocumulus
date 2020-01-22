@@ -1,10 +1,10 @@
 import {color} from 'd3-color';
-import {scaleLinear, scaleOrdinal, scaleSequential} from 'd3-scale';
+import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {cloneDeep, isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
-import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator} from '../PlotUtil';
+import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
 //export const API = 'http://localhost:5000/api';
 export const API = '/api';
@@ -28,6 +28,7 @@ export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
 
 
+export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
@@ -578,6 +579,10 @@ export function handleMeasureFilterUpdated(payload) {
     };
 }
 
+export function handleColorChange(payload) {
+    return {type: SET_CATEGORICAL_COLOR, payload: payload};
+}
+
 export function handleDimensionFilterUpdated(payload) {
     return function (dispatch, getState) {
         let name = payload.name;
@@ -744,11 +749,12 @@ function _loadSavedView() {
 
         if (savedView.dataset != null) {
             if (savedView.colorScheme != null) {
-                let interp = getInterpolator(savedView.colorScheme);
-                if (interp != null) {
+                let interpolator = getInterpolator(savedView.colorScheme);
+                if (interpolator != null) {
                     savedView.colorScheme = {
                         name: savedView.colorScheme,
-                        value: interp
+                        value: interpolator,
+                        reversed: false // FIXME
                     };
                 }
             }
@@ -1451,7 +1457,7 @@ function handleEmbeddingResult(result) {
         let embeddingResult = result.embeddingResult;
         let selectedEmbedding = result.embedding;
         let interpolator = state.interpolator;
-        let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
+        let rgbScale = getRgbScale();
         const markerSize = state.markerSize;
         let embeddingData = state.embeddingData;
         let embeddingChartSize = state.embeddingChartSize;
@@ -1497,7 +1503,7 @@ function handleEmbeddingResult(result) {
                     traceSummary = {min: min, max: max};
                     globalFeatureSummary[name] = traceSummary;
                 }
-                colorScale = scaleSequential(interpolator.value).domain([traceSummary.min, traceSummary.max]);
+                colorScale = scaleSequential(interpolator.value).domain(interpolator.reversed ? [traceSummary.max, traceSummary.min] : [traceSummary.min, traceSummary.max]);
                 colorScale.summary = traceSummary;
             } else {
                 let traceUniqueValues = traceSummary.categories;

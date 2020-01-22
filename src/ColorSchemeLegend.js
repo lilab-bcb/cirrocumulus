@@ -69,18 +69,6 @@ class ColorSchemeLegend extends React.PureComponent {
         this.redraw();
     }
 
-    handleStart = (e) => {
-
-    };
-
-    handleDrag = (e, data) => {
-
-
-    };
-
-    handleStop = (e) => {
-
-    };
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.redraw();
@@ -101,8 +89,8 @@ class ColorSchemeLegend extends React.PureComponent {
         }
 
         return (
-            <canvas width={width * backingScale} height={height * backingScale} ref={this.ref} style={style}></canvas>
-
+            <canvas width={width * backingScale} height={height * backingScale} ref={this.ref}
+                    style={style}></canvas>
         );
 
     }

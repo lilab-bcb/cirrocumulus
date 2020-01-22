@@ -1,5 +1,5 @@
 import {color} from 'd3-color';
-import {scaleLinear, scaleSequential} from 'd3-scale';
+import {scaleSequential} from 'd3-scale';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -8,6 +8,7 @@ import {
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
+    SET_CATEGORICAL_COLOR,
     SET_DATASET,
     SET_DATASET_CHOICES,
     SET_DATASET_FILTER,
@@ -44,7 +45,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import PlotUtil, {getInterpolator} from '../PlotUtil';
+import PlotUtil, {getInterpolator, getRgbScale} from '../PlotUtil';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -53,7 +54,11 @@ export const DEFAULT_UNSELECTED_MARKER_SIZE = 2;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
-const DEFAULT_INTERPOLATOR_OBJ = {name: DEFAULT_INTERPOLATOR, value: getInterpolator(DEFAULT_INTERPOLATOR)};
+const DEFAULT_INTERPOLATOR_OBJ = {
+    name: DEFAULT_INTERPOLATOR,
+    reversed: false,
+    value: getInterpolator(DEFAULT_INTERPOLATOR)
+};
 
 function features(state = [], action) {
     switch (action.type) {
@@ -490,6 +495,20 @@ function datasetFilter(state = {}, action) {
     }
 }
 
+function updateChartColorScale(traceInfo) {
+    const rgbScale = getRgbScale();
+    let colorScale = traceInfo.colorScale;
+    traceInfo.data.forEach(trace => {
+        let colors = [];
+        for (let i = 0, n = trace.values.length; i < n; i++) {
+            let rgb = color(colorScale(trace.values[i]));
+            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+        }
+        trace.marker.color = colors;
+    });
+    traceInfo.colorScale = colorScale;
+}
+
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
     switch (action.type) {
@@ -623,25 +642,40 @@ function embeddingData(state = [], action) {
                 state[stateIndex] = Object.assign({}, traceInfo);
             });
             return state.slice();
+        case SET_CATEGORICAL_COLOR:
+
+            state.forEach((traceInfo, stateIndex) => {
+
+                if (!traceInfo.continuous && traceInfo.name === action.payload.name) {
+                    let index = traceInfo.colorScale.domain().indexOf(action.payload.value);
+                    let range = traceInfo.colorScale.range();
+                    range[index] = action.payload.color;
+                    traceInfo.colorScale.range(range);
+                    updateChartColorScale(traceInfo);
+                    traceInfo.data = traceInfo.data.slice();
+                    state[stateIndex] = Object.assign({}, traceInfo);
+                }
+            });
+            return state.slice();
         case SET_INTERPOLATOR:
-            // update colors for existing traces
-            // TODO custom categorical colors
-            let rgbScale = scaleLinear().domain([0, 255]).range([0, 1]);
+            // update colors for existing continuous traces
+            let rgbScale = getRgbScale();
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous) {
-                    let colorScale = scaleSequential(action.payload.value).domain(traceInfo.colorScale.domain());
-                    traceInfo.data.forEach(trace => {
-                        let colors = [];
-                        for (let i = 0, n = trace.values.length; i < n; i++) {
-                            let rgb = color(colorScale(trace.values[i]));
-                            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
-                        }
-                        trace.marker.color = colors;
-                    });
-                    traceInfo.colorScale = colorScale;
+                    let domain = traceInfo.colorScale.domain();
+                    // ensure domain is in order min to max if not reversed, otherwise max to min
+                    if (action.payload.reversed) {
+                        domain.sort((a, b) => b - a);
+                    } else {
+                        domain.sort((a, b) => a - b);
+                    }
+
+                    traceInfo.colorScale = scaleSequential(action.payload.value).domain(domain);
+                    updateChartColorScale(traceInfo);
+                    traceInfo.data = traceInfo.data.slice();
+                    state[stateIndex] = Object.assign({}, traceInfo);
                 }
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
+
             });
             return state.slice();
         case SET_DATASET:
@@ -670,6 +704,7 @@ function plotConfig(state = null, action) {
 }
 
 function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
+
     switch (action.type) {
         case SET_INTERPOLATOR:
             return action.payload;

@@ -26,6 +26,7 @@ import {
     setBinValues,
     setEmbeddingChartSize,
     setFeatures,
+    setInterpolator,
     setMarkerOpacity,
     setMarkerOpacityUI,
     setMarkerSize,
@@ -158,6 +159,14 @@ class EmbedForm extends React.PureComponent {
         this.props.handleEmbeddings(embeddings.slice(0));
     };
 
+
+    handleReverseColors = (event) => {
+        const value = event.target.checked;
+        const interpolator = this.props.interpolator;
+        interpolator.reversed = value;
+        this.props.handleInterpolator(Object.assign({}, interpolator));
+    };
+
     handleBinValuesChange = (event) => {
         const value = event.target.checked;
         this.props.handleBinValues(value);
@@ -192,7 +201,7 @@ class EmbedForm extends React.PureComponent {
 
 
     render() {
-        const {numberOfBinsUI, binValues, binSummary, embeddings, classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, unselectedMarkerOpacity, dataset} = this.props;
+        const {numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, unselectedMarkerOpacity, dataset} = this.props;
 
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
@@ -296,6 +305,16 @@ class EmbedForm extends React.PureComponent {
                     <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
                     <ColorSchemeSelector/>
                 </FormControl>
+                {<FormControlLabel
+                    control={
+                        <Switch
+                            checked={interpolator.reversed}
+                            value={'reverseColors'}
+                            onChange={this.handleReverseColors}
+                        />
+                    }
+                    label="Reverse Colors"
+                />}
 
                 {!isSummarized && <FormControlLabel
                     control={
@@ -381,6 +400,7 @@ const mapStateToProps = state => {
         numberOfBinsUI: state.numberOfBinsUI,
         datasetFilters: state.datasetFilters,
         embeddingChartSize: state.embeddingChartSize,
+        interpolator: state.interpolator,
         markerOpacity: state.markerOpacityUI,
         markerSize: state.markerSizeUI,
         savedDatasetFilter: state.savedDatasetFilter,
@@ -395,6 +415,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     return {
         handleEmbeddings: value => {
             dispatch(setSelectedEmbedding(value));
+        },
+        handleInterpolator: value => {
+            dispatch(setInterpolator(value));
         },
         handleNumberOfBins: value => {
             dispatch(setNumberOfBins(value));
