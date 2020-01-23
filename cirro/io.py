@@ -37,7 +37,7 @@ def save_data_obsm(adata, output_directory):
         d = {}
         for ndim in dimensions:
             for i in range(ndim):
-                d[str(i)] = m[:, i].astype('float32')
+                d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
             write_table(d, output_directory, name)
 
 
