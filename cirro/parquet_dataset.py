@@ -1,12 +1,11 @@
+import json
 import os
 
-import json
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
-
 from cirro.simple_data import SimpleData
 
 
@@ -120,12 +119,15 @@ class ParquetDataset:
         if basis is not None and len(basis) > 0:
             for b in basis:
                 cache_key = str(dataset_id) + '-' + b['full_name']
-                columns_to_fetch = [b['full_name']]
-                if not b['precomputed']:  # need coordinates and bins
-                    columns_to_fetch += b['coordinate_columns']
+                is_precomputed = b['precomputed']
+                if is_precomputed:
+                    columns_to_fetch = [b['full_name']]
+                else:  # need coordinates
+                    columns_to_fetch = b['coordinate_columns']
                 cached_value = self.cached_data.get(cache_key)
                 if cached_value is None:
-                    with file_system.open(data_path + '/' + b['full_name'] + '.parquet', 'rb') as s:
+                    basis_path = (data_path + '/') + (b['full_name' if is_precomputed else 'name']) + '.parquet'
+                    with file_system.open(basis_path, 'rb') as s:
                         df = pq.read_table(s, columns=columns_to_fetch).to_pandas()
                     cached_value = df
                     self.cached_data[cache_key] = cached_value
