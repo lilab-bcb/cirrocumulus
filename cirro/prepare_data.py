@@ -144,7 +144,7 @@ class PrepareData:
         adata = self.adata
         X_range = self.X_range
         full_basis_name = basis['full_name']
-
+        output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
         # write cell level bin to /data
         if X_range[0] == 0:
             df_with_coords = pd.DataFrame()
@@ -160,7 +160,7 @@ class PrepareData:
             # write bins and coordinates to obsm_summary/name
             result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
                 measures=measures + ['__count'], dimensions=dimensions)
-            output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
+
             bin_dict = dict(index=result['bins'])
             for column in result['coordinates']:
                 bin_dict[column] = result['coordinates'][column]
@@ -177,8 +177,7 @@ class PrepareData:
         result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
         for column in result['values']:
-            write_table(dict(value=result['values'][column]),
-                output_directory, column)
+            write_table(dict(value=result['values'][column]), output_directory, column)
 
     def schema(self):
         basis_list = self.basis_list
