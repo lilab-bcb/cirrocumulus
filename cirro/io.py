@@ -60,3 +60,5 @@ def save_adata_X_chunk(adata, adata_col_slice, output_directory):
         indices = np.where(X != 0)[0]
         values = X[indices]
         write_table(dict(index=indices, value=values), output_directory, names[j])
+        if j > 0 and (j + 1) % 1000 == 0:
+            logger.info('Wrote adata X {}/{}'.format(j + 1, X_slice.shape[1]))
