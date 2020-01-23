@@ -4,9 +4,8 @@ import logging
 import os
 
 import anndata
-import pandas as pd
-
 import cirro.data_processing as data_processing
+import pandas as pd
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
@@ -31,7 +30,6 @@ class PrepareData:
         others = []
         if basis_list is None or len(basis_list) == 0:
             basis_list = list(self.adata.obsm_keys())
-            logger.info('Basis {}'.format(basis_list))
         self.basis_list = basis_list
         self.nbins = nbins
         self.dataset_api = DatasetAPI()
@@ -214,8 +212,9 @@ if __name__ == '__main__':
     logger.addHandler(logging.StreamHandler())
     logger.info('preparing ' + args.dataset + '...')
     input_basis = []  # check if specified as comma delimited list
-    for b in args.basis:
-        input_basis.extend(b.split(','))
+    if args.basis is not None:
+        for b in args.basis:
+            input_basis.extend(b.split(','))
     input_X_range = args.X_range
     if input_X_range is not None:
         input_X_range = input_X_range.split('-')
