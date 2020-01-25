@@ -82,6 +82,7 @@ class EmbeddingChart extends React.PureComponent {
         return (
             <div style={{display: 'inline-block', border: '1px solid LightGrey'}}>
                 <Plot
+                    style={{display: 'inline-block'}}
                     data={traceInfo.data}
                     onInitialized={this.onInitialized}
                     layout={traceInfo.layout}
