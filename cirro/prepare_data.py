@@ -4,8 +4,9 @@ import logging
 import os
 
 import anndata
-import cirro.data_processing as data_processing
 import pandas as pd
+
+import cirro.data_processing as data_processing
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
@@ -46,6 +47,11 @@ class PrepareData:
             if pd.api.types.is_categorical_dtype(c):
                 if 1 < len(c.cat.categories) < 5000:
                     dimensions.append(name)
+                    if c.isna().sum() > 0:
+                        logger.info('Replacing nans in {}'.format(name))
+                        self.adata.obs[name] = self.adata.obs[name].astype(str)
+                        self.adata.obs.loc[self.adata.obs[name].isna(), name] = ''
+                        self.adata.obs[name] = self.adata.obs[name].astype('category')
                 else:
                     others.append(name)
             elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
