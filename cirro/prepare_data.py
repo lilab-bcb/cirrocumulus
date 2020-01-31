@@ -20,15 +20,13 @@ logger = logging.getLogger("cirro")
 class PrepareData:
 
     def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output,
-                 X_range=None):
+                 X_range=None, dimensions=None):
         self.input_path = input_path
         self.adata = anndata.read(input_path, backed=backed)
 
         logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
-        dimensions = []
-        measures = []
-        others = []
+        self.base_name = output
         if basis_list is None or len(basis_list) == 0:
             basis_list = list(self.adata.obsm_keys())
         self.basis_list = basis_list
@@ -41,27 +39,27 @@ class PrepareData:
 
         self.input_dataset = Entity(input_path,
             {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path})
+        dimensions_supplied = dimensions is not None and len(dimensions) > 0
+        self.dimensions = [] if not dimensions_supplied else dimensions
+        self.measures = []
+        self.others = []
         for i in range(len(self.adata.obs.columns)):
             name = self.adata.obs.columns[i]
             c = self.adata.obs[name]
-            if pd.api.types.is_categorical_dtype(c):
-                if 1 < len(c.cat.categories) < 5000:
-                    dimensions.append(name)
+            if not dimensions_supplied and pd.api.types.is_categorical_dtype(c):
+                if 1 < len(c.cat.categories) < 2000:
+                    self.dimensions.append(name)
                     if c.isna().sum() > 0:
                         logger.info('Replacing nans in {}'.format(name))
                         self.adata.obs[name] = self.adata.obs[name].astype(str)
                         self.adata.obs.loc[self.adata.obs[name].isna(), name] = ''
                         self.adata.obs[name] = self.adata.obs[name].astype('category')
                 else:
-                    others.append(name)
+                    self.others.append(name)
             elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
-                measures.append('obs/' + name)
+                self.measures.append('obs/' + name)
             else:
-                others.append(name)
-        self.others = others
-        self.dimensions = dimensions
-        self.measures = measures
-        self.base_name = output
+                self.others.append(name)
 
     def execute(self):
         basis_list = self.basis_list
@@ -209,6 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('out', help='Path to output directory')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
+    parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
     parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
@@ -228,5 +227,5 @@ if __name__ == '__main__':
         input_X_range[0] = int(input_X_range[0])
         input_X_range[1] = int(input_X_range[1])
     prepare_data = PrepareData(args.dataset, args.backed, input_basis, args.nbins, args.summary, args.out,
-        X_range=input_X_range)
+        X_range=input_X_range, dimensions=args.groups)
     prepare_data.execute()

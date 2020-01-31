@@ -53,9 +53,12 @@ def save_data_obs(adata, output_directory):
 def save_adata_X_chunk(adata, adata_col_slice, output_directory):
     X_slice = adata.X[:, adata_col_slice]
     names = adata.var.index[adata_col_slice]
+    is_sparse = scipy.sparse.issparse(X_slice)
+    if is_sparse and scipy.sparse.isspmatrix_csr(X_slice):
+        X_slice = X_slice.tocsc()
     for j in range(X_slice.shape[1]):
         X = X_slice[:, j]
-        if scipy.sparse.issparse(X):
+        if is_sparse:
             X = X.toarray().flatten()
         indices = np.where(X != 0)[0]
         values = X[indices]

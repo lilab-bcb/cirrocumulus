@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
 import scipy.sparse
 from natsort import natsorted
+from pandas import CategoricalDtype
 
 from cirro.simple_data import SimpleData
 
@@ -20,8 +20,11 @@ class DotPlotAggregator:
         dimensions = self.dimensions
         X = adata.X[:, SimpleData.get_var_indices(adata, var_measures)]
         issparse = scipy.sparse.issparse(X)
-
+        df = adata.obs
         for dimension in dimensions:
+            if not df[dimension].dtype.ordered:
+                df[dimension] = df[dimension].astype(
+                    CategoricalDtype(natsorted(df[dimension].dtype.categories), ordered=True))
             grouped = adata.obs.groupby(dimension)
             group_names = []
             mean_output = None
@@ -42,13 +45,9 @@ class DotPlotAggregator:
                 fraction_expressed_output = np.vstack((fraction_expressed_output,
                                                        fraction_expressed)) if fraction_expressed_output is not None else fraction_expressed
 
-            index = pd.Index(group_names)
-            sorted_categories = natsorted(index)
-            reordered_indices = index.get_indexer_for(sorted_categories)
             values = []
-            dotplot_result = {'categories': sorted_categories, 'name': dimension, 'values': values}
-            mean_output = mean_output[reordered_indices]
-            fraction_expressed_output = fraction_expressed_output[reordered_indices]
+            dotplot_result = {'categories': group_names, 'name': dimension, 'values': values}
+
             for i in range(mean_output.shape[1]):
                 name = var_measures[i]
                 values.append({'name': name,

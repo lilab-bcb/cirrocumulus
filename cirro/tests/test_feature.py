@@ -17,7 +17,7 @@ def diff_measures(test_data, summary, fields):
         assert my_min[i] == field_summary['min'], 'min'
         assert my_max[i] == field_summary['max'], 'max'
         assert my_expressed[i] == field_summary['numExpressed'], 'numExpressed'
-        assert my_sum[i] == approx(field_summary['sum'], abs=0.0001), 'sum'
+        assert my_sum[i] == approx(field_summary['sum'], abs=0.001), 'sum'
         assert my_mean[i] == approx(field_summary['mean'], abs=0.0000001), 'mean'
 
 

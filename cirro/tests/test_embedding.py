@@ -45,8 +45,7 @@ def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, ba
     grouped_df = df.groupby(basis['full_name']).agg(agg_dict)
 
     results = handle_embedding(dataset_api=dataset_api, dataset=input_dataset,
-        basis=basis,
-        measures=measures, dimensions=dimensions)
+        basis=basis, measures=measures, dimensions=dimensions)
 
     for key in basis['coordinate_columns']:
         np.testing.assert_array_equal(results['coordinates'][key], grouped_df[key].values, err_msg=key)

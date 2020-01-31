@@ -1,5 +1,6 @@
-from cirro.simple_data import SimpleData
 from natsort.natsort import natsorted
+
+from cirro.simple_data import SimpleData
 
 
 class FeatureAggregator:
@@ -8,7 +9,6 @@ class FeatureAggregator:
         self.obs_measures = obs_measures
         self.var_measures = var_measures
         self.dimensions = dimensions
-
 
     @staticmethod
     def add_to_result(df, result):

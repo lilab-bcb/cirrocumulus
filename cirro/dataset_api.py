@@ -28,6 +28,8 @@ class DatasetAPI:
         return provider if provider is not None else self.default_provider
 
     def add(self, provider):
+        if self.default_provider is None:
+            self.default_provider = provider
         suffixes = provider.get_suffixes()
         for suffix in suffixes:
             self.suffix_to_provider[suffix.lower()] = provider

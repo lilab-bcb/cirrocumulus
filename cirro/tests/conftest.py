@@ -13,9 +13,10 @@ def test_data():
     return anndata.read('test-data/pbmc3k_no_raw.h5ad')
 
 
-@pytest.fixture(scope='module', autouse=True)
-def measures():
-    return ['TNFRSF4', 'DSCR3', 'SUMO3']
+@pytest.fixture(scope='module', autouse=True, params=['small', 'large'])
+def measures(request):
+    return ['TNFRSF4', 'DSCR3', 'SUMO3'] if request.param == 'small' else list(
+        anndata.read('test-data/pbmc3k_no_raw.h5ad').var.index)
 
 
 @pytest.fixture(scope='module', autouse=True)
