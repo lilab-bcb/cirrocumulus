@@ -15,15 +15,14 @@ def main(argsv):
         description='Run cirrocumulus')
     parser.add_argument('dataset', help='Path to an h5ad file or parquet file')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--host', help='Host IP address', default="0.0.0.0")
+    parser.add_argument('--host', help='Host IP address')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-    parser.add_argument('--images', help='Directory containing images')
 
     args = parser.parse_args(argsv)
 
-    from flask_cors import CORS
-    CORS(app)
+    # from flask_cors import CORS
+    # CORS(app)
     Compress(app)
     from cirro.api import dataset_api
     from cirro.h5ad_dataset import H5ADDataset
