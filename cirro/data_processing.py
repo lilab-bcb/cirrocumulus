@@ -189,28 +189,58 @@ def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
     return result
 
 
+def handle_export_dataset_filters(dataset_api, dataset, data_filters):
+    import json
+    reformatted_filters = []
+    filter_names = []
+    for data_filter_obj in data_filters:
+        filter_value = json.loads(data_filter_obj['value'])
+        filter_names.append(data_filter_obj['name'])
+        reformatted_filters.append(filter_value)
+
+    adata_info = get_data(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
+    result_df = pd.DataFrame(index=adata_info['adata'].obs['index'])
+    for i in range(len(reformatted_filters)):
+        data_filter = reformatted_filters[i]
+        filter_name = filter_names[i]
+        adata_filtered = filter_adata(adata_info['adata'], data_filter)
+        df = pd.DataFrame(index=adata_filtered.obs['index'])
+        df[filter_name] = True
+        result_df = result_df.join(df, rsuffix='r')
+    result_df.fillna(False, inplace=True)
+    return result_df.to_csv()
+
+
 def handle_selection_ids(dataset_api, dataset, data_filter):
     selection_info = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
     return {'ids': IdsAggregator().execute(selection_info['adata'])}
 
 
-def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
+def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
     obs_measures, var_measures = split_measures(measures)
-    var_keys_filter, obs_keys_filter, selected_points_filter_basis = data_filter_keys(data_filter)
+    var_keys_filter = []
+    obs_keys_filter = []
+    selected_points_filter_basis_list = []
+    for data_filter in data_filters:
+        _var_keys_filter, _obs_keys_filter, selected_points_filter_basis = data_filter_keys(data_filter)
+        if selected_points_filter_basis is not None:
+            selected_points_filter_basis_list.append(selected_points_filter_basis)
+        var_keys_filter += _var_keys_filter
+        obs_keys_filter += _obs_keys_filter
     obs_keys = list(set(obs_measures + obs_keys_filter + dimensions))
     var_keys = list(set(var_measures + var_keys_filter))
     basis_objs = []
-    selected_points_filter_basis_found = False
+    basis_keys = set()
     for embedding in embeddings:
         basis_obj = get_basis(embedding['basis'], embedding.get('nbins'), embedding.get('agg'),
             embedding.get('ndim', '2'), embedding.get('precomputed', False))
-        basis_objs.append(basis_obj)
-        if selected_points_filter_basis is not None and not selected_points_filter_basis_found and basis_obj[
-            'full_name'] == selected_points_filter_basis['full_name']:
-            selected_points_filter_basis_found = True
-    # add selected_points_filter_basis is not included
-    if selected_points_filter_basis is not None and not selected_points_filter_basis_found:
-        basis_objs.append(selected_points_filter_basis)
+        if basis_obj['full_name'] not in basis_keys:
+            basis_objs.append(basis_obj)
+            basis_keys.add(basis_obj['full_name'])
+    for basis_obj in selected_points_filter_basis_list:
+        if basis_obj['full_name'] not in basis_keys:
+            basis_objs.append(basis_obj)
+            basis_keys.add(basis_obj['full_name'])
     adata = dataset_api.read(dataset=dataset, obs_keys=obs_keys, var_keys=var_keys, basis=basis_objs)
     for basis_obj in basis_objs:
         if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
@@ -218,9 +248,16 @@ def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensio
                 nbins=basis_obj['nbins'],
                 bin_name=basis_obj['full_name'],
                 coordinate_columns=basis_obj['coordinate_columns'])
-    adata = filter_adata(adata, data_filter)
     return {'adata': adata, 'basis': basis_objs, 'obs_measures': obs_measures, 'var_measures': var_measures,
             'dimensions': dimensions}
+
+
+def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
+    adata_info = get_data(dataset_api, dataset, embeddings, measures, dimensions,
+        [data_filter] if data_filter is not None else [])
+    adata = filter_adata(adata_info['adata'], data_filter)
+    adata_info['adata'] = adata
+    return adata_info
 
 
 def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
@@ -254,8 +291,7 @@ def data_filter_keys(data_filter):
         if selected_points_filter is not None:
             basis_name = selected_points_filter.get('basis')
             basis = get_basis(basis_name, selected_points_filter.get('nbins'), selected_points_filter.get('agg'),
-                selected_points_filter.get('ndim', '2'),
-                selected_points_filter.get('precomputed', False))
+                selected_points_filter.get('ndim', '2'), selected_points_filter.get('precomputed', False))
 
         for i in range(len(user_filters)):
             user_filter = user_filters[i]

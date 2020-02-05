@@ -87,7 +87,9 @@ function featuresUI(state = [], action) {
     }
 }
 
-// Currently loaded dataset filter, used for keeping track of whether filter is modified
+// Currently loaded dataset filter, used for filter editing.
+// Object containing  ds_id, name, notes
+// Once created, only name and notes are editable, not the filter values
 function savedDatasetFilter(state = null, action) {
     switch (action.type) {
         case SET_SAVED_DATASET_FILTER:
@@ -515,11 +517,9 @@ function embeddingData(state = [], action) {
         case SET_EMBEDDING_DATA :
             return action.payload;
         case SET_EMBEDDING_CHART_SIZE:
-            const size = PlotUtil.getEmbeddingChartSize(action.payload);
             state.forEach(traceInfo => {
                 let layout = Object.assign({}, traceInfo.layout);
-                layout.width = size;
-                layout.height = size;
+                layout.size = action.payload; // 1, 2, 3 (small, medium, large)
                 traceInfo.layout = layout;
             });
 

@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {cloneDeep, isEqual, isPlainObject} from 'lodash';
+import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
@@ -80,13 +80,26 @@ export const SET_MARKER_OPACITY_UI = 'SET_MARKER_OPACITY_UI';
 export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_UI';
 
 export function getEmbeddingKey(embedding) {
-
     let fullName = embedding.name + '_' + embedding.dimensions;
     if (embedding.bin || embedding.precomputed) {
         fullName = fullName + '_' + embedding.nbins + '_' + embedding.agg;
     }
     return fullName;
 }
+
+function getEmbeddingJson(embedding) {
+    let value = {basis: embedding.name, ndim: embedding.dimensions};
+    if (embedding.precomputed) {
+        value.precomputed = true;
+    }
+    if (embedding.bin) {
+        value.nbins = embedding.nbins;
+        value.agg = embedding.agg;
+    }
+
+    return value;
+}
+
 
 function getUser() {
     return function (dispatch, state) {
@@ -188,17 +201,37 @@ export function openDatasetFilter(filterId) {
             }).then(response => response.json())
             .then(result => {
                 result.id = filterId;
-                result.value = JSON.parse(result.value);
-                if (result.value.points) {
+                dispatch(setSavedDatasetFilter({id: filterId, name: result.name, notes: result.notes}));
+                let filterValue = JSON.parse(result.value);
+                let datasetFilter = {};
+                if (filterValue.selectedPoints) { // brush
                     dispatch(setDatasetFilter({}));
                     let embeddings = getState().embeddings;
-                    let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(result.value.name)];
-                    dispatch(handleFilterUpdated(result.value.points, embedding));
+                    let embeddingKey = filterValue.selectedPoints.basis + '_' + filterValue.selectedPoints.ndim;
+                    if (filterValue.selectedPoints.nbins) {
+                        embeddingKey += '_' + filterValue.selectedPoints.nbins + '_' + filterValue.selectedPoints.agg;
+                    }
+                    let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingKey)];
+                    dispatch(handleFilterUpdated(filterValue.selectedPoints.value, embedding));
                 } else {
-                    dispatch(setDatasetFilter(result.value));
+                    filterValue.filters.forEach(item => {
+                        let filterOperation = item[1];
+                        let field = item[0];
+                        let slashIndex = field.indexOf('/');
+                        if (slashIndex !== -1) {
+                            field = field.substring(slashIndex + 1);
+                        }
+                        if (filterOperation === 'in') {
+                            datasetFilter[field] = item[2];
+                        } else {
+                            datasetFilter[field] = {operation: item[1], value: item[2]};
+                        }
+                    });
+                    dispatch(setDatasetFilter(datasetFilter));
                     dispatch(handleFilterUpdated());
                 }
-                dispatch(setSavedDatasetFilter(cloneDeep(result)));
+
+
             }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -243,19 +276,10 @@ export function deleteDatasetFilter(filterId) {
 export function saveDatasetFilter(payload) {
     return function (dispatch, getState) {
         const state = getState();
-        let filterValue;
-        const datasetId = getState().dataset.id;
-
-        if (Object.keys(state.datasetFilter).length > 0) {
-            filterValue = state.datasetFilter;
-        } else if (state.selection.count > 0) {
-            let chartKeys = Object.keys(state.selection.chart);
-            let selection = state.selection.chart[chartKeys[0]];
-            filterValue = {points: selection.points, name: chartKeys[0]};
-        }
+        let filterValue = getFilterJson(state, true);
         let savedDatasetFilter = state.savedDatasetFilter;
         let isEditFilter = savedDatasetFilter != null;
-        let requestBody = {ds_id: datasetId};
+        let requestBody = {ds_id: state.dataset.id};
         if (isEditFilter) {
             requestBody.id = savedDatasetFilter.id;
         }
@@ -401,6 +425,27 @@ export function downloadSelectedIds() {
     };
 }
 
+export function exportDatasetFilters() {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        fetch(API + '/export_filters?id=' + getState().dataset.id).then(result => {
+            if (!result.ok) {
+                handleError(dispatch, 'Unable to export filters');
+                return;
+            }
+            return result.text();
+        }, {
+            headers: {'Authorization': 'Bearer ' + getIdToken()},
+        }).then(result => {
+            const blob = new Blob([result], {type: "text/plain;charset=utf-8"});
+            saveAs(blob, "filters.csv");
+        }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err);
+        });
+    };
+}
 
 export function setDotPlotSortOrder(payload) {
     return {type: SET_DOT_PLOT_SORT_ORDER, payload: payload};
@@ -426,19 +471,6 @@ function setSavedDatasetFilter(payload) {
     return {type: SET_SAVED_DATASET_FILTER, payload: payload};
 }
 
-
-function getEmbeddingJson(embedding) {
-    let value = {basis: embedding.name, ndim: embedding.dimensions};
-    if (embedding.precomputed) {
-        value.precomputed = true;
-    }
-    if (embedding.bin) {
-        value.nbins = embedding.nbins;
-        value.agg = embedding.agg;
-    }
-
-    return value;
-}
 
 function updateChartSelection(selectionCoordinates, chartSelection, state) {
     for (let key in selectionCoordinates) {
@@ -1456,8 +1488,9 @@ function handleEmbeddingResult(result) {
         const state = getState();
         let embeddingResult = result.embeddingResult;
         let selectedEmbedding = result.embedding;
+        let isImage = selectedEmbedding.image != null;
         let interpolator = state.interpolator;
-        let rgbScale = getRgbScale();
+
         const markerSize = state.markerSize;
         let embeddingData = state.embeddingData;
         let embeddingChartSize = state.embeddingChartSize;
@@ -1471,7 +1504,8 @@ function handleEmbeddingResult(result) {
         const embeddingValues = embeddingResult.values;
         const coordinates = embeddingResult.coordinates;
         const is3d = selectedEmbedding.dimensions === 3;
-
+        let rgbScale = getRgbScale();
+        const colorMapper = isImage ? (rgb => rgb.formatRgb()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];
@@ -1516,7 +1550,7 @@ function handleEmbeddingResult(result) {
             let colors = [];
             for (let i = 0, n = values.length; i < n; i++) {
                 let rgb = color(colorScale(values[i]));
-                colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+                colors.push(colorMapper(rgb));
             }
 
 
@@ -1546,19 +1580,37 @@ function handleEmbeddingResult(result) {
                 chartData.z = z;
             }
 
-            chartData = [chartData];
+
+            const layout = PlotUtil.createEmbeddingLayout({size: embeddingChartSize, is3d: is3d, title: name});
+            if (selectedEmbedding.type === 'image') {
+                chartData.isImage = true;
+                chartData.image = fetch(API + '/image?id=' + state.dataset.id + '&image=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});
+                // layout.images = [{
+                //
+                //     "source": "https://images.plot.ly/language-icons/api-home/js-logo.png",
+                //     "xref": "x",
+                //     "yref": "y",
+                //     "layer": "above",
+                //     "x": 0,
+                //     "y": 0,
+                //     "sizex": 500,
+                //     "sizey": 500,
+                //     "xanchor": "left",
+                //     "yanchor": "top"
+                // }];
+            }
             embeddingData.push(
                 {
                     date: new Date(),
                     active: true,
                     colorScale: colorScale,
                     continuous: !isCategorical,
-                    data: chartData,
+                    data: [chartData],
                     name: name,
-                    layout: PlotUtil.createEmbeddingLayout(
-                        {size: embeddingChartSize, is3d: is3d, title: name}),
+                    layout: layout,
                     isCategorical: isCategorical,
                 });
+
         }
         embeddingData.sort((a, b) => {
             a = a.name.toLowerCase();

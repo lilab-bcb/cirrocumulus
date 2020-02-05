@@ -220,7 +220,6 @@ class App extends PureComponent {
         const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && this.props.dataset.nObs > 0 && (this.props.selection.count !== this.props.dataset.nObs);
         return (
             <div className={classes.root}>
-
                 {(this.props.dialog === EDIT_DATASET_DIALOG || this.props.dialog === IMPORT_DATASET_DIALOG) &&
                 <EditDatasetDialog/>}
                 {this.props.dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}

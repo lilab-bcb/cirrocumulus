@@ -4,6 +4,14 @@ import os
 from cirro.entity import Entity
 
 
+def create_dataset_meta(path):
+    result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
+    if os.path.basename(path).endswith('.json'):
+        with open(path, 'rt') as f:
+            result.update(json.load(f))
+    return result
+
+
 class LocalDbAPI:
 
     def __init__(self, path):
@@ -13,6 +21,7 @@ class LocalDbAPI:
         if os.path.exists(self.dataset_filter_path) and os.path.getsize(self.dataset_filter_path) > 0:
             with open(self.dataset_filter_path, 'rt') as f:
                 self.dataset_filter.update(json.load(f))
+        self.meta = create_dataset_meta(self.path)
 
     def server(self):
         return dict(canWrite=True)
@@ -22,17 +31,19 @@ class LocalDbAPI:
 
     def datasets(self, email):
         results = []
-        results.append(self.__create_dataset_meta(self.path))
+        results.append(self.meta)
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        result = Entity(dataset_id, self.__create_dataset_meta(dataset_id))
+        result = Entity(dataset_id, self.meta)
         return result
 
     def dataset_filters(self, email, dataset_id):
         results = []
         for key in self.dataset_filter:
-            results.append({'id': key, 'name': self.dataset_filter[key]['name']})
+            r = self.dataset_filter[key]
+            r['id'] = key
+            results.append(r)
         return results
 
     def delete_dataset_filter(self, email, filter_id):
@@ -67,10 +78,3 @@ class LocalDbAPI:
     def __write_dataset_filter(self):
         with open(self.dataset_filter_path, 'wt') as f:
             json.dump(self.dataset_filter, f)
-
-    def __create_dataset_meta(self, path):
-        result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
-        if os.path.basename(path).endswith('.json'):
-            with open(path, 'rt') as f:
-                result.update(json.load(f))
-        return result

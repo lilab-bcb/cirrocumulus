@@ -1,13 +1,15 @@
-import cirro.data_processing as data_processing
-from cirro.embedding_aggregator import get_basis
 from flask import Blueprint, Response, request
 
+import cirro.data_processing as data_processing
+from cirro.embedding_aggregator import get_basis
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
 from .util import *
 
+cached_schema = None
+cached_dataset_schema_id = None
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
@@ -50,7 +52,24 @@ def handle_dataset_filters():
 
     database_api.get_dataset(email, dataset_id)
     dataset_filters = database_api.dataset_filters(email, dataset_id)
+    # {'id': result.id, 'name': result['name']}
     return to_json(dataset_filters)
+
+
+@blueprint.route('/export_filters', methods=['GET'])
+def handle_export_dataset_filters():
+    """Download filters in a csv file for a dataset.
+    """
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+
+    if dataset_id == '':
+        return 'Please provide an id', 400
+
+    dataset = database_api.get_dataset(email, dataset_id)
+    dataset_filters = database_api.dataset_filters(email, dataset_id)
+    text = data_processing.handle_export_dataset_filters(dataset_api, dataset, dataset_filters)
+    return Response(text, mimetype='text/plain')
 
 
 @blueprint.route('/filter', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -89,18 +108,41 @@ def handle_dataset_filter():
         return to_json('', 204)
 
 
+def get_schema_and_dataset():
+    """Get dataset schema and dataset object
+    """
+    global cached_schema, cached_dataset_schema_id
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+    if dataset_id == '':
+        return 'Please provide an id', 400
+    dataset = database_api.get_dataset(email, dataset_id)
+    if dataset_id == cached_dataset_schema_id:
+        return cached_schema, dataset
+    schema = dataset_api.schema(dataset)
+
+    cached_dataset_schema_id = dataset_id
+    cached_schema = schema
+    return schema, dataset
+
+
 @blueprint.route('/schema', methods=['GET'])
 def handle_schema():
     """Get dataset schema.
     """
-    email = auth_api.auth()['email']
-    dataset_id = request.args.get('id', '')
+    return get_schema_and_dataset()[0]
 
-    if dataset_id == '':
-        return 'Please provide an id', 400
-    dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.schema(dataset)
-    return to_json(schema)
+
+@blueprint.route('/image', methods=['GET'])
+def handle_image():
+    schema, dataset = get_schema_and_dataset()
+    image_id = request.args.get('image')
+    path = dataset['url']
+    import os
+    path = os.path.dirname(path)
+    image_path = os.path.join(path, 'images', image_id)
+    with dataset_api.fs.open(image_path) as s:
+        return Response(s.read(), mimetype='image/png')  # FIXME
 
 
 @blueprint.route('/user', methods=['GET'])

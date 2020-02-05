@@ -15,10 +15,11 @@ def main(argsv):
         description='Run cirrocumulus')
     parser.add_argument('dataset', help='Path to an h5ad file or parquet file')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--host', help='Host IP address', default="127.0.0.1")
+    parser.add_argument('--host', help='Host IP address', default="0.0.0.0")
     parser.add_argument('--port', help='Server port', default=5000, type=int)
-    parser.add_argument('--debug', help='Run in debug mode', action='store_true')
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
+    parser.add_argument('--images', help='Directory containing images')
+
     args = parser.parse_args(argsv)
 
     from flask_cors import CORS
@@ -32,6 +33,12 @@ def main(argsv):
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI(args.dataset)
+    if args.images is not None:
+        scale_factors_path = os.path.join(args.images, 'scalefactors_json.json')
+        if os.path.exists(scale_factors_path):
+            import json
+            with open(scale_factors_path, 'r') as f:
+                scale_factors = json.load(f)
 
     try:
         from cirro.parquet_dataset import ParquetDataset
@@ -40,11 +47,12 @@ def main(argsv):
         dataset_api.default_provider = pq
     except ModuleNotFoundError:
         pass
+
     dataset_api.add(H5ADDataset('r' if args.backed else None))
     if not args.no_open:
         url = args.host + ':' + str(args.port)
         webbrowser.open(url)
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    app.run(host=args.host, port=args.port, debug=False)
 
 
 if __name__ == "__main__":

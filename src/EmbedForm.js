@@ -1,4 +1,5 @@
 import {Switch} from '@material-ui/core';
+import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
@@ -20,6 +21,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
+    exportDatasetFilters,
     getEmbeddingKey,
     openDatasetFilter,
     setBinSummary,
@@ -308,7 +310,7 @@ class EmbedForm extends React.PureComponent {
                 {<FormControlLabel
                     control={
                         <Switch
-                            checked={interpolator.reversed}
+                            checked={interpolator.reversed || false}
                             value={'reverseColors'}
                             onChange={this.handleReverseColors}
                         />
@@ -385,7 +387,7 @@ class EmbedForm extends React.PureComponent {
                         </ListItem>
                     ))}
                 </List>
-
+                {datasetFilters.length > 0 && <Button onClick={this.props.handleExportDatasetFilters}>Export</Button>}
             </div>
         );
     }
@@ -466,6 +468,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleDeleteDatasetFilter: value => {
             dispatch(deleteDatasetFilter(value));
+        },
+        handleExportDatasetFilters: () => {
+            dispatch(exportDatasetFilters());
         }
     };
 };

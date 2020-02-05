@@ -124,6 +124,7 @@ class PlotUtil {
             showLink: false,
             responsive: false,
             displaylogo: false,
+            scrollZoom: true,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
         };
     }
@@ -153,20 +154,16 @@ class PlotUtil {
     }
 
 
-    static getEmbeddingChartSize(size) {
-        let maxSize = Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
-        return Math.floor(maxSize / size);
+    static getSingleEmbeddingChartSize() {
+        return Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
     }
 
     static createEmbeddingLayout(options) {
         let {size, is3d} = options;
-        size = PlotUtil.getEmbeddingChartSize(size);
 
         let layout = {
             hovermode: 'closest',
             dragmode: 'select',
-            width: size,
-            height: size,
             margin: {
                 l: 0,
                 b: 0,

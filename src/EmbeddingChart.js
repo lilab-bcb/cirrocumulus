@@ -13,6 +13,7 @@ import {
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import createPlotlyComponent from './factory';
+import ImageChart from './ImageChart';
 
 const Plot = createPlotlyComponent(window.Plotly);
 
@@ -36,6 +37,23 @@ class EmbeddingChart extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {animating: false, forceRender: true};
+    }
+
+    componentWillUnmount() {
+        if (this.graphDiv != null) {
+            window.Plotly.purge(this.graphDiv);
+        }
+    }
+
+    onWebglcontextlost() {
+        if (this.graphDiv != null) {
+            window.Plotly.purge(this.graphDiv);
+            window.Plotly.react(this.graphDiv, {
+                data: this.props.traceInfo.data,
+                layout: this.props.traceInfo.layout,
+                config: this.props.config
+            });
+        }
     }
 
     toggleAnimation = (event) => {
@@ -76,12 +94,23 @@ class EmbeddingChart extends React.PureComponent {
         this.graphDiv = graphDiv;
     };
 
+
     render() {
         const {traceInfo, config, nObs, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
 
         return (
-            <div style={{display: 'inline-block', border: '1px solid LightGrey'}}>
-                <Plot
+            <div style={this.props.style}>
+                {!traceInfo.data[0].isImage && <Plot
+                    style={{display: 'inline-block'}}
+                    data={traceInfo.data}
+                    onInitialized={this.onInitialized}
+                    layout={traceInfo.layout}
+                    config={config}
+                    onDeselect={onDeselect}
+                    onWebglcontextlost={this.onWebglcontextlost}
+                    onSelected={onSelect}
+                />}
+                {traceInfo.data[0].isImage && <ImageChart
                     style={{display: 'inline-block'}}
                     data={traceInfo.data}
                     onInitialized={this.onInitialized}
@@ -89,7 +118,7 @@ class EmbeddingChart extends React.PureComponent {
                     config={config}
                     onDeselect={onDeselect}
                     onSelected={onSelect}
-                />
+                />}
                 {traceInfo.data[0].type == 'scatter3d' && !this.state.animating &&
                 <IconButton onClick={this.toggleAnimation} aria-label="Play">
                     <PlayCircleFilledIcon/>

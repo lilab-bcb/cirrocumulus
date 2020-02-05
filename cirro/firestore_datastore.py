@@ -49,7 +49,7 @@ class FirestoreDatastore:
         query.add_filter('dataset_id', '=', int(dataset_id))
         results = []
         for result in query.fetch():
-            results.append({'id': result.id, 'name': result['name']})
+            results.append(result)
         return results
 
     def delete_dataset_filter(self, email, filter_id):

@@ -69,6 +69,7 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
+        images = adata.uns['images'] if 'images' in adata.uns else None
         result['var'] = adata.var_names.values.tolist()
         result['obs'] = obs
         result['obsCat'] = obs_cat
@@ -77,11 +78,24 @@ class SimpleData:
         for key in adata.obsm_keys():
             if key.startswith('X_'):
                 dim = min(3, adata.obsm[key].shape[1])
+                embedding = dict(name=key, dimensions=dim)
+
+                if images is not None and key in images:
+                    image_info = images[key]
+                    for image_key in image_info:
+                        if isinstance(image_info[image_key], np.ndarray) and len(image_info[image_key]) == 1:
+                            image_info[image_key] = image_info[image_key].tolist()[0]
+                    embedding.update(image_info)
+                    embedding['type'] = 'image'
                 if dim == 3:
-                    embeddings.append(dict(name=key, dimensions=dim))
-                    embeddings.append(dict(name=key, dimensions=2))
+                    embeddings.append(embedding)
+                    embedding = embedding.copy()
+                    embedding['dimensions'] = 2
+                    embeddings.append(embedding)
                 else:
-                    embeddings.append(dict(name=key, dimensions=dim))
+                    embeddings.append(embedding)
+            else:
+                print('Skipping {}'.format(key))
         result['embeddings'] = embeddings
         return result
 

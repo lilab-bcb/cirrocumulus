@@ -15,9 +15,10 @@ class DotPlotAggregator:
     def execute(self, adata):
         results = []
         # {categories:[], name:'', values:[{name:'', fractionExpressed:0, mean:0}]}
-
         var_measures = self.var_measures
         dimensions = self.dimensions
+        if len(var_measures) == 0 or len(dimensions) == 0:
+            return results
         X = adata.X[:, SimpleData.get_var_indices(adata, var_measures)]
         issparse = scipy.sparse.issparse(X)
         df = adata.obs
@@ -25,6 +26,8 @@ class DotPlotAggregator:
             if not df[dimension].dtype.ordered:
                 df[dimension] = df[dimension].astype(
                     CategoricalDtype(natsorted(df[dimension].dtype.categories), ordered=True))
+            if len(df[dimension].dtype.categories) <= 1:
+                continue
             grouped = adata.obs.groupby(dimension)
             group_names = []
             mean_output = None
@@ -47,7 +50,7 @@ class DotPlotAggregator:
 
             values = []
             dotplot_result = {'categories': group_names, 'name': dimension, 'values': values}
-
+            print(mean_output.shape)
             for i in range(mean_output.shape[1]):
                 name = var_measures[i]
                 values.append({'name': name,
