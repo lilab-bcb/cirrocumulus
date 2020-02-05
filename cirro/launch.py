@@ -42,8 +42,10 @@ def main(argsv):
         pass
 
     dataset_api.add(H5ADDataset('r' if args.backed else None))
+
     if not args.no_open:
-        url = args.host + ':' + str(args.port)
+        host = args.host if args.host is not None else '127.0.0.0'
+        url = host + ':' + str(args.port)
         webbrowser.open(url)
     app.run(host=args.host, port=args.port, debug=False)
 
