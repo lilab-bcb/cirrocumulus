@@ -1,7 +1,28 @@
+import subprocess
 from codecs import open
 from os import path
 
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+
+    def run(self):
+        subprocess.check_call(['npm', 'i'])
+        subprocess.check_call(['npm', 'run-script', 'build'])
+        develop.run(self)
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+
+    def run(self):
+        subprocess.check_call(['npm', 'i'])
+        subprocess.check_call(['npm', 'run-script', 'build'])
+        install.run(self)
 
 
 with open(path.join(path.abspath(path.dirname(__file__)), "README.rst"), encoding="utf-8") as f:
@@ -19,6 +40,10 @@ requires = [
 setup(
     name="cirrocumulus",
     use_scm_version=True,
+    cmdclass={
+            'develop': PostDevelopCommand,
+            'install': PostInstallCommand,
+    },
     setup_requires=['setuptools_scm'],
     description="scRNA-Seq visualization tool",
     long_description=long_description,
