@@ -32,12 +32,6 @@ def main(argsv):
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI(args.dataset)
-    if args.images is not None:
-        scale_factors_path = os.path.join(args.images, 'scalefactors_json.json')
-        if os.path.exists(scale_factors_path):
-            import json
-            with open(scale_factors_path, 'r') as f:
-                scale_factors = json.load(f)
 
     try:
         from cirro.parquet_dataset import ParquetDataset
