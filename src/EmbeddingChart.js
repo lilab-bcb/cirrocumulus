@@ -145,7 +145,7 @@ class EmbeddingChart extends React.PureComponent {
 
                 {traceInfo.continuous ?
                     <ColorSchemeLegendWrapper
-                        width={186}
+                        width={140}
                         label={true}
                         height={30}
                         handleUpdate={handleMeasureFilterUpdated}
