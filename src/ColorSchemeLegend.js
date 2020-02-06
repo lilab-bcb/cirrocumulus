@@ -83,7 +83,7 @@ class ColorSchemeLegend extends React.PureComponent {
         this.backingScale = backingScale;
         let height = this.props.height;
         let width = this.props.width;
-        let style = {width: width, height: height, display: 'block'};
+        let style = {width: width, height: height};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }

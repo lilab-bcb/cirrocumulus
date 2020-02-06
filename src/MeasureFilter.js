@@ -46,28 +46,28 @@ class MeasureFilter extends React.PureComponent {
         const id = name + '_filter';
 
         return (
-            <div style={{paddingBottom: 10}}>
-                <div style={{display: 'inline-flex'}}>
 
-                    <Select
-                        id={id}
-                        style={{marginRight: 6}}
-                        value={filter.operation}
-                        onChange={this.handleOperationChanged}
-                    >
-                        <MenuItem value={""}></MenuItem>
-                        <MenuItem value={">"}>{">"}</MenuItem>
-                        <MenuItem value={"<"}>{"<"}</MenuItem>
-                        <MenuItem value={"="}>{"="}</MenuItem>
-                        <MenuItem value={">="}>{">="}</MenuItem>
-                        <MenuItem value={"<="}>{"<="}</MenuItem>
-                        <MenuItem value={"!="}>{"!="}</MenuItem>
-                    </Select>
+            <div style={{display: 'inline-flex', paddingLeft: 10}}>
 
-                    <TextField  onKeyPress={this.handleValueKeyPress}
-                               onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 90}}/>
-                </div>
-            </div>);
+                <Select
+                    id={id}
+                    style={{marginRight: 6}}
+                    value={filter.operation}
+                    onChange={this.handleOperationChanged}
+                >
+                    <MenuItem value={""}></MenuItem>
+                    <MenuItem value={">"}>{">"}</MenuItem>
+                    <MenuItem value={"<"}>{"<"}</MenuItem>
+                    <MenuItem value={"="}>{"="}</MenuItem>
+                    <MenuItem value={">="}>{">="}</MenuItem>
+                    <MenuItem value={"<="}>{"<="}</MenuItem>
+                    <MenuItem value={"!="}>{"!="}</MenuItem>
+                </Select>
+
+                <TextField onKeyPress={this.handleValueKeyPress}
+                           onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 90}}/>
+            </div>
+        );
     }
 }
 

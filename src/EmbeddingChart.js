@@ -148,6 +148,7 @@ class EmbeddingChart extends React.PureComponent {
                         width={140}
                         label={true}
                         height={30}
+
                         handleUpdate={handleMeasureFilterUpdated}
                         datasetFilter={datasetFilter}
                         scale={traceInfo.colorScale}
