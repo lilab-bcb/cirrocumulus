@@ -64,8 +64,8 @@ class MeasureFilter extends React.PureComponent {
                         <MenuItem value={"!="}>{"!="}</MenuItem>
                     </Select>
 
-                    <TextField placeholder={"Enter a number"} onKeyPress={this.handleValueKeyPress}
-                               onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 120}}/>
+                    <TextField  onKeyPress={this.handleValueKeyPress}
+                               onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 90}}/>
                 </div>
             </div>);
     }

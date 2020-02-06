@@ -1,29 +1,13 @@
 import {uniqueId} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
-import simplify from 'simplify-js';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import {intFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
+import {arrayToSvgPath, isPointInside} from './PlotUtil';
 
 const OpenSeadragon = window.OpenSeadragon;
 
-function isPointInside(point, vs) {
-    let x = point.x;
-    let y = point.y;
-    let inside = false;
-    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        let xi = vs[i].x;
-        let yi = vs[i].y;
-        let xj = vs[j].x;
-        let yj = vs[j].y;
-        let intersect = ((yi > y) != (yj > y))
-            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-
-    return inside;
-}
 
 class ImageChart extends React.PureComponent {
 
@@ -34,7 +18,7 @@ class ImageChart extends React.PureComponent {
 
     getSpotsInPolygon(points) {
         let data = this.props.data;
-        let spotRadius = data[0].embedding.spotDiameter / 2;
+        // let spotRadius = data[0].embedding.spotDiameter / 2;
         let indices = [];
         for (let i = 0; i < data[0].x.length; i++) {
             if (isPointInside({x: data[0].x[i], y: data[0].y[i]}, points)) {
@@ -146,15 +130,6 @@ class ImageChart extends React.PureComponent {
         let selectionMode = -1; // -1=no lasso, 0=start, 1=dragging
         let lassoPathArray = [];
 
-        function lassoPathArrayToPath() {
-            lassoPathArray = simplify(lassoPathArray);
-            let svgPath = 'M ' + lassoPathArray[0].x + ' ' + lassoPathArray[0].y;
-            for (let i = 1; i < lassoPathArray.length; i++) {
-                svgPath += ' L ' + lassoPathArray[i].x + ' ' + lassoPathArray[i].y;
-            }
-            svgPath += ' Z';
-            return svgPath;
-        }
 
         this.viewer.innerTracker.moveHandler = function (event) {
             if (selectionMode === -1 && viewer.world.getItemCount() > 0) {
@@ -190,7 +165,7 @@ class ImageChart extends React.PureComponent {
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
                 lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
-                lassoPath.setAttribute('d', lassoPathArrayToPath());
+                lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
                 selectionMode = 1;
             }
         };
@@ -223,10 +198,11 @@ class ImageChart extends React.PureComponent {
         let lassoPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         lassoPath.setAttribute('stroke', 'black');
         lassoPath.setAttribute('stroke-width', '2px');
-        lassoPath.setAttribute('fill', 'none');
+        lassoPath.setAttribute('fill', '#0bb');
+        lassoPath.setAttribute('fill-opacity', '0.1');
         lassoPath.setAttribute('stroke-dasharray', '2 2');
-        svgOverlay.node().appendChild(lassoPath);
 
+        svgOverlay.node().appendChild(lassoPath);
 
     }
 

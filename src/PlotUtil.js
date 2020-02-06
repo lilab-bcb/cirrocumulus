@@ -1,5 +1,6 @@
 import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
+import simplify from 'simplify-js';
 
 export const interpolators = {};
 interpolators['Diverging'] = [
@@ -62,15 +63,36 @@ export const CATEGORY_20C = [
     '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
-export function isPlotlyBug(el, newTrace) {
-    // https://github.com/plotly/plotly.js/issues/3405
-    const threshold = 100000;
-    const oldData = el.data;
-    const oldSize = oldData != null ? oldData[0].x.length : 0;
-    const newSize = newTrace.x != null ? newTrace.x.length : 0;
-    return ((oldSize > threshold) && (newSize <= threshold));
+export function isPointInside(point, vs) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+
+    var x = point.x, y = point.y;
+
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i].x, yi = vs[i].y;
+        var xj = vs[j].x, yj = vs[j].y;
+
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
 }
 
+export function arrayToSvgPath(lassoPathArray) {
+    if (lassoPathArray.length > 1) {
+        lassoPathArray = simplify(lassoPathArray);
+    }
+    let svgPath = 'M ' + lassoPathArray[0].x + ' ' + lassoPathArray[0].y;
+    for (let i = 1; i < lassoPathArray.length; i++) {
+        svgPath += ' L ' + lassoPathArray[i].x + ' ' + lassoPathArray[i].y;
+    }
+    svgPath += ' Z';
+    return svgPath;
+}
 
 export function getRgbScale() {
     return scaleLinear().domain([0, 255]).range([0, 1]);

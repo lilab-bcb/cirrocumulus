@@ -32,7 +32,7 @@ class ColorSchemeLegend extends React.PureComponent {
         let nsteps = this.props.nsteps || 10;
 
         let stepSize = (domain[1] - domain[0]) / nsteps;
-        let legendHeight = 20;
+        let legendHeight = 18;
         let gradient = context.createLinearGradient(0, 0, width, legendHeight);
         let valueToFraction = scaleLinear().range([0, 1]).domain(domain).clamp(true);
         for (let i = 0; i < nsteps; i++) {

@@ -14,6 +14,7 @@ import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import createPlotlyComponent from './factory';
 import ImageChart from './ImageChart';
+import Scatter2d from './Scatter2d';
 
 const Plot = createPlotlyComponent(window.Plotly);
 
@@ -100,7 +101,7 @@ class EmbeddingChart extends React.PureComponent {
 
         return (
             <div style={this.props.style}>
-                {!traceInfo.data[0].isImage && <Plot
+                {!traceInfo.data[0].isImage && traceInfo.data[0].type !== 'scattergl' && <Plot
                     style={{display: 'inline-block'}}
                     data={traceInfo.data}
                     onInitialized={this.onInitialized}
@@ -110,6 +111,18 @@ class EmbeddingChart extends React.PureComponent {
                     onWebglcontextlost={this.onWebglcontextlost}
                     onSelected={onSelect}
                 />}
+
+
+                {!traceInfo.data[0].isImage && traceInfo.data[0].type === 'scattergl' && <Scatter2d
+                    style={{display: 'inline-block'}}
+                    data={traceInfo.data}
+                    onInitialized={this.onInitialized}
+                    layout={traceInfo.layout}
+                    config={config}
+                    onDeselect={onDeselect}
+                    onSelected={onSelect}
+                />}
+
                 {traceInfo.data[0].isImage && <ImageChart
                     style={{display: 'inline-block'}}
                     data={traceInfo.data}
@@ -134,7 +147,7 @@ class EmbeddingChart extends React.PureComponent {
                     <ColorSchemeLegendWrapper
                         width={186}
                         label={true}
-                        height={40}
+                        height={30}
                         handleUpdate={handleMeasureFilterUpdated}
                         datasetFilter={datasetFilter}
                         scale={traceInfo.colorScale}
@@ -156,6 +169,7 @@ class EmbeddingChart extends React.PureComponent {
                                        nObsSelected={nObsSelected}
                                        globalFeatureSummary={globalFeatureSummary}
                                        featureSummary={featureSummary}/>}
+
             </div>);
 
     }
