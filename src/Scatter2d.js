@@ -77,7 +77,7 @@ class Scatter2d extends React.PureComponent {
             let point = {x: 0, y: 0};
 
             for (let i = 0, n = trace.x.length; i < n; i++) {
-                let x = this.xToPix(trace.x[i]);
+                let x = this.xToPix(trace.x[i]); // includes translate
                 let y = this.yToPix(trace.y[i]);
                 point.x = x;
                 point.y = y;
@@ -147,8 +147,13 @@ class Scatter2d extends React.PureComponent {
         this.drawContext(context);
     }
 
-    xToPix(x) {
-        return this.xToPixScale(x) + this.translateX;
+
+    xToPix(value) {
+        return this.xToPixScale(value) + this.translateX;
+    }
+
+    yToPix(value) {
+        return this.yToPixScale(value) + this.translateY;
     }
 
     pixToX(pix) {
@@ -159,9 +164,6 @@ class Scatter2d extends React.PureComponent {
         return this.yToPixScale.invert()(pix - this.translateY);
     }
 
-    yToPix(y) {
-        return this.yToPixScale(y) + this.translateY;
-    }
 
     drawContext(context) {
         let data = this.props.data;
@@ -199,8 +201,8 @@ class Scatter2d extends React.PureComponent {
         if (trace.selectedpoints == null) {
             context.globalAlpha = markerOpacity;
             for (let i = 0, n = trace.x.length; i < n; i++) {
-                let xpix = this.xToPix(trace.x[i]);
-                let ypix = this.yToPix(trace.y[i]);
+                let xpix = this.xToPixScale(trace.x[i]);
+                let ypix = this.yToPixScale(trace.y[i]);
                 context.fillStyle = trace.marker.color[i];
                 context.beginPath();
                 context.arc(xpix, ypix, markerSize, 0, PI2);
@@ -213,8 +215,8 @@ class Scatter2d extends React.PureComponent {
             let selectedPoints = trace.selectedpoints;
             let selectedPointsIndex = 0;
             for (let i = 0, n = trace.x.length; i < n; i++) {
-                let xpix = xToPixScale(trace.x[i]);
-                let ypix = yToPixScale(trace.y[i]);
+                let xpix = this.xToPixScale(trace.x[i]);
+                let ypix = this.yToPixScale(trace.y[i]);
                 let isSelected = false;
                 if (i === selectedPoints[selectedPointsIndex]) {
                     isSelected = true;
