@@ -146,7 +146,7 @@ class PlotUtil {
             showLink: false,
             responsive: false,
             displaylogo: false,
-            scrollZoom: true,
+            scrollZoom: false,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
         };
     }
