@@ -1505,7 +1505,8 @@ function handleEmbeddingResult(result) {
         const coordinates = embeddingResult.coordinates;
         const is3d = selectedEmbedding.dimensions === 3;
         let rgbScale = getRgbScale();
-        const colorMapper = isImage || !is3d ? (rgb => rgb.formatRgb()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+
+        const colorMapper = isImage || !is3d ? (rgb => rgb.formatHex()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];

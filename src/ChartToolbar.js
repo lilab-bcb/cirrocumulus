@@ -25,7 +25,7 @@ const styles = theme => ({
 class ChartToolbar extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = {selection: ChartToolbar.MODE_LASSO};
+        this.state = {selection: ChartToolbar.MODE_BRUSH};
     }
 
     onLasso = (event) => {
@@ -43,14 +43,9 @@ class ChartToolbar extends React.PureComponent {
         this.props.onPan();
     };
 
-    onZoomIn = (event) => {
-        this.setState({selection: ChartToolbar.MODE_ZOOM_IN});
-        this.props.onZoomIn();
-    };
-
-    onZoomOut = (event) => {
-        this.setState({selection: ChartToolbar.MODE_ZOOM_OUT});
-        this.props.onZoomOut();
+    onZoom = (event) => {
+        this.setState({selection: ChartToolbar.MODE_ZOOM});
+        this.props.onZoom();
     };
 
 
@@ -61,7 +56,7 @@ class ChartToolbar extends React.PureComponent {
         return (<div className={this.props.classes.root} style={{position: 'absolute', top: 0, right: 0, height: 16}}>
             <Tooltip title={"Lasso"}>
                 <IconButton className={selection === ChartToolbar.MODE_LASSO ? active : inactive}
-                            aria-label="Lasso" onClick={this.onLasso}>
+                            aria-label="Lasso Select" onClick={this.onLasso}>
                     <svg width="16" height="16" viewBox="0 0 1031 1000">
                         <path
                             d="m1018 538c-36 207-290 336-568 286-277-48-473-256-436-463 10-57 36-108 76-151-13-66 11-137 68-183 34-28 75-41 114-42l-55-70 0 0c-2-1-3-2-4-3-10-14-8-34 5-45 14-11 34-8 45 4 1 1 2 3 2 5l0 0 113 140c16 11 31 24 45 40 4 3 6 7 8 11 48-3 100 0 151 9 278 48 473 255 436 462z m-624-379c-80 14-149 48-197 96 42 42 109 47 156 9 33-26 47-66 41-105z m-187-74c-19 16-33 37-39 60 50-32 109-55 174-68-42-25-95-24-135 8z m360 75c-34-7-69-9-102-8 8 62-16 128-68 170-73 59-175 54-244-5-9 20-16 40-20 61-28 159 121 317 333 354s407-60 434-217c28-159-121-318-333-355z"
@@ -69,14 +64,16 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>
-            {/*<IconButton className={selection === ChartToolbar.MODE_BRUSH ? active : inactive}*/}
-            {/*            aria-label="Brush" onClick={this.onBrush}>*/}
-            {/*    <svg viewBox="0 0 1000 1000" height="16" width="16">*/}
-            {/*        <path*/}
-            {/*            d="m0 850l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-285l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z"*/}
-            {/*            transform="matrix(1 0 0 -1 0 850)"></path>*/}
-            {/*    </svg>*/}
-            {/*</IconButton>*/}
+            <Tooltip title={"Brush"}>
+                <IconButton className={selection === ChartToolbar.MODE_BRUSH ? active : inactive}
+                            aria-label="Box Select" onClick={this.onBrush}>
+                    <svg viewBox="0 0 1000 1000" height="16" width="16">
+                        <path
+                            d="m0 850l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-285l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z"
+                            transform="matrix(1 0 0 -1 0 850)"></path>
+                    </svg>
+                </IconButton>
+            </Tooltip>
             <Tooltip title={"Pan"}>
                 <IconButton className={selection === ChartToolbar.MODE_PAN ? active : inactive}
                             aria-label="Pan" onClick={this.onPan}>
@@ -87,15 +84,16 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>
-            {/*<IconButton className={selection === ChartToolbar.MODE_ZOOM_IN ? active : inactive}*/}
-            {/*            aria-label="Zoom In" onClick={this.onZoomIn}>*/}
-            {/*    <svg viewBox="0 0 875 1000" height="16" width="16">*/}
-            {/*        <path*/}
-            {/*            d="m1 787l0-875 875 0 0 875-875 0z m687-500l-187 0 0-187-125 0 0 187-188 0 0 125 188 0 0 187 125 0 0-187 187 0 0-125z"*/}
-            {/*            transform="matrix(1 0 0 -1 0 850)"></path>*/}
-            {/*    </svg>*/}
-            {/*</IconButton>*/}
-
+            <Tooltip title={"Zoom"}>
+                <IconButton className={selection === ChartToolbar.MODE_ZOOM ? active : inactive}
+                            aria-label="Zoom" onClick={this.onZoom}>
+                    <svg viewBox="0 0 1000 1000" height="16" width="16">
+                        <path
+                            d="m1000-25l-250 251c40 63 63 138 63 218 0 224-182 406-407 406-224 0-406-182-406-406s183-406 407-406c80 0 155 22 218 62l250-250 125 125z m-812 250l0 438 437 0 0-438-437 0z m62 375l313 0 0-312-313 0 0 312z"
+                            transform="matrix(1 0 0 -1 0 850)"></path>
+                    </svg>
+                </IconButton>
+            </Tooltip>
             {/*<IconButton className={selection === ChartToolbar.MODE_ZOOM_OUT ? active : inactive}*/}
             {/*            aria-label="Zoom Out" onClick={this.onZoomOut}>*/}
             {/*    <svg viewBox="0 0 875 1000" height="16" width="16">*/}
@@ -131,7 +129,7 @@ class ChartToolbar extends React.PureComponent {
 ChartToolbar.MODE_LASSO = 0;
 ChartToolbar.MODE_BRUSH = 1;
 ChartToolbar.MODE_PAN = 2;
-ChartToolbar.MODE_ZOOM_IN = 3;
-ChartToolbar.MODE_ZOOM_OUT = 4;
+ChartToolbar.MODE_ZOOM = 3;
+
 
 export default withStyles(styles)(ChartToolbar);
