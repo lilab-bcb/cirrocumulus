@@ -199,6 +199,34 @@ class AutocompleteSelect extends React.Component {
         }
     };
 
+    onPaste = (event) => {
+        let text = event.clipboardData.getData('text/plain');
+        if (text != null && text.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            let tokens = text.split(/[\n,]/);
+            let results = [];
+            tokens.forEach(token => {
+                token = token.toLowerCase().trim().replace(/"/g, '');
+                if (token !== '') {
+                    let found = false;
+                    for (let i = 0, ngroups = this.props.options.length; i < ngroups && !found; i++) {
+                        let option = this.props.options[i];
+                        for (let j = 0, n = option.options.length; j < n; j++) {
+                            let choice = option.options[j];
+                            if (choice.value.toLowerCase() == token) {
+                                results.push(choice.value);
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+
+            this.props.onChange(results);
+        }
+    };
+
     filterOptions = (inputValue) => {
         if (inputValue) {
             inputValue = inputValue.toLowerCase();
@@ -207,7 +235,7 @@ class AutocompleteSelect extends React.Component {
             let results = [];
             for (let i = 0, ngroups = this.props.options.length; i < ngroups; i++) {
                 let option = this.props.options[i];
-                let filteredOption = {label: option.label, options: []}
+                let filteredOption = {label: option.label, options: []};
                 results.push(filteredOption);
                 for (let j = 0, n = option.options.length; j < n; j++) {
                     let choice = option.options[j];
@@ -239,7 +267,7 @@ class AutocompleteSelect extends React.Component {
         };
 
         return (
-            <div className={classes.root}>
+            <div className={classes.root} onPaste={this.onPaste}>
                 <NoSsr>
                     <AsyncSelect
                         noOptionsMessage={this.noOptionsMessage}
