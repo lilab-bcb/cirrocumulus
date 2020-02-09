@@ -18,6 +18,10 @@ class FileSystem:
         self.scheme_to_fs[pr.scheme] = fs
         return fs
 
+    def get_mapper(self, path):
+        fs = self.get_fs(path)
+        return fs.get_mapper(path)
+
     def open(self, path, mode='rb'):
         fs = self.get_fs(path)
         return fs.open(path, mode)
