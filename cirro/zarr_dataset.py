@@ -93,7 +93,7 @@ class ZarrDataset(AbstractDataset):
             obs_g = store['obs']
             for key in obs_keys:
                 dataset = obs_g[key]
-                if isinstance(dataset.attrs["categories"], str):
+                if isinstance(dataset.attrs.get("categories", None), str):
                     categories_dset = categories[key]
                     categories = categories_dset[...]
                     ordered = categories_dset.attrs.get("ordered", False)
