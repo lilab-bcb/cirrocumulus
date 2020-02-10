@@ -34,7 +34,6 @@ import {
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
-    SET_SAVED_DATASET_FILTER,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -87,17 +86,6 @@ function featuresUI(state = [], action) {
     }
 }
 
-// Currently loaded dataset filter, used for filter editing.
-// Object containing  ds_id, name, notes
-// Once created, only name and notes are editable, not the filter values
-function savedDatasetFilter(state = null, action) {
-    switch (action.type) {
-        case SET_SAVED_DATASET_FILTER:
-            return action.payload;
-        default:
-            return state;
-    }
-}
 
 function groupBy(state = [], action) {
     switch (action.type) {
@@ -502,9 +490,11 @@ function updateChartColorScale(traceInfo) {
     let colorScale = traceInfo.colorScale;
     traceInfo.data.forEach(trace => {
         let colors = [];
+        const colorMapper = trace.type === 'scatter3d' ? (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]) : (rgb => rgb.formatHex());
         for (let i = 0, n = trace.values.length; i < n; i++) {
             let rgb = color(colorScale(trace.values[i]));
-            colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+            colors.push(colorMapper(rgb));
+            // colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
         }
         trace.marker.color = colors;
     });
@@ -659,7 +649,7 @@ function embeddingData(state = [], action) {
             return state.slice();
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
-            let rgbScale = getRgbScale();
+
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous) {
                     let domain = traceInfo.colorScale.domain();
@@ -744,7 +734,6 @@ export default combineReducers({
     numberOfBinsUI,
     message,
     plotConfig,
-    savedDatasetFilter,
     selection,
     serverInfo,
     unselectedMarkerOpacity,

@@ -1,3 +1,4 @@
+import {Tooltip} from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -5,6 +6,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
@@ -13,8 +15,7 @@ class CategoricalLegend extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {contextmenuEl: null, anchorEl: null, color: null, colorValue: null};
-
+        this.state = {contextmenuEl: null, anchorEl: null, color: null, colorValue: null, forceUpdate: false};
     }
 
 
@@ -29,6 +30,7 @@ class CategoricalLegend extends React.PureComponent {
 
     handleColorChangeApply = (e) => {
         this.props.handleColorChange({name: this.props.name, value: this.state.colorValue, color: this.state.color});
+        this.setState({forceUpdate: !this.state.forceUpdate});
     };
 
     handleEditColor = (e) => {
@@ -157,11 +159,10 @@ class CategoricalLegend extends React.PureComponent {
                         const count = globalDimensionSummary.counts[i];
                         const selectedCount = selectedDimensionToCount[category] || 0;
                         const fractionSelected = selectionSummary == null ? 0 : selectedCount / nObsSelected;
-                        const selectedSize = fractionScale(fractionSelected);
-
-                        const globalSize = fractionScale(count / nObs);
-                        const globalTitle = intFormat(count) + ' / ' + nObs + (' (' + numberFormat(100 * count / nObs) + '%)');
-                        const selectionTitle = selectionSummary == null ? null : intFormat(selectedCount) + ' / ' + intFormat(nObsSelected) + (selectedCount > 0 ? (' (' + numberFormat(100 * fractionSelected) + '%)') : '');
+                        // const selectedSize = fractionScale(fractionSelected);
+                        // const globalSize = fractionScale(count / nObs);
+                        const globalTitle = numberFormat(100 * count / nObs) + '%';
+                        const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
                             onContextMenu={(e) => this.handleContextmenu(category, i, e)}
@@ -185,46 +186,52 @@ class CategoricalLegend extends React.PureComponent {
                             </td>
 
                             <td>
-                                <div
-                                    title={globalTitle}
-                                    style={{
-                                        display: 'inline-block',
-                                        position: 'relative',
-                                        width: maxSize,
-                                        border: '1px solid black',
-                                        height: 9
-                                    }}>
+                                <Tooltip title={globalTitle}>
+                                    <div>{intFormat(count)}</div>
+                                </Tooltip>
+                                {/*<div*/}
+                                {/*    title={globalTitle}*/}
+                                {/*    style={{*/}
+                                {/*        display: 'inline-block',*/}
+                                {/*        position: 'relative',*/}
+                                {/*        width: maxSize,*/}
+                                {/*        border: '1px solid black',*/}
+                                {/*        height: 9*/}
+                                {/*    }}>*/}
 
-                                    <div style={{
-                                        position: 'absolute',
-                                        width: globalSize,
-                                        left: 0,
-                                        top: 0,
-                                        backgroundColor: 'LightGrey',
-                                        height: 9
-                                    }}/>
-                                </div>
+                                {/*    <div style={{*/}
+                                {/*        position: 'absolute',*/}
+                                {/*        width: globalSize,*/}
+                                {/*        left: 0,*/}
+                                {/*        top: 0,*/}
+                                {/*        backgroundColor: 'LightGrey',*/}
+                                {/*        height: 9*/}
+                                {/*    }}/>*/}
+                                {/*</div>*/}
                             </td>
                             {selectionSummary && <td>
-                                <div
-                                    title={selectionTitle}
-                                    style={{
-                                        display: 'inline-block',
-                                        position: 'relative',
-                                        width: maxSize,
-                                        border: '1px solid black',
-                                        height: 9
-                                    }}>
+                                <Tooltip title={selectionTitle}>
+                                    <div>{intFormat(selectedCount)}</div>
+                                </Tooltip>
+                                {/*<div*/}
+                                {/*    title={selectionTitle}*/}
+                                {/*    style={{*/}
+                                {/*        display: 'inline-block',*/}
+                                {/*        position: 'relative',*/}
+                                {/*        width: maxSize,*/}
+                                {/*        border: '1px solid black',*/}
+                                {/*        height: 9*/}
+                                {/*    }}>*/}
 
-                                    <div style={{
-                                        position: 'absolute',
-                                        width: selectedSize,
-                                        left: 0,
-                                        top: 0,
-                                        backgroundColor: 'LightGrey',
-                                        height: 9
-                                    }}/>
-                                </div>
+                                {/*    <div style={{*/}
+                                {/*        position: 'absolute',*/}
+                                {/*        width: selectedSize,*/}
+                                {/*        left: 0,*/}
+                                {/*        top: 0,*/}
+                                {/*        backgroundColor: 'LightGrey',*/}
+                                {/*        height: 9*/}
+                                {/*    }}/>*/}
+                                {/*</div>*/}
                             </td>}
                         </tr>;
                     })

@@ -29,7 +29,7 @@ class AbstractDataset(ABC):
         pass
 
     def schema(self, file_system, path):
-        if path.endswith('.gzip'):
+        if path.endswith('.gz'):
             import gzip
             with gzip.open(file_system.open(path)) as s:
                 return json.load(s)

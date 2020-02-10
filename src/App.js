@@ -212,10 +212,19 @@ class App extends PureComponent {
         const {classes, serverInfo} = this.props;
         const isEdit = this.props.savedDatasetFilter != null;
         let datasetFilters = getDatasetFilterArray(this.props.datasetFilter);
-        const brushSelection = this.props.selection.count;
-        if (datasetFilters.length === 0 && brushSelection > 0) {
-            datasetFilters.push(['selection', brushSelection]);
+        let datasetFilterKeys = [];
+        let isBrushing = false;
+        datasetFilters.forEach(f => {
+            if (typeof f[0] === 'object') {
+                isBrushing = true;
+            } else {
+                datasetFilterKeys.push(f[0]);
+            }
+        });
+        if (isBrushing) {
+            datasetFilterKeys.push('selection');
         }
+
         const shape = this.props.dataset != null && this.props.dataset.shape != null ? this.props.dataset.shape : [0, 0];
         const hasSelection = this.props.dataset != null && shape[0] > 0 && !isNaN(this.props.selection.count);
         const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && shape[0] > 0 && (this.props.selection.count !== shape[0]);
@@ -263,15 +272,15 @@ class App extends PureComponent {
 
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
 
-                                {datasetFilters.map(f => {
+                                {datasetFilterKeys.map(key => {
                                     return <Chip
                                         size="small"
                                         onDelete={() => {
-                                            this.onDatasetFilterChipDeleted(f);
+                                            this.onDatasetFilterChipDeleted(key);
                                         }}
                                         style={{marginRight: 2}}
-                                        key={f[0]}
-                                        label={f[0]}
+                                        key={key}
+                                        label={key}
                                         variant={'outlined'}
                                     />;
                                 })}

@@ -26,7 +26,7 @@ class ParquetDataset(AbstractDataset):
 
     def schema(self, file_system, path):
         if path.endswith('.json') or path.endswith('.json.gz'):  # precomputed dataset
-            super().schema(file_system, path)
+            return super().schema(file_system, path)
         with file_system.open(path, 'rb') as s:
             parquet_file = pq.ParquetFile(s)
             schema = parquet_file.schema.to_arrow_schema()

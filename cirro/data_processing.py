@@ -17,45 +17,45 @@ def filter_adata(adata, data_filter):
             field = filter_obj[0]
             op = filter_obj[1]
             value = filter_obj[2]
-            if field in adata.obs:
-                X = adata.obs[field]
+            if isinstance(field, dict):
+                selected_points_basis = get_basis(field['basis'], field.get('nbins'),
+                    field.get('agg'), field.get('ndim', '2'), field.get('precomputed', False))
+                obs_field = selected_points_basis['full_name'] if selected_points_basis[
+                                                                      'nbins'] is not None else 'index'
+                points = value['selectedpoints']
+                if obs_field == 'index':
+                    keep = adata.obs.index.isin(points)
+                else:
+                    keep = adata.obs[obs_field].isin(points)
             else:
-                indices = SimpleData.get_var_indices(adata, [field])
-                X = adata.X[:, indices[0]]
-            if op == 'in':
-                keep = (X.isin(value)).values
-            elif op == '>':
-                keep = (X > value)
-            elif op == '=':
-                keep = (X == value)
-            elif op == '<':
-                keep = (X < value)
-            elif op == '!=':
-                keep = (X != value)
-            elif op == '>=':
-                keep = (X >= value)
-            elif op == '<=':
-                keep = (X <= value)
-            else:
-                raise ValueError('Unknown filter')
+                if field in adata.obs:
+                    X = adata.obs[field]
+                else:
+                    indices = SimpleData.get_var_indices(adata, [field])
+                    X = adata.X[:, indices[0]]
+                if op == 'in':
+                    keep = (X.isin(value)).values
+                elif op == '>':
+                    keep = (X > value)
+                elif op == '=':
+                    keep = (X == value)
+                elif op == '<':
+                    keep = (X < value)
+                elif op == '!=':
+                    keep = (X != value)
+                elif op == '>=':
+                    keep = (X >= value)
+                elif op == '<=':
+                    keep = (X <= value)
+                else:
+                    raise ValueError('Unknown filter')
 
             if scipy.sparse.issparse(keep):
                 keep = keep.toarray().flatten()
             if isinstance(keep, pd.Series):
                 keep = keep.values
             keep_expr = keep_expr & keep if keep_expr is not None else keep
-        selected_points = data_filter.get('selectedPoints')
-        if selected_points is not None:
-            selected_points_basis = get_basis(selected_points['basis'], selected_points.get('nbins'),
-                selected_points.get('agg'), selected_points.get('ndim', '2'), selected_points.get('precomputed', False))
-            field = selected_points_basis['full_name'] if selected_points_basis['nbins'] is not None else 'index'
-            if field == 'index':
-                keep = adata.obs.index.isin(selected_points.get('value'))
-            else:
-                keep = adata.obs[field].isin(selected_points.get('value'))
-            keep_expr = keep_expr & keep if keep_expr is not None else keep
-
-        adata = SimpleData.view(adata, keep_expr)
+        adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
     return adata
 
 
@@ -211,6 +211,26 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
     return result_df.to_csv()
 
 
+def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
+    selection_info = get_selected_data(dataset_api, dataset, embeddings=embeddings, measures=measures,
+        dimensions=dimensions, data_filter=data_filter)
+    basis_objs = selection_info['basis']
+    obs_measures = selection_info['obs_measures']
+    var_measures = selection_info['var_measures']
+    adata = selection_info['adata']
+
+    result = {}
+    if len(basis_objs) > 0:
+        result['coordinates'] = {}
+        for basis_obj in basis_objs:
+            result['coordinates'][basis_obj['full_name']] = UniqueAggregator(
+                basis_obj['full_name'] if basis_obj['nbins'] is not None else 'index').execute(adata)
+    if stats:
+        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
+    result['count'] = adata.shape[0]
+    return result
+
+
 def handle_selection_ids(dataset_api, dataset, data_filter):
     selection_info = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
     return {'ids': IdsAggregator().execute(selection_info['adata'])}
@@ -222,9 +242,8 @@ def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], da
     obs_keys_filter = []
     selected_points_filter_basis_list = []
     for data_filter in data_filters:
-        _var_keys_filter, _obs_keys_filter, selected_points_filter_basis = data_filter_keys(data_filter)
-        if selected_points_filter_basis is not None:
-            selected_points_filter_basis_list.append(selected_points_filter_basis)
+        _var_keys_filter, _obs_keys_filter, selected_points_filter_basis_list = data_filter_keys(data_filter)
+        selected_points_filter_basis_list += selected_points_filter_basis_list
         var_keys_filter += _var_keys_filter
         obs_keys_filter += _obs_keys_filter
     obs_keys = list(set(obs_measures + obs_keys_filter + dimensions))
@@ -260,46 +279,25 @@ def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensio
     return adata_info
 
 
-def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
-    result = {}
-    selection_info = get_selected_data(dataset_api, dataset, embeddings=embeddings, measures=measures,
-        dimensions=dimensions, data_filter=data_filter)
-    basis_objs = selection_info['basis']
-    obs_measures = selection_info['obs_measures']
-    var_measures = selection_info['var_measures']
-    adata = selection_info['adata']
-
-    if len(basis_objs) > 0:
-        result['selectionCoordinates'] = {}
-        for basis_obj in basis_objs:
-            result['selectionCoordinates'][basis_obj['full_name']] = UniqueAggregator(
-                basis_obj['full_name'] if basis_obj['nbins'] is not None else 'index').execute(
-                adata)
-    if stats:
-        result['selectionSummary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
-    result['count'] = adata.shape[0]
-    return result
-
-
 def data_filter_keys(data_filter):
     var_keys = set()
     obs_keys = set()
-    basis = None
+    basis_list = []
     if data_filter is not None:
         user_filters = data_filter.get('filters', [])
-        selected_points_filter = data_filter.get('selectedPoints')
-        if selected_points_filter is not None:
-            basis_name = selected_points_filter.get('basis')
-            basis = get_basis(basis_name, selected_points_filter.get('nbins'), selected_points_filter.get('agg'),
-                selected_points_filter.get('ndim', '2'), selected_points_filter.get('precomputed', False))
 
         for i in range(len(user_filters)):
             user_filter = user_filters[i]
             key = user_filter[0]
-            name, key_type = get_var_name_type(key)
-            user_filter[0] = name
-            if key_type == 'X':
-                var_keys.add(name)
+            if isinstance(key, dict):
+                basis = get_basis(key['basis'], key.get('nbins'), key.get('agg'),
+                    key.get('ndim', '2'), key.get('precomputed', False))
+                basis_list.append(basis)
             else:
-                obs_keys.add(name)
-    return list(var_keys), list(obs_keys), basis
+                name, key_type = get_var_name_type(key)
+                user_filter[0] = name
+                if key_type == 'X':
+                    var_keys.add(name)
+                else:
+                    obs_keys.add(name)
+    return list(var_keys), list(obs_keys), basis_list

@@ -186,13 +186,7 @@ export function login() {
 
 export function openDatasetFilter(filterId) {
     return function (dispatch, getState) {
-        const savedDatasetFilter = getState().savedDatasetFilter;
-        if (savedDatasetFilter != null && filterId === savedDatasetFilter.id) { // toggle
-            dispatch(setSavedDatasetFilter(null));
-            dispatch(setDatasetFilter({}));
-            dispatch(handleFilterUpdated());
-            return;
-        }
+
         dispatch(_setLoading(true));
 
         fetch(API + '/filter?id=' + filterId,
@@ -201,35 +195,24 @@ export function openDatasetFilter(filterId) {
             }).then(response => response.json())
             .then(result => {
                 result.id = filterId;
-                dispatch(setSavedDatasetFilter({id: filterId, name: result.name, notes: result.notes}));
                 let filterValue = JSON.parse(result.value);
                 let datasetFilter = {};
-                if (filterValue.selectedPoints) { // brush
-                    dispatch(setDatasetFilter({}));
-                    let embeddings = getState().embeddings;
-                    let embeddingKey = filterValue.selectedPoints.basis + '_' + filterValue.selectedPoints.ndim;
-                    if (filterValue.selectedPoints.nbins) {
-                        embeddingKey += '_' + filterValue.selectedPoints.nbins + '_' + filterValue.selectedPoints.agg;
+
+                filterValue.filters.forEach(item => {
+                    let filterOperation = item[1];
+                    let field = item[0];
+                    let slashIndex = field.indexOf('/');
+                    if (slashIndex !== -1) {
+                        field = field.substring(slashIndex + 1);
                     }
-                    let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingKey)];
-                    dispatch(handleFilterUpdated(filterValue.selectedPoints.value, embedding));
-                } else {
-                    filterValue.filters.forEach(item => {
-                        let filterOperation = item[1];
-                        let field = item[0];
-                        let slashIndex = field.indexOf('/');
-                        if (slashIndex !== -1) {
-                            field = field.substring(slashIndex + 1);
-                        }
-                        if (filterOperation === 'in') {
-                            datasetFilter[field] = item[2];
-                        } else {
-                            datasetFilter[field] = {operation: item[1], value: item[2]};
-                        }
-                    });
-                    dispatch(setDatasetFilter(datasetFilter));
-                    dispatch(handleFilterUpdated());
-                }
+                    if (filterOperation === 'in') {
+                        datasetFilter[field] = item[2];
+                    } else {
+                        datasetFilter[field] = {operation: item[1], value: item[2]};
+                    }
+                });
+                dispatch(setDatasetFilter(datasetFilter));
+                dispatch(handleFilterUpdated());
 
 
             }).finally(() => {
@@ -260,10 +243,7 @@ export function deleteDatasetFilter(filterId) {
 
                 dispatch(setDatasetFilters(datasetFilters.slice()));
                 dispatch(setMessage('Filter deleted'));
-                let savedDatasetFilter = getState().savedDatasetFilter;
-                if (savedDatasetFilter != null && savedDatasetFilter.id === filterId) {
-                    dispatch(setSavedDatasetFilter(null));
-                }
+
             }).finally(() => {
             dispatch(_setLoading(false));
             dispatch(setDialog(null));
@@ -277,15 +257,13 @@ export function saveDatasetFilter(payload) {
     return function (dispatch, getState) {
         const state = getState();
         let filterValue = getFilterJson(state, true);
-        let savedDatasetFilter = state.savedDatasetFilter;
-        let isEditFilter = savedDatasetFilter != null;
+
         let requestBody = {ds_id: state.dataset.id};
-        if (isEditFilter) {
-            requestBody.id = savedDatasetFilter.id;
+        if (payload.filterId != null) {
+            requestBody.id = payload.filterId;
         }
-        if (savedDatasetFilter == null) {
-            savedDatasetFilter = {};
-        }
+        let savedDatasetFilter = {};
+
         let sendRequest = false;
         if (payload.name !== savedDatasetFilter.name) {
             requestBody.name = payload.name;
@@ -306,18 +284,17 @@ export function saveDatasetFilter(payload) {
         for (let key in requestBody) {
             savedDatasetFilter[key] = requestBody[key];
         }
-
         dispatch(_setLoading(true));
         fetch(API + '/filter',
             {
                 body: JSON.stringify(requestBody),
-                method: isEditFilter ? 'PUT' : 'POST',
+                method: payload.filterId != null ? 'PUT' : 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(response => response.json())
             .then(result => {
                 requestBody.id = result.id;
                 let datasetFilters = getState().datasetFilters;
-                if (isEditFilter) {
+                if (payload.filterId != null) {
                     for (let i = 0; i < datasetFilters.length; i++) {
                         if (datasetFilters[i].id === result.id) {
                             datasetFilters[i] = requestBody;
@@ -329,7 +306,6 @@ export function saveDatasetFilter(payload) {
                 }
                 dispatch(setDatasetFilters(datasetFilters.slice()));
                 dispatch(setMessage('Filter saved'));
-                dispatch(setSavedDatasetFilter(Object.assign({}, savedDatasetFilter)));
             }).finally(() => {
             dispatch(_setLoading(false));
             dispatch(setDialog(null));
@@ -339,18 +315,22 @@ export function saveDatasetFilter(payload) {
     };
 }
 
-export function removeDatasetFilter(filter) {
+export function removeDatasetFilter(filterKey) {
     return function (dispatch, getState) {
-        if (filter == null) {
+        if (filterKey == null) {
             // clear all
             dispatch(setDatasetFilter({}));
-            dispatch(setSelection({chart: {}}));
-            dispatch(setSavedDatasetFilter(null));
-        } else if (filter[0] === 'selection') {
-            dispatch(setSelection({chart: {}}));
         } else {
             let datasetFilter = getState().datasetFilter;
-            delete datasetFilter[filter[0]];
+            if (filterKey === 'selection') {
+                for (let key in datasetFilter) {
+                    if (datasetFilter[key].basis != null) {
+                        delete datasetFilter[key];
+                    }
+                }
+            } else {
+                delete datasetFilter[filterKey];
+            }
             dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
         }
         dispatch(handleFilterUpdated());
@@ -360,10 +340,14 @@ export function removeDatasetFilter(filter) {
 export function getDatasetFilterArray(datasetFilter) {
     let filters = [];
     for (let key in datasetFilter) {
+        // basis, selectedpoints, path for brush filter
         const value = datasetFilter[key];
         let f = null;
+
         if (window.Array.isArray(value)) {
             f = [key, 'in', value];
+        } else if (value.basis != null) {
+            f = [getEmbeddingJson(value.basis), 'in', {selectedpoints: value.selectedpoints}];
         } else {
             if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
                 f = [key, value.operation, value.value];
@@ -378,29 +362,18 @@ export function getDatasetFilterArray(datasetFilter) {
 }
 
 
-function getFilterJson(state, returnSelection = false) {
+function getFilterJson(state) {
     let filters = getDatasetFilterArray(state.datasetFilter);
     if (filters.length > 0) {
         const obs = state.dataset.obs;
         const obsCat = state.dataset.obsCat;
         for (let i = 0; i < filters.length; i++) {
+            // add obs/ prefix
             if (obsCat.indexOf(filters[i][0]) !== -1 || obs.indexOf(filters[i][0]) !== -1) {
                 filters[i][0] = 'obs/' + filters[i][0];
             }
         }
         return {filters: filters};
-    } else if (returnSelection) {
-        if (state.selection.count > 0) {
-            let keys = Object.keys(state.selection.chart);
-            let embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(keys[0])];
-            let selection = state.selection.chart[keys[0]];
-            return {
-                selectedPoints: Object.assign({
-                    value: selection.points
-                }, getEmbeddingJson(embedding))
-            };
-
-        }
     }
 }
 
@@ -467,63 +440,13 @@ function setFeatureSummary(payload) {
     return {type: SET_FEATURE_SUMMARY, payload: payload};
 }
 
-function setSavedDatasetFilter(payload) {
-    return {type: SET_SAVED_DATASET_FILTER, payload: payload};
-}
 
-
-function updateChartSelection(selectionCoordinates, chartSelection, state) {
-    for (let key in selectionCoordinates) {
-        const selectedIndicesOrBins = selectionCoordinates[key].indices_or_bins;
-        const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
-        if (embedding == null) {
-            console.log(key + ' missing');
-        }
-        let selectedPoints = selectedIndicesOrBins;
-        if (embedding.bin) {
-            // find embedding data with matching layout
-            for (let i = 0; i < state.embeddingData.length; i++) {
-                const embedding = state.embeddingData[i].data[0].embedding;
-                let fullName = getEmbeddingKey(embedding);
-                if (fullName === key) {
-                    const traceBins = state.embeddingData[i].data[0].bins;
-                    if (traceBins != null) {
-                        selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
-                        break;
-                    }
-                }
-            }
-
-        }
-
-        chartSelection[key] = {
-            userPoints: selectedPoints,
-            points: selectedIndicesOrBins
-        };
-    }
-}
-
-/**
- *
- * @param selectedPoints Selected chart points if selection was updated or null.
- * @returns {Function}
- */
-function handleFilterUpdated(selectedPoints, embedding) {
+function handleFilterUpdated() {
     return function (dispatch, getState) {
-
         // whenever filter is updated, we need to get selection statistics
-        // if filter is not brush filter, we also need to get coordinates of selected cells
         const state = getState();
         const obs = state.dataset.obs;
-        let filter;
-        if (selectedPoints != null && selectedPoints.length > 0) {
-            filter = {
-                selectedPoints: Object.assign({value: selectedPoints}, getEmbeddingJson(embedding))
-            };
-
-        } else {
-            filter = getFilterJson(state);
-        }
+        let filter = getFilterJson(state);
 
         let json = {
             id: state.dataset.id,
@@ -555,11 +478,38 @@ function handleFilterUpdated(selectedPoints, embedding) {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(result => result.json()).then(result => {
-            const selectionCoordinates = result.selectionCoordinates;
+            const coordinates = result.coordinates;
             const count = result.count;
-            if (selectionCoordinates != null) {
+            if (coordinates != null) {
                 let chartSelection = {};
-                updateChartSelection(selectionCoordinates, chartSelection, state);
+                for (let key in coordinates) {
+                    const selectedIndicesOrBins = coordinates[key].indices_or_bins;
+                    const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
+                    if (embedding == null) {
+                        console.log(key + ' missing');
+                    }
+                    let selectedPoints = selectedIndicesOrBins;
+                    if (embedding.bin) {
+                        // find embedding data with matching layout
+                        for (let i = 0; i < state.embeddingData.length; i++) {
+                            const embedding = state.embeddingData[i].data[0].embedding;
+                            let fullName = getEmbeddingKey(embedding);
+                            if (fullName === key) {
+                                const traceBins = state.embeddingData[i].data[0].bins;
+                                if (traceBins != null) {
+                                    selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+
+                    chartSelection[key] = {
+                        userPoints: selectedPoints,
+                        points: selectedIndicesOrBins
+                    };
+                }
                 dispatch(setSelection({
                     count: count,
                     chart: chartSelection
@@ -568,10 +518,29 @@ function handleFilterUpdated(selectedPoints, embedding) {
                 dispatch(setSelection({chart: {}}));
             }
             // userPoints are in chart space, points are in server space, count is total number of cells selected
-            dispatch(setFeatureSummary(result.selectionSummary));
+            dispatch(setFeatureSummary(result.summary));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
+    };
+}
+
+export function handleBrushFilterUpdated(payload) {
+    return function (dispatch, getState) {
+        const name = payload.name; // full basis name
+        const value = payload.value;
+        let datasetFilter = getState().datasetFilter;
+        // value has basis, selectedpoints, path
+        if (value.selectedpoints == null) {
+            delete datasetFilter[name];
+        } else {
+            // const points = value.points;
+            // const basis = value.basis;
+            // const path = value.path;
+            datasetFilter[name] = value;
+        }
+        dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
+        dispatch(handleFilterUpdated());
     };
 }
 
@@ -673,28 +642,11 @@ export function handleDimensionFilterUpdated(payload) {
                 selectedValues.push(value);
             }
         }
-        dispatch(setSelection({chart: {}}));
         dispatch(setDatasetFilter(datasetFilter));
         dispatch(handleFilterUpdated());
     };
 }
 
-export function handleSelectedPoints(payload) {
-    return function (dispatch, getState) {
-        let isEmpty = payload == null || payload.points.length === 0;
-        let selectedpoints = isEmpty ? [] : payload.points[0].data.selectedpoints;
-        if (!isEmpty && payload.points[0].data.bins != null) {
-            selectedpoints = PlotUtil.convertPointsToBins(selectedpoints, payload.points[0].data.bins);
-        }
-        dispatch(setDatasetFilter({}));
-        if (isEmpty) {
-            dispatch(handleFilterUpdated());
-        } else {
-            dispatch(handleFilterUpdated(selectedpoints, payload.points[0].data.embedding));
-        }
-
-    };
-}
 
 export function restoreView(payload) {
     return {type: RESTORE_VIEW, payload: payload};
@@ -1450,9 +1402,9 @@ function _updateCharts(sliceOptions, onError) {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
                 }).then(r => r.json()).then(result => {
-                if (result.selectionSummary) {
+                if (result.summary) {
                     // merge selection
-                    let selectionSummary = Object.assign(getState().featureSummary, result.selectionSummary);
+                    let selectionSummary = Object.assign(getState().featureSummary, result.summary);
                     dispatch(setFeatureSummary(selectionSummary));
                 }
                 // dispatch(setSelection({

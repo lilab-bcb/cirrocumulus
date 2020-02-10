@@ -3,6 +3,7 @@ import {clientPoint} from 'd3-selection';
 import {saveAs} from 'file-saver';
 import {throttle} from 'lodash';
 import React from 'react';
+import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {numberFormat} from './formatters';
 import {arrayToSvgPath, isPointInside} from './PlotUtil';
@@ -142,6 +143,20 @@ class Scatter2d extends React.PureComponent {
             let point = {x: 0, y: 0};
             let hitTest = this.interactionMode === ChartToolbar.MODE_LASSO ? isPointInside : isPointInsideRect;
             let path = this.interactionMode === ChartToolbar.MODE_LASSO ? this.lassoPathArray : this.rect;
+            let userPath;
+            if (this.interactionMode === ChartToolbar.MODE_LASSO) {
+                userPath = this.lassoPathArray.map(item => {
+                    return {x: this.xToPixScale.invert(item.x), y: this.yToPixScale.invert(item.y)};
+                });
+                userPath = arrayToSvgPath(userPath);
+            } else {
+                userPath = {
+                    x: this.xToPixScale.invert(this.rect.x),
+                    y: this.yToPixScale.invert(this.rect.y),
+                    width: this.xToPixScale.invert(this.rect.width) - this.xToPixScale.invert(0),
+                    height: this.yToPixScale.invert(this.rect.height) - this.yToPixScale.invert(0)
+                };
+            }
             for (let i = 0, n = trace.x.length; i < n; i++) {
                 let x = this.xToPixScale(trace.x[i]); // includes translate
                 let y = this.yToPixScale(trace.y[i]);
@@ -156,9 +171,13 @@ class Scatter2d extends React.PureComponent {
             }
             trace.selectedpoints = selectedpoints;
             if (selectedpoints == null) {
-                this.props.onDeselect();
+                this.props.onDeselect({name: getEmbeddingKey(trace.embedding)});
             } else {
-                this.props.onSelected({points: [{data: this.props.data[0]}]});
+
+                this.props.onSelected({
+                    name: getEmbeddingKey(trace.embedding),
+                    value: {basis: trace.embedding, selectedpoints: selectedpoints, path: userPath}
+                });
             }
             this.lassoPathArray = [];
             this.lassoRef.current.setAttribute('d', '');
@@ -254,7 +273,6 @@ class Scatter2d extends React.PureComponent {
 
 
     redraw() {
-        let start = new Date().getTime();
         //let quadTree = d3.geom.quadtree(data);
         let backingScale = this.backingScale;
         let node = this.chartRef.current;
@@ -266,7 +284,6 @@ class Scatter2d extends React.PureComponent {
             .clearRect(0, 0, width * backingScale, height * backingScale);
         context.scale(backingScale, backingScale);
         this.drawContext(context);
-        console.log(new Date().getTime() - start);
     }
 
 
@@ -387,8 +404,10 @@ class Scatter2d extends React.PureComponent {
                 ></canvas>
                 <div style={{
                     color: 'white',
+                    fontFamily: 'Roboto Condensed, Helvetica, Arial, sans-serif',
+                    fontSize: 14,
                     position: 'absolute',
-                    background: 'rgba(0,0,0,0.5)'
+                    background: 'rgba(97,97,97,0.7)'
                 }}
                      ref={this.tooltipRef}></div>
                 <svg style={{width: width, height: height, position: 'absolute'}}

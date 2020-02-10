@@ -5,10 +5,10 @@ import React from 'react';
 
 import {connect} from 'react-redux';
 import {
+    handleBrushFilterUpdated,
     handleColorChange,
     handleDimensionFilterUpdated,
-    handleMeasureFilterUpdated,
-    handleSelectedPoints
+    handleMeasureFilterUpdated
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
@@ -201,10 +201,10 @@ const mapDispatchToProps = dispatch => {
             dispatch(handleMeasureFilterUpdated(e));
         },
         onSelect: (e) => {
-            dispatch(handleSelectedPoints(e));
+            dispatch(handleBrushFilterUpdated(e));
         },
-        onDeselect: () => {
-            dispatch(handleSelectedPoints(null));
+        onDeselect: (e) => {
+            dispatch(handleBrushFilterUpdated(e));
         }
     };
 };
