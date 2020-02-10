@@ -31,13 +31,17 @@ def main(argsv):
     import os
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
-    database_api.provider = LocalDbAPI(args.dataset)
+    database_api.provider = LocalDbAPI(os.path.normpath(args.dataset))
 
     try:
         from cirro.parquet_dataset import ParquetDataset
-        pq = ParquetDataset()
-        dataset_api.add(pq)
-        dataset_api.default_provider = pq
+        dataset_api.add(ParquetDataset())
+    except ModuleNotFoundError:
+        pass
+
+    try:
+        from cirro.zarr_dataset import ZarrDataset
+        dataset_api.add(ZarrDataset())
     except ModuleNotFoundError:
         pass
 
