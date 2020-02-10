@@ -97,7 +97,7 @@ class EmbeddingChart extends React.PureComponent {
 
 
     render() {
-        const {traceInfo, config, nObs, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
+        const {traceInfo, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
 
         return (
             <div style={this.props.style}>
@@ -148,13 +148,12 @@ class EmbeddingChart extends React.PureComponent {
                         width={140}
                         label={true}
                         height={30}
-
                         handleUpdate={handleMeasureFilterUpdated}
                         datasetFilter={datasetFilter}
                         scale={traceInfo.colorScale}
                         featureSummary={featureSummary}
                         globalFeatureSummary={globalFeatureSummary}
-                        nObs={nObs}
+                        nObs={shape[0]}
                         nObsSelected={nObsSelected}
                         maxHeight={traceInfo.layout.height}
                         name={traceInfo.name}
@@ -166,7 +165,7 @@ class EmbeddingChart extends React.PureComponent {
                                        scale={traceInfo.colorScale}
                                        maxHeight={traceInfo.layout.height - 24}
                                        clickEnabled={true}
-                                       nObs={nObs}
+                                       nObs={shape[0]}
                                        nObsSelected={nObsSelected}
                                        globalFeatureSummary={globalFeatureSummary}
                                        featureSummary={featureSummary}/>}
@@ -184,7 +183,7 @@ const mapStateToProps = state => {
         config: state.plotConfig,
         datasetFilter: state.datasetFilter,
         featureSummary: state.featureSummary,
-        nObs: state.dataset.nObs,
+        shape: state.dataset.shape,
         nObsSelected: state.selection.count,
         globalFeatureSummary: state.globalFeatureSummary
     };

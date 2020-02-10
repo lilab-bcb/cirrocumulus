@@ -50,7 +50,6 @@ class DotPlotAggregator:
 
             values = []
             dotplot_result = {'categories': group_names, 'name': dimension, 'values': values}
-            print(mean_output.shape)
             for i in range(mean_output.shape[1]):
                 name = var_measures[i]
                 values.append({'name': name,

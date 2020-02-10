@@ -1,9 +1,16 @@
 import json
+import os
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from cirro.abstract_dataset import AbstractDataset
+
+
+def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
+    os.makedirs(output_dir, exist_ok=True)
+    pq.write_table(pa.Table.from_pydict(d), output_dir + os.path.sep + name + '.parquet',
+        write_statistics=write_statistics, row_group_size=row_group_size)
 
 
 class ParquetDataset(AbstractDataset):
@@ -18,7 +25,7 @@ class ParquetDataset(AbstractDataset):
         return pq.read_table(file_system.open(path + '.parquet'), columns=columns).to_pandas()
 
     def schema(self, file_system, path):
-        if path.endswith('.json'):  # precomputed dataset
+        if path.endswith('.json') or path.endswith('.json.gz'):  # precomputed dataset
             super().schema(file_system, path)
         with file_system.open(path, 'rb') as s:
             parquet_file = pq.ParquetFile(s)

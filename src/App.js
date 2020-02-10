@@ -216,8 +216,9 @@ class App extends PureComponent {
         if (datasetFilters.length === 0 && brushSelection > 0) {
             datasetFilters.push(['selection', brushSelection]);
         }
-        const hasSelection = this.props.dataset != null && this.props.dataset.nObs > 0 && !isNaN(this.props.selection.count);
-        const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && this.props.dataset.nObs > 0 && (this.props.selection.count !== this.props.dataset.nObs);
+        const shape = this.props.dataset != null && this.props.dataset.shape != null ? this.props.dataset.shape : [0, 0];
+        const hasSelection = this.props.dataset != null && shape[0] > 0 && !isNaN(this.props.selection.count);
+        const showNumberOfCells = !hasSelection && this.props.dataset != null && !(this.props.selection.count > 0) && shape[0] > 0 && (this.props.selection.count !== shape[0]);
         return (
             <div className={classes.root}>
                 {(this.props.dialog === EDIT_DATASET_DIALOG || this.props.dialog === IMPORT_DATASET_DIALOG) &&
@@ -241,7 +242,8 @@ class App extends PureComponent {
                                     name: 'dataset',
                                     id: 'dataset-id',
                                 }}
-                            > {this.props.datasetChoices.length > 0 && <MenuItem key="" value="" disabled>
+                            > {this.props.datasetChoices.length > 0 && this.props.datasetChoices.length !== 1 &&
+                            <MenuItem key="" value="" disabled>
                                 Choose a dataset
                             </MenuItem>}
                                 {this.props.datasetChoices.map(dataset => <MenuItem
@@ -255,10 +257,8 @@ class App extends PureComponent {
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
                                 {hasSelection && (<Link title="Download selected ids" href="#"
                                                         onClick={this.handleSelectedCellsClick}>{intFormat(this.props.selection.count)}</Link>)}
-                                {hasSelection && ' / ' + intFormat(this.props.dataset.nObs) + ' cells'}
-                                {showNumberOfCells && intFormat(this.props.dataset.nObs) + ' cells'}
-
-
+                                {hasSelection && ' / ' + intFormat(shape[0]) + ' cells'}
+                                {showNumberOfCells && intFormat(shape[0]) + ' cells'}
                             </div>
 
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>

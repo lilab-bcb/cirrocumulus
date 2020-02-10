@@ -47,6 +47,7 @@ class ImageChart extends React.PureComponent {
         return title.join('<br/>');
     }
 
+
     drawSpots = (opts) => {
         let context = opts.context;
         let data = this.props.data;
@@ -203,7 +204,7 @@ class ImageChart extends React.PureComponent {
         lassoPath.setAttribute('stroke-dasharray', '2 2');
 
         svgOverlay.node().appendChild(lassoPath);
-
+        let pathOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {

@@ -73,7 +73,7 @@ class SimpleData:
         result['var'] = adata.var_names.values.tolist()
         result['obs'] = obs
         result['obsCat'] = obs_cat
-        result['nObs'] = adata.shape[0]
+        result['shape'] = adata.shape
         embeddings = []
         for key in adata.obsm_keys():
             if key.startswith('X_'):

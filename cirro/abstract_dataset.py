@@ -29,8 +29,13 @@ class AbstractDataset(ABC):
         pass
 
     def schema(self, file_system, path):
-        with file_system.open(path) as s:
-            return json.load(s)
+        if path.endswith('.gzip'):
+            import gzip
+            with gzip.open(file_system.open(path)) as s:
+                return json.load(s)
+        else:
+            with file_system.open(path) as s:
+                return json.load(s)
 
     @staticmethod
     def get_keys(keys, basis=None):
@@ -57,17 +62,24 @@ class AbstractDataset(ABC):
                     result_df[column] = df[column]
         return result_df
 
+    def get_dataset_attrs(self, file_system, path):
+        import gzip
+        with gzip.open(file_system.open(os.path.join(path, 'data', 'index.json.gz'))) as s:
+            return json.load(s)
+
     def read_data_sparse(self, file_system, path, obs_keys=[], var_keys=[], basis=[], dataset=None):
         # path is path to index.json
         # if path ends with /data then X is stored as index, value pairs
         # if basis, read index to get bins, x, and y
         path = os.path.dirname(path)
         data_path = os.path.join(path, 'data')
+        dataset_attrs = self.get_dataset_attrs(file_system, path)
+        shape = dataset_attrs['shape']
+
         data = []
         row = []
         col = []
         X = None
-        nobs = dataset['nObs']
 
         if len(var_keys) > 0:
             for i in range(len(var_keys)):
@@ -80,7 +92,7 @@ class AbstractDataset(ABC):
             data = np.concatenate(data)
             row = np.concatenate(row)
             col = np.concatenate(col)
-            X = scipy.sparse.csr_matrix((data, (row, col)), shape=(nobs, len(var_keys)))
+            X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
         obs = None
         dataset_id = dataset.id
         if self.cached_dataset_id != dataset_id:

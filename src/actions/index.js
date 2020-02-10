@@ -1104,6 +1104,9 @@ function setDatasetFilters(payload) {
 
 export function setDataset(id, loadDefaultView = true, setLoading = true) {
     return function (dispatch, getState) {
+        if (setLoading) {
+            dispatch(_setLoading(true));
+        }
         const datasetChoices = getState().datasetChoices;
         let choice = null;
         for (let i = 0; i < datasetChoices.length; i++) {
@@ -1113,6 +1116,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
         }
         if (choice == null) {
+            dispatch(_setLoading(false));
             dispatch(setMessage('Unable to find dataset'));
             return Promise.reject('Unable to find dataset');
         }
@@ -1126,9 +1130,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             obs: [],
             obsCat: []
         }));
-        if (setLoading) {
-            dispatch(_setLoading(true));
-        }
+
 
         const filtersPromise = fetch(API + '/filters?id=' + id,
             {
@@ -1141,6 +1143,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             return response.json();
         }).then(result => {
             let newDataset = result;
+
             if (newDataset.embeddings) {
                 for (let i = 0; i < newDataset.embeddings.length; i++) {
                     if (newDataset.embeddings[i].nbins != null) {

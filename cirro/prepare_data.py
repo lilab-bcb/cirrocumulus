@@ -11,10 +11,30 @@ from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
 from cirro.h5ad_dataset import H5ADDataset
-from cirro.io import write_table, save_adata
+from cirro.io import save_adata
+from cirro.parquet_dataset import write_pq
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
+
+
+def make_unique(index, join='-1'):
+    lower_index = index.str.lower()
+    if lower_index.is_unique:
+        return index
+    from collections import defaultdict
+
+    indices_dup = lower_index.duplicated(keep="first")
+    values_dup_lc = lower_index.values[indices_dup]
+    values_dup = index.values[indices_dup]
+    counter = defaultdict(lambda: 0)
+    for i, v in enumerate(values_dup_lc):
+        counter[v] += 1
+        values_dup[i] += join + str(counter[v])
+    values = index.values
+    values[indices_dup] = values_dup
+    index = pd.Index(values)
+    return index
 
 
 class PrepareData:
@@ -23,6 +43,11 @@ class PrepareData:
                  X_range=None, dimensions=None):
         self.input_path = input_path
         self.adata = anndata.read(input_path, backed=backed)
+        if not backed:
+            self.adata = self.adata[:, self.adata.X.sum(axis=0).A1 > 0]
+        index = make_unique(self.adata.var.index.append(pd.Index(self.adata.obs.columns)))
+        self.adata.var.index = index[0:len(self.adata.var.index)]
+        self.adata.obs.columns = index[len(self.adata.var.index):]
 
         logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
@@ -61,23 +86,26 @@ class PrepareData:
             else:
                 self.others.append(name)
 
+    def get_path(self, path):
+        return os.path.join(self.base_name, path)
+
     def execute(self):
         basis_list = self.basis_list
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
-        for basis_name in basis_list:
-            self.grid_embedding(basis_name, bin_agg_function, nbins)
-        save_adata(self.adata, os.path.join(self.base_name, 'data'), X_range=X_range)
         self.summary_stats()
         self.grouped_stats()
+        save_adata(self.adata, self.get_path('data'), X_range=X_range)
+        for basis_name in basis_list:
+            self.grid_embedding(basis_name, bin_agg_function, nbins)
         self.schema()
 
     def summary_stats(self):
         dimensions = self.dimensions
         measures = self.measures
-        dimension_output_directory = os.path.join(self.base_name, 'counts')
-        measure_output_directory = os.path.join(self.base_name, 'statistics')
+        dimension_output_directory = self.get_path('counts')
+        measure_output_directory = self.get_path('statistics')
         dataset_api = self.dataset_api
         input_dataset = self.input_dataset
         X_range = self.X_range
@@ -88,16 +116,18 @@ class PrepareData:
                 measures=measures, dimensions=dimensions)
             summary = process_results['summary']
             for column in summary:
+
                 dimension_or_measure_summary = summary[column]
                 if 'categories' in dimension_or_measure_summary:
-                    write_table(dict(index=dimension_or_measure_summary['categories'],
+                    write_pq(dict(index=dimension_or_measure_summary['categories'],
                         value=dimension_or_measure_summary['counts']),
-                        dimension_output_directory, column, write_statistics=False)
+                        dimension_output_directory, column)
                 else:
-                    write_table(
+
+                    write_pq(
                         dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
                             sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
-                        measure_output_directory, column, write_statistics=False)
+                        measure_output_directory, column)
 
         logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
@@ -105,12 +135,12 @@ class PrepareData:
         summary = process_results['summary']
         for column in summary:
             measure_summary = summary[column]
-            write_table(dict(min=[measure_summary['min']],
+            write_pq(dict(min=[measure_summary['min']],
                 max=[measure_summary['max']],
                 sum=[measure_summary['sum']],
                 numExpressed=[measure_summary['numExpressed']],
                 mean=[measure_summary['mean']]),
-                measure_output_directory, column, write_statistics=False)
+                measure_output_directory, column)
 
 
     # stats, grouped by categories in adata.obs for dot plot
@@ -127,11 +157,11 @@ class PrepareData:
         dotplot_results = process_results['dotplot']
 
         for dotplot_result in dotplot_results:
-            output_directory = os.path.join(self.base_name, 'grouped_statistics', dotplot_result['name'])
-            write_table(dict(index=dotplot_result['categories']), output_directory, 'index')
+            output_directory = self.get_path('grouped_statistics/' + dotplot_result['name'])
+            write_pq(dict(index=dotplot_result['categories']), output_directory, 'index')
             values = dotplot_result['values']
             for value in values:
-                write_table(dict(mean=value['mean'],
+                write_pq(dict(mean=value['mean'],
                     fractionExpressed=value['fractionExpressed']),
                     output_directory, value['name'])
 
@@ -146,7 +176,8 @@ class PrepareData:
         adata = self.adata
         X_range = self.X_range
         full_basis_name = basis['full_name']
-        output_directory = os.path.join(self.base_name, 'obsm_summary', full_basis_name)
+        output_directory = self.get_path('obsm_summary/' + full_basis_name)
+
         # write cell level bin to /data
         if X_range[0] == 0:
             df_with_coords = pd.DataFrame()
@@ -156,7 +187,7 @@ class PrepareData:
             EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
                 bin_name=full_basis_name)
             dict_with_coords = df_with_coords.to_dict(orient='list')
-            write_table(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
+            write_pq(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
             if nbins <= 0:
                 return
             # write bins and coordinates to obsm_summary/name
@@ -166,20 +197,20 @@ class PrepareData:
             bin_dict = dict(index=result['bins'])
             for column in result['coordinates']:
                 bin_dict[column] = result['coordinates'][column]
-            write_table(bin_dict, output_directory, 'index')
+            write_pq(bin_dict, output_directory, 'index')
 
             for column in result['values']:
                 vals = result['values'][column]
                 if not isinstance(vals, dict):
                     vals = dict(value=vals)
-                write_table(vals, output_directory, column)
+                write_pq(vals, output_directory, column)
             logger.info('{} embedding finished writing obs'.format(basis_name))
         # write X to obsm_summary/name
         logger.info('{} embedding X {}-{}'.format(basis_name, X_range[0], X_range[1]))
         result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
         for column in result['values']:
-            write_table(dict(value=result['values'][column]), output_directory, column)
+            write_pq(dict(value=result['values'][column]), output_directory, column)
 
     def schema(self):
         basis_list = self.basis_list

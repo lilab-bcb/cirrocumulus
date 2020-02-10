@@ -38,6 +38,11 @@ class EmbeddingCharts extends React.PureComponent {
 
         // let gridWidth = window.screen.availWidth - 280;
         // let gridHeight = window.screen.availHeight - 190;
+        //
+        // let columnWidth = itemSize + 300;
+        //
+        // // can't render more than 8 charts due to webgl context
+        // gridHeight = itemSize * 2;
         // let elements = [];
         // let row;
         //
@@ -63,19 +68,18 @@ class EmbeddingCharts extends React.PureComponent {
         //
         //     let row = elements[rowIndex];
         //     let item = row[columnIndex];
-        //     if (!item) {
+        //     if (!item || !isVisible || isScrolling) {
         //         return <div style={style} key={key}/>;
         //     }
         //     return (
-        //         <EmbeddingChart style={style} traceInfo={item}
-        //                         key={key}/>
+        //         <EmbeddingChart style={style} traceInfo={item} key={key}/>
         //     );
         // }
         //
-        // // can't render more than 6 charts due to webgl context
+        //
         // return <Grid
         //     cellRenderer={cellRenderer}
-        //     columnWidth={itemSize + 300}
+        //     columnWidth={columnWidth}
         //     columnCount={embeddingChartSize}
         //     useDynamicRowHeight={false}
         //     height={gridHeight}
