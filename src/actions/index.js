@@ -428,14 +428,14 @@ export function downloadSelectedIds() {
 export function exportDatasetFilters() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        fetch(API + '/export_filters?id=' + getState().dataset.id).then(result => {
+        fetch(API + '/export_filters?id=' + getState().dataset.id, {
+            headers: {'Authorization': 'Bearer ' + getIdToken()},
+        }).then(result => {
             if (!result.ok) {
                 handleError(dispatch, 'Unable to export filters');
                 return;
             }
             return result.text();
-        }, {
-            headers: {'Authorization': 'Bearer ' + getIdToken()},
         }).then(result => {
             const blob = new Blob([result], {type: "text/plain;charset=utf-8"});
             saveAs(blob, "filters.csv");
