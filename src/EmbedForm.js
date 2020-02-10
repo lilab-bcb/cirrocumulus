@@ -272,7 +272,7 @@ class EmbedForm extends React.PureComponent {
                     </Select>
                 </FormControl>
 
-                <FormControl className={classes.formControl}>
+                <FormControl className={classes.formControl} style={{zIndex: 2000}}>
                     <AutocompleteSelect label="Features" options={allOptions}
                                         defaultOptions={defaultOptions} value={featureValue}
                                         onChange={this.props.handleFeatures}
