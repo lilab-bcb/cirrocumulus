@@ -15,7 +15,7 @@ app.register_blueprint(blueprint, url_prefix='/api')
 
 @app.route('/')
 def root():
-    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
+    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "cirro", "client")), "index.html")
 
 
 pq_ds = ParquetDataset()
@@ -26,5 +26,6 @@ database_api.provider = FirestoreDatastore()
 
 if __name__ == '__main__':  # for running locally
     from flask_cors import CORS
+
     CORS(app)
     app.run(host='127.0.0.1', port=5000, debug=True)
