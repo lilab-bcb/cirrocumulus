@@ -6,21 +6,24 @@ import scipy.sparse
 from cirro.simple_data import SimpleData
 
 
-class H5ADDataset:
+class AnndataDataset:
 
-    def __init__(self, backed='r', force_sparse=True):
+    def __init__(self, backed='r', force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
         self.path_to_data = {}
         self.backed = backed
         self.force_sparse = force_sparse
+        self.extensions = extensions
         # only works with local files
 
     def get_suffixes(self):
-        return ['h5ad', 'loom']
+        return self.extensions
 
     def read_adata(self, path):
         path_lc = path.lower()
         if path_lc.endswith('.loom'):
             return anndata.read_loom(path)
+        elif path_lc.endswith('.zarr'):
+            return anndata.read_zarr(path)
         return anndata.read(path, backed=self.backed)
         # elif path.endswith('.mtx'):
         #
@@ -45,12 +48,6 @@ class H5ADDataset:
     def schema(self, filesystem, path):
         return SimpleData.schema(self.get_data(path))
 
-    def statistics(self, file_system, path, keys, basis):
-        py_dict = self.get_py_dict(file_system, path, keys, basis)
-        key_to_stats = {}
-        for key in py_dict:
-            key_to_stats[key] = (py_dict[key].min(), py_dict[key].max())
-        return key_to_stats
 
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
         adata = self.get_data(path)

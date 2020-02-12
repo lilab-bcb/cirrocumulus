@@ -3,9 +3,10 @@ import os
 import anndata
 import pytest
 
+from cirro.anndata_dataset import AnndataDataset
 from cirro.dataset_api import DatasetAPI
 from cirro.entity import Entity
-from cirro.h5ad_dataset import H5ADDataset
+from cirro.zarr_dataset import ZarrDataset
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -29,6 +30,11 @@ def dimensions():
     return ['louvain']
 
 
+@pytest.fixture(scope='module', autouse=True)
+def continuous_obs():
+    return ['n_genes', 'percent_mito']
+
+
 @pytest.fixture(scope='module')
 def basis():
     return 'X_umap'
@@ -47,7 +53,8 @@ def h5_dataset_force_sparse(request):
 @pytest.fixture(scope='module', autouse=True)
 def dataset_api(h5_dataset_backed, h5_dataset_force_sparse):
     dataset_api = DatasetAPI()
-    dataset_api.add(H5ADDataset(backed=h5_dataset_backed, force_sparse=h5_dataset_force_sparse))
+    dataset_api.add(AnndataDataset(backed=h5_dataset_backed, force_sparse=h5_dataset_force_sparse, extensions=['h5ad']))
+    dataset_api.add(ZarrDataset())
     return dataset_api
 
 

@@ -20,13 +20,28 @@ def filter_adata(adata, data_filter):
             if isinstance(field, dict):
                 selected_points_basis = get_basis(field['basis'], field.get('nbins'),
                     field.get('agg'), field.get('ndim', '2'), field.get('precomputed', False))
-                obs_field = selected_points_basis['full_name'] if selected_points_basis[
-                                                                      'nbins'] is not None else 'index'
-                points = value['selectedpoints']
-                if obs_field == 'index':
-                    keep = adata.obs.index.isin(points)
+
+                p = value['path']
+                from matplotlib import path
+                if isinstance(p, dict):
+                    # rectangle
+                    p = path.Path([(p['x'], p['y']),
+                                   (p['x'], p['y'] + p['height']),
+                                   (p['x'] + p['width'], p['y'] + p['height']),
+                                   (p['x'] + p['width'], p['y'])])
                 else:
-                    keep = adata.obs[obs_field].isin(points)
+                    p = path.Path(p)
+                keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
+
+                # obs_field = selected_points_basis['full_name'] if selected_points_basis[
+                #                                                       'nbins'] is not None else 'index'
+                # points = value['selectedpoints']
+                # if obs_field == 'index':
+                #     test = adata.obs.index.isin(points)
+                # else:
+                #     test = adata.obs[obs_field].isin(points)
+                # print((test != keep).sum())
+
             else:
                 if field in adata.obs:
                     X = adata.obs[field]

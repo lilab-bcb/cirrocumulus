@@ -4,15 +4,17 @@ import logging
 import os
 
 import anndata
+import numpy as np
 import pandas as pd
+import zarr
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 import cirro.data_processing as data_processing
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
-from cirro.h5ad_dataset import H5ADDataset
-from cirro.io import save_adata
-from cirro.parquet_dataset import write_pq
+from cirro.anndata_dataset import AnndataDataset
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
@@ -37,6 +39,87 @@ def make_unique(index, join='-1'):
     return index
 
 
+def make_ordered(df, columns):
+    if columns is None:
+        columns = df.columns
+    for i in range(len(columns)):
+        name = columns[i]
+        c = df[name]
+        if pd.api.types.is_categorical_dtype(c) and not c.dtype.ordered:
+            df[name] = df[name].astype(CategoricalDtype(natsorted(df[name].dtype.categories), ordered=True))
+
+
+def write_obs_stats(store, results):
+    for column in results:
+        dimension_or_measure_summary = results[column]
+        if 'categories' in dimension_or_measure_summary:
+            store['stats/obs/' + column] = dimension_or_measure_summary['counts']
+            # write_pq(dict(index=dimension_or_measure_summary['categories'],
+            #     value=dimension_or_measure_summary['counts']),
+            #     dimension_output_directory, column)
+        else:
+            g = store.require_group('stats/obs/' + column)
+            for field in dimension_or_measure_summary:
+                g.attrs[field] = dimension_or_measure_summary[field]
+
+
+def write_X_stats(store, results):
+    for column in results:
+        measure_summary = results[column]
+        g = store.require_group('stats/X/' + column)
+        for field in measure_summary:
+            g.attrs[field] = measure_summary[field]
+
+
+def write_grouped_stats(store, adata, dotplot_results):
+    for dotplot_result in dotplot_results:
+        # output_directory = self.get_path('grouped_statistics/' + dotplot_result['name'])
+        # write_pq(dict(index=dotplot_result['categories']), output_directory, 'index')
+        categories = dotplot_result['categories']
+        shape = (len(categories), adata.shape[1])
+        category_name = dotplot_result['name']
+        g = store.require_group('grouped_stats/obs/' + category_name)
+        ds_mean = g.require_dataset('X_mean', shape=shape, chunks=(None, 1), dtype='f4')
+        ds_frac = g.require_dataset('X_fraction_expressed', shape=shape, chunks=(None, 1), dtype='f4')
+        values = dotplot_result['values']
+        for value in values:
+            var_field = value['name']
+            X_index = adata.var.index.get_indexer_for([var_field])[0]
+            ds_mean[:, X_index] = value['mean']
+            ds_frac[:, X_index] = value['fractionExpressed']
+
+
+def write_basis_X(coords_group, basis_group, adata, result):
+    shape = (coords_group['index'].shape[0], adata.shape[1])
+    X = basis_group.require_dataset('X', shape=shape, chunks=(None, 1), dtype='f4')
+    for column in result['values']:
+        X_index = adata.var.index.get_indexer_for([column])[0]
+        X[:, X_index] = result['values'][column]
+
+
+def write_basis_obs(basis, coords_group, obs_group, result):
+    coords_group['index'] = result['bins']
+    ndim = len(basis['coordinate_columns'])
+    nbins = len(result['bins'])
+
+    value_ds = coords_group.require_dataset('value', dtype='f4', shape=(nbins, ndim))
+
+    for i in range(len(basis['coordinate_columns'])):
+        coord_field = basis['coordinate_columns'][i]
+        value_ds[:, i] = np.array(result['coordinates'][coord_field])
+    # write_pq(bin_dict, output_directory, 'index')
+
+    for column in result['values']:
+        vals = result['values'][column]
+        if not isinstance(vals, dict):  # continuous field
+            obs_group[column] = vals
+        else:
+            g = obs_group.require_group(column)
+            g['purity'] = vals['purity']
+            g['mode'] = vals['value']
+        # write_pq(vals, output_directory, column)
+
+
 class PrepareData:
 
     def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output,
@@ -58,7 +141,7 @@ class PrepareData:
         self.nbins = nbins
         self.dataset_api = DatasetAPI()
         self.bin_agg_function = bin_agg_function
-        ds = H5ADDataset()
+        ds = AnndataDataset()
         ds.path_to_data[input_path] = self.adata
         self.dataset_api.add(ds)
 
@@ -85,6 +168,8 @@ class PrepareData:
                 self.measures.append('obs/' + name)
             else:
                 self.others.append(name)
+        make_ordered(self.adata.obs, self.dimensions)
+        self.store = zarr.open(self.base_name)
 
     def get_path(self, path):
         return os.path.join(self.base_name, path)
@@ -94,9 +179,14 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
+        if X_range[0] == 0:
+            import scipy.sparse
+            if scipy.sparse.issparse(self.adata.X) and scipy.sparse.isspmatrix_csr(self.adata.X):
+                self.adata.X = self.adata.X.tocsc()
+            self.adata.write_zarr(self.base_name, chunks=(None, 1))
         self.summary_stats()
         self.grouped_stats()
-        save_adata(self.adata, self.get_path('data'), X_range=X_range)
+
         for basis_name in basis_list:
             self.grid_embedding(basis_name, bin_agg_function, nbins)
         self.schema()
@@ -104,43 +194,32 @@ class PrepareData:
     def summary_stats(self):
         dimensions = self.dimensions
         measures = self.measures
-        dimension_output_directory = self.get_path('counts')
-        measure_output_directory = self.get_path('statistics')
         dataset_api = self.dataset_api
         input_dataset = self.input_dataset
         X_range = self.X_range
         adata = self.adata
-
+        store = self.store
         if X_range[0] == 0:
             process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
                 measures=measures, dimensions=dimensions)
-            summary = process_results['summary']
-            for column in summary:
-
-                dimension_or_measure_summary = summary[column]
-                if 'categories' in dimension_or_measure_summary:
-                    write_pq(dict(index=dimension_or_measure_summary['categories'],
-                        value=dimension_or_measure_summary['counts']),
-                        dimension_output_directory, column)
-                else:
-
-                    write_pq(
-                        dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
-                            sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
-                        measure_output_directory, column)
+            write_obs_stats(store, process_results)
+            # write_pq(
+            #     dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
+            #         sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
+            #     measure_output_directory, column)
 
         logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
-        summary = process_results['summary']
-        for column in summary:
-            measure_summary = summary[column]
-            write_pq(dict(min=[measure_summary['min']],
-                max=[measure_summary['max']],
-                sum=[measure_summary['sum']],
-                numExpressed=[measure_summary['numExpressed']],
-                mean=[measure_summary['mean']]),
-                measure_output_directory, column)
+        write_X_stats(store, process_results)
+
+
+        # write_pq(dict(min=[measure_summary['min']],
+        #     max=[measure_summary['max']],
+        #     sum=[measure_summary['sum']],
+        #     numExpressed=[measure_summary['numExpressed']],
+        #     mean=[measure_summary['mean']]),
+        #     measure_output_directory, column)
 
 
     # stats, grouped by categories in adata.obs for dot plot
@@ -150,22 +229,21 @@ class PrepareData:
         input_dataset = self.input_dataset
         adata = self.adata
         X_range = self.X_range
-
+        store = self.store
         logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions)
         dotplot_results = process_results['dotplot']
 
-        for dotplot_result in dotplot_results:
-            output_directory = self.get_path('grouped_statistics/' + dotplot_result['name'])
-            write_pq(dict(index=dotplot_result['categories']), output_directory, 'index')
-            values = dotplot_result['values']
-            for value in values:
-                write_pq(dict(mean=value['mean'],
-                    fractionExpressed=value['fractionExpressed']),
-                    output_directory, value['name'])
+        write_grouped_stats(store, adata, dotplot_results)
+        # for value in values:
+        # write_pq(dict(mean=value['mean'],
+        #     fractionExpressed=value['fractionExpressed']),
+        #     output_directory, value['name'])
 
     def grid_embedding(self, basis_name, summary, nbins):
+        if nbins <= 0:
+            return
         logger.info('{} embedding'.format(basis_name))
         basis = get_basis(basis_name, nbins, summary, 2, False)
 
@@ -176,9 +254,12 @@ class PrepareData:
         adata = self.adata
         X_range = self.X_range
         full_basis_name = basis['full_name']
-        output_directory = self.get_path('obsm_summary/' + full_basis_name)
 
-        # write cell level bin to /data
+        store = self.store
+        basis_group = store.require_group('obsm_summary/' + full_basis_name)
+        obs_group = basis_group.require_group('obs')
+        coords_group = basis_group.require_group('coords')
+
         if X_range[0] == 0:
             df_with_coords = pd.DataFrame()
             obsm = adata.obsm[basis_name]
@@ -186,31 +267,23 @@ class PrepareData:
                 df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
             EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
                 bin_name=full_basis_name)
-            dict_with_coords = df_with_coords.to_dict(orient='list')
-            write_pq(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
-            if nbins <= 0:
-                return
+            coords_group['full_index'] = df_with_coords[full_basis_name].values
+
+            # dict_with_coords = df_with_coords.to_dict(orient='list')
+            # write_pq(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
+
             # write bins and coordinates to obsm_summary/name
             result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
                 measures=measures + ['__count'], dimensions=dimensions)
-
-            bin_dict = dict(index=result['bins'])
-            for column in result['coordinates']:
-                bin_dict[column] = result['coordinates'][column]
-            write_pq(bin_dict, output_directory, 'index')
-
-            for column in result['values']:
-                vals = result['values'][column]
-                if not isinstance(vals, dict):
-                    vals = dict(value=vals)
-                write_pq(vals, output_directory, column)
+            # bin_dict = dict(index=result['bins'])
+            write_basis_obs(basis, coords_group, obs_group, result)
             logger.info('{} embedding finished writing obs'.format(basis_name))
         # write X to obsm_summary/name
         logger.info('{} embedding X {}-{}'.format(basis_name, X_range[0], X_range[1]))
         result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
-        for column in result['values']:
-            write_pq(dict(value=result['values'][column]), output_directory, column)
+        write_basis_X(coords_group, basis_group, adata, result)
+        # write_pq(dict(value=result['values'][column]), output_directory, column)
 
     def schema(self):
         basis_list = self.basis_list

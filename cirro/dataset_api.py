@@ -43,10 +43,20 @@ class DatasetAPI:
             value['summary'] = dataset['summary']
         return value
 
-    def statistics(self, dataset, keys, basis):
+    def read_precomputed_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
         provider = self.get_provider(path)
-        return provider.statistics(self.fs, path, keys, basis)
+        return provider.read_precomputed_stats(self.fs, path, obs_keys=obs_keys, var_keys=var_keys)
+
+    def read_precomputed_grouped_stats(self, dataset, obs_keys=[], var_keys=[]):
+        path = dataset['url']
+        provider = self.get_provider(path)
+        return provider.read_precomputed_grouped_stats(self.fs, path, obs_keys=obs_keys, var_keys=var_keys)
+
+    def read_precomputed_basis(self, dataset, obs_keys=[], var_keys=[], basis=None):
+        path = dataset['url']
+        provider = self.get_provider(path)
+        return provider.read_precomputed_basis(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, basis=basis)
 
     def read_summarized(self, dataset, obs_keys=[], var_keys=[], index=False, rename=False,
                         path=None):

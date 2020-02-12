@@ -5,7 +5,7 @@ from cirro.simple_data import SimpleData
 
 class FeatureAggregator:
 
-    def __init__(self, obs_measures, var_measures, dimensions):
+    def __init__(self, obs_measures=[], var_measures=[], dimensions=[]):
         self.obs_measures = obs_measures
         self.var_measures = var_measures
         self.dimensions = dimensions
