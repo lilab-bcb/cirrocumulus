@@ -4,7 +4,7 @@ from pytest import approx
 from cirro.data_processing import handle_stats
 from cirro.entity import Entity
 from cirro.feature_aggregator import FeatureAggregator
-from cirro.prepare_data import write_obs_stats, write_X_stats, make_ordered
+from cirro.prepare_data import make_ordered, write_X_stats, write_obs_stats
 
 
 def diff_measures(test_data, summary, fields, is_x):
@@ -80,7 +80,7 @@ def test_save_stats(tmp_path, dataset_api, test_data, measures, continuous_obs, 
 
     meta = {'name': tmp_path, 'url': url}
     input_dataset = Entity(url, meta)
-    result = dataset_api.read_precomputed_stats(input_dataset, obs_keys=dimensions, var_keys=measures)
+    result = dataset_api.read_precomputed_stats(input_dataset, obs_keys=dimensions + continuous_obs, var_keys=measures)
     diff_measures(test_data, result, measures, True)
     diff_measures(test_data, result, continuous_obs, False)
     diff_dimensions(test_data, result, dimensions)
