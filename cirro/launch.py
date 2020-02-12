@@ -25,7 +25,7 @@ def main(argsv):
     # CORS(app)
     Compress(app)
     from cirro.api import dataset_api
-    from cirro.h5ad_dataset import H5ADDataset
+    from cirro.anndata_dataset import AnndataDataset
     from cirro.local_db_api import LocalDbAPI
     from cirro.no_auth import NoAuth
     import os
@@ -33,19 +33,7 @@ def main(argsv):
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI(os.path.normpath(args.dataset))
 
-    try:
-        from cirro.parquet_dataset import ParquetDataset
-        dataset_api.add(ParquetDataset())
-    except ModuleNotFoundError:
-        pass
-
-    try:
-        from cirro.zarr_dataset import ZarrDataset
-        dataset_api.add(ZarrDataset())
-    except ModuleNotFoundError:
-        pass
-
-    dataset_api.add(H5ADDataset('r' if args.backed else None))
+    dataset_api.add(AnndataDataset('r' if args.backed else None))
 
     if not args.no_open:
         host = args.host if args.host is not None else '127.0.0.0'
