@@ -150,7 +150,7 @@ class ZarrDataset(AbstractDataset):
             data = group["data"]
             mtx = scipy.sparse.csc_matrix(shape, dtype=data.dtype)
             mtx.data = data
-            mtx.indices = indices = group["indices"]
+            mtx.indices = group["indices"]
             mtx.indptr = group["indptr"]
             X = mtx[:, indices]
         else:
