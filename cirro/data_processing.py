@@ -183,7 +183,7 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
 def handle_grouped_stats(dataset_api, dataset, measures=[], dimensions=[]):
     # all dot plot measures are in X
     result = {}
-    if dataset.get('precomputed', False):
+    if dataset_api.has_precomputed_stats(dataset):
         result['dotplot'] = precomputed_grouped_stats(dataset_api, dataset, measures, dimensions)
     else:
         adata = dataset_api.read(dataset=dataset, obs_keys=dimensions, var_keys=measures)
@@ -195,7 +195,7 @@ def handle_grouped_stats(dataset_api, dataset, measures=[], dimensions=[]):
 def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
     result = {}
     obs_measures, var_measures = split_measures(measures)
-    if dataset.get('precomputed', False):
+    if dataset_api.has_precomputed_stats(dataset):
         result['summary'] = precomputed_summary(dataset_api, dataset, obs_measures, var_measures,
             dimensions)
     else:

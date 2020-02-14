@@ -157,8 +157,10 @@ class ImageChart extends React.PureComponent {
         //     }
         // };
 
-        this.viewer.innerTracker.dragHandler = function (event) {
+
+        this.viewer.addHandler('canvas-drag', function (event) {
             if (selectionMode > -1 && viewer.world.getItemCount() > 0) {
+                event.preventDefaultAction = true;
                 if (selectionMode === 0) {
                     lassoPathArray = [];
                 }
@@ -169,7 +171,7 @@ class ImageChart extends React.PureComponent {
                 lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
                 selectionMode = 1;
             }
-        };
+        });
 
         this.viewer.innerTracker.clickHandler = function (event) {
             if (selectionMode > -1) {

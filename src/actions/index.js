@@ -347,7 +347,7 @@ export function getDatasetFilterArray(datasetFilter) {
         if (window.Array.isArray(value)) {
             f = [key, 'in', value];
         } else if (value.basis != null) {
-            f = [getEmbeddingJson(value.basis), 'in', {selectedpoints: value.selectedpoints}];
+            f = [getEmbeddingJson(value.basis), 'in', {path: value.path}];
         } else {
             if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
                 f = [key, value.operation, value.value];
@@ -443,6 +443,7 @@ function setFeatureSummary(payload) {
 
 function handleFilterUpdated() {
     return function (dispatch, getState) {
+        dispatch(_setLoading(true));
         // whenever filter is updated, we need to get selection statistics
         const state = getState();
         const obs = state.dataset.obs;
@@ -462,16 +463,21 @@ function handleFilterUpdated() {
         if (filter) {
             json.filter = filter;
         }
+
+        if (filter == null) {
+
+            // if (Object.keys(getState().featureSummary).length !== 0 && Object.keys(getState().chart).length !== 0) {
+            dispatch(setSelection({chart: {}}));
+            dispatch(setFeatureSummary({}));
+            //}
+            dispatch(_setLoading(false));
+            return;
+        }
         let selectedEmbeddings = state.embeddings;
         json.embeddings = selectedEmbeddings.map(e => {
             return getEmbeddingJson(e);
         });
 
-        if (filter == null) {
-            dispatch(setSelection({chart: {}}));
-            return dispatch(setFeatureSummary({}));
-        }
-        dispatch(_setLoading(true));
         fetch(API + '/selection',
             {
                 body: JSON.stringify(json),
@@ -530,8 +536,10 @@ export function handleBrushFilterUpdated(payload) {
         const name = payload.name; // full basis name
         const value = payload.value;
         let datasetFilter = getState().datasetFilter;
-        // value has basis, selectedpoints, path
-        if (value.selectedpoints == null) {
+        // value has basis, path
+        let update = true;
+        if (value == null) { // remove
+            update = datasetFilter[name] != null;
             delete datasetFilter[name];
         } else {
             // const points = value.points;
@@ -539,8 +547,10 @@ export function handleBrushFilterUpdated(payload) {
             // const path = value.path;
             datasetFilter[name] = value;
         }
-        dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
-        dispatch(handleFilterUpdated());
+        if (update) {
+            dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
+            dispatch(handleFilterUpdated());
+        }
     };
 }
 

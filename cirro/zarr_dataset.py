@@ -1,30 +1,8 @@
-import numcodecs
-import numpy as np
 import pandas as pd
 import zarr
 
 from cirro.abstract_dataset import AbstractDataset
 from cirro.simple_data import SimpleData
-
-
-def write_zarr(d, output, name):
-    g = output.create_group(name)
-    for key in d:
-        value = d[key]
-        if isinstance(value, list):
-            value = np.array(value)
-        dtype = value.dtype
-        object_codec = None
-        if pd.api.types.is_categorical_dtype(value):
-            object_codec = numcodecs.Categorize(value.cat.categories, dtype=object)
-            dtype = object
-            value = value.astype(str)
-        elif dtype == object:
-            object_codec = numcodecs.MsgPack()
-        if isinstance(value, pd.Series):
-            value = value.values
-        ds = g.create_dataset(key, shape=value.shape, chunks=None, dtype=dtype, object_codec=object_codec)
-        ds[:] = value
 
 
 class ZarrDataset(AbstractDataset):
@@ -61,20 +39,20 @@ class ZarrDataset(AbstractDataset):
             obsm_keys = store['obsm']
             for key in obsm_keys:
                 if key.startswith('X_'):
-                    shape = store['obsm'][key].shape
+                    m = store['obsm'][key]
+                    shape = m.shape
                     dim = min(3, shape[1])
-                    embedding = dict(name=key, dimensions=dim)
-                    if dim == 3:
-                        embeddings.append(embedding)
-                        embedding = embedding.copy()
-                        embedding['dimensions'] = 2
-                        embeddings.append(embedding)
-                    else:
-                        embeddings.append(embedding)
+                    embedding = m.attrs.asdict()
+                    embedding['dimensions'] = dim
+                    embeddings.append(embedding)
                 else:
                     print('Skipping {}'.format(key))
             result['embeddings'] = embeddings
         return result
+
+    def has_precomputed_stats(self, file_system, path, dataset):
+        store = zarr.open(file_system.get_mapper(path), 'r')
+        return store.get('stats') is not None
 
     def read_precomputed_stats(self, file_system, path, obs_keys=[], var_keys=[]):
         store = zarr.open(file_system.get_mapper(path), 'r')
@@ -197,16 +175,3 @@ class ZarrDataset(AbstractDataset):
                 for i in range(len(columns_to_fetch)):
                     obs[columns_to_fetch[i]] = m[:, i]
         return SimpleData(X, obs, pd.DataFrame(index=var_index))
-
-
-    def to_pandas(self, file_system, path, columns=None):
-        store = file_system.get_mapper(path)
-        g = zarr.open(store)
-        result = {}
-        if isinstance(g, zarr.hierarchy.Group):
-            keys = columns if columns is not None else g.array_keys(False)
-        else:
-            keys = columns if columns is not None else g.dtype.fields.keys()
-        for key in keys:
-            result[key] = g[key][()]
-        return pd.DataFrame.from_dict(result)

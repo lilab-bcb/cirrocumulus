@@ -3,12 +3,14 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
+from cirro.abstract_dataset import AbstractDataset
 from cirro.simple_data import SimpleData
 
 
-class AnndataDataset:
+class AnndataDataset(AbstractDataset):
 
     def __init__(self, backed='r', force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
+        super().__init__()
         self.path_to_data = {}
         self.backed = backed
         self.force_sparse = force_sparse
@@ -55,13 +57,9 @@ class AnndataDataset:
         X = None
 
         if len(var_keys) > 0:
-            indexer = adata.var.index.get_indexer_for(var_keys)
-            indexer_sort = np.argsort(indexer)
-            X = adata[:, indexer[indexer_sort]].X
+            X = adata[:, var_keys].X
             if len(X.shape) == 1:
                 X = np.array([X]).T
-
-            var_keys = np.array(var_keys)[indexer_sort]
             if self.force_sparse and not scipy.sparse.issparse(X):
                 X = scipy.sparse.csr_matrix(X)
         for key in obs_keys:

@@ -43,6 +43,11 @@ class DatasetAPI:
             value['summary'] = dataset['summary']
         return value
 
+    def has_precomputed_stats(self, dataset):
+        path = dataset['url']
+        provider = self.get_provider(path)
+        return provider.has_precomputed_stats(self.fs, path, dataset)
+
     def read_precomputed_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
         provider = self.get_provider(path)

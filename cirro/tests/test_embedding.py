@@ -4,7 +4,7 @@ import pandas as pd
 from cirro.data_processing import handle_embedding
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
-from cirro.prepare_data import make_ordered, write_basis_obs, write_basis_X
+from cirro.prepare_data import make_ordered, write_basis_obs, write_basis_X, require_binned_basis_group
 
 
 def create_df(test_data, measures, dimensions, basis):
@@ -89,7 +89,7 @@ def test_saved_embedding(tmp_path, dataset_api, test_data, measures, dimensions,
         var_measures=[], dimensions=dimensions,
         count=False,
         nbins=basis['nbins'], basis=basis, agg_function=basis['agg']).execute(test_data)
-    basis_group = store.require_group('obsm_summary/' + basis['full_name'])
+    basis_group = require_binned_basis_group(store, basis)
     obs_group = basis_group.require_group('obs')
     coords_group = basis_group.require_group('coords')
     write_basis_obs(basis, coords_group, obs_group, result)

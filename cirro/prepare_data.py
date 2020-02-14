@@ -11,10 +11,10 @@ from natsort import natsorted
 from pandas import CategoricalDtype
 
 import cirro.data_processing as data_processing
+from cirro.anndata_dataset import AnndataDataset
 from cirro.dataset_api import DatasetAPI
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.entity import Entity
-from cirro.anndata_dataset import AnndataDataset
 from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
@@ -95,6 +95,15 @@ def write_basis_X(coords_group, basis_group, adata, result):
     for column in result['values']:
         X_index = adata.var.index.get_indexer_for([column])[0]
         X[:, X_index] = result['values'][column]
+
+
+def require_binned_basis_group(store, basis):
+    basis_group = store.require_group('obsm_summary/' + basis['full_name'])
+    basis_group.attrs['nbins'] = basis['nbins']
+    basis_group.attrs['agg'] = basis['agg']
+    basis_group.attrs['name'] = basis['name']
+    basis_group.attrs['precomputed'] = True
+    return basis_group
 
 
 def write_basis_obs(basis, coords_group, obs_group, result):
@@ -189,7 +198,7 @@ class PrepareData:
 
         for basis_name in basis_list:
             self.grid_embedding(basis_name, bin_agg_function, nbins)
-        self.schema()
+        # self.schema()
 
     def summary_stats(self):
         dimensions = self.dimensions
@@ -256,7 +265,7 @@ class PrepareData:
         full_basis_name = basis['full_name']
 
         store = self.store
-        basis_group = store.require_group('obsm_summary/' + full_basis_name)
+        basis_group = require_binned_basis_group(store, basis)
         obs_group = basis_group.require_group('obs')
         coords_group = basis_group.require_group('coords')
 

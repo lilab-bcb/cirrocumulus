@@ -119,65 +119,82 @@ class Scatter2d extends React.PureComponent {
         }
     };
 
+
     onMouseUp = (event) => {
-        this.isPointerDown = false;
+        // stop lasso, zoom, etc.
         window.removeEventListener('mouseup', this.onMouseUp);
         window.removeEventListener('mousemove', this.onMouseMove);
+        if (!this.isPointerDown) {
+            return;
+        }
+        let elapsed = new Date().getTime() - this.mouseDownTime;
+        let isDoubleClick = elapsed <= 150;
+
+        this.isPointerDown = false;
+
         if (this.interactionMode === ChartToolbar.MODE_ZOOM) {
             this.brushRef.current.setAttribute('x', '0');
             this.brushRef.current.setAttribute('y', '0');
             this.brushRef.current.setAttribute('width', '0');
             this.brushRef.current.setAttribute('height', '0');
-            let data = this.props.data;
+            if (!isDoubleClick) {
+                let data = this.props.data;
 
-            data[0]._xmin = this.xToPixScale.invert(this.rect.x);
-            data[0]._xmax = this.xToPixScale.invert(this.rect.x + this.rect.width);
+                data[0]._xmin = this.xToPixScale.invert(this.rect.x);
+                data[0]._xmax = this.xToPixScale.invert(this.rect.x + this.rect.width);
 
-            data[0]._ymax = this.yToPixScale.invert(this.rect.y);
-            data[0]._ymin = this.yToPixScale.invert(this.rect.y + this.rect.height);
-            let _this = this;
-            requestAnimationFrame(() => _this.redraw());
+                data[0]._ymax = this.yToPixScale.invert(this.rect.y);
+                data[0]._ymin = this.yToPixScale.invert(this.rect.y + this.rect.height);
+                let _this = this;
+                requestAnimationFrame(() => _this.redraw());
+            } else {
+                this.onHome();
+            }
         } else if (this.interactionMode === ChartToolbar.MODE_LASSO || this.interactionMode === ChartToolbar.MODE_BRUSH) {
             let trace = this.props.data[0];
-            let selectedpoints = [];
-            let point = {x: 0, y: 0};
-            let hitTest = this.interactionMode === ChartToolbar.MODE_LASSO ? isPointInside : isPointInsideRect;
-            let path = this.interactionMode === ChartToolbar.MODE_LASSO ? this.lassoPathArray : this.rect;
-            let userPath;
-            if (this.interactionMode === ChartToolbar.MODE_LASSO) {
-                userPath = this.lassoPathArray.map(item => {
-                    return {x: this.xToPixScale.invert(item.x), y: this.yToPixScale.invert(item.y)};
-                });
-                userPath = arrayToSvgPath(userPath);
-            } else {
-                userPath = {
-                    x: this.xToPixScale.invert(this.rect.x),
-                    y: this.yToPixScale.invert(this.rect.y),
-                    width: this.xToPixScale.invert(this.rect.width) - this.xToPixScale.invert(0),
-                    height: this.yToPixScale.invert(this.rect.height) - this.yToPixScale.invert(0)
-                };
-            }
-            for (let i = 0, n = trace.x.length; i < n; i++) {
-                let x = this.xToPixScale(trace.x[i]); // includes translate
-                let y = this.yToPixScale(trace.y[i]);
-                point.x = x;
-                point.y = y;
-                if (hitTest(point, path)) {
-                    selectedpoints.push(i);
-                }
-            }
-            if (selectedpoints.length === 0) {
-                selectedpoints = null;
-            }
-            trace.selectedpoints = selectedpoints;
-            if (selectedpoints == null) {
-                this.props.onDeselect({name: getEmbeddingKey(trace.embedding)});
+            if (isDoubleClick) {
+                return this.props.onDeselect({name: getEmbeddingKey(trace.embedding)});
             } else {
 
-                this.props.onSelected({
-                    name: getEmbeddingKey(trace.embedding),
-                    value: {basis: trace.embedding, selectedpoints: selectedpoints, path: userPath}
-                });
+                let selectedpoints = [];
+                let point = {x: 0, y: 0};
+                let hitTest = this.interactionMode === ChartToolbar.MODE_LASSO ? isPointInside : isPointInsideRect;
+                let path = this.interactionMode === ChartToolbar.MODE_LASSO ? this.lassoPathArray : this.rect;
+                let userPath;
+                if (this.interactionMode === ChartToolbar.MODE_LASSO) {
+                    userPath = this.lassoPathArray.map(item => {
+                        return [this.xToPixScale.invert(item.x), this.yToPixScale.invert(item.y)];
+                    });
+                } else {
+                    userPath = {
+                        shape: 'rect',
+                        x: this.xToPixScale.invert(this.rect.x),
+                        y: this.yToPixScale.invert(this.rect.y),
+                        width: this.xToPixScale.invert(this.rect.width) - this.xToPixScale.invert(0),
+                        height: this.yToPixScale.invert(this.rect.height) - this.yToPixScale.invert(0)
+                    };
+                }
+                for (let i = 0, n = trace.x.length; i < n; i++) {
+                    let x = this.xToPixScale(trace.x[i]); // includes translate
+                    let y = this.yToPixScale(trace.y[i]);
+                    point.x = x;
+                    point.y = y;
+                    if (hitTest(point, path)) {
+                        selectedpoints.push(i);
+                    }
+                }
+                if (selectedpoints.length === 0) {
+                    selectedpoints = null;
+                }
+
+                if (selectedpoints == null) {
+                    this.props.onDeselect({name: getEmbeddingKey(trace.embedding)});
+                } else {
+                    this.props.onSelected({
+                        name: getEmbeddingKey(trace.embedding),
+                        value: {basis: trace.embedding, selectedpoints: selectedpoints, path: userPath}
+                    });
+                }
             }
             this.lassoPathArray = [];
             this.lassoRef.current.setAttribute('d', '');
@@ -190,27 +207,30 @@ class Scatter2d extends React.PureComponent {
     };
 
     onMouseDown = (event) => {
-        this.tooltipRef.current.style.display = '';
-        if (event.button === 0) {
+
+        if (event.button === 0) { // left click
+            this.isPointerDown = true;
+            this.mouseDownTime = new Date().getTime();
+            this.tooltipRef.current.style.display = 'none';
             window.addEventListener('mouseup', this.onMouseUp);
             window.addEventListener('mousemove', this.onMouseMove);
-            this.isPointerDown = true;
+
             if (this.interactionMode === ChartToolbar.MODE_BRUSH || this.interactionMode === ChartToolbar.MODE_ZOOM) {
                 let coords = clientPoint(event.target, event);
                 this.rect.x = coords[0];
                 this.rect.y = coords[1];
-                this.rect.width = 1;
-                this.rect.height = 1;
-                this.brushRef.current.setAttribute('x', this.rect.x);
-                this.brushRef.current.setAttribute('y', this.rect.y);
-                this.brushRef.current.setAttribute('width', this.rect.width);
-                this.brushRef.current.setAttribute('height', this.rect.height);
+                this.rect.width = 0;
+                this.rect.height = 0;
+                // this.brushRef.current.setAttribute('x', this.rect.x);
+                // this.brushRef.current.setAttribute('y', this.rect.y);
+                // this.brushRef.current.setAttribute('width', this.rect.width);
+                // this.brushRef.current.setAttribute('height', this.rect.height);
                 this.mouseDownPoint = {x: coords[0], y: coords[1]};
             } else if (this.interactionMode === ChartToolbar.MODE_LASSO) {
                 this.lassoPathArray = [];
                 let coords = clientPoint(event.target, event);
                 this.lassoPathArray.push({x: coords[0], y: coords[1]});
-                this.lassoRef.current.setAttribute('d', arrayToSvgPath(this.lassoPathArray));
+                // this.lassoRef.current.setAttribute('d', arrayToSvgPath(this.lassoPathArray));
             } else if (this.interactionMode === ChartToolbar.MODE_PAN) {
                 this.mouseDownPoint = {x: event.clientX, y: event.clientY};
             }
@@ -323,7 +343,6 @@ class Scatter2d extends React.PureComponent {
         let yToPixScale = scaleLinear().domain([trace._ymin, trace._ymax]).range([height - maxMarkerSize, maxMarkerSize]);
         this.xToPixScale = xToPixScale;
         this.yToPixScale = yToPixScale;
-        window.test = this.yToPixScale;
 
         const PI2 = 2 * Math.PI;
         if (trace.selectedpoints == null) {
