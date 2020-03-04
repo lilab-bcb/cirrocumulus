@@ -24,8 +24,8 @@ def main(argsv):
 
     args = parser.parse_args(argsv)
 
-    from flask_cors import CORS
-    CORS(app)
+    # from flask_cors import CORS
+    # CORS(app)
     Compress(app)
     from cirro.api import dataset_api
     from cirro.local_db_api import LocalDbAPI
