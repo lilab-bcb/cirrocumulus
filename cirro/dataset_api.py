@@ -1,6 +1,6 @@
 import os
 
-from .file_system import FileSystem
+from .file_system_adapter import FileSystemAdapter
 
 
 def get_path(dataset, dataset_path):
@@ -16,10 +16,10 @@ def get_path(dataset, dataset_path):
 class DatasetAPI:
     def __init__(self):
         self.suffix_to_provider = {}
-        self.fs = FileSystem()
+        self.fs_adapter = FileSystemAdapter()
         self.default_provider = None
 
-    def get_provider(self, path):
+    def get_dataset_provider(self, path):
         index = path.rfind('.')
         if index == -1:
             return self.default_provider
@@ -37,40 +37,37 @@ class DatasetAPI:
 
     def schema(self, dataset):
         path = dataset['url']
-        provider = self.get_provider(path)
-        value = provider.schema(self.fs, path)
+        provider = self.get_dataset_provider(path)
+        value = provider.schema(self.fs_adapter.get_fs(path), path)
         if 'summary' in dataset:
             value['summary'] = dataset['summary']
         return value
 
     def has_precomputed_stats(self, dataset):
         path = dataset['url']
-        provider = self.get_provider(path)
-        return provider.has_precomputed_stats(self.fs, path, dataset)
+        provider = self.get_dataset_provider(path)
+        return provider.has_precomputed_stats(self.fs_adapter.get_fs(path), path, dataset)
 
     def read_precomputed_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
-        provider = self.get_provider(path)
-        return provider.read_precomputed_stats(self.fs, path, obs_keys=obs_keys, var_keys=var_keys)
+        provider = self.get_dataset_provider(path)
+        return provider.read_precomputed_stats(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys)
 
     def read_precomputed_grouped_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
-        provider = self.get_provider(path)
-        return provider.read_precomputed_grouped_stats(self.fs, path, obs_keys=obs_keys, var_keys=var_keys)
+        provider = self.get_dataset_provider(path)
+        return provider.read_precomputed_grouped_stats(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys,
+            var_keys=var_keys)
 
     def read_precomputed_basis(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']
-        provider = self.get_provider(path)
-        return provider.read_precomputed_basis(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, basis=basis)
+        provider = self.get_dataset_provider(path)
+        return provider.read_precomputed_basis(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys,
+            basis=basis)
 
-    def read_summarized(self, dataset, obs_keys=[], var_keys=[], index=False, rename=False,
-                        path=None):
-        path = get_path(dataset, path)
-        provider = self.get_provider(path)
-        return provider.read_summarized(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, index=index,
-            rename=rename, dataset=dataset)
 
     def read(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']
-        provider = self.get_provider(path)
-        return provider.read(self.fs, path, obs_keys=obs_keys, var_keys=var_keys, basis=basis, dataset=dataset)
+        provider = self.get_dataset_provider(path)
+        return provider.read(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys, basis=basis,
+            dataset=dataset)

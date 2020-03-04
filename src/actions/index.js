@@ -116,13 +116,13 @@ function getUser() {
 export function initGapi() {
     return function (dispatch, getState) {
         dispatch(_setLoadingApp({loading: true, progress: 0}));
-        let startTime = new Date().getTime();
-        let loadingTime = 32;
+        const startTime = new Date().getTime();
+        const approximateColdBootTime = 32;
 
         function loadingAppProgress() {
             if (getState().loadingApp.loading) {
                 let elapsed = (new Date().getTime() - startTime) / 1000;
-                let p = Math.min(100, 100 * (elapsed / loadingTime));
+                let p = Math.min(100, 100 * (elapsed / approximateColdBootTime));
                 dispatch(_setLoadingApp({loading: true, progress: p}));
                 if (p < 100) {
                     window.setTimeout(loadingAppProgress, 300);
@@ -142,7 +142,7 @@ export function initGapi() {
                 });
             } else {
 
-
+                console.log((new Date().getTime() - startTime) / 1000 + " startup time");
                 let script = document.createElement('script');
                 script.type = 'text/javascript';
                 script.src = 'https://apis.google.com/js/api.js';
@@ -1471,7 +1471,7 @@ function handleEmbeddingResult(result) {
         const is3d = selectedEmbedding.dimensions === 3;
         let rgbScale = getRgbScale();
 
-        const colorMapper = isImage || !is3d ? (rgb => rgb.formatHex()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+        const colorMapper = isImage ? (rgb => rgb.formatHex()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];

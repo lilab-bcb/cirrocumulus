@@ -46,11 +46,10 @@ class ContinuousLegend extends React.PureComponent {
         const statistics = ['Mean', '% Expressed'];
         return (
             <div style={{
-                display: 'inline-block',
-                padding: 10,
-                verticalAlign: 'top',
-                maxHeight: maxHeight,
-                overflow: 'auto'
+                // padding: 10,
+                // verticalAlign: 'top',
+                // maxHeight: maxHeight,
+                // overflow: 'auto'
             }}>
                 <b>{displayName}</b>
                 {globalSummary != null && name !== '__count' && this.getTable(statistics, summaryNames, selectionSummary, globalSummary)}

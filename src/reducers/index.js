@@ -488,15 +488,14 @@ function datasetFilter(state = {}, action) {
 function updateChartColorScale(traceInfo) {
     const rgbScale = getRgbScale();
     let colorScale = traceInfo.colorScale;
-    traceInfo.data.forEach(trace => {
+    traceInfo.data.forEach(datum => {
         let colors = [];
-        const colorMapper = trace.type === 'scatter3d' ? (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]) : (rgb => rgb.formatHex());
-        for (let i = 0, n = trace.values.length; i < n; i++) {
-            let rgb = color(colorScale(trace.values[i]));
+        const colorMapper = !datum.isImage ? (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]) : (rgb => rgb.formatHex());
+        for (let i = 0, n = datum.values.length; i < n; i++) {
+            let rgb = color(colorScale(datum.values[i]));
             colors.push(colorMapper(rgb));
-            // colors.push([rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
         }
-        trace.marker.color = colors;
+        datum.marker.color = colors;
     });
     traceInfo.colorScale = colorScale;
 }

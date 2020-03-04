@@ -1,4 +1,5 @@
 import argparse
+import gzip
 import json
 import logging
 import os
@@ -49,44 +50,46 @@ def make_ordered(df, columns):
             df[name] = df[name].astype(CategoricalDtype(natsorted(df[name].dtype.categories), ordered=True))
 
 
-def write_obs_stats(store, results):
+def write_obs_stats(directory, results):
+    os.makedirs(os.path.join(directory, 'stats', 'obs'), exist_ok=True)
     for column in results:
         dimension_or_measure_summary = results[column]
         if 'categories' in dimension_or_measure_summary:
-            store['stats/obs/' + column] = dimension_or_measure_summary['counts']
+            with gzip.open(os.path.join(directory, 'stats', 'obs', column + '.json.gz'), 'wt') as f:
+                json.dump(dimension_or_measure_summary, f)
             # write_pq(dict(index=dimension_or_measure_summary['categories'],
             #     value=dimension_or_measure_summary['counts']),
             #     dimension_output_directory, column)
         else:
-            g = store.require_group('stats/obs/' + column)
-            for field in dimension_or_measure_summary:
-                g.attrs[field] = dimension_or_measure_summary[field]
+            with gzip.open(os.path.join(directory, 'stats', 'obs', column + '.json.gz'), 'wt') as f:
+                json.dump(dimension_or_measure_summary, f)
 
 
-def write_X_stats(store, results):
+def write_X_stats(directory, results):
+    os.makedirs(os.path.join(directory, 'stats', 'X'), exist_ok=True)
     for column in results:
         measure_summary = results[column]
-        g = store.require_group('stats/X/' + column)
-        for field in measure_summary:
-            g.attrs[field] = measure_summary[field]
+        with gzip.open(os.path.join(directory, 'stats', 'X', column + '.json.gz'), 'wt') as f:
+            json.dump(measure_summary, f)
 
 
-def write_grouped_stats(store, adata, dotplot_results):
+def write_grouped_stats(directory, adata, dotplot_results):
+    # mean and fraction expressed for every gene per category
     for dotplot_result in dotplot_results:
         # output_directory = self.get_path('grouped_statistics/' + dotplot_result['name'])
         # write_pq(dict(index=dotplot_result['categories']), output_directory, 'index')
         categories = dotplot_result['categories']
-        shape = (len(categories), adata.shape[1])
         category_name = dotplot_result['name']
-        g = store.require_group('grouped_stats/obs/' + category_name)
-        ds_mean = g.require_dataset('X_mean', shape=shape, chunks=(None, 1), dtype='f4')
-        ds_frac = g.require_dataset('X_fraction_expressed', shape=shape, chunks=(None, 1), dtype='f4')
+        os.makedirs(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X'), exist_ok=True)
+        with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'index.json.gz'),
+                'wt') as f:
+            json.dump(categories, f)
         values = dotplot_result['values']
         for value in values:
             var_field = value['name']
-            X_index = adata.var.index.get_indexer_for([var_field])[0]
-            ds_mean[:, X_index] = value['mean']
-            ds_frac[:, X_index] = value['fractionExpressed']
+            with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X', var_field + '.json.gz'),
+                    'wt') as f:
+                json.dump(value, f)
 
 
 def write_basis_X(coords_group, basis_group, adata, result):
@@ -102,6 +105,7 @@ def require_binned_basis_group(store, basis):
     basis_group.attrs['nbins'] = basis['nbins']
     basis_group.attrs['agg'] = basis['agg']
     basis_group.attrs['name'] = basis['name']
+    basis_group.attrs['dimensions'] = basis['dimensions']
     basis_group.attrs['precomputed'] = True
     return basis_group
 
@@ -207,11 +211,12 @@ class PrepareData:
         input_dataset = self.input_dataset
         X_range = self.X_range
         adata = self.adata
-        store = self.store
+        base_dir = self.base_name
+
         if X_range[0] == 0:
             process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
                 measures=measures, dimensions=dimensions)
-            write_obs_stats(store, process_results)
+            write_obs_stats(base_dir, process_results['summary'])
             # write_pq(
             #     dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
             #         sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
@@ -220,7 +225,7 @@ class PrepareData:
         logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
-        write_X_stats(store, process_results)
+        write_X_stats(base_dir, process_results['summary'])
 
 
         # write_pq(dict(min=[measure_summary['min']],
@@ -238,13 +243,13 @@ class PrepareData:
         input_dataset = self.input_dataset
         adata = self.adata
         X_range = self.X_range
-        store = self.store
+        base_dir = self.base_name
         logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions)
         dotplot_results = process_results['dotplot']
 
-        write_grouped_stats(store, adata, dotplot_results)
+        write_grouped_stats(base_dir, adata, dotplot_results)
         # for value in values:
         # write_pq(dict(mean=value['mean'],
         #     fractionExpressed=value['fractionExpressed']),
@@ -276,15 +281,11 @@ class PrepareData:
                 df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
             EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
                 bin_name=full_basis_name)
-            coords_group['full_index'] = df_with_coords[full_basis_name].values
+            coords_group['bins'] = df_with_coords[full_basis_name].values
+            coords_group['bin_coords'] = df_with_coords[basis['coordinate_columns']].values
 
-            # dict_with_coords = df_with_coords.to_dict(orient='list')
-            # write_pq(dict_with_coords, os.path.join(self.base_name, 'data'), full_basis_name)
-
-            # write bins and coordinates to obsm_summary/name
             result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
                 measures=measures + ['__count'], dimensions=dimensions)
-            # bin_dict = dict(index=result['bins'])
             write_basis_obs(basis, coords_group, obs_group, result)
             logger.info('{} embedding finished writing obs'.format(basis_name))
         # write X to obsm_summary/name
@@ -309,7 +310,7 @@ class PrepareData:
                     result['embeddings'].append(
                         {'precomputed': True, 'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function,
                          'dimensions': 2})
-            with open(output_file, 'wt') as f:
+            with gzip.open(output_file, 'wt') as f:
                 json.dump(result, f)
 
 

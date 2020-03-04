@@ -1,37 +1,36 @@
 import json
 import os
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import scipy.sparse
 
 from cirro.abstract_dataset import AbstractDataset
 from cirro.simple_data import SimpleData
-
-
-def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
-    os.makedirs(output_dir, exist_ok=True)
-    pq.write_table(pa.Table.from_pydict(d), output_dir + os.path.sep + name + '.parquet',
-        write_statistics=write_statistics, row_group_size=row_group_size)
 
 
 class ParquetDataset(AbstractDataset):
 
     def __init__(self):
         super().__init__()
+        self.cached_dataset_id = None
+        self.cached_data = {}
 
     def get_suffixes(self):
         return ['parquet', 'pq', 'json', 'pjson']
 
-
     def read_data_sparse(self, file_system, path, obs_keys=[], var_keys=[], basis=[], dataset=None):
+        dataset_id = dataset.id
         # path is path to index.json
         # if path ends with /data then X is stored as index, value pairs
         # if basis, read index to get bins, x, and y
         path = os.path.dirname(path)
-        data_path = os.path.join(path, 'data')
-        dataset_attrs = self.get_dataset_attrs(file_system, path)
-        shape = dataset_attrs['shape']
+        X_path = os.path.join(path, 'X')
+        obs_path = os.path.join(path, 'obs')
+        obsm_path = os.path.join(path, 'obsm')
+        nobs = dataset['nObs']
 
         data = []
         row = []
@@ -41,7 +40,7 @@ class ParquetDataset(AbstractDataset):
         if len(var_keys) > 0:
             for i in range(len(var_keys)):
                 key = var_keys[i]
-                df = self.to_pandas(file_system, data_path + '/' + key)
+                df = pq.read_table(file_system.open(X_path + '/' + key)).to_pandas()
                 data.append(df['value'])
                 row.append(df['index'])
                 col.append(np.repeat(i, len(df)))
@@ -49,18 +48,15 @@ class ParquetDataset(AbstractDataset):
             data = np.concatenate(data)
             row = np.concatenate(row)
             col = np.concatenate(col)
-            X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+            X = scipy.sparse.csr_matrix((data, (row, col)), shape=(nobs, len(var_keys)))
         obs = None
-        dataset_id = dataset.id
-        if self.cached_dataset_id != dataset_id:
-            self.cached_dataset_id = dataset_id
-            self.cached_data = {}
 
         for key in obs_keys:
             cache_key = str(dataset_id) + '-' + key
             cached_value = self.cached_data.get(cache_key)
             if cached_value is None:
-                df = self.to_pandas(file_system, data_path + '/' + key, ['value'])  # ignore index in obs for now
+                df = pq.read_table(file_system.open(obs_path + '/' + key), columns=['value']).to_pandas()
+                # ignore index in obs for now
                 cached_value = df['value']
             if obs is None:
                 obs = pd.DataFrame()
@@ -77,8 +73,8 @@ class ParquetDataset(AbstractDataset):
                     columns_to_fetch = b['coordinate_columns']
                 cached_value = self.cached_data.get(cache_key)
                 if cached_value is None:
-                    basis_path = (data_path + '/') + (b['full_name' if is_precomputed else 'name'])
-                    df = self.to_pandas(file_system, basis_path, columns_to_fetch)
+                    basis_path = (obsm_path + '/') + (b['full_name' if is_precomputed else 'name'])
+                    df = pq.read_table(file_system.open(basis_path), columns=columns_to_fetch).to_pandas()
                     cached_value = df
                     self.cached_data[cache_key] = cached_value
                 if obs is None:
@@ -87,22 +83,16 @@ class ParquetDataset(AbstractDataset):
                     obs[c] = cached_value[c]
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
 
-    @staticmethod
-    def get_keys(keys, basis=None):
-        if basis is not None:
-            keys = keys + basis['coordinate_columns']
-        return keys
-
     def read_summarized(self, file_system, path, obs_keys=[], var_keys=[], index=False, rename=False, dataset=None):
         result_df = pd.DataFrame()
-
         if index:
-            df = self.to_pandas(file_system, path + '/index')
+            df = pq.read_table(file_system.open(path + '/index')).to_pandas()
+
             for column in df:
                 result_df[column] = df[column]
 
         for key in var_keys + obs_keys:
-            df = self.to_pandas(file_system, path + '/' + key)
+            df = pq.read_table(file_system.open(path + '/' + key)).to_pandas()
             if rename:
                 for column in df:
                     result_df['{}_{}'.format(key, column)] = df[column]
@@ -111,30 +101,29 @@ class ParquetDataset(AbstractDataset):
                     result_df[column] = df[column]
         return result_df
 
-    def has_precomputed_stats(self, file_system, path, dataset):
-        return path.endswith('json')
-
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
+        dataset_id = dataset.id
+        if self.cached_dataset_id != dataset_id:
+            self.cached_dataset_id = dataset_id
+            self.cached_data = {}
         # path is path to index.json
         if path.endswith('json'):
             return self.read_data_sparse(file_system, path, obs_keys, var_keys, basis, dataset)
-        keys = []
+        # dense parquet file
+        keys = obs_keys + var_keys
+
         if basis is not None and len(basis) > 0:
             for b in basis:
-                keys += AbstractDataset.get_keys(obs_keys + var_keys, basis=b)
+                keys += b['coordinate_columns']
         if len(keys) == 0:
             return SimpleData(None, pd.DataFrame(), pd.Index([]))
-        df = self.to_pandas(file_system, path, keys)
+        df = pq.read_table(file_system.open(path), columns=keys).to_pandas()
         X = df[var_keys].values
         if basis is not None and len(basis) > 0:
             for b in basis:
                 obs_keys = obs_keys + b['coordinate_columns']
         obs = df[obs_keys]
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
-
-
-    def to_pandas(self, file_system, path, columns=None):
-        return pq.read_table(file_system.open(path + '.parquet'), columns=columns).to_pandas()
 
     def schema(self, file_system, path):
         if path.endswith('.json') or path.endswith('.json.gz'):  # precomputed dataset
@@ -158,4 +147,5 @@ class ParquetDataset(AbstractDataset):
             result['obsCat'] = obs_cat
             result['nObs'] = parquet_file.metadata.num_rows
             result['embeddings'] = metadata['obsm']
+            result['shape'] = (parquet_file.metadata.num_rows, len(result['var']))
             return result

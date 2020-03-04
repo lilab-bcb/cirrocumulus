@@ -1,6 +1,3 @@
-import pandas as pd
-import scipy.sparse
-
 from cirro.dotplot_aggregator import DotPlotAggregator
 from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirro.feature_aggregator import FeatureAggregator
@@ -10,6 +7,8 @@ from cirro.unique_aggregator import UniqueAggregator
 
 
 def filter_adata(adata, data_filter):
+    import pandas as pd
+    import scipy.sparse
     if data_filter is not None:
         keep_expr = None
         user_filters = data_filter.get('filters', [])
@@ -75,62 +74,24 @@ def filter_adata(adata, data_filter):
 
 
 def precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimensions):
-    result = {}
     if '__count' in var_measures:
         var_measures.remove('__count')
-    for dimension in dimensions:
-        df = dataset_api.read_summarized(dataset, obs_keys=[dimension], path='counts')
-        result[dimension] = dict(categories=df['index'].values.tolist(), counts=df['value'].values.tolist())
-
-    if (len(obs_measures) + len(var_measures)) > 0:
-        df = dataset_api.read_summarized(dataset, var_keys=var_measures, obs_keys=obs_measures, path='statistics',
-            rename=True)
-        for column in obs_measures + var_measures:
-            result[column] = {'min': float(df['{}_min'.format(column)][0]),
-                              'max': float(df['{}_max'.format(column)][0]),
-                              'sum': float(df['{}_sum'.format(column)][0]),
-                              'mean': float(df['{}_mean'.format(column)][0])}
-            if '{}_numExpressed'.format(column) in df:
-                result[column]['numExpressed'] = int(df['{}_numExpressed'.format(column)][0])
-    return result
+    return dataset_api.read_precomputed_stats(dataset, obs_keys=dimensions + obs_measures, var_keys=var_measures)
 
 
 def precomputed_grouped_stats(dataset_api, dataset, var_measures, dimensions):
-    result = []
     if (len(var_measures)) > 0 and len(dimensions) > 0:
-        for dimension in dimensions:
-            df = dataset_api.read_summarized(dataset, index=True, rename=True, obs_keys=[],
-                var_keys=var_measures, path='grouped_statistics/' + dimension)
-            values = []
-            dimension_result = dict(categories=df['index'].values.tolist(), name=dimension, values=values)
-            result.append(dimension_result)
-            for measure in var_measures:
-                fraction_expressed = df[measure + '_fractionExpressed'].values.tolist()
-                mean = df[measure + '_mean'].values.tolist()
-                values.append(dict(name=measure, fractionExpressed=fraction_expressed, mean=mean))
-
-    return result
+        return dataset_api.read_precomputed_grouped_stats(dataset,
+            var_keys=var_measures, obs_keys=dimensions)
+    return []
 
 
 def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures,
                           dimensions):
     if (len(obs_measures) + len(var_measures) + len(dimensions)) == 0:
         obs_measures = ['__count']
-
-    path = 'obsm_summary/' + basis['full_name']
-    df = dataset_api.read_summarized(dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures,
-        index=True, rename=True, path=path)
-    result = {'coordinates': {}, 'values': {}, 'bins': df['index'].values.tolist()}
-
-    for column in basis['coordinate_columns']:
-        result['coordinates'][column] = df[column].values.tolist()
-
-    for key in obs_measures + var_measures:
-        result['values'][key] = df[key + '_value'].values.tolist()
-    for key in dimensions:
-        result['values'][key] = dict(value=df[key + '_value'].values.tolist(),
-            purity=df[key + '_purity'].values.tolist())
-    return result
+    return dataset_api.read_precomputed_basis(dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures,
+        basis=basis)
 
 
 def get_var_name_type(key):
@@ -206,6 +167,8 @@ def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
 
 def handle_export_dataset_filters(dataset_api, dataset, data_filters):
     import json
+    import pandas as pd
+
     reformatted_filters = []
     filter_names = []
     for data_filter_obj in data_filters:

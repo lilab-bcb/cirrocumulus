@@ -1,3 +1,6 @@
+from cirro.anndata_dataset import AnndataDataset
+
+
 def main(argsv):
     from flask import Flask, send_from_directory
     import argparse
@@ -21,19 +24,24 @@ def main(argsv):
 
     args = parser.parse_args(argsv)
 
-    # from flask_cors import CORS
-    # CORS(app)
+    from flask_cors import CORS
+    CORS(app)
     Compress(app)
     from cirro.api import dataset_api
-    from cirro.anndata_dataset import AnndataDataset
     from cirro.local_db_api import LocalDbAPI
     from cirro.no_auth import NoAuth
     import os
+
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
     database_api.provider = LocalDbAPI(os.path.normpath(args.dataset))
-
     dataset_api.add(AnndataDataset('r' if args.backed else None))
+    try:
+        from cirro.parquet_dataset import ParquetDataset
+        dataset_api.add(ParquetDataset())
+    except ModuleNotFoundError:
+        pass
+    # dataset_api.add(ZarrDataset())
 
     if not args.no_open:
         host = args.host if args.host is not None else '127.0.0.0'

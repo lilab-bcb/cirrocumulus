@@ -27,7 +27,7 @@ class Scatter2d extends React.PureComponent {
         this.lassoPathArray = [];
         this.event = {clientX: 0, clientY: 0};
         this.rect = {x: 0, y: 0, width: 0, height: 0};
-        this._onMouseMove = throttle(this._onMouseMove, 100, {leading: true});
+        this.onMouseMove = throttle(this.onMouseMove, 100, {leading: true});
         this._onTooltip = throttle(this._onTooltip, 300);
     }
 
@@ -87,6 +87,7 @@ class Scatter2d extends React.PureComponent {
     onMouseExit = (event) => {
         this.tooltipRef.current.style.display = 'none';
     };
+
     _onTooltip = (event) => {
         if (!this.isPointerDown) {
             let coords = clientPoint(this.svgRef.current, event);
@@ -145,8 +146,7 @@ class Scatter2d extends React.PureComponent {
 
                 data[0]._ymax = this.yToPixScale.invert(this.rect.y);
                 data[0]._ymin = this.yToPixScale.invert(this.rect.y + this.rect.height);
-                let _this = this;
-                requestAnimationFrame(() => _this.redraw());
+                requestAnimationFrame(() => this.redraw());
             } else {
                 this.onHome();
             }
@@ -203,7 +203,6 @@ class Scatter2d extends React.PureComponent {
             this.brushRef.current.setAttribute('width', '0');
             this.brushRef.current.setAttribute('height', '0');
         }
-
     };
 
     onMouseDown = (event) => {
@@ -236,17 +235,17 @@ class Scatter2d extends React.PureComponent {
             }
         }
     };
+
+    // onMouseMove = (event) => {
+    //     if (this.isPointerDown) {
+    //         this._onMouseMove(event);
+    //     }
+    // };
+
     onMouseMove = (event) => {
         if (this.isPointerDown) {
-            this._onMouseMove(event);
-        }
-    };
-
-    _onMouseMove = (event) => {
-
-        if (this.isPointerDown) {
             this.tooltipRef.current.style.display = 'none';
-            let layout = this.props.layout;
+            const layout = this.props.layout;
             let height = layout.height;
             let width = layout.width;
             let coords = clientPoint(this.svgRef.current, event);
@@ -265,8 +264,7 @@ class Scatter2d extends React.PureComponent {
                 let ty = this.yToPixScale.invert(translateY) - this.yToPixScale.invert(0);
                 data[0]._ymin = data[0].ymin - ty;
                 data[0]._ymax = data[0].ymax - ty;
-                let _this = this;
-                requestAnimationFrame(() => _this.redraw());
+                requestAnimationFrame(() => this.redraw());
             } else if (this.interactionMode === ChartToolbar.MODE_BRUSH || this.interactionMode === ChartToolbar.MODE_ZOOM) {
                 this.rect.x = this.mouseDownPoint.x;
                 this.rect.y = this.mouseDownPoint.y;

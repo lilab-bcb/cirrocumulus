@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getEmbeddingKey} from './actions';
+import {Grid} from 'react-virtualized';
 import EmbeddingChart from './EmbeddingChart';
 import PlotUtil from './PlotUtil';
 
@@ -16,7 +16,7 @@ class EmbeddingCharts extends React.PureComponent {
         activeTraces.forEach(traceInfo => {
 
             if (itemSize !== traceInfo.layout.width) {
-                // traceInfo.layout = Object.assign({}, traceInfo.layout);
+                traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
                 traceInfo.layout.width = itemSize;
                 traceInfo.layout.height = itemSize;
             }
@@ -32,63 +32,66 @@ class EmbeddingCharts extends React.PureComponent {
             return null;
         }
 
-        return activeTraces.map(traceInfo => <EmbeddingChart
-            style={{display: 'inline-block', border: '1px solid LightGrey'}} traceInfo={traceInfo}
-            key={traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding)}/>);
+        // return activeTraces.map(traceInfo => <EmbeddingChart
+        //     style={{display: 'inline-block', border: '1px solid LightGrey'}} traceInfo={traceInfo}
+        //     key={traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding)}/>);
 
-        // let gridWidth = window.screen.availWidth - 280;
-        // let gridHeight = window.screen.availHeight - 190;
-        //
-        // let columnWidth = itemSize + 300;
-        //
-        // // can't render more than 8 charts due to webgl context
-        // gridHeight = itemSize * 2;
-        // let elements = [];
-        // let row;
-        //
-        // for (let i = 0; i < activeTraces.length; i++) {
-        //     if (i % embeddingChartSize === 0) {
-        //         row = [];
-        //         elements.push(row);
-        //     }
-        //     row.push(activeTraces[i]);
-        // }
-        //
-        // function cellRenderer({
-        //                           columnIndex, // Horizontal (column) index of cell
-        //                           isScrolling, // The Grid is currently being scrolled
-        //                           isVisible, // This cell is visible within the grid (eg it is not an overscanned cell)
-        //                           key, // Unique key within array of cells
-        //                           parent, // Reference to the parent Grid (instance)
-        //                           rowIndex, // Vertical (row) index of cell
-        //                           style, // Style object to be applied to cell (to position it);
-        //                           // This must be passed through to the rendered cell element.
-        //                       }) {
-        //
-        //
-        //     let row = elements[rowIndex];
-        //     let item = row[columnIndex];
-        //     if (!item || !isVisible || isScrolling) {
-        //         return <div style={style} key={key}/>;
-        //     }
-        //     return (
-        //         <EmbeddingChart style={style} traceInfo={item} key={key}/>
-        //     );
-        // }
-        //
-        //
-        // return <Grid
-        //     cellRenderer={cellRenderer}
-        //     columnWidth={columnWidth}
-        //     columnCount={embeddingChartSize}
-        //     useDynamicRowHeight={false}
-        //     height={gridHeight}
-        //     overscanColumnCount={0}
-        //     overscanRowCount={0}
-        //     rowHeight={itemSize}
-        //     rowCount={elements.length}
-        //     width={gridWidth}
-        // />;
+        let gridWidth = window.screen.availWidth - 280;
+        let gridHeight = window.screen.availHeight - 190;
+
+        let columnWidth = itemSize + 300; // leave room for legend
+
+        // can't render more than 8 charts due to webgl context
+        gridHeight = itemSize * 2;
+        let elements = [];
+        let row;
+
+        for (let i = 0; i < activeTraces.length; i++) {
+            if (i % embeddingChartSize === 0) {
+                row = [];
+                elements.push(row);
+            }
+            row.push(activeTraces[i]);
+        }
+
+        function cellRenderer({
+                                  columnIndex, // Horizontal (column) index of cell
+                                  isScrolling, // The Grid is currently being scrolled
+                                  isVisible, // This cell is visible within the grid (eg it is not an overscanned cell)
+                                  key, // Unique key within array of cells
+                                  parent, // Reference to the parent Grid (instance)
+                                  rowIndex, // Vertical (row) index of cell
+                                  style, // Style object to be applied to cell (to position it);
+                                  // This must be passed through to the rendered cell element.
+                              }) {
+
+
+            let row = elements[rowIndex];
+            let item = row[columnIndex];
+            // if (!item || !isVisible || isScrolling) {
+            //     return <div style={style} key={key}/>;
+            // }
+            if (!item) {
+                return <div style={style} key={key}/>;
+            }
+            return (
+                <EmbeddingChart style={style} traceInfo={item} key={key}/>
+            );
+        }
+
+
+        return <Grid
+            cellRenderer={cellRenderer}
+            columnWidth={columnWidth}
+            columnCount={embeddingChartSize}
+            useDynamicRowHeight={false}
+            height={gridHeight}
+            overscanColumnCount={0}
+            overscanRowCount={0}
+            rowHeight={itemSize}
+            rowCount={elements.length}
+            width={gridWidth}
+        />;
 
     }
 

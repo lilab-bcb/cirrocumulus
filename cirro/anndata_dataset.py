@@ -9,7 +9,7 @@ from cirro.simple_data import SimpleData
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed='r', force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
+    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
         super().__init__()
         self.path_to_data = {}
         self.backed = backed
@@ -26,6 +26,7 @@ class AnndataDataset(AbstractDataset):
             return anndata.read_loom(path)
         elif path_lc.endswith('.zarr'):
             return anndata.read_zarr(path)
+        print('Reading ')
         return anndata.read(path, backed=self.backed)
         # elif path.endswith('.mtx'):
         #
@@ -47,11 +48,10 @@ class AnndataDataset(AbstractDataset):
             self.add_data(path, adata)
         return adata
 
-    def schema(self, filesystem, path):
+    def schema(self, fs_adapter, path):
         return SimpleData.schema(self.get_data(path))
 
-
-    def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
+    def read(self, fs_adapter, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
         adata = self.get_data(path)
         obs = None
         X = None
