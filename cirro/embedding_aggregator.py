@@ -130,34 +130,34 @@ class EmbeddingAggregator:
 
             for i in range(len(var_measures)):
                 if X_output is not None:
-                    result['values'][var_measures[i]] = X_output[:, i].tolist()
+                    result['values'][var_measures[i]] = X_output[:, i]
                 else:
-                    result['values'][var_measures[i]] = df_summary[var_measures[i]].tolist()
+                    result['values'][var_measures[i]] = df_summary[var_measures[i]]
             for i in range(len(obs_measures)):
-                result['values'][obs_measures[i]] = df_summary[obs_measures[i]].tolist()
+                result['values'][obs_measures[i]] = df_summary[obs_measures[i]]
             if add_count:
-                result['values']['__count'] = df_summary['__count'].tolist()
+                result['values']['__count'] = df_summary['__count']
 
             for column in dimensions:
                 if not quick:
                     result['values'][column] = dict(value=dimension_mode_output[column],
                         purity=dimension_purity_output[column])
                 else:
-                    result['values'][column] = dict(value=df_summary[column].tolist())
-            result['bins'] = df_summary.index.to_list()
+                    result['values'][column] = dict(value=df_summary[column])
+            result['bins'] = df_summary.index
             for column in basis['coordinate_columns']:
-                result['coordinates'][column] = df_summary[column].tolist()
-        else:
+                result['coordinates'][column] = df_summary[column]
+        else:  # no binning
             if add_count:
-                result['values']['__count'] = np.ones(adata.shape[0]).tolist()
+                result['values']['__count'] = np.ones(adata.shape[0])
             if len(var_measures) > 0:
                 X = adata.X[:, SimpleData.get_var_indices(adata, var_measures)]
                 is_X_sparse = scipy.sparse.issparse(X)
                 for i in range(len(var_measures)):
-                    result['values'][var_measures[i]] = X[:, i].tolist() if not is_X_sparse else X[:,
-                                                                                                 i].toarray().flatten().tolist()
+                    result['values'][var_measures[i]] = X[:, i] if not is_X_sparse else X[:,
+                                                                                        i].toarray().flatten()
             for column in obs_measures + dimensions:
-                result['values'][column] = adata.obs[column].to_list()
+                result['values'][column] = adata.obs[column]
             for column in basis['coordinate_columns']:
-                result['coordinates'][column] = adata.obs[column].to_list()
+                result['coordinates'][column] = adata.obs[column]
         return result

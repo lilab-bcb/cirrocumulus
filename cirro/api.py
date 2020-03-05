@@ -142,7 +142,7 @@ def handle_image():
     path = os.path.dirname(path)
     image_path = os.path.join(path, 'images', image_id)
     with dataset_api.fs.open(image_path) as s:
-        return Response(s.read(), mimetype='image/png')  # FIXME
+        return Response(s.read(), mimetype='image/png')  # FIXME, correct mimetype
 
 
 @blueprint.route('/user', methods=['GET'])
@@ -173,8 +173,9 @@ def handle_embedding():
     dimensions = content.get('dimensions', [])
     measures = content.get('measures', [])
     basis = get_basis(content.get('basis'), nbins=nbins, agg=agg_function, dimensions=ndim, precomputed=precomputed)
-    return data_processing.handle_embedding(dataset_api=dataset_api, dataset=dataset, basis=basis, measures=measures,
-        dimensions=dimensions)
+    return to_json(
+        data_processing.handle_embedding(dataset_api=dataset_api, dataset=dataset, basis=basis, measures=measures,
+            dimensions=dimensions))
 
 
 @blueprint.route('/selection', methods=['POST'])
@@ -183,9 +184,9 @@ def handle_selection():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
-    return data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+    return to_json(data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
         measures=content.get('measures', []), dimensions=content.get('dimensions', []),
-        embeddings=content.get('embeddings', []))
+        embeddings=content.get('embeddings', [])))
 
 
 @blueprint.route('/stats', methods=['POST'])
@@ -194,8 +195,8 @@ def handle_stats():
     email, dataset = get_email_and_dataset(content)
     measures = content.get('measures', [])
     dimensions = content.get('dimensions', [])
-    return data_processing.handle_stats(dataset_api=dataset_api, dataset=dataset,
-        measures=measures, dimensions=dimensions)
+    return to_json(data_processing.handle_stats(dataset_api=dataset_api, dataset=dataset,
+        measures=measures, dimensions=dimensions))
 
 
 @blueprint.route('/grouped_stats', methods=['POST'])
@@ -204,8 +205,8 @@ def handle_grouped_stats():
     email, dataset = get_email_and_dataset(content)
     dimensions = content.get('dimensions', [])
     measures = content.get('measures', [])
-    return data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=dataset,
-        measures=measures, dimensions=dimensions)
+    return to_json(data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=dataset,
+        measures=measures, dimensions=dimensions))
 
 
 @blueprint.route('/selected_ids', methods=['POST'])

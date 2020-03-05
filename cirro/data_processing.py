@@ -133,7 +133,6 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[], qu
                 nbins=basis['nbins'],
                 coordinate_columns=basis['coordinate_columns'],
                 bin_name=basis['full_name'])
-
         result = EmbeddingAggregator(obs_measures=obs_measures,
             var_measures=var_measures, dimensions=dimensions,
             count=count,

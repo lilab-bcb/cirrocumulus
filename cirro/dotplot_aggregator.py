@@ -53,7 +53,7 @@ class DotPlotAggregator:
             for i in range(mean_output.shape[1]):
                 name = var_measures[i]
                 values.append({'name': name,
-                               'fractionExpressed': fraction_expressed_output[:, i].tolist(),
-                               'mean': mean_output[:, i].tolist()})
+                               'fractionExpressed': fraction_expressed_output[:, i],
+                               'mean': mean_output[:, i]})
             results.append(dotplot_result)
         return results
