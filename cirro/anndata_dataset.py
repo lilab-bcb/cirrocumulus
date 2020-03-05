@@ -26,7 +26,6 @@ class AnndataDataset(AbstractDataset):
             return anndata.read_loom(path)
         elif path_lc.endswith('.zarr'):
             return anndata.read_zarr(path)
-        print('Reading ')
         return anndata.read(path, backed=self.backed)
         # elif path.endswith('.mtx'):
         #
@@ -45,6 +44,8 @@ class AnndataDataset(AbstractDataset):
         adata = self.path_to_data.get(path)
         if adata is None:
             adata = self.read_adata(path)
+            if scipy.sparse.isspmatrix_csr(adata.X):
+                adata.X = adata.X.tocsc()
             self.add_data(path, adata)
         return adata
 
