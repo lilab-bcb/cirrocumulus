@@ -51,7 +51,6 @@ class ColorSchemeLegend extends React.PureComponent {
         context.strokeStyle = 'LightGrey';
         context.strokeRect(0, 0, width, legendHeight);
         if (this.props.label > 0) {
-
             context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
             context.textBaseline = 'top';
             context.fillStyle = 'black';
@@ -69,13 +68,11 @@ class ColorSchemeLegend extends React.PureComponent {
         this.redraw();
     }
 
-
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.redraw();
     }
 
     render() {
-
         let backingScale = 1;
         if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
             backingScale = window.devicePixelRatio;

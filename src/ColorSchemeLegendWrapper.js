@@ -9,7 +9,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
     render() {
         const {scale, name, nObs, nObsSelected, featureSummary, globalFeatureSummary, maxHeight, colorSchemeLegendStyle, datasetFilter, handleUpdate} = this.props;
         return (
-            <div style={{display: 'inline-block', verticalAlign: 'top'}}>
+            <div className="cirro-condensed" style={{display: 'inline-block', verticalAlign: 'top'}}>
                 {/*ContinuousLegend shows stats table */}
                 <ContinuousLegend name={name}
                                   summary={scale.summary}

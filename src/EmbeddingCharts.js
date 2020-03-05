@@ -37,12 +37,11 @@ class EmbeddingCharts extends React.PureComponent {
         //     key={traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding)}/>);
 
         let gridWidth = window.screen.availWidth - 280;
-        let gridHeight = window.screen.availHeight - 190;
 
         let columnWidth = itemSize + 300; // leave room for legend
 
         // can't render more than 8 charts due to webgl context
-        gridHeight = itemSize * 2;
+        let gridHeight = itemSize * 2;
         let elements = [];
         let row;
 

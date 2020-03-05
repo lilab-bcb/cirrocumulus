@@ -493,6 +493,7 @@ function handleFilterUpdated() {
                     const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
                     if (embedding == null) {
                         console.log(key + ' missing');
+                        continue;
                     }
                     let selectedPoints = selectedIndicesOrBins;
                     if (embedding.bin) {

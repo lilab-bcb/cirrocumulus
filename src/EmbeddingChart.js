@@ -48,6 +48,7 @@ class EmbeddingChart extends React.PureComponent {
 
     onWebglcontextlost() {
         if (this.graphDiv != null) {
+            console.log('onWebglcontextlost');
             window.Plotly.purge(this.graphDiv);
             window.Plotly.react(this.graphDiv, {
                 data: this.props.traceInfo.data,
@@ -128,11 +129,13 @@ class EmbeddingChart extends React.PureComponent {
         const trace = this.props.traceInfo.data[0];
         const name = getEmbeddingKey(trace.embedding);
         this.props.onDeselect({name: name});
-
     };
 
     render() {
-        const {traceInfo, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary, datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated} = this.props;
+        const {
+            traceInfo, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary,
+            datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
+        } = this.props;
 
         return (
             <div style={this.props.style}>
@@ -235,9 +238,6 @@ const mapDispatchToProps = dispatch => {
             dispatch(handleMeasureFilterUpdated(e));
         },
         onSelect: (e) => {
-            console.log(e);
-
-            // name is full basis name
             dispatch(handleBrushFilterUpdated(e));
         },
         onDeselect: (e) => {
