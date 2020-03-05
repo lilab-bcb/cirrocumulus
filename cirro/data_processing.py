@@ -118,7 +118,7 @@ def split_measures(measures):
     return obs_measures, var_measures
 
 
-def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
+def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[], quick=True):
     obs_measures, var_measures = split_measures(measures)
     if basis['precomputed']:
         result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
@@ -137,7 +137,10 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[]):
         result = EmbeddingAggregator(obs_measures=obs_measures,
             var_measures=var_measures, dimensions=dimensions,
             count=count,
-            nbins=basis['nbins'], basis=basis, agg_function=basis['agg']).execute(adata)
+            nbins=basis['nbins'],
+            basis=basis,
+            agg_function=basis['agg'],
+            quick=quick).execute(adata)
     return result
 
 

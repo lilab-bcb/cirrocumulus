@@ -285,7 +285,7 @@ class PrepareData:
             coords_group['bin_coords'] = df_with_coords[basis['coordinate_columns']].values
 
             result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
-                measures=measures + ['__count'], dimensions=dimensions)
+                measures=measures + ['__count'], dimensions=dimensions, quick=False)
             write_basis_obs(basis, coords_group, obs_group, result)
             logger.info('{} embedding finished writing obs'.format(basis_name))
         # write X to obsm_summary/name
