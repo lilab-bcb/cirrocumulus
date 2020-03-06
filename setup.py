@@ -34,7 +34,7 @@ requires = [
         "flask-compress",
         "fsspec",
         "natsort",
-        "numpy"
+        "numpy",
         "pandas",
         "matplotlib",
         "scipy"
