@@ -191,6 +191,7 @@ class App extends PureComponent {
 
     handleImportDataset = (event) => {
         this.props.handleDialog(IMPORT_DATASET_DIALOG);
+        this.setState({moreMenuOpen: false});
     };
     handleDataset = (event) => {
         this.props.handleDataset(event.target.value);
