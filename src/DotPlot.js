@@ -154,8 +154,9 @@ class DotPlot extends React.PureComponent {
             height: 80 + maxCategoryWidth + features.length * (maxDiameter + 1),
             width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
         });
-        layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: 20, r: 0};
-
+        layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: maxDiameter, r: maxDiameter};
+        layout.yaxis.type = 'category';
+        layout.yaxis.autorange = true;
         layout.xaxis.tickvals = x;
         layout.xaxis.tickmode = 'array';
         let ticktext = [];
