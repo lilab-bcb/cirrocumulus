@@ -6,20 +6,18 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
-import Input from '@material-ui/core/Input';
+import Grid from '@material-ui/core/Grid';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Link from '@material-ui/core/Link';
 import MenuItem from '@material-ui/core/MenuItem';
-import Popover from '@material-ui/core/Popover';
 import Select from '@material-ui/core/Select';
-import withStyles from "@material-ui/core/styles/withStyles";
+import {withStyles} from '@material-ui/core/styles';
+import Switch from '@material-ui/core/Switch';
 import Toolbar from '@material-ui/core/Toolbar';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import CloseIcon from '@material-ui/icons/Close';
 import CloudIcon from '@material-ui/icons/Cloud';
-import DeleteIcon from '@material-ui/icons/Delete';
-import LinkIcon from '@material-ui/icons/Link';
-import SettingsIcon from '@material-ui/icons/Settings';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
@@ -32,6 +30,7 @@ import {
     logout,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
+    setCombineDatasetFilters,
     setDataset,
     setDialog,
     setMessage,
@@ -80,17 +79,20 @@ class App extends PureComponent {
         super(props);
         this.state = {
             userMenuOpen: false,
-            linkMenuOpen: false,
             userMenuAnchorEl: null,
-            linkMenuAnchorEl: null,
-            linkText: null,
+            moreMenuOpen: false,
+            moreMenuAnchorEl: null,
+
         };
-        this.linkRef = React.createRef();
 
     }
 
     handleUserMenuClose = () => {
         this.setState({userMenuOpen: false});
+    };
+
+    handleMoreMenuClose = () => {
+        this.setState({moreMenuOpen: false});
     };
 
     onDatasetFilterChipDeleted = (name) => {
@@ -104,6 +106,9 @@ class App extends PureComponent {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
 
+    handleCombineDatasetFilters = (event) => {
+        this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
+    };
 
     handleMessageClose = () => {
         this.props.setMessage(null);
@@ -111,33 +116,11 @@ class App extends PureComponent {
     handleUserMenuOpen = (event) => {
         this.setState({userMenuOpen: true, userMenuAnchorEl: event.currentTarget});
     };
-
-    handleLinkMenuClose = (event) => {
-        this.setState({linkMenuOpen: false, linkMenuAnchorEl: null});
+    handleMoreMenuOpen = (event) => {
+        this.setState({moreMenuOpen: true, moreMenuAnchorEl: event.currentTarget});
     };
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (this.state.linkMenuOpen) {
-            window.requestAnimationFrame(() => {
-                this.linkRef.current.focus();
-                this.linkRef.current.select();
-            });
-        }
-    }
 
     copyLink = () => {
-        this.linkRef.current.focus();
-        this.linkRef.current.select();
-        document.execCommand('copy');
-        this.props.setMessage('Link copied');
-    };
-
-    handleSelectedCellsClick = (event) => {
-        event.preventDefault();
-        this.props.downloadSelectedIds();
-    };
-
-    handleLinkMenuOpen = (event) => {
         let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
@@ -181,21 +164,36 @@ class App extends PureComponent {
             json.colorScheme = this.props.interpolator.name;
         }
         linkText += '?q=' + JSON.stringify(json);
-        this.setState({linkMenuOpen: true, linkMenuAnchorEl: event.currentTarget, linkText: linkText});
-
+        const el = document.createElement('textarea');
+        el.value = linkText;
+        el.setAttribute('readonly', '');
+        el.style.position = 'absolute';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        el.focus();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        this.props.setMessage('Link copied');
+        this.setState({moreMenuOpen: false});
     };
+
+    handleSelectedCellsClick = (event) => {
+        event.preventDefault();
+        this.props.downloadSelectedIds();
+    };
+
 
     handleLogout = () => {
         this.setState({userMenuOpen: false});
         this.props.handleLogout();
     };
 
+    handleImportDataset = (event) => {
+        this.props.handleDialog(IMPORT_DATASET_DIALOG);
+    };
     handleDataset = (event) => {
-        if (event.target.value === 'importDataset') {
-            this.props.handleDialog(IMPORT_DATASET_DIALOG);
-        } else {
-            this.props.handleDataset(event.target.value);
-        }
+        this.props.handleDataset(event.target.value);
     };
     handleSettings = (event) => {
         this.props.handleDialog(EDIT_DATASET_DIALOG);
@@ -209,7 +207,7 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {classes, serverInfo} = this.props;
+        const {classes, serverInfo, combineDatasetFilters} = this.props;
         const isEdit = this.props.savedDatasetFilter != null;
         let datasetFilters = getDatasetFilterArray(this.props.datasetFilter);
         let datasetFilterKeys = [];
@@ -258,10 +256,7 @@ class App extends PureComponent {
                                 {this.props.datasetChoices.map(dataset => <MenuItem
                                     key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
 
-                                {this.props.user.importer && this.props.datasetChoices.length > 0 && <hr/>}
-                                {this.props.user.importer && <MenuItem key="importDataset" value="importDataset">
-                                    Import...
-                                </MenuItem>}
+
                             </Select>}
                             <div style={{display: 'inline-block', marginLeft: '10px'}}>
                                 {hasSelection && (<Link title="Download selected ids" href="#"
@@ -290,6 +285,20 @@ class App extends PureComponent {
                                 <div style={{display: 'inline-block', marginLeft: '10px'}}><Link title="Clear" href="#"
                                                                                                  onClick={this.onDatasetFilterCleared}>Clear</Link>
                                 </div>}
+                                {datasetFilters.length > 0 &&
+                                <div style={{display: 'inline-block', marginLeft: '10px'}}>
+                                    <Grid component="label" container alignItems="center" spacing={0}>
+                                        <Grid item>AND</Grid>
+                                        <Grid item>
+                                            <Switch
+                                                size="small"
+                                                checked={combineDatasetFilters === 'or'}
+                                                onChange={this.handleCombineDatasetFilters}
+                                            />
+                                        </Grid>
+                                        <Grid item>OR</Grid>
+                                    </Grid>
+                                </div>}
                                 {datasetFilters.length > 0 && serverInfo.canWrite &&
                                 <div style={{display: 'inline-block', marginLeft: '10px'}}>
                                     <Link style={{
@@ -305,47 +314,38 @@ class App extends PureComponent {
                             </div>
                         </div>
                         <div style={{marginLeft: 'auto'}}>
-                            {this.props.dataset != null &&
-                            <Tooltip title="Link"><IconButton
-                                aria-owns={this.state.linkMenuOpen ? 'link-popper' : undefined}
-                                aria-haspopup="true" onClick={this.handleLinkMenuOpen} aria-label="Link">
-                                <LinkIcon/>
-                            </IconButton></Tooltip>}
+                            <Tooltip title={'More'}>
+                                <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
+                                            onClick={this.handleMoreMenuOpen}>
+                                    <MoreVertIcon/>
+                                </IconButton>
+                            </Tooltip>
+                            <Menu id="more-menu"
+                                  anchorEl={this.state.moreMenuAnchorEl}
+                                  anchorOrigin={{
+                                      vertical: 'top',
+                                      horizontal: 'right',
+                                  }}
 
-                            {this.props.dataset !== null && this.props.dataset.owner &&
-                            <Tooltip title="Edit"><IconButton onClick={this.handleSettings} aria-label="Edit">
-                                <SettingsIcon/>
-                            </IconButton></Tooltip>}
+                                  transformOrigin={{
+                                      vertical: 'top',
+                                      horizontal: 'right',
+                                  }} open={this.state.moreMenuOpen}
+                                  onClose={this.handleMoreMenuClose}>
+                                {this.props.user.importer &&
+                                <MenuItem onClick={this.handleImportDataset}>
+                                    Import Dataset
+                                </MenuItem>}
+                                {this.props.dataset !== null && this.props.dataset.owner &&
+                                <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
+                                {this.props.dataset !== null && this.props.dataset.owner &&
+                                <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
+                                {this.props.dataset != null &&
+                                <MenuItem onClick={this.copyLink}>Copy Link
+                                </MenuItem>}
+                            </Menu>
 
-                            {this.props.dataset !== null && this.props.dataset.owner &&
-                            <Tooltip title="Delete"><IconButton onClick={this.handleDelete} aria-label="Delete">
-                                <DeleteIcon/>
-                            </IconButton></Tooltip>}
 
-                            {this.props.dataset != null && <Popover
-                                id="link-popper"
-                                open={this.state.linkMenuOpen}
-                                anchorEl={this.state.linkMenuAnchorEl}
-                                onClose={this.handleLinkMenuClose}
-
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                            >
-                                <div style={{padding: 10}}>
-                                    <h4>Copy link to share your current view</h4>
-                                    <Button size="small" variant="outlined" onClick={this.copyLink}>
-                                        Copy
-                                    </Button> <Input autoFocus={true} inputRef={this.linkRef} readOnly={true}
-                                                     value={this.state.linkText}></Input>
-                                </div>
-                            </Popover>
-                            }
                             {this.props.email != null &&
                             <Tooltip title={this.props.email}>
                                 <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
@@ -435,6 +435,7 @@ const mapStateToProps = state => {
     return {
         binSummary: state.binSummary,
         binValues: state.binValues,
+        combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
         dataset: state.dataset,
         datasetChoices: state.datasetChoices,
@@ -472,6 +473,9 @@ const mapDispatchToProps = dispatch => {
         },
         handleDialog: (value) => {
             dispatch(setDialog(value));
+        },
+        handleCombineDatasetFilters: (value) => {
+            dispatch(setCombineDatasetFilters(value));
         },
         setMessage: (value) => {
             dispatch(setMessage(value));

@@ -16,7 +16,7 @@ const authScopes = [
     'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/devstorage.full_control',
 ];
-
+export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
@@ -373,7 +373,7 @@ function getFilterJson(state) {
                 filters[i][0] = 'obs/' + filters[i][0];
             }
         }
-        return {filters: filters};
+        return {filters: filters, combine: state.combineDatasetFilters};
     }
 }
 
@@ -422,6 +422,17 @@ export function exportDatasetFilters() {
 
 export function setDotPlotSortOrder(payload) {
     return {type: SET_DOT_PLOT_SORT_ORDER, payload: payload};
+}
+
+function _setCombineDatasetFilters(payload) {
+    return {type: SET_COMBINE_DATASET_FILTERS, payload: payload};
+}
+
+export function setCombineDatasetFilters(payload) {
+    return function (dispatch, getState) {
+        dispatch(_setCombineDatasetFilters(payload));
+        dispatch(handleFilterUpdated());
+    };
 }
 
 function setGlobalFeatureSummary(payload) {

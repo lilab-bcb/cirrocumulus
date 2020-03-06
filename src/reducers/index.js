@@ -9,6 +9,7 @@ import {
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
     SET_CATEGORICAL_COLOR,
+    SET_COMBINE_DATASET_FILTERS,
     SET_DATASET,
     SET_DATASET_CHOICES,
     SET_DATASET_FILTER,
@@ -485,6 +486,17 @@ function datasetFilter(state = {}, action) {
     }
 }
 
+function combineDatasetFilters(state = 'and', action) {
+    switch (action.type) {
+        case SET_COMBINE_DATASET_FILTERS:
+            return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.combineDatasetFilters != null ? action.payload.combineDatasetFilters : state;
+        default:
+            return state;
+    }
+}
+
 function updateChartColorScale(traceInfo) {
     const rgbScale = getRgbScale();
     let colorScale = traceInfo.colorScale;
@@ -707,6 +719,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
+    combineDatasetFilters,
     datasetFilter,
     datasetFilters,
     dataset,
