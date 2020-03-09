@@ -12,6 +12,8 @@ def filter_adata(adata, data_filter):
     if data_filter is not None:
         keep_expr = None
         user_filters = data_filter.get('filters', [])
+        combine_filters = data_filter.get('combine', 'and')
+
         for filter_obj in user_filters:
             field = filter_obj[0]
             op = filter_obj[1]
@@ -68,7 +70,14 @@ def filter_adata(adata, data_filter):
                 keep = keep.toarray().flatten()
             if isinstance(keep, pd.Series):
                 keep = keep.values
-            keep_expr = keep_expr & keep if keep_expr is not None else keep
+            if keep_expr is not None:
+                if combine_filters == 'and':
+                    keep_expr = keep_expr & keep
+                else:
+                    keep_expr = keep_expr | keep
+            else:
+                keep_expr = keep
+
         adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
     return adata
 

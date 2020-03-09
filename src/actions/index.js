@@ -566,6 +566,7 @@ export function handleBrushFilterUpdated(payload) {
     };
 }
 
+
 export function handleMeasureFilterUpdated(payload) {
     return function (dispatch, getState) {
         const name = payload.name;
@@ -1604,7 +1605,6 @@ function handleEmbeddingResult(result) {
 }
 
 function handleError(dispatch, err, message) {
-    throw err;
     console.log(err);
     if (err.status === 401) {
         dispatch(setMessage('Your session has expired. Please login again.'));

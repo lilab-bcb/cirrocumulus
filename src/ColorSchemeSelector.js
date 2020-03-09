@@ -41,7 +41,8 @@ class ColorSchemeSelector extends React.PureComponent {
     render() {
         const {classes} = this.props;
         let interpolator = fixInterpolatorName(this.props.interpolator.name);
-
+        const width = 180;
+        const height = 20;
         return (
             <Select
                 input={<Input id="color-scheme"/>}
@@ -53,8 +54,8 @@ class ColorSchemeSelector extends React.PureComponent {
                     Diverging
                 </MenuItem>
                 {interpolators['Diverging'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={200}
-                                       label={false} height={24}
+                    <ColorSchemeLegend width={width}
+                                       label={false} height={height}
                                        scale={this.getScale(item)}/>
 
                 </MenuItem>))}
@@ -63,8 +64,8 @@ class ColorSchemeSelector extends React.PureComponent {
                     Sequential (Single Hue)
                 </MenuItem>
                 {interpolators['Sequential (Single Hue)'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={200}
-                                       label={false} height={20}
+                    <ColorSchemeLegend width={width}
+                                       label={false} height={height}
                                        scale={this.getScale(item)}/>
                 </MenuItem>))}
 
@@ -72,8 +73,8 @@ class ColorSchemeSelector extends React.PureComponent {
                     Sequential (Multi-Hue)
                 </MenuItem>
                 {interpolators['Sequential (Multi-Hue)'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={200}
-                                       label={false} height={20}
+                    <ColorSchemeLegend width={width}
+                                       label={false} height={height}
                                        scale={this.getScale(item)}/>
                 </MenuItem>))}
 
@@ -81,8 +82,8 @@ class ColorSchemeSelector extends React.PureComponent {
                     Cyclical
                 </MenuItem>
                 {interpolators['Cyclical'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={200}
-                                       label={false} height={20}
+                    <ColorSchemeLegend width={width}
+                                       label={false} height={height}
                                        scale={this.getScale(item)}/>
                 </MenuItem>))}
 

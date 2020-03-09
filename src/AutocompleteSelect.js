@@ -20,7 +20,7 @@ const styles = theme => ({
     input: {
         display: 'flex',
         padding: 0,
-        maxWidth: '220px',
+        // maxWidth: '220px',
         height: '100%'
     },
     valueContainer: {
@@ -44,6 +44,10 @@ const styles = theme => ({
     },
     singleValue: {
         fontSize: 16,
+    },
+    dropdownIndicator: {
+        alignSelf: 'flex-end',
+        color: 'red'
     },
     placeholder: {
         position: 'absolute',
@@ -299,7 +303,7 @@ class AutocompleteSelect extends React.Component {
 AutocompleteSelect.propTypes = {
     isMulti: PropTypes.bool.isRequired,
     defaultOptions: PropTypes.array,
-    label: PropTypes.string.isRequired,
+    label: PropTypes.string,
     helperText: PropTypes.string,
     classes: PropTypes.object.isRequired,
     theme: PropTypes.object.isRequired,
