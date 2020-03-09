@@ -222,6 +222,25 @@ class AppHeader extends React.PureComponent {
         return (
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
+                    {email != null &&
+                    <Select
+                        style={{marginRight: 6}}
+                        disableUnderline={true}
+                        displayEmpty={true}
+                        value={dataset == null ? '' : dataset.id}
+                        onChange={this.handleDataset}
+                        inputProps={{
+                            name: 'dataset',
+                            id: 'dataset-id',
+                        }}
+                    > {datasetChoices.length > 0 && datasetChoices.length !== 1 &&
+                    <MenuItem key="" value="" disabled>
+                        Choose a dataset
+                    </MenuItem>}
+                        {datasetChoices.map(dataset => <MenuItem
+                            key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
+                    </Select>}
+
                     <div className={"cirro-condensed"}>
                         {/*<CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>*/}
                         {/*<h3*/}
@@ -277,26 +296,6 @@ class AppHeader extends React.PureComponent {
                         </div>
                     </div>
                     <div style={{marginLeft: 'auto'}}>
-
-                        {email != null &&
-                        <Select
-                            disableUnderline={true}
-                            displayEmpty={true}
-                            value={dataset == null ? '' : dataset.id}
-                            onChange={this.handleDataset}
-                            inputProps={{
-                                name: 'dataset',
-                                id: 'dataset-id',
-                            }}
-                        > {datasetChoices.length > 0 && datasetChoices.length !== 1 &&
-                        <MenuItem key="" value="" disabled>
-                            Choose a dataset
-                        </MenuItem>}
-                            {datasetChoices.map(dataset => <MenuItem
-                                key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
-
-
-                        </Select>}
 
                         <Tooltip title={'More'}>
                             <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
