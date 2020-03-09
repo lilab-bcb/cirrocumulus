@@ -6,8 +6,8 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-export const API = 'http://localhost:5000/api';
-//export const API = '/api';
+//export const API = 'http://localhost:5000/api';
+export const API = '/api';
 
 const authScopes = [
     'email',
