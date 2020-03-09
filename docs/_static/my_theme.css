@@ -1,0 +1,22 @@
+.wy-nav-content {
+    max-width: none;
+}
+
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+.wy-table-responsive {
+    margin-bottom: 24px;
+    max-width: 100%;
+    overflow: visible;
+}
+
+.red {
+	color: red;
+}
+
+.red-bold {
+	color: red;
+	font-weight: bold;
+}
