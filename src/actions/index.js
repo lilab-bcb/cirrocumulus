@@ -6,8 +6,8 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-//export const API = 'http://localhost:5000/api';
-export const API = '/api';
+export const API = 'http://localhost:5000/api';
+//export const API = '/api';
 
 const authScopes = [
     'email',
@@ -565,6 +565,7 @@ export function handleBrushFilterUpdated(payload) {
         }
     };
 }
+
 
 export function handleMeasureFilterUpdated(payload) {
     return function (dispatch, getState) {
@@ -1604,7 +1605,6 @@ function handleEmbeddingResult(result) {
 }
 
 function handleError(dispatch, err, message) {
-    throw err;
     console.log(err);
     if (err.status === 401) {
         dispatch(setMessage('Your session has expired. Please login again.'));
