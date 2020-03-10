@@ -20,7 +20,7 @@ const styles = theme => ({
     input: {
         display: 'flex',
         padding: 0,
-        // maxWidth: '220px',
+        maxWidth: '220px',
         height: '100%'
     },
     valueContainer: {

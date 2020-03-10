@@ -1,7 +1,11 @@
 import {Switch} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import Divider from '@material-ui/core/Divider';
+import MuiExpansionPanel from '@material-ui/core/ExpansionPanel';
+import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import IconButton from '@material-ui/core/IconButton';
@@ -49,6 +53,7 @@ const styles = theme => ({
     root: {
         display: 'flex',
         flexWrap: 'wrap',
+        width: '100%',
         'flex-direction': 'column',
     },
     formControl: {
@@ -60,6 +65,49 @@ const styles = theme => ({
         minWidth: 200,
     },
 });
+
+
+const ExpansionPanel = withStyles({
+    root: {
+        border: '1px solid rgba(0, 0, 0, .125)',
+        boxShadow: 'none',
+        '&:not(:last-child)': {
+            borderBottom: 0,
+        },
+        '&:before': {
+            display: 'none',
+        },
+        '&$expanded': {
+            margin: 0,
+        },
+    },
+    expanded: {},
+})(MuiExpansionPanel);
+
+const ExpansionPanelSummary = withStyles({
+    root: {
+        backgroundColor: 'rgba(0, 0, 0, .03)',
+        borderBottom: '1px solid rgba(0, 0, 0, .125)',
+        marginBottom: -1,
+        minHeight: 43,
+        '&$expanded': {
+            minHeight: 43,
+        },
+    },
+    content: {
+        '&$expanded': {
+            margin: 0,
+        },
+    },
+    expanded: {},
+})(MuiExpansionPanelSummary);
+
+const ExpansionPanelDetails = withStyles(theme => ({
+    root: {
+        padding: 0,
+    },
+}))(MuiExpansionPanelDetails);
+
 
 class EmbedForm extends React.PureComponent {
 
@@ -79,7 +127,7 @@ class EmbedForm extends React.PureComponent {
     onMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
             let markerSize = parseFloat(event.target.value);
-            if (markerSize >= 0) {
+            if (markerSize >= 0 && markerSize <= 30) {
                 this.props.handleMarkerSize(markerSize);
             }
         }
@@ -97,7 +145,7 @@ class EmbedForm extends React.PureComponent {
     onUnselectedMarkerSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
             let markerSize = parseFloat(event.target.value);
-            if (markerSize >= 0) {
+            if (markerSize >= 0 && markerSize <= 30) {
                 this.props.handleUnselectedMarkerSize(markerSize);
             }
         }
@@ -271,123 +319,146 @@ class EmbedForm extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
-
                 <FormControl className={classes.formControl} style={{zIndex: 2000}}>
                     <AutocompleteSelect label="Features" options={allOptions}
                                         defaultOptions={defaultOptions} value={featureValue}
                                         onChange={this.props.handleFeatures}
                                         isMulti={true}/>
                 </FormControl>
-
-                <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="chart_size">Chart Size</InputLabel>
-                    <Select
-                        className={classes.select}
-                        input={<Input id="chart_size"/>}
-                        onChange={this.onEmbeddingChartSizeChange}
-                        value={embeddingChartSize}
-                        multiple={false}>
-                        {chartSizes.map(item => (
-                            <MenuItem key={item.label} value={item.value}>
-                                <ListItemText primary={item.label}/>
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-
-                <TextField type="number" step="2" min="0" max="30" onKeyPress={this.onMarkerSizeKeyPress}
-                           onChange={this.onMarkerSizeChange} label="Marker Size"
-                           className={classes.formControl} value={markerSize}/>
-                <TextField step="0.1" type="number" min="0" max="1" onKeyPress={this.onMarkerOpacityKeyPress}
-                           onChange={this.onMarkerOpacityChange} label="Marker Opacity"
-                           className={classes.formControl} value={markerOpacity}/>
-
-                <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
-                    <ColorSchemeSelector/>
-                </FormControl>
-                {<FormControlLabel
-                    control={
-                        <Switch
-                            checked={interpolator.reversed || false}
-                            value={'reverseColors'}
-                            onChange={this.handleReverseColors}
-                        />
-                    }
-                    label="Reverse Colors"
-                />}
-
-                {!isSummarized && <FormControlLabel
-                    control={
-                        <Switch
-                            checked={binValues}
-                            value={'binPlot'}
-                            onChange={this.handleBinValuesChange}
-                        />
-                    }
-                    label="Bin Plot"
-                />}
-
-                {!isSummarized && binValues &&
-                <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
-                           value={numberOfBinsUI}
-                           onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"
-                           className={classes.formControl}/>}
-
-
-                {!isSummarized && binValues && <FormControl className={classes.formControl}>
-                    <InputLabel htmlFor="summary">Bin Summary</InputLabel>
-                    <Select
-                        className={classes.select}
-                        input={<Input id="summary"/>}
-                        onChange={this.onBinSummaryChange}
-                        value={binSummary}
+                <ExpansionPanel defaultExpanded>
+                    <ExpansionPanelSummary
+                        aria-controls="chart-options-content"
+                        id="chart-options-header"
                     >
-                        {summaryOptions.map(c => (
-                            <MenuItem key={c.value} value={c.value}>
-                                <ListItemText primary={c.label}/>
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>}
+                        <div>Chart Options</div>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        <div>
+                            <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="chart_size">Chart Size</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    input={<Input id="chart_size"/>}
+                                    onChange={this.onEmbeddingChartSizeChange}
+                                    value={embeddingChartSize}
+                                    multiple={false}>
+                                    {chartSizes.map(item => (
+                                        <MenuItem key={item.label} value={item.value}>
+                                            <ListItemText primary={item.label}/>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
 
-                <Divider/>
+                            <TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}
+                                       onChange={this.onMarkerSizeChange} label="Marker Size"
+                                       className={classes.formControl} value={markerSize}/>
+                            <TextField type="text" onKeyPress={this.onMarkerOpacityKeyPress}
+                                       onChange={this.onMarkerOpacityChange} label="Marker Opacity"
+                                       className={classes.formControl} value={markerOpacity}/>
 
-                <Typography
-                    color="textSecondary"
-                    display="block"
-                    variant="caption"
-                >
-                    Unselected Chart Properties
-                </Typography>
-                <TextField type="number" step="2" min="0" max="30" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
-                           onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
-                           className={classes.formControl} value={unselectedMarkerSize}/>
-                <TextField step="0.1" type="number" min="0" max="1"
-                           onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
-                           onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
-                           className={classes.formControl} value={unselectedMarkerOpacity}/>
+                            <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
+                                <ColorSchemeSelector/>
+                            </FormControl>
+                            {<FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={interpolator.reversed || false}
+                                        value={'reverseColors'}
+                                        onChange={this.handleReverseColors}
+                                    />
+                                }
+                                label="Reverse Colors"
+                            />}
 
-                {datasetFilters.length > 0 && <Divider/>}
-                {datasetFilters.length > 0 && <h3 style={{marginLeft: 8}}>Saved Filters</h3>}
+                            {!isSummarized && <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={binValues}
+                                        value={'binPlot'}
+                                        onChange={this.handleBinValuesChange}
+                                    />
+                                }
+                                label="Bin Plot"
+                            />}
 
-                <List dense={true}>
-                    {datasetFilters.map(item => (
-                        <ListItem key={item.id} data-key={item.id} button
-                                  selected={item.id === savedDatasetFilter.id}
-                                  onClick={e => this.openDatasetFilter(item.id)}>
-                            <ListItemText primary={item.name}/>
-                            <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
-                                <IconButton edge="end" aria-label="delete">
-                                    <DeleteIcon/>
-                                </IconButton>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-                    ))}
-                </List>
-                {datasetFilters.length > 0 && <Button onClick={this.props.handleExportDatasetFilters}>Export</Button>}
+                            {!isSummarized && binValues &&
+                            <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
+                                       value={numberOfBinsUI}
+                                       onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"
+                                       className={classes.formControl}/>}
+
+
+                            {!isSummarized && binValues && <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="summary">Bin Summary</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    input={<Input id="summary"/>}
+                                    onChange={this.onBinSummaryChange}
+                                    value={binSummary}
+                                >
+                                    {summaryOptions.map(c => (
+                                        <MenuItem key={c.value} value={c.value}>
+                                            <ListItemText primary={c.label}/>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>}
+
+
+                            <Divider/>
+
+                            <Typography
+                                color="textSecondary"
+                                display="block"
+                                variant="caption"
+                            >
+                                Unselected Chart Properties
+                            </Typography>
+                            <TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
+                                       onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
+                                       className={classes.formControl} value={unselectedMarkerSize}/>
+                            <TextField type="text"
+                                       onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
+                                       onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
+                                       className={classes.formControl} value={unselectedMarkerOpacity}/>
+
+                        </div>
+
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
+                <ExpansionPanel defaultExpanded>
+                    <ExpansionPanelSummary
+                        aria-controls="filter-options-content"
+                        id="filter-options-header"
+                    >
+                        <div>Saved Filters</div>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        <div>
+                            {datasetFilters.length === 0 &&
+                            <Box color="text.secondary">No saved filters</Box>}
+                            {datasetFilters.length > 0 && <div><List dense={true}>
+                                {datasetFilters.map(item => (
+                                    <ListItem key={item.id} data-key={item.id} button
+                                              selected={item.id === savedDatasetFilter.id}
+                                              onClick={e => this.openDatasetFilter(item.id)}>
+                                        <ListItemText primary={item.name}/>
+                                        <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
+                                            <IconButton edge="end" aria-label="delete">
+                                                <DeleteIcon/>
+                                            </IconButton>
+                                        </ListItemSecondaryAction>
+                                    </ListItem>
+                                ))}
+                            </List>
+                                <Button onClick={this.props.handleExportDatasetFilters}>Export Filters</Button>
+                            </div>}
+                        </div>
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
             </div>
         );
     }
