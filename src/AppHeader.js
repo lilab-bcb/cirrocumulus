@@ -26,6 +26,7 @@ import {
     setCombineDatasetFilters,
     setDataset,
     setDialog,
+    setMessage,
 } from './actions';
 import {intFormat} from './formatters';
 import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_MARKER_SIZE} from "./reducers";
@@ -367,7 +368,9 @@ class AppHeader extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
-
+        features: state.features,
+        embeddings: state.embeddings,
+        groupBy: state.groupBy,
         binSummary: state.binSummary,
         binValues: state.binValues,
         combineDatasetFilters: state.combineDatasetFilters,
@@ -394,7 +397,9 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
-
+        setMessage: (value) => {
+            dispatch(setMessage(value));
+        },
         handleLogin: () => {
             dispatch(login());
         },
@@ -410,7 +415,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleCombineDatasetFilters: (value) => {
             dispatch(setCombineDatasetFilters(value));
         },
-
         downloadSelectedIds: () => {
             dispatch(downloadSelectedIds());
         },
