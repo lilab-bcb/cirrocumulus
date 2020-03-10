@@ -81,6 +81,12 @@ You can clearly see that TRAC is highly expressed in this cluster, while CD34 is
 
 You can click the name once more to go back to the whole dataset visualization.
 
+Moreover, if you want to hide unselected cells, simply set **Unselected Marker Opacity** in the left panel (see below) to ``0``, and press Enter button on your keyboard:
+
+.. image:: images/tutorial-03.png
+  :scale: 40%
+  :align: center
+
 Share Results
 ^^^^^^^^^^^^^^
 
