@@ -1,25 +1,37 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {Grid} from 'react-virtualized';
+import {getTraceKey, setPrimaryTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
+import GalleryImage from './GalleryImage';
 import PlotUtil from './PlotUtil';
 
 
 class EmbeddingCharts extends React.PureComponent {
 
+
+    onChartSelected = (traceInfo) => {
+        this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
+    };
+
     getPlots() {
-        const embeddingChartSize = this.props.embeddingChartSize;
-        const activeTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
+        const {primaryTraceKey, embeddingData} = this.props;
+        //  const embeddingChartSize = this.props.embeddingChartSize;
+        const activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
+        let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
+        if (primaryTraces.length === 0 && activeTraces.length > 0) {
+            primaryTraces = [activeTraces[0]];
+        }
+        console.log('getPlots', activeTraces.length, primaryTraces.length);
         const singleChartSize = PlotUtil.getSingleEmbeddingChartSize();
-        let itemSize = Math.floor(singleChartSize / embeddingChartSize);
+        // let itemSize = Math.floor(singleChartSize / embeddingChartSize);
         activeTraces.forEach(traceInfo => {
 
-            if (itemSize !== traceInfo.layout.width) {
-                traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
-                traceInfo.layout.width = itemSize;
-                traceInfo.layout.height = itemSize;
-            }
+            // if (itemSize !== traceInfo.layout.width) {
+            //     traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
+            //     traceInfo.layout.width = itemSize;
+            //     traceInfo.layout.height = itemSize;
+            // }
 
             if (traceInfo.data[0].marker.size === 0 && traceInfo.data[0].type !== 'scatter3d') {
                 traceInfo.data[0].marker.size = 1e-8;
@@ -28,69 +40,29 @@ class EmbeddingCharts extends React.PureComponent {
                 traceInfo.data[0].unselected.marker.size = 1e-8;
             }
         });
-        if (activeTraces.length === 0) {
-            return null;
-        }
 
-        // return activeTraces.map(traceInfo => <EmbeddingChart
-        //     style={{display: 'inline-block', border: '1px solid LightGrey'}} traceInfo={traceInfo}
-        //     key={traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding)}/>);
+        if (primaryTraces.length > 0) {
+            let traceInfo = primaryTraces[0];
+            if (singleChartSize !== traceInfo.layout.width) {
+                traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
+                traceInfo.layout.width = singleChartSize;
+                traceInfo.layout.height = singleChartSize;
 
-        let gridWidth = window.screen.availWidth - 280;
-
-        let columnWidth = itemSize + 300; // leave room for legend
-
-        // can't render more than 8 charts due to webgl context
-        let gridHeight = itemSize * 2;
-        let elements = [];
-        let row;
-
-        for (let i = 0; i < activeTraces.length; i++) {
-            if (i % embeddingChartSize === 0) {
-                row = [];
-                elements.push(row);
             }
-            row.push(activeTraces[i]);
         }
 
-        function cellRenderer({
-                                  columnIndex, // Horizontal (column) index of cell
-                                  isScrolling, // The Grid is currently being scrolled
-                                  isVisible, // This cell is visible within the grid (eg it is not an overscanned cell)
-                                  key, // Unique key within array of cells
-                                  parent, // Reference to the parent Grid (instance)
-                                  rowIndex, // Vertical (row) index of cell
-                                  style, // Style object to be applied to cell (to position it);
-                                  // This must be passed through to the rendered cell element.
-                              }) {
+        return (<div>
+            {primaryTraces.map(traceInfo => <EmbeddingChart
+                style={{display: 'block', border: '1px solid LightGrey'}} traceInfo={traceInfo}
+                key={getTraceKey(traceInfo)}/>)}
+            {activeTraces.map(traceInfo => <GalleryImage
+                style={{display: 'inline-block', border: '1px solid LightGrey'}}
+                traceInfo={traceInfo}
+                selected={primaryTraceKey === getTraceKey(traceInfo)}
+                onSelect={this.onChartSelected}
+                key={getTraceKey(traceInfo)}/>)}
+        </div>);
 
-
-            let row = elements[rowIndex];
-            let item = row[columnIndex];
-            // if (!item || !isVisible || isScrolling) {
-            //     return <div style={style} key={key}/>;
-            // }
-            if (!item) {
-                return <div style={style} key={key}/>;
-            }
-            return (
-                <EmbeddingChart style={style} traceInfo={item} key={key}/>
-            );
-        }
-
-
-        return <Grid
-            cellRenderer={cellRenderer}
-            columnWidth={columnWidth}
-            columnCount={embeddingChartSize}
-            useDynamicRowHeight={false}
-            height={gridHeight}
-            overscanColumnCount={0}
-            overscanRowCount={0}
-            rowHeight={itemSize}
-            rowCount={elements.length}
-            width={gridWidth}
-        />;
 
     }
 
@@ -102,11 +74,16 @@ class EmbeddingCharts extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         embeddingData: state.embeddingData,
-        embeddingChartSize: state.embeddingChartSize
+        embeddingChartSize: state.embeddingChartSize,
+        primaryTraceKey: state.primaryTraceKey
     };
 };
 const mapDispatchToProps = dispatch => {
-    return {};
+    return {
+        handlePrimaryTraceKey: (value) => {
+            dispatch(setPrimaryTraceKey(value));
+        }
+    };
 };
 
 export default (connect(

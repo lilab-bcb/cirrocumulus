@@ -1,3 +1,5 @@
+import {createMuiTheme} from '@material-ui/core/styles';
+import {ThemeProvider} from '@material-ui/styles';
 import React from 'react';
 import {render} from 'react-dom';
 import {Provider} from 'react-redux';
@@ -6,8 +8,6 @@ import thunkMiddleware from 'redux-thunk';
 import {initGapi} from './actions';
 import App from './App';
 import rootReducer from './reducers';
-import {ThemeProvider} from '@material-ui/styles';
-import {createMuiTheme} from '@material-ui/core/styles';
 // import * as serviceWorker from './serviceWorker';
 
 const theme = createMuiTheme(
@@ -17,11 +17,15 @@ const theme = createMuiTheme(
         }
     }
 );
-
+const logger = store => next => action => {
+    console.log('dispatching', action);
+    let result = next(action);
+    return result;
+};
 const store = createStore(
     rootReducer,
     applyMiddleware(
-        thunkMiddleware,
+        thunkMiddleware, logger
     ),
 );
 

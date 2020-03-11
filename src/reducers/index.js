@@ -35,6 +35,7 @@ import {
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
+    SET_PRIMARY_TRACE_KEY,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -580,6 +581,7 @@ function embeddingData(state = [], action) {
             });
             return state.slice();
         case SET_SELECTION:
+
             state.forEach((traceInfo, stateIndex) => {
                 const embedding = traceInfo.data[0].embedding;
                 let fullName = getEmbeddingKey(embedding);
@@ -686,6 +688,15 @@ function embeddingData(state = [], action) {
     }
 }
 
+export function primaryTraceKey(state = null, action) {
+    switch (action.type) {
+        case SET_PRIMARY_TRACE_KEY:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 function loading(state = false, action) {
     switch (action.type) {
         case SET_LOADING:
@@ -746,6 +757,7 @@ export default combineReducers({
     numberOfBinsUI,
     message,
     plotConfig,
+    primaryTraceKey,
     selection,
     serverInfo,
     unselectedMarkerOpacity,

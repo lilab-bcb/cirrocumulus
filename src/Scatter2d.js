@@ -22,7 +22,7 @@ class Scatter2d extends React.PureComponent {
         this.brushRef = React.createRef();
         this.svgRef = React.createRef();
         this.backingScale = 1;
-        this.interactionMode = ChartToolbar.MODE_BRUSH;
+        this.interactionMode = 'select';
         this.isPointerDown = false;
         this.lassoPathArray = [];
         this.event = {clientX: 0, clientY: 0};
@@ -62,22 +62,11 @@ class Scatter2d extends React.PureComponent {
         saveAs(blob, name + '.svg');
     };
 
-    onLasso = () => {
-        this.interactionMode = ChartToolbar.MODE_LASSO;
+    onDragMode = (mode) => {
+        this.interactionMode = mode;
+
     };
 
-    onZoom = () => {
-        this.interactionMode = ChartToolbar.MODE_ZOOM;
-    };
-
-
-    onPan = () => {
-        this.interactionMode = ChartToolbar.MODE_PAN;
-    };
-
-    onBrush = () => {
-        this.interactionMode = ChartToolbar.MODE_BRUSH;
-    };
 
     onTooltip = (event) => {
         this.event.clientX = event.clientX;
@@ -133,7 +122,7 @@ class Scatter2d extends React.PureComponent {
 
         this.isPointerDown = false;
 
-        if (this.interactionMode === ChartToolbar.MODE_ZOOM) {
+        if (this.interactionMode === 'zoom') {
             this.brushRef.current.setAttribute('x', '0');
             this.brushRef.current.setAttribute('y', '0');
             this.brushRef.current.setAttribute('width', '0');
@@ -150,7 +139,7 @@ class Scatter2d extends React.PureComponent {
             } else {
                 this.onHome();
             }
-        } else if (this.interactionMode === ChartToolbar.MODE_LASSO || this.interactionMode === ChartToolbar.MODE_BRUSH) {
+        } else if (this.interactionMode === 'lasso' || this.interactionMode === 'select') {
             let trace = this.props.data[0];
             if (isDoubleClick) {
                 return this.props.onDeselect({name: getEmbeddingKey(trace.embedding)});
@@ -158,10 +147,10 @@ class Scatter2d extends React.PureComponent {
 
                 let selectedpoints = [];
                 let point = {x: 0, y: 0};
-                let hitTest = this.interactionMode === ChartToolbar.MODE_LASSO ? isPointInside : isPointInsideRect;
-                let path = this.interactionMode === ChartToolbar.MODE_LASSO ? this.lassoPathArray : this.rect;
+                let hitTest = this.interactionMode === 'lasso' ? isPointInside : isPointInsideRect;
+                let path = this.interactionMode === 'lasso' ? this.lassoPathArray : this.rect;
                 let userPath;
-                if (this.interactionMode === ChartToolbar.MODE_LASSO) {
+                if (this.interactionMode === 'lasso') {
                     userPath = this.lassoPathArray.map(item => {
                         return [this.xToPixScale.invert(item.x), this.yToPixScale.invert(item.y)];
                     });
@@ -214,7 +203,7 @@ class Scatter2d extends React.PureComponent {
             window.addEventListener('mouseup', this.onMouseUp);
             window.addEventListener('mousemove', this.onMouseMove);
 
-            if (this.interactionMode === ChartToolbar.MODE_BRUSH || this.interactionMode === ChartToolbar.MODE_ZOOM) {
+            if (this.interactionMode === 'select' || this.interactionMode === 'zoom') {
                 let coords = clientPoint(event.target, event);
                 this.rect.x = coords[0];
                 this.rect.y = coords[1];
@@ -225,12 +214,12 @@ class Scatter2d extends React.PureComponent {
                 // this.brushRef.current.setAttribute('width', this.rect.width);
                 // this.brushRef.current.setAttribute('height', this.rect.height);
                 this.mouseDownPoint = {x: coords[0], y: coords[1]};
-            } else if (this.interactionMode === ChartToolbar.MODE_LASSO) {
+            } else if (this.interactionMode === 'lasso') {
                 this.lassoPathArray = [];
                 let coords = clientPoint(event.target, event);
                 this.lassoPathArray.push({x: coords[0], y: coords[1]});
                 // this.lassoRef.current.setAttribute('d', arrayToSvgPath(this.lassoPathArray));
-            } else if (this.interactionMode === ChartToolbar.MODE_PAN) {
+            } else if (this.interactionMode === 'pan') {
                 this.mouseDownPoint = {x: event.clientX, y: event.clientY};
             }
         }
@@ -251,10 +240,10 @@ class Scatter2d extends React.PureComponent {
             let coords = clientPoint(this.svgRef.current, event);
             coords[0] = Math.min(width, Math.max(0, coords[0]));
             coords[1] = Math.min(height, Math.max(0, coords[1]));
-            if (this.interactionMode === ChartToolbar.MODE_LASSO) {
+            if (this.interactionMode === 'lasso') {
                 this.lassoPathArray.push({x: coords[0], y: coords[1]});
                 this.lassoRef.current.setAttribute('d', arrayToSvgPath(this.lassoPathArray));
-            } else if (this.interactionMode === ChartToolbar.MODE_PAN) {
+            } else if (this.interactionMode === 'pan') {
                 let data = this.props.data;
                 let translateX = event.clientX - this.mouseDownPoint.x;
                 let translateY = event.clientY - this.mouseDownPoint.y;
@@ -265,7 +254,7 @@ class Scatter2d extends React.PureComponent {
                 data[0]._ymin = data[0].ymin - ty;
                 data[0]._ymax = data[0].ymax - ty;
                 requestAnimationFrame(() => this.redraw());
-            } else if (this.interactionMode === ChartToolbar.MODE_BRUSH || this.interactionMode === ChartToolbar.MODE_ZOOM) {
+            } else if (this.interactionMode === 'select' || this.interactionMode === 'zoom') {
                 this.rect.x = this.mouseDownPoint.x;
                 this.rect.y = this.mouseDownPoint.y;
                 this.rect.width = coords[0] - this.mouseDownPoint.x;
@@ -343,6 +332,7 @@ class Scatter2d extends React.PureComponent {
         this.yToPixScale = yToPixScale;
 
         const PI2 = 2 * Math.PI;
+        let colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
         if (trace.selectedpoints == null) {
             context.globalAlpha = markerOpacity;
             for (let i = 0, n = trace.x.length; i < n; i++) {
@@ -351,7 +341,9 @@ class Scatter2d extends React.PureComponent {
                 if (x >= trace._xmin && x <= trace._xmax && y >= trace._ymin && y <= trace._ymax) {
                     let xpix = this.xToPixScale(x);
                     let ypix = this.yToPixScale(y);
-                    context.fillStyle = trace.marker.color[i];
+                    const rgb = trace.marker.color[i];
+                    const color = 'rgb(' + colorScale(rgb[0]) + ',' + colorScale(rgb[1]) + ',' + colorScale(rgb[2]) + ')';
+                    context.fillStyle = color;
                     context.beginPath();
                     context.arc(xpix, ypix, markerSize, 0, PI2);
                     context.closePath();
@@ -374,7 +366,9 @@ class Scatter2d extends React.PureComponent {
                     let xpix = this.xToPixScale(x);
                     let ypix = this.yToPixScale(y);
                     context.globalAlpha = isSelected ? markerOpacity : unselectedOpacity;
-                    context.fillStyle = trace.marker.color[i];
+                    const rgb = trace.marker.color[i];
+                    const color = 'rgb(' + colorScale(rgb[0]) + ',' + colorScale(rgb[1]) + ',' + colorScale(rgb[2]) + ')';
+                    context.fillStyle = color;
                     context.beginPath();
                     context.arc(xpix, ypix, isSelected ? markerSize : unselectedMarkerSize, 0, PI2);
                     context.closePath();
@@ -443,11 +437,9 @@ class Scatter2d extends React.PureComponent {
                     </g>
                 </svg>
                 <ChartToolbar onHome={this.onHome}
-                              onZoom={this.onZoom}
-                              onPan={this.onPan}
-                              onBrush={this.onBrush}
-                              onLasso={this.onLasso}
                               onSaveImage={this.onSaveImage}
+                              onDragMode={this.onDragMode}
+
                 />
             </div>
 

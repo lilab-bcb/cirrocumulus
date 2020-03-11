@@ -2,6 +2,8 @@ import IconButton from '@material-ui/core/IconButton';
 import PauseCircleFilledIcon from '@material-ui/icons/PauseCircleFilled';
 import PlayCircleFilledIcon from '@material-ui/icons/PlayCircleFilled';
 import React from 'react';
+import createPlotlyComponent from 'react-plotly.js/factory';
+
 
 import {connect} from 'react-redux';
 import {
@@ -12,8 +14,8 @@ import {
     handleMeasureFilterUpdated
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
+import ChartToolbar from './ChartToolbar';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
-import createPlotlyComponent from './factory';
 import ImageChart from './ImageChart';
 
 const Plot = createPlotlyComponent(window.Plotly);
@@ -96,7 +98,6 @@ class EmbeddingChart extends React.PureComponent {
         this.graphDiv = graphDiv;
     };
 
-
     onSelect = (event) => {
         const trace = this.props.traceInfo.data[0];
         const name = getEmbeddingKey(trace.embedding);
@@ -130,6 +131,17 @@ class EmbeddingChart extends React.PureComponent {
         const name = getEmbeddingKey(trace.embedding);
         this.props.onDeselect({name: name});
     };
+    onDragMode = (mode) => {
+        const layout = this.props.traceInfo.layout;
+        layout.dragmode = mode;
+        this.props.traceInfo.layout = Object.assign({}, this.props.traceInfo.layout);
+        window.Plotly.react(this.graphDiv, {
+            data: this.props.traceInfo.data,
+            layout: this.props.traceInfo.layout,
+            config: this.props.config
+        });
+    };
+
 
     render() {
         const {
@@ -137,8 +149,14 @@ class EmbeddingChart extends React.PureComponent {
             datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
         } = this.props;
 
+        console.log('item', traceInfo.data[0].name);
         return (
             <div style={this.props.style}>
+                <ChartToolbar
+                    onDragMode={this.onDragMode}
+                    onHome={this.onHome}
+                    onSaveImage={this.onSaveImage}
+                />
                 {!traceInfo.data[0].isImage && <Plot
                     style={{display: 'inline-block'}}
                     data={traceInfo.data}

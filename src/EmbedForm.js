@@ -27,6 +27,11 @@ import {
     deleteDatasetFilter,
     exportDatasetFilters,
     getEmbeddingKey,
+    getTraceKey,
+    handleBrushFilterUpdated,
+    handleColorChange,
+    handleDimensionFilterUpdated,
+    handleMeasureFilterUpdated,
     openDatasetFilter,
     setBinSummary,
     setBinValues,
@@ -47,6 +52,8 @@ import {
 } from './actions';
 
 import AutocompleteSelect from './AutocompleteSelect';
+import CategoricalLegend from './CategoricalLegend';
+import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ColorSchemeSelector from './ColorSchemeSelector';
 
 const styles = theme => ({
@@ -251,8 +258,12 @@ class EmbedForm extends React.PureComponent {
 
 
     render() {
-        const {numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, unselectedMarkerOpacity, dataset} = this.props;
-
+        const {
+            numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingData,
+            embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, datasetFilter,
+            featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset
+        } = this.props;
+        const activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
             savedDatasetFilter = {};
@@ -325,6 +336,52 @@ class EmbedForm extends React.PureComponent {
                                         onChange={this.props.handleFeatures}
                                         isMulti={true}/>
                 </FormControl>
+
+                <ExpansionPanel defaultExpanded>
+                    <ExpansionPanelSummary
+                        aria-controls="summary-content"
+                        id="summary-header"
+                    >
+                        <div>Summary</div>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        <div>
+                            {activeTraces.map(traceInfo =>
+                                traceInfo.continuous ?
+                                    <ColorSchemeLegendWrapper
+                                        key={getTraceKey(traceInfo)}
+                                        width={140}
+                                        label={true}
+                                        height={30}
+                                        handleUpdate={handleMeasureFilterUpdated}
+                                        datasetFilter={datasetFilter}
+                                        scale={traceInfo.colorScale}
+                                        featureSummary={featureSummary}
+                                        globalFeatureSummary={globalFeatureSummary}
+                                        nObs={shape[0]}
+                                        nObsSelected={nObsSelected}
+                                        maxHeight={traceInfo.layout.height}
+                                        name={traceInfo.name}
+                                    /> :
+                                    <CategoricalLegend
+                                        key={getTraceKey(traceInfo)}
+                                        datasetFilter={datasetFilter}
+                                        handleClick={handleDimensionFilterUpdated}
+                                        handleColorChange={handleColorChange}
+                                        name={traceInfo.name}
+                                        scale={traceInfo.colorScale}
+                                        maxHeight={100}
+                                        clickEnabled={true}
+                                        nObs={shape[0]}
+                                        nObsSelected={nObsSelected}
+                                        globalFeatureSummary={globalFeatureSummary}
+                                        featureSummary={featureSummary}/>
+                            )}
+
+                        </div>
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
+
                 <ExpansionPanel defaultExpanded>
                     <ExpansionPanelSummary
                         aria-controls="chart-options-content"
@@ -466,12 +523,20 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+
+
+        datasetFilter: state.datasetFilter,
+        featureSummary: state.featureSummary,
+        shape: state.dataset.shape,
+        nObsSelected: state.selection.count,
+        globalFeatureSummary: state.globalFeatureSummary,
         dataset: state.dataset,
         binValues: state.binValues,
         binSummary: state.binSummary,
         numberOfBins: state.numberOfBins,
         numberOfBinsUI: state.numberOfBinsUI,
         datasetFilters: state.datasetFilters,
+        embeddingData: state.embeddingData,
         embeddingChartSize: state.embeddingChartSize,
         interpolator: state.interpolator,
         markerOpacity: state.markerOpacityUI,
@@ -486,6 +551,22 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
+        handleDimensionFilterUpdated: (e) => {
+            dispatch(handleDimensionFilterUpdated(e));
+        },
+        handleColorChange: (e) => {
+            dispatch(handleColorChange(e));
+        },
+        handleMeasureFilterUpdated: (e) => {
+            dispatch(handleMeasureFilterUpdated(e));
+        },
+        onSelect: (e) => {
+            dispatch(handleBrushFilterUpdated(e));
+        },
+        onDeselect: (e) => {
+            dispatch(handleBrushFilterUpdated(e));
+        },
+
         handleEmbeddings: value => {
             dispatch(setSelectedEmbedding(value));
         },

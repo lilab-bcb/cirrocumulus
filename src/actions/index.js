@@ -6,7 +6,7 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -20,6 +20,7 @@ export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
+export const SET_PRIMARY_TRACE_KEY = 'SET_PRIMARY_TRACE_KEY';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
 export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
@@ -85,6 +86,10 @@ export function getEmbeddingKey(embedding) {
         fullName = fullName + '_' + embedding.nbins + '_' + embedding.agg;
     }
     return fullName;
+}
+
+export function getTraceKey(traceInfo) {
+    return traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding);
 }
 
 function getEmbeddingJson(embedding) {
@@ -435,6 +440,11 @@ export function setCombineDatasetFilters(payload) {
     };
 }
 
+
+export function setPrimaryTraceKey(payload) {
+    return {type: SET_PRIMARY_TRACE_KEY, payload: payload};
+}
+
 function setGlobalFeatureSummary(payload) {
     return {type: SET_GLOBAL_FEATURE_SUMMARY, payload: payload};
 }
@@ -474,11 +484,15 @@ function handleFilterUpdated() {
         if (filter) {
             json.filter = filter;
         }
+        const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
         if (filter == null) {
 
             // if (Object.keys(getState().featureSummary).length !== 0 && Object.keys(getState().chart).length !== 0) {
-            dispatch(setSelection({chart: {}}));
+
+            if (!isCurrentSelectionEmpty) {
+                dispatch(setSelection({chart: {}}));
+            }
             dispatch(setFeatureSummary({}));
             //}
             dispatch(_setLoading(false));
@@ -533,7 +547,9 @@ function handleFilterUpdated() {
                     chart: chartSelection
                 }));
             } else {
-                dispatch(setSelection({chart: {}}));
+                if (!isCurrentSelectionEmpty) {
+                    dispatch(setSelection({chart: {}}));
+                }
             }
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             dispatch(setFeatureSummary(result.summary));

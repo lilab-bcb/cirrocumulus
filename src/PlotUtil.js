@@ -82,6 +82,51 @@ export function isPointInside(point, vs) {
     return inside;
 }
 
+export function drawScatter2d(context, data, layout) {
+    let height = layout.height;
+    let width = layout.width;
+    let trace = data[0];
+    let xmin = Number.MAX_VALUE;
+    let xmax = -Number.MAX_VALUE;
+    let ymin = Number.MAX_VALUE;
+    let ymax = -Number.MAX_VALUE;
+    for (let i = 0, n = trace.x.length; i < n; i++) {
+        let x = trace.x[i];
+        let y = trace.y[i];
+        xmin = x < xmin ? x : xmin;
+        xmax = x > xmax ? x : xmax;
+        ymin = y < ymin ? y : ymin;
+        ymax = y > ymax ? y : ymax;
+    }
+    const markerSize = trace.marker.size;
+    const unselectedMarkerSize = trace.unselected.marker.size;
+    const maxMarkerSize = Math.max(markerSize, unselectedMarkerSize);
+    const markerOpacity = trace.marker.opacity;
+    const xToPixScale = scaleLinear().domain([xmin, xmax]).range([maxMarkerSize, width - maxMarkerSize]);
+    const yToPixScale = scaleLinear().domain([ymin, ymax]).range([height - maxMarkerSize, maxMarkerSize]);
+    const PI2 = 2 * Math.PI;
+    const unselectedOpacity = trace.unselected.marker.opacity;
+    const selectedPoints = trace.selectedpoints;
+    let selectedPointsIndex = 0;
+    for (let i = 0, n = trace.x.length; i < n; i++) {
+        let isSelected = false;
+        if (i === selectedPoints[selectedPointsIndex]) {
+            isSelected = true;
+            selectedPointsIndex++;
+        }
+        const x = trace.x[i];
+        const y = trace.y[i];
+        const xpix = xToPixScale(x);
+        const ypix = yToPixScale(y);
+        context.globalAlpha = isSelected ? markerOpacity : unselectedOpacity;
+        context.fillStyle = trace.marker.color[i];
+        context.beginPath();
+        context.arc(xpix, ypix, isSelected ? markerSize : unselectedMarkerSize, 0, PI2);
+        context.closePath();
+        context.fill();
+    }
+}
+
 export function arrayToSvgPath(lassoPathArray) {
     if (lassoPathArray.length > 1) {
         lassoPathArray = simplify(lassoPathArray);
@@ -147,6 +192,7 @@ class PlotUtil {
             responsive: false,
             displaylogo: false,
             scrollZoom: false,
+            displayModeBar: false,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
         };
     }
@@ -154,8 +200,10 @@ class PlotUtil {
     static createDotPlotConfig() {
         return {
             showLink: false,
+            scrollZoom: false,
             responsive: false,
             displaylogo: false,
+            displayModeBar: true,
             modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
         };
     }
@@ -177,6 +225,7 @@ class PlotUtil {
 
 
     static getSingleEmbeddingChartSize() {
+        // leave room for drawer and header
         return Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
     }
 
