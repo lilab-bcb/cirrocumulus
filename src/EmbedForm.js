@@ -261,7 +261,8 @@ class EmbedForm extends React.PureComponent {
         const {
             numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingData,
             embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, datasetFilter,
-            featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset
+            featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
+            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated
         } = this.props;
         const activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
         let savedDatasetFilter = this.props.savedDatasetFilter;
