@@ -346,13 +346,13 @@ class EmbedForm extends React.PureComponent {
                         <div>Summary</div>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
-                        <div>
+                        <div style={{marginLeft: 10}}>
                             {activeTraces.map(traceInfo =>
                                 traceInfo.continuous ?
                                     <ColorSchemeLegendWrapper
                                         key={getTraceKey(traceInfo)}
                                         width={140}
-                                        label={true}
+                                        showColorScheme={false}
                                         height={30}
                                         handleUpdate={handleMeasureFilterUpdated}
                                         datasetFilter={datasetFilter}

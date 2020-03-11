@@ -1,4 +1,7 @@
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
 import Link from '@material-ui/core/Link';
+import Typography from '@material-ui/core/Typography';
 import React from 'react';
 
 function stateReset(gl) {
@@ -111,20 +114,25 @@ class GalleryImage extends React.PureComponent {
     };
 
     render() {
-        if (this.state.url == null) {
-            return null;
-        }
-        return (
-            <div style={{display: 'inline-block'}}>
-                <Link href="#"
-                      onClick={this.onSelect}>{this.props.traceInfo.data[0].name}</Link>
-                {/*<div style={{position: 'relative'}}>*/}
-                {/*    {this.state.urls.map(url =>*/}
-                {/*        <img style={{position: 'absolute', top: 0, left: 0}} src={url}/>)}*/}
-                {/*</div>*/}
-                <img src={this.state.url}/>
-            </div>
-        );
+        return (<Card variant="outlined" style={{display: 'inline-block'}}>
+            <CardContent>
+
+                <Typography style={{textAlign: 'center'}} variant="caption" component="h4">
+                    <Link href="#"
+                          onClick={this.onSelect}>{this.props.traceInfo.data[0].name}</Link>
+                </Typography>
+                <div style={{display: 'inline-block'}}>
+
+                    {/*<div style={{position: 'relative'}}>*/}
+                    {/*    {this.state.urls.map(url =>*/}
+                    {/*        <img style={{position: 'absolute', top: 0, left: 0}} src={url}/>)}*/}
+                    {/*</div>*/}
+                    <img src={this.state.url}/>
+                </div>
+            </CardContent>
+
+        </Card>);
+
     }
 }
 

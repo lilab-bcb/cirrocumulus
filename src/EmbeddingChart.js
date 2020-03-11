@@ -202,6 +202,7 @@ class EmbeddingChart extends React.PureComponent {
                     <ColorSchemeLegendWrapper
                         width={140}
                         label={true}
+                        showColorScheme={true}
                         height={30}
                         handleUpdate={handleMeasureFilterUpdated}
                         datasetFilter={datasetFilter}

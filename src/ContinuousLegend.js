@@ -5,7 +5,7 @@ import {numberFormat, numberFormat0} from './formatters';
 class ContinuousLegend extends React.PureComponent {
 
 
-    getTable(statistics, summaryNames, selectionSummary, globalSummary) {
+    getTable(summaryNames, selectionSummary, globalSummary) {
         return (<table>
             <thead>
             <tr>
@@ -21,12 +21,24 @@ class ContinuousLegend extends React.PureComponent {
                 <td>{numberFormat(globalSummary.mean)}</td>
                 {selectionSummary && <td>{numberFormat(selectionSummary.mean)}</td>}
             </tr>
+
             {globalSummary.numExpressed != null && <tr>
                 <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
                 <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
                 {selectionSummary &&
                 <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
             </tr>}
+            {(globalSummary.numExpressed == null || globalSummary.min !== 0) && <tr>
+                <td style={{textAlign: 'right'}}>{'Min'}:</td>
+                <td>{numberFormat(globalSummary.min)}</td>
+                {selectionSummary && <td>{numberFormat(selectionSummary.min)}</td>}
+            </tr>}
+            <tr>
+                <td style={{textAlign: 'right'}}>{'Max'}:</td>
+                <td>{numberFormat(globalSummary.max)}</td>
+                {selectionSummary && <td>{numberFormat(selectionSummary.max)}</td>}
+            </tr>
+
             </tbody>
 
         </table>);
@@ -43,7 +55,6 @@ class ContinuousLegend extends React.PureComponent {
             summaryNames.push('selection');
             //  summaryNames.push('rest');
         }
-        const statistics = ['Mean', '% Expressed'];
         return (
             <div style={{
                 // padding: 10,
@@ -52,7 +63,7 @@ class ContinuousLegend extends React.PureComponent {
                 // overflow: 'auto'
             }}>
                 <b>{displayName}</b>
-                {globalSummary != null && name !== '__count' && this.getTable(statistics, summaryNames, selectionSummary, globalSummary)}
+                {globalSummary != null && name !== '__count' && this.getTable(summaryNames, selectionSummary, globalSummary)}
             </div>);
     }
 }
