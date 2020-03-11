@@ -371,7 +371,7 @@ class EmbedForm extends React.PureComponent {
                                         handleColorChange={handleColorChange}
                                         name={traceInfo.name}
                                         scale={traceInfo.colorScale}
-                                        maxHeight={100}
+                                        maxHeight={300}
                                         clickEnabled={true}
                                         nObs={shape[0]}
                                         nObsSelected={nObsSelected}
