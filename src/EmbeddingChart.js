@@ -14,7 +14,6 @@ import {
     handleMeasureFilterUpdated
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
-import ChartToolbar from './ChartToolbar';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 
@@ -149,14 +148,14 @@ class EmbeddingChart extends React.PureComponent {
             datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
         } = this.props;
 
-        console.log('item', traceInfo.data[0].name);
+
         return (
             <div style={this.props.style}>
-                <ChartToolbar
-                    onDragMode={this.onDragMode}
-                    onHome={this.onHome}
-                    onSaveImage={this.onSaveImage}
-                />
+                {/*<ChartToolbar*/}
+                {/*    onDragMode={this.onDragMode}*/}
+                {/*    onHome={this.onHome}*/}
+                {/*    onSaveImage={this.onSaveImage}*/}
+                {/*/>*/}
                 {!traceInfo.data[0].isImage && <Plot
                     style={{display: 'inline-block'}}
                     data={traceInfo.data}
