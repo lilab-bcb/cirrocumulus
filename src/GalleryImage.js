@@ -70,10 +70,13 @@ class GalleryImage extends React.PureComponent {
     }
 
 
-    componentDidUpdate(prevProps, prevState) {
+    componentDidMount() {
+        this.draw();
+    }
 
+    draw() {
         if (this.state.url == null) {
-
+            let start = new Date().getTime();
             const {traceInfo, config} = this.props;
             const div = document.createElement('div');
             const layout = Object.assign({}, traceInfo.layout);
@@ -96,15 +99,22 @@ class GalleryImage extends React.PureComponent {
             // "gl-canvas gl-canvas-focus"
             // "gl-canvas gl-canvas-pick"
             let canvas = div.querySelectorAll('.gl-canvas');
-            window.Plotly.purge(div);
             this.setState({url: canvas[0].toDataURL()});
 
+            // window.Plotly.purge(div);
+            console.log(new Date().getTime() - start, traceInfo.name);
             // div.querySelectorAll('canvas').forEach(canvas => {
             //     console.log('here');
             //     stateReset(canvas.getContext('webgl'));
             // });
 
         }
+
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        this.draw();
+
     }
 
 
