@@ -101,7 +101,7 @@ class GalleryImage extends React.PureComponent {
             let canvas = div.querySelectorAll('.gl-canvas');
             this.setState({url: canvas[0].toDataURL()});
 
-            // window.Plotly.purge(div);
+            window.Plotly.purge(div);
             console.log(new Date().getTime() - start, traceInfo.name);
             // div.querySelectorAll('canvas').forEach(canvas => {
             //     console.log('here');
