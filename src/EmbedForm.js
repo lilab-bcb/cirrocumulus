@@ -19,7 +19,6 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -27,7 +26,6 @@ import {
     deleteDatasetFilter,
     exportDatasetFilters,
     getEmbeddingKey,
-    getTraceKey,
     handleBrushFilterUpdated,
     handleColorChange,
     handleDimensionFilterUpdated,
@@ -264,7 +262,16 @@ class EmbedForm extends React.PureComponent {
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated
         } = this.props;
-        const activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
+
+        // for filters we only need one embedding trace per feature
+        const traceNames = new Set();
+        const filterTraces = [];
+        embeddingData.forEach(trace => {
+            if (trace.active && trace.name !== '__count' && !traceNames.has(trace.name)) {
+                traceNames.add(trace.name);
+                filterTraces.push(trace);
+            }
+        });
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
             savedDatasetFilter = {};
@@ -347,10 +354,10 @@ class EmbedForm extends React.PureComponent {
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div style={{marginLeft: 10}}>
-                            {activeTraces.map(traceInfo =>
+                            {filterTraces.map(traceInfo =>
                                 traceInfo.continuous ?
                                     <ColorSchemeLegendWrapper
-                                        key={getTraceKey(traceInfo)}
+                                        key={traceInfo.name}
                                         width={140}
                                         showColorScheme={false}
                                         height={30}
@@ -361,11 +368,11 @@ class EmbedForm extends React.PureComponent {
                                         globalFeatureSummary={globalFeatureSummary}
                                         nObs={shape[0]}
                                         nObsSelected={nObsSelected}
-                                        maxHeight={traceInfo.layout.height}
+                                        maxHeight={null}
                                         name={traceInfo.name}
                                     /> :
                                     <CategoricalLegend
-                                        key={getTraceKey(traceInfo)}
+                                        key={traceInfo.name}
                                         datasetFilter={datasetFilter}
                                         handleClick={handleDimensionFilterUpdated}
                                         handleColorChange={handleColorChange}
@@ -392,30 +399,36 @@ class EmbedForm extends React.PureComponent {
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div>
-                            <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="chart_size">Chart Size</InputLabel>
-                                <Select
-                                    className={classes.select}
-                                    input={<Input id="chart_size"/>}
-                                    onChange={this.onEmbeddingChartSizeChange}
-                                    value={embeddingChartSize}
-                                    multiple={false}>
-                                    {chartSizes.map(item => (
-                                        <MenuItem key={item.label} value={item.value}>
-                                            <ListItemText primary={item.label}/>
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            {/*<FormControl className={classes.formControl}>*/}
+                            {/*    <InputLabel htmlFor="chart_size">Chart Size</InputLabel>*/}
+                            {/*    <Select*/}
+                            {/*        className={classes.select}*/}
+                            {/*        input={<Input id="chart_size"/>}*/}
+                            {/*        onChange={this.onEmbeddingChartSizeChange}*/}
+                            {/*        value={embeddingChartSize}*/}
+                            {/*        multiple={false}>*/}
+                            {/*        {chartSizes.map(item => (*/}
+                            {/*            <MenuItem key={item.label} value={item.value}>*/}
+                            {/*                <ListItemText primary={item.label}/>*/}
+                            {/*            </MenuItem>*/}
+                            {/*        ))}*/}
+                            {/*    </Select>*/}
+                            {/*</FormControl>*/}
 
 
                             <TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}
                                        onChange={this.onMarkerSizeChange} label="Marker Size"
                                        className={classes.formControl} value={markerSize}/>
+                            <TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
+                                       onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
+                                       className={classes.formControl} value={unselectedMarkerSize}/>
                             <TextField type="text" onKeyPress={this.onMarkerOpacityKeyPress}
                                        onChange={this.onMarkerOpacityChange} label="Marker Opacity"
                                        className={classes.formControl} value={markerOpacity}/>
-
+                            <TextField type="text"
+                                       onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
+                                       onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
+                                       className={classes.formControl} value={unselectedMarkerOpacity}/>
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
                                 <ColorSchemeSelector/>
@@ -468,20 +481,14 @@ class EmbedForm extends React.PureComponent {
 
                             <Divider/>
 
-                            <Typography
-                                color="textSecondary"
-                                display="block"
-                                variant="caption"
-                            >
-                                Unselected Chart Properties
-                            </Typography>
-                            <TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
-                                       onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
-                                       className={classes.formControl} value={unselectedMarkerSize}/>
-                            <TextField type="text"
-                                       onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
-                                       onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
-                                       className={classes.formControl} value={unselectedMarkerOpacity}/>
+                            {/*<Typography*/}
+                            {/*    color="textSecondary"*/}
+                            {/*    display="block"*/}
+                            {/*    variant="caption"*/}
+                            {/*>*/}
+                            {/*    Unselected Chart Properties*/}
+                            {/*</Typography>*/}
+
 
                         </div>
 
