@@ -33,20 +33,15 @@ import {
     openDatasetFilter,
     setBinSummary,
     setBinValues,
-    setEmbeddingChartSize,
     setFeatures,
     setInterpolator,
     setMarkerOpacity,
     setMarkerOpacityUI,
-    setMarkerSize,
-    setMarkerSizeUI,
     setNumberOfBins,
     setNumberOfBinsUI,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
-    setUnselectedMarkerOpacityUI,
-    setUnselectedMarkerSize,
-    setUnselectedMarkerSizeUI
+    setUnselectedMarkerOpacityUI
 } from './actions';
 
 import AutocompleteSelect from './AutocompleteSelect';
@@ -586,18 +581,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleNumberOfBinsUI: value => {
             dispatch(setNumberOfBinsUI(value));
         },
-        handleMarkerSize: value => {
-            dispatch(setMarkerSize(value));
-        },
-        handleMarkerSizeUI: value => {
-            dispatch(setMarkerSizeUI(value));
-        },
-        handleUnselectedMarkerSize: value => {
-            dispatch(setUnselectedMarkerSize(value));
-        },
-        handleUnselectedMarkerSizeUI: value => {
-            dispatch(setUnselectedMarkerSizeUI(value));
-        },
         handleMarkerOpacity: value => {
             dispatch(setMarkerOpacity(value));
         },
@@ -606,9 +589,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleUnselectedMarkerOpacity: value => {
             dispatch(setUnselectedMarkerOpacity(value));
-        },
-        handleEmbeddingChartSize: value => {
-            dispatch(setEmbeddingChartSize(value));
         },
         handleUnselectedMarkerOpacityUI: value => {
             dispatch(setUnselectedMarkerOpacityUI(value));

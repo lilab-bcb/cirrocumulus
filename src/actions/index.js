@@ -6,7 +6,7 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -699,23 +699,6 @@ export function setMarkerSize(payload) {
     return {type: SET_MARKER_SIZE, payload: payload};
 }
 
-export function setMarkerSizeUI(payload) {
-    return {type: SET_MARKER_SIZE_UI, payload: payload};
-}
-
-
-export function setEmbeddingChartSize(payload) {
-    return {type: SET_EMBEDDING_CHART_SIZE, payload: payload};
-}
-
-
-export function setUnselectedMarkerSize(payload) {
-    return {type: SET_UNSELECTED_MARKER_SIZE, payload: payload};
-}
-
-export function setUnselectedMarkerSizeUI(payload) {
-    return {type: SET_UNSELECTED_MARKER_SIZE_UI, payload: payload};
-}
 
 export function setUser(payload) {
     return {type: SET_USER, payload: payload};
@@ -953,7 +936,7 @@ export function setInterpolator(payload) {
     return {type: SET_INTERPOLATOR, payload: payload};
 }
 
-function _setEmbeddingData(payload) {
+export function setEmbeddingData(payload) {
     return {type: SET_EMBEDDING_DATA, payload: payload};
 }
 
@@ -1455,7 +1438,7 @@ function _updateCharts(sliceOptions, onError) {
                 dispatch(handleEmbeddingResult(embeddingResults[i]));
             }
             if (embeddingResults.length === 0) {
-                dispatch(_setEmbeddingData(embeddingData.slice()));
+                dispatch(setEmbeddingData(embeddingData.slice()));
             }
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -1609,7 +1592,7 @@ function handleEmbeddingResult(result) {
         });
 
 
-        dispatch(_setEmbeddingData(embeddingData.slice()));
+        dispatch(setEmbeddingData(embeddingData.slice()));
     };
 
 }

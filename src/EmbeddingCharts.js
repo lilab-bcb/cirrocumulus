@@ -1,8 +1,9 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
+import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {ScatterGL} from 'scatter-gl';
-import {getEmbeddingKey, getTraceKey, setPrimaryTraceKey} from './actions';
+import {getEmbeddingKey, getTraceKey, setEmbeddingData, setPrimaryTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 import GalleryImage from './GalleryImage';
 
@@ -33,6 +34,12 @@ class EmbeddingCharts extends React.PureComponent {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
     };
 
+    onSortEnd = (activeTraces, e) => {
+        activeTraces[e.oldIndex].sortIndex = e.newIndex;
+        activeTraces[e.newIndex].sortIndex = e.oldIndex;
+        this.props.handleEmbeddingData(this.props.embeddingData.slice(0));
+    };
+
     render() {
         const {primaryTraceKey, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
         let activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
@@ -41,7 +48,12 @@ class EmbeddingCharts extends React.PureComponent {
             primaryTraces = [activeTraces[0]];
         }
         activeTraces = activeTraces.filter(activeTrace => activeTrace.name !== '__count');
-
+        for (let i = 0; i < activeTraces.length; i++) {
+            if (activeTraces[i].sortIndex == null) {
+                activeTraces[i].sortIndex = i;
+            }
+        }
+        activeTraces.sort((a, b) => a.sortIndex - b.sortIndex);
         const primaryTrace = primaryTraces[0];
         let userPoints = this.emptySet;
         if (primaryTrace) {
@@ -50,17 +62,26 @@ class EmbeddingCharts extends React.PureComponent {
             const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
             userPoints = chartSelection ? chartSelection.userPoints : this.emptySet;
         }
-        // const SortableItem = SortableElement(({value}) => <li>{value}</li>);
-        //
-        // const SortableList = SortableContainer(({items}) => {
-        //     return (
-        //         <ul>
-        //             {items.map((value, index) => (
-        //                 <SortableItem key={`item-${value}`} index={index} value={value}/>
-        //             ))}
-        //         </ul>
-        //     );
-        // });
+        // const DragHandle = sortableHandle(() => <span>::</span>);
+
+        const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
+            traceInfo={traceInfo}
+            color={traceInfo.marker.color}
+            scatterGL={this.scatterGL}
+            markerOpacity={markerOpacity}
+            containerElement={this.containerElement}
+            onSelect={this.onChartSelected}
+            key={getTraceKey(traceInfo)}/>);
+
+        const SortableList = sortableContainer(({items}) => {
+            return (
+                <ul>
+                    {items.map((traceInfo, index) => (
+                        <SortableItem key={getTraceKey(traceInfo)} index={index} traceInfo={traceInfo}/>
+                    ))}
+                </ul>
+            );
+        });
         return (<React.Fragment>
             {primaryTrace && <EmbeddingChart
                 markerOpacity={markerOpacity}
@@ -69,14 +90,9 @@ class EmbeddingCharts extends React.PureComponent {
                 selection={userPoints}
                 color={primaryTrace.marker.color}
             />}
-            {activeTraces.map(traceInfo => <GalleryImage
-                traceInfo={traceInfo}
-                color={traceInfo.marker.color}
-                scatterGL={this.scatterGL}
-                markerOpacity={markerOpacity}
-                containerElement={this.containerElement}
-                onSelect={this.onChartSelected}
-                key={getTraceKey(traceInfo)}/>)}
+            <SortableList distance={2}
+                          axis="xy" items={activeTraces}
+                          onSortEnd={(e) => this.onSortEnd(activeTraces, e)}/>;
         </React.Fragment>);
     }
 }
@@ -94,6 +110,9 @@ const mapDispatchToProps = dispatch => {
     return {
         handlePrimaryTraceKey: (value) => {
             dispatch(setPrimaryTraceKey(value));
+        },
+        handleEmbeddingData: (value) => {
+            dispatch(setEmbeddingData(value));
         }
     };
 };
