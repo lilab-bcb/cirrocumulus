@@ -23,10 +23,15 @@
     "react-redux": "^7.2.0",
     "react-scripts": "3.4.0",
     "react-select": "^3.0.5",
-    "react-virtualized": "^9.21.2",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
+    "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git",
     "simplify-js": "^1.2.4"
+  },
+  "devDependencies": {
+    "source-map-loader": "^0.2.4",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.8.3"
   },
   "scripts": {
     "start": "react-scripts start",
