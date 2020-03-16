@@ -4,7 +4,6 @@ import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
     DELETE_DATASET,
-    getEmbeddingKey,
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
@@ -18,7 +17,6 @@ import {
     SET_DOT_PLOT_DATA,
     SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
-    SET_EMBEDDING_CHART_SIZE,
     SET_EMBEDDING_DATA,
     SET_FEATURE_SUMMARY,
     SET_FEATURES,
@@ -30,8 +28,6 @@ import {
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
     SET_MARKER_OPACITY_UI,
-    SET_MARKER_SIZE,
-    SET_MARKER_SIZE_UI,
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
@@ -41,17 +37,14 @@ import {
     SET_SERVER_INFO,
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_MARKER_OPACITY_UI,
-    SET_UNSELECTED_MARKER_SIZE,
-    SET_UNSELECTED_MARKER_SIZE_UI,
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import PlotUtil, {getInterpolator, getRgbScale} from '../PlotUtil';
+import {getInterpolator, getRgbScale} from '../PlotUtil';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
-export const DEFAULT_MARKER_SIZE = 5;
-export const DEFAULT_UNSELECTED_MARKER_SIZE = 2;
+
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
@@ -154,57 +147,6 @@ function binValues(state = false, action) {
 }
 
 
-function markerSize(state = DEFAULT_MARKER_SIZE, action) {
-    switch (action.type) {
-        case SET_MARKER_SIZE:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_MARKER_SIZE;
-        case RESTORE_VIEW:
-            return action.payload.markerSize != null ? action.payload.markerSize : state;
-        default:
-            return state;
-    }
-}
-
-function unselectedMarkerSize(state = DEFAULT_UNSELECTED_MARKER_SIZE, action) {
-    switch (action.type) {
-        case SET_UNSELECTED_MARKER_SIZE:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_MARKER_SIZE;
-        case RESTORE_VIEW:
-            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
-        default:
-            return state;
-    }
-}
-
-function unselectedMarkerSizeUI(state = null, action) {
-    switch (action.type) {
-        case SET_UNSELECTED_MARKER_SIZE :
-        case SET_UNSELECTED_MARKER_SIZE_UI:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_UNSELECTED_MARKER_SIZE;
-        case RESTORE_VIEW:
-            return action.payload.unselectedMarkerSize != null ? action.payload.unselectedMarkerSize : state;
-        default:
-            return state;
-    }
-}
-
-function embeddingChartSize(state = 2, action) {
-    switch (action.type) {
-        case SET_EMBEDDING_CHART_SIZE:
-            return action.payload;
-        case RESTORE_VIEW:
-            return action.payload.embeddingChartSize != null ? action.payload.embeddingChartSize : state;
-        default:
-            return state;
-    }
-}
-
 function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     switch (action.type) {
         case SET_NUMBER_OF_BINS:
@@ -232,20 +174,6 @@ function numberOfBinsUI(state = DEFAULT_NUMBER_BINS, action) {
     }
 }
 
-
-function markerSizeUI(state = null, action) {
-    switch (action.type) {
-        case SET_MARKER_SIZE:
-        case SET_MARKER_SIZE_UI:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_MARKER_SIZE;
-        case RESTORE_VIEW:
-            return action.payload.markerSize != null ? action.payload.markerSize : state;
-        default:
-            return state;
-    }
-}
 
 function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
     switch (action.type) {
@@ -501,15 +429,20 @@ function combineDatasetFilters(state = 'and', action) {
 function updateChartColorScale(traceInfo) {
     const rgbScale = getRgbScale();
     let colorScale = traceInfo.colorScale;
-    traceInfo.data.forEach(datum => {
-        let colors = [];
-        const colorMapper = !datum.isImage ? (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]) : (rgb => rgb.formatHex());
-        for (let i = 0, n = datum.values.length; i < n; i++) {
-            let rgb = color(colorScale(datum.values[i]));
-            colors.push(colorMapper(rgb));
-        }
-        datum.marker.color = colors;
-    });
+    let colors = [];
+    const colorMapper = traceInfo.isImage ? rgb => rgb.formatHex() : rgb => {
+        return {
+            r: rgbScale(rgb.r),
+            g: rgbScale(rgb.g),
+            b: rgbScale(rgb.b),
+            opacity: 1
+        };
+    };
+    for (let i = 0, n = traceInfo.x.length; i < n; i++) {
+        let rgb = color(colorScale(traceInfo.values[i]));
+        colors.push(colorMapper(rgb));
+    }
+    traceInfo.marker.color = colors;
     traceInfo.colorScale = colorScale;
 }
 
@@ -518,132 +451,10 @@ function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
             return action.payload;
-        case SET_EMBEDDING_CHART_SIZE:
-            state.forEach(traceInfo => {
-                let layout = Object.assign({}, traceInfo.layout);
-                layout.size = action.payload; // 1, 2, 3 (small, medium, large)
-                traceInfo.layout = layout;
-            });
 
-            return state.slice();
-        case SET_UNSELECTED_MARKER_OPACITY:
-            state.forEach((traceInfo, stateIndex) => {
-                traceInfo.data.forEach((trace, index) => {
-                    trace.unselected.marker.opacity = action.payload;
-                    if (trace.type === 'scatter3d' && index === 2) {
-                        trace.marker.opacity = action.payload;
-                        trace.visible = action.payload > 0;
-                    }
-                });
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
-            });
-            return state.slice();
-        case SET_UNSELECTED_MARKER_SIZE:
-            state.forEach((traceInfo, stateIndex) => {
-                traceInfo.data.forEach((trace, index) => {
-                    trace.unselected.marker.size = action.payload;
-                    if (trace.type === 'scatter3d' && index === 2) {
-                        trace.marker.size = action.payload;
-                        trace.visible = action.payload > 0;
-                    }
-                });
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
-            });
-            return state.slice();
-        case SET_MARKER_OPACITY:
-            state.forEach((traceInfo, stateIndex) => {
-                traceInfo.data.forEach((trace, index) => {
-                    if (trace.type !== 'scatter3d' || index < 2) {
-                        trace.marker.opacity = action.payload;
-                    }
-                    if (trace.type === 'scatter3d' && index === 1) {
-                        trace.visible = action.payload > 0;
-                    }
-                });
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
-            });
-            return state.slice();
-        case SET_MARKER_SIZE:
-            state.forEach((traceInfo, stateIndex) => {
-                traceInfo.data.forEach((trace, index) => {
-                    if (trace.type !== 'scatter3d' || index < 2) {
-                        trace.marker.size = action.payload;
-                    }
-                    if (trace.type === 'scatter3d' && index === 1) {
-                        trace.visible = action.payload > 0;
-                    }
-                });
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
-            });
-            return state.slice();
         case SET_SELECTION:
 
-            state.forEach((traceInfo, stateIndex) => {
-                const embedding = traceInfo.data[0].embedding;
-                let fullName = getEmbeddingKey(embedding);
-                const selection = action.payload.chart && action.payload.chart[fullName];
-                const userPoints = selection ? selection.userPoints : null;
-                if (traceInfo.data[0].type === 'scatter3d') {
-                    // plotly bug workaround split into 2 traces, 1st trace contains selected, 2nd trace contains unselected
-                    // see https://github.com/plotly/plotly.js/issues/4481
-                    if (userPoints != null && userPoints.length > 0) {
-                        let fullTrace = traceInfo.data[0];
-                        fullTrace.visible = false;
-                        let selectedTrace = Object.assign({}, fullTrace);
-                        selectedTrace.visible = true;
-                        selectedTrace.x = [];
-                        selectedTrace.y = [];
-                        selectedTrace.z = [];
-                        selectedTrace.text = [];
-                        selectedTrace.marker = {opacity: fullTrace.marker.opacity, size: fullTrace.size, color: []};
-                        let unselectedTrace = Object.assign({}, fullTrace);
-                        unselectedTrace.visible = true;
-                        unselectedTrace.x = [];
-                        unselectedTrace.y = [];
-                        unselectedTrace.z = [];
-                        unselectedTrace.text = [];
-                        unselectedTrace.marker = {
-                            opacity: fullTrace.unselected.marker.opacity,
-                            size: fullTrace.unselected.marker.size,
-                            color: []
-                        };
-                        for (let i = 0, n = userPoints.length; i < n; i++) {
-                            let index = userPoints[i];
-                            selectedTrace.x.push(fullTrace.x[index]);
-                            selectedTrace.y.push(fullTrace.y[index]);
-                            selectedTrace.z.push(fullTrace.z[index]);
-                            selectedTrace.text.push(fullTrace.text[index]);
-                            selectedTrace.marker.color.push(fullTrace.marker.color[index]);
-                        }
-                        const userPointsSet = new Set(userPoints);
-                        for (let i = 0, n = fullTrace.x.length; i < n; i++) {
-                            if (!userPointsSet.has(i)) {
-                                unselectedTrace.x.push(fullTrace.x[i]);
-                                unselectedTrace.y.push(fullTrace.y[i]);
-                                unselectedTrace.z.push(fullTrace.z[i]);
-                                unselectedTrace.text.push(fullTrace.text[i]);
-                                unselectedTrace.marker.color.push(fullTrace.marker.color[i]);
-                            }
-                        }
 
-                        traceInfo.data = [fullTrace, selectedTrace, unselectedTrace];
-                    } else {
-                        traceInfo.data = [traceInfo.data[0]];
-                        traceInfo.data[0].visible = true;
-                    }
-                } else {
-                    traceInfo.data.forEach(trace => {
-                        trace.selectedpoints = userPoints;
-                    });
-
-                }
-                traceInfo.data = traceInfo.data.slice();
-                state[stateIndex] = Object.assign({}, traceInfo);
-            });
             return state.slice();
         case SET_CATEGORICAL_COLOR:
 
@@ -655,8 +466,6 @@ function embeddingData(state = [], action) {
                     range[index] = action.payload.color;
                     traceInfo.colorScale.range(range);
                     updateChartColorScale(traceInfo);
-                    traceInfo.data = traceInfo.data.slice();
-                    state[stateIndex] = Object.assign({}, traceInfo);
                 }
             });
             return state.slice();
@@ -675,8 +484,6 @@ function embeddingData(state = [], action) {
 
                     traceInfo.colorScale = scaleSequential(action.payload.value).domain(domain);
                     updateChartColorScale(traceInfo);
-                    traceInfo.data = traceInfo.data.slice();
-                    state[stateIndex] = Object.assign({}, traceInfo);
                 }
 
             });
@@ -706,14 +513,6 @@ function loading(state = false, action) {
     }
 }
 
-function plotConfig(state = null, action) {
-    switch (action.type) {
-        case SET_DATASET:
-            return PlotUtil.createPlotConfig();
-        default:
-            return state;
-    }
-}
 
 function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 
@@ -738,7 +537,6 @@ export default combineReducers({
     dialog,
     dotPlotData,
     email,
-    embeddingChartSize,
     embeddingData,
     embeddings,
     features,
@@ -751,18 +549,13 @@ export default combineReducers({
     loadingApp,
     markerOpacity,
     markerOpacityUI,
-    markerSize,
-    markerSizeUI,
     numberOfBins,
     numberOfBinsUI,
     message,
-    plotConfig,
     primaryTraceKey,
     selection,
     serverInfo,
     unselectedMarkerOpacity,
     unselectedMarkerOpacityUI,
-    unselectedMarkerSize,
-    unselectedMarkerSizeUI,
     user
 });

@@ -23,16 +23,33 @@ def filter_adata(adata, data_filter):
                     field.get('agg'), field.get('ndim', '2'), field.get('precomputed', False))
 
                 p = value['path']
-                from matplotlib import path
                 if isinstance(p, dict):
                     # rectangle
-                    p = path.Path([(p['x'], p['y']),
-                                   (p['x'], p['y'] + p['height']),
-                                   (p['x'] + p['width'], p['y'] + p['height']),
-                                   (p['x'] + p['width'], p['y'])])
+                    if 'z' in p:
+                        keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
+                                adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
+                                   'height']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][2]] >= p['z']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p[
+                                   'depth'])
+                    else:
+                        # from matplotlib import path
+                        # p = path.Path([(p['x'], p['y']),
+                        #                (p['x'], p['y'] + p['height']),
+                        #                (p['x'] + p['width'], p['y'] + p['height']),
+                        #                (p['x'] + p['width'], p['y'])])
+                        # keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
+                        keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
+                                adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & (
+                                       adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
+                                   'height'])
                 else:
+                    from matplotlib import path
                     p = path.Path(p)
-                keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
+                    keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
 
                 # obs_field = selected_points_basis['full_name'] if selected_points_basis[
                 #                                                       'nbins'] is not None else 'index'

@@ -63,6 +63,11 @@ export const CATEGORY_20C = [
     '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
+export function getChartSize() {
+    // leave room for drawer and header
+    return {width: window.screen.availWidth - 300, height: window.screen.availHeight - 200};
+}
+
 export function isPointInside(point, vs) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
@@ -208,59 +213,6 @@ class PlotUtil {
         };
     }
 
-
-    static createEmbeddingAxis(is3d = false) {
-        return {
-            showbackground: false,
-            autorange: true,
-            showgrid: false,
-            zeroline: false,
-            showline: false,
-            title: '',
-            autotick: false,
-            ticks: '',
-            showticklabels: false,
-        };
-    }
-
-
-    static getSingleEmbeddingChartSize() {
-        // leave room for drawer and header
-        return Math.floor(Math.min(window.screen.availWidth - 240, window.screen.availHeight - 190));
-    }
-
-    static createEmbeddingLayout(options) {
-        let {size, is3d} = options;
-
-        let layout = {
-            hovermode: 'closest',
-            dragmode: 'select',
-            margin: {
-                l: 0,
-                b: 0,
-                r: 0,
-                t: 0,
-                autoexpand: false
-            },
-            legend: {yanchor: 'top'},
-            autosize: false,
-            displaylogo: false,
-            showlegend: false,
-
-        };
-        if (is3d) {
-            layout.scene = {
-                camera: {eye: {x: 1, y: 1, z: 1}},
-                xaxis: PlotUtil.createEmbeddingAxis(true),
-                yaxis: PlotUtil.createEmbeddingAxis(true),
-                zaxis: PlotUtil.createEmbeddingAxis(true),
-            };
-        } else {
-            layout.xaxis = PlotUtil.createEmbeddingAxis();
-            layout.yaxis = PlotUtil.createEmbeddingAxis();
-        }
-        return layout;
-    }
 
     static createDotPlotAxis() {
         return {

@@ -1,67 +1,73 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getTraceKey, setPrimaryTraceKey} from './actions';
+import {ScatterGL} from 'scatter-gl';
+import {getEmbeddingKey, getTraceKey, setPrimaryTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 import GalleryImage from './GalleryImage';
-import PlotUtil from './PlotUtil';
 
 
 class EmbeddingCharts extends React.PureComponent {
 
+
+    constructor(props) {
+        super(props);
+        const containerElement = document.createElement('div');
+        const ratio = window.devicePixelRatio;
+        const size = Math.round(400 / ratio);
+        containerElement.style.position = 'absolute';
+        containerElement.style.left = '-9999px';
+        containerElement.style.width = size + 'px';
+        containerElement.style.height = size + 'px';
+        document.body.appendChild(containerElement);
+        this.scatterGL = new ScatterGL(containerElement, {
+            renderMode: 'POINT',
+            interactive: false,
+            rotateOnStart: false,
+            showLabelsOnHover: false
+        });
+        this.containerElement = containerElement;
+        this.emptySet = new Set();
+    }
 
     onChartSelected = (traceInfo) => {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
     };
 
     getPlots() {
-        const {primaryTraceKey, embeddingData} = this.props;
-        //  const embeddingChartSize = this.props.embeddingChartSize;
-        const activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
+        const {primaryTraceKey, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+        let activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
         if (primaryTraces.length === 0 && activeTraces.length > 0) {
             primaryTraces = [activeTraces[0]];
         }
-        console.log('getPlots', activeTraces.length, primaryTraces.length);
-        const singleChartSize = PlotUtil.getSingleEmbeddingChartSize();
-        // let itemSize = Math.floor(singleChartSize / embeddingChartSize);
-        activeTraces.forEach(traceInfo => {
+        activeTraces = activeTraces.filter(activeTrace => activeTrace.name !== '__count');
 
-            // if (itemSize !== traceInfo.layout.width) {
-            //     traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
-            //     traceInfo.layout.width = itemSize;
-            //     traceInfo.layout.height = itemSize;
-            // }
-
-            if (traceInfo.data[0].marker.size === 0 && traceInfo.data[0].type !== 'scatter3d') {
-                traceInfo.data[0].marker.size = 1e-8;
-            }
-            if (traceInfo.data[0].unselected.marker.size === 0 && traceInfo.data[0].type !== 'scatter3d') {
-                traceInfo.data[0].unselected.marker.size = 1e-8;
-            }
-        });
-
-        if (primaryTraces.length > 0) {
-            let traceInfo = primaryTraces[0];
-            if (singleChartSize !== traceInfo.layout.width) {
-                traceInfo.layout = Object.assign({}, traceInfo.layout); // force re-render
-                traceInfo.layout.width = singleChartSize;
-                traceInfo.layout.height = singleChartSize;
-
-            }
+        const primaryTrace = primaryTraces[0];
+        let userPoints = this.emptySet;
+        if (primaryTrace) {
+            const embedding = primaryTrace.embedding;
+            const fullName = getEmbeddingKey(embedding);
+            const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
+            userPoints = chartSelection ? chartSelection.userPoints : this.emptySet;
         }
-
-        return (<div>
-            {primaryTraces.map(traceInfo => <EmbeddingChart
-                style={{display: 'block', border: '1px solid LightGrey'}} traceInfo={traceInfo}
-                key={getTraceKey(traceInfo)}/>)}
+        return (<React.Fragment>
+            {primaryTrace && <EmbeddingChart
+                markerOpacity={markerOpacity}
+                unselectedMarkerOpacity={unselectedMarkerOpacity}
+                traceInfo={primaryTrace}
+                selection={userPoints}
+                color={primaryTrace.marker.color}
+            />}
             {activeTraces.map(traceInfo => <GalleryImage
-                style={{display: 'inline-block', border: '1px solid LightGrey'}}
                 traceInfo={traceInfo}
-                selected={primaryTraceKey === getTraceKey(traceInfo)}
+                color={traceInfo.marker.color}
+                scatterGL={this.scatterGL}
+                markerOpacity={markerOpacity}
+                containerElement={this.containerElement}
                 onSelect={this.onChartSelected}
                 key={getTraceKey(traceInfo)}/>)}
-        </div>);
+        </React.Fragment>);
 
 
     }
@@ -74,7 +80,9 @@ class EmbeddingCharts extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         embeddingData: state.embeddingData,
-        embeddingChartSize: state.embeddingChartSize,
+        markerOpacity: state.markerOpacity,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        selection: state.selection,
         primaryTraceKey: state.primaryTraceKey
     };
 };

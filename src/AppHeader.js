@@ -29,7 +29,7 @@ import {
     setMessage,
 } from './actions';
 import {intFormat} from './formatters';
-import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_MARKER_SIZE} from "./reducers";
+import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY} from "./reducers";
 
 const drawerWidth = 240;
 
@@ -137,10 +137,10 @@ class AppHeader extends React.PureComponent {
                 }
             }
         }
-        json.datasetFilter = datasetFilter;
-        if (this.props.markerSize !== DEFAULT_MARKER_SIZE) {
-            json.markerSize = this.props.markerSize;
+        if (Object.keys(datasetFilter).length > 0) {
+            json.datasetFilter = datasetFilter;
         }
+
         if (this.props.markerOpacity !== DEFAULT_MARKER_OPACITY) {
             json.markerOpacity = this.props.markerOpacity;
         }
@@ -385,7 +385,7 @@ const mapStateToProps = state => {
         loading: state.loading,
         loadingApp: state.loadingApp,
         markerOpacity: state.markerOpacity,
-        markerSize: state.markerSize,
+
         message: state.message,
         numberOfBins: state.numberOfBins,
         savedDatasetFilter: state.savedDatasetFilter,

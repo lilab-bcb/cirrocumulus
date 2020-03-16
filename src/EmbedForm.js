@@ -416,12 +416,12 @@ class EmbedForm extends React.PureComponent {
                             {/*</FormControl>*/}
 
 
-                            <TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}
-                                       onChange={this.onMarkerSizeChange} label="Marker Size"
-                                       className={classes.formControl} value={markerSize}/>
-                            <TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}
-                                       onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"
-                                       className={classes.formControl} value={unselectedMarkerSize}/>
+                            {/*<TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}*/}
+                            {/*           onChange={this.onMarkerSizeChange} label="Marker Size"*/}
+                            {/*           className={classes.formControl} value={markerSize}/>*/}
+                            {/*<TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}*/}
+                            {/*           onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"*/}
+                            {/*           className={classes.formControl} value={unselectedMarkerSize}/>*/}
                             <TextField type="text" onKeyPress={this.onMarkerOpacityKeyPress}
                                        onChange={this.onMarkerOpacityChange} label="Marker Opacity"
                                        className={classes.formControl} value={markerOpacity}/>

@@ -6,7 +6,7 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -89,7 +89,7 @@ export function getEmbeddingKey(embedding) {
 }
 
 export function getTraceKey(traceInfo) {
-    return traceInfo.name + '_' + getEmbeddingKey(traceInfo.data[0].embedding);
+    return traceInfo.name + '_' + getEmbeddingKey(traceInfo.embedding);
 }
 
 function getEmbeddingJson(embedding) {
@@ -524,10 +524,10 @@ function handleFilterUpdated() {
                     if (embedding.bin) {
                         // find embedding data with matching layout
                         for (let i = 0; i < state.embeddingData.length; i++) {
-                            const embedding = state.embeddingData[i].data[0].embedding;
+                            const embedding = state.embeddingData[i].embedding;
                             let fullName = getEmbeddingKey(embedding);
                             if (fullName === key) {
-                                const traceBins = state.embeddingData[i].data[0].bins;
+                                const traceBins = state.embeddingData[i].bins;
                                 if (traceBins != null) {
                                     selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
                                     break;
@@ -538,7 +538,7 @@ function handleFilterUpdated() {
                     }
 
                     chartSelection[key] = {
-                        userPoints: selectedPoints,
+                        userPoints: new Set(selectedPoints),
                         points: selectedIndicesOrBins
                     };
                 }
@@ -633,7 +633,7 @@ export function handleDimensionFilterUpdated(payload) {
         let embeddingData = getState().embeddingData;
         let categories;
         for (let i = 0; i < embeddingData.length; i++) {
-            if (embeddingData[i].data[0].name === name) {
+            if (embeddingData[i].name === name) {
                 categories = embeddingData[i].colorScale.domain();
                 break;
             }
@@ -1220,17 +1220,11 @@ function _updateCharts(sliceOptions, onError) {
 
         // set active flag on cached data
         embeddingData.forEach(traceInfo => {
-            const embeddingKey = getEmbeddingKey(traceInfo.data[0].embedding);
+            const embeddingKey = getEmbeddingKey(traceInfo.embedding);
             let visibleFeatures = embeddingToVisibleFeatures[embeddingKey] || {};
             let active = visibleFeatures[traceInfo.name];
             if (active) {
                 traceInfo.date = new Date();
-                traceInfo.layout = PlotUtil.createEmbeddingLayout(
-                    {
-                        size: embeddingChartSize,
-                        is3d: traceInfo.data[0].embedding.dimensions === 3,
-                        title: traceInfo.name
-                    });
             }
             // data is cached so delete from visibleFeatures
             delete visibleFeatures[traceInfo.name];
@@ -1500,7 +1494,14 @@ function handleEmbeddingResult(result) {
         const is3d = selectedEmbedding.dimensions === 3;
         let rgbScale = getRgbScale();
 
-        const colorMapper = isImage ? (rgb => rgb.formatHex()) : (rgb => [rgbScale(rgb.r), rgbScale(rgb.g), rgbScale(rgb.b)]);
+        const colorMapper = isImage ? rgb => rgb.formatHex() : rgb => {
+            return {
+                r: rgbScale(rgb.r),
+                g: rgbScale(rgb.g),
+                b: rgbScale(rgb.b),
+                opacity: 1
+            };
+        };
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];
@@ -1561,22 +1562,26 @@ function handleEmbeddingResult(result) {
                 y: y,
                 bins: embeddingBins,
                 marker: {
-                    size: markerSize,
+                    // size: markerSize,
                     color: colors,
-                    opacity: markerOpacity,
-                    showscale: false,
+                    // opacity: markerOpacity,
+                    // showscale: false,
                 },
-                unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
-                values: values,
-                purity: purity,
-                text: values,
+                date: new Date(),
+                z: is3d ? z : undefined,
+                active: true,
+                colorScale: colorScale,
+                continuous: !isCategorical,
+                // layout: layout,
+                isCategorical: isCategorical,
+                // unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
+                values: values, // for color
+                // purity: purity,
+                // text: values,
             };
-            if (is3d) {
-                chartData.z = z;
-            }
 
 
-            const layout = PlotUtil.createEmbeddingLayout({size: embeddingChartSize, is3d: is3d, title: name});
+            // const layout = PlotUtil.createEmbeddingLayout({size: embeddingChartSize, is3d: is3d, title: name});
             if (selectedEmbedding.type === 'image') {
                 chartData.isImage = true;
                 chartData.image = fetch(API + '/image?id=' + state.dataset.id + '&image=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});
@@ -1594,17 +1599,7 @@ function handleEmbeddingResult(result) {
                 //     "yanchor": "top"
                 // }];
             }
-            embeddingData.push(
-                {
-                    date: new Date(),
-                    active: true,
-                    colorScale: colorScale,
-                    continuous: !isCategorical,
-                    data: [chartData],
-                    name: name,
-                    layout: layout,
-                    isCategorical: isCategorical,
-                });
+            embeddingData.push(chartData);
 
         }
         embeddingData.sort((a, b) => {
@@ -1614,7 +1609,6 @@ function handleEmbeddingResult(result) {
         });
 
 
-        dispatch(setSelection(state.selection));
         dispatch(_setEmbeddingData(embeddingData.slice()));
     };
 
