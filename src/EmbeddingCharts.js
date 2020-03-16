@@ -6,7 +6,6 @@ import {getEmbeddingKey, getTraceKey, setPrimaryTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 import GalleryImage from './GalleryImage';
 
-
 class EmbeddingCharts extends React.PureComponent {
 
 
@@ -34,7 +33,7 @@ class EmbeddingCharts extends React.PureComponent {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
     };
 
-    getPlots() {
+    render() {
         const {primaryTraceKey, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
         let activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
@@ -51,6 +50,17 @@ class EmbeddingCharts extends React.PureComponent {
             const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
             userPoints = chartSelection ? chartSelection.userPoints : this.emptySet;
         }
+        // const SortableItem = SortableElement(({value}) => <li>{value}</li>);
+        //
+        // const SortableList = SortableContainer(({items}) => {
+        //     return (
+        //         <ul>
+        //             {items.map((value, index) => (
+        //                 <SortableItem key={`item-${value}`} index={index} value={value}/>
+        //             ))}
+        //         </ul>
+        //     );
+        // });
         return (<React.Fragment>
             {primaryTrace && <EmbeddingChart
                 markerOpacity={markerOpacity}
@@ -68,12 +78,6 @@ class EmbeddingCharts extends React.PureComponent {
                 onSelect={this.onChartSelected}
                 key={getTraceKey(traceInfo)}/>)}
         </React.Fragment>);
-
-
-    }
-
-    render() {
-        return this.getPlots();
     }
 }
 

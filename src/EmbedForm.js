@@ -258,7 +258,7 @@ class EmbedForm extends React.PureComponent {
     render() {
         const {
             numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingData,
-            embeddingChartSize, unselectedMarkerSize, features, groupBy, markerSize, markerOpacity, datasetFilter,
+            features, groupBy, markerOpacity, datasetFilter,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated
         } = this.props;
@@ -315,11 +315,10 @@ class EmbedForm extends React.PureComponent {
         }];
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
 
-        const chartSizes = [{label: 'Small', value: 3}, {label: 'Medium', value: 2}, {label: 'Large', value: 1}];
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
-                    <InputLabel id="embedding-label">Embedding</InputLabel>
+                    <InputLabel id="embedding-label">Embeddings</InputLabel>
                     <Select
                         className={classes.select}
                         labelId="embedding-label"
@@ -350,7 +349,7 @@ class EmbedForm extends React.PureComponent {
                         aria-controls="summary-content"
                         id="summary-header"
                     >
-                        <div>Summary</div>
+                        <div>Filters</div>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div style={{marginLeft: 10}}>

@@ -16,23 +16,6 @@ import ScatterChartThree from './ScatterChartThree';
 
 
 class EmbeddingChart extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {animating: false};
-    }
-
-
-    toggleAnimation = (event) => {
-        this.setState((prevState, props) => ({
-            animating: !prevState.animating
-        }), () => {
-            window.requestAnimationFrame(() => {
-                if (this.state.animating) {
-                    this.animate();
-                }
-            });
-        });
-    };
 
 
     render() {
@@ -74,16 +57,6 @@ class EmbeddingChart extends React.PureComponent {
                                            featureSummary={featureSummary}/>}
                 </div>
 
-                {/*{!traceInfo.data[0].isImage && <Plot*/}
-                {/*    style={{display: 'inline-block'}}*/}
-                {/*    data={traceInfo.data}*/}
-                {/*    onInitialized={this.onInitialized}*/}
-                {/*    layout={traceInfo.layout}*/}
-                {/*    config={config}*/}
-                {/*    onDeselect={this.onDeselect}*/}
-                {/*    onWebglcontextlost={this.onWebglcontextlost}*/}
-                {/*    onSelected={this.onSelect}*/}
-                {/*/>}*/}
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
@@ -105,15 +78,6 @@ class EmbeddingChart extends React.PureComponent {
                     onDeselect={onDeselect}
                     onSelected={onSelect}
                 />}
-                {/*{traceInfo.data[0].type === 'scatter3d' && !this.state.animating &&*/}
-                {/*<IconButton onClick={this.toggleAnimation} aria-label="Play">*/}
-                {/*    <PlayCircleFilledIcon/>*/}
-                {/*</IconButton>}*/}
-
-                {/*{traceInfo.data[0].type === 'scatter3d' && this.state.animating &&*/}
-                {/*<IconButton onClick={this.toggleAnimation} aria-label="Pause">*/}
-                {/*    <PauseCircleFilledIcon/>*/}
-                {/*</IconButton>}*/}
 
 
             </div>);
