@@ -4,6 +4,7 @@ import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
     DELETE_DATASET,
+    getTraceKey,
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
@@ -451,15 +452,10 @@ function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
             return action.payload;
-
         case SET_SELECTION:
-
-
             return state.slice();
         case SET_CATEGORICAL_COLOR:
-
             state.forEach((traceInfo, stateIndex) => {
-
                 if (!traceInfo.continuous && traceInfo.name === action.payload.name) {
                     let index = traceInfo.colorScale.domain().indexOf(action.payload.value);
                     let range = traceInfo.colorScale.range();
@@ -499,6 +495,13 @@ export function primaryTraceKey(state = null, action) {
     switch (action.type) {
         case SET_PRIMARY_TRACE_KEY:
             return action.payload;
+        case SET_EMBEDDING_DATA:
+            let traces = action.payload.filter(traceInfo => traceInfo.active);
+            if (traces.length === 0) {
+                return null;
+            }
+            const activeTrace = traces[traces.length - 1];
+            return getTraceKey(activeTrace);
         default:
             return state;
     }

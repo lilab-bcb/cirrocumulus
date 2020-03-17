@@ -38,16 +38,18 @@ class GalleryImage extends React.PureComponent {
     };
 
     render() {
+        let name = this.props.traceInfo.name;
+        if (name === '__count') {
+            name = 'count';
+        }
         return (<Card variant="outlined" style={{display: 'inline-block'}}>
             <CardContent>
 
                 <Typography style={{textAlign: 'center'}} variant="caption" component="h4">
                     <Link href="#"
-                          onClick={this.onSelect}>{this.props.traceInfo.name}</Link>
+                          onClick={this.onSelect}>{name}</Link>
                 </Typography>
                 <div style={{display: 'inline-block'}}>
-
-
                     <img src={this.state.url}/>
                 </div>
             </CardContent>

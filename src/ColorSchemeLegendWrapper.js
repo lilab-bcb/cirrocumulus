@@ -20,10 +20,10 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                                   maxHeight={maxHeight}></ContinuousLegend>
                 {name !== '__count' &&
                 <MeasureFilter datasetFilter={datasetFilter} name={name} handleUpdate={handleUpdate}/>}
-                {showColorScheme &&
-                <ColorSchemeLegend width={this.props.width} height={this.props.height} style={{paddingLeft: 10}}
-                                   scale={scale}
-                                   label={this.props.label}></ColorSchemeLegend>}
+                {/*{showColorScheme &&*/}
+                {/*<ColorSchemeLegend width={this.props.width} height={this.props.height} style={{paddingLeft: 10}}*/}
+                {/*                   scale={scale}*/}
+                {/*                   label={this.props.label}></ColorSchemeLegend>}*/}
             </div>);
 
     }

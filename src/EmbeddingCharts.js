@@ -32,29 +32,27 @@ class EmbeddingCharts extends React.PureComponent {
 
     onChartSelected = (traceInfo) => {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
+        window.scrollTo(0, 0);
     };
 
-    onSortEnd = (activeTraces, e) => {
-        activeTraces[e.oldIndex].sortIndex = e.newIndex;
-        activeTraces[e.newIndex].sortIndex = e.oldIndex;
-        this.props.handleEmbeddingData(this.props.embeddingData.slice(0));
+    onSortEnd = (galleryTraces, e) => {
+        galleryTraces[e.oldIndex].sortIndex = e.newIndex;
+        galleryTraces[e.newIndex].sortIndex = e.oldIndex;
+        this.props.handleEmbeddingData(this.props.embeddingData.slice());
     };
 
     render() {
         const {primaryTraceKey, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
-        let activeTraces = embeddingData.filter(traceInfo => traceInfo.active);
+        let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
-        if (primaryTraces.length === 0 && activeTraces.length > 0) {
-            primaryTraces = [activeTraces[0]];
-        }
-        activeTraces = activeTraces.filter(activeTrace => activeTrace.name !== '__count');
-        for (let i = 0; i < activeTraces.length; i++) {
-            if (activeTraces[i].sortIndex == null) {
-                activeTraces[i].sortIndex = i;
+
+        for (let i = 0; i < galleryTraces.length; i++) {
+            if (galleryTraces[i].sortIndex == null) {
+                galleryTraces[i].sortIndex = i;
             }
         }
-        activeTraces.sort((a, b) => a.sortIndex - b.sortIndex);
-        const primaryTrace = primaryTraces[0];
+        galleryTraces.sort((a, b) => a.sortIndex - b.sortIndex);
+        const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
         let userPoints = this.emptySet;
         if (primaryTrace) {
             const embedding = primaryTrace.embedding;
@@ -90,9 +88,9 @@ class EmbeddingCharts extends React.PureComponent {
                 selection={userPoints}
                 color={primaryTrace.marker.color}
             />}
-            <SortableList distance={2}
-                          axis="xy" items={activeTraces}
-                          onSortEnd={(e) => this.onSortEnd(activeTraces, e)}/>;
+            {galleryTraces.length > 1 && <SortableList distance={2}
+                                                       axis="xy" items={galleryTraces}
+                                                       onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>};
         </React.Fragment>);
     }
 }

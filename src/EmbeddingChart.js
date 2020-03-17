@@ -28,7 +28,7 @@ class EmbeddingChart extends React.PureComponent {
         return (
 
             <div style={this.props.style}>
-                <div style={{position: 'absolute', right: 10}}>
+                <div style={{position: 'absolute', right: 10, zIndex: 1000}}>
                     {traceInfo.continuous ?
                         <ColorSchemeLegendWrapper
                             width={140}

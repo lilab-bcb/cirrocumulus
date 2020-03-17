@@ -112,10 +112,6 @@ const ExpansionPanelDetails = withStyles(theme => ({
 class EmbedForm extends React.PureComponent {
 
 
-    onMarkerSizeChange = (event) => {
-        this.props.handleMarkerSizeUI(event.target.value);
-    };
-
     openDatasetFilter = (filterId) => {
         this.props.handleOpenDatasetFilter(filterId);
     };
@@ -124,32 +120,6 @@ class EmbedForm extends React.PureComponent {
         this.props.handleDeleteDatasetFilter(filterId);
     };
 
-    onMarkerSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let markerSize = parseFloat(event.target.value);
-            if (markerSize >= 0 && markerSize <= 30) {
-                this.props.handleMarkerSize(markerSize);
-            }
-        }
-    };
-
-    onEmbeddingChartSizeChange = (event) => {
-        this.props.handleEmbeddingChartSize(event.target.value);
-    };
-
-
-    onUnselectedMarkerSizeChange = (event) => {
-        this.props.handleUnselectedMarkerSizeUI(event.target.value);
-    };
-
-    onUnselectedMarkerSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let markerSize = parseFloat(event.target.value);
-            if (markerSize >= 0 && markerSize <= 30) {
-                this.props.handleUnselectedMarkerSize(markerSize);
-            }
-        }
-    };
 
     onMarkerOpacityChange = (event) => {
         this.props.handleMarkerOpacityUI(event.target.value);
@@ -234,7 +204,6 @@ class EmbedForm extends React.PureComponent {
         const embeddings = event.target.value;
         const selection = [];
         embeddings.forEach(embedding => {
-
             if (!embedding.precomputed) {
                 embedding = Object.assign(embedding, {
                     bin: this.props.binValues,
@@ -244,7 +213,6 @@ class EmbedForm extends React.PureComponent {
                 });
             }
             selection.push(embedding);
-
         });
         this.props.handleEmbeddings(selection);
     };
@@ -309,7 +277,6 @@ class EmbedForm extends React.PureComponent {
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
         }];
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
-
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
@@ -326,7 +293,7 @@ class EmbedForm extends React.PureComponent {
                         {availableEmbeddings.map(embedding => (
                             <MenuItem key={getEmbeddingKey(embedding)}
                                       value={embedding}>
-                                <Checkbox checked={embeddingKeys.indexOf(getEmbeddingKey(embedding)) > -1}/>
+                                <Checkbox checked={embeddingKeys.indexOf(getEmbeddingKey(embedding)) !== -1}/>
                                 <ListItemText primary={embedding.name + (embedding.dimensions === 3 ? ' 3d' : '')}/>
                             </MenuItem>
                         ))}

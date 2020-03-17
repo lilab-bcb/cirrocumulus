@@ -1,5 +1,6 @@
 import React from 'react';
 import {Dataset, ScatterGL} from 'scatter-gl';
+
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {getChartSize} from './PlotUtil';
@@ -11,6 +12,7 @@ class ScatterChartThree extends React.PureComponent {
         this.containerElementRef = React.createRef();
         this.scatterGL = null;
         this.chartSize = getChartSize();
+        this.state = {animating: false};
 
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
@@ -67,6 +69,15 @@ class ScatterChartThree extends React.PureComponent {
         // }
         // saveAs(blob, name + '.svg');
     };
+    onToggleAnimation = () => {
+        if (this.scatterGL.scatterPlot.orbitIsAnimating()) {
+            this.scatterGL.stopOrbitAnimation();
+            this.setState({animating: false});
+        } else {
+            this.scatterGL.startOrbitAnimation();
+            this.setState({animating: true});
+        }
+    };
 
     onDragMode = (mode) => {
         if (mode === 'pan') {
@@ -84,6 +95,9 @@ class ScatterChartThree extends React.PureComponent {
                 rotateOnStart: false,
                 showLabelsOnHover: false,
                 onSelect: (selectedpoints, boundingBox) => {
+                    if (this.scatterGL.scatterPlot.interactionMode === 'PAN') {
+                        return;
+                    }
                     if (selectedpoints != null && selectedpoints.length === 0) {
                         selectedpoints = null;
                     }
@@ -131,14 +145,16 @@ class ScatterChartThree extends React.PureComponent {
 
                 }
             });
+
             this.scatterGL.setSelectMode();
+            const canvas = this.containerElementRef.current.querySelector('canvas');
+            canvas.style.outline = '0px';
         }
     }
 
     draw() {
         const scatterGL = this.scatterGL;
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
-        console.log(traceInfo.name);
         scatterGL.setSelectedPointIndices(selection);
         const dataset = new Dataset(traceInfo.x, traceInfo.y, traceInfo.z, color);
         scatterGL.render(dataset);
@@ -165,12 +181,20 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     render() {
-        return <div><ChartToolbar onHome={this.onHome}
-                                  onSaveImage={this.onSaveImage}
-                                  onDragMode={this.onDragMode}></ChartToolbar>
-            <div style={{display: 'inline-block', width: this.chartSize.width, height: this.chartSize.height}}
+        return <React.Fragment><ChartToolbar onHome={this.onHome}
+                                             is3d={this.props.traceInfo && this.props.traceInfo.z != null}
+                                             animating={this.state.animating}
+                                             toggleAnimation={this.onToggleAnimation}
+                                             onSaveImage={this.onSaveImage}
+                                             onDragMode={this.onDragMode}></ChartToolbar>
+            <div style={{
+                display: 'inline-block',
+                position: 'relative',
+                width: this.chartSize.width,
+                height: this.chartSize.height
+            }}
                  ref={this.containerElementRef}/>
-        </div>;
+        </React.Fragment>;
     }
 }
 

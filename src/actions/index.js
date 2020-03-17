@@ -6,7 +6,7 @@ import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -1182,7 +1182,7 @@ function _updateCharts(sliceOptions, onError) {
         const obsCat = state.dataset.obsCat;
         const dotPlotData = state.dotPlotData;
         let embeddingData = state.embeddingData;
-        const embeddingChartSize = state.embeddingChartSize;
+
         const globalFeatureSummary = state.globalFeatureSummary;
         if (sliceOptions.clear) {
             embeddingData = [];
@@ -1437,9 +1437,14 @@ function _updateCharts(sliceOptions, onError) {
             for (let i = 0; i < embeddingResults.length; i++) {
                 dispatch(handleEmbeddingResult(embeddingResults[i]));
             }
-            if (embeddingResults.length === 0) {
-                dispatch(setEmbeddingData(embeddingData.slice()));
-            }
+            // embeddingData.sort((a, b) => {
+            //     a = a.name.toLowerCase();
+            //     b = b.name.toLowerCase();
+            //     return a < b ? -1 : 1;
+            // });
+
+
+            dispatch(setEmbeddingData(embeddingData.slice()));
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -1585,14 +1590,7 @@ function handleEmbeddingResult(result) {
             embeddingData.push(chartData);
 
         }
-        embeddingData.sort((a, b) => {
-            a = a.name.toLowerCase();
-            b = b.name.toLowerCase();
-            return a < b ? -1 : 1;
-        });
 
-
-        dispatch(setEmbeddingData(embeddingData.slice()));
     };
 
 }

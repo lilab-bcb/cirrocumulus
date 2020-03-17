@@ -20,7 +20,7 @@ import AppHeader from './AppHeader';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DotPlotsPlotly from './DotPlots';
 import EditDatasetDialog from './EditDatasetDialog';
-import EmbeddingChartPlotly from './EmbeddingCharts';
+import EmbeddingCharts from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
@@ -92,7 +92,7 @@ class App extends PureComponent {
                     <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
                                                     value={loadingApp.progress}/></h2>
                     </div>}
-                    {dataset != null && <EmbeddingChartPlotly/>}
+                    {dataset != null && <EmbeddingCharts/>}
                     {dataset != null && <DotPlotsPlotly/>}
                 </main>
 

@@ -1,6 +1,8 @@
 import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
 import withStyles from '@material-ui/core/styles/withStyles';
+import PauseIcon from '@material-ui/icons/Pause';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import React from 'react';
 
 const styles = theme => ({
@@ -49,7 +51,7 @@ class ChartToolbar extends React.PureComponent {
             {/*    </IconButton>*/}
             {/*</Tooltip>*/}
             <Tooltip title={"Brush"}>
-                <IconButton className={dragmode === 'select' ? active : inactive}
+                <IconButton edge={false} size={'small'} className={dragmode === 'select' ? active : inactive}
                             aria-label="Box Select" onClick={() => this.setDragMode('select')}>
                     <svg viewBox="0 0 1000 1000" height="16" width="16">
                         <path
@@ -59,7 +61,7 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>
             <Tooltip title={"Pan"}>
-                <IconButton className={dragmode === 'pan' ? active : inactive}
+                <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : inactive}
                             aria-label="Pan" onClick={() => this.setDragMode('pan')}>
                     <svg viewBox="0 0 1000 1000" height="16" width="16">
                         <path
@@ -68,12 +70,13 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>
-            {/*<Tooltip title={"Pan"}>*/}
-            {/*    <IconButton aria-label="Pla" onClick={() => this.setDragMode('pan')}>*/}
-            {/*        <PlayArrowIcon />*/}
-            {/*    </IconButton>*/}
-            {/*</Tooltip>*/}
-
+            {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
+                <IconButton edge={false} size={'small'} aria-label={this.props.animating ? 'Pause' : 'Animate'}
+                            onClick={this.props.toggleAnimation}>
+                    {!this.props.animating && <PlayArrowIcon/>}
+                    {this.props.animating && <PauseIcon/>}
+                </IconButton>
+            </Tooltip>}
 
 
             {/*<Tooltip title={"Zoom"}>*/}
