@@ -8,8 +8,7 @@ from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
 from .util import *
 
-cached_schema = None
-cached_dataset_schema_id = None
+
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
@@ -111,18 +110,13 @@ def handle_dataset_filter():
 def get_schema_and_dataset():
     """Get dataset schema and dataset object
     """
-    global cached_schema, cached_dataset_schema_id
+
     email = auth_api.auth()['email']
     dataset_id = request.args.get('id', '')
     if dataset_id == '':
         return 'Please provide an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
-    if dataset_id == cached_dataset_schema_id:
-        return cached_schema, dataset
     schema = dataset_api.schema(dataset)
-
-    cached_dataset_schema_id = dataset_id
-    cached_schema = schema
     return schema, dataset
 
 

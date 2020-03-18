@@ -1,3 +1,5 @@
+import gzip
+import json
 import logging
 import os
 
@@ -5,6 +7,8 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
+
+from cirro.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
 
@@ -15,42 +19,40 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
         write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata(adata, root, X_range=None):
+def save_adata(adata, output_directory):
     logger.info('Save adata')
-    if X_range is None:
-        X_range = (0, adata.shape[1])
-    logger.info('Save adata {}-{}'.format(X_range[0], X_range[1]))
-    X_dir = os.makedirs(os.path.join(root, 'X'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'obs'))
-    os.makedirs(os.path.join(root, 'obsm'))
+    X_dir = os.path.join(output_directory, 'X')
+    obs_dir = os.path.join(output_directory, 'obs')
+    obsm_dir = os.path.join(output_directory, 'obsm')
+    result = SimpleData.schema(adata)
 
-    save_adata_X_chunk(adata, slice(X_range[0], X_range[1]), root)
-    if X_range[0] == 0:
-        import json
-        import os
-        import gzip
-        with gzip.open(os.path.join(X_dir, 'index.json.gz'), 'wt') as f:
-            json.dump({'shape': adata.shape, 'encoding': 'parquet', 'version': '1.0.0'}, f)
-        save_data_obs(adata, root)
-        save_data_obsm(adata, root)
+    with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
+        json.dump(result, f)
+    os.makedirs(X_dir, exist_ok=True)
+    os.makedirs(obs_dir, exist_ok=True)
+    os.makedirs(obsm_dir, exist_ok=True)
+    save_adata_X(adata, X_dir)
+
+    save_data_obs(adata, obs_dir)
+    save_data_obsm(adata, obsm_dir)
 
 
-def save_adata_X_chunk(adata, adata_col_slice, X_dir):
-    X_slice = adata.X[:, adata_col_slice]
-    names = adata.var.index[adata_col_slice]
-    is_sparse = scipy.sparse.issparse(X_slice)
-    if is_sparse and scipy.sparse.isspmatrix_csr(X_slice):
-        X_slice = X_slice.tocsc()
+def save_adata_X(adata, X_dir):
+    adata_X = adata.X
+    names = adata.var.index
+    is_sparse = scipy.sparse.issparse(adata_X)
+    if is_sparse and scipy.sparse.isspmatrix_csr(adata_X):
+        adata_X = adata_X.tocsc()
 
-    for j in range(X_slice.shape[1]):
-        X = X_slice[:, j]
+    for j in range(adata_X.shape[1]):
+        X = adata_X[:, j]
         if is_sparse:
             X = X.toarray().flatten()
         indices = np.where(X != 0)[0]
         values = X[indices]
-        write_pq(dict(index=indices, value=values), os.path.join(X_dir, 'name=' + names[j]), 'index')
+        write_pq(dict(index=indices, value=values), X_dir, names[j])
         if j > 0 and (j + 1) % 1000 == 0:
-            logger.info('Wrote adata X {}/{}'.format(j + 1, X_slice.shape[1]))
+            logger.info('Wrote adata X {}/{}'.format(j + 1, adata_X.shape[1]))
 
 
 def save_data_obsm(adata, obsm_dir):
@@ -62,7 +64,7 @@ def save_data_obsm(adata, obsm_dir):
         d = {}
         for i in range(dimensions):
             d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
-        write_pq(d, os.path.join(obsm_dir, name), 'index.parquet')
+        write_pq(d, obsm_dir, name)
 
 
 def save_data_obs(adata, obs_dir):
@@ -70,5 +72,5 @@ def save_data_obs(adata, obs_dir):
     for name in adata.obs:
         # TODO sort?
         value = adata.obs[name]
-        write_pq(dict(value=value), os.path.join(obs_dir, name), 'index')
-    write_pq(dict(value=adata.obs.index.values), output, 'index')
+        write_pq(dict(value=value), obs_dir, name)
+    write_pq(dict(value=adata.obs.index.values), obs_dir, 'index')

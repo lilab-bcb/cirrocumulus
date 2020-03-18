@@ -18,6 +18,8 @@ class DatasetAPI:
         self.suffix_to_provider = {}
         self.fs_adapter = FileSystemAdapter()
         self.default_provider = None
+        self.cached_schema = None
+        self.cached_dataset_id = None
 
     def get_dataset_provider(self, path):
         index = path.rfind('.')
@@ -36,11 +38,16 @@ class DatasetAPI:
             self.suffix_to_provider[suffix.lower()] = provider
 
     def schema(self, dataset):
+        dataset_id = dataset.id
+        if self.cached_dataset_id == dataset_id:
+            return self.cached_schema
         path = dataset['url']
         provider = self.get_dataset_provider(path)
         value = provider.schema(self.fs_adapter.get_fs(path), path)
         if 'summary' in dataset:
             value['summary'] = dataset['summary']
+        self.cached_schema = value
+        self.cached_dataset_id = dataset.id
         return value
 
     def has_precomputed_stats(self, dataset):
@@ -70,4 +77,4 @@ class DatasetAPI:
         path = dataset['url']
         provider = self.get_dataset_provider(path)
         return provider.read(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys, basis=basis,
-            dataset=dataset)
+            dataset=dataset, schema=self.schema(dataset))

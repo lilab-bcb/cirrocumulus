@@ -10,6 +10,18 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {API, EDIT_DATASET_DIALOG, getIdToken, saveDataset, setDialog, setMessage} from './actions';
 
+function getUniqueArray(text) {
+    let tokens = text.split(',');
+    let values = new Set();
+    for (let i = 0; i < tokens.length; i++) {
+        let s = tokens[i].trim().toLowerCase();
+        if (s !== '') {
+            values.add(s);
+        }
+    }
+    return Array.from(values);
+}
+
 class EditDatasetDialog extends React.PureComponent {
 
     constructor(props) {
@@ -58,16 +70,7 @@ class EditDatasetDialog extends React.PureComponent {
             return;
         }
         this.setState({loading: true});
-        let tokens = this.state.readers.split(',');
-
-        let uniqueReaders = new Set();
-        for (let i = 0; i < tokens.length; i++) {
-            let reader = tokens[i].trim().toLowerCase();
-            if (reader !== '') {
-                uniqueReaders.add(reader);
-            }
-        }
-        let readers = Array.from(uniqueReaders);
+        let readers = getUniqueArray(this.state.readers);
         this.props.handleSave({dataset: this.props.dataset, name: datasetName, url: url, readers: readers});
     };
 
