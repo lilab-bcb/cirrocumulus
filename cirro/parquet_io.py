@@ -25,12 +25,12 @@ def save_adata(adata, output_directory):
     obs_dir = os.path.join(output_directory, 'obs')
     obsm_dir = os.path.join(output_directory, 'obsm')
     result = SimpleData.schema(adata)
-
-    with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
-        json.dump(result, f)
     os.makedirs(X_dir, exist_ok=True)
     os.makedirs(obs_dir, exist_ok=True)
     os.makedirs(obsm_dir, exist_ok=True)
+    with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
+        json.dump(result, f)
+
     save_adata_X(adata, X_dir)
 
     save_data_obs(adata, obs_dir)
