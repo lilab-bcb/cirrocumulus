@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cirro.data_processing import handle_embedding
-from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirrocumulus.data_processing import handle_embedding
+from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 
 
 def create_df(test_data, measures, dimensions, basis):

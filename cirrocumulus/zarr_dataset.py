@@ -8,8 +8,8 @@ import zarr
 from scipy.sparse import _sparsetools
 from scipy.sparse.compressed import _cs_matrix
 
-from cirro.abstract_dataset import AbstractDataset
-from cirro.simple_data import SimpleData
+from cirrocumulus.abstract_dataset import AbstractDataset
+from cirrocumulus.simple_data import SimpleData
 
 
 class BackedSparseMatrix(_cs_matrix):

@@ -1,6 +1,6 @@
 from natsort.natsort import natsorted
 
-from cirro.simple_data import SimpleData
+from cirrocumulus.simple_data import SimpleData
 
 
 class FeatureAggregator:

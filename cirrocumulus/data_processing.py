@@ -1,9 +1,9 @@
-from cirro.dotplot_aggregator import DotPlotAggregator
-from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
-from cirro.feature_aggregator import FeatureAggregator
-from cirro.ids_aggregator import IdsAggregator
-from cirro.simple_data import SimpleData
-from cirro.unique_aggregator import UniqueAggregator
+from cirrocumulus.dotplot_aggregator import DotPlotAggregator
+from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirrocumulus.feature_aggregator import FeatureAggregator
+from cirrocumulus.ids_aggregator import IdsAggregator
+from cirrocumulus.simple_data import SimpleData
+from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
 def filter_adata(adata, data_filter):

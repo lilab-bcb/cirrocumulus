@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirro.abstract_dataset import AbstractDataset
-from cirro.simple_data import SimpleData
+from cirrocumulus.abstract_dataset import AbstractDataset
+from cirrocumulus.simple_data import SimpleData
 
 
 class AnndataDataset(AbstractDataset):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from cirro.data_processing import handle_selection_ids
+from cirrocumulus.data_processing import handle_selection_ids
 
 
 def test_dimension_filter(dataset_api, input_dataset, test_data):

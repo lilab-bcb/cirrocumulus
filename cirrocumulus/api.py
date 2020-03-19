@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, request
 
-import cirro.data_processing as data_processing
-from cirro.embedding_aggregator import get_basis
+import cirrocumulus.data_processing as data_processing
+from cirrocumulus.embedding_aggregator import get_basis
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI

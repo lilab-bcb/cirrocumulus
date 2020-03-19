@@ -1,7 +1,7 @@
 import json
 import os
 
-from cirro.entity import Entity
+from cirrocumulus.entity import Entity
 
 
 def create_dataset_meta(path):

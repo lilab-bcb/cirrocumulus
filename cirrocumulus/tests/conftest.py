@@ -3,10 +3,10 @@ import os
 import anndata
 import pytest
 
-from cirro.anndata_dataset import AnndataDataset
-from cirro.dataset_api import DatasetAPI
-from cirro.entity import Entity
-from cirro.zarr_dataset import ZarrDataset
+from cirrocumulus.anndata_dataset import AnndataDataset
+from cirrocumulus.dataset_api import DatasetAPI
+from cirrocumulus.entity import Entity
+from cirrocumulus.zarr_dataset import ZarrDataset
 
 
 @pytest.fixture(scope='module', autouse=True)

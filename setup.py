@@ -79,5 +79,5 @@ setup(
     python_requires=">=3.6",
     package_data={
     },
-    entry_points={"console_scripts": ["cirro=cirro.__main__:main"]},
+    entry_points={"console_scripts": ["cirro=cirrocumulus.__main__:main"]},
 )

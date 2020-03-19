@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
-
 import sys
-from cirro import launch
+
+from cirrocumulus import launch
 
 
 def main():

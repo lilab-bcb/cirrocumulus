@@ -1,10 +1,10 @@
 import pandas as pd
 from pytest import approx
 
-from cirro.data_processing import handle_stats
-from cirro.entity import Entity
-from cirro.feature_aggregator import FeatureAggregator
-from cirro.prepare_data import make_ordered, write_X_stats, write_obs_stats
+from cirrocumulus.data_processing import handle_stats
+from cirrocumulus.entity import Entity
+from cirrocumulus.feature_aggregator import FeatureAggregator
+from cirrocumulus.prepare_data import make_ordered, write_X_stats, write_obs_stats
 
 
 def diff_measures(test_data, summary, fields, is_x):

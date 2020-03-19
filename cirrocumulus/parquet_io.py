@@ -8,7 +8,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirro.simple_data import SimpleData
+from cirrocumulus.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
 

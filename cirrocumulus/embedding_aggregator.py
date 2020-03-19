@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse
 
-from cirro.simple_data import SimpleData
+from cirrocumulus.simple_data import SimpleData
 
 
 def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False):

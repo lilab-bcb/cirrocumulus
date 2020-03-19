@@ -11,12 +11,12 @@ import zarr
 from natsort import natsorted
 from pandas import CategoricalDtype
 
-import cirro.data_processing as data_processing
-from cirro.anndata_dataset import AnndataDataset
-from cirro.dataset_api import DatasetAPI
-from cirro.embedding_aggregator import EmbeddingAggregator, get_basis
-from cirro.entity import Entity
-from cirro.simple_data import SimpleData
+import cirrocumulus.data_processing as data_processing
+from cirrocumulus.anndata_dataset import AnndataDataset
+from cirrocumulus.dataset_api import DatasetAPI
+from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirrocumulus.entity import Entity
+from cirrocumulus.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
 

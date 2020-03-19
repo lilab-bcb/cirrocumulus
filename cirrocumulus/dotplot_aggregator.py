@@ -3,7 +3,7 @@ import scipy.sparse
 from natsort import natsorted
 from pandas import CategoricalDtype
 
-from cirro.simple_data import SimpleData
+from cirrocumulus.simple_data import SimpleData
 
 
 class DotPlotAggregator:

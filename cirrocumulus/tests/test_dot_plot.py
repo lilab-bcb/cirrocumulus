@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirro.data_processing import handle_grouped_stats
-from cirro.dotplot_aggregator import DotPlotAggregator
-from cirro.entity import Entity
-from cirro.prepare_data import write_grouped_stats, make_ordered
+from cirrocumulus.data_processing import handle_grouped_stats
+from cirrocumulus.dotplot_aggregator import DotPlotAggregator
+from cirrocumulus.entity import Entity
+from cirrocumulus.prepare_data import write_grouped_stats, make_ordered
 
 
 def diff_results(summarized_df, measures, results):

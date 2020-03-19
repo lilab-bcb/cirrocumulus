@@ -1,11 +1,11 @@
-from cirro.anndata_dataset import AnndataDataset
+from cirrocumulus.anndata_dataset import AnndataDataset
 
 
 def main(argsv):
     from flask import Flask, send_from_directory
     import argparse
     import webbrowser
-    from cirro.api import blueprint, auth_api, database_api
+    from cirrocumulus.api import blueprint, auth_api, database_api
     from flask_compress import Compress
     app = Flask(__name__, static_folder='client/')
     app.register_blueprint(blueprint, url_prefix='/api')
@@ -27,9 +27,9 @@ def main(argsv):
     # from flask_cors import CORS
     # CORS(app)
     Compress(app)
-    from cirro.api import dataset_api
-    from cirro.local_db_api import LocalDbAPI
-    from cirro.no_auth import NoAuth
+    from cirrocumulus.api import dataset_api
+    from cirrocumulus.local_db_api import LocalDbAPI
+    from cirrocumulus.no_auth import NoAuth
     import os
 
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
@@ -37,7 +37,7 @@ def main(argsv):
     database_api.provider = LocalDbAPI(os.path.normpath(args.dataset))
     dataset_api.add(AnndataDataset('r' if args.backed else None))
     try:
-        from cirro.parquet_dataset import ParquetDataset
+        from cirrocumulus.parquet_dataset import ParquetDataset
         dataset_api.add(ParquetDataset())
     except ModuleNotFoundError:
         pass

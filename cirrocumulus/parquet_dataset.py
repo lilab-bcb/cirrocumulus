@@ -7,8 +7,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirro.abstract_dataset import AbstractDataset
-from cirro.simple_data import SimpleData
+from cirrocumulus.abstract_dataset import AbstractDataset
+from cirrocumulus.simple_data import SimpleData
 
 
 class ParquetDataset(AbstractDataset):

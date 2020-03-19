@@ -2,9 +2,9 @@ import os
 
 from flask import Flask, send_from_directory
 
-from cirro.api import blueprint, auth_api, database_api, dataset_api
-from cirro.firestore_datastore import FirestoreDatastore
-from cirro.google_auth import GoogleAuth
+from cirrocumulus.api import blueprint, auth_api, database_api, dataset_api
+from cirrocumulus.firestore_datastore import FirestoreDatastore
+from cirrocumulus.google_auth import GoogleAuth
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -20,13 +20,13 @@ def root():
 
 
 try:
-    from cirro.parquet_dataset import ParquetDataset
+    from cirrocumulus.parquet_dataset import ParquetDataset
 
     dataset_api.add(ParquetDataset())
 except ModuleNotFoundError:
     pass
 try:
-    from cirro.zarr_dataset import ZarrDataset
+    from cirrocumulus.zarr_dataset import ZarrDataset
 
     dataset_api.add(ZarrDataset())
 except ModuleNotFoundError:
