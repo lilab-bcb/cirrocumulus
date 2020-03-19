@@ -9,7 +9,7 @@ from cirrocumulus import launch
 def main():
     command_list = [launch]
     parser = argparse.ArgumentParser(description='Run a cirro command')
-    command_list_strings = list(map(lambda x: x.__name__[len('cirro.'):], command_list))
+    command_list_strings = list(map(lambda x: x.__name__[len('cirrocumulus.'):], command_list))
     parser.add_argument('command', help='The command', choices=command_list_strings)
     parser.add_argument('command_args', help='The command arguments', nargs=argparse.REMAINDER)
     my_args = parser.parse_args()

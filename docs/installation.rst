@@ -44,7 +44,7 @@ Google Cloud Platform (GCP) Deployment Instructions
       ID”. Enter “Web application” for “Application Type” and
       https://<PROJECT>.appspot.com for “Authorized JavaScript origins”.
       Click “Create” to create the credentials.
-   -  Copy OAuth client id into ``cirrocumulus/cirro/config.json``.
+   -  Copy OAuth client id into ``cirrocumulus/cirrocumulus/config.json``.
 
 -  Create App Engine by navigating to App Engine > Dashboard. You may
    choose the region where your application is hosted. Select the Python
