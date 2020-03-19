@@ -10,13 +10,13 @@ from cirrocumulus.google_auth import GoogleAuth
 # called `app` in `main.py`.
 
 
-app = Flask(__name__, static_folder='cirro/client/')
+app = Flask(__name__, static_folder='cirrocumulus/client/')
 app.register_blueprint(blueprint, url_prefix='/api')
 
 
 @app.route('/')
 def root():
-    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "cirro", "client")), "index.html")
+    return send_from_directory(os.path.abspath(os.path.join(app.root_path, "cirrocumulus", "client")), "index.html")
 
 
 try:
