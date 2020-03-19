@@ -5,6 +5,8 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import {withStyles} from '@material-ui/core/styles';
+import Tab from '@material-ui/core/Tab';
+import Tabs from '@material-ui/core/Tabs';
 import CloseIcon from '@material-ui/icons/Close';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
@@ -22,11 +24,31 @@ import DotPlotsPlotly from './DotPlots';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
+import GalleryCharts from './GalleryCharts';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
 const drawerWidth = 240;
 
-
+const AntTab = withStyles(theme => ({
+    root: {
+        minWidth: 50,
+        textTransform: 'none',
+        fontWeight: theme.typography.fontWeightRegular,
+        marginRight: theme.spacing(0),
+        '&:hover': {
+            color: '#40a9ff',
+            opacity: 1,
+        },
+        '&$selected': {
+            color: '#1890ff',
+            fontWeight: theme.typography.fontWeightMedium,
+        },
+        '&:focus': {
+            color: '#40a9ff',
+        },
+    },
+    selected: {},
+}))(props => <Tab disableRipple {...props} />);
 const styles = theme => ({
     root: {
         display: 'flex',
@@ -56,11 +78,17 @@ class App extends PureComponent {
 
     constructor(props) {
         super(props);
+        this.state = {tab: 'embedding'};
     }
 
     handleMessageClose = () => {
         this.props.setMessage(null);
     };
+
+    handleTabChange = (event, value) => {
+        this.setState({tab: value});
+    };
+
 
     render() {
 
@@ -92,8 +120,39 @@ class App extends PureComponent {
                     <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
                                                     value={loadingApp.progress}/></h2>
                     </div>}
-                    {dataset != null && <EmbeddingCharts/>}
-                    {dataset != null && <DotPlotsPlotly/>}
+
+
+                    <Tabs
+                        value={this.state.tab}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        onChange={this.handleTabChange}
+                        aria-label="view"
+
+                    >
+                        <AntTab value="embedding" label="Embedding"/>
+                        <AntTab value="gallery" label="Gallery"/>
+                        <AntTab value="dot_plot" label="Dot Plot"/>
+                    </Tabs>
+                    <div
+                        role="tabpanel"
+                        hidden={this.state.tab !== 'embedding'}
+                    >
+                        {dataset != null && <EmbeddingCharts/>}
+                    </div>
+                    <div
+                        role="tabpanel"
+                        hidden={this.state.tab !== 'gallery'}
+                    >
+                        {dataset != null && <GalleryCharts/>}
+                    </div>
+                    <div
+                        role="tabpanel"
+                        hidden={this.state.tab !== 'dot_plot'}
+                    >
+                        {dataset != null && <DotPlotsPlotly/>}
+                    </div>
+
                 </main>
 
                 {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>

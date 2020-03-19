@@ -11,11 +11,8 @@ class ColorSchemeLegend extends React.PureComponent {
     }
 
     redraw() {
-        let backingScale = 1;
-        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            backingScale = window.devicePixelRatio;
-        }
-        this.backingScale = backingScale;
+        let backingScale = this.backingScale;
+
         let node = this.ref.current;
         const context = node.getContext('2d');
         const height = this.props.height;
@@ -76,14 +73,16 @@ class ColorSchemeLegend extends React.PureComponent {
     }
 
     render() {
-
+        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
+            this.backingScale = window.devicePixelRatio;
+        }
+       
         let height = this.props.height;
         let width = this.props.width;
         let style = {width: width, height: height};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }
-
         return (
             <canvas width={width * this.backingScale} height={height * this.backingScale} ref={this.ref}
                     style={style}></canvas>
