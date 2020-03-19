@@ -36,18 +36,18 @@ requires = [
         "natsort",
         "numpy",
         "pandas",
-        "matplotlib",
         "scipy"
 ]
 
 setup(
     name="cirrocumulus",
     use_scm_version=True,
-    cmdclass={
-            'develop': PostDevelopCommand,
-            'install': PostInstallCommand,
-    },
     setup_requires=['setuptools_scm'],
+    # cmdclass={
+    #         'develop': PostDevelopCommand,
+    #         'install': PostInstallCommand,
+    # },
+    # version="2.0.2",
     description="scRNA-Seq visualization tool",
     long_description=long_description,
     long_description_content_type="text/x-rst",
