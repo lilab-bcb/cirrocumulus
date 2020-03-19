@@ -1,2 +1,2 @@
-recursive-include cirro/client/ *
+recursive-include cirrocumulus/client/ *
 prune test-data
