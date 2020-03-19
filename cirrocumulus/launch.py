@@ -43,10 +43,10 @@ def main(argsv):
         pass
     # dataset_api.add(ZarrDataset())
 
+
     if not args.no_open:
-        host = args.host if args.host is not None else '127.0.0.0'
-        url = host + ':' + str(args.port)
-        webbrowser.open(url)
+        host = args.host if args.host is not None else '127.0.0.1'
+        webbrowser.open(host + ':' + str(args.port))
     app.run(host=args.host, port=args.port, debug=False)
 
 

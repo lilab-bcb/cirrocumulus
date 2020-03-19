@@ -54,7 +54,7 @@ class AnndataDataset(AbstractDataset):
     def schema(self, fs_adapter, path):
         return SimpleData.schema(self.get_data(path))
 
-    def read(self, fs_adapter, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
+    def read(self, fs_adapter, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
         adata = self.get_data(path)
         obs = None
         X = None

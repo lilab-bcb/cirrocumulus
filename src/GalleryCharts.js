@@ -31,7 +31,6 @@ class GalleryCharts extends React.PureComponent {
 
     onChartSelected = (traceInfo) => {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
-        window.scrollTo(0, 0);
     };
 
     onSortEnd = (galleryTraces, e) => {

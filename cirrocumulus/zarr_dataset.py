@@ -221,7 +221,7 @@ class ZarrDataset(AbstractDataset):
         return result
 
     # read zarr dataset stored in anndata format
-    def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
+    def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
         store = zarr.open(file_system.get_mapper(path), 'r')
         X = None
         if len(var_keys) > 0:
