@@ -122,7 +122,7 @@ class App extends PureComponent {
                     </div>}
 
 
-                    <Tabs
+                    {dataset != null && <Tabs
                         value={this.state.tab}
                         indicatorColor="primary"
                         textColor="primary"
@@ -133,7 +133,8 @@ class App extends PureComponent {
                         <AntTab value="embedding" label="Embedding"/>
                         <AntTab value="gallery" label="Gallery"/>
                         <AntTab value="dot_plot" label="Dot Plot"/>
-                    </Tabs>
+                    </Tabs>}
+
                     <div
                         role="tabpanel"
                         hidden={this.state.tab !== 'embedding'}
