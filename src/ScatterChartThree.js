@@ -1,9 +1,10 @@
 import React from 'react';
 import {Dataset, ScatterGL} from 'scatter-gl';
 
+
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
-import {getChartSize} from './PlotUtil';
+import {drawScatter2d, getChartSize} from './PlotUtil';
 
 class ScatterChartThree extends React.PureComponent {
 
@@ -54,20 +55,26 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     onSaveImage = () => {
-        // let layout = this.props.layout;
-        // let height = layout.height;
-        // let width = layout.width;
-        // let context = new window.C2S(width, height);
-        // this.drawContext(context);
-        // let svg = context.getSerializedSvg();
-        // let blob = new Blob([svg], {
-        //     type: 'text/plain;charset=utf-8'
-        // });
-        // let name = this.props.data[0].name;
-        // if (name === '__count') {
-        //     name = 'count';
-        // }
-        // saveAs(blob, name + '.svg');
+        const markerSize = 4; //this.scatterGL.pointVisualizer.renderMaterial.uniforms.pointSize.value;
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
+        const chartSize = {width: 800, height: 800};
+        let context = new window.C2S(chartSize.width, chartSize.height);
+        drawScatter2d(context, chartSize, traceInfo, markerSize, markerOpacity, unselectedMarkerOpacity, selection, color);
+        let svg = context.getSerializedSvg();
+        let blob = new Blob([svg], {
+            type: 'text/plain;charset=utf-8'
+        });
+        let name = traceInfo.name;
+        if (name === '__count') {
+            name = 'count';
+        }
+        // const renderer = new SVGRenderer();
+        // document.body.appendChild(renderer.domElement);
+        // renderer.setSize(window.innerWidth, window.innerHeight);
+        // renderer.setQuality('low');
+        // renderer.render(this.scatterGL.scatterPlot.scene, this.scatterGL.scatterPlot.camera);
+        // console.log(renderer.domElement);
+        window.saveAs(blob, name + '.svg');
     };
     onToggleAnimation = () => {
         if (this.scatterGL.scatterPlot.orbitIsAnimating()) {
@@ -174,6 +181,7 @@ class ScatterChartThree extends React.PureComponent {
         scatterGL.render(dataset);
         scatterGL.updateScatterPlotAttributes();
         scatterGL.renderScatterPlot();
+        window.foo = this.scatterGL;
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -181,6 +189,7 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     render() {
+
         return <React.Fragment><ChartToolbar onHome={this.onHome}
                                              is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                                              animating={this.state.animating}

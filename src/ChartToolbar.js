@@ -97,15 +97,15 @@ class ChartToolbar extends React.PureComponent {
             {/*    </svg>*/}
             {/*</IconButton>*/}
 
-            {/*<Tooltip title={"Save Image"}>*/}
-            {/*    <IconButton aria-label="Save Image" onClick={this.props.onSaveImage}>*/}
-            {/*        <svg viewBox="0 0 1000 1000" width="16" height="16">*/}
-            {/*            <path*/}
-            {/*                d="m500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z"*/}
-            {/*                transform="matrix(1 0 0 -1 0 850)"></path>*/}
-            {/*        </svg>*/}
-            {/*    </IconButton>*/}
-            {/*</Tooltip>*/}
+            {!this.props.is3d && <Tooltip title={"Save Image"}>
+                <IconButton aria-label="Save Image" onClick={this.props.onSaveImage}>
+                    <svg viewBox="0 0 1000 1000" width="16" height="16">
+                        <path
+                            d="m500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z"
+                            transform="matrix(1 0 0 -1 0 850)"></path>
+                    </svg>
+                </IconButton>
+            </Tooltip>}
 
             {/*<Tooltip title={"Reset"}>*/}
             {/*    <IconButton aria-label="Reset" onClick={this.props.onHome}>*/}
