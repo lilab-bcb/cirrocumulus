@@ -13,8 +13,6 @@ class ScatterChartThree extends React.PureComponent {
         this.containerElementRef = React.createRef();
         this.scatterGL = null;
         this.chartSize = getChartSize();
-        this.chartSize.width = 400;
-        this.chartSize.height = 400;
         this.state = {animating: false};
 
         // window.addEventListener('resize', () => {
