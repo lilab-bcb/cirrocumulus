@@ -17,8 +17,30 @@ class GalleryImage extends React.PureComponent {
         const {traceInfo, scatterGL, containerElement, markerOpacity} = this.props;
         ScatterChartThree.snapshot(scatterGL, traceInfo, markerOpacity);
         const canvas = containerElement.querySelector('canvas');
-        const url = canvas.toDataURL();
-        this.setState({url: url});
+        // const _this = this;
+        // const copy = document.createElement('canvas');
+        // let size = {width: 400, height: 400};
+        // copy.width = size.width * window.devicePixelRatio;
+        // copy.style.width = size.width + 'px';
+        // copy.height = size.height * window.devicePixelRatio;
+        // copy.style.height = size.height + 'px';
+        // const context = copy.getContext('2d');
+        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // context.drawImage(canvas, 0, 0, size.width, size.height);
+        this.setState({url: canvas.toDataURL()});
+        // canvas.toBlob(function (blob) {
+        //     // let newImg = document.createElement('img');
+        //     let url = URL.createObjectURL(blob);
+        //     _this.setState({url: url});
+        //     // newImg.onload = function () {
+        //     //     // no longer need to read the blob so it's revoked
+        //     //     URL.revokeObjectURL(url);
+        //     // };
+        //     //
+        //     // newImg.src = url;
+        //     // document.body.appendChild(newImg);
+        // });
+
     }
 
 
@@ -49,11 +71,8 @@ class GalleryImage extends React.PureComponent {
                     <Link href="#"
                           onClick={this.onSelect}>{name}</Link>
                 </Typography>
-                <div style={{display: 'inline-block'}}>
-                    <img src={this.state.url}/>
-                </div>
+                <img src={this.state.url} style={{width: 400, height: 400}}/>
             </CardContent>
-
         </Card>);
 
     }

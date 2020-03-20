@@ -13,6 +13,8 @@ class ScatterChartThree extends React.PureComponent {
         this.containerElementRef = React.createRef();
         this.scatterGL = null;
         this.chartSize = getChartSize();
+        this.chartSize.width = 400;
+        this.chartSize.height = 400;
         this.state = {animating: false};
 
         // window.addEventListener('resize', () => {
@@ -24,16 +26,15 @@ class ScatterChartThree extends React.PureComponent {
 
     static snapshot(scatterGL, traceInfo, markerOpacity) {
         const dataset = new Dataset(traceInfo.x, traceInfo.y, traceInfo.z, traceInfo.marker.color);
-        scatterGL.render(dataset);
-        scatterGL.setDimensions(traceInfo.z == null ? 2 : 3);
         scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
             const c = dataset.metadata[i];
             c.opacity = markerOpacity;
             return c;
         });
+        scatterGL.setDimensions(traceInfo.z == null ? 2 : 3);
         scatterGL.render(dataset);
-        scatterGL.updateScatterPlotAttributes();
-        scatterGL.renderScatterPlot();
+        // scatterGL.updateScatterPlotAttributes();
+        // scatterGL.renderScatterPlot();
     }
 
 

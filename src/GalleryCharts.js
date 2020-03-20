@@ -12,8 +12,7 @@ class GalleryCharts extends React.PureComponent {
     constructor(props) {
         super(props);
         const containerElement = document.createElement('div');
-        const ratio = window.devicePixelRatio;
-        const size = Math.round(400 / ratio);
+        const size = 400;
         containerElement.style.position = 'absolute';
         containerElement.style.left = '-9999px';
         containerElement.style.width = size + 'px';
@@ -71,9 +70,9 @@ class GalleryCharts extends React.PureComponent {
             );
         });
         return (
-            galleryTraces.length > 1 && <SortableList distance={2}
-                                                      axis="xy" items={galleryTraces}
-                                                      onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>);
+            <SortableList distance={2}
+                          axis="xy" items={galleryTraces}
+                          onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>);
     }
 }
 
