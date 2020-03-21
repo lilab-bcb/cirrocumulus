@@ -7,7 +7,6 @@ import os
 import anndata
 import numpy as np
 import pandas as pd
-import zarr
 from natsort import natsorted
 from pandas import CategoricalDtype
 
@@ -16,12 +15,14 @@ from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.entity import Entity
+from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
 
 
 def make_unique(index, join='-1'):
+    index = index.str.replace('/', '_')
     lower_index = index.str.lower()
     if lower_index.is_unique:
         return index
@@ -136,8 +137,9 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 class PrepareData:
 
     def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output,
-                 X_range=None, dimensions=None):
+                 X_range=None, dimensions=None, stats=True):
         self.input_path = input_path
+        self.stats = stats
         self.adata = anndata.read(input_path, backed=backed)
         if not backed:
             self.adata = self.adata[:, self.adata.X.sum(axis=0).A1 > 0]
@@ -182,7 +184,7 @@ class PrepareData:
             else:
                 self.others.append(name)
         make_ordered(self.adata.obs, self.dimensions)
-        self.store = zarr.open(self.base_name)
+        self.store = self.base_name
 
     def get_path(self, path):
         return os.path.join(self.base_name, path)
@@ -193,16 +195,15 @@ class PrepareData:
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
         if X_range[0] == 0:
-            import scipy.sparse
-            if scipy.sparse.issparse(self.adata.X) and scipy.sparse.isspmatrix_csr(self.adata.X):
-                self.adata.X = self.adata.X.tocsc()
-            self.adata.write_zarr(self.base_name, chunks=(None, 1))
-        self.summary_stats()
-        self.grouped_stats()
+            save_adata(self.adata, self.store)
+
+        if self.stats:
+            self.summary_stats()
+            self.grouped_stats()
 
         for basis_name in basis_list:
             self.grid_embedding(basis_name, bin_agg_function, nbins)
-        # self.schema()
+        self.schema()
 
     def summary_stats(self):
         dimensions = self.dimensions
@@ -301,9 +302,10 @@ class PrepareData:
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
         if X_range[0] == 0:
-            output_file = os.path.join(self.base_name, 'index.json')
+            output_file = os.path.join(self.base_name, 'index.json.gz')
             result = SimpleData.schema(self.adata)
-            result['precomputed'] = True
+            if self.stats:
+                result['precomputed'] = True  # has stats
             if nbins > 0:
                 result['embeddings'] = []
                 for basis_name in basis_list:
@@ -319,6 +321,7 @@ if __name__ == '__main__':
         description='(BETA!) Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
     parser.add_argument('dataset', help='Path to a h5ad file')
     parser.add_argument('out', help='Path to output directory')
+    parser.add_argument('--no-stats', dest="no_stats", help='Do not generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
@@ -340,6 +343,7 @@ if __name__ == '__main__':
         assert len(input_X_range) == 2
         input_X_range[0] = int(input_X_range[0])
         input_X_range[1] = int(input_X_range[1])
+
     prepare_data = PrepareData(args.dataset, args.backed, input_basis, args.nbins, args.summary, args.out,
-        X_range=input_X_range, dimensions=args.groups)
+        X_range=input_X_range, dimensions=args.groups, stats=not args.no_stats)
     prepare_data.execute()

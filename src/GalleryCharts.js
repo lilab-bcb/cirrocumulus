@@ -30,6 +30,7 @@ class GalleryCharts extends React.PureComponent {
 
     onChartSelected = (traceInfo) => {
         this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
+        window.scrollTo(0, 0);
     };
 
     onSortEnd = (galleryTraces, e) => {
@@ -70,9 +71,9 @@ class GalleryCharts extends React.PureComponent {
             );
         });
         return (
-            <SortableList distance={2}
-                          axis="xy" items={galleryTraces}
-                          onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>);
+            galleryTraces.length > 1 && <SortableList distance={2}
+                                                      axis="xy" items={galleryTraces}
+                                                      onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>);
     }
 }
 

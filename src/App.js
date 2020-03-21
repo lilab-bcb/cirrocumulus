@@ -130,8 +130,7 @@ class App extends PureComponent {
                         aria-label="view"
 
                     >
-                        <AntTab value="embedding" label="Embedding"/>
-                        <AntTab value="gallery" label="Gallery"/>
+                        <AntTab value="embedding" label="Embeddings"/>
                         <AntTab value="dot_plot" label="Dot Plot"/>
                     </Tabs>}
 
@@ -140,11 +139,6 @@ class App extends PureComponent {
                         hidden={this.state.tab !== 'embedding'}
                     >
                         {dataset != null && <EmbeddingCharts/>}
-                    </div>
-                    <div
-                        role="tabpanel"
-                        hidden={this.state.tab !== 'gallery'}
-                    >
                         {dataset != null && <GalleryCharts/>}
                     </div>
                     <div
