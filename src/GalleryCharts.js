@@ -40,7 +40,7 @@ class GalleryCharts extends React.PureComponent {
     };
 
     render() {
-        const {embeddingData, markerOpacity} = this.props;
+        const {embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
 
         for (let i = 0; i < galleryTraces.length; i++) {
@@ -57,6 +57,8 @@ class GalleryCharts extends React.PureComponent {
             color={traceInfo.marker.color}
             scatterGL={this.scatterGL}
             markerOpacity={markerOpacity}
+            unselectedMarkerOpacity={unselectedMarkerOpacity}
+            selection={selection}
             containerElement={this.containerElement}
             onSelect={this.onChartSelected}
             key={getTraceKey(traceInfo)}/>);

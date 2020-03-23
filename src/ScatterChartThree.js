@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dataset, ScatterGL} from 'scatter-gl';
+import {DatasetArray, ScatterGL} from 'scatter-gl';
 
 
 import {getEmbeddingKey} from './actions';
@@ -22,22 +22,14 @@ class ScatterChartThree extends React.PureComponent {
     }
 
 
-    static snapshot(scatterGL, traceInfo, markerOpacity) {
-        const dataset = new Dataset(traceInfo.x, traceInfo.y, traceInfo.z, traceInfo.marker.color);
-        scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
-            const c = dataset.metadata[i];
-            c.opacity = markerOpacity;
-            return c;
-        });
-        scatterGL.setDimensions(traceInfo.z == null ? 2 : 3);
-        scatterGL.render(dataset);
-        // scatterGL.updateScatterPlotAttributes();
-        // scatterGL.renderScatterPlot();
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        this.draw();
+        console.log('draw');
     }
-
 
     componentDidMount() {
         this.init();
+        this.draw();
         this.draw();
     }
 
@@ -48,10 +40,6 @@ class ScatterChartThree extends React.PureComponent {
         // }
     }
 
-
-    onHome = () => {
-
-    };
 
     onSaveImage = () => {
         const markerSize = 4; //this.scatterGL.pointVisualizer.renderMaterial.uniforms.pointSize.value;
@@ -159,12 +147,12 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     draw() {
+
         const scatterGL = this.scatterGL;
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
-        scatterGL.setSelectedPointIndices(selection);
-        const dataset = new Dataset(traceInfo.x, traceInfo.y, traceInfo.z, color);
-        scatterGL.render(dataset);
-        scatterGL.setDimensions(traceInfo.z == null ? 2 : 3);
+        scatterGL.selectedPointIndices = selection;
+        const dataset = new DatasetArray(traceInfo.x, traceInfo.y, traceInfo.z, color);
+
         scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
             const c = dataset.metadata[i];
             c.opacity = markerOpacity;
@@ -177,18 +165,13 @@ class ScatterChartThree extends React.PureComponent {
             }
             return c;
         });
+
         scatterGL.render(dataset);
-        scatterGL.updateScatterPlotAttributes();
-        scatterGL.renderScatterPlot();
-        window.foo = this.scatterGL;
+
     }
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        this.draw();
-    }
 
     render() {
-
         return <React.Fragment><ChartToolbar onHome={this.onHome}
                                              is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                                              animating={this.state.animating}

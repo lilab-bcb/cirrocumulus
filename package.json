@@ -22,7 +22,7 @@
     "react-plotly.js": "^2.4.0",
     "react-redux": "^7.2.0",
     "react-scripts": "3.4.0",
-    "react-select": "^3.0.5",
+    "react-select": "^3.1.0",
     "react-sortable-hoc": "^1.11.0",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "source-map-loader": "^0.2.4",
-    "ts-loader": "^6.2.1",
+    "ts-loader": "^6.2.2",
     "typescript": "^3.8.3"
   },
   "scripts": {

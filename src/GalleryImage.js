@@ -3,7 +3,29 @@ import CardContent from '@material-ui/core/CardContent';
 import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import ScatterChartThree from './ScatterChartThree';
+import {DatasetArray} from 'scatter-gl';
+import {getEmbeddingKey} from './actions';
+
+
+function snapshot(scatterGL, traceInfo, markerOpacity, unselectedMarkerOpacity, selection) {
+    const dataset = new DatasetArray(traceInfo.x, traceInfo.y, traceInfo.z, traceInfo.marker.color);
+    scatterGL.selectedPointIndices = selection;
+    scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
+        const c = dataset.metadata[i];
+        c.opacity = markerOpacity;
+        // if (hoverIndex === i) {
+        //     return c.brighter();
+        // }
+        const isSelected = selectedIndices.size === 0 || selectedIndices.has(i);
+        if (!isSelected) {
+            c.opacity = unselectedMarkerOpacity;
+        }
+        return c;
+    });
+
+    scatterGL.render(dataset);
+
+}
 
 
 class GalleryImage extends React.PureComponent {
@@ -14,8 +36,17 @@ class GalleryImage extends React.PureComponent {
 
 
     drawThree() {
-        const {traceInfo, scatterGL, containerElement, markerOpacity} = this.props;
-        ScatterChartThree.snapshot(scatterGL, traceInfo, markerOpacity);
+        let start = new Date().getTime();
+        const {scatterGL, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
+
+        const embedding = traceInfo.embedding;
+        const fullName = getEmbeddingKey(embedding);
+        const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
+        const userPoints = chartSelection ? chartSelection.userPoints : new Set();
+
+
+        snapshot(scatterGL, traceInfo, markerOpacity, unselectedMarkerOpacity, userPoints);
+        const e1 = new Date().getTime() - start;
         const canvas = containerElement.querySelector('canvas');
         // const _this = this;
         // const copy = document.createElement('canvas');
@@ -27,7 +58,9 @@ class GalleryImage extends React.PureComponent {
         // const context = copy.getContext('2d');
         // context.scale(window.devicePixelRatio, window.devicePixelRatio);
         // context.drawImage(canvas, 0, 0, size.width, size.height);
-        this.setState({url: canvas.toDataURL()});
+        const url = canvas.toDataURL();
+        console.log(traceInfo.name, e1, new Date().getTime() - start);
+        this.setState({url: url});
         // canvas.toBlob(function (blob) {
         //     // let newImg = document.createElement('img');
         //     let url = URL.createObjectURL(blob);

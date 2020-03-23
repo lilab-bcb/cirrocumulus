@@ -501,7 +501,7 @@ export function primaryTraceKey(state = null, action) {
                 return null;
             }
             const activeTrace = traces[traces.length - 1];
-            return getTraceKey(activeTrace);
+            return getTraceKey(activeTrace); // last feature becomes primary
         default:
             return state;
     }
