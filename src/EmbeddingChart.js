@@ -65,6 +65,7 @@ class EmbeddingChart extends React.PureComponent {
                                    onSelected={this.props.onSelect}
                                    markerOpacity={this.props.markerOpacity}
                                    color={traceInfo.marker.color}
+                                   onGallery={this.props.onGallery}
                                    unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
                 />}
 

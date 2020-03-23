@@ -72,6 +72,7 @@ export const SET_DOT_PLOT_SORT_ORDER = 'SET_DOT_PLOT_SORT_ORDER';
 export const SET_EMBEDDING_DATA = 'SET_EMBEDDING_DATA';
 
 export const SET_LOADING = 'SET_LOADING';
+export const SET_TAB = 'SET_TAB';
 
 export const SET_LOADING_APP = 'LOADING_APP';
 
@@ -950,6 +951,10 @@ function _setDatasetChoices(payload) {
 
 function _setLoading(payload) {
     return {type: SET_LOADING, payload: payload};
+}
+
+export function setTab(payload) {
+    return {type: SET_TAB, payload: payload};
 }
 
 function _setLoadingApp(payload) {

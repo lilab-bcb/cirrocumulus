@@ -1,3 +1,4 @@
+import Link from '@material-ui/core/Link';
 import React from 'react';
 import {DatasetArray, ScatterGL} from 'scatter-gl';
 
@@ -79,6 +80,11 @@ class ScatterChartThree extends React.PureComponent {
         } else if (mode === 'select') {
             this.scatterGL.setSelectMode();
         }
+    };
+
+    onGallery = (event) => {
+        event.preventDefault();
+        this.props.onGallery();
     };
 
     init() {
@@ -178,6 +184,9 @@ class ScatterChartThree extends React.PureComponent {
                                              toggleAnimation={this.onToggleAnimation}
                                              onSaveImage={this.onSaveImage}
                                              onDragMode={this.onDragMode}></ChartToolbar>
+            <Link style={{paddingLeft: 5}} href="#" onClick={this.onGallery}>
+                Gallery
+            </Link>
             <div style={{
                 display: 'inline-block',
                 position: 'relative',

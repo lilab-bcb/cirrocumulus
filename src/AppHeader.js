@@ -8,6 +8,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import {withStyles} from '@material-ui/core/styles';
 import Switch from '@material-ui/core/Switch';
+import Tab from '@material-ui/core/Tab';
+import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -27,11 +29,11 @@ import {
     setDataset,
     setDialog,
     setMessage,
+    setTab,
 } from './actions';
+import {drawerWidth} from './App';
 import {intFormat} from './formatters';
-import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY} from "./reducers";
-
-const drawerWidth = 240;
+import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_UNSELECTED_MARKER_OPACITY} from "./reducers";
 
 
 const styles = theme => ({
@@ -45,6 +47,26 @@ const styles = theme => ({
         marginLeft: drawerWidth,
     },
 });
+const AntTab = withStyles(theme => ({
+    root: {
+        minWidth: 50,
+        textTransform: 'none',
+        fontWeight: theme.typography.fontWeightRegular,
+        marginRight: theme.spacing(0),
+        '&:hover': {
+            color: '#40a9ff',
+            opacity: 1,
+        },
+        '&$selected': {
+            color: '#1890ff',
+            fontWeight: theme.typography.fontWeightMedium,
+        },
+        '&:focus': {
+            color: '#40a9ff',
+        },
+    },
+    selected: {},
+}))(props => <Tab disableRipple {...props} />);
 
 class AppHeader extends React.PureComponent {
 
@@ -59,6 +81,11 @@ class AppHeader extends React.PureComponent {
         };
 
     }
+
+    handleTabChange = (event, value) => {
+        this.props.handleTab(value);
+    };
+
 
     handleEmbeddingsChange = (event) => {
 
@@ -113,47 +140,51 @@ class AppHeader extends React.PureComponent {
     };
 
     copyLink = () => {
+        const {dataset, embeddings, features, groupBy, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
-            dataset: this.props.dataset.id,
-            embeddings: this.props.embeddings
+            dataset: dataset.id,
+            embeddings: embeddings
         };
-        if (this.props.features.length > 0) {
-            json.features = this.props.features;
+        if (features.length > 0) {
+            json.features = features;
         }
-        if (this.props.groupBy.length > 0) {
-            json.groupBy = this.props.groupBy;
+        if (groupBy.length > 0) {
+            json.groupBy = groupBy;
         }
 
-        let datasetFilter = {};
-        for (let key in this.props.datasetFilter) {
-            let value = this.props.datasetFilter[key];
+        let datasetFilterJson = {};
+        for (let key in datasetFilter) {
+            let value = datasetFilter[key];
             if (window.Array.isArray(value)) {
-                datasetFilter[key] = value;
+                datasetFilterJson[key] = value;
             } else {
                 if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
-                    datasetFilter[key] = {operation: value.operation, value: value.value};
+                    datasetFilterJson[key] = {operation: value.operation, value: value.value};
                 }
             }
         }
-        if (Object.keys(datasetFilter).length > 0) {
-            json.datasetFilter = datasetFilter;
+        if (Object.keys(datasetFilterJson).length > 0) {
+            json.datasetFilter = datasetFilterJson;
         }
 
-        if (this.props.markerOpacity !== DEFAULT_MARKER_OPACITY) {
-            json.markerOpacity = this.props.markerOpacity;
+        if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
+            json.markerOpacity = markerOpacity;
+        }
+        if (unselectedMarkerOpacity !== DEFAULT_UNSELECTED_MARKER_OPACITY) {
+            json.unselectedMarkerOpacity = unselectedMarkerOpacity;
         }
 
-        if (this.props.dotPlotData && this.props.dotPlotData.length > 0) {
+        if (dotPlotData && dotPlotData.length > 0) {
             let sortOrder = {};
-            this.props.dotPlotData.forEach(data => {
+            dotPlotData.forEach(data => {
                 sortOrder[data.name] = data.sortBy;
             });
             json.sort = sortOrder;
         }
-        if (this.props.interpolator.name !== DEFAULT_INTERPOLATOR) {
-            json.colorScheme = this.props.interpolator.name;
+        if (interpolator.name !== DEFAULT_INTERPOLATOR) {
+            json.colorScheme = interpolator.name;
         }
         linkText += '?q=' + JSON.stringify(json);
         const el = document.createElement('textarea');
@@ -197,15 +228,14 @@ class AppHeader extends React.PureComponent {
 
     render() {
         const {
-            dataset, loadingApp, email, datasetChoices, selection, classes, serverInfo, combineDatasetFilters, savedDatasetFilter,
-            datasetFilter, user
+            dataset, loadingApp, email, datasetChoices, selection, classes, serverInfo, combineDatasetFilters,
+            datasetFilter, tab, user
         } = this.props;
         const shape = dataset != null && dataset.shape != null ? dataset.shape : [0, 0];
         const hasSelection = dataset != null && shape[0] > 0 && !isNaN(selection.count);
         const showNumberOfCells = !hasSelection && dataset != null && !(selection.count > 0) && shape[0] > 0 && (selection.count !== shape[0]);
-
-        const isEdit = savedDatasetFilter != null;
         let datasetFilters = getDatasetFilterArray(datasetFilter);
+        const showMoreMenu = (email != null && user.importer) || dataset != null;
         const datasetFilterKeys = [];
         let isBrushing = false;
         datasetFilters.forEach(f => {
@@ -221,6 +251,7 @@ class AppHeader extends React.PureComponent {
 
 
         return (
+
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
                     {email != null &&
@@ -242,18 +273,30 @@ class AppHeader extends React.PureComponent {
                             key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
                     </Select>}
 
+                    <div className={"cirro-condensed"} style={{display: 'inline-block'}}>
+                        {hasSelection && (<Link title="Download selected ids" href="#"
+                                                onClick={this.handleSelectedCellsClick}>{intFormat(selection.count)}</Link>)}
+                        {hasSelection && ' / ' + intFormat(shape[0]) + ' cells'}
+                        {showNumberOfCells && intFormat(shape[0]) + ' cells'}
+                    </div>
+
+                    {dataset != null && <Tabs
+                        value={tab}
+                        indicatorColor="primary"
+                        textColor="primary"
+                        onChange={this.handleTabChange}
+                        aria-label="view"
+
+                    >
+                        <AntTab value="embedding" label="Embeddings"/>
+                        <AntTab value="dot_plot" label="Dot Plot"/>
+                    </Tabs>}
+
                     <div className={"cirro-condensed"}>
                         {/*<CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>*/}
                         {/*<h3*/}
                         {/*    style={{display: 'inline', marginRight: 20}}>Cirro</h3>*/}
 
-
-                        <div style={{display: 'inline-block'}}>
-                            {hasSelection && (<Link title="Download selected ids" href="#"
-                                                    onClick={this.handleSelectedCellsClick}>{intFormat(selection.count)}</Link>)}
-                            {hasSelection && ' / ' + intFormat(shape[0]) + ' cells'}
-                            {showNumberOfCells && intFormat(shape[0]) + ' cells'}
-                        </div>
 
                         <div style={{display: 'inline-block', marginLeft: '10px'}}>
                             {datasetFilters.length > 0 && <div style={{display: 'inline-block'}}>FILTER:</div>}
@@ -298,25 +341,25 @@ class AppHeader extends React.PureComponent {
                     </div>
                     <div style={{marginLeft: 'auto'}}>
 
-                        <Tooltip title={'More'}>
+                        {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleMoreMenuOpen}>
                                 <MoreVertIcon/>
                             </IconButton>
-                        </Tooltip>
-                        <Menu id="more-menu"
-                              anchorEl={this.state.moreMenuAnchorEl}
-                              anchorOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right',
-                              }}
+                        </Tooltip>}
+                        {showMoreMenu && <Menu id="more-menu"
+                                               anchorEl={this.state.moreMenuAnchorEl}
+                                               anchorOrigin={{
+                                                   vertical: 'top',
+                                                   horizontal: 'right',
+                                               }}
 
-                              transformOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right',
-                              }} open={this.state.moreMenuOpen}
-                              onClose={this.handleMoreMenuClose}>
-                            {user.importer &&
+                                               transformOrigin={{
+                                                   vertical: 'top',
+                                                   horizontal: 'right',
+                                               }} open={this.state.moreMenuOpen}
+                                               onClose={this.handleMoreMenuClose}>
+                            {email != null && user.importer &&
                             <MenuItem onClick={this.handleImportDataset}>
                                 Import Dataset
                             </MenuItem>}
@@ -327,7 +370,7 @@ class AppHeader extends React.PureComponent {
                             {dataset != null &&
                             <MenuItem onClick={this.copyLink}>Copy Link
                             </MenuItem>}
-                        </Menu>
+                        </Menu>}
 
 
                         {email != null &&
@@ -375,6 +418,8 @@ const mapStateToProps = state => {
         binValues: state.binValues,
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
+        markerOpacity: state.markerOpacity,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
 
         datasetChoices: state.datasetChoices,
         dialog: state.dialog,
@@ -384,19 +429,20 @@ const mapStateToProps = state => {
         interpolator: state.interpolator,
         loading: state.loading,
         loadingApp: state.loadingApp,
-        markerOpacity: state.markerOpacity,
 
         message: state.message,
-        numberOfBins: state.numberOfBins,
-        savedDatasetFilter: state.savedDatasetFilter,
+
         selection: state.selection,
         serverInfo: state.serverInfo,
         user: state.user,
-        view3d: state.view3d
+        tab: state.tab
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
+        handleTab: (value) => {
+            dispatch(setTab(value));
+        },
         setMessage: (value) => {
             dispatch(setMessage(value));
         },

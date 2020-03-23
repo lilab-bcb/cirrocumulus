@@ -72,6 +72,10 @@ class GalleryCharts extends React.PureComponent {
                 </ul>
             );
         });
+        if (galleryTraces.length <= 1) {
+            return <h4>Please enter one or more features in the "Features"
+                search box or select more than one embedding to show "Gallery".</h4>;
+        }
         return (
             galleryTraces.length > 1 && <SortableList distance={2}
                                                       axis="xy" items={galleryTraces}

@@ -19,7 +19,8 @@ const styles = theme => ({
         },
         '& > .cirro-inactive': {
             fill: '#bdbdbd'
-        }
+        },
+        display: 'inline-block'
     }
 });
 
@@ -106,6 +107,7 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>}
+
 
             {/*<Tooltip title={"Reset"}>*/}
             {/*    <IconButton aria-label="Reset" onClick={this.props.onHome}>*/}

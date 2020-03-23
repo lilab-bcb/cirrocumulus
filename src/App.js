@@ -5,8 +5,6 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import {withStyles} from '@material-ui/core/styles';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
 import CloseIcon from '@material-ui/icons/Close';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
@@ -27,28 +25,9 @@ import EmbedForm from './EmbedForm';
 import GalleryCharts from './GalleryCharts';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
-const drawerWidth = 240;
+export const drawerWidth = 240;
 
-const AntTab = withStyles(theme => ({
-    root: {
-        minWidth: 50,
-        textTransform: 'none',
-        fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing(0),
-        '&:hover': {
-            color: '#40a9ff',
-            opacity: 1,
-        },
-        '&$selected': {
-            color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium,
-        },
-        '&:focus': {
-            color: '#40a9ff',
-        },
-    },
-    selected: {},
-}))(props => <Tab disableRipple {...props} />);
+
 const styles = theme => ({
     root: {
         display: 'flex',
@@ -79,14 +58,16 @@ class App extends PureComponent {
     constructor(props) {
         super(props);
         this.state = {tab: 'embedding'};
+        this.galleryRef = React.createRef();
     }
 
     handleMessageClose = () => {
         this.props.setMessage(null);
     };
 
-    handleTabChange = (event, value) => {
-        this.setState({tab: value});
+
+    onGallery = () => {
+        window.scrollTo(0, this.galleryRef.current.offsetTop);
     };
 
 
@@ -94,7 +75,7 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {classes, dataset, dialog, loading, loadingApp, message} = this.props;
+        const {classes, dataset, dialog, loading, loadingApp, message, tab} = this.props;
 
         return (
             <div className={classes.root}>
@@ -121,32 +102,25 @@ class App extends PureComponent {
                                                     value={loadingApp.progress}/></h2>
                     </div>}
 
+                    {dataset != null && <React.Fragment>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'embedding'}
+                        >
+                            <EmbeddingCharts onGallery={this.onGallery}/>
+                            <div ref={this.galleryRef}>
+                                <GalleryCharts/>
+                            </div>
 
-                    {dataset != null && <Tabs
-                        value={this.state.tab}
-                        indicatorColor="primary"
-                        textColor="primary"
-                        onChange={this.handleTabChange}
-                        aria-label="view"
+                        </div>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'dot_plot'}
+                        >
+                            <DotPlotsPlotly/>
+                        </div>
+                    </React.Fragment>}
 
-                    >
-                        <AntTab value="embedding" label="Embeddings"/>
-                        <AntTab value="dot_plot" label="Dot Plot"/>
-                    </Tabs>}
-
-                    <div
-                        role="tabpanel"
-                        hidden={this.state.tab !== 'embedding'}
-                    >
-                        {dataset != null && <EmbeddingCharts/>}
-                        {dataset != null && <GalleryCharts/>}
-                    </div>
-                    <div
-                        role="tabpanel"
-                        hidden={this.state.tab !== 'dot_plot'}
-                    >
-                        {dataset != null && <DotPlotsPlotly/>}
-                    </div>
 
                 </main>
 
@@ -192,6 +166,7 @@ const mapStateToProps = state => {
         loading: state.loading,
         loadingApp: state.loadingApp,
         message: state.message,
+        tab: state.tab
     };
 };
 const mapDispatchToProps = dispatch => {
@@ -199,6 +174,7 @@ const mapDispatchToProps = dispatch => {
         handleDialog: (value) => {
             dispatch(setDialog(value));
         },
+
         setMessage: (value) => {
             dispatch(setMessage(value));
         }

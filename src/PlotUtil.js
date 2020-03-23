@@ -65,7 +65,7 @@ export const CATEGORY_20C = [
 
 export function getChartSize() {
     // leave room for drawer and header
-    return {width: window.screen.availWidth - 300, height: window.screen.availHeight - 200};
+    return {width: window.screen.availWidth - 280, height: window.screen.availHeight - 220};
 }
 
 export function isPointInside(point, vs) {

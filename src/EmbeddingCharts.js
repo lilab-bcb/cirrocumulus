@@ -27,6 +27,7 @@ class EmbeddingCharts extends React.PureComponent {
                 traceInfo={primaryTrace}
                 selection={userPoints}
                 color={primaryTrace.marker.color}
+                onGallery={this.props.onGallery}
             />
         );
     }

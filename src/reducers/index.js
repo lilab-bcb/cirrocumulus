@@ -36,6 +36,7 @@ import {
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
+    SET_TAB,
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_MARKER_OPACITY_UI,
     SET_USER,
@@ -361,6 +362,15 @@ function datasetChoices(state = [], action) {
     }
 }
 
+function tab(state = 'embedding', action) {
+    switch (action.type) {
+        case SET_TAB:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 function dialog(state = null, action) {
     switch (action.type) {
         case SET_DIALOG:
@@ -558,6 +568,7 @@ export default combineReducers({
     primaryTraceKey,
     selection,
     serverInfo,
+    tab,
     unselectedMarkerOpacity,
     unselectedMarkerOpacityUI,
     user
