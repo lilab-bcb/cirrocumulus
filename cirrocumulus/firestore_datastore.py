@@ -35,7 +35,7 @@ class FirestoreDatastore:
     def datasets(self, email):
         client = self.datastore_client
         query = client.query(kind=DATASET)
-        query.add_filter('readers', 'array_contains', email)
+        query.add_filter('readers', '=', email)
 
         results = []
         for result in query.fetch():
