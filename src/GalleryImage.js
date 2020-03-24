@@ -3,27 +3,24 @@ import CardContent from '@material-ui/core/CardContent';
 import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import {DatasetArray} from 'scatter-gl';
 import {getEmbeddingKey} from './actions';
 
 
-function snapshot(scatterGL, traceInfo, markerOpacity, unselectedMarkerOpacity, selection) {
-    const dataset = new DatasetArray(traceInfo.x, traceInfo.y, traceInfo.z, traceInfo.marker.color);
-    scatterGL.selectedPointIndices = selection;
-    scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
-        const c = dataset.metadata[i];
-        c.opacity = markerOpacity;
-        // if (hoverIndex === i) {
-        //     return c.brighter();
-        // }
-        const isSelected = selectedIndices.size === 0 || selectedIndices.has(i);
-        if (!isSelected) {
-            c.opacity = unselectedMarkerOpacity;
-        }
-        return c;
-    });
+function snapshot(scatterPlot, traceInfo, markerOpacity, unselectedMarkerOpacity, selection) {
+    const colors = traceInfo.colors;
+    for (let i = 0, j = 3, n = traceInfo.npoints; i < n; i++, j += 4) {
+        const isSelected = selection.size === 0 || selection.has(i);
+        colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+    }
+    scatterPlot.setPointColors(colors);
+    scatterPlot.setPointPositions(traceInfo.positions);
+    scatterPlot.setDimensions(traceInfo.dimensions);
+    const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
 
-    scatterGL.render(dataset);
+    const scale = new Float32Array(traceInfo.npoints);
+    scale.fill(scaleDefault);
+    scatterPlot.setPointScaleFactors(scale);
+    scatterPlot.render();
 
 }
 
@@ -37,7 +34,7 @@ class GalleryImage extends React.PureComponent {
 
     drawThree() {
         let start = new Date().getTime();
-        const {scatterGL, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
+        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
 
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
@@ -45,7 +42,7 @@ class GalleryImage extends React.PureComponent {
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
 
 
-        snapshot(scatterGL, traceInfo, markerOpacity, unselectedMarkerOpacity, userPoints);
+        snapshot(scatterPlot, traceInfo, markerOpacity, unselectedMarkerOpacity, userPoints);
         const e1 = new Date().getTime() - start;
         const canvas = containerElement.querySelector('canvas');
         // const _this = this;
@@ -104,7 +101,7 @@ class GalleryImage extends React.PureComponent {
                     <Link href="#"
                           onClick={this.onSelect}>{name}</Link>
                 </Typography>
-                <img src={this.state.url} style={{width: 400, height: 400}}/>
+                <img alt="" src={this.state.url} style={{width: 400, height: 400}}/>
             </CardContent>
         </Card>);
 

@@ -108,7 +108,22 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>}
 
-
+            {/*<Tooltip title={*/}
+            {/*    <React.Fragment>*/}
+            {/*        <h6>3D controls</h6>*/}
+            {/*        <b>Rotate</b> Mouse left click.*/}
+            {/*        <b>Pan</b> Mouse right click.*/}
+            {/*        <b>Zoom</b> Mouse wheel.*/}
+            {/*        Holding <b>ctrl</b> reverses the mouse clicks.*/}
+            {/*        <h6>2D controls</h6>*/}
+            {/*        <b>Pan</b> Mouse left click.*/}
+            {/*        <b>Zoom</b> Mouse wheel.*/}
+            {/*    </React.Fragment>*/}
+            {/*}>*/}
+            {/*    <IconButton edge={false} size={'small'} aria-label="Help">*/}
+            {/*        <HelpIcon/>*/}
+            {/*    </IconButton>*/}
+            {/*</Tooltip>*/}
             {/*<Tooltip title={"Reset"}>*/}
             {/*    <IconButton aria-label="Reset" onClick={this.props.onHome}>*/}
             {/*        <svg viewBox="0 0 928.6 1000" height="16" width="16">*/}

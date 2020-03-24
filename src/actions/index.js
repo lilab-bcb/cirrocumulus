@@ -1,10 +1,10 @@
-import {color} from 'd3-color';
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
-import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, getRgbScale} from '../PlotUtil';
+import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, updateTraceColors} from '../PlotUtil';
+import {getPositions} from '../ThreeUtil';
 
 //export const API = 'http://localhost:5000/api';
 export const API = '/api';
@@ -1485,16 +1485,7 @@ function handleEmbeddingResult(result) {
         const embeddingValues = embeddingResult.values;
         const coordinates = embeddingResult.coordinates;
         const is3d = selectedEmbedding.dimensions === 3;
-        let rgbScale = getRgbScale();
 
-        const colorMapper = isImage ? rgb => rgb.formatHex() : rgb => {
-            return {
-                r: rgbScale(rgb.r),
-                g: rgbScale(rgb.g),
-                b: rgbScale(rgb.b),
-                opacity: 1
-            };
-        };
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];
@@ -1536,45 +1527,32 @@ function handleEmbeddingResult(result) {
                 colorScale.summary = traceSummary;
             }
 
-            let colors = [];
-            for (let i = 0, n = values.length; i < n; i++) {
-                let rgb = color(colorScale(values[i]));
-                colors.push(colorMapper(rgb));
-            }
-
 
             let chartData = {
                 embedding: Object.assign({}, selectedEmbedding),
-                hoverinfo: 'text',
-                showlegend: false,
                 name: name,
-                mode: 'markers',
-                type: is3d ? 'scatter3d' : 'scattergl',
-                hoveron: 'points',
                 x: x,
                 y: y,
-                bins: embeddingBins,
-                marker: {
-                    // size: markerSize,
-                    color: colors,
-                    // opacity: markerOpacity,
-                    // showscale: false,
-                },
-                date: new Date(),
                 z: is3d ? z : undefined,
+                bins: embeddingBins,
+
+                dimensions: is3d ? 3 : 2,
+                npoints: x.length,
+                date: new Date(),
                 active: true,
                 colorScale: colorScale,
                 continuous: !isCategorical,
-                // layout: layout,
+
                 isCategorical: isCategorical,
-                // unselected: {marker: {opacity: unselectedMarkerOpacity, size: unselectedMarkerSize}},
                 values: values, // for color
                 // purity: purity,
                 // text: values,
             };
+            if (selectedEmbedding.type !== 'image') {
+                chartData.positions = getPositions(chartData);
+            }
+            updateTraceColors(chartData);
 
-
-            // const layout = PlotUtil.createEmbeddingLayout({size: embeddingChartSize, is3d: is3d, title: name});
             if (selectedEmbedding.type === 'image') {
                 chartData.isImage = true;
                 chartData.image = fetch(API + '/image?id=' + state.dataset.id + '&image=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});

@@ -1,18 +1,16 @@
 import Link from '@material-ui/core/Link';
 import React from 'react';
-import {DatasetArray, ScatterGL} from 'scatter-gl';
-
-
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {drawScatter2d, getChartSize} from './PlotUtil';
+import {createScatterPlot} from './ThreeUtil';
 
 class ScatterChartThree extends React.PureComponent {
 
     constructor(props) {
         super(props);
         this.containerElementRef = React.createRef();
-        this.scatterGL = null;
+        this.scatterPlot = null;
         this.chartSize = getChartSize();
         this.state = {animating: false};
 
@@ -25,7 +23,7 @@ class ScatterChartThree extends React.PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.draw();
-        console.log('draw');
+
     }
 
     componentDidMount() {
@@ -65,20 +63,20 @@ class ScatterChartThree extends React.PureComponent {
         window.saveAs(blob, name + '.svg');
     };
     onToggleAnimation = () => {
-        if (this.scatterGL.scatterPlot.orbitIsAnimating()) {
-            this.scatterGL.stopOrbitAnimation();
+        if (this.scatterPlot.orbitIsAnimating()) {
+            this.scatterPlot.stopOrbitAnimation();
             this.setState({animating: false});
         } else {
-            this.scatterGL.startOrbitAnimation();
+            this.scatterPlot.startOrbitAnimation();
             this.setState({animating: true});
         }
     };
 
     onDragMode = (mode) => {
         if (mode === 'pan') {
-            this.scatterGL.setPanMode();
+            this.scatterPlot.setInteractionMode('PAN');
         } else if (mode === 'select') {
-            this.scatterGL.setSelectMode();
+            this.scatterPlot.setInteractionMode('SELECT');
         }
     };
 
@@ -89,91 +87,88 @@ class ScatterChartThree extends React.PureComponent {
 
     init() {
         const {traceInfo} = this.props;
-        if (this.scatterGL == null) {
-            this.scatterGL = new ScatterGL(this.containerElementRef.current, {
-                renderMode: 'POINT',
-                rotateOnStart: false,
-                showLabelsOnHover: false,
-                onSelect: (selectedpoints, boundingBox) => {
-                    if (this.scatterGL.scatterPlot.interactionMode === 'PAN') {
-                        return;
-                    }
-                    if (selectedpoints != null && selectedpoints.length === 0) {
-                        selectedpoints = null;
-                    }
-
-                    if (selectedpoints == null) {
-                        this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
-                    } else {
-
-                        let xmin = Number.MAX_VALUE;
-                        let ymin = Number.MAX_VALUE;
-                        let zmin = Number.MAX_VALUE;
-                        let xmax = -Number.MAX_VALUE;
-                        let ymax = -Number.MAX_VALUE;
-                        let zmax = -Number.MAX_VALUE;
-                        const is3d = traceInfo.z != null;
-                        selectedpoints.forEach(index => {
-                            const x = traceInfo.x[index];
-                            xmin = Math.min(xmin, x);
-                            xmax = Math.max(xmax, x);
-                            const y = traceInfo.y[index];
-                            ymin = Math.min(ymin, y);
-                            ymax = Math.max(ymax, y);
-                            if (is3d) {
-                                const z = traceInfo.z[index];
-                                zmin = Math.min(zmin, z);
-                                zmax = Math.max(zmax, z);
-                            }
-                        });
-
-
-                        let path = {shape: 'rect', x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
-                        if (is3d) {
-                            path.shape = 'rect 3d';
-                            path.z = zmin;
-                            path.depth = zmax - zmin;
-                        }
-                        this.props.onSelected({
-                            name: getEmbeddingKey(traceInfo.embedding),
-                            value: {basis: traceInfo.embedding, selectedpoints: selectedpoints, path: path}
-                        });
-                    }
-                },
-                onHover: (point) => {
-
-
+        if (this.scatterPlot == null) {
+            const containerElement = this.containerElementRef.current;
+            this.scatterPlot = createScatterPlot(containerElement);
+            this.scatterPlot.selectCallback = (selectedpoints) => {
+                if (this.scatterPlot.interactionMode === 'PAN') {
+                    return;
                 }
-            });
+                if (selectedpoints != null && selectedpoints.length === 0) {
+                    selectedpoints = null;
+                }
 
-            this.scatterGL.setSelectMode();
+                if (selectedpoints == null) {
+                    this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+                } else {
+
+                    let xmin = Number.MAX_VALUE;
+                    let ymin = Number.MAX_VALUE;
+                    let zmin = Number.MAX_VALUE;
+                    let xmax = -Number.MAX_VALUE;
+                    let ymax = -Number.MAX_VALUE;
+                    let zmax = -Number.MAX_VALUE;
+                    const is3d = traceInfo.z != null;
+                    selectedpoints.forEach(index => {
+                        const x = traceInfo.x[index];
+                        xmin = Math.min(xmin, x);
+                        xmax = Math.max(xmax, x);
+                        const y = traceInfo.y[index];
+                        ymin = Math.min(ymin, y);
+                        ymax = Math.max(ymax, y);
+                        if (is3d) {
+                            const z = traceInfo.z[index];
+                            zmin = Math.min(zmin, z);
+                            zmax = Math.max(zmax, z);
+                        }
+                    });
+
+
+                    let path = {shape: 'rect', x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
+                    if (is3d) {
+                        path.shape = 'rect 3d';
+                        path.z = zmin;
+                        path.depth = zmax - zmin;
+                    }
+                    this.props.onSelected({
+                        name: getEmbeddingKey(traceInfo.embedding),
+                        value: {basis: traceInfo.embedding, selectedpoints: selectedpoints, path: path}
+                    });
+                }
+            };
+
+            // this.scatterGL = new ScatterGL(this.containerElementRef.current, {
+            //     renderMode: 'POINT',
+            //     rotateOnStart: false,
+            //     showLabelsOnHover: false,
+            //
+            //     onHover: (point) => {
+            //
+            //     }
+            // });
+
+
             const canvas = this.containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
         }
     }
 
     draw() {
-
-        const scatterGL = this.scatterGL;
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
-        scatterGL.selectedPointIndices = selection;
-        const dataset = new DatasetArray(traceInfo.x, traceInfo.y, traceInfo.z, color);
+        const colors = traceInfo.colors;
+        for (let i = 0, j = 3, n = traceInfo.npoints; i < n; i++, j += 4) {
+            const isSelected = selection.size === 0 || selection.has(i);
+            colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+        }
+        this.scatterPlot.setPointColors(colors);
+        this.scatterPlot.setPointPositions(traceInfo.positions);
+        this.scatterPlot.setDimensions(traceInfo.dimensions);
+        const {scaleDefault, scaleSelected, scaleHover} = this.scatterPlot.styles.point;
 
-        scatterGL.setPointColorer((i, selectedIndices, hoverIndex) => {
-            const c = dataset.metadata[i];
-            c.opacity = markerOpacity;
-            // if (hoverIndex === i) {
-            //     return c.brighter();
-            // }
-            const isSelected = selectedIndices.size === 0 || selectedIndices.has(i);
-            if (!isSelected) {
-                c.opacity = unselectedMarkerOpacity;
-            }
-            return c;
-        });
-
-        scatterGL.render(dataset);
-
+        const scale = new Float32Array(traceInfo.npoints);
+        scale.fill(scaleDefault);
+        this.scatterPlot.setPointScaleFactors(scale);
+        this.scatterPlot.render();
     }
 
 

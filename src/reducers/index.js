@@ -1,4 +1,3 @@
-import {color} from 'd3-color';
 import {scaleSequential} from 'd3-scale';
 import {combineReducers} from 'redux';
 import {
@@ -42,7 +41,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {getInterpolator, getRgbScale} from '../PlotUtil';
+import {getInterpolator, updateTraceColors} from '../PlotUtil';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -437,25 +436,6 @@ function combineDatasetFilters(state = 'and', action) {
     }
 }
 
-function updateChartColorScale(traceInfo) {
-    const rgbScale = getRgbScale();
-    let colorScale = traceInfo.colorScale;
-    let colors = [];
-    const colorMapper = traceInfo.isImage ? rgb => rgb.formatHex() : rgb => {
-        return {
-            r: rgbScale(rgb.r),
-            g: rgbScale(rgb.g),
-            b: rgbScale(rgb.b),
-            opacity: 1
-        };
-    };
-    for (let i = 0, n = traceInfo.x.length; i < n; i++) {
-        let rgb = color(colorScale(traceInfo.values[i]));
-        colors.push(colorMapper(rgb));
-    }
-    traceInfo.marker.color = colors;
-    traceInfo.colorScale = colorScale;
-}
 
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
@@ -471,7 +451,7 @@ function embeddingData(state = [], action) {
                     let range = traceInfo.colorScale.range();
                     range[index] = action.payload.color;
                     traceInfo.colorScale.range(range);
-                    updateChartColorScale(traceInfo);
+                    updateTraceColors(traceInfo);
                 }
             });
             return state.slice();
@@ -489,9 +469,8 @@ function embeddingData(state = [], action) {
                     }
 
                     traceInfo.colorScale = scaleSequential(action.payload.value).domain(domain);
-                    updateChartColorScale(traceInfo);
+                    updateTraceColors(traceInfo);
                 }
-
             });
             return state.slice();
         case SET_DATASET:

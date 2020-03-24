@@ -2,9 +2,9 @@ import React from 'react';
 
 import {connect} from 'react-redux';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
-import {ScatterGL} from 'scatter-gl';
 import {getTraceKey, setEmbeddingData, setPrimaryTraceKey} from './actions';
 import GalleryImage from './GalleryImage';
+import {createScatterPlot} from './ThreeUtil';
 
 class GalleryCharts extends React.PureComponent {
 
@@ -18,12 +18,8 @@ class GalleryCharts extends React.PureComponent {
         containerElement.style.width = size + 'px';
         containerElement.style.height = size + 'px';
         document.body.appendChild(containerElement);
-        this.scatterGL = new ScatterGL(containerElement, {
-            renderMode: 'POINT',
-            interactive: false,
-            rotateOnStart: false,
-            showLabelsOnHover: false
-        });
+        this.scatterPlot = createScatterPlot(containerElement);
+        this.scatterPlot.interactive = false;
         this.containerElement = containerElement;
         this.emptySet = new Set();
     }
@@ -54,8 +50,8 @@ class GalleryCharts extends React.PureComponent {
 
         const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
             traceInfo={traceInfo}
-            color={traceInfo.marker.color}
-            scatterGL={this.scatterGL}
+            color={traceInfo.colors}
+            scatterPlot={this.scatterPlot}
             markerOpacity={markerOpacity}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
             selection={selection}

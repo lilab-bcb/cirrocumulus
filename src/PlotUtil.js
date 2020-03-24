@@ -1,6 +1,8 @@
+import {color} from 'd3-color';
 import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 import simplify from 'simplify-js';
+import {getColors} from './ThreeUtil';
 
 export const interpolators = {};
 interpolators['Diverging'] = [
@@ -68,6 +70,22 @@ export function getChartSize() {
     return {width: window.screen.availWidth - 280, height: window.screen.availHeight - 220};
 }
 
+
+export function updateTraceColors(traceInfo) {
+    if (traceInfo.isImage) {
+        let colors = [];
+        let colorScale = traceInfo.colorScale;
+        const colorMapper = rgb => rgb.formatHex();
+        for (let i = 0, n = traceInfo.npoints; i < n; i++) {
+            let rgb = color(colorScale(traceInfo.values[i]));
+            colors.push(colorMapper(rgb));
+        }
+        traceInfo.colors = colors;
+    } else {
+        traceInfo.colors = getColors(traceInfo);
+    }
+}
+
 export function isPointInside(point, vs) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
@@ -90,12 +108,11 @@ export function isPointInside(point, vs) {
 export function drawScatter2d(context, chartSize, traceInfo, markerSize, markerOpacity, unselectedMarkerOpacity, selection, color) {
     let height = chartSize.height;
     let width = chartSize.width;
-
     let xmin = Number.MAX_VALUE;
     let xmax = -Number.MAX_VALUE;
     let ymin = Number.MAX_VALUE;
     let ymax = -Number.MAX_VALUE;
-    for (let i = 0, n = traceInfo.x.length; i < n; i++) {
+    for (let i = 0, n = traceInfo.npoints; i < n; i++) {
         let x = traceInfo.x[i];
         let y = traceInfo.y[i];
         xmin = x < xmin ? x : xmin;
@@ -107,15 +124,17 @@ export function drawScatter2d(context, chartSize, traceInfo, markerSize, markerO
     const yToPixScale = scaleLinear().domain([ymin, ymax]).range([height - markerSize, markerSize]);
     const PI2 = 2 * Math.PI;
     const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
-    for (let i = 0, n = traceInfo.x.length; i < n; i++) {
+    for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 4) {
         const isSelected = selection.size === 0 || selection.has(i);
         const x = traceInfo.x[i];
         const y = traceInfo.y[i];
         const xpix = xToPixScale(x);
         const ypix = yToPixScale(y);
-        const c = color[i];
+        const r = Math.round(colorScale(color[j]));
+        const g = Math.round(colorScale(color[j + 1]));
+        const b = Math.round(colorScale(color[j + 2]));
         const alpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        context.fillStyle = 'rgba(' + colorScale(c.r) + ',' + colorScale(c.g) + ',' + colorScale(c.b) + ',' + alpha + ')';
+        context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
         context.beginPath();
         context.arc(xpix, ypix, markerSize, 0, PI2);
         context.closePath();

@@ -87,7 +87,7 @@ class ImageChart extends React.PureComponent {
                     selectedPointsIndex++;
                 }
                 context.globalAlpha = isSelected ? selectedOpacity : unselectedOpacity;
-                context.fillStyle = data[0].marker.color[i];
+                context.fillStyle = data[0].colors[i];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
                 context.fill();
