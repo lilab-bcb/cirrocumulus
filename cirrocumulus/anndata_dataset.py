@@ -15,8 +15,7 @@ class AnndataDataset(AbstractDataset):
         self.backed = backed
         self.force_sparse = force_sparse
         self.extensions = extensions
-        self.cached_dataset_id = None
-        self.cached_data = {}
+
         # only works with local files
 
     def get_suffixes(self):
@@ -59,26 +58,12 @@ class AnndataDataset(AbstractDataset):
         obs = None
         X = None
 
-        if self.cached_dataset_id != dataset.id:
-            self.cached_dataset_id = dataset.id
-            self.cached_data = {}
-
         if len(var_keys) > 0:
-            cache_var_key = str(dataset.id) + '-var_keys'
-            cache_X_key = str(dataset.id) + '-X'
-            cached_var_keys = self.cached_data.get(cache_var_key)
-
-            if var_keys == cached_var_keys:
-                X = self.cached_data[cache_X_key]
-            else:
-                X = adata[:, var_keys].X
-                if len(X.shape) == 1:
-                    X = np.array([X]).T
-                if self.force_sparse and not scipy.sparse.issparse(X):
-                    X = scipy.sparse.csr_matrix(X)
-
-                self.cached_data[cache_X_key] = X
-                self.cached_data[cache_var_key] = var_keys
+            X = adata[:, var_keys].X
+            if len(X.shape) == 1:
+                X = np.array([X]).T
+            if self.force_sparse and not scipy.sparse.issparse(X):
+                X = scipy.sparse.csr_matrix(X)
 
         for key in obs_keys:
             if key == 'index':

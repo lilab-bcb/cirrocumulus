@@ -7,6 +7,7 @@ import os
 import anndata
 import numpy as np
 import pandas as pd
+import pandas._libs.json as ujson
 from natsort import natsorted
 from pandas import CategoricalDtype
 
@@ -19,6 +20,10 @@ from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
+
+
+def to_json(data):
+    return ujson.dumps(data, double_precision=2, orient='values')
 
 
 def make_unique(index, join='-1'):
@@ -57,13 +62,30 @@ def write_obs_stats(directory, results):
         dimension_or_measure_summary = results[column]
         if 'categories' in dimension_or_measure_summary:
             with gzip.open(os.path.join(directory, 'stats', 'obs', column + '.json.gz'), 'wt') as f:
-                json.dump(dimension_or_measure_summary, f)
-            # write_pq(dict(index=dimension_or_measure_summary['categories'],
-            #     value=dimension_or_measure_summary['counts']),
-            #     dimension_output_directory, column)
+                f.write(to_json(dimension_or_measure_summary))
         else:
             with gzip.open(os.path.join(directory, 'stats', 'obs', column + '.json.gz'), 'wt') as f:
-                json.dump(dimension_or_measure_summary, f)
+                f.write(to_json(dimension_or_measure_summary))
+
+
+def write_X_bins(base_output_dir, n_bins=25):
+    # read in means from stats/X
+    obs_avg = []
+    names = []
+    d = os.path.join(base_output_dir, 'stats', 'X')
+    for file in os.listdir(d):
+        if file.endswith('.json.gz'):
+            with gzip.open(os.path.join(d, file), 'rt') as f:
+                names.append(file[0:file.rindex('.json.gz')])
+                result = json.load(f)
+                obs_avg.append(result['mean'])
+
+    obs_avg = pd.Series(np.array(obs_avg), index=names)
+    n_items = int(np.round(len(obs_avg) / (n_bins - 1)))
+    obs_cut = obs_avg.rank(method='min') // n_items
+    obs_cut = obs_cut.astype(int)
+    with gzip.open(os.path.join(base_output_dir, 'X.json.gz'), 'wt') as f:
+        f.write(to_json(obs_cut.to_dict()))
 
 
 def write_X_stats(directory, results):
@@ -71,26 +93,24 @@ def write_X_stats(directory, results):
     for column in results:
         measure_summary = results[column]
         with gzip.open(os.path.join(directory, 'stats', 'X', column + '.json.gz'), 'wt') as f:
-            json.dump(measure_summary, f)
+            f.write(to_json(measure_summary))
 
 
-def write_grouped_stats(directory, adata, dotplot_results):
+def write_grouped_stats(directory, dotplot_results):
     # mean and fraction expressed for every gene per category
     for dotplot_result in dotplot_results:
-        # output_directory = self.get_path('grouped_statistics/' + dotplot_result['name'])
-        # write_pq(dict(index=dotplot_result['categories']), output_directory, 'index')
         categories = dotplot_result['categories']
         category_name = dotplot_result['name']
         os.makedirs(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X'), exist_ok=True)
         with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'index.json.gz'),
                 'wt') as f:
-            json.dump(categories, f)
+            f.write(to_json(categories))
         values = dotplot_result['values']
         for value in values:
             var_field = value['name']
             with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X', var_field + '.json.gz'),
                     'wt') as f:
-                json.dump(value, f)
+                f.write(to_json(value))
 
 
 def write_basis_X(coords_group, basis_group, adata, result):
@@ -142,14 +162,17 @@ class PrepareData:
         self.stats = stats
         self.adata = anndata.read(input_path, backed=backed)
         if not backed:
-            self.adata = self.adata[:, self.adata.X.sum(axis=0).A1 > 0]
+            s = self.adata.X.sum(axis=0)
+            if isinstance(s, np.matrix):
+                s = s.A1
+            self.adata = self.adata[:, s > 0]
         index = make_unique(self.adata.var.index.append(pd.Index(self.adata.obs.columns)))
         self.adata.var.index = index[0:len(self.adata.var.index)]
         self.adata.obs.columns = index[len(self.adata.var.index):]
 
         logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
-        self.base_name = output
+        self.base_output_dir = output
         if basis_list is None or len(basis_list) == 0:
             basis_list = list(self.adata.obsm_keys())
         self.basis_list = basis_list
@@ -184,10 +207,9 @@ class PrepareData:
             else:
                 self.others.append(name)
         make_ordered(self.adata.obs, self.dimensions)
-        self.store = self.base_name
 
     def get_path(self, path):
-        return os.path.join(self.base_name, path)
+        return os.path.join(self.base_output_dir, path)
 
     def execute(self):
         basis_list = self.basis_list
@@ -195,7 +217,7 @@ class PrepareData:
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
         if X_range[0] == 0:
-            save_adata(self.adata, self.store)
+            save_adata(self.adata, self.base_output_dir)
 
         if self.stats:
             self.summary_stats()
@@ -212,30 +234,18 @@ class PrepareData:
         input_dataset = self.input_dataset
         X_range = self.X_range
         adata = self.adata
-        base_dir = self.base_name
+        base_dir = self.base_output_dir
 
         if X_range[0] == 0:
             process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
                 measures=measures, dimensions=dimensions)
             write_obs_stats(base_dir, process_results['summary'])
-            # write_pq(
-            #     dict(min=[dimension_or_measure_summary['min']], max=[dimension_or_measure_summary['max']],
-            #         sum=[dimension_or_measure_summary['sum']], mean=[dimension_or_measure_summary['mean']]),
-            #     measure_output_directory, column)
 
         logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
         write_X_stats(base_dir, process_results['summary'])
-
-
-        # write_pq(dict(min=[measure_summary['min']],
-        #     max=[measure_summary['max']],
-        #     sum=[measure_summary['sum']],
-        #     numExpressed=[measure_summary['numExpressed']],
-        #     mean=[measure_summary['mean']]),
-        #     measure_output_directory, column)
-
+        write_X_bins(base_dir)
 
     # stats, grouped by categories in adata.obs for dot plot
     def grouped_stats(self):
@@ -244,17 +254,14 @@ class PrepareData:
         input_dataset = self.input_dataset
         adata = self.adata
         X_range = self.X_range
-        base_dir = self.base_name
+        base_dir = self.base_output_dir
         logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
         process_results = data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset,
             measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions)
         dotplot_results = process_results['dotplot']
 
-        write_grouped_stats(base_dir, adata, dotplot_results)
-        # for value in values:
-        # write_pq(dict(mean=value['mean'],
-        #     fractionExpressed=value['fractionExpressed']),
-        #     output_directory, value['name'])
+        write_grouped_stats(base_dir, dotplot_results)
+
 
     def grid_embedding(self, basis_name, summary, nbins):
         if nbins <= 0:
@@ -270,7 +277,6 @@ class PrepareData:
         X_range = self.X_range
         full_basis_name = basis['full_name']
 
-        store = self.store
         basis_group = require_binned_basis_group(store, basis)
         obs_group = basis_group.require_group('obs')
         coords_group = basis_group.require_group('coords')
@@ -302,8 +308,9 @@ class PrepareData:
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
         if X_range[0] == 0:
-            output_file = os.path.join(self.base_name, 'index.json.gz')
+            output_file = os.path.join(self.base_output_dir, 'index.json.gz')
             result = SimpleData.schema(self.adata)
+            result['format'] = 'parquet'
             if self.stats:
                 result['precomputed'] = True  # has stats
             if nbins > 0:
@@ -313,37 +320,45 @@ class PrepareData:
                         {'precomputed': True, 'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function,
                          'dimensions': 2})
             with gzip.open(output_file, 'wt') as f:
-                json.dump(result, f)
+                f.write(to_json(result))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='(BETA!) Prepare a dataset by binning on a grid using an embedding, generating feature statistics feature statistics within a category, and saving the data for easy slicing by feature.')
+        description='(BETA!) Prepare a dataset for cirrocumulus cloud.')
     parser.add_argument('dataset', help='Path to a h5ad file')
-    parser.add_argument('out', help='Path to output directory')
+    parser.add_argument('--out', help='Path to output directory')
     parser.add_argument('--no-stats', dest="no_stats", help='Do not generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
+    # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
-    parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
-    parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
-    parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
+    # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
+    # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
+    # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
 
     args = parser.parse_args()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
-    logger.info('preparing ' + args.dataset + '...')
-    input_basis = []  # check if specified as comma delimited list
-    if args.basis is not None:
-        for b in args.basis:
-            input_basis.extend(b.split(','))
-    input_X_range = args.X_range
-    if input_X_range is not None:
-        input_X_range = input_X_range.split('-')
-        assert len(input_X_range) == 2
-        input_X_range[0] = int(input_X_range[0])
-        input_X_range[1] = int(input_X_range[1])
 
-    prepare_data = PrepareData(args.dataset, args.backed, input_basis, args.nbins, args.summary, args.out,
+    input_basis = []  # check if specified as comma delimited list
+    input_X_range = None
+    out = args.out
+    if out is None:
+        out = os.path.basename(args.dataset)
+        out = out[0:out.rindex('.')]
+    summary = 'max'
+    nbins = -1
+    # summary = args.summary
+    # if args.basis is not None:
+    #     for b in args.basis:
+    #         input_basis.extend(b.split(','))
+    # input_X_range = args.X_range
+    # if input_X_range is not None:
+    #     input_X_range = input_X_range.split('-')
+    #     assert len(input_X_range) == 2
+    #     input_X_range[0] = int(input_X_range[0])
+    #     input_X_range[1] = int(input_X_range[1])
+
+    prepare_data = PrepareData(args.dataset, args.backed, input_basis, nbins, summary, out,
         X_range=input_X_range, dimensions=args.groups, stats=not args.no_stats)
     prepare_data.execute()

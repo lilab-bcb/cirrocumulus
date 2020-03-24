@@ -25,6 +25,7 @@ def save_adata(adata, output_directory):
     obs_dir = os.path.join(output_directory, 'obs')
     obsm_dir = os.path.join(output_directory, 'obsm')
     result = SimpleData.schema(adata)
+    result['format'] = 'parquet'
     os.makedirs(X_dir, exist_ok=True)
     os.makedirs(obs_dir, exist_ok=True)
     os.makedirs(obsm_dir, exist_ok=True)
