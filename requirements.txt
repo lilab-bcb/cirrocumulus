@@ -1,11 +1,11 @@
 CacheControl==0.12.6
 Flask==1.1.1
-fsspec==0.6.2
+fsspec==0.6.3
 gcsfs==0.6.0
 google-auth===1.11.0
 google-cloud-datastore==1.11.0
 natsort==7.0.1
-numpy==1.18.1
-pandas==1.0.2
+numpy==1.18.2
+pandas==1.0.3
 scipy==1.4.1
 pyarrow===0.16.0
