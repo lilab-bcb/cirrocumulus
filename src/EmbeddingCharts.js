@@ -3,6 +3,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {getEmbeddingKey, getTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
+import {getChartSize} from './PlotUtil';
 
 const emptySet = new Set();
 
@@ -21,7 +22,11 @@ class EmbeddingCharts extends React.PureComponent {
         }
 
 
-        return (primaryTrace && <EmbeddingChart
+        if (primaryTrace == null) {
+            const chartSize = getChartSize();
+            return <div style={{height: chartSize.height}}></div>;
+        }
+        return (<EmbeddingChart
                 markerOpacity={markerOpacity}
                 unselectedMarkerOpacity={unselectedMarkerOpacity}
                 traceInfo={primaryTrace}

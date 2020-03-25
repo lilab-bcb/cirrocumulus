@@ -39,6 +39,7 @@ import {
     setMarkerOpacityUI,
     setNumberOfBins,
     setNumberOfBinsUI,
+    setPointSize,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
     setUnselectedMarkerOpacityUI
@@ -120,9 +121,11 @@ class EmbedForm extends React.PureComponent {
         this.props.handleDeleteDatasetFilter(filterId);
     };
 
-
     onMarkerOpacityChange = (event) => {
         this.props.handleMarkerOpacityUI(event.target.value);
+    };
+    onPointSizeChange = (event) => {
+        this.props.handlePointSize(event.target.value);
     };
 
     onMarkerOpacityKeyPress = (event) => {
@@ -223,9 +226,17 @@ class EmbedForm extends React.PureComponent {
             numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingData,
             features, groupBy, markerOpacity, datasetFilter,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
-            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated
+            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize
         } = this.props;
 
+
+        const pointSizeTicks = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
+            value: 0.75,
+            label: '75%'
+        }, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
+            value: 3,
+            label: '300%'
+        }, {value: 4, label: '400%'}];
         // for filters we only need one embedding trace per feature
         const traceNames = new Set();
         const filterTraces = [];
@@ -360,21 +371,6 @@ class EmbedForm extends React.PureComponent {
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div>
-                            {/*<FormControl className={classes.formControl}>*/}
-                            {/*    <InputLabel htmlFor="chart_size">Chart Size</InputLabel>*/}
-                            {/*    <Select*/}
-                            {/*        className={classes.select}*/}
-                            {/*        input={<Input id="chart_size"/>}*/}
-                            {/*        onChange={this.onEmbeddingChartSizeChange}*/}
-                            {/*        value={embeddingChartSize}*/}
-                            {/*        multiple={false}>*/}
-                            {/*        {chartSizes.map(item => (*/}
-                            {/*            <MenuItem key={item.label} value={item.value}>*/}
-                            {/*                <ListItemText primary={item.label}/>*/}
-                            {/*            </MenuItem>*/}
-                            {/*        ))}*/}
-                            {/*    </Select>*/}
-                            {/*</FormControl>*/}
 
 
                             {/*<TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}*/}
@@ -390,6 +386,24 @@ class EmbedForm extends React.PureComponent {
                                        onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
                                        onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
                                        className={classes.formControl} value={unselectedMarkerOpacity}/>
+
+                            <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="point_size">Marker Size</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    input={<Input id="point_size"/>}
+                                    onChange={this.onPointSizeChange}
+                                    value={pointSize}
+                                    multiple={false}>
+                                    {pointSizeTicks.map(item => (
+                                        <MenuItem key={item.label} value={item.value}>
+                                            <ListItemText primary={item.label}/>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
                                 <ColorSchemeSelector/>
@@ -509,7 +523,7 @@ const mapStateToProps = state => {
         embeddingChartSize: state.embeddingChartSize,
         interpolator: state.interpolator,
         markerOpacity: state.markerOpacityUI,
-        markerSize: state.markerSizeUI,
+        pointSize: state.pointSize,
         savedDatasetFilter: state.savedDatasetFilter,
         embeddings: state.embeddings,
         features: state.features,
@@ -544,6 +558,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleNumberOfBins: value => {
             dispatch(setNumberOfBins(value));
+        },
+        handlePointSize: value => {
+            dispatch(setPointSize(value));
         },
         handleNumberOfBinsUI: value => {
             dispatch(setNumberOfBinsUI(value));

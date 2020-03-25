@@ -30,6 +30,7 @@ import {
     SET_MARKER_OPACITY_UI,
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
+    SET_POINT_SIZE,
     SET_NUMBER_OF_BINS_UI,
     SET_PRIMARY_TRACE_KEY,
     SET_SELECTED_EMBEDDING,
@@ -45,7 +46,7 @@ import {getInterpolator, updateTraceColors} from '../PlotUtil';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
-
+export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
@@ -480,6 +481,15 @@ function embeddingData(state = [], action) {
     }
 }
 
+export function pointSize(state = DEFAULT_POINT_SIZE, action) {
+    switch (action.type) {
+        case SET_POINT_SIZE:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 export function primaryTraceKey(state = null, action) {
     switch (action.type) {
         case SET_PRIMARY_TRACE_KEY:
@@ -544,6 +554,7 @@ export default combineReducers({
     numberOfBins,
     numberOfBinsUI,
     message,
+    pointSize,
     primaryTraceKey,
     selection,
     serverInfo,

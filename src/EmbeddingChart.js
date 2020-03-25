@@ -63,6 +63,7 @@ class EmbeddingChart extends React.PureComponent {
                                    selection={this.props.selection}
                                    onDeselect={this.props.onDeselect}
                                    onSelected={this.props.onSelect}
+                                   pointSize={this.props.pointSize}
                                    markerOpacity={this.props.markerOpacity}
                                    color={traceInfo.colors}
                                    onGallery={this.props.onGallery}
@@ -96,6 +97,7 @@ const mapStateToProps = state => {
         featureSummary: state.featureSummary,
         shape: state.dataset.shape,
         nObsSelected: state.selection.count,
+        pointSize: state.pointSize,
         globalFeatureSummary: state.globalFeatureSummary
     };
 };

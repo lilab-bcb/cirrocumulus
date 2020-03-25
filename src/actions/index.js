@@ -51,6 +51,7 @@ export const SET_BIN_VALUES = 'SET_BIN_VALUES';
 export const SET_BIN_SUMMARY = 'SET_BIN_SUMMARY';
 export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
+export const SET_POINT_SIZE = 'SET_POINT_SIZE';
 
 // update ui
 export const SET_EMAIL = 'SET_EMAIL';
@@ -694,6 +695,10 @@ export function restoreView(payload) {
 
 export function setNumberOfBinsUI(payload) {
     return {type: SET_NUMBER_OF_BINS_UI, payload: payload};
+}
+
+export function setPointSize(payload) {
+    return {type: SET_POINT_SIZE, payload: payload};
 }
 
 export function setMarkerSize(payload) {
