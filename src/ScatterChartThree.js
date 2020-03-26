@@ -2,6 +2,7 @@ import Link from '@material-ui/core/Link';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
+import {numberFormat} from './formatters';
 import {drawScatter2d, getChartSize} from './PlotUtil';
 import {createScatterPlot} from './ThreeUtil';
 
@@ -10,6 +11,7 @@ class ScatterChartThree extends React.PureComponent {
     constructor(props) {
         super(props);
         this.containerElementRef = React.createRef();
+        this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.chartSize = getChartSize();
         this.state = {animating: false};
@@ -86,10 +88,23 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     init() {
-        const {traceInfo} = this.props;
+
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
             this.scatterPlot = createScatterPlot(containerElement);
+            this.scatterPlot.hoverCallback = (point) => {
+                if (point == null) {
+                    this.tooltipElementRef.current.innerHTML = ' ';
+                } else {
+                    const traceInfo = this.props.traceInfo;
+                    let value = traceInfo.values[point];
+                    if (typeof value === 'number') {
+                        value = numberFormat(value);
+                    }
+                    this.tooltipElementRef.current.innerHTML = ' ' + value;
+                }
+
+            };
             this.scatterPlot.selectCallback = (selectedpoints) => {
                 if (this.scatterPlot.interactionMode === 'PAN') {
                     return;
@@ -97,7 +112,7 @@ class ScatterChartThree extends React.PureComponent {
                 if (selectedpoints != null && selectedpoints.length === 0) {
                     selectedpoints = null;
                 }
-
+                const traceInfo = this.props.traceInfo;
                 if (selectedpoints == null) {
                     this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
@@ -108,7 +123,7 @@ class ScatterChartThree extends React.PureComponent {
                     let xmax = -Number.MAX_VALUE;
                     let ymax = -Number.MAX_VALUE;
                     let zmax = -Number.MAX_VALUE;
-                    const is3d = traceInfo.z != null;
+                    const is3d = traceInfo.dimensions === 3;
                     selectedpoints.forEach(index => {
                         const x = traceInfo.x[index];
                         xmin = Math.min(xmin, x);
@@ -173,22 +188,33 @@ class ScatterChartThree extends React.PureComponent {
 
 
     render() {
-        return <React.Fragment><ChartToolbar onHome={this.onHome}
-                                             is3d={this.props.traceInfo && this.props.traceInfo.z != null}
-                                             animating={this.state.animating}
-                                             toggleAnimation={this.onToggleAnimation}
-                                             onSaveImage={this.onSaveImage}
-                                             onDragMode={this.onDragMode}></ChartToolbar>
+        return <React.Fragment>
+            <ChartToolbar onHome={this.onHome}
+                          is3d={this.props.traceInfo && this.props.traceInfo.z != null}
+                          animating={this.state.animating}
+                          toggleAnimation={this.onToggleAnimation}
+                          onSaveImage={this.onSaveImage}
+                          onDragMode={this.onDragMode}>
+            </ChartToolbar>
             <Link style={{paddingLeft: 5}} href="#" onClick={this.onGallery}>
                 Gallery
             </Link>
+            <div ref={this.tooltipElementRef} style={{
+                display: 'inline-block',
+                textOverflow: 'hidden',
+                paddingLeft: 5
+            }}>&nbsp;
+            </div>
+
             <div style={{
                 display: 'inline-block',
                 position: 'relative',
                 width: this.chartSize.width,
                 height: this.chartSize.height
             }}
-                 ref={this.containerElementRef}/>
+                 ref={this.containerElementRef}>
+
+            </div>
         </React.Fragment>;
     }
 }
