@@ -34,6 +34,7 @@ class EditDatasetDialog extends React.PureComponent {
         };
     }
 
+
     componentDidMount() {
         if (this.props.dataset != null) {
             fetch(API + '/dataset?id=' + this.props.dataset.id,

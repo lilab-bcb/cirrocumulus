@@ -12,6 +12,7 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import AccountCircle from '@material-ui/icons/AccountCircle';
+import HelpIcon from '@material-ui/icons/Help';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -20,6 +21,7 @@ import {
     downloadSelectedIds,
     EDIT_DATASET_DIALOG,
     getDatasetFilterArray,
+    HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
     login,
     logout,
@@ -126,6 +128,10 @@ class AppHeader extends React.PureComponent {
     onDatasetFilterSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
+    handleHelp = () => {
+        this.props.handleDialog(HELP_DIALOG);
+    };
+
 
     handleCombineDatasetFilters = (event) => {
         this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
@@ -342,7 +348,7 @@ class AppHeader extends React.PureComponent {
                     <div style={{marginLeft: 'auto'}}>
 
                         {showMoreMenu && <Tooltip title={'More'}>
-                            <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
+                            <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleMoreMenuOpen}>
                                 <MoreVertIcon/>
                             </IconButton>
@@ -371,11 +377,16 @@ class AppHeader extends React.PureComponent {
                             <MenuItem onClick={this.copyLink}>Copy Link
                             </MenuItem>}
                         </Menu>}
-
+                        <Tooltip title={'Help'}>
+                            <IconButton aria-label="Help"
+                                        onClick={this.handleHelp}>
+                                <HelpIcon/>
+                            </IconButton>
+                        </Tooltip>
 
                         {email != null &&
                         <Tooltip title={email}>
-                            <IconButton style={{marginLeft: 50}} aria-label="Menu" aria-haspopup="true"
+                            <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleUserMenuOpen}>
                                 <AccountCircle/>
                             </IconButton>

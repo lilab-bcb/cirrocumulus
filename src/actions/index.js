@@ -63,6 +63,7 @@ export const SET_DIALOG = 'SET_DIALOG';
 export const EDIT_DATASET_DIALOG = 'EDIT_DATASET_DIALOG';
 export const IMPORT_DATASET_DIALOG = 'IMPORT_DATASET_DIALOG';
 export const SAVE_DATASET_FILTER_DIALOG = 'SAVE_DATASET_FILTER_DIALOG';
+export const HELP_DIALOG = 'HELP_DIALOG';
 export const DELETE_DATASET_DIALOG = 'DELETE_DATASET_DIALOG';
 
 export const SET_DATASET_CHOICES = 'SET_DATASET_CHOICES';
@@ -118,7 +119,6 @@ function getUser() {
         }).then(result => result.json()).then(user => dispatch(setUser(user)));
     };
 }
-
 
 export function initGapi() {
     return function (dispatch, getState) {
@@ -823,9 +823,9 @@ export function initLogin(loadSavedView) {
     };
 }
 
-// export function getAccessToken() {
-//     return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-// }
+export function getAccessToken() {
+    return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+}
 
 export function getIdToken() {
     return typeof window.gapi !== 'undefined' ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token : '';

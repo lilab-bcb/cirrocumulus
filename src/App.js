@@ -11,6 +11,7 @@ import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
     EDIT_DATASET_DIALOG,
+    HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
     SAVE_DATASET_FILTER_DIALOG,
     setDialog,
@@ -23,6 +24,7 @@ import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
 import GalleryCharts from './GalleryCharts';
+import HelpDialog from './HelpDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 
 export const drawerWidth = 240;
@@ -83,6 +85,7 @@ class App extends PureComponent {
                 <EditDatasetDialog/>}
                 {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
                 {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
+                {dialog === HELP_DIALOG && <HelpDialog/>}
 
                 <AppHeader/>
                 <Drawer
