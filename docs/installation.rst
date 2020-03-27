@@ -25,9 +25,15 @@ Google Cloud Platform (GCP) Deployment Instructions
 
 -  Install `Node.js`_.
 
+-  Install TypeScript::
+
+    npm install -g typescript
+
 -  Install JavaScript dependencies::
 
     npm i
+
+
 
 -  Build the client::
 
