@@ -73,8 +73,8 @@ export function getPositions(trace) {
     const getRange = (extent) => Math.abs(extent[1] - extent[0]);
     const xRange = getRange(xExtent);
     const yRange = getRange(yExtent);
-    const zRange = is3d ? getRange(zExtent) : 0;
-    const maxRange = Math.max(xRange, yRange);
+    const zRange = is3d ? getRange(zExtent) : 1;
+    const maxRange = Math.max(xRange, yRange, zRange);
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
     const makeScaleRange = (range, base) => [
         -base * (range / maxRange),

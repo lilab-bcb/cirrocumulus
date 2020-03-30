@@ -171,12 +171,17 @@ class ScatterChartThree extends React.PureComponent {
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
         const colors = traceInfo.colors;
-        for (let i = 0, j = 3, n = traceInfo.npoints; i < n; i++, j += 4) {
+        const positions = traceInfo.positions;
+        const is3d = traceInfo.z != null;
+        for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
             const isSelected = selection.size === 0 || selection.has(i);
             colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+            if (!is3d) {
+                positions[k] = isSelected ? 1 : 0;
+            }
         }
         this.scatterPlot.setPointColors(colors);
-        this.scatterPlot.setPointPositions(traceInfo.positions);
+        this.scatterPlot.setPointPositions(positions);
         this.scatterPlot.setDimensions(traceInfo.dimensions);
         // const {scaleDefault, scaleSelected, scaleHover} = this.scatterPlot.styles.point;
 
