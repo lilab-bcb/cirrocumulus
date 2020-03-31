@@ -13,7 +13,6 @@ def filter_adata(adata, data_filter):
         keep_expr = None
         user_filters = data_filter.get('filters', [])
         combine_filters = data_filter.get('combine', 'and')
-
         for filter_obj in user_filters:
             field = filter_obj[0]
             op = filter_obj[1]
@@ -61,7 +60,7 @@ def filter_adata(adata, data_filter):
                 # print((test != keep).sum())
 
             else:
-                if field in adata.obs:
+                if adata.obs is not None and field in adata.obs:
                     X = adata.obs[field]
                 else:
                     indices = SimpleData.get_var_indices(adata, [field])
@@ -96,6 +95,7 @@ def filter_adata(adata, data_filter):
                 keep_expr = keep
 
         adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
+
     return adata
 
 

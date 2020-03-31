@@ -2,12 +2,14 @@ import {Switch} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
+import Chip from '@material-ui/core/Chip';
 import Divider from '@material-ui/core/Divider';
 import MuiExpansionPanel from '@material-ui/core/ExpansionPanel';
 import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -24,15 +26,21 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
+    downloadSelectedIds,
     exportDatasetFilters,
+    getDatasetFilterArray,
     getEmbeddingKey,
     handleBrushFilterUpdated,
     handleColorChange,
     handleDimensionFilterUpdated,
     handleMeasureFilterUpdated,
     openDatasetFilter,
+    removeDatasetFilter,
+    SAVE_DATASET_FILTER_DIALOG,
     setBinSummary,
     setBinValues,
+    setCombineDatasetFilters,
+    setDialog,
     setFeatures,
     setInterpolator,
     setMarkerOpacity,
@@ -220,16 +228,48 @@ class EmbedForm extends React.PureComponent {
         this.props.handleEmbeddings(selection);
     };
 
+    handleSelectedCellsClick = (event) => {
+        event.preventDefault();
+        this.props.downloadSelectedIds();
+    };
+
+    onDatasetFilterChipDeleted = (name) => {
+        this.props.removeDatasetFilter(name);
+    };
+
+    onDatasetFilterCleared = () => {
+        this.props.removeDatasetFilter(null);
+    };
+    onDatasetFilterSaved = () => {
+        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
+    };
+
+    handleCombineDatasetFilters = (event) => {
+        this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
+    };
 
     render() {
         const {
-            numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, datasetFilters, embeddingData,
-            features, groupBy, markerOpacity, datasetFilter,
+            numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
+            features, groupBy, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
-            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize
+            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize, combineDatasetFilters
         } = this.props;
 
+        let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
 
+        const datasetFilterKeys = [];
+        let isBrushing = false;
+        currentDatasetFilters.forEach(f => {
+            if (typeof f[0] === 'object') {
+                isBrushing = true;
+            } else {
+                datasetFilterKeys.push(f[0]);
+            }
+        });
+        if (isBrushing) {
+            datasetFilterKeys.push('selection');
+        }
         const pointSizeTicks = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
             value: 0.75,
             label: '75%'
@@ -323,17 +363,56 @@ class EmbedForm extends React.PureComponent {
                         aria-controls="summary-content"
                         id="summary-header"
                     >
-                        <div>Filters</div>
+                        <div>Filter</div>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div style={{marginLeft: 10}}>
+                            <div>
+                                <Grid component="label" container alignItems="center" spacing={0}>
+                                    <Grid item>AND</Grid>
+                                    <Grid item>
+                                        <Switch
+                                            size="small"
+                                            checked={combineDatasetFilters === 'or'}
+                                            onChange={this.handleCombineDatasetFilters}
+                                        />
+                                    </Grid>
+                                    <Grid item>OR</Grid>
+                                </Grid>
+                            </div>
+                            <div>
+
+                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                        onClick={this.onDatasetFilterCleared}>Clear</Button>
+                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                        onClick={this.onDatasetFilterSaved}>Save</Button>
+                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                        onClick={this.handleSelectedCellsClick}>Export</Button>
+                            </div>
+                            <Divider/>
+                            {datasetFilterKeys.map(key => {
+                                return <Chip
+                                    size="small"
+                                    onDelete={() => {
+                                        this.onDatasetFilterChipDeleted(key);
+                                    }}
+                                    style={{marginRight: 2}}
+                                    key={key}
+                                    label={key}
+                                    variant={'outlined'}
+                                />;
+                            })}
+
+
                             {filterTraces.map(traceInfo =>
+
                                 traceInfo.continuous ?
                                     <ColorSchemeLegendWrapper
                                         key={traceInfo.name}
                                         width={140}
                                         showColorScheme={false}
                                         height={30}
+                                        style={{paddingBottom: 2, paddingTop: 2}}
                                         handleUpdate={handleMeasureFilterUpdated}
                                         datasetFilter={datasetFilter}
                                         scale={traceInfo.colorScale}
@@ -346,6 +425,7 @@ class EmbedForm extends React.PureComponent {
                                     /> :
                                     <CategoricalLegend
                                         key={traceInfo.name}
+                                        style={{paddingBottom: 2, paddingTop: 2}}
                                         datasetFilter={datasetFilter}
                                         handleClick={handleDimensionFilterUpdated}
                                         handleColorChange={handleColorChange}
@@ -358,6 +438,7 @@ class EmbedForm extends React.PureComponent {
                                         globalFeatureSummary={globalFeatureSummary}
                                         featureSummary={featureSummary}/>
                             )}
+
 
                         </div>
                     </ExpansionPanelDetails>
@@ -507,9 +588,6 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-
-
-        datasetFilter: state.datasetFilter,
         featureSummary: state.featureSummary,
         shape: state.dataset.shape,
         nObsSelected: state.selection.count,
@@ -519,7 +597,6 @@ const mapStateToProps = state => {
         binSummary: state.binSummary,
         numberOfBins: state.numberOfBins,
         numberOfBinsUI: state.numberOfBinsUI,
-        datasetFilters: state.datasetFilters,
         embeddingData: state.embeddingData,
         embeddingChartSize: state.embeddingChartSize,
         interpolator: state.interpolator,
@@ -530,11 +607,26 @@ const mapStateToProps = state => {
         features: state.features,
         groupBy: state.groupBy,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
-        unselectedMarkerSize: state.unselectedMarkerSizeUI
+        unselectedMarkerSize: state.unselectedMarkerSizeUI,
+        combineDatasetFilters: state.combineDatasetFilters,
+        datasetFilter: state.datasetFilter,
+        datasetFilters: state.datasetFilters
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
+        handleDialog: (value) => {
+            dispatch(setDialog(value));
+        },
+        handleCombineDatasetFilters: (value) => {
+            dispatch(setCombineDatasetFilters(value));
+        },
+        downloadSelectedIds: () => {
+            dispatch(downloadSelectedIds());
+        },
+        removeDatasetFilter: (filter) => {
+            dispatch(removeDatasetFilter(filter));
+        },
         handleDimensionFilterUpdated: (e) => {
             dispatch(handleDimensionFilterUpdated(e));
         },

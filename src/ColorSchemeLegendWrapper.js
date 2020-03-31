@@ -1,15 +1,18 @@
 import React from 'react';
-
-import ColorSchemeLegend from './ColorSchemeLegend';
 import ContinuousLegend from './ContinuousLegend';
 import MeasureFilter from './MeasureFilter';
 
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
-        const {scale, name, nObs, nObsSelected, featureSummary, globalFeatureSummary, maxHeight, datasetFilter, handleUpdate, showColorScheme} = this.props;
+        const {scale, name, nObs, nObsSelected, featureSummary, globalFeatureSummary, maxHeight, datasetFilter, handleUpdate} = this.props;
+        let style = {display: 'inline-block', verticalAlign: 'top'};
+        if (this.props.style) {
+            style = Object.assign({}, style, this.props.style);
+        }
+
         return (
-            <div className="cirro-condensed" style={{display: 'inline-block', verticalAlign: 'top'}}>
+            <div className="cirro-condensed" style={style}>
                 {/*ContinuousLegend shows stats table */}
                 <ContinuousLegend name={name}
                                   summary={scale.summary}

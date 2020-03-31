@@ -74,7 +74,7 @@ class AnndataDataset(AbstractDataset):
                 obs = pd.DataFrame()
             obs[key] = values
 
-        if basis is not None:
+        if basis is not None and len(basis) > 0:
             if obs is None:
                 obs = pd.DataFrame()
             for b in basis:
@@ -83,5 +83,4 @@ class AnndataDataset(AbstractDataset):
                 dimensions = b['dimensions']
                 for i in range(dimensions):
                     obs[b['coordinate_columns'][i]] = embedding_data[:, i]
-
         return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))

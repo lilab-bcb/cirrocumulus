@@ -109,13 +109,14 @@ class CategoricalLegend extends React.PureComponent {
         // }
         const categories = globalDimensionSummary.categories;
         clickEnabled = clickEnabled && categories.length > 1;
-
+        let style = {maxHeight: maxHeight};
+        if (this.props.style) {
+            style = Object.assign({}, style, this.props.style);
+        }
         let maxSize = 60;
         const fractionScale = scaleLinear().domain([0, 1]).range([0, maxSize]).clamp(true);
         return (
-            <div className="cirro-chart-legend" style={{
-                maxHeight: maxHeight
-            }}>
+            <div className="cirro-chart-legend" style={style}>
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
                         aria-labelledby="edit-category-color-dialog-title">
                     <DialogTitle id="edit-category-color-dialog-title">Edit {this.state.colorValue} Color</DialogTitle>

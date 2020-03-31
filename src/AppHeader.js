@@ -1,13 +1,9 @@
 import {IconButton, Menu, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
-import Chip from '@material-ui/core/Chip';
-import Grid from '@material-ui/core/Grid';
-import Link from '@material-ui/core/Link';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import {withStyles} from '@material-ui/core/styles';
-import Switch from '@material-ui/core/Switch';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -18,16 +14,11 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
-    downloadSelectedIds,
     EDIT_DATASET_DIALOG,
-    getDatasetFilterArray,
     HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
     login,
     logout,
-    removeDatasetFilter,
-    SAVE_DATASET_FILTER_DIALOG,
-    setCombineDatasetFilters,
     setDataset,
     setDialog,
     setMessage,
@@ -118,23 +109,9 @@ class AppHeader extends React.PureComponent {
         this.setState({moreMenuOpen: false});
     };
 
-    onDatasetFilterChipDeleted = (name) => {
-        this.props.removeDatasetFilter(name);
-    };
 
-    onDatasetFilterCleared = () => {
-        this.props.removeDatasetFilter(null);
-    };
-    onDatasetFilterSaved = () => {
-        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
-    };
     handleHelp = () => {
         this.props.handleDialog(HELP_DIALOG);
-    };
-
-
-    handleCombineDatasetFilters = (event) => {
-        this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
     };
 
 
@@ -145,7 +122,9 @@ class AppHeader extends React.PureComponent {
         this.setState({moreMenuOpen: true, moreMenuAnchorEl: event.currentTarget});
     };
 
-    copyLink = () => {
+    copyLink = (event) => {
+        const scrollX = window.scrollX;
+        const scrollY = window.scrollY;
         const {dataset, embeddings, features, groupBy, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
@@ -205,12 +184,9 @@ class AppHeader extends React.PureComponent {
         document.body.removeChild(el);
         this.props.setMessage('Link copied');
         this.setState({moreMenuOpen: false});
+        window.scrollTo(scrollX, scrollY);
     };
 
-    handleSelectedCellsClick = (event) => {
-        event.preventDefault();
-        this.props.downloadSelectedIds();
-    };
 
     handleLogout = () => {
         this.setState({userMenuOpen: false});
@@ -234,26 +210,12 @@ class AppHeader extends React.PureComponent {
 
     render() {
         const {
-            dataset, loadingApp, email, datasetChoices, selection, classes, serverInfo, combineDatasetFilters,
-            datasetFilter, tab, user
+            dataset, loadingApp, email, datasetChoices, selection, classes, serverInfo, tab, user
         } = this.props;
         const shape = dataset != null && dataset.shape != null ? dataset.shape : [0, 0];
         const hasSelection = dataset != null && shape[0] > 0 && !isNaN(selection.count);
         const showNumberOfCells = !hasSelection && dataset != null && !(selection.count > 0) && shape[0] > 0 && (selection.count !== shape[0]);
-        let datasetFilters = getDatasetFilterArray(datasetFilter);
         const showMoreMenu = (email != null && user.importer) || dataset != null;
-        const datasetFilterKeys = [];
-        let isBrushing = false;
-        datasetFilters.forEach(f => {
-            if (typeof f[0] === 'object') {
-                isBrushing = true;
-            } else {
-                datasetFilterKeys.push(f[0]);
-            }
-        });
-        if (isBrushing) {
-            datasetFilterKeys.push('selection');
-        }
 
 
         return (
@@ -280,8 +242,7 @@ class AppHeader extends React.PureComponent {
                     </Select>}
 
                     <div className={"cirro-condensed"} style={{display: 'inline-block'}}>
-                        {hasSelection && (<Link title="Download selected ids" href="#"
-                                                onClick={this.handleSelectedCellsClick}>{intFormat(selection.count)}</Link>)}
+                        {hasSelection && intFormat(selection.count)}
                         {hasSelection && ' / ' + intFormat(shape[0]) + ' cells'}
                         {showNumberOfCells && intFormat(shape[0]) + ' cells'}
                     </div>
@@ -304,46 +265,6 @@ class AppHeader extends React.PureComponent {
                         {/*    style={{display: 'inline', marginRight: 20}}>Cirro</h3>*/}
 
 
-                        <div style={{display: 'inline-block', marginLeft: '10px'}}>
-                            {datasetFilters.length > 0 && <div style={{display: 'inline-block'}}>FILTER:</div>}
-                            {datasetFilterKeys.map(key => {
-                                return <Chip
-                                    size="small"
-                                    onDelete={() => {
-                                        this.onDatasetFilterChipDeleted(key);
-                                    }}
-                                    style={{marginRight: 2}}
-                                    key={key}
-                                    label={key}
-                                    variant={'outlined'}
-                                />;
-                            })}
-
-
-                            {datasetFilters.length > 0 &&
-                            <div style={{display: 'inline-block', marginLeft: '10px'}}>
-                                <Button size="small" color={'primary'}
-                                        onClick={this.onDatasetFilterCleared}>Clear</Button>
-                                <Button size="small" color={'primary'}
-                                        onClick={this.onDatasetFilterSaved}>Save</Button>
-                            </div>}
-
-
-                            {datasetFilters.length > 0 &&
-                            <div style={{display: 'inline-block', marginLeft: '10px'}}>
-                                <Grid component="label" container alignItems="center" spacing={0}>
-                                    <Grid item>AND</Grid>
-                                    <Grid item>
-                                        <Switch
-                                            size="small"
-                                            checked={combineDatasetFilters === 'or'}
-                                            onChange={this.handleCombineDatasetFilters}
-                                        />
-                                    </Grid>
-                                    <Grid item>OR</Grid>
-                                </Grid>
-                            </div>}
-                        </div>
                     </div>
                     <div style={{marginLeft: 'auto'}}>
 
@@ -468,15 +389,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleDialog: (value) => {
             dispatch(setDialog(value));
-        },
-        handleCombineDatasetFilters: (value) => {
-            dispatch(setCombineDatasetFilters(value));
-        },
-        downloadSelectedIds: () => {
-            dispatch(downloadSelectedIds());
-        },
-        removeDatasetFilter: (filter) => {
-            dispatch(removeDatasetFilter(filter));
         }
     };
 };

@@ -208,7 +208,8 @@ def handle_selected_ids():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
-    return data_processing.handle_selection_ids(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter)
+    return to_json(
+        data_processing.handle_selection_ids(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter))
 
 
 # List available datasets
