@@ -452,7 +452,7 @@ class EmbedForm extends React.PureComponent {
                         aria-controls="chart-options-content"
                         id="chart-options-header"
                     >
-                        <div>Embedding Options</div>
+                        <div>View Options</div>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div>
