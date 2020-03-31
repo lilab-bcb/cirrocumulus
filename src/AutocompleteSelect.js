@@ -275,7 +275,9 @@ class AutocompleteSelect extends React.Component {
                 <NoSsr>
                     <AsyncSelect
                         noOptionsMessage={this.noOptionsMessage}
+                        blurInputOnSelect={true}
                         cacheOptions={false}
+                        openMenuOnFocus={true}
                         placeholder={''}
                         loadOptions={this.loadOptions}
                         classes={classes}
