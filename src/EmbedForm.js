@@ -314,6 +314,7 @@ class EmbedForm extends React.PureComponent {
                     <AutocompleteSelect label="Features" options={allOptions}
                                         defaultOptions={defaultOptions} value={featureValue}
                                         onChange={this.props.handleFeatures}
+                                        helperText={'Enter or paste list'}
                                         isMulti={true}/>
                 </FormControl>
 

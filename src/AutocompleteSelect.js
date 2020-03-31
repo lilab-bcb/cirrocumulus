@@ -186,6 +186,11 @@ const components = {
 };
 
 class AutocompleteSelect extends React.Component {
+    constructor(props) {
+        super(props);
+        this.div = React.createRef();
+    }
+
     loadOptions = (inputValue, callback) => {
         return callback(this.filterOptions(inputValue));
     };
@@ -203,32 +208,69 @@ class AutocompleteSelect extends React.Component {
         }
     };
 
+    onDrop = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        let dt = event.dataTransfer;
+        let files = dt.files;
+        let reader = new FileReader();
+        const _this = this;
+        reader.onload = function (event) {
+            let text = event.target.result;
+            let tokens = text.split(/[\n,\t]/);
+            _this.enterTokens(tokens);
+        };
+
+        reader.onerror = function (event) {
+            alert("Unable to read file.");
+        };
+
+        reader.readAsText(files[0]);
+        this.div.current.style.border = '';
+    };
+
+    enterTokens(tokens) {
+        let results = [];
+        tokens.forEach(token => {
+            token = token.toLowerCase().trim().replace(/"/g, '');
+            if (token !== '') {
+                let found = false;
+                for (let i = 0, ngroups = this.props.options.length; i < ngroups && !found; i++) {
+                    let option = this.props.options[i];
+                    for (let j = 0, n = option.options.length; j < n; j++) {
+                        let choice = option.options[j];
+                        if (choice.value.toLowerCase() == token) {
+                            results.push(choice.value);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        this.props.onChange(results);
+    }
+
     onPaste = (event) => {
         let text = event.clipboardData.getData('text/plain');
         if (text != null && text.length > 0) {
             event.preventDefault();
             event.stopPropagation();
             let tokens = text.split(/[\n,]/);
-            let results = [];
-            tokens.forEach(token => {
-                token = token.toLowerCase().trim().replace(/"/g, '');
-                if (token !== '') {
-                    let found = false;
-                    for (let i = 0, ngroups = this.props.options.length; i < ngroups && !found; i++) {
-                        let option = this.props.options[i];
-                        for (let j = 0, n = option.options.length; j < n; j++) {
-                            let choice = option.options[j];
-                            if (choice.value.toLowerCase() == token) {
-                                results.push(choice.value);
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
-
-            this.props.onChange(results);
+            this.enterTokens(tokens);
         }
+    };
+
+    onDragOver = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.div.current.style.border = '1px solid black';
+    };
+
+    onDragEnd = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.div.current.style.border = '';
     };
 
     filterOptions = (inputValue) => {
@@ -271,7 +313,11 @@ class AutocompleteSelect extends React.Component {
         };
 
         return (
-            <div className={classes.root} onPaste={this.onPaste}>
+            <div ref={this.div} className={classes.root} onPaste={this.onPaste}
+                 onDrop={this.onDrop}
+                 onDragOver={this.onDragOver}
+                 onDragEnd={this.onDragEnd}
+                 onDragLeave={this.onDragEnd}>
                 <NoSsr>
                     <AsyncSelect
                         noOptionsMessage={this.noOptionsMessage}
