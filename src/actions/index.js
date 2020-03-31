@@ -347,10 +347,9 @@ export function removeDatasetFilter(filterKey) {
 export function getDatasetFilterArray(datasetFilter) {
     let filters = [];
     for (let key in datasetFilter) {
-        // basis, selectedpoints, path for brush filter
+        // basis, path for brush filter
         const value = datasetFilter[key];
         let f = null;
-
         if (window.Array.isArray(value)) {
             f = [key, 'in', value];
         } else if (value.basis != null) {
@@ -564,7 +563,8 @@ function handleFilterUpdated() {
 export function handleBrushFilterUpdated(payload) {
     return function (dispatch, getState) {
         const name = payload.name; // full basis name
-        const value = payload.value;
+        const value = payload.value;  // value has basis and path
+        const clear = payload.clear;
         let datasetFilter = getState().datasetFilter;
         // value has basis, path
         let update = true;
@@ -572,10 +572,16 @@ export function handleBrushFilterUpdated(payload) {
             update = datasetFilter[name] != null;
             delete datasetFilter[name];
         } else {
-            // const points = value.points;
-            // const basis = value.basis;
-            // const path = value.path;
-            datasetFilter[name] = value;
+            if (clear) {
+                datasetFilter[name] = {basis: value.basis, path: [value.path]};
+            } else {
+                const prior = datasetFilter[name];
+                if (prior != null) {
+                    datasetFilter[name].path.push(value.path);
+                } else {
+                    datasetFilter[name] = {basis: value.basis, path: [value.path]};
+                }
+            }
         }
         if (update) {
             dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));

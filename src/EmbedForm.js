@@ -211,9 +211,9 @@ class EmbedForm extends React.PureComponent {
     };
 
     handleEmbeddingsChange = (event) => {
-
         const embeddings = event.target.value;
         const selection = [];
+
         embeddings.forEach(embedding => {
             if (!embedding.precomputed) {
                 embedding = Object.assign(embedding, {
@@ -225,6 +225,8 @@ class EmbedForm extends React.PureComponent {
             }
             selection.push(embedding);
         });
+
+
         this.props.handleEmbeddings(selection);
     };
 
@@ -292,6 +294,7 @@ class EmbedForm extends React.PureComponent {
         }
         const availableFeatures = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
+        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
@@ -327,7 +330,7 @@ class EmbedForm extends React.PureComponent {
             label: 'Variables',
             options: [{isDisabled: true, label: 'Type to search', value: ''}]
         }];
-        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
+
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
@@ -380,7 +383,7 @@ class EmbedForm extends React.PureComponent {
                                     <Grid item>OR</Grid>
                                 </Grid>
                             </div>
-                            <div>
+                            <div style={{marginBottom: 2}}>
 
                                 <Button disabled={datasetFilterKeys.length === 0} size="small"
                                         onClick={this.onDatasetFilterCleared}>Clear</Button>
@@ -412,7 +415,7 @@ class EmbedForm extends React.PureComponent {
                                         width={140}
                                         showColorScheme={false}
                                         height={30}
-                                        style={{paddingBottom: 2, paddingTop: 2}}
+                                        style={{paddingBottom: 3, paddingTop: 3}}
                                         handleUpdate={handleMeasureFilterUpdated}
                                         datasetFilter={datasetFilter}
                                         scale={traceInfo.colorScale}
@@ -425,7 +428,7 @@ class EmbedForm extends React.PureComponent {
                                     /> :
                                     <CategoricalLegend
                                         key={traceInfo.name}
-                                        style={{paddingBottom: 2, paddingTop: 2}}
+                                        style={{paddingBottom: 3, paddingTop: 3}}
                                         datasetFilter={datasetFilter}
                                         handleClick={handleDimensionFilterUpdated}
                                         handleColorChange={handleColorChange}
@@ -449,7 +452,7 @@ class EmbedForm extends React.PureComponent {
                         aria-controls="chart-options-content"
                         id="chart-options-header"
                     >
-                        <div>Chart Options</div>
+                        <div>Embedding Options</div>
                     </ExpansionPanelSummary>
                     <ExpansionPanelDetails>
                         <div>

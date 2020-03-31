@@ -1,7 +1,9 @@
 import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
 import withStyles from '@material-ui/core/styles/withStyles';
+import ExposureIcon from '@material-ui/icons/Exposure';
 import PauseIcon from '@material-ui/icons/Pause';
+import PhotoSizeSelectSmallIcon from '@material-ui/icons/PhotoSizeSelectSmall';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import React from 'react';
 
@@ -15,10 +17,12 @@ const styles = theme => ({
             padding: 0,
         },
         '& > .cirro-active': {
-            fill: 'black'
+            fill: 'rgba(0, 0, 0, 0.54)',
+            color: 'rgba(0, 0, 0, 0.54)'
         },
         '& > .cirro-inactive': {
-            fill: '#bdbdbd'
+            fill: 'rgba(0, 0, 0, 0.26)',
+            color: 'rgba(0, 0, 0, 0.26)'
         },
         display: 'inline-block'
     }
@@ -26,20 +30,21 @@ const styles = theme => ({
 
 //"zoom" | "pan" | "select" | "lasso" | "orbit" | "turntable"
 class ChartToolbar extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {dragmode: 'select'};
-    }
+
 
     setDragMode = (mode) => {
-        this.setState({dragmode: mode});
         this.props.onDragMode(mode);
     };
+
+    setEditSelection = () => {
+        this.props.onEditSelection();
+    };
+
 
     render() {
         let active = 'cirro-active';
         let inactive = 'cirro-inactive';
-        let dragmode = this.state.dragmode;
+        const {dragmode, editSelection} = this.props;
         return (<div className={this.props.classes.root}>
             {/*<Tooltip title={"Lasso"}>*/}
             {/*    <IconButton className={dragmode === 'lasso' ? active : inactive}*/}
@@ -54,13 +59,26 @@ class ChartToolbar extends React.PureComponent {
             <Tooltip title={"Brush"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'select' ? active : inactive}
                             aria-label="Box Select" onClick={() => this.setDragMode('select')}>
-                    <svg viewBox="0 0 1000 1000" height="16" width="16">
-                        <path
-                            d="m0 850l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-285l0-143 143 0 0 143-143 0z m857 0l0-143 143 0 0 143-143 0z m-857-286l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z m285 0l0-143 143 0 0 143-143 0z m286 0l0-143 143 0 0 143-143 0z"
-                            transform="matrix(1 0 0 -1 0 850)"></path>
-                    </svg>
+                    <PhotoSizeSelectSmallIcon/>
                 </IconButton>
             </Tooltip>
+
+            <Tooltip title={"Append to brush selection"}>
+                <IconButton edge={false} size={'small'}
+                            className={dragmode === 'select' && editSelection ? active : inactive}
+                            aria-label="Append to brush selection" onClick={this.setEditSelection}>
+                    <ExposureIcon/>
+                </IconButton>
+            </Tooltip>
+            {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
+                <IconButton className={active} edge={false} size={'small'}
+                            aria-label={this.props.animating ? 'Pause' : 'Animate'}
+                            onClick={this.props.toggleAnimation}>
+                    {!this.props.animating && <PlayArrowIcon/>}
+                    {this.props.animating && <PauseIcon/>}
+                </IconButton>
+            </Tooltip>}
+
             <Tooltip title={"Pan"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : inactive}
                             aria-label="Pan" onClick={() => this.setDragMode('pan')}>
@@ -71,14 +89,6 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>
-            {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
-                <IconButton edge={false} size={'small'} aria-label={this.props.animating ? 'Pause' : 'Animate'}
-                            onClick={this.props.toggleAnimation}>
-                    {!this.props.animating && <PlayArrowIcon/>}
-                    {this.props.animating && <PauseIcon/>}
-                </IconButton>
-            </Tooltip>}
-
 
             {/*<Tooltip title={"Zoom"}>*/}
             {/*    <IconButton className={dragmode === 'zoom' ? active : inactive}*/}
@@ -99,7 +109,7 @@ class ChartToolbar extends React.PureComponent {
             {/*</IconButton>*/}
 
             {!this.props.is3d && <Tooltip title={"Save Image"}>
-                <IconButton aria-label="Save Image" onClick={this.props.onSaveImage}>
+                <IconButton className={active} aria-label="Save Image" onClick={this.props.onSaveImage}>
                     <svg viewBox="0 0 1000 1000" width="16" height="16">
                         <path
                             d="m500 450c-83 0-150-67-150-150 0-83 67-150 150-150 83 0 150 67 150 150 0 83-67 150-150 150z m400 150h-120c-16 0-34 13-39 29l-31 93c-6 15-23 28-40 28h-340c-16 0-34-13-39-28l-31-94c-6-15-23-28-40-28h-120c-55 0-100-45-100-100v-450c0-55 45-100 100-100h800c55 0 100 45 100 100v450c0 55-45 100-100 100z m-400-550c-138 0-250 112-250 250 0 138 112 250 250 250 138 0 250-112 250-250 0-138-112-250-250-250z m365 380c-19 0-35 16-35 35 0 19 16 35 35 35 19 0 35-16 35-35 0-19-16-35-35-35z"

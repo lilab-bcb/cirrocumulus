@@ -14,8 +14,8 @@ class ScatterChartThree extends React.PureComponent {
         this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.chartSize = getChartSize();
-        this.state = {animating: false};
 
+        this.state = {animating: false, dragmode: 'select', editSelection: false};
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
         // });
@@ -74,12 +74,21 @@ class ScatterChartThree extends React.PureComponent {
         }
     };
 
+    onEditSelection = () => {
+        this.setState((state, props) => {
+            return {editSelection: !state.editSelection};
+        });
+    };
+
+
     onDragMode = (mode) => {
         if (mode === 'pan') {
             this.scatterPlot.setInteractionMode('PAN');
         } else if (mode === 'select') {
+
             this.scatterPlot.setInteractionMode('SELECT');
         }
+        this.setState({dragmode: mode});
     };
 
     onGallery = (event) => {
@@ -147,7 +156,8 @@ class ScatterChartThree extends React.PureComponent {
                     }
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
-                        value: {basis: traceInfo.embedding, selectedpoints: selectedpoints, path: path}
+                        clear: !this.state.editSelection,
+                        value: {basis: traceInfo.embedding, path: path}
                     });
                 }
             };
@@ -194,12 +204,16 @@ class ScatterChartThree extends React.PureComponent {
 
     render() {
         return <React.Fragment>
-            <ChartToolbar onHome={this.onHome}
-                          is3d={this.props.traceInfo && this.props.traceInfo.z != null}
-                          animating={this.state.animating}
-                          toggleAnimation={this.onToggleAnimation}
-                          onSaveImage={this.onSaveImage}
-                          onDragMode={this.onDragMode}>
+            <ChartToolbar
+                dragmode={this.state.dragmode}
+                animating={this.state.animating}
+                editSelection={this.state.editSelection}
+                is3d={this.props.traceInfo && this.props.traceInfo.z != null}
+                onHome={this.onHome}
+                toggleAnimation={this.onToggleAnimation}
+                onSaveImage={this.onSaveImage}
+                onDragMode={this.onDragMode}
+                onEditSelection={this.onEditSelection}>
             </ChartToolbar>
             <Link style={{paddingLeft: 5}} href="#" onClick={this.onGallery}>
                 Gallery
