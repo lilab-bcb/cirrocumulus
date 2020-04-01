@@ -30,8 +30,8 @@ import {
     SET_MARKER_OPACITY_UI,
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
-    SET_POINT_SIZE,
     SET_NUMBER_OF_BINS_UI,
+    SET_POINT_SIZE,
     SET_PRIMARY_TRACE_KEY,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
@@ -101,6 +101,7 @@ function groupBy(state = [], action) {
 function dataset(state = null, action) {
     switch (action.type) {
         case SET_DATASET:
+            document.title = action.payload.name;
             return action.payload;
         default:
             return state;

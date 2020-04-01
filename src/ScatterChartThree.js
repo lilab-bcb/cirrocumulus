@@ -1,10 +1,36 @@
-import Link from '@material-ui/core/Link';
+import {Tooltip} from '@material-ui/core';
+import IconButton from '@material-ui/core/IconButton';
+import PhotoLibraryIcon from '@material-ui/icons/PhotoLibrary';
+import {scaleLinear} from 'd3-scale';
 import React from 'react';
+import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {numberFormat} from './formatters';
-import {drawScatter2d, getChartSize} from './PlotUtil';
+import {getChartSize, setClipboardData} from './PlotUtil';
 import {createScatterPlot} from './ThreeUtil';
+
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize) {
+    const colors = traceInfo.colors;
+    const positions = traceInfo.positions;
+    const is3d = traceInfo.z != null;
+    for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
+        const isSelected = selection.size === 0 || selection.has(i);
+        colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+        if (!is3d) {
+            positions[k] = isSelected ? 1 : 0;
+        }
+    }
+    scatterPlot.setPointColors(colors);
+    scatterPlot.setPointPositions(positions);
+    scatterPlot.setDimensions(traceInfo.dimensions);
+    // const {scaleDefault, scaleSelected, scaleHover} = this.scatterPlot.styles.point;
+
+    const scale = new Float32Array(traceInfo.npoints);
+    scale.fill(pointSize);
+    scatterPlot.setPointScaleFactors(scale);
+    scatterPlot.render();
+}
 
 class ScatterChartThree extends React.PureComponent {
 
@@ -41,13 +67,130 @@ class ScatterChartThree extends React.PureComponent {
         // }
     }
 
+    onCopyImage = (event) => {
+        const canvas = this.containerElementRef.current.querySelector('canvas');
+        const url = canvas.toDataURL();
+        setClipboardData([{
+            format: 'text/html',
+            data: '<img src="' + url + '">'
+        }], true);
 
-    onSaveImage = () => {
-        const markerSize = 4; //this.scatterGL.pointVisualizer.renderMaterial.uniforms.pointSize.value;
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
-        const chartSize = {width: 800, height: 800};
-        let context = new window.C2S(chartSize.width, chartSize.height);
-        drawScatter2d(context, chartSize, traceInfo, markerSize, markerOpacity, unselectedMarkerOpacity, selection, color);
+    };
+
+    savePng() {
+
+        const size = this.chartSize;
+        const copy = document.createElement('canvas');
+        copy.width = size.width; // * window.devicePixelRatio;
+        copy.height = size.height; // * window.devicePixelRatio;
+        const context = copy.getContext('2d');
+        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const canvas = this.containerElementRef.current.querySelector('canvas');
+
+        let img = new Image();
+        img.onload = () => {
+            context.drawImage(img, 0, 0);
+            let name = this.props.traceInfo.name;
+            if (name === '__count') {
+                name = 'count';
+            }
+            copy.toBlob(blob => {
+                window.saveAs(blob, name + '.png', true);
+            }, 'image/png');
+        };
+        img.src = canvas.toDataURL();
+
+
+    }
+
+    calculatePointSize(traceInfo) {
+        const n = traceInfo.npoints;
+        const SCALE = 200;
+        const LOG_BASE = 8;
+        const DIVISOR = 1.5;
+        // Scale point size inverse-logarithmically to the number of points.
+        const pointSize = SCALE / Math.log(n) / Math.log(LOG_BASE);
+        return traceInfo.dimensions === 3 ? pointSize : pointSize / DIVISOR;
+    }
+
+    drawContext(context, chartSize) {
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+        const pointSize = this.calculatePointSize(traceInfo);
+        let scaleFactor = this.props.pointSize;
+        const PI2 = 2 * Math.PI;
+        const colors = traceInfo.colors;
+        const positions = traceInfo.positions;
+        const camera = this.scatterPlot.camera;
+        const width = chartSize.width;
+        const height = chartSize.height;
+        const widthHalf = width / 2;
+        const heightHalf = height / 2;
+        const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
+        const npoints = traceInfo.npoints;
+        // Transform current vertex by modelViewMatrix (model world position and
+        // camera world position matrix).
+
+        const is3d = traceInfo.dimensions === 3;
+        // Project vertex in camera-space to screen coordinates using the camera's
+        // projection matrix.
+        // gl_Position = projectionMatrix * cameraSpacePos;
+        let outputPointSize = 0;
+        let fog = this.scatterPlot.scene.fog;
+
+        if (!is3d) {
+            const PI = 3.1415926535897932384626433832795;
+            const minScale = 0.1;  // minimum scaling factor
+            const outSpeed = 2.0;  // shrink speed when zooming out
+            const outNorm = (1. - minScale) / Math.atan(outSpeed);
+            const maxScale = 15.0;  // maximum scaling factor
+            const inSpeed = 0.02;  // enlarge speed when zooming in
+            const zoomOffset = 0.3;  // offset zoom pivot
+            let zoom = camera.projectionMatrix.elements[0] + zoomOffset;  // zoom pivot
+            let scale = zoom < 1. ? 1. + outNorm * Math.atan(outSpeed * (zoom - 1.)) :
+                1. + 2. / PI * (maxScale - 1.) * Math.atan(inSpeed * (zoom - 1.));
+            outputPointSize = pointSize * scale;
+        }
+        const pos = new Vector3();
+        let cameraSpacePos = new Vector4();
+        const modelViewMatrix = camera.modelViewMatrix.clone();
+        let gl_PointSize = (outputPointSize * scaleFactor) / 4;
+        for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
+            const isSelected = selection.size === 0 || selection.has(i);
+            pos.x = positions[k];
+            pos.y = positions[k + 1];
+            pos.z = positions[k + 2];
+            pos.project(camera);
+            if (is3d) {
+                cameraSpacePos.x = pos.x;
+                cameraSpacePos.y = pos.y;
+                cameraSpacePos.z = pos.z;
+                cameraSpacePos.w = 1;
+                cameraSpacePos = cameraSpacePos.applyMatrix4(camera.modelViewMatrix);
+                outputPointSize = -pointSize / cameraSpacePos.z;
+                // const fogDepth = pointSize / outputPointSize * 1.2;
+                gl_PointSize = (outputPointSize * scaleFactor) / 4;
+            }
+            pos.x = (pos.x * widthHalf) + widthHalf;
+            pos.y = -(pos.y * heightHalf) + heightHalf;
+            // float fogFactor = smoothstep( fogNear, fogFar, fogDepth );
+            // gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+            const r = Math.round(colorScale(colors[j]));
+            const g = Math.round(colorScale(colors[j + 1]));
+            const b = Math.round(colorScale(colors[j + 2]));
+            const alpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
+            context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+            context.beginPath();
+
+            context.arc(pos.x, pos.y, gl_PointSize, 0, PI2);
+            context.closePath();
+            context.fill();
+        }
+    }
+
+    saveSvg() {
+        const {traceInfo} = this.props;
+        let context = new window.C2S(this.chartSize.width, this.chartSize.height);
+        this.drawContext(context, this.chartSize);
         let svg = context.getSerializedSvg();
         let blob = new Blob([svg], {
             type: 'text/plain;charset=utf-8'
@@ -56,13 +199,23 @@ class ScatterChartThree extends React.PureComponent {
         if (name === '__count') {
             name = 'count';
         }
+        window.saveAs(blob, name + '.svg');
+    }
+
+    onSaveImage = () => {
+        // if (this.scatterPlot.orbitIsAnimating()) {
+        //     this.scatterPlot.stopOrbitAnimation();
+        //     this.setState({animating: false});
+        // }
+        this.saveSvg();
+
         // const renderer = new SVGRenderer();
         // document.body.appendChild(renderer.domElement);
         // renderer.setSize(window.innerWidth, window.innerHeight);
         // renderer.setQuality('low');
         // renderer.render(this.scatterGL.scatterPlot.scene, this.scatterGL.scatterPlot.camera);
         // console.log(renderer.domElement);
-        window.saveAs(blob, name + '.svg');
+
     };
     onToggleAnimation = () => {
         if (this.scatterPlot.orbitIsAnimating()) {
@@ -180,25 +333,7 @@ class ScatterChartThree extends React.PureComponent {
 
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
-        const colors = traceInfo.colors;
-        const positions = traceInfo.positions;
-        const is3d = traceInfo.z != null;
-        for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
-            const isSelected = selection.size === 0 || selection.has(i);
-            colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
-            if (!is3d) {
-                positions[k] = isSelected ? 1 : 0;
-            }
-        }
-        this.scatterPlot.setPointColors(colors);
-        this.scatterPlot.setPointPositions(positions);
-        this.scatterPlot.setDimensions(traceInfo.dimensions);
-        // const {scaleDefault, scaleSelected, scaleHover} = this.scatterPlot.styles.point;
-
-        const scale = new Float32Array(traceInfo.npoints);
-        scale.fill(pointSize);
-        this.scatterPlot.setPointScaleFactors(scale);
-        this.scatterPlot.render();
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize);
     }
 
 
@@ -213,11 +348,18 @@ class ScatterChartThree extends React.PureComponent {
                 toggleAnimation={this.onToggleAnimation}
                 onSaveImage={this.onSaveImage}
                 onDragMode={this.onDragMode}
+                onCopyImage={this.onCopyImage}
                 onEditSelection={this.onEditSelection}>
             </ChartToolbar>
-            <Link style={{paddingLeft: 5}} href="#" onClick={this.onGallery}>
-                Gallery
-            </Link>
+            <Tooltip title={"View Gallery"}>
+                <IconButton edge={false} size={'small'}
+
+                            aria-label="View Gallery" onClick={this.onGallery}>
+                    <PhotoLibraryIcon/>
+                </IconButton>
+            </Tooltip>
+
+
             <div ref={this.tooltipElementRef} style={{
                 display: 'inline-block',
                 textOverflow: 'hidden',
