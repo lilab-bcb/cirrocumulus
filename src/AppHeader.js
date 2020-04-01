@@ -123,8 +123,7 @@ class AppHeader extends React.PureComponent {
     };
 
     copyLink = (event) => {
-        const scrollX = window.scrollX;
-        const scrollY = window.scrollY;
+
         const {dataset, embeddings, features, groupBy, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
@@ -172,19 +171,28 @@ class AppHeader extends React.PureComponent {
             json.colorScheme = interpolator.name;
         }
         linkText += '?q=' + JSON.stringify(json);
-        const el = document.createElement('textarea');
-        el.value = linkText;
-        el.setAttribute('readonly', '');
-        el.style.position = 'absolute';
-        el.style.left = '-9999px';
-        document.body.appendChild(el);
-        el.select();
-        el.focus();
+        const fakeElem = document.createElement('textarea');
+        fakeElem.style.fontSize = '12pt';
+        fakeElem.style.border = '0';
+        fakeElem.style.padding = '0';
+        fakeElem.style.margin = '0';
+        // Move element out of screen horizontally
+
+        fakeElem.style.position = 'absolute';
+        const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
+        fakeElem.style[isRTL ? 'right' : 'left'] = '-999999px';
+        // Move element to the same position vertically
+        fakeElem.style.top = (window.pageYOffset || document.documentElement.scrollTop) + 'px';
+        fakeElem.setAttribute('readonly', '');
+        fakeElem.value = linkText;
+        document.body.appendChild(fakeElem);
+        fakeElem.select();
+        fakeElem.focus();
         document.execCommand('copy');
-        document.body.removeChild(el);
+        document.body.removeChild(fakeElem);
         this.props.setMessage('Link copied');
         this.setState({moreMenuOpen: false});
-        window.scrollTo(scrollX, scrollY);
+
     };
 
 
