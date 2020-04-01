@@ -70,6 +70,64 @@ export function getChartSize() {
     return {width: window.screen.availWidth - 280, height: window.screen.availHeight - 220};
 }
 
+/**
+ *
+ * @param array. Array of format,data
+ */
+export function setClipboardData(clipboardData, delay) {
+    const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
+    const fakeElem = document.createElement('div');
+    fakeElem.contentEditable = true;
+
+    // Prevent zooming on iOS
+    fakeElem.style.fontSize = '12pt';
+    // Reset box model
+
+    fakeElem.style.border = '0';
+    fakeElem.style.padding = '0';
+    fakeElem.style.margin = '0';
+    // Move element out of screen horizontally
+    fakeElem.style.position = 'absolute';
+    fakeElem.style[isRTL ? 'right' : 'left'] = '-999999px';
+    // Move element to the same position vertically
+    fakeElem.style.top = (window.pageYOffset || document.documentElement.scrollTop) + 'px';
+    fakeElem.setAttribute('readonly', '');
+    //fakeElem.innerHTML = html;
+    const f = function (e) {
+        clipboardData.forEach(function (elem) {
+            e.clipboardData.setData(elem.format, elem.data);
+        });
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        fakeElem.removeEventListener('copy', f);
+    };
+    fakeElem.addEventListener('copy', f);
+
+    document.body.appendChild(fakeElem);
+    // if (fakeElem.hasAttribute('contenteditable')) {
+    fakeElem.focus();
+    // }
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(fakeElem);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    if (delay) {
+        setTimeout(function () {
+            if (!document.execCommand('copy')) {
+                console.log('copy failed');
+            }
+            document.body.removeChild(fakeElem);
+        }, 50);
+    } else {
+        if (!document.execCommand('copy')) {
+            console.log('copy failed');
+        }
+        document.body.removeChild(fakeElem);
+    }
+};
 
 export function updateTraceColors(traceInfo) {
     if (traceInfo.isImage) {
@@ -105,42 +163,6 @@ export function isPointInside(point, vs) {
     return inside;
 }
 
-export function drawScatter2d(context, chartSize, traceInfo, markerSize, markerOpacity, unselectedMarkerOpacity, selection, color) {
-    let height = chartSize.height;
-    let width = chartSize.width;
-    let xmin = Number.MAX_VALUE;
-    let xmax = -Number.MAX_VALUE;
-    let ymin = Number.MAX_VALUE;
-    let ymax = -Number.MAX_VALUE;
-    for (let i = 0, n = traceInfo.npoints; i < n; i++) {
-        let x = traceInfo.x[i];
-        let y = traceInfo.y[i];
-        xmin = x < xmin ? x : xmin;
-        xmax = x > xmax ? x : xmax;
-        ymin = y < ymin ? y : ymin;
-        ymax = y > ymax ? y : ymax;
-    }
-    const xToPixScale = scaleLinear().domain([xmin, xmax]).range([markerSize, width - markerSize]);
-    const yToPixScale = scaleLinear().domain([ymin, ymax]).range([height - markerSize, markerSize]);
-    const PI2 = 2 * Math.PI;
-    const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
-    for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 4) {
-        const isSelected = selection.size === 0 || selection.has(i);
-        const x = traceInfo.x[i];
-        const y = traceInfo.y[i];
-        const xpix = xToPixScale(x);
-        const ypix = yToPixScale(y);
-        const r = Math.round(colorScale(color[j]));
-        const g = Math.round(colorScale(color[j + 1]));
-        const b = Math.round(colorScale(color[j + 2]));
-        const alpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-        context.beginPath();
-        context.arc(xpix, ypix, markerSize, 0, PI2);
-        context.closePath();
-        context.fill();
-    }
-}
 
 export function arrayToSvgPath(lassoPathArray) {
     if (lassoPathArray.length > 1) {
