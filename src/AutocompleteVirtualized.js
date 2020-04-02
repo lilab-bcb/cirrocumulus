@@ -167,7 +167,7 @@ export default function AutocompleteVirtualized(props) {
         <Autocomplete
             multiple
             ref={ref}
-            style={{width: 220}}
+            style={{width: 200}}
             disableListWrap
             classes={classes}
             value={props.value}
