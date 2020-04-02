@@ -32,6 +32,19 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     scatterPlot.render();
 }
 
+function clamp(x, min_v, max_v) {
+    return Math.min(Math.max(x, min_v), max_v);
+}
+
+function smoothstep(edge0, edge1, x) {
+    const t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    return t * t * (3 - 2 * t);
+};
+
+function mix(x, y, a) {
+    return x * (1.0 - a) + y * a;
+}
+
 class ScatterChartThree extends React.PureComponent {
 
     constructor(props) {
@@ -127,16 +140,10 @@ class ScatterChartThree extends React.PureComponent {
         const heightHalf = height / 2;
         const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
         const npoints = traceInfo.npoints;
-        // Transform current vertex by modelViewMatrix (model world position and
-        // camera world position matrix).
 
         const is3d = traceInfo.dimensions === 3;
-        // Project vertex in camera-space to screen coordinates using the camera's
-        // projection matrix.
-        // gl_Position = projectionMatrix * cameraSpacePos;
         let outputPointSize = 0;
         let fog = this.scatterPlot.scene.fog;
-
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;
             const minScale = 0.1;  // minimum scaling factor
@@ -152,7 +159,14 @@ class ScatterChartThree extends React.PureComponent {
         }
         const pos = new Vector3();
         let cameraSpacePos = new Vector4();
-        const modelViewMatrix = camera.modelViewMatrix.clone();
+        // vec4 cameraSpacePos = modelViewMatrix * vec4(position, 1.0);
+        // Project vertex in camera-space to screen coordinates using the camera's
+        // projection matrix.
+        // gl_Position = projectionMatrix * cameraSpacePos;
+
+        let object = this.scatterPlot.visualizers.get('SPRITES').points;
+        let modelViewMatrix = object.modelViewMatrix.clone();
+        modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         let gl_PointSize = (outputPointSize * scaleFactor) / 4;
         for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
             const isSelected = selection.size === 0 || selection.has(i);
@@ -160,25 +174,33 @@ class ScatterChartThree extends React.PureComponent {
             pos.y = positions[k + 1];
             pos.z = positions[k + 2];
             pos.project(camera);
+
+            let r = colors[j];
+            let g = colors[j + 1];
+            let b = colors[j + 2];
+            let a = isSelected ? markerOpacity : unselectedMarkerOpacity;
             if (is3d) {
-                cameraSpacePos.x = pos.x;
-                cameraSpacePos.y = pos.y;
-                cameraSpacePos.z = pos.z;
+                cameraSpacePos.x = positions[k];
+                cameraSpacePos.y = positions[k + 1];
+                cameraSpacePos.z = positions[k + 2];
                 cameraSpacePos.w = 1;
-                cameraSpacePos = cameraSpacePos.applyMatrix4(camera.modelViewMatrix);
+                cameraSpacePos.applyMatrix4(modelViewMatrix);
                 outputPointSize = -pointSize / cameraSpacePos.z;
-                // const fogDepth = pointSize / outputPointSize * 1.2;
+                const fogDepth = pointSize / outputPointSize * 1.2;
                 gl_PointSize = (outputPointSize * scaleFactor) / 4;
+                const fogFactor = smoothstep(fog.near, fog.far, fogDepth);
+                r = mix(r, fog.color.r, fogFactor);
+                g = mix(g, fog.color.g, fogFactor);
+                b = mix(b, fog.color.b, fogFactor);
             }
             pos.x = (pos.x * widthHalf) + widthHalf;
             pos.y = -(pos.y * heightHalf) + heightHalf;
-            // float fogFactor = smoothstep( fogNear, fogFar, fogDepth );
-            // gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
-            const r = Math.round(colorScale(colors[j]));
-            const g = Math.round(colorScale(colors[j + 1]));
-            const b = Math.round(colorScale(colors[j + 2]));
-            const alpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
-            context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+
+            r = Math.round(colorScale(r));
+            g = Math.round(colorScale(g));
+            b = Math.round(colorScale(b));
+
+            context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
             context.beginPath();
 
             context.arc(pos.x, pos.y, gl_PointSize, 0, PI2);
