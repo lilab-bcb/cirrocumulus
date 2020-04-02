@@ -4,24 +4,11 @@ import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
+import {updateScatterChart} from './ScatterChartThree';
 
 
 function snapshot(scatterPlot, traceInfo, markerOpacity, unselectedMarkerOpacity, selection) {
-    const colors = traceInfo.colors;
-    for (let i = 0, j = 3, n = traceInfo.npoints; i < n; i++, j += 4) {
-        const isSelected = selection.size === 0 || selection.has(i);
-        colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
-    }
-    scatterPlot.setPointColors(colors);
-    scatterPlot.setPointPositions(traceInfo.positions);
-    scatterPlot.setDimensions(traceInfo.dimensions);
-    const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
-
-    const scale = new Float32Array(traceInfo.npoints);
-    scale.fill(scaleDefault);
-    scatterPlot.setPointScaleFactors(scale);
-    scatterPlot.render();
-
+    updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, 1);
 }
 
 
