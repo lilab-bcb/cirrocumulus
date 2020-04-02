@@ -70,7 +70,9 @@ class SimpleData:
             else:
                 obs.append(key)
         images = adata.uns['images'] if 'images' in adata.uns else None
-        result['var'] = adata.var_names.values.tolist()
+
+        result['var'] = list(
+            sorted(adata.var_names.values, key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
         result['obs'] = obs
         result['obsCat'] = obs_cat
         result['shape'] = adata.shape

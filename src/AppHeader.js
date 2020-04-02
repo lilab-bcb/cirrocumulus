@@ -124,19 +124,17 @@ class AppHeader extends React.PureComponent {
 
     copyLink = (event) => {
 
-        const {dataset, embeddings, features, groupBy, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
             dataset: dataset.id,
             embeddings: embeddings
         };
-        if (features.length > 0) {
-            json.features = features;
+        if (searchTokens.length > 0) {
+            json.q = searchTokens;
         }
-        if (groupBy.length > 0) {
-            json.groupBy = groupBy;
-        }
+
 
         let datasetFilterJson = {};
         for (let key in datasetFilter) {
@@ -351,9 +349,9 @@ class AppHeader extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
-        features: state.features,
+
         embeddings: state.embeddings,
-        groupBy: state.groupBy,
+        searchTokens: state.searchTokens,
         binSummary: state.binSummary,
         binValues: state.binValues,
         combineDatasetFilters: state.combineDatasetFilters,

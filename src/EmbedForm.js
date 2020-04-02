@@ -41,23 +41,34 @@ import {
     setBinValues,
     setCombineDatasetFilters,
     setDialog,
-    setFeatures,
     setInterpolator,
     setMarkerOpacity,
     setMarkerOpacityUI,
     setNumberOfBins,
     setNumberOfBinsUI,
     setPointSize,
+    setSearchTokens,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
     setUnselectedMarkerOpacityUI
 } from './actions';
-
-import AutocompleteSelect from './AutocompleteSelect';
+import AutocompleteVirtualized from './AutocompleteVirtualized';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ColorSchemeSelector from './ColorSchemeSelector';
+import {splitSearchTokens} from './util';
 
+const pointSizeTicks = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
+    value: 0.75,
+    label: '75%'
+}, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
+    value: 3,
+    label: '300%'
+}, {value: 4, label: '400%'}];
+const summaryOptions = [
+    {value: 'max', label: 'Maximum'},
+    {value: 'mean', label: 'Mean'},
+    {value: 'sum', label: 'Sum'}];
 const styles = theme => ({
     root: {
         display: 'flex',
@@ -135,6 +146,15 @@ class EmbedForm extends React.PureComponent {
     onPointSizeChange = (event) => {
         this.props.handlePointSize(event.target.value);
     };
+
+    onFeaturesChange = (event, value) => {
+        this.props.handleSearchTokens(value, true);
+    };
+
+    onObservationsChange = (event, value) => {
+        this.props.handleSearchTokens(value, false);
+    };
+
 
     onMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -253,7 +273,7 @@ class EmbedForm extends React.PureComponent {
     render() {
         const {
             numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
-            features, groupBy, markerOpacity, datasetFilter, datasetFilters,
+            searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize, combineDatasetFilters
         } = this.props;
@@ -272,13 +292,7 @@ class EmbedForm extends React.PureComponent {
         if (isBrushing) {
             datasetFilterKeys.push('selection');
         }
-        const pointSizeTicks = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
-            value: 0.75,
-            label: '75%'
-        }, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
-            value: 3,
-            label: '300%'
-        }, {value: 4, label: '400%'}];
+
         // for filters we only need one embedding trace per feature
         const traceNames = new Set();
         const filterTraces = [];
@@ -292,44 +306,21 @@ class EmbedForm extends React.PureComponent {
         if (savedDatasetFilter == null) {
             savedDatasetFilter = {};
         }
-        const availableFeatures = dataset == null ? [] : dataset.features;
+        const splitTokens = splitSearchTokens(searchTokens);
+        const featureOptions = dataset == null ? [] : dataset.features;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
-        const summaryOptions = [
-            {value: 'max', label: 'Maximum'},
-            {value: 'mean', label: 'Mean'},
-            {value: 'sum', label: 'Sum'}];
-        let featureValue = features.concat(groupBy);
-        featureValue = featureValue.map(item => {
-            return {label: item, value: item};
-        });
-        let metadataOptions = obs.map(item => {
-            return {label: item, value: item};
-        });
-        metadataOptions = metadataOptions.concat(obsCat.map(item => {
-            return {label: item, value: item, categorical: true};
-        }));
-        metadataOptions.sort((a, b) => {
-            a = a.label.toLowerCase();
-            b = b.label.toLowerCase();
+
+        let annotationOptions = obs.concat(obsCat);
+        annotationOptions.sort((a, b) => {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
             return a < b ? -1 : (a == b ? 0 : 1);
         });
 
-        let allOptions = [{label: 'Annotations', options: metadataOptions}, {
-            label: 'Variables',
-            options: availableFeatures.map(item => {
-                return {label: item, value: item};
-            })
-        }];
-        let defaultOptions = [{
-            label: 'Annotations', options: metadataOptions
-        }, {
-            label: 'Variables',
-            options: [{isDisabled: true, label: 'Type to search', value: ''}]
-        }];
 
         return (
             <div className={classes.root}>
@@ -353,12 +344,27 @@ class EmbedForm extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
-                <FormControl className={classes.formControl} style={{zIndex: 2000}}>
-                    <AutocompleteSelect label="Features" options={allOptions}
-                                        defaultOptions={defaultOptions} value={featureValue}
-                                        onChange={this.props.handleFeatures}
-                                        helperText={'Enter or paste list'}
-                                        isMulti={true}/>
+                <FormControl className={classes.formControl}>
+
+                    {/*<AutocompleteSelect label="Features" options={allOptions}*/}
+                    {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
+                    {/*                    onChange={this.props.handleFeatures}*/}
+                    {/*                    helperText={'Enter or paste list'}*/}
+                    {/*                    isMulti={true}/>*/}
+                    <AutocompleteVirtualized label={"Features"} options={featureOptions} value={splitTokens.X}
+                                             onChange={this.onFeaturesChange}/>
+                </FormControl>
+
+                <FormControl className={classes.formControl}>
+
+                    {/*<AutocompleteSelect label="Features" options={allOptions}*/}
+                    {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
+                    {/*                    onChange={this.props.handleFeatures}*/}
+                    {/*                    helperText={'Enter or paste list'}*/}
+                    {/*                    isMulti={true}/>*/}
+                    <AutocompleteVirtualized label={"Observations"} options={annotationOptions}
+                                             value={splitTokens.obs.concat(splitTokens.obsCat)}
+                                             onChange={this.onObservationsChange}/>
                 </FormControl>
 
                 <ExpansionPanel defaultExpanded>
@@ -607,10 +613,8 @@ const mapStateToProps = state => {
         pointSize: state.pointSize,
         savedDatasetFilter: state.savedDatasetFilter,
         embeddings: state.embeddings,
-        features: state.features,
-        groupBy: state.groupBy,
+        searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
-        unselectedMarkerSize: state.unselectedMarkerSizeUI,
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
         datasetFilters: state.datasetFilters
@@ -679,8 +683,8 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleBinValues: value => {
             dispatch(setBinValues(value));
         },
-        handleFeatures: value => {
-            dispatch(setFeatures(value == null ? [] : value));
+        handleSearchTokens: (value, isX) => {
+            dispatch(setSearchTokens(value == null ? [] : value, isX));
         },
         handleOpenDatasetFilter: value => {
             dispatch(openDatasetFilter(value));

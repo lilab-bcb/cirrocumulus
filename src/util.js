@@ -191,103 +191,103 @@ export function getInterpolator(name) {
     return scaleChromatic[fixInterpolatorName(name)];
 }
 
-class PlotUtil {
-
-
-    static convertPointsToBins(points, allBins) {
-        let bins = [];
-        for (let i = 0, n = points.length; i < n; i++) {
-            bins.push(allBins[points[i]]);
-        }
-        return bins;
+export function convertPointsToBins(points, allBins) {
+    let bins = [];
+    for (let i = 0, n = points.length; i < n; i++) {
+        bins.push(allBins[points[i]]);
     }
-
-    static convertBinsToPoints(bins, selectedBins) {
-        let points = [];
-        let binIndex = 0;
-
-        for (let i = 0, n = bins.length; i < n; i++) {
-            if (bins[i] === selectedBins[binIndex]) {
-                points.push(i);
-                binIndex++;
-            }
-        }
-
-        // selectedBins = new Set(selectedBins);
-        // for (let i = 0, n = bins.length; i < n; i++) {
-        //     if (selectedBins.has(bins[i])) {
-        //         points.push(i);
-        //     }
-        // }
-
-        return points;
-    }
-
-    static createPlotConfig() {
-        return {
-            showLink: false,
-            responsive: false,
-            displaylogo: false,
-            scrollZoom: false,
-            displayModeBar: true,
-            modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud']
-        };
-    }
-
-    static createDotPlotConfig() {
-        return {
-            showLink: false,
-            scrollZoom: false,
-            responsive: false,
-            displaylogo: false,
-            displayModeBar: true,
-            modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
-        };
-    }
-
-
-    static createDotPlotAxis() {
-        return {
-            showbackground: false,
-            autorange: false,
-            fixedrange: true,
-            showgrid: true,
-            zeroline: false,
-            showline: false,
-            title: '',
-            // type: 'category'
-            autotick: false
-        };
-    }
-
-    static createDotPlotLayout(options) {
-        let {width, height} = options;
-        let layout = {
-            hovermode: 'closest',
-            dragmode: 'select',
-            width: width,
-            height: height,
-            margin: {
-                l: 0,
-                b: 0,
-                r: 0,
-                t: 0,
-                autoexpand: false
-            },
-            fixedrange: true,
-            legend: {yanchor: 'top'},
-            autosize: true,
-            displaylogo: false,
-            showlegend: false,
-            font: {
-                family: 'Roboto Condensed,Helvetica,Arial,sans-serif'
-            }
-        };
-
-        layout.xaxis = PlotUtil.createDotPlotAxis();
-        layout.yaxis = PlotUtil.createDotPlotAxis();
-        return layout;
-    }
+    return bins;
 }
 
-export default PlotUtil;
+export function convertBinsToPoints(bins, selectedBins) {
+    let points = [];
+    let binIndex = 0;
+
+    for (let i = 0, n = bins.length; i < n; i++) {
+        if (bins[i] === selectedBins[binIndex]) {
+            points.push(i);
+            binIndex++;
+        }
+    }
+
+    // selectedBins = new Set(selectedBins);
+    // for (let i = 0, n = bins.length; i < n; i++) {
+    //     if (selectedBins.has(bins[i])) {
+    //         points.push(i);
+    //     }
+    // }
+
+    return points;
+}
+
+
+export function createDotPlotConfig() {
+    return {
+        showLink: false,
+        scrollZoom: false,
+        responsive: false,
+        displaylogo: false,
+        displayModeBar: true,
+        modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+    };
+}
+
+
+export function createDotPlotAxis() {
+    return {
+        showbackground: false,
+        autorange: false,
+        fixedrange: true,
+        showgrid: true,
+        zeroline: false,
+        showline: false,
+        title: '',
+        // type: 'category'
+        autotick: false
+    };
+}
+
+export function createDotPlotLayout(options) {
+    let {width, height} = options;
+    let layout = {
+        hovermode: 'closest',
+        dragmode: 'select',
+        width: width,
+        height: height,
+        margin: {
+            l: 0,
+            b: 0,
+            r: 0,
+            t: 0,
+            autoexpand: false
+        },
+        fixedrange: true,
+        legend: {yanchor: 'top'},
+        autosize: true,
+        displaylogo: false,
+        showlegend: false,
+        font: {
+            family: 'Roboto Condensed,Helvetica,Arial,sans-serif'
+        }
+    };
+
+    layout.xaxis = createDotPlotAxis();
+    layout.yaxis = createDotPlotAxis();
+    return layout;
+}
+
+export function splitSearchTokens(tokens) {
+    let X = [];
+    let obs = [];
+    let obsCat = [];
+    tokens.forEach(token => {
+        if (token.type === 'X') {
+            X.push(token.value);
+        } else if (token.type === 'obs') {
+            obs.push(token.value);
+        } else {
+            obsCat.push(token.value);
+        }
+    });
+    return {X: X, obs: obs, obsCat: obsCat};
+}

@@ -10,7 +10,8 @@ import React from 'react';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
-import PlotUtil from './PlotUtil';
+import {createDotPlotConfig, createDotPlotLayout} from './util';
+
 import SizeLegend from './SizeLegend';
 
 const Plot = createPlotlyComponent(window.Plotly);
@@ -138,7 +139,7 @@ class DotPlot extends React.PureComponent {
             traces.push(trace);
         });
 
-        let config = PlotUtil.createDotPlotConfig();
+        let config = createDotPlotConfig();
         let maxFeatureLength = 0;
         features.forEach(value => {
             maxFeatureLength = Math.max(maxFeatureLength, value.length);
@@ -150,7 +151,7 @@ class DotPlot extends React.PureComponent {
         });
         const maxFeatureWidth = maxFeatureLength * 9;
         const maxCategoryWidth = maxCategoryLength * 9;
-        let layout = PlotUtil.createDotPlotLayout({
+        let layout = createDotPlotLayout({
             height: 80 + maxCategoryWidth + features.length * (maxDiameter + 1),
             width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
         });

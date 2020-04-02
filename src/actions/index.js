@@ -3,8 +3,15 @@ import {schemeCategory10} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
-import PlotUtil, {CATEGORY_20B, CATEGORY_20C, getInterpolator, updateTraceColors} from '../PlotUtil';
 import {getPositions} from '../ThreeUtil';
+import {
+    CATEGORY_20B,
+    CATEGORY_20C,
+    convertBinsToPoints,
+    getInterpolator,
+    splitSearchTokens,
+    updateTraceColors
+} from '../util';
 
 //export const API = 'http://localhost:5000/api';
 export const API = '/api';
@@ -42,9 +49,8 @@ export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 export const SET_SELECTION = 'SET_SELECTION';
 export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
 export const SET_SAVED_DATASET_FILTER = 'SET_SAVED_DATASET_FILTER';
-export const SET_FEATURES = 'SET_FEATURES';
-export const SET_FEATURES_UI = 'SET_FEATURES_UI';
-export const SET_GROUP_BY = 'SET_GROUP_BY';
+export const SET_SEARCH_TOKENS = 'SET_SEARCH_TOKENS';
+
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_NUMBER_OF_BINS = 'SET_NUMBER_OF_BINS';
 export const SET_BIN_VALUES = 'SET_BIN_VALUES';
@@ -468,20 +474,16 @@ function handleFilterUpdated() {
         dispatch(_setLoading(true));
         // whenever filter is updated, we need to get selection statistics
         const state = getState();
-        const obs = state.dataset.obs;
+
+        const searchTokens = splitSearchTokens(state.searchTokens);
         let filter = getFilterJson(state);
 
         let json = {
             id: state.dataset.id,
-            measures: state.features.slice(),
-            dimensions: state.groupBy,
+            measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
+            dimensions: searchTokens.obsCat,
         };
-        for (let i = 0; i < json.measures.length; i++) {
-            let feature = json.measures[i];
-            if (obs.indexOf(feature) !== -1) {
-                json.measures[i] = 'obs/' + feature;
-            }
-        }
+
         if (filter) {
             json.filter = filter;
         }
@@ -530,7 +532,7 @@ function handleFilterUpdated() {
                             if (fullName === key) {
                                 const traceBins = state.embeddingData[i].bins;
                                 if (traceBins != null) {
-                                    selectedPoints = PlotUtil.convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                                    selectedPoints = convertBinsToPoints(traceBins, selectedIndicesOrBins);
                                     break;
                                 }
                             }
@@ -790,7 +792,7 @@ function _loadSavedView() {
             dispatch(setDataset(savedView.dataset, false, false))
                 .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
                 .then(() => dispatch(restoreView(savedView)))
-                .then(() => dispatch(_updateCharts({dotplot: true})))
+                .then(() => dispatch(_updateCharts()))
                 .then(() => dispatch(handleFilterUpdated()))
                 .then(() => {
                     if (savedView.sort != null) {
@@ -995,70 +997,34 @@ function _setEmail(payload) {
 }
 
 
-export function setFeatures(payload) {
-    const value = payload;
+export function setSearchTokens(value, isX) {
     return function (dispatch, getState) {
         const state = getState();
-        const obsCat = state.dataset.obsCat;
-        const priorFeatures = state.features;
-        const priorGroupBy = state.groupBy;
-        const features = [];
-        const groupBy = [];
-        value.forEach(val => {
-            if (obsCat.indexOf(val) !== -1) {
-                groupBy.push(val);
-            } else {
-                features.push(val);
-            }
-        });
 
-        if (features.length !== priorFeatures.length) {
-            dispatch(_setFeatures(features));
+        let searchTokens = state.searchTokens;
+        searchTokens = isX ? searchTokens.filter(item => item.type !== 'X') : searchTokens.filter(item => item.type === 'X');
+        if (isX) {
+            searchTokens = searchTokens.concat(value.map(item => {
+                return {value: item, type: 'X'};
+            }));
+        } else {
+            const obsCat = state.dataset.obsCat;
+            value.forEach(val => {
+                const type = obsCat.indexOf(val) !== -1 ? 'obsCat' : 'obs';
+                searchTokens.push({value: val, type: type});
+            });
         }
-        if (groupBy.length !== priorGroupBy.length) {
-            dispatch(_setGroupBy(groupBy));
-        }
+        dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
+        dispatch(_updateCharts());
     };
 }
 
-
-function _setFeatures(payload) {
-
-    return function (dispatch, getState) {
-        let prior = getState().features;
-        dispatch({type: SET_FEATURES, payload: payload});
-        dispatch(_updateCharts({dotplot: true}, err => {
-            dispatch({type: SET_FEATURES, payload: prior});
-        }));
-    };
-}
-
-function _setGroupBy(payload) {
-    return function (dispatch, getState) {
-        let prior = getState().groupBy; // in case of error, restore
-        // let datasetFilter = getState().datasetFilter;
-        // let categoricalFilterChanged = false;
-        // for (let key in datasetFilter) {
-        //     if (payload.indexOf(key) === -1) {
-        //         delete datasetFilter[key];
-        //         categoricalFilterChanged = true;
-        //     }
-        // }
-        // if (categoricalFilterChanged) {
-        //     dispatch({type: SET_DATASET_FILTER, payload: datasetFilter});
-        // }
-        dispatch({type: SET_GROUP_BY, payload: payload}); // updated choices
-        dispatch(_updateCharts({dotplot: true}, err => {
-            dispatch({type: SET_GROUP_BY, payload: prior});
-        }));
-    };
-}
 
 export function setSelectedEmbedding(payload) {
     return function (dispatch, getState) {
         let prior = getState().embeddings;
         dispatch({type: SET_SELECTED_EMBEDDING, payload: payload});
-        dispatch(_updateCharts({}, err => {
+        dispatch(_updateCharts(err => {
             dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
         }));
     };
@@ -1167,51 +1133,28 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 }
 
 
-// dot plot depends on features, groupBy
-// embedding chart depends on groupBy, features, embedding (also markerSize, colorScale which don't require API
-// call). Also need to updated embedding when selection changes.
-/**
- *
- * @param sliceOptions.dotplot
- */
-function _updateCharts(sliceOptions, onError) {
+function _updateCharts(onError) {
     return function (dispatch, getState) {
         const state = getState();
         if (state.dataset == null) {
             return;
         }
         dispatch(_setLoading(true));
-        let continuousFeatures = state.features;
-        const categoricalFeatures = state.groupBy;
 
-        if (continuousFeatures.length === 0 && categoricalFeatures.length === 0) {
-            continuousFeatures = ['__count'];
+        const searchTokens = splitSearchTokens(state.searchTokens);
+        let dotplot = searchTokens.X.length > 0 && searchTokens.obsCat.length > 0;
+        if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0) {
+            searchTokens.X = ['__count'];
         }
-
-
-        const obs = state.dataset.obs;
         const embeddings = state.embeddings;
-        if (sliceOptions.dotplot && continuousFeatures.length === 0) {
-            sliceOptions.dotplot = false;
-        }
-
-        const obsCat = state.dataset.obsCat;
         const dotPlotData = state.dotPlotData;
         let embeddingData = state.embeddingData;
-
         const globalFeatureSummary = state.globalFeatureSummary;
-        if (sliceOptions.clear) {
-            embeddingData = [];
-        }
-
         let embeddingToVisibleFeatures = {};
         embeddings.forEach(selectedEmbedding => {
             let embeddingKey = getEmbeddingKey(selectedEmbedding);
             let features = {};
-            continuousFeatures.forEach(feature => {
-                features[feature] = true;
-            });
-            categoricalFeatures.forEach(feature => {
+            searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).forEach(feature => {
                 features[feature] = true;
             });
             embeddingToVisibleFeatures[embeddingKey] = features;
@@ -1233,18 +1176,17 @@ function _updateCharts(sliceOptions, onError) {
         let dotplotMeasures = [];
         let dotplotDimensions = [];
         let dotPlotKeys = {}; // category-feature
-        if (sliceOptions.dotplot) {
+        if (dotplot) {
             let cachedDotPlotKeys = {};
             dotPlotData.forEach(dotPlotDataItem => {
                 dotPlotDataItem.values.forEach(datum => {
                     cachedDotPlotKeys[dotPlotDataItem.name + '-' + datum.name] = true;
                 });
             });
-            categoricalFeatures.forEach(category => {
+            searchTokens.obsCat.forEach(category => {
                 let added = false;
-                continuousFeatures.forEach(feature => {
-                    let isObs = obs.indexOf(feature) !== -1 && feature !== '__count';
-                    if (!isObs) {
+                searchTokens.X.forEach(feature => {
+                    if (feature !== '__count') {
                         let key = category + '-' + feature;
                         dotPlotKeys[key] = true;
                         if (cachedDotPlotKeys[key] == null) {
@@ -1267,9 +1209,9 @@ function _updateCharts(sliceOptions, onError) {
             let measures = [];
             let dimensions = [];
             for (let feature in visibleFeatures) {
-                if (obs.indexOf(feature) !== -1) { // continuous obs
+                if (searchTokens.obs.indexOf(feature) !== -1) { // continuous obs
                     measures.push('obs/' + feature);
-                } else if (obsCat.indexOf(feature) !== -1) { // categorical obs
+                } else if (searchTokens.obsCat.indexOf(feature) !== -1) { // categorical obs
                     dimensions.push(feature);
                 } else {
                     measures.push(feature); // X
@@ -1296,7 +1238,7 @@ function _updateCharts(sliceOptions, onError) {
         let selectionSummaryDimensions = [];
         const featureSummary = state.featureSummary;
         let globalFeatureSummaryDimensions = [];
-        categoricalFeatures.forEach(feature => {
+        searchTokens.obsCat.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryDimensions.push(feature);
             }
@@ -1305,16 +1247,27 @@ function _updateCharts(sliceOptions, onError) {
             }
         });
         let globalFeatureSummaryMeasures = [];
-        continuousFeatures.forEach(feature => {
+        searchTokens.X.forEach(feature => {
             if (feature !== '__count') {
-                let isObs = obs.indexOf(feature) !== -1;
+
                 if (globalFeatureSummary[feature] == null) {
-                    globalFeatureSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
+                    globalFeatureSummaryMeasures.push(feature);
                 }
                 if (featureSummary[feature] == null) {
-                    selectionSummaryMeasures.push(isObs ? 'obs/' + feature : feature);
+                    selectionSummaryMeasures.push(feature);
                 }
             }
+        });
+        searchTokens.obs.forEach(feature => {
+
+
+            if (globalFeatureSummary[feature] == null) {
+                globalFeatureSummaryMeasures.push('obs/' + feature);
+            }
+            if (featureSummary[feature] == null) {
+                selectionSummaryMeasures.push('obs/' + feature);
+            }
+
         });
 
 
@@ -1341,7 +1294,7 @@ function _updateCharts(sliceOptions, onError) {
 
         function updateActiveDotPlotItems() {
             dotPlotData.forEach((dotPlotDataItem, dotPlotDataItemIndex) => {
-                let active = categoricalFeatures.indexOf(dotPlotDataItem.name) !== -1;
+                let active = searchTokens.obsCat.indexOf(dotPlotDataItem.name) !== -1;
                 dotPlotDataItem.active = active;
                 if (active) {
                     let oneActiveFeature = false;

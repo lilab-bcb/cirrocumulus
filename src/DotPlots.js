@@ -9,8 +9,7 @@ class DotPlots extends React.PureComponent {
     render() {
         const activeDotPlots = this.props.dotPlotData.filter(data => data.active);
         if (activeDotPlots.length === 0) {
-            return <h4>Please enter one or more categorical observations and one or more variables in the "Features"
-                search box.</h4>;
+            return <h4>Please enter one or more categorical observations and one or more features.</h4>;
         }
         return (<div>{activeDotPlots.map((data, i) => {
             return <DotPlot onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;

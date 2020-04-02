@@ -136,15 +136,13 @@ def get_compressed_vector(
     return data, indices, indptr
 
 
-class ZarrDataset(AbstractDataset):
+class ZarrDatasetBacked(AbstractDataset):
 
     def __init__(self):
         super().__init__()
 
-
     def get_suffixes(self):
         return ['zarr']
-
 
     def schema(self, file_system, path):
         store = zarr.open(file_system.get_mapper(path), 'r')

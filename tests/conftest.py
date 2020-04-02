@@ -6,7 +6,7 @@ import pytest
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.entity import Entity
-from cirrocumulus.zarr_dataset import ZarrDataset
+from cirrocumulus.zarr_dataset_backed import ZarrDatasetBacked
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -54,7 +54,7 @@ def h5_dataset_force_sparse(request):
 def dataset_api(h5_dataset_backed, h5_dataset_force_sparse):
     dataset_api = DatasetAPI()
     dataset_api.add(AnndataDataset(backed=h5_dataset_backed, force_sparse=h5_dataset_force_sparse, extensions=['h5ad']))
-    dataset_api.add(ZarrDataset())
+    dataset_api.add(ZarrDatasetBacked())
     return dataset_api
 
 

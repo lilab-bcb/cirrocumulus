@@ -45,12 +45,11 @@ class HelpDialog extends React.PureComponent {
                     Zoom: Mouse wheel.<br/>
                     <Divider/>
                     <Typography variant="h6">Gallery</Typography>
-                    Enter two or more features in the "Features" search box or select more than one embedding to show
-                    gallery plots.
-                    Drag and drop to reorder the plots. Click the feature name to make it the primary view.
+                    Enter two or more ids or select more than one embedding to show gallery plots.
+                    Drag and drop to reorder the plots. Click the id to make it the primary view.
                     <Divider/>
                     <Typography variant="h6">Dot Plot</Typography>
-                    Enter one or more categorical observations and one or more variables in the "Features" search box.
+                    Enter one or more categorical observations and one or more features.
                 </DialogContent>
 
             </Dialog>

@@ -9,7 +9,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {setInterpolator} from './actions';
 import ColorSchemeLegend from './ColorSchemeLegend';
-import {fixInterpolatorName, getInterpolator, interpolators} from "./PlotUtil";
+import {fixInterpolatorName, getInterpolator, interpolators} from "./util";
 
 const styles = theme => ({
     root: {

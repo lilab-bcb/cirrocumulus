@@ -313,7 +313,8 @@ class AutocompleteSelect extends React.Component {
         };
 
         return (
-            <div ref={this.div} className={classes.root} onPaste={this.onPaste}
+            <div ref={this.div} className={classes.root}
+                 onPaste={this.onPaste}
                  onDrop={this.onDrop}
                  onDragOver={this.onDragOver}
                  onDragEnd={this.onDragEnd}

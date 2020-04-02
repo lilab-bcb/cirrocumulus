@@ -7,7 +7,7 @@ import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {numberFormat} from './formatters';
-import {getChartSize, setClipboardData} from './PlotUtil';
+import {getChartSize, setClipboardData} from './util';
 import {createScatterPlot} from './ThreeUtil';
 
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize) {

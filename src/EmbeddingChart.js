@@ -11,7 +11,7 @@ import {
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
-import {getChartSize} from './PlotUtil';
+import {getChartSize} from './util';
 import ScatterChartThree from './ScatterChartThree';
 
 

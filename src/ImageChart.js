@@ -4,7 +4,7 @@ import {connect} from 'react-redux';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import {intFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
-import {arrayToSvgPath, isPointInside} from './PlotUtil';
+import {arrayToSvgPath, isPointInside} from './util';
 
 const OpenSeadragon = window.OpenSeadragon;
 

@@ -3,7 +3,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {getEmbeddingKey, getTraceKey} from './actions';
 import EmbeddingChart from './EmbeddingChart';
-import {getChartSize} from './PlotUtil';
+import {getChartSize} from './util';
 
 const emptySet = new Set();
 

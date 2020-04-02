@@ -1,6 +1,6 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites} from 'scatter-gl';
-import {getRgbScale} from './PlotUtil';
+import {getRgbScale} from './util';
 
 function scaleLinear(value, domain, range) {
     const domainDifference = domain[1] - domain[0];

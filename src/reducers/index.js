@@ -19,10 +19,7 @@ import {
     SET_EMAIL,
     SET_EMBEDDING_DATA,
     SET_FEATURE_SUMMARY,
-    SET_FEATURES,
-    SET_FEATURES_UI,
     SET_GLOBAL_FEATURE_SUMMARY,
-    SET_GROUP_BY,
     SET_INTERPOLATOR,
     SET_LOADING,
     SET_LOADING_APP,
@@ -33,6 +30,7 @@ import {
     SET_NUMBER_OF_BINS_UI,
     SET_POINT_SIZE,
     SET_PRIMARY_TRACE_KEY,
+    SET_SEARCH_TOKENS,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -42,7 +40,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {getInterpolator, updateTraceColors} from '../PlotUtil';
+import {getInterpolator, updateTraceColors} from '../util';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -56,42 +54,21 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     value: getInterpolator(DEFAULT_INTERPOLATOR)
 };
 
-function features(state = [], action) {
+
+/**
+ *
+ * @param state Array of value, type where type can be X, obs, or obsCat
+ * @param action
+ * @returns {*|*[]}
+ */
+function searchTokens(state = [], action) {
     switch (action.type) {
-        case SET_FEATURES:
+        case SET_SEARCH_TOKENS:
             return action.payload;
         case SET_DATASET:
             return [];
         case RESTORE_VIEW:
-            return action.payload.features || [];
-        default:
-            return state;
-    }
-}
-
-function featuresUI(state = [], action) {
-    switch (action.type) {
-        case SET_FEATURES:
-        case SET_FEATURES_UI:
-            return action.payload;
-        case SET_DATASET:
-            return [];
-        case RESTORE_VIEW:
-            return action.payload.features || [];
-        default:
-            return state;
-    }
-}
-
-
-function groupBy(state = [], action) {
-    switch (action.type) {
-        case SET_GROUP_BY:
-            return action.payload;
-        case SET_DATASET:
-            return [];
-        case RESTORE_VIEW:
-            return action.payload.groupBy || [];
+            return action.payload.q || [];
         default:
             return state;
     }
@@ -542,11 +519,8 @@ export default combineReducers({
     email,
     embeddingData,
     embeddings,
-    features,
     featureSummary,
-    featuresUI,
     globalFeatureSummary,
-    groupBy,
     interpolator,
     loading,
     loadingApp,
@@ -557,6 +531,7 @@ export default combineReducers({
     message,
     pointSize,
     primaryTraceKey,
+    searchTokens,
     selection,
     serverInfo,
     tab,
