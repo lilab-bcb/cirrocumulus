@@ -391,11 +391,11 @@ class EmbedForm extends React.PureComponent {
                             </div>
                             <div style={{marginBottom: 2}}>
 
-                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
                                         onClick={this.onDatasetFilterCleared}>Clear</Button>
-                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
                                         onClick={this.onDatasetFilterSaved}>Save</Button>
-                                <Button disabled={datasetFilterKeys.length === 0} size="small"
+                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
                                         onClick={this.handleSelectedCellsClick}>Export</Button>
                             </div>
                             <Divider/>

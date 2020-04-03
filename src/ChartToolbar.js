@@ -1,5 +1,7 @@
 import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 import withStyles from '@material-ui/core/styles/withStyles';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import PauseIcon from '@material-ui/icons/Pause';
@@ -31,6 +33,10 @@ const styles = theme => ({
 
 //"zoom" | "pan" | "select" | "lasso" | "orbit" | "turntable"
 class ChartToolbar extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        this.state = {saveImageEl: null};
+    }
 
 
     setDragMode = (mode) => {
@@ -40,12 +46,24 @@ class ChartToolbar extends React.PureComponent {
     setEditSelection = () => {
         this.props.onEditSelection();
     };
+    handleSaveImageMenu = (event) => {
+        console.log(event.currentTarget);
+        this.setState({saveImageEl: event.currentTarget});
+    };
+    handleSaveImageMenuClose = (event) => {
+        this.setState({saveImageEl: null});
+    };
 
+    handleSaveImage = (format) => {
+        this.setState({saveImageEl: null});
+        this.props.onSaveImage(format);
+    };
 
     render() {
         let active = 'cirro-active';
         let inactive = 'cirro-inactive';
         const {dragmode, editSelection} = this.props;
+        const {saveImageEl} = this.state;
         return (<div className={this.props.classes.root}>
             {/*<Tooltip title={"Lasso"}>*/}
             {/*    <IconButton className={dragmode === 'lasso' ? active : inactive}*/}
@@ -109,11 +127,24 @@ class ChartToolbar extends React.PureComponent {
             {/*    </svg>*/}
             {/*</IconButton>*/}
 
-            {<Tooltip title={"Save Image"}>
-                <IconButton edge={false} size={'small'} aria-label="Save Image" onClick={this.props.onSaveImage}>
+            <Tooltip title={"Save Image"}>
+                <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false} size={'small'}
+                            aria-label="Save Image" onClick={this.handleSaveImageMenu}>
                     <PhotoCameraIcon/>
                 </IconButton>
-            </Tooltip>}
+            </Tooltip>
+
+            <Menu
+                id="save-image-menu"
+                anchorEl={saveImageEl}
+                keepMounted
+                open={Boolean(saveImageEl)}
+                onClose={this.handleSaveImageMenuClose}
+            >
+                <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
+                <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
+
+            </Menu>
 
 
             {/*<Tooltip title={"Copy Image"}>*/}

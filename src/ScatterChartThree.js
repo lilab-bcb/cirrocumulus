@@ -7,8 +7,8 @@ import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {numberFormat} from './formatters';
-import {getChartSize, setClipboardData} from './util';
 import {createScatterPlot} from './ThreeUtil';
+import {getChartSize, setClipboardData} from './util';
 
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize) {
     const colors = traceInfo.colors;
@@ -90,31 +90,6 @@ class ScatterChartThree extends React.PureComponent {
 
     };
 
-    savePng() {
-
-        const size = this.chartSize;
-        const copy = document.createElement('canvas');
-        copy.width = size.width; // * window.devicePixelRatio;
-        copy.height = size.height; // * window.devicePixelRatio;
-        const context = copy.getContext('2d');
-        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        const canvas = this.containerElementRef.current.querySelector('canvas');
-
-        let img = new Image();
-        img.onload = () => {
-            context.drawImage(img, 0, 0);
-            let name = this.props.traceInfo.name;
-            if (name === '__count') {
-                name = 'count';
-            }
-            copy.toBlob(blob => {
-                window.saveAs(blob, name + '.png', true);
-            }, 'image/png');
-        };
-        img.src = canvas.toDataURL();
-
-
-    }
 
     calculatePointSize(traceInfo) {
         const n = traceInfo.npoints;
@@ -209,6 +184,26 @@ class ScatterChartThree extends React.PureComponent {
         }
     }
 
+    savePng() {
+        const {traceInfo} = this.props;
+        const size = this.chartSize;
+        const canvas = document.createElement('canvas');
+        canvas.width = size.width; // * window.devicePixelRatio;
+        canvas.height = size.height; // * window.devicePixelRatio;
+        const context = canvas.getContext('2d');
+        this.drawContext(context, this.chartSize);
+        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        let name = traceInfo.name;
+        if (name === '__count') {
+            name = 'count';
+        }
+        canvas.toBlob(blob => {
+            window.saveAs(blob, name + '.png', true);
+        });
+
+
+    }
+
     saveSvg() {
         const {traceInfo} = this.props;
         let context = new window.C2S(this.chartSize.width, this.chartSize.height);
@@ -224,12 +219,16 @@ class ScatterChartThree extends React.PureComponent {
         window.saveAs(blob, name + '.svg');
     }
 
-    onSaveImage = () => {
+    onSaveImage = (format) => {
         // if (this.scatterPlot.orbitIsAnimating()) {
         //     this.scatterPlot.stopOrbitAnimation();
         //     this.setState({animating: false});
         // }
-        this.saveSvg();
+        if (format === 'svg') {
+            this.saveSvg();
+        } else {
+            this.savePng();
+        }
 
         // const renderer = new SVGRenderer();
         // document.body.appendChild(renderer.domElement);
