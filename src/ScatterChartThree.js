@@ -80,16 +80,6 @@ class ScatterChartThree extends React.PureComponent {
         // }
     }
 
-    onCopyImage = (event) => {
-        const canvas = this.containerElementRef.current.querySelector('canvas');
-        const url = canvas.toDataURL();
-        setClipboardData([{
-            format: 'text/html',
-            data: '<img src="' + url + '">'
-        }], true);
-
-    };
-
 
     calculatePointSize(traceInfo) {
         const n = traceInfo.npoints;
@@ -183,6 +173,21 @@ class ScatterChartThree extends React.PureComponent {
             context.fill();
         }
     }
+
+    onCopyImage = (event) => {
+        const size = this.chartSize;
+        const canvas = document.createElement('canvas');
+        canvas.width = size.width; // * window.devicePixelRatio;
+        canvas.height = size.height; // * window.devicePixelRatio;
+        const context = canvas.getContext('2d');
+        this.drawContext(context, this.chartSize);
+        const url = canvas.toDataURL();
+        setClipboardData([{
+            format: 'image/png',
+            data: '<img src="' + url + '">'
+        }]);
+
+    };
 
     savePng() {
         const {traceInfo} = this.props;
@@ -335,16 +340,6 @@ class ScatterChartThree extends React.PureComponent {
                     });
                 }
             };
-
-            // this.scatterGL = new ScatterGL(this.containerElementRef.current, {
-            //     renderMode: 'POINT',
-            //     rotateOnStart: false,
-            //     showLabelsOnHover: false,
-            //
-            //     onHover: (point) => {
-            //
-            //     }
-            // });
 
 
             const canvas = this.containerElementRef.current.querySelector('canvas');

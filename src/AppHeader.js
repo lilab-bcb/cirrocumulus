@@ -135,7 +135,6 @@ class AppHeader extends React.PureComponent {
             json.q = searchTokens;
         }
 
-
         let datasetFilterJson = {};
         for (let key in datasetFilter) {
             let value = datasetFilter[key];
@@ -169,26 +168,36 @@ class AppHeader extends React.PureComponent {
             json.colorScheme = interpolator.name;
         }
         linkText += '?q=' + JSON.stringify(json);
+        const container = document.activeElement;
         const fakeElem = document.createElement('textarea');
+        const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
         fakeElem.style.fontSize = '12pt';
         fakeElem.style.border = '0';
         fakeElem.style.padding = '0';
         fakeElem.style.margin = '0';
         // Move element out of screen horizontally
-
         fakeElem.style.position = 'absolute';
-        const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
-        fakeElem.style[isRTL ? 'right' : 'left'] = '-999999px';
-        // Move element to the same position vertically
-        fakeElem.style.top = (window.pageYOffset || document.documentElement.scrollTop) + 'px';
+        fakeElem.style[isRTL ? 'right' : 'left'] = '-9999px';
         fakeElem.setAttribute('readonly', '');
+        // Move element to the same position vertically
+        let yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        fakeElem.style.top = yPosition + 'px';
         fakeElem.value = linkText;
-        document.body.appendChild(fakeElem);
+        container.appendChild(fakeElem);
+
         fakeElem.select();
-        fakeElem.focus();
+        fakeElem.setSelectionRange(0, fakeElem.value.length);
+
         document.execCommand('copy');
-        document.body.removeChild(fakeElem);
+
+        const fakeHandlerCallback = (event) => {
+            document.activeElement.blur();
+            window.getSelection().removeAllRanges();
+            container.removeChild(fakeElem);
+            container.removeEventListener('click', fakeHandlerCallback);
+        };
         this.props.setMessage('Link copied');
+        container.addEventListener('click', fakeHandlerCallback);
         this.setState({moreMenuOpen: false});
 
     };

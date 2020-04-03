@@ -74,7 +74,8 @@ export function getChartSize() {
  *
  * @param array. Array of format,data
  */
-export function setClipboardData(clipboardData, delay) {
+export function setClipboardData(clipboardData) {
+    const container = document.activeElement;
     const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
     const fakeElem = document.createElement('div');
     fakeElem.contentEditable = true;
@@ -93,7 +94,8 @@ export function setClipboardData(clipboardData, delay) {
     fakeElem.style.top = (window.pageYOffset || document.documentElement.scrollTop) + 'px';
     fakeElem.setAttribute('readonly', '');
     //fakeElem.innerHTML = html;
-    const f = function (e) {
+    const copyListener = (e) => {
+
         clipboardData.forEach(function (elem) {
             e.clipboardData.setData(elem.format, elem.data);
         });
@@ -101,32 +103,23 @@ export function setClipboardData(clipboardData, delay) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        fakeElem.removeEventListener('copy', f);
+        fakeElem.removeEventListener('copy', copyListener);
     };
-    fakeElem.addEventListener('copy', f);
+    fakeElem.addEventListener('copy', copyListener);
 
-    document.body.appendChild(fakeElem);
-    // if (fakeElem.hasAttribute('contenteditable')) {
-    fakeElem.focus();
-    // }
+    container.appendChild(fakeElem);
+
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(fakeElem);
     selection.removeAllRanges();
     selection.addRange(range);
-    if (delay) {
-        setTimeout(function () {
-            if (!document.execCommand('copy')) {
-                console.log('copy failed');
-            }
-            document.body.removeChild(fakeElem);
-        }, 50);
-    } else {
-        if (!document.execCommand('copy')) {
-            console.log('copy failed');
-        }
-        document.body.removeChild(fakeElem);
-    }
+    const fakeHandlerCallback = (event) => {
+        container.removeChild(fakeElem);
+        container.removeEventListener('click', fakeHandlerCallback);
+    };
+    document.execCommand('copy');
+    container.addEventListener('click', fakeHandlerCallback);
 };
 
 export function updateTraceColors(traceInfo) {
