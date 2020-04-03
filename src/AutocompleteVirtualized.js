@@ -3,7 +3,7 @@ import ListSubheader from '@material-ui/core/ListSubheader';
 import {makeStyles, useTheme} from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
-import Autocomplete from '@material-ui/lab/Autocomplete';
+import Autocomplete, {createFilterOptions} from '@material-ui/lab/Autocomplete';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {VariableSizeList} from 'react-window';
@@ -163,10 +163,12 @@ export default function AutocompleteVirtualized(props) {
         showDragIndicator(false);
     };
 
+    const filterOptions = createFilterOptions({matchFrom: 'start'});
     return (
         <Autocomplete
             multiple
             ref={ref}
+            filterOptions={filterOptions}
             style={{width: 200}}
             disableListWrap
             classes={classes}

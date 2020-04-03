@@ -8,6 +8,7 @@ import {
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
     SET_CATEGORICAL_COLOR,
+    SET_CHART_SIZE,
     SET_COMBINE_DATASET_FILTERS,
     SET_DATASET,
     SET_DATASET_CHOICES,
@@ -54,6 +55,14 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     value: getInterpolator(DEFAULT_INTERPOLATOR)
 };
 
+function chartSize(state = 500, action) {
+    switch (action.type) {
+        case SET_CHART_SIZE:
+            return action.payload;
+        default:
+            return state;
+    }
+}
 
 /**
  *
@@ -509,6 +518,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
+    chartSize,
     combineDatasetFilters,
     datasetFilter,
     datasetFilters,

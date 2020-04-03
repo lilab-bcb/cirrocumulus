@@ -7,11 +7,6 @@ import {getEmbeddingKey} from './actions';
 import {updateScatterChart} from './ScatterChartThree';
 
 
-function snapshot(scatterPlot, traceInfo, markerOpacity, unselectedMarkerOpacity, selection) {
-    updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, 1);
-}
-
-
 class GalleryImage extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -21,27 +16,18 @@ class GalleryImage extends React.PureComponent {
 
     drawThree() {
         let start = new Date().getTime();
-        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color} = this.props;
+        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
 
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
 
+        updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize);
 
-        snapshot(scatterPlot, traceInfo, markerOpacity, unselectedMarkerOpacity, userPoints);
         const e1 = new Date().getTime() - start;
         const canvas = containerElement.querySelector('canvas');
-        // const _this = this;
-        // const copy = document.createElement('canvas');
-        // let size = {width: 400, height: 400};
-        // copy.width = size.width * window.devicePixelRatio;
-        // copy.style.width = size.width + 'px';
-        // copy.height = size.height * window.devicePixelRatio;
-        // copy.style.height = size.height + 'px';
-        // const context = copy.getContext('2d');
-        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        // context.drawImage(canvas, 0, 0, size.width, size.height);
+
         const url = canvas.toDataURL();
         console.log(traceInfo.name, e1, new Date().getTime() - start);
         this.setState({url: url});
@@ -88,7 +74,8 @@ class GalleryImage extends React.PureComponent {
                     <Link href="#"
                           onClick={this.onSelect}>{name}</Link>
                 </Typography>
-                <img alt="" src={this.state.url} style={{width: 400, height: 400}}/>
+                <img alt="" src={this.state.url}
+                     style={{width: this.props.chartSize, height: this.props.chartSize}}/>
             </CardContent>
         </Card>);
 

@@ -12,16 +12,16 @@ class GalleryCharts extends React.PureComponent {
     constructor(props) {
         super(props);
         const containerElement = document.createElement('div');
-        const size = 400;
         containerElement.style.position = 'absolute';
         containerElement.style.left = '-9999px';
-        containerElement.style.width = size + 'px';
-        containerElement.style.height = size + 'px';
+        containerElement.style.width = props.chartSize + 'px';
+        containerElement.style.height = props.chartSize + 'px';
         document.body.appendChild(containerElement);
         this.scatterPlot = createScatterPlot(containerElement);
         this.scatterPlot.interactive = false;
         this.containerElement = containerElement;
         this.emptySet = new Set();
+
     }
 
     onChartSelected = (traceInfo) => {
@@ -35,8 +35,16 @@ class GalleryCharts extends React.PureComponent {
         this.props.handleEmbeddingData(this.props.embeddingData.slice());
     };
 
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.chartSize !== this.props.chartSize) {
+            this.containerElement.style.width = this.props.chartSize + 'px';
+            this.containerElement.style.height = this.props.chartSize + 'px';
+            this.scatterPlot.resize(false);
+        }
+    }
+
     render() {
-        const {embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+        const {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, selection} = this.props;
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
 
         for (let i = 0; i < galleryTraces.length; i++) {
@@ -53,6 +61,8 @@ class GalleryCharts extends React.PureComponent {
             color={traceInfo.colors}
             scatterPlot={this.scatterPlot}
             markerOpacity={markerOpacity}
+            pointSize={pointSize}
+            chartSize={chartSize}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
             selection={selection}
             containerElement={this.containerElement}
@@ -61,7 +71,7 @@ class GalleryCharts extends React.PureComponent {
 
         const SortableList = sortableContainer(({items}) => {
             return (
-                <ul>
+                <ul style={{padding: 0}}>
                     {items.map((traceInfo, index) => (
                         <SortableItem key={getTraceKey(traceInfo)} index={index} traceInfo={traceInfo}/>
                     ))}
@@ -85,7 +95,9 @@ const mapStateToProps = state => {
         markerOpacity: state.markerOpacity,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         selection: state.selection,
-        primaryTraceKey: state.primaryTraceKey
+        primaryTraceKey: state.primaryTraceKey,
+        pointSize: state.pointSize,
+        chartSize: state.chartSize
     };
 };
 const mapDispatchToProps = dispatch => {

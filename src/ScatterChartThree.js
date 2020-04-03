@@ -54,7 +54,7 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.chartSize = getChartSize();
 
-        this.state = {animating: false, dragmode: 'select', editSelection: false};
+        this.state = {animating: false, dragmode: 'pan', editSelection: false};
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
         // });

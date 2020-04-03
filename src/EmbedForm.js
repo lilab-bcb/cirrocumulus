@@ -39,6 +39,7 @@ import {
     SAVE_DATASET_FILTER_DIALOG,
     setBinSummary,
     setBinValues,
+    setChartSize,
     setCombineDatasetFilters,
     setDialog,
     setInterpolator,
@@ -58,13 +59,17 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {splitSearchTokens} from './util';
 
-const pointSizeTicks = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
+const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
 }, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
     value: 3,
     label: '300%'
 }, {value: 4, label: '400%'}];
+const gallerySizeOptions = [{value: 400, label: 'Small'}, {value: 500, label: 'Medium'}, {
+    value: 600,
+    label: 'Large'
+}];
 const summaryOptions = [
     {value: 'max', label: 'Maximum'},
     {value: 'mean', label: 'Mean'},
@@ -198,6 +203,13 @@ class EmbedForm extends React.PureComponent {
         }
     };
 
+
+    onChartSizeChange = (event) => {
+        const value = event.target.value;
+        this.props.handleChartSize(value);
+
+    };
+
     onBinSummaryChange = (event) => {
         const value = event.target.value;
         this.props.handleBinSummary(value);
@@ -272,7 +284,7 @@ class EmbedForm extends React.PureComponent {
 
     render() {
         const {
-            numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
+            chartSize, numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize, combineDatasetFilters
@@ -455,8 +467,8 @@ class EmbedForm extends React.PureComponent {
 
                 <ExpansionPanel defaultExpanded>
                     <ExpansionPanelSummary
-                        aria-controls="chart-options-content"
-                        id="chart-options-header"
+                        aria-controls="view-options-content"
+                        id="view-options-header"
                     >
                         <div>View Options</div>
                     </ExpansionPanelSummary>
@@ -486,7 +498,7 @@ class EmbedForm extends React.PureComponent {
                                     onChange={this.onPointSizeChange}
                                     value={pointSize}
                                     multiple={false}>
-                                    {pointSizeTicks.map(item => (
+                                    {pointSizeOptions.map(item => (
                                         <MenuItem key={item.label} value={item.value}>
                                             <ListItemText primary={item.label}/>
                                         </MenuItem>
@@ -543,7 +555,21 @@ class EmbedForm extends React.PureComponent {
                                     ))}
                                 </Select>
                             </FormControl>}
-
+                            <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    input={<Input id="chart_size"/>}
+                                    onChange={this.onChartSizeChange}
+                                    value={chartSize}
+                                    multiple={false}>
+                                    {gallerySizeOptions.map(item => (
+                                        <MenuItem key={item.label} value={item.value}>
+                                            <ListItemText primary={item.label}/>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
                             <Divider/>
 
@@ -617,13 +643,17 @@ const mapStateToProps = state => {
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
-        datasetFilters: state.datasetFilters
+        datasetFilters: state.datasetFilters,
+        chartSize: state.chartSize
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {
     return {
         handleDialog: (value) => {
             dispatch(setDialog(value));
+        },
+        handleChartSize: (value) => {
+            dispatch(setChartSize(value));
         },
         handleCombineDatasetFilters: (value) => {
             dispatch(setCombineDatasetFilters(value));

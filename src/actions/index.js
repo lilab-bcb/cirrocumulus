@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -28,6 +28,7 @@ export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filte
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_PRIMARY_TRACE_KEY = 'SET_PRIMARY_TRACE_KEY';
+export const SET_CHART_SIZE = 'SET_CHART_SIZE';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
 export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
@@ -445,6 +446,10 @@ export function setCombineDatasetFilters(payload) {
         dispatch(_setCombineDatasetFilters(payload));
         dispatch(handleFilterUpdated());
     };
+}
+
+export function setChartSize(payload) {
+    return {type: SET_CHART_SIZE, payload: payload};
 }
 
 
