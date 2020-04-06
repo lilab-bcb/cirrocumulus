@@ -24,7 +24,7 @@ export function createScatterPlot(containerElement) {
     const visualizer = new ScatterPlotVisualizerSprites(styles);
     activeVisualizers.push(visualizer);
     scatterPlot.setActiveVisualizers(activeVisualizers);
-    scatterPlot.setInteractionMode('SELECT');
+    // scatterPlot.setInteractionMode('SELECT');
     return scatterPlot;
 }
 

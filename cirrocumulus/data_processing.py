@@ -37,36 +37,26 @@ def get_adata_filter(adata, data_filter):
                     if isinstance(p, dict):
                         # rectangle
                         if 'z' in p:  # 3d
-                            selection_keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
-                                    adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p[
-                                'width']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] >= p[
-                                                 'y']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] <= p[
-                                                 'y'] + p[
-                                                         'height']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][2]] >= p[
-                                                 'z']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][2]] <= p[
-                                                 'z'] + p[
-                                                         'depth'])
-                        elif 'x' in p:
-                            selection_keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
-                                    adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p[
-                                'width']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] >= p[
-                                                 'y']) & (
-                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] <= p[
-                                                 'y'] + p[
-                                                         'height'])
-                        else:  # list of points
-                            points = p['points']
-                            field = selected_points_basis['full_name'] if selected_points_basis[
-                                                                              'nbins'] is not None else 'index'
-                            if field == 'index':
-                                selection_keep = adata.obs.index.isin(points)
-                            else:
-                                selection_keep = adata.obs[field].isin(points)
+                            selection_keep = \
+                                (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
+                        else:
+                            selection_keep = \
+                                (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
+                    else:
+                        field = selected_points_basis['full_name'] if selected_points_basis[
+                                                                          'nbins'] is not None else 'index'
+                        if field == 'index':
+                            selection_keep = adata.obs.index.isin(p)
+                        else:
+                            selection_keep = adata.obs[field].isin(p)
                     keep = selection_keep | keep if keep is not None else selection_keep
 
             else:

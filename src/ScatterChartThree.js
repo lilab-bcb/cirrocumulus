@@ -8,7 +8,7 @@ import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {numberFormat} from './formatters';
 import {createScatterPlot} from './ThreeUtil';
-import {getChartSize, setClipboardData} from './util';
+import {getChartSize, isPointInside, setClipboardData} from './util';
 
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize) {
     const colors = traceInfo.colors;
@@ -264,7 +264,10 @@ class ScatterChartThree extends React.PureComponent {
         if (mode === 'pan') {
             this.scatterPlot.setInteractionMode('PAN');
         } else if (mode === 'select') {
-
+            this.scatterPlot.setInteractionMode('SELECT');
+            this.scatterPlot.rectangleSelector.setSelectionMode('BOX');
+        } else if (mode === 'lasso') {
+            this.scatterPlot.rectangleSelector.setSelectionMode('LASSO');
             this.scatterPlot.setInteractionMode('SELECT');
         }
         this.setState({dragmode: mode});
@@ -293,6 +296,39 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
             };
+            this.scatterPlot.lassoCallback = (points) => {
+                const traceInfo = this.props.traceInfo;
+                const positions = traceInfo.positions;
+                const camera = this.scatterPlot.camera;
+                const chartSize = this.chartSize;
+                const width = chartSize.width;
+                const height = chartSize.height;
+                const widthHalf = width / 2;
+                const heightHalf = height / 2;
+                const pos = new Vector3();
+                const selectedPoints = [];
+
+                for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                    pos.x = positions[k];
+                    pos.y = positions[k + 1];
+                    pos.z = positions[k + 2];
+                    pos.project(camera);
+                    pos.x = (pos.x * widthHalf) + widthHalf;
+                    pos.y = -(pos.y * heightHalf) + heightHalf;
+                    if (isPointInside(pos, points)) {
+                        selectedPoints.push(i);
+                    }
+                }
+                if (selectedPoints.length === 0) {
+                    this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+                } else {
+                    this.props.onSelected({
+                        name: getEmbeddingKey(traceInfo.embedding),
+                        clear: !this.state.editSelection,
+                        value: {basis: traceInfo.embedding, path: selectedPoints}
+                    });
+                }
+            };
             this.scatterPlot.selectCallback = (selectedpoints) => {
                 if (this.scatterPlot.interactionMode === 'PAN') {
                     return;
@@ -304,39 +340,56 @@ class ScatterChartThree extends React.PureComponent {
                 if (selectedpoints == null) {
                     this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
-
-                    let xmin = Number.MAX_VALUE;
-                    let ymin = Number.MAX_VALUE;
-                    let zmin = Number.MAX_VALUE;
-                    let xmax = -Number.MAX_VALUE;
-                    let ymax = -Number.MAX_VALUE;
-                    let zmax = -Number.MAX_VALUE;
-                    const is3d = traceInfo.dimensions === 3;
-                    selectedpoints.forEach(index => {
-                        const x = traceInfo.x[index];
-                        xmin = Math.min(xmin, x);
-                        xmax = Math.max(xmax, x);
-                        const y = traceInfo.y[index];
-                        ymin = Math.min(ymin, y);
-                        ymax = Math.max(ymax, y);
-                        if (is3d) {
-                            const z = traceInfo.z[index];
-                            zmin = Math.min(zmin, z);
-                            zmax = Math.max(zmax, z);
-                        }
-                    });
-
-
-                    let path = {shape: 'rect', x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
-                    if (is3d) {
-                        path.shape = 'rect 3d';
-                        path.z = zmin;
-                        path.depth = zmax - zmin;
-                    }
+                    // let xmin = Number.MAX_VALUE;
+                    // let ymin = Number.MAX_VALUE;
+                    // let zmin = Number.MAX_VALUE;
+                    // let xmax = -Number.MAX_VALUE;
+                    // let ymax = -Number.MAX_VALUE;
+                    // let zmax = -Number.MAX_VALUE;
+                    //
+                    // const is3d = traceInfo.dimensions === 3;
+                    // selectedpoints.forEach(index => {
+                    //     const x = traceInfo.x[index];
+                    //     xmin = Math.min(xmin, x);
+                    //     xmax = Math.max(xmax, x);
+                    //     const y = traceInfo.y[index];
+                    //     ymin = Math.min(ymin, y);
+                    //     ymax = Math.max(ymax, y);
+                    //     if (is3d) {
+                    //         const z = traceInfo.z[index];
+                    //         zmin = Math.min(zmin, z);
+                    //         zmax = Math.max(zmax, z);
+                    //     }
+                    // });
+                    //
+                    //
+                    // let path = {
+                    //     shape: 'rect',
+                    //     x: xmin,
+                    //     y: ymin,
+                    //     width: xmax - xmin,
+                    //     height: ymax - ymin
+                    // };
+                    // if (is3d) {
+                    //     path.shape = 'rect 3d';
+                    //     if (zmin > zmax) {
+                    //         const tmp = zmin;
+                    //         zmin = zmax;
+                    //         zmax = tmp;
+                    //     }
+                    //     path.z = zmin;
+                    //     path.depth = zmax - zmin;
+                    // }
+                    //
+                    // this.props.onSelected({
+                    //     name: getEmbeddingKey(traceInfo.embedding),
+                    //     clear: !this.state.editSelection,
+                    //     value: {basis: traceInfo.embedding, path: path}
+                    // });
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.state.editSelection,
-                        value: {basis: traceInfo.embedding, path: path}
+                        value: {basis: traceInfo.embedding, path: selectedpoints}
                     });
                 }
             };
