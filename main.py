@@ -26,9 +26,9 @@ try:
 except ModuleNotFoundError:
     pass
 try:
-    from cirrocumulus.zarr_dataset import ZarrDataset
+    from cirrocumulus.zarr_dataset_backed import ZarrDatasetBacked
 
-    dataset_api.add(ZarrDataset())
+    dataset_api.add(ZarrDatasetBacked())
 except ModuleNotFoundError:
     pass
 auth_api.provider = GoogleAuth()
@@ -38,5 +38,5 @@ if __name__ == '__main__':
     from flask_cors import CORS
 
     CORS(app)
+    app.run(host='127.0.0.1', port=5000, debug=True)
 
-    app.run(host='127.0.0.1', port=8080, debug=True)
