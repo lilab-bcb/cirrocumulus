@@ -1,5 +1,5 @@
 CacheControl==0.12.6
-Flask==1.1.1
+Flask==1.1.2
 fsspec==0.7.1
 gcsfs==0.6.1
 google-auth===1.11.0

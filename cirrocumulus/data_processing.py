@@ -7,57 +7,67 @@ from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
 def filter_adata(adata, data_filter):
+    keep_expr = get_adata_filter(adata, data_filter)
+    adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
+    return adata
+
+
+def get_adata_filter(adata, data_filter):
     import pandas as pd
     import scipy.sparse
+    keep_expr = None
     if data_filter is not None:
-        keep_expr = None
+
         user_filters = data_filter.get('filters', [])
         combine_filters = data_filter.get('combine', 'and')
         for filter_obj in user_filters:
             field = filter_obj[0]
             op = filter_obj[1]
             value = filter_obj[2]
-            if isinstance(field, dict):
+            if isinstance(field, dict):  # selection box
+                keep = None
                 selected_points_basis = get_basis(field['basis'], field.get('nbins'),
                     field.get('agg'), field.get('ndim', '2'), field.get('precomputed', False))
 
-                p = value['path']
-                if isinstance(p, dict):
-                    # rectangle
-                    if 'z' in p:
-                        keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
-                                adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
-                                   'height']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][2]] >= p['z']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p[
-                                   'depth'])
-                    else:
-                        # from matplotlib import path
-                        # p = path.Path([(p['x'], p['y']),
-                        #                (p['x'], p['y'] + p['height']),
-                        #                (p['x'] + p['width'], p['y'] + p['height']),
-                        #                (p['x'] + p['width'], p['y'])])
-                        # keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
-                        keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
-                                adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & (
-                                       adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
-                                   'height'])
-                else:
-                    from matplotlib import path
-                    p = path.Path(p)
-                    keep = p.contains_points(adata.obs[selected_points_basis['coordinate_columns']])
+                path = value['path']
+                if not isinstance(path, list):
+                    path = [path]
 
-                # obs_field = selected_points_basis['full_name'] if selected_points_basis[
-                #                                                       'nbins'] is not None else 'index'
-                # points = value['selectedpoints']
-                # if obs_field == 'index':
-                #     test = adata.obs.index.isin(points)
-                # else:
-                #     test = adata.obs[obs_field].isin(points)
-                # print((test != keep).sum())
+                for p in path:
+                    if isinstance(p, dict):
+                        # rectangle
+                        if 'z' in p:  # 3d
+                            selection_keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
+                                    adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p[
+                                'width']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] >= p[
+                                                 'y']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] <= p[
+                                                 'y'] + p[
+                                                         'height']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][2]] >= p[
+                                                 'z']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][2]] <= p[
+                                                 'z'] + p[
+                                                         'depth'])
+                        elif 'x' in p:
+                            selection_keep = (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & (
+                                    adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p[
+                                'width']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] >= p[
+                                                 'y']) & (
+                                                     adata.obs[selected_points_basis['coordinate_columns'][1]] <= p[
+                                                 'y'] + p[
+                                                         'height'])
+                        else:  # list of points
+                            points = p['points']
+                            field = selected_points_basis['full_name'] if selected_points_basis[
+                                                                              'nbins'] is not None else 'index'
+                            if field == 'index':
+                                selection_keep = adata.obs.index.isin(points)
+                            else:
+                                selection_keep = adata.obs[field].isin(points)
+                    keep = selection_keep | keep if keep is not None else selection_keep
 
             else:
                 if adata.obs is not None and field in adata.obs:
@@ -94,9 +104,7 @@ def filter_adata(adata, data_filter):
             else:
                 keep_expr = keep
 
-        adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
-
-    return adata
+    return keep_expr
 
 
 def precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimensions):
@@ -215,6 +223,13 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         result_df = result_df.join(df, rsuffix='r')
     result_df.fillna(False, inplace=True)
     return result_df.to_csv()
+
+
+def handle_diff_exp(dataset_api, dataset, data_filter=None):
+    adata_info = get_data(dataset_api, dataset, [], [], [], [data_filter])
+    adata = adata_info['adata']
+    mask = get_adata_filter(adata, data_filter)
+    return dataset_api.diff_exp(dataset, mask)
 
 
 def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):

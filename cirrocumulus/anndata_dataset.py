@@ -3,10 +3,12 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
+import cirrocumulus.diff_exp
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.simple_data import SimpleData
 
 
+# only works with local files
 class AnndataDataset(AbstractDataset):
 
     def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
@@ -16,7 +18,9 @@ class AnndataDataset(AbstractDataset):
         self.force_sparse = force_sparse
         self.extensions = extensions
 
-        # only works with local files
+    def diff_exp(self, fs_adapter, path, mask, dataset=None, schema=None):
+        adata = self.get_data(path)
+        return cirrocumulus.diff_exp.diff_exp(adata.X, mask)
 
     def get_suffixes(self):
         return self.extensions
