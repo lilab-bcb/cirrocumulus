@@ -11,8 +11,8 @@ import {
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
-import {getChartSize} from './util';
 import ScatterChartThree from './ScatterChartThree';
+import {getChartSize} from './util';
 
 
 class EmbeddingChart extends React.PureComponent {
@@ -67,6 +67,7 @@ class EmbeddingChart extends React.PureComponent {
                                    markerOpacity={this.props.markerOpacity}
                                    color={traceInfo.colors}
                                    onGallery={this.props.onGallery}
+                                   categories={traceInfo.continuous ? null : globalFeatureSummary[traceInfo.name].categories}
                                    unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
                 />}
 

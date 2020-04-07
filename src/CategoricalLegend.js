@@ -60,30 +60,7 @@ class CategoricalLegend extends React.PureComponent {
         }
     };
 
-    draw(context) {
-        const {scale, name, globalFeatureSummary} = this.props;
-        const globalDimensionSummary = globalFeatureSummary[name];
-        const categories = globalDimensionSummary.categories;
-        context.font = '14px Helvetica';
-        context.textAlign = 'left';
-        for (let i = 0; i < categories.length; i++) {
-            const category = categories[i];
-            context.fillStyle = scale(category);
-            context.fillRect(0, i * 12, 10, 10);
-            context.fillStyle = 'black';
-            context.fillText('' + category, 12, i * 12);
-        }
-    }
 
-    getSize(context) {
-        const {name, globalFeatureSummary} = this.props;
-        context.font = '14px Helvetica';
-        const globalDimensionSummary = globalFeatureSummary[name];
-        const categories = globalDimensionSummary.categories;
-        let maxWidth = context.measureText(name).width;
-        categories.forEach(value => maxWidth = Math.max(maxWidth, context.measureText(value).width));
-        return {width: maxWidth + 14, height: categories.length * 12};
-    }
 
     render() {
         const {scale, datasetFilter, name, featureSummary, maxHeight, globalFeatureSummary, nObs, nObsSelected} = this.props;

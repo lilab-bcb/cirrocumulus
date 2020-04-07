@@ -6,7 +6,9 @@ import React from 'react';
 import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
+import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
+import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
 import {createScatterPlot} from './ThreeUtil';
 import {getChartSize, isPointInside, setClipboardData} from './util';
 
@@ -189,58 +191,64 @@ class ScatterChartThree extends React.PureComponent {
 
     };
 
-    savePng() {
-        const {traceInfo} = this.props;
-        const size = this.chartSize;
-        const canvas = document.createElement('canvas');
-        canvas.width = size.width; // * window.devicePixelRatio;
-        canvas.height = size.height; // * window.devicePixelRatio;
-        const context = canvas.getContext('2d');
-        this.drawContext(context, this.chartSize);
-        // context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        let name = traceInfo.name;
-        if (name === '__count') {
-            name = 'count';
-        }
-        canvas.toBlob(blob => {
-            window.saveAs(blob, name + '.png', true);
-        });
-
-
-    }
-
-    saveSvg() {
-        const {traceInfo} = this.props;
-        let context = new window.C2S(this.chartSize.width, this.chartSize.height);
-        this.drawContext(context, this.chartSize);
-        let svg = context.getSerializedSvg();
-        let blob = new Blob([svg], {
-            type: 'text/plain;charset=utf-8'
-        });
-        let name = traceInfo.name;
-        if (name === '__count') {
-            name = 'count';
-        }
-        window.saveAs(blob, name + '.svg');
-    }
 
     onSaveImage = (format) => {
-        // if (this.scatterPlot.orbitIsAnimating()) {
-        //     this.scatterPlot.stopOrbitAnimation();
-        //     this.setState({animating: false});
-        // }
-        if (format === 'svg') {
-            this.saveSvg();
+        const {traceInfo} = this.props;
+        let context;
+        let canvas = null;
+        const chartSize = this.chartSize;
+        const totalSize = {width: this.chartSize.width, height: this.chartSize.height};
+        let name = traceInfo.name;
+        if (name === '__count') {
+            name = 'count';
+        }
+        if (format !== 'svg') {
+            canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            context = canvas.getContext('2d');
         } else {
-            this.savePng();
+            context = new window.C2S(100, 100);
+        }
+        if (!traceInfo.continuous) {
+            const legendSize = getCategoricalLegendSize(context, name, this.props.categories);
+            totalSize.width += legendSize.width;
+            totalSize.height = Math.max(legendSize.height, chartSize.height);
+        } else {
+            totalSize.height += 150;
+
+        }
+        if (format === 'svg') {
+            context = new window.C2S(totalSize.width, totalSize.height);
+        } else {
+
+            canvas.width = totalSize.width; // * window.devicePixelRatio;
+            canvas.height = totalSize.height; // * window.devicePixelRatio;
+            context = canvas.getContext('2d');
         }
 
-        // const renderer = new SVGRenderer();
-        // document.body.appendChild(renderer.domElement);
-        // renderer.setSize(window.innerWidth, window.innerHeight);
-        // renderer.setQuality('low');
-        // renderer.render(this.scatterGL.scatterPlot.scene, this.scatterGL.scatterPlot.camera);
-        // console.log(renderer.domElement);
+        this.drawContext(context, chartSize);
+
+        if (!traceInfo.continuous) {
+            context.translate(chartSize.width, 2);
+            drawCategoricalLegend(context, traceInfo.colorScale, name, this.props.categories);
+        } else {
+            context.translate(chartSize.width / 2 - 75, chartSize.height + 2);
+            drawColorScheme(context, 150, 20, traceInfo.colorScale, true);
+        }
+
+        if (format === 'svg') {
+            let svg = context.getSerializedSvg();
+            let blob = new Blob([svg], {
+                type: 'text/plain;charset=utf-8'
+            });
+            window.saveAs(blob, name + '.svg');
+        } else {
+            canvas.toBlob(blob => {
+                window.saveAs(blob, name + '.png', true);
+            });
+        }
+
 
     };
     onToggleAnimation = () => {
