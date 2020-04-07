@@ -1,3 +1,6 @@
+import {Tooltip} from '@material-ui/core';
+import Typography from '@material-ui/core/Typography';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import React from 'react';
 
 import {connect} from 'react-redux';
@@ -78,13 +81,15 @@ class GalleryCharts extends React.PureComponent {
                 </ul>
             );
         });
-        if (galleryTraces.length <= 1) {
-            return <h4>Please enter one or more features or select more than one embedding to show "Gallery".</h4>;
-        }
+
         return (
-            galleryTraces.length > 1 && <SortableList distance={2}
-                                                      axis="xy" items={galleryTraces}
-                                                      onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>);
+            <React.Fragment><Typography variant="subtitle1">Gallery<Tooltip
+                title="Drag gallery charts to reorder. Click title to set primary view."><HelpOutlineIcon
+                style={{verticalAlign: 'text-bottom'}}/></Tooltip></Typography>
+                <SortableList
+                    distance={2}
+                    axis="xy" items={galleryTraces}
+                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/></React.Fragment>);
     }
 }
 
