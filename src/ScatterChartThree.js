@@ -211,7 +211,7 @@ class ScatterChartThree extends React.PureComponent {
             context = new window.C2S(100, 100);
         }
         if (!traceInfo.continuous) {
-            const legendSize = getCategoricalLegendSize(context, name, this.props.categories);
+            const legendSize = getCategoricalLegendSize(context, name, traceInfo.colorScale.domain());
             totalSize.width += legendSize.width;
             totalSize.height = Math.max(legendSize.height, chartSize.height);
         } else {
@@ -221,7 +221,6 @@ class ScatterChartThree extends React.PureComponent {
         if (format === 'svg') {
             context = new window.C2S(totalSize.width, totalSize.height);
         } else {
-
             canvas.width = totalSize.width; // * window.devicePixelRatio;
             canvas.height = totalSize.height; // * window.devicePixelRatio;
             context = canvas.getContext('2d');
@@ -231,7 +230,7 @@ class ScatterChartThree extends React.PureComponent {
 
         if (!traceInfo.continuous) {
             context.translate(chartSize.width, 2);
-            drawCategoricalLegend(context, traceInfo.colorScale, name, this.props.categories);
+            drawCategoricalLegend(context, traceInfo.colorScale, name, traceInfo.colorScale.domain());
         } else {
             context.translate(chartSize.width / 2 - 75, chartSize.height + 2);
             drawColorScheme(context, 150, 20, traceInfo.colorScale, true);
