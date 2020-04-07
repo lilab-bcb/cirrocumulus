@@ -25,23 +25,28 @@ def get_adata_filter(adata, data_filter):
             op = filter_obj[1]
             value = filter_obj[2]
             if isinstance(field, dict):  # selection box
-                keep = None
+
                 selected_points_basis = get_basis(field['basis'], field.get('nbins'),
                     field.get('agg'), field.get('ndim', '2'), field.get('precomputed', False))
 
-                path = value['path']
-                if not isinstance(path, list):
-                    path = [path]
-
-                for p in path:
-                    if isinstance(p, dict):
-                        # rectangle
+                if 'points' in value:
+                    p = value['points']
+                    field = selected_points_basis['full_name'] if selected_points_basis[
+                                                                      'nbins'] is not None else 'index'
+                    if field == 'index':
+                        keep = adata.obs.index.isin(p)
+                    else:
+                        keep = adata.obs[field].isin(p)
+                else:
+                    keep = None
+                    for p in value['path']:
                         if 'z' in p:  # 3d
                             selection_keep = \
                                 (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height']) & \
+                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
+                                    'height']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
                         else:
@@ -50,13 +55,7 @@ def get_adata_filter(adata, data_filter):
                                 (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
                                 (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
-                    else:
-                        field = selected_points_basis['full_name'] if selected_points_basis[
-                                                                          'nbins'] is not None else 'index'
-                        if field == 'index':
-                            selection_keep = adata.obs.index.isin(p)
-                        else:
-                            selection_keep = adata.obs[field].isin(p)
+
                     keep = selection_keep | keep if keep is not None else selection_keep
 
             else:
