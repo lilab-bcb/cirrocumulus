@@ -221,9 +221,11 @@ class ScatterChartThree extends React.PureComponent {
         if (format === 'svg') {
             context = new window.C2S(totalSize.width, totalSize.height);
         } else {
-            canvas.width = totalSize.width; // * window.devicePixelRatio;
-            canvas.height = totalSize.height; // * window.devicePixelRatio;
+            canvas.width = totalSize.width * window.devicePixelRatio;
+            canvas.height = totalSize.height * window.devicePixelRatio;
             context = canvas.getContext('2d');
+            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+
         }
 
         this.drawContext(context, chartSize);
@@ -238,6 +240,11 @@ class ScatterChartThree extends React.PureComponent {
 
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
+            // let prefix = [];
+            // prefix.push('<?xml version="1.0" encoding="utf-8"?>\n');
+            // prefix.push('<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"' +
+            //     ' "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n');
+            // svg = prefix.join('') + svg;
             let blob = new Blob([svg], {
                 type: 'text/plain;charset=utf-8'
             });
