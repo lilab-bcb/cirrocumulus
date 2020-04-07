@@ -339,7 +339,7 @@ class ScatterChartThree extends React.PureComponent {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.state.editSelection,
-                        value: {basis: traceInfo.embedding, path: selectedPoints}
+                        value: {basis: traceInfo.embedding, points: selectedPoints}
                     });
                 }
             };
@@ -403,7 +403,7 @@ class ScatterChartThree extends React.PureComponent {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.state.editSelection,
-                        value: {basis: traceInfo.embedding, path: selectedpoints}
+                        value: {basis: traceInfo.embedding, points: selectedpoints}
                     });
                 }
             };

@@ -360,7 +360,16 @@ export function getDatasetFilterArray(datasetFilter) {
         if (window.Array.isArray(value)) {
             f = [key, 'in', value];
         } else if (value.basis != null) {
-            f = [getEmbeddingJson(value.basis), 'in', {path: value.path}];
+            let points = value.points;
+            if (points.length > 1) { // take "or"
+                let allPoints = new Set();
+                points.forEach(p => p.forEach(i => allPoints.add(i)));
+                points = Array.from(allPoints);
+            } else {
+                points = points[0];
+            }
+
+            f = [getEmbeddingJson(value.basis), 'in', {points: points}];
         } else {
             if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
                 f = [key, value.operation, value.value];
@@ -570,23 +579,23 @@ function handleFilterUpdated() {
 export function handleBrushFilterUpdated(payload) {
     return function (dispatch, getState) {
         const name = payload.name; // full basis name
-        const value = payload.value;  // value has basis and path
+        const value = payload.value;  // value has basis and points
         const clear = payload.clear;
         let datasetFilter = getState().datasetFilter;
-        // value has basis, path
+
         let update = true;
         if (value == null) { // remove
             update = datasetFilter[name] != null;
             delete datasetFilter[name];
         } else {
             if (clear) {
-                datasetFilter[name] = {basis: value.basis, path: [value.path]};
+                datasetFilter[name] = {basis: value.basis, points: [value.points]};
             } else {
                 const prior = datasetFilter[name];
                 if (prior != null) {
-                    datasetFilter[name].path.push(value.path);
+                    datasetFilter[name].points.push(value.points);
                 } else {
-                    datasetFilter[name] = {basis: value.basis, path: [value.path]};
+                    datasetFilter[name] = {basis: value.basis, points: [value.points]};
                 }
             }
         }
