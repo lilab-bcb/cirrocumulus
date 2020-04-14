@@ -176,6 +176,7 @@ export default function AutocompleteVirtualized(props) {
             openOnFocus={true}
             filterSelectedOptions={true}
             blurOnSelect={true}
+            ChipProps={{size: 'small'}}
             ListboxComponent={ListboxComponent}
             renderGroup={renderGroup}
             options={props.options}
