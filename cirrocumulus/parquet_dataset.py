@@ -21,66 +21,6 @@ class ParquetDataset(AbstractDataset):
     def get_suffixes(self):
         return ['parquet', 'pq']
 
-    def read_data_sparse(self, file_system, path, obs_keys=[], var_keys=[], basis=[], dataset=None, schema=None):
-        dataset_id = dataset.id
-        # if basis, read index to get bins, x, and y
-        X_path = os.path.join(path, 'X')
-        obs_path = os.path.join(path, 'obs')
-        obsm_path = os.path.join(path, 'obsm')
-        shape = schema['shape']
-
-        data = []
-        row = []
-        col = []
-        X = None
-
-        if len(var_keys) > 0:
-            for i in range(len(var_keys)):
-                key = var_keys[i]
-                df = pq.read_table(file_system.open(X_path + '/' + key + '.parquet')).to_pandas()
-                data.append(df['value'])
-                row.append(df['index'])
-                col.append(np.repeat(i, len(df)))
-
-            data = np.concatenate(data)
-            row = np.concatenate(row)
-            col = np.concatenate(col)
-            X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
-        obs = None
-
-        for key in obs_keys:
-            cache_key = str(dataset_id) + '-' + key
-            cached_value = self.cached_data.get(cache_key)
-            if cached_value is None:
-                df = pq.read_table(file_system.open(obs_path + '/' + key + '.parquet'), columns=['value']).to_pandas()
-                # ignore index in obs for now
-                cached_value = df['value']
-            if obs is None:
-                obs = pd.DataFrame()
-            obs[key] = cached_value
-            self.cached_data[cache_key] = cached_value
-
-        if basis is not None and len(basis) > 0:
-            for b in basis:
-                cache_key = str(dataset_id) + '-' + b['full_name']
-                is_precomputed = b['precomputed']
-                if is_precomputed:
-                    columns_to_fetch = [b['full_name']]
-                else:  # need coordinates
-                    columns_to_fetch = b['coordinate_columns']
-                cached_value = self.cached_data.get(cache_key)
-                if cached_value is None:
-                    basis_path = (obsm_path + '/') + (b['full_name' if is_precomputed else 'name']) + '.parquet'
-                    print(basis_path)
-                    df = pq.read_table(file_system.open(basis_path), columns=columns_to_fetch).to_pandas()
-                    cached_value = df
-                    self.cached_data[cache_key] = cached_value
-                if obs is None:
-                    obs = pd.DataFrame()
-                for c in columns_to_fetch:
-                    obs[c] = cached_value[c]
-        return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
-
     def read_summarized(self, file_system, path, obs_keys=[], var_keys=[], index=False, rename=False, dataset=None):
         result_df = pd.DataFrame()
         if index:
@@ -98,6 +38,65 @@ class ParquetDataset(AbstractDataset):
                 for column in df:
                     result_df[column] = df[column]
         return result_df
+
+    def read_data_sparse(self, file_system, path, obs_keys=[], var_keys=[], basis=[], dataset=None, schema=None):
+        dataset_id = dataset.id
+        # if basis, read index to get bins, x, and y
+        X = None
+
+        if len(var_keys) > 0:
+            data = []
+            row = []
+            col = []
+            X_path = os.path.join(path, 'X')
+            shape = schema['shape']
+            for i in range(len(var_keys)):
+                key = var_keys[i]
+                df = pq.read_table(file_system.open(X_path + '/' + key + '.parquet')).to_pandas()
+                data.append(df['value'])
+                row.append(df['index'])
+                col.append(np.repeat(i, len(df)))
+
+            data = np.concatenate(data)
+            row = np.concatenate(row)
+            col = np.concatenate(col)
+            # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+            X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+        obs = None
+
+        for key in obs_keys:
+            obs_path = os.path.join(path, 'obs')
+            cache_key = str(dataset_id) + '-' + key
+            cached_value = self.cached_data.get(cache_key)
+            if cached_value is None:
+                df = pq.read_table(file_system.open(obs_path + '/' + key + '.parquet'), columns=['value']).to_pandas()
+                # ignore index in obs for now
+                cached_value = df['value']
+            if obs is None:
+                obs = pd.DataFrame()
+            obs[key] = cached_value
+            self.cached_data[cache_key] = cached_value
+
+        if basis is not None and len(basis) > 0:
+            obsm_path = os.path.join(path, 'obsm')
+            for b in basis:
+                cache_key = str(dataset_id) + '-' + b['full_name']
+                is_precomputed = b['precomputed']
+                if is_precomputed:
+                    columns_to_fetch = [b['full_name']]
+                else:  # need coordinates
+                    columns_to_fetch = b['coordinate_columns']
+                cached_value = self.cached_data.get(cache_key)
+                if cached_value is None:
+                    basis_path = (obsm_path + '/') + (b['full_name' if is_precomputed else 'name']) + '.parquet'
+                    df = pq.read_table(file_system.open(basis_path), columns=columns_to_fetch).to_pandas()
+                    cached_value = df
+                    self.cached_data[cache_key] = cached_value
+                if obs is None:
+                    obs = pd.DataFrame()
+                for c in columns_to_fetch:
+                    obs[c] = cached_value[c]
+        return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
 
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
         dataset_id = dataset.id

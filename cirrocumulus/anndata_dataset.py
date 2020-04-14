@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-import cirrocumulus.diff_exp
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.simple_data import SimpleData
 
@@ -18,9 +17,6 @@ class AnndataDataset(AbstractDataset):
         self.force_sparse = force_sparse
         self.extensions = extensions
 
-    def diff_exp(self, fs_adapter, path, mask, dataset=None, schema=None):
-        adata = self.get_data(path)
-        return cirrocumulus.diff_exp.diff_exp(adata.X, mask)
 
     def get_suffixes(self):
         return self.extensions
@@ -54,10 +50,10 @@ class AnndataDataset(AbstractDataset):
             self.add_data(path, adata)
         return adata
 
-    def schema(self, fs_adapter, path):
+    def schema(self, file_system, path):
         return SimpleData.schema(self.get_data(path))
 
-    def read(self, fs_adapter, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
+    def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
         adata = self.get_data(path)
         obs = None
         X = None

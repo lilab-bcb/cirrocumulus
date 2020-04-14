@@ -21,11 +21,16 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
+import Tooltip from '@material-ui/core/Tooltip';
+import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
+import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import SaveIcon from '@material-ui/icons/Save';
 import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
+    diffExp,
     downloadSelectedIds,
     exportDatasetFilters,
     getDatasetFilterArray,
@@ -57,6 +62,7 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ColorSchemeSelector from './ColorSchemeSelector';
+import {intFormat} from './formatters';
 import {splitSearchTokens} from './util';
 
 const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
@@ -266,6 +272,10 @@ class EmbedForm extends React.PureComponent {
         event.preventDefault();
         this.props.downloadSelectedIds();
     };
+    handleDiffExp = (event) => {
+        event.preventDefault();
+        this.props.handleDiffExp();
+    };
 
     onDatasetFilterChipDeleted = (name) => {
         this.props.removeDatasetFilter(name);
@@ -287,7 +297,8 @@ class EmbedForm extends React.PureComponent {
             chartSize, numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
-            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize, combineDatasetFilters
+            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
+            combineDatasetFilters, selection
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
@@ -401,28 +412,45 @@ class EmbedForm extends React.PureComponent {
                                     <Grid item>OR</Grid>
                                 </Grid>
                             </div>
-                            <div style={{marginBottom: 2}}>
+                            {datasetFilterKeys.length > 0 && !isNaN(selection.count) &&
+                            <React.Fragment>
+                                <div style={{marginBottom: 2}}>
+                                    {intFormat(selection.count) + " / " + intFormat(dataset.shape[0]) + ": "}
+                                    {datasetFilterKeys.map(key => {
+                                        return <Chip
+                                            size="small"
+                                            onDelete={() => {
+                                                this.onDatasetFilterChipDeleted(key);
+                                            }}
+                                            style={{marginRight: 2}}
+                                            key={key}
+                                            label={key}
+                                            variant={'outlined'}
+                                        />;
+                                    })}
+                                    <Divider/>
+                                    <Tooltip title={"Clear Filter"}>
+                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                                    onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={"Save Filter"}>
+                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                                    onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={"Download Selected IDs"}>
+                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                                    onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={"Compute Markers"}>
+                                        <Button color="primary" variant="outlined"
+                                                disabled={datasetFilterKeys.length === 0}
+                                                size={"small"}
+                                                onClick={this.handleDiffExp}>Markers</Button>
+                                    </Tooltip>
+                                </div>
 
-                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
-                                        onClick={this.onDatasetFilterCleared}>Clear</Button>
-                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
-                                        onClick={this.onDatasetFilterSaved}>Save</Button>
-                                <Button variant="outlined" disabled={datasetFilterKeys.length === 0} size="small"
-                                        onClick={this.handleSelectedCellsClick}>Export</Button>
-                            </div>
-                            <Divider/>
-                            {datasetFilterKeys.map(key => {
-                                return <Chip
-                                    size="small"
-                                    onDelete={() => {
-                                        this.onDatasetFilterChipDeleted(key);
-                                    }}
-                                    style={{marginRight: 2}}
-                                    key={key}
-                                    label={key}
-                                    variant={'outlined'}
-                                />;
-                            })}
+                            </React.Fragment>
+                            }
 
 
                             {filterTraces.map(traceInfo =>
@@ -644,6 +672,7 @@ const mapStateToProps = state => {
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
         datasetFilters: state.datasetFilters,
+        selection: state.selection,
         chartSize: state.chartSize
     };
 };
@@ -654,6 +683,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleChartSize: (value) => {
             dispatch(setChartSize(value));
+        },
+        handleDiffExp: (value) => {
+            dispatch(diffExp(value));
         },
         handleCombineDatasetFilters: (value) => {
             dispatch(setCombineDatasetFilters(value));
@@ -679,7 +711,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         onDeselect: (e) => {
             dispatch(handleBrushFilterUpdated(e));
         },
-
         handleEmbeddings: value => {
             dispatch(setSelectedEmbedding(value));
         },

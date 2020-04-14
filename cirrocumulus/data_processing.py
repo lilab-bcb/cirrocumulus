@@ -214,11 +214,11 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
     return result_df.to_csv()
 
 
-def handle_diff_exp(dataset_api, dataset, data_filter=None):
+def handle_diff_exp(dataset_api, dataset, data_filter, var_range):
     adata_info = get_data(dataset_api, dataset, [], [], [], [data_filter])
     adata = adata_info['adata']
     mask = get_adata_filter(adata, data_filter)
-    return dataset_api.diff_exp(dataset, mask)
+    return dataset_api.diff_exp(dataset, mask, var_range)
 
 
 def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):

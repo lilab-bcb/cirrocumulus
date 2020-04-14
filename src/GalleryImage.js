@@ -22,14 +22,9 @@ class GalleryImage extends React.PureComponent {
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
-
         updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize);
-
-        const e1 = new Date().getTime() - start;
         const canvas = containerElement.querySelector('canvas');
-
         const url = canvas.toDataURL();
-        console.log(traceInfo.name, e1, new Date().getTime() - start);
         this.setState({url: url});
         // canvas.toBlob(function (blob) {
         //     // let newImg = document.createElement('img');

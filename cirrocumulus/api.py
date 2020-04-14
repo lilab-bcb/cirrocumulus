@@ -155,6 +155,17 @@ def get_email_and_dataset(content):
     return email, dataset
 
 
+@blueprint.route('/diff_exp', methods=['POST'])
+def handle_diff_exp():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    data_filter = content.get('filter')
+    var_range = content.get('var_range')
+    return to_json(
+        data_processing.handle_diff_exp(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+            var_range=var_range))
+
+
 @blueprint.route('/embedding', methods=['POST'])
 def handle_embedding():
     content = request.get_json(cache=False)

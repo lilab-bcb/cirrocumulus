@@ -3,6 +3,8 @@ import json
 import os
 from abc import abstractmethod, ABC
 
+import cirrocumulus.diff_exp
+
 
 class AbstractDataset(ABC):
 
@@ -16,6 +18,23 @@ class AbstractDataset(ABC):
     @abstractmethod
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None):
         pass
+
+    def diff_exp(self, file_system, path, mask, dataset, schema, var_range):
+        var_names = schema['var']
+        start = var_range[0]
+        end = var_range[1]
+        if end - start > 5000:
+            raise ValueError()
+        adata = self.read(file_system, path, obs_keys=[], var_keys=var_names[start:end], basis=[],
+            dataset=dataset, schema=schema)
+
+        result = cirrocumulus.diff_exp.diff_exp(adata.X, mask)
+        # if result is None:
+        #     result = batch_result
+        # else:
+        #     for key in batch_result:
+        #         result[key] = np.concatenate((result[key], batch_result[key]))
+        return result
 
     def has_precomputed_stats(self, file_system, path, dataset):
         return file_system.exists(os.path.join(path, 'stats'))

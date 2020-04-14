@@ -72,11 +72,11 @@ class DatasetAPI:
         return provider.read_precomputed_basis(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys,
             basis=basis)
 
-    def diff_exp(self, dataset, mask):
+    def diff_exp(self, dataset, mask, var_range):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
         return provider.diff_exp(self.fs_adapter.get_fs(path), path, mask=mask, dataset=dataset,
-            schema=self.schema(dataset))
+            schema=self.schema(dataset), var_range=var_range)
 
     def read(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']

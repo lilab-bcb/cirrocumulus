@@ -400,6 +400,49 @@ function getFilterJson(state) {
 }
 
 
+export function diffExp() {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        let filter = getFilterJson(getState(), true);
+        let nfeatures = getState().dataset.features.length;
+        let batchSize = 3000; // FIXME
+        let promises = [];
+        let results = null;
+        let start = 0;
+        let end = batchSize;
+        let batches = Math.ceil(nfeatures / batchSize);
+        for (let i = 0; i < batches; i++) {
+            end = Math.min(end + batchSize, nfeatures);
+            start = Math.min(start + batchSize, nfeatures);
+            if (end > start) {
+                let p = fetch(API + '/diff_exp',
+                    {
+                        body: JSON.stringify({id: getState().dataset.id, filter: filter, var_range: [start, end]}),
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                    }).then(result => result.json()).then(result => {
+                    if (results == null) {
+                        results = result;
+                    } else {
+                        for (let key in result) {
+                            results[key] = results[key].concat(result[key]);
+                        }
+                    }
+                });
+                promises.push(p);
+            }
+        }
+
+        Promise.all(promises).then(() => {
+            console.log(results);
+        }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err);
+        });
+    };
+}
+
 export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
