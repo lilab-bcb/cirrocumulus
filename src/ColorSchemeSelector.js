@@ -19,12 +19,9 @@ const styles = theme => ({
     },
     formControl: {
         display: 'block',
-        margin: theme.spacing(1),
-        minWidth: 200,
+        margin: theme.spacing(1)
     },
-    select: {
-        minWidth: 200,
-    },
+   
 });
 
 
@@ -41,7 +38,7 @@ class ColorSchemeSelector extends React.PureComponent {
     render() {
         const {classes} = this.props;
         let interpolator = fixInterpolatorName(this.props.interpolator.name);
-        const width = 180;
+        const width = 174;
         const height = 20;
         return (
             <Select
