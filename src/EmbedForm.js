@@ -422,10 +422,10 @@ class EmbedForm extends React.PureComponent {
                                             onDelete={() => {
                                                 this.onDatasetFilterChipDeleted(key);
                                             }}
-                                            style={{marginRight: 2}}
+                                            style={{marginRight: 2, verticalAlign: 'bottom'}}
                                             key={key}
                                             label={key}
-                                            variant={'outlined'}
+
                                         />;
                                     })}
                                     <Divider/>
@@ -441,12 +441,13 @@ class EmbedForm extends React.PureComponent {
                                         <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                     </Tooltip>
-                                    <Tooltip title={"Compute Markers"}>
-                                        <Button color="primary" variant="outlined"
-                                                disabled={datasetFilterKeys.length === 0}
-                                                size={"small"}
-                                                onClick={this.handleDiffExp}>Markers</Button>
-                                    </Tooltip>
+                                    {/*<Tooltip title={"Compute Markers"}>*/}
+                                    {/*    <Button color="primary" variant="outlined"*/}
+                                    {/*            disabled={datasetFilterKeys.length === 0}*/}
+                                    {/*            size={"small"}*/}
+                                    {/*            onClick={this.handleDiffExp}>Markers</Button>*/}
+                                    {/*</Tooltip>*/}
+                                    <Divider/>
                                 </div>
 
                             </React.Fragment>
@@ -461,7 +462,11 @@ class EmbedForm extends React.PureComponent {
                                         width={140}
                                         showColorScheme={false}
                                         height={30}
-                                        style={{paddingBottom: 3, paddingTop: 3}}
+                                        style={{
+                                            paddingBottom: 3,
+                                            paddingTop: 3,
+                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                        }}
                                         handleUpdate={handleMeasureFilterUpdated}
                                         datasetFilter={datasetFilter}
                                         scale={traceInfo.colorScale}
@@ -474,7 +479,11 @@ class EmbedForm extends React.PureComponent {
                                     /> :
                                     <CategoricalLegend
                                         key={traceInfo.name}
-                                        style={{paddingBottom: 3, paddingTop: 3}}
+                                        style={{
+                                            paddingBottom: 3,
+                                            paddingTop: 3,
+                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                        }}
                                         datasetFilter={datasetFilter}
                                         handleClick={handleDimensionFilterUpdated}
                                         handleColorChange={handleColorChange}
