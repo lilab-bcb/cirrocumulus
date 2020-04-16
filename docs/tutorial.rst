@@ -6,18 +6,18 @@ This is a tutorial on using Cirrocumulus as a web application.
 Overview
 ^^^^^^^^^
 
-Cirrocumulus is deployed on Google App Engine at https://cirrocumulus.appspot.com. Its interface is as the following:
+The Cirrocumulus interface is as follows:
 
 .. image:: images/tutorial-07.png
 
-The left panel specifies the embedding and attributes of cells to visualize, as well as marker configurations. All the plots are shown in the main window on its right-hand side, while the top panel is mainly to set the current user and dataset.
+The left panel specifies the embedding and attributes of cells to visualize, as well as marker configurations.
+All the plots are shown in the main window on its right-hand side, while the top panel is mainly to set the current user and dataset.
 
-Assuming you already registered on `Terra <https://app.terra.bio>`_, and have access to your dataset, starting from the next section, you'll learn how to use Cirrocumulus for data visualization.
 
 Open Dataset
 ^^^^^^^^^^^^^^
 
-First, sign in to your Terra account by clicking the ``SIGN IN`` button on the right-top corner:
+First, sign in to your Google account by clicking the ``SIGN IN`` button on the right-top corner:
 
 .. image:: images/tutorial-01.png
   :scale: 50%
