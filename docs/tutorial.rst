@@ -8,7 +8,7 @@ Overview
 
 The Cirrocumulus interface is as follows:
 
-.. image:: images/tutorial-07.png
+.. image:: images/overview.png
 
 The left panel specifies the embedding and attributes of cells to visualize, as well as marker configurations.
 All the plots are shown in the main window on its right-hand side, while the top panel is mainly to set the current user and dataset.
@@ -19,13 +19,12 @@ Open Dataset
 
 First, sign in to your Google account by clicking the ``SIGN IN`` button on the right-top corner:
 
-.. image:: images/tutorial-01.png
-  :scale: 50%
+.. image:: images/sign-in.png
   :align: center
 
 After that, select the dataset you want to visualize from the drop-down menu on the top panel:
 
-.. image:: images/tutorial-02.png
+.. image:: images/choose-dataset.png
   :scale: 50%
   :align: center
 
@@ -34,66 +33,91 @@ View Embedding and Attributes
 
 After opening the dataset, you need to specify which embedding and cell attributes you want to see on the left panel:
 
-.. image:: images/tutorial-03.png
-  :scale: 40%
+.. image:: images/embed-attr.png
+  :scale: 50%
   :align: center
 
-Below is the detailed explanation on each item:
+Here is the detailed explanation on each field:
 
-* **Embedding**: You can choose only one cell embedding at a time for visualization. The embedding name indicates its algorithm: e.g. ``X_umap`` is for UMAP coordinates, ``X_fitsne`` for FIt-SNE, ``X_fle`` for force-directed layout, ``X_pca`` for PCA, etc.
+* **Embedding**: You can choose cell embeddings here for visualization. The embedding name indicates its algorithm: e.g. ``X_umap`` is for UMAP coordinates, ``X_fitsne`` for FIt-SNE, ``X_fle`` for force-directed layout, ``X_pca`` for PCA, etc. You can view multiple embeddings at the same time.
 
-* **Features**: You can select multiple cell features for visualization, each of which will be shown in a seperate plot with the embedding you specify above. There are two ways for selection:
+* **Features**: You can view feature plots by selecting genes from this field. Either choose from the drop-down menu, or type in this field, with candidate genes provided while you are typing, and select the gene you want.
 
-    * **Annotations**: By clicking the drop-down menu of *Feature* field, you'll see a list of annotation attributes. These are cell attributes, such as cell type annotations, 10x channel information, etc. You can select them by clicking from the menu.
+* **Observations**: Cell attributes can be chosen from this field to view.
 
-    * **Genes**: You may also want to see feature plots with respect to some genes. In this case, you'll need to type in *Feature* field, with candidate genes provided while you are typing. Then you can be sure if the gene name you want to see is in the dataset, and if so, select it by finishing the typing and press ``Enter`` button from you keyboard.
+Main plot view
+^^^^^^^^^^^^^^^^^^^
 
-* **Plot configuration**: You can set plot size in **Charter Size** field, set data point size in **Marker Size** (larger number gives larger points), set data point opacity in **Marker Opacity** (a number between ``0`` and ``1``, smaller number gives more transparent points), and change plot color scheme in **Color Scheme** field.
+The default view is a main interactive embedding plot, as the example below:
 
-.. image:: images/tutorial-04.png
+.. image:: images/interactive-plot.png
   :align: center
 
-Above is an example to show UMAP embedding of cells with their cell type annotation and 10x channel information, as well as feature plots regarding genes CD34, CD14, and TRAC. Marker size is set to ``2`` to make the plots more readable.
+You can scroll your mouse to zoom in/out the main plot. Alternatively, there is an interaction toolbox on the left-top side:
 
-Furthermore, besides these scatterplots, Cirrocumulus also shows dot plots of all the selected genes against each selected categorical cell attribute, respectively. Below is an example of Genes CD34, CD14, and TRAC against cluster-based cell type annotations:
-
-.. image:: images/tutorial-05.png
-  :scale: 40%
+.. image:: images/toolbox.png
   :align: center
 
-From this dot plot, as TRAC is an important marker for T cells, we can easily see that all the clusters annotated as T cells are consistent with expressions regarding TRAC.
+From left to right are: *Lasso selection*, *Box selection*, *Append to selection*, *Move viewpoint*, *Save to image*, and *View Gallery*.
 
-Moreover, as all the plots in Cirrocumulus are interactively, you can check the gene expression information of each cluster by simply moving your mouse to the dot you are interested in:
+By default, *Move viewpoint* is activated, and you can move the viewpoint by dragging your cursor on the main plot. You can select a specific area to view by switching to one of the three selections provided in the toolbox. By clicking *Save to image* button, you can save the current plot as a png file. The last *View Gallery* button is to switch to Gallery view, which will be discussed in next section.
 
-.. image:: images/tutorial-09.png
-  :scale: 40%
+Moreover, as the main plot is interactive, you can see the attribute of each data point (i.e. cell) by moving your cursor to its location on the plot. 
+
+You can also select cells with the same status by clicking the corresponding name from legend:
+
+.. image:: images/legend-select.png
   :align: center
 
-View a Specific Group of Cells
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+As a result, this specific class of cells is highlighted. You can click the same name once more to go back to the normal plot.
 
-Besides showing the whole dataset, you can also view a group of cells of interest by directly clicking its name from the legend. After a while, you'll see that all the unselected groups are set to be translucent. For example, in the plots below, I only select the first cluster:
+You can adjust the main plot using the view options on the left panel:
 
-.. image:: images/tutorial-06.png
+.. image:: images/view-options.png
+  :scale: 50%
   :align: center
 
-You can clearly see that TRAC is highly expressed in this cluster, while CD34 is not.
 
-You can click the name once more to go back to the whole dataset visualization.
+Gallery view
+^^^^^^^^^^^^^^^^^^^
 
-Moreover, if you want to hide unselected cells, simply set **Unselected Marker Opacity** in the left panel (see below) to ``0``, and press Enter button on your keyboard:
+You can switch to the gallery view by clicking the *View Gallery* button in the toolbox of the main plot:
 
-.. image:: images/tutorial-03.png
-  :scale: 40%
+.. image:: images/gallery.png
   :align: center
+
+As you can see from the example above, gallery view provides a way from comparing plots. Legend can be viewed from the left panel.
+
+Moreover, when you select a specific class of cells, and then switch to gallery view, you'll see that all the plots have these cells highlighted:
+
+.. image:: images/gallery-select.png
+  :align: center
+
+You can also change the gallery plots' size using the following option on the left panel:
+
+.. image:: images/gallery-chart-size.png
+  :scale: 50%
+  :align: center
+
+
+Dot plot view
+^^^^^^^^^^^^^^^
+
+Besides scatterplots under cell embedding, you can also check gene distributions regarding cell types using dot plots:
+
+.. image:: images/dot-plot.png
+  :align: center
+
+You can switch to this view by selecting ``Dot Plot`` from the top tab.
+
 
 Share Results
 ^^^^^^^^^^^^^^
 
-Finally, when you are done with visualization, and want to share plots with your collaborators, you can click the following button on the top panel:
+Finally, when you are done with visualization, and want to share plots with your collaborators, you can click the left-most button on the right-top corner, and choose ``Copy Link`` in the drop-down menu:
 
-.. image:: images/tutorial-08.png
-  :scale: 40%
+.. image:: images/more.png
+  :scale: 50%
   :align: center
 
-Then click the ``COPY`` button, and paste the URL in your email sent to your collaborators.
+Now you can send the URL you just copied to others.
