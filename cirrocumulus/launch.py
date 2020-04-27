@@ -6,6 +6,7 @@ def create_app(dataset, backed):
     from flask_compress import Compress
     from flask import Flask, send_from_directory
     app = Flask(__name__, static_folder='client/')
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.register_blueprint(blueprint, url_prefix='/api')
 
     @app.route('/')
