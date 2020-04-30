@@ -124,7 +124,7 @@ def get_schema_and_dataset():
 def handle_schema():
     """Get dataset schema.
     """
-    return get_schema_and_dataset()[0]
+    return to_json(get_schema_and_dataset()[0])
 
 
 @blueprint.route('/image', methods=['GET'])
@@ -149,21 +149,21 @@ def handle_user():
 def get_email_and_dataset(content):
     email = auth_api.auth()['email']
     dataset_id = content.get('id', '')
-    if dataset_id is '':
+    if dataset_id == '':
         return 'Please supply an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     return email, dataset
 
 
-@blueprint.route('/diff_exp', methods=['POST'])
-def handle_diff_exp():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
-    data_filter = content.get('filter')
-    var_range = content.get('var_range')
-    return to_json(
-        data_processing.handle_diff_exp(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
-            var_range=var_range))
+# @blueprint.route('/diff_exp', methods=['POST'])
+# def handle_diff_exp():
+#     content = request.get_json(cache=False)
+#     email, dataset = get_email_and_dataset(content)
+#     data_filter = content.get('filter')
+#     var_range = content.get('var_range')
+#     return to_json(
+#         data_processing.handle_diff_exp(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+#             var_range=var_range))
 
 
 @blueprint.route('/embedding', methods=['POST'])
