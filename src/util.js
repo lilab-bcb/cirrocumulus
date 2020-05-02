@@ -137,18 +137,101 @@ export function updateTraceColors(traceInfo) {
     }
 }
 
+
+/**
+ * Computes the rank using the given index array. The index array can be
+ * obtained from the indexSort method. Does not handle ties.
+ *
+ */
+function rankIndexArray(index) {
+    const rank = [];
+    const n = index.length;
+    for (let j = 0; j < n; j++) {
+        rank[index[j]] = j + 1;
+    }
+    return rank;
+};
+
+function indexSort(array, ascending) {
+    const pairs = [];
+    for (let i = 0, length = array.length; i < length; i++) {
+        pairs.push({
+            value: array[i],
+            index: i
+        });
+    }
+    return indexSortPairs(pairs, ascending);
+};
+
+function indexSortPairs(array, ascending) {
+    if (ascending) {
+        array.sort(function (a, b) {
+            return (a.value < b.value ? -1 : (a.value === b.value ? (a.index < b.index ? -1 : 1) : 1));
+        });
+    } else {
+        array.sort(function (a, b) {
+            return (a.value < b.value ? 1 : (a.value === b.value ? (a.index < b.index ? 1 : -1) : -1));
+        });
+    }
+    const indices = [];
+    array.forEach(function (item) {
+        indices.push(item.index);
+    });
+    return indices;
+};
+
+/**
+ * Computes the False Discovery Rate using the BH procedure.
+ *
+ * @param nominalPValues
+ *            Array of nominal p-values.
+ */
+export function fdr(nominalPValues) {
+    const size = nominalPValues.length;
+    const pValueIndices = indexSort(nominalPValues, true);
+    const ranks = rankIndexArray(pValueIndices);
+
+    // check for ties
+    for (let i = pValueIndices.length - 1; i > 0; i--) {
+        const bigPValue = nominalPValues[pValueIndices[i]];
+        const smallPValue = nominalPValues[pValueIndices[i - 1]];
+        if (bigPValue === smallPValue) {
+            ranks[pValueIndices[i - 1]] = ranks[pValueIndices[i]];
+        }
+    }
+
+    const fdr = new Float32Array(size);
+    for (let i = 0; i < size; i++) {
+        const rank = ranks[i];
+        const p = nominalPValues[i];
+        fdr[i] = (p * size) / rank;
+    }
+
+    // ensure fdr is monotonically decreasing
+    const pIndices = indexSort(nominalPValues, false);
+    for (let i = 0; i < pIndices.length - 1; i++) {
+        const highIndex = pIndices[i];
+        const lowIndex = pIndices[i + 1];
+        fdr[lowIndex] = Math.min(fdr[lowIndex], fdr[highIndex]);
+    }
+    for (let i = 0; i < size; i++) {
+        fdr[i] = Math.min(fdr[i], 1);
+    }
+    return fdr;
+};
+
 export function isPointInside(point, vs) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
 
-    var x = point.x, y = point.y;
+    const x = point.x, y = point.y;
 
-    var inside = false;
-    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        var xi = vs[i].x, yi = vs[i].y;
-        var xj = vs[j].x, yj = vs[j].y;
+    let inside = false;
+    for (const i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i].x, yi = vs[i].y;
+        const xj = vs[j].x, yj = vs[j].y;
 
-        var intersect = ((yi > y) != (yj > y))
+        const intersect = ((yi > y) != (yj > y))
             && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
     }
