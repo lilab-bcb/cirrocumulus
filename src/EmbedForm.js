@@ -429,7 +429,7 @@ class EmbedForm extends React.PureComponent {
                                         />;
                                     })}
                                     <Divider/>
-                                    <Tooltip title={"Clear Filter"}>
+                                    <Tooltip title={"Clear All"}>
                                         <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                     </Tooltip>
