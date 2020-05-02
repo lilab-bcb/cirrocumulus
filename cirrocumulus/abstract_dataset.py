@@ -25,10 +25,11 @@ class AbstractDataset(ABC):
         end = var_range[1]
         if end - start > 5000:
             raise ValueError()
-        adata = self.read(file_system, path, obs_keys=[], var_keys=var_names[start:end], basis=[],
+        var_names = var_names[start:end]
+        adata = self.read(file_system, path, obs_keys=[], var_keys=var_names, basis=[],
             dataset=dataset, schema=schema)
-
         result = cirrocumulus.diff_exp.diff_exp(adata.X, mask)
+        result['name'] = var_names
         # if result is None:
         #     result = batch_result
         # else:
