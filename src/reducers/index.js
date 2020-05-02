@@ -3,6 +3,7 @@ import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
     DELETE_DATASET,
+    DIFF_EXP_RESULTS,
     getTraceKey,
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
@@ -107,6 +108,18 @@ function embeddings(state = [], action) {
             return state;
     }
 }
+
+function diffExpResults(state = null, action) {
+    switch (action.type) {
+        case DIFF_EXP_RESULTS:
+            return action.payload;
+        case SET_DATASET:
+            return null;
+        default:
+            return state;
+    }
+}
+
 
 function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
     switch (action.type) {
@@ -526,6 +539,7 @@ export default combineReducers({
     datasetChoices,
     dialog,
     dotPlotData,
+    diffExpResults,
     email,
     embeddingData,
     embeddings,

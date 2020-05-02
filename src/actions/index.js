@@ -1,5 +1,5 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
-import {schemeCategory10} from 'd3-scale-chromatic';
+import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -35,7 +35,7 @@ export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
-
+export const DIFF_EXP_RESULTS = 'DIFF_EXP_RESULTS';
 
 export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
@@ -405,7 +405,7 @@ export function diffExp() {
         dispatch(_setLoading(true));
         let filter = getFilterJson(getState(), true);
         let nfeatures = getState().dataset.features.length;
-        let batchSize = 3000; // FIXME
+        let batchSize = 3000; // TODO
         let promises = [];
         let results = null;
         let start = 0;
@@ -434,7 +434,12 @@ export function diffExp() {
         }
 
         Promise.all(promises).then(() => {
-            console.log(results);
+            let keys = Object.keys(results);
+            let indices = new Uint16Array(results[keys[0]].length); // for sort order
+            for (let i = 0, n = indices.length; i < n; i++) {
+                indices[i] = i;
+            }
+            dispatch(setDiffExpResults({arrays: results, indices: indices}));
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -498,6 +503,10 @@ export function setCombineDatasetFilters(payload) {
         dispatch(_setCombineDatasetFilters(payload));
         dispatch(handleFilterUpdated());
     };
+}
+
+export function setDiffExpResults(payload) {
+    return {type: DIFF_EXP_RESULTS, payload: payload};
 }
 
 export function setChartSize(payload) {
@@ -1493,15 +1502,13 @@ function handleEmbeddingResult(result) {
         let isImage = selectedEmbedding.image != null;
         let interpolator = state.interpolator;
 
-        const markerSize = state.markerSize;
+
         let embeddingData = state.embeddingData;
-        let embeddingChartSize = state.embeddingChartSize;
+
         const globalFeatureSummary = state.globalFeatureSummary;
-        const markerOpacity = state.markerOpacity;
 
         const obsCat = state.dataset.obsCat;
-        const unselectedMarkerSize = state.unselectedMarkerSize;
-        const unselectedMarkerOpacity = state.unselectedMarkerOpacity;
+
         const embeddingBins = embeddingResult.bins;
         const embeddingValues = embeddingResult.values;
         const coordinates = embeddingResult.coordinates;
@@ -1542,9 +1549,18 @@ function handleEmbeddingResult(result) {
                 colorScale.summary = traceSummary;
             } else {
                 let traceUniqueValues = traceSummary.categories;
-                colorScale = scaleOrdinal(
-                    traceUniqueValues.length <= 10 ? schemeCategory10 : (traceUniqueValues.length <= 20 ? CATEGORY_20B : CATEGORY_20B.concat(
-                        CATEGORY_20C))).domain(traceUniqueValues);
+                let colors;
+                if (traceUniqueValues.length <= 10) {
+                    colors = schemeCategory10;
+                } else if (traceUniqueValues.length <= 12) {
+                    colors = schemePaired;
+                } else if (traceUniqueValues.length <= 20) {
+                    colors = CATEGORY_20B;
+                } else {
+                    colors = CATEGORY_20B.concat(CATEGORY_20C);
+                }
+
+                colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
                 colorScale.summary = traceSummary;
             }
 
