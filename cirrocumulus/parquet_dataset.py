@@ -126,25 +126,63 @@ class ParquetDataset(AbstractDataset):
         if path.endswith('.json') or path.endswith('.json.gz'):  # precomputed dataset
             return super().schema(file_system, path)
         elif path.endswith('.parquet'):
+            metadata = None
             with file_system.open(path, 'rb') as s:
                 parquet_file = pq.ParquetFile(s)
                 schema = parquet_file.schema.to_arrow_schema()
-                metadata = json.loads(schema.metadata[b'pegasus'])
                 result = {'version': '1'}
-                all_obs = metadata['obs']
+                result['nObs'] = parquet_file.metadata.num_rows
+                for metadata_key in [b'pegasus']:
+                    if metadata_key in schema.metadata:
+                        metadata = json.loads(schema.metadata[metadata_key])
+                        break
                 obs = []
                 obs_cat = []
-                for name in all_obs:
-                    field = schema.field(name)
-                    if isinstance(field.type, pa.lib.DictionaryType):
-                        obs_cat.append(name)
-                    else:
-                        obs.append(name)
-                result['var'] = metadata['var']
+                if metadata is None:
+                    # obs, the obsm, then var
+                    names = parquet_file.schema.names
+                    section = 'obs'
+                    result['embeddings'] = []
+                    result['var'] = []
+                    embedding_basename_to_count = {}
+                    for name in names:
+                        if section == 'obs' and name.startswith('X_'):
+                            section = 'obsm'
+                        if section == 'obs':
+                            field = schema.field(name)
+                            if isinstance(field.type, pa.lib.DictionaryType):
+                                obs_cat.append(name)
+                            else:
+                                obs.append(name)
+                        if section == 'obsm' and not name.startswith('X_'):
+                            section = 'var'
+                        if section == 'obsm':  # X_fitsne_1', 'X_fitsne_2, etc
+                            basename = name[0:name.rindex('_')]
+                            count = embedding_basename_to_count.get(basename, 0)
+                            embedding_basename_to_count[basename] = count + 1
+                        if section == 'var':
+                            result['var'].append(name)
+                    for name in embedding_basename_to_count.keys():
+                        result['embeddings'].append(dict(name=name, dimensions=2))
+                        if embedding_basename_to_count[name] == 3:
+                            result['embeddings'].append(dict(name=name, dimensions=3))
+                    result['var'] = list(
+                        sorted(result['var'],
+                            key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
+                else:
+                    all_obs = metadata['obs']
+
+                    for name in all_obs:
+                        field = schema.field(name)
+                        if isinstance(field.type, pa.lib.DictionaryType):
+                            obs_cat.append(name)
+                        else:
+                            obs.append(name)
+                    result['var'] = metadata['var']
+                    result['embeddings'] = metadata['obsm']
+                    
                 result['obs'] = obs
                 result['obsCat'] = obs_cat
-                result['nObs'] = parquet_file.metadata.num_rows
-                result['embeddings'] = metadata['obsm']
                 result['shape'] = (parquet_file.metadata.num_rows, len(result['var']))
                 return result
         else:
