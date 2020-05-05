@@ -2,6 +2,7 @@
 .git
 .gitignore
 __pycache__/
+.eggs
 node_modules
 public
 LICENSE
