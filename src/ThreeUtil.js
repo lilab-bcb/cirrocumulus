@@ -1,5 +1,5 @@
 import {color} from 'd3-color';
-import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {makeStyles, ScatterPlot, ScatterPlotVisualizer3DLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
 import {getRgbScale} from './util';
 
 function scaleLinear(value, domain, range) {
@@ -10,8 +10,10 @@ function scaleLinear(value, domain, range) {
     return percentDomain * rangeDifference + range[0];
 }
 
+
 export function createScatterPlot(containerElement) {
     const styles = makeStyles();
+    styles.label3D.fontSize = 40;
 
     const scatterPlot = new ScatterPlot(containerElement, {
         camera: {},
@@ -24,7 +26,6 @@ export function createScatterPlot(containerElement) {
     const visualizer = new ScatterPlotVisualizerSprites(styles);
     activeVisualizers.push(visualizer);
     scatterPlot.setActiveVisualizers(activeVisualizers);
-    // scatterPlot.setInteractionMode('SELECT');
     return scatterPlot;
 }
 
@@ -100,4 +101,65 @@ export function getPositions(trace) {
     }
     return positions;
 
+}
+
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false) {
+    const colors = traceInfo.colors;
+    const positions = traceInfo.positions;
+    const is3d = traceInfo.z != null;
+    for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
+        const isSelected = selection.size === 0 || selection.has(i);
+        colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+        if (!is3d) {
+            positions[k] = isSelected ? 1 : 0;
+        }
+    }
+    scatterPlot.setPointColors(colors);
+    scatterPlot.setPointPositions(positions);
+    scatterPlot.setDimensions(traceInfo.dimensions);
+    // const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
+
+    const scale = new Float32Array(traceInfo.npoints);
+    scale.fill(pointSize);
+    scatterPlot.setPointScaleFactors(scale);
+
+    showLabels = showLabels && traceInfo.isCategorical;
+
+    let activeVisualizers = scatterPlot.getActiveVisualizers();
+    activeVisualizers = activeVisualizers.filter(vis => !(vis instanceof ScatterPlotVisualizer3DLabels));
+    if (showLabels) {
+        let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
+        let categoryToPosition = {};
+        let ncategories = 0;
+        for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 3) {
+            let value = traceInfo.values[i];
+            let p = categoryToPosition[value];
+            if (p === undefined) {
+                p = {count: 0, position: [0, 0, 0]};
+                categoryToPosition[value] = p;
+                ncategories++;
+            }
+            p.count++;
+            p.position[0] += traceInfo.positions[j];
+            p.position[1] += traceInfo.positions[j + 1];
+            p.position[2] += traceInfo.positions[j + 2];
+        }
+        let labelStrings = [];
+        let labelPositions = new Float32Array(ncategories * 3);
+        let positionIndex = 0;
+        for (let category in categoryToPosition) {
+            labelStrings.push(category);
+            let p = categoryToPosition[category];
+            labelPositions[positionIndex] = p.position[0] / p.count;
+            labelPositions[positionIndex + 1] = p.position[1] / p.count;
+            labelPositions[positionIndex + 2] = p.position[2] / p.count;
+            positionIndex += 3;
+        }
+
+        labels3DVisualizer.setLabels(labelStrings, labelPositions);
+        activeVisualizers.push(labels3DVisualizer);
+    }
+
+    scatterPlot.setActiveVisualizers(activeVisualizers);
+    scatterPlot.render();
 }

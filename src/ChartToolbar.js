@@ -4,6 +4,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import withStyles from '@material-ui/core/styles/withStyles';
 import ExposureIcon from '@material-ui/icons/Exposure';
+import FontDownloadIcon from '@material-ui/icons/FontDownload';
 import PauseIcon from '@material-ui/icons/Pause';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import PhotoSizeSelectSmallIcon from '@material-ui/icons/PhotoSizeSelectSmall';
@@ -45,6 +46,10 @@ class ChartToolbar extends React.PureComponent {
         this.props.onDragMode(mode);
     };
 
+    onShowLabels = () => {
+        this.props.onShowLabels();
+    };
+
     setEditSelection = () => {
         this.props.onEditSelection();
     };
@@ -62,7 +67,7 @@ class ChartToolbar extends React.PureComponent {
 
     render() {
 
-        const {dragmode, editSelection} = this.props;
+        const {dragmode, editSelection, showLabels} = this.props;
         const {saveImageEl} = this.state;
         return (<div className={this.props.classes.root}>
             <Tooltip title={"Lasso Select"}>
@@ -110,6 +115,14 @@ class ChartToolbar extends React.PureComponent {
                     </svg>
                 </IconButton>
             </Tooltip>
+
+            <Tooltip title={"Show Labels"}>
+                <IconButton edge={false} size={'small'} className={showLabels ? active : inactive}
+                            aria-label="Show Labels" onClick={() => this.onShowLabels()}>
+                    <FontDownloadIcon/>
+                </IconButton>
+            </Tooltip>
+
 
             {/*<Tooltip title={"Zoom"}>*/}
             {/*    <IconButton className={dragmode === 'zoom' ? active : inactive}*/}

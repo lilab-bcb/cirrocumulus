@@ -28,11 +28,11 @@
     "redux-thunk": "^2.3.0",
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git",
     "simplify-js": "^1.2.4",
-    "three": "^0.115.0"
+    "three": "^0.116.1"
   },
   "devDependencies": {
     "source-map-loader": "^0.2.4",
-    "ts-loader": "^7.0.2",
+    "ts-loader": "^7.0.3",
     "typescript": "^3.8.3",
     "yarn": "^1.22.4"
   },

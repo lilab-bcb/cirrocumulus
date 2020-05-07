@@ -9,30 +9,8 @@ import ChartToolbar from './ChartToolbar';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
 import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
-import {createScatterPlot} from './ThreeUtil';
+import {createScatterPlot, updateScatterChart} from './ThreeUtil';
 import {getChartSize, isPointInside, setClipboardData} from './util';
-
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize) {
-    const colors = traceInfo.colors;
-    const positions = traceInfo.positions;
-    const is3d = traceInfo.z != null;
-    for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
-        const isSelected = selection.size === 0 || selection.has(i);
-        colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        if (!is3d) {
-            positions[k] = isSelected ? 1 : 0;
-        }
-    }
-    scatterPlot.setPointColors(colors);
-    scatterPlot.setPointPositions(positions);
-    scatterPlot.setDimensions(traceInfo.dimensions);
-    // const {scaleDefault, scaleSelected, scaleHover} = this.scatterPlot.styles.point;
-
-    const scale = new Float32Array(traceInfo.npoints);
-    scale.fill(pointSize);
-    scatterPlot.setPointScaleFactors(scale);
-    scatterPlot.render();
-}
 
 function clamp(x, min_v, max_v) {
     return Math.min(Math.max(x, min_v), max_v);
@@ -56,7 +34,7 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.chartSize = getChartSize();
 
-        this.state = {animating: false, dragmode: 'pan', editSelection: false};
+        this.state = {animating: false, dragmode: 'pan', editSelection: false, showLabels: false};
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
         // });
@@ -66,7 +44,6 @@ class ScatterChartThree extends React.PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.draw();
-
     }
 
     componentDidMount() {
@@ -188,7 +165,6 @@ class ScatterChartThree extends React.PureComponent {
             format: 'image/png',
             data: '<img src="' + url + '">'
         }]);
-
     };
 
 
@@ -285,6 +261,13 @@ class ScatterChartThree extends React.PureComponent {
             this.scatterPlot.setInteractionMode('SELECT');
         }
         this.setState({dragmode: mode});
+    };
+
+    onShowLabels = () => {
+        this.setState((state, props) => {
+            return {showLabels: !state.showLabels};
+        });
+
     };
 
     onGallery = (event) => {
@@ -416,7 +399,7 @@ class ScatterChartThree extends React.PureComponent {
 
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize);
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.state.showLabels);
     }
 
 
@@ -426,10 +409,12 @@ class ScatterChartThree extends React.PureComponent {
                 dragmode={this.state.dragmode}
                 animating={this.state.animating}
                 editSelection={this.state.editSelection}
+                showLabels={this.state.showLabels}
                 is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                 onHome={this.onHome}
                 toggleAnimation={this.onToggleAnimation}
                 onSaveImage={this.onSaveImage}
+                onShowLabels={this.onShowLabels}
                 onDragMode={this.onDragMode}
                 onCopyImage={this.onCopyImage}
                 onEditSelection={this.onEditSelection}>

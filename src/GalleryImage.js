@@ -4,7 +4,7 @@ import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
-import {updateScatterChart} from './ScatterChartThree';
+import {updateScatterChart} from './ThreeUtil';
 
 
 class GalleryImage extends React.PureComponent {

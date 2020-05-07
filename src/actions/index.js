@@ -490,6 +490,7 @@ export function exportDatasetFilters() {
     };
 }
 
+
 export function setDotPlotSortOrder(payload) {
     return {type: SET_DOT_PLOT_SORT_ORDER, payload: payload};
 }
@@ -1572,14 +1573,12 @@ function handleEmbeddingResult(result) {
                 y: y,
                 z: is3d ? z : undefined,
                 bins: embeddingBins,
-
                 dimensions: is3d ? 3 : 2,
                 npoints: x.length,
                 date: new Date(),
                 active: true,
                 colorScale: colorScale,
                 continuous: !isCategorical,
-
                 isCategorical: isCategorical,
                 values: values, // for color
                 // purity: purity,
