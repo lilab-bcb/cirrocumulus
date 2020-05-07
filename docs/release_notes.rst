@@ -1,3 +1,7 @@
+Version 1.0.1 `May 7, 2020`
+----------------------------------
+* Draw labels on embedding
+
 Version 1.0.0 `May 5, 2020`
 ----------------------------------
 * Lasso and box selection
