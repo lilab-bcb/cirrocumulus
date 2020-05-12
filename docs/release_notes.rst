@@ -1,3 +1,7 @@
+Version 1.0.1.post1 `May 12, 2020`
+----------------------------------
+* Include labels in saved image
+
 Version 1.0.1 `May 7, 2020`
 ----------------------------------
 * Draw labels on embedding

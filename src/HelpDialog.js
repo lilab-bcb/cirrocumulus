@@ -35,7 +35,6 @@ class HelpDialog extends React.PureComponent {
                 <DialogContent>
                     <Typography variant="h6">Primary View Controls</Typography>
                     <Typography variant="subtitle1">3D</Typography>
-
                     Rotate: Mouse left click.<br/>
                     Pan: Mouse right click.<br/>
                     Zoom: Mouse wheel.<br/>
@@ -45,8 +44,7 @@ class HelpDialog extends React.PureComponent {
                     Zoom: Mouse wheel.<br/>
                     <Divider/>
                     <Typography variant="h6">Gallery</Typography>
-                    Enter two or more ids or select more than one embedding to show gallery plots.
-                    Drag and drop to reorder the plots. Click the id to make it the primary view.
+                    Drag and drop to reorder the plots. Click the id link to make it the primary view.
                     <Divider/>
                     <Typography variant="h6">Dot Plot</Typography>
                     Enter one or more categorical observations and one or more features.

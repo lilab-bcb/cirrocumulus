@@ -35,7 +35,7 @@ import {
     exportDatasetFilters,
     getDatasetFilterArray,
     getEmbeddingKey,
-    handleBrushFilterUpdated,
+    handleBrushFilterUpdated, handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
     handleMeasureFilterUpdated,
@@ -294,10 +294,10 @@ class EmbedForm extends React.PureComponent {
 
     render() {
         const {
-            chartSize, numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
+            categoricalNames, chartSize, numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
-            handleColorChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
+            handleColorChange, handleNameChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
             combineDatasetFilters, selection
         } = this.props;
 
@@ -487,6 +487,8 @@ class EmbedForm extends React.PureComponent {
                                         datasetFilter={datasetFilter}
                                         handleClick={handleDimensionFilterUpdated}
                                         handleColorChange={handleColorChange}
+                                        handleNameChange={handleNameChange}
+                                        categoricalNames={categoricalNames}
                                         name={traceInfo.name}
                                         scale={traceInfo.colorScale}
                                         maxHeight={300}
@@ -660,6 +662,7 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        categoricalNames: state.categoricalNames,
         featureSummary: state.featureSummary,
         shape: state.dataset.shape,
         nObsSelected: state.selection.count,
@@ -710,6 +713,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleColorChange: (e) => {
             dispatch(handleColorChange(e));
+        },
+        handleNameChange: (e) => {
+            dispatch(handleCategoricalNameChange(e));
         },
         handleMeasureFilterUpdated: (e) => {
             dispatch(handleMeasureFilterUpdated(e));

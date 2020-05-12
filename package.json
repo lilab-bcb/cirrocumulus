@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@material-ui/core": "^4.9.13",
+    "@material-ui/core": "^4.9.14",
     "@material-ui/icons": "^4.9.1",
-    "@material-ui/lab": "^4.0.0-alpha.52",
-    "@testing-library/jest-dom": "^5.5.0",
+    "@material-ui/lab": "^4.0.0-alpha.53",
+    "@testing-library/jest-dom": "^5.7.0",
     "@testing-library/react": "^10.0.4",
-    "@testing-library/user-event": "^10.1.0",
+    "@testing-library/user-event": "^10.2.0",
     "classnames": "^2.2.6",
     "d3-format": "^1.4.4",
     "d3-scale": "^3.2.1",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "source-map-loader": "^0.2.4",
-    "ts-loader": "^7.0.3",
+    "ts-loader": "^7.0.4",
     "typescript": "^3.8.3",
     "yarn": "^1.22.4"
   },

@@ -6,8 +6,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-
-import {scaleLinear} from 'd3-scale';
+import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 
@@ -15,7 +14,15 @@ class CategoricalLegend extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {contextmenuEl: null, anchorEl: null, color: null, colorValue: null, forceUpdate: false};
+        this.state = {
+            contextmenuEl: null,
+            anchorEl: null,
+            color: null,
+            name: '',
+            categoryValue: null,
+            forceUpdate: false,
+            menu: null
+        };
     }
 
 
@@ -23,20 +30,45 @@ class CategoricalLegend extends React.PureComponent {
         this.setState({contextmenuEl: null, anchorEl: null});
     };
 
-
     handleColorChange = (e) => {
         this.setState({color: e.target.value});
     };
+    handleNameChange = (e) => {
+        this.setState({name: e.target.value});
+    };
 
     handleColorChangeApply = (e) => {
-        this.props.handleColorChange({name: this.props.name, value: this.state.colorValue, color: this.state.color});
+        this.props.handleColorChange({
+            name: this.props.name,
+            value: this.state.categoryValue,
+            color: this.state.color
+        });
         this.setState({forceUpdate: !this.state.forceUpdate});
+    };
+    handleNameChangeApply = (e) => {
+        this.props.handleNameChange({
+            name: this.props.name,
+            oldValue: this.state.categoryValue,
+            value: this.state.name
+        });
+        this.setState({name: '', contextmenuEl: null, anchorEl: null});
     };
 
     handleEditColor = (e) => {
         this.setState((prevState, props) => ({
             anchorEl: prevState.contextmenuEl,
-            contextmenuEl: null
+            contextmenuEl: null,
+            menu: 'color'
+        }), () => {
+            // this.inputElement.click();
+        });
+    };
+    handleEditName = (e) => {
+        this.setState((prevState, props) => ({
+            anchorEl: prevState.contextmenuEl,
+            contextmenuEl: null,
+            menu: 'name',
+            name: ''
         }), () => {
             // this.inputElement.click();
         });
@@ -56,14 +88,13 @@ class CategoricalLegend extends React.PureComponent {
     handleContextmenu = (value, index, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
-            this.setState({contextmenuEl: e.target, colorValue: value, color: this.props.scale(value)});
+            this.setState({contextmenuEl: e.target, categoryValue: value, color: this.props.scale(value)});
         }
     };
 
 
-
     render() {
-        const {scale, datasetFilter, name, featureSummary, maxHeight, globalFeatureSummary, nObs, nObsSelected} = this.props;
+        const {scale, datasetFilter, name, featureSummary, maxHeight, globalFeatureSummary, nObs, nObsSelected, categoricalNames} = this.props;
         let clickEnabled = this.props.clickEnabled;
         const categoricalFilterValues = datasetFilter[name];
         const selectionSummary = featureSummary[name];
@@ -85,30 +116,48 @@ class CategoricalLegend extends React.PureComponent {
         //     globalDimensionSummary.max = max;
         // }
         const categories = globalDimensionSummary.categories;
+        const renamedCategories = categoricalNames[name] || {};
         clickEnabled = clickEnabled && categories.length > 1;
         let style = {maxHeight: maxHeight};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }
-        let maxSize = 60;
-        const fractionScale = scaleLinear().domain([0, 1]).range([0, maxSize]).clamp(true);
+
+        let renamedCategoryValue = renamedCategories[this.state.categoryValue] || this.state.categoryValue;
         return (
             <div className="cirro-chart-legend" style={style}>
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
-                        aria-labelledby="edit-category-color-dialog-title">
-                    <DialogTitle id="edit-category-color-dialog-title">Edit {this.state.colorValue} Color</DialogTitle>
-                    <DialogContent>
-                        <input type="color" value={this.state.color}
-                               onChange={this.handleColorChange} style={{width: 100}}/>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.handlePopoverClose} color="primary">
-                            Close
-                        </Button>
-                        <Button onClick={this.handleColorChangeApply} color="primary">
-                            Apply
-                        </Button>
-                    </DialogActions>
+                        aria-labelledby="edit-category-dialog-title">
+
+                    {Boolean(this.state.anchorEl) && this.state.menu == 'color' && <React.Fragment>
+                        <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Color</DialogTitle>
+                        <DialogContent>
+                            <input type="color" value={this.state.color}
+                                   onChange={this.handleColorChange} style={{width: 100}}/>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={this.handlePopoverClose} color="primary">
+                                Close
+                            </Button>
+                            <Button onClick={this.handleColorChangeApply} color="primary">
+                                Apply
+                            </Button>
+                        </DialogActions>
+                    </React.Fragment>}
+                    {Boolean(this.state.anchorEl) && this.state.menu == 'name' && <React.Fragment>
+                        <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Name</DialogTitle>
+                        <DialogContent>
+                            <TextField type="text" onChange={this.handleNameChange} value={this.state.name}/>
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={this.handlePopoverClose} color="primary">
+                                Cancel
+                            </Button>
+                            <Button onClick={this.handleNameChangeApply} color="primary">
+                                OK
+                            </Button>
+                        </DialogActions>
+                    </React.Fragment>}
                 </Dialog>
                 <b>{name}</b> <small>({categories.length})</small>
 
@@ -126,7 +175,7 @@ class CategoricalLegend extends React.PureComponent {
                 {/*        horizontal: 'center',*/}
                 {/*    }}*/}
                 {/*>*/}
-                {/*    <Typography>Edit {this.state.colorValue} Color</Typography>*/}
+                {/*    <Typography>Edit {this.state.categoryValue} Color</Typography>*/}
                 {/*    <input ref={input => this.inputElement = input} type="color" value={this.state.color}*/}
                 {/*           onChange={this.handleColorChange} style={{width: 100}}/>*/}
                 {/*    <Button onClick={handleClose} color="primary">*/}
@@ -142,6 +191,7 @@ class CategoricalLegend extends React.PureComponent {
                     onClose={this.handleContextmenuClose}
                 >
                     <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
+                    <MenuItem onClick={this.handleEditName}>Edit Name</MenuItem>
                 </Menu>
                 <table>
                     <thead>
@@ -165,6 +215,11 @@ class CategoricalLegend extends React.PureComponent {
                         // const selectedSize = fractionScale(fractionSelected);
                         // const globalSize = fractionScale(count / nObs);
                         const globalTitle = numberFormat(100 * count / nObs) + '%';
+                        let categoryText = category;
+                        let renamed = renamedCategories[category];
+                        if (renamed !== undefined) {
+                            categoryText = renamed;
+                        }
                         const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
@@ -185,7 +240,7 @@ class CategoricalLegend extends React.PureComponent {
                                     overflow: 'hidden',
                                     display: 'inline-block',
                                     userSelect: 'none'
-                                }} title={'' + category}>{'' + category}</div>
+                                }} title={'' + categoryText}>{'' + categoryText}</div>
                             </td>
 
                             <td>

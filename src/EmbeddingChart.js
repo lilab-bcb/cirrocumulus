@@ -4,6 +4,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {
     handleBrushFilterUpdated,
+    handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
     handleMeasureFilterUpdated
@@ -20,8 +21,8 @@ class EmbeddingChart extends React.PureComponent {
 
     render() {
         const {
-            traceInfo, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary,
-            datasetFilter, handleColorChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
+            traceInfo, categoricalNames, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary,
+            datasetFilter, handleColorChange, handleNameChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
         } = this.props;
 
         const chartSize = getChartSize();
@@ -47,7 +48,9 @@ class EmbeddingChart extends React.PureComponent {
                         <CategoricalLegend datasetFilter={datasetFilter}
                                            handleClick={handleDimensionFilterUpdated}
                                            handleColorChange={handleColorChange}
+                                           handleNameChange={handleNameChange}
                                            name={traceInfo.name}
+                                           categoricalNames={categoricalNames}
                                            scale={traceInfo.colorScale}
                                            maxHeight={chartSize.height - 24}
                                            clickEnabled={true}
@@ -60,6 +63,7 @@ class EmbeddingChart extends React.PureComponent {
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
+                                   categoricalNames={categoricalNames}
                                    selection={this.props.selection}
                                    onDeselect={this.props.onDeselect}
                                    onSelected={this.props.onSelect}
@@ -89,6 +93,7 @@ class EmbeddingChart extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        categoricalNames: state.categoricalNames,
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
@@ -108,6 +113,9 @@ const mapDispatchToProps = dispatch => {
         },
         handleColorChange: (e) => {
             dispatch(handleColorChange(e));
+        },
+        handleNameChange: (e) => {
+            dispatch(handleCategoricalNameChange(e));
         },
         handleMeasureFilterUpdated: (e) => {
             dispatch(handleMeasureFilterUpdated(e));

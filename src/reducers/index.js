@@ -9,6 +9,7 @@ import {
     SET_BIN_SUMMARY,
     SET_BIN_VALUES,
     SET_CATEGORICAL_COLOR,
+    SET_CATEGORICAL_NAME,
     SET_CHART_SIZE,
     SET_COMBINE_DATASET_FILTERS,
     SET_DATASET,
@@ -437,6 +438,24 @@ function combineDatasetFilters(state = 'and', action) {
     }
 }
 
+// category -> value -> newValue
+function categoricalNames(state = {}, action) {
+    switch (action.type) {
+        case SET_CATEGORICAL_NAME:
+            let category = state[action.payload.name];
+            if (category === undefined) {
+                category = {};
+                state[action.payload.name] = category;
+            }
+            category[action.payload.oldValue] = action.payload.value;
+            return Object.assign({}, state);
+        case SET_DATASET:
+            return {};
+        default:
+            return state;
+    }
+}
+
 
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
@@ -456,6 +475,7 @@ function embeddingData(state = [], action) {
                 }
             });
             return state.slice();
+
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
 
@@ -531,6 +551,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
+    categoricalNames,
     chartSize,
     combineDatasetFilters,
     datasetFilter,

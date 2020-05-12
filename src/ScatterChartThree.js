@@ -9,7 +9,7 @@ import ChartToolbar from './ChartToolbar';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
 import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
-import {createScatterPlot, updateScatterChart} from './ThreeUtil';
+import {createScatterPlot, getCategoryLabelsPositions, updateScatterChart} from './ThreeUtil';
 import {getChartSize, isPointInside, setClipboardData} from './util';
 
 function clamp(x, min_v, max_v) {
@@ -70,8 +70,10 @@ class ScatterChartThree extends React.PureComponent {
         return traceInfo.dimensions === 3 ? pointSize : pointSize / DIVISOR;
     }
 
-    drawContext(context, chartSize) {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+    drawContext(context, chartSize, format) {
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames} = this.props;
+        const showLabels = this.state.showLabels && traceInfo.isCategorical;
+
         const pointSize = this.calculatePointSize(traceInfo);
         let scaleFactor = this.props.pointSize;
         const PI2 = 2 * Math.PI;
@@ -108,7 +110,15 @@ class ScatterChartThree extends React.PureComponent {
         // projection matrix.
         // gl_Position = projectionMatrix * cameraSpacePos;
 
-        let object = this.scatterPlot.visualizers.get('SPRITES').points;
+        let spriteVisualizer;
+        for (let i = 0; i < this.scatterPlot.visualizers.length; i++) {
+            if (this.scatterPlot.visualizers[i].id === 'SPRITES') {
+                spriteVisualizer = this.scatterPlot.visualizers[i];
+                break;
+            }
+        }
+
+        let object = spriteVisualizer.points;
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         let gl_PointSize = (outputPointSize * scaleFactor) / 4;
@@ -150,6 +160,23 @@ class ScatterChartThree extends React.PureComponent {
             context.arc(pos.x, pos.y, gl_PointSize, 0, PI2);
             context.closePath();
             context.fill();
+        }
+        if (showLabels) {
+            context.fillStyle = 'black';
+
+            let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
+            context.font = '24px ' + font; // FIXME adjust size
+            const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+            for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
+                pos.x = labelsPositions.positions[k];
+                pos.y = labelsPositions.positions[k + 1];
+                pos.z = labelsPositions.positions[k + 2];
+                pos.project(camera);
+                pos.x = (pos.x * widthHalf) + widthHalf;
+                pos.y = -(pos.y * heightHalf) + heightHalf;
+                context.fillText(labelsPositions.labels[i], pos.x, pos.y);
+
+            }
         }
     }
 
@@ -201,10 +228,12 @@ class ScatterChartThree extends React.PureComponent {
             canvas.height = totalSize.height * window.devicePixelRatio;
             context = canvas.getContext('2d');
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            context.fillStyle = 'white';
+            context.fillRect(0, 0, totalSize.width, totalSize.height);
 
         }
 
-        this.drawContext(context, chartSize);
+        this.drawContext(context, chartSize, format);
 
         if (!traceInfo.continuous) {
             context.translate(chartSize.width, 2);
@@ -398,8 +427,8 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     draw() {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.state.showLabels);
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize, categoricalNames} = this.props;
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.state.showLabels, categoricalNames);
     }
 
 

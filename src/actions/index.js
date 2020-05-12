@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -38,6 +38,7 @@ export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
 export const DIFF_EXP_RESULTS = 'DIFF_EXP_RESULTS';
 
 export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
+export const SET_CATEGORICAL_NAME = 'SET_CATEGORICAL_NAME';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
@@ -698,6 +699,10 @@ export function handleMeasureFilterUpdated(payload) {
 
 export function handleColorChange(payload) {
     return {type: SET_CATEGORICAL_COLOR, payload: payload};
+}
+
+export function handleCategoricalNameChange(payload) {
+    return {type: SET_CATEGORICAL_NAME, payload: payload};
 }
 
 export function handleDimensionFilterUpdated(payload) {

@@ -103,7 +103,47 @@ export function getPositions(trace) {
 
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false) {
+export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
+    const categoryToPosition = {};
+    let ncategories = 0;
+    for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 3) {
+        let value = traceInfo.values[i];
+        let p = categoryToPosition[value];
+        if (p === undefined) {
+            p = {count: 0, position: [0, 0, 0]};
+            categoryToPosition[value] = p;
+            ncategories++;
+        }
+        p.count++;
+        p.position[0] += traceInfo.positions[j];
+        p.position[1] += traceInfo.positions[j + 1];
+        p.position[2] += traceInfo.positions[j + 2];
+    }
+    let labelStrings = [];
+    let labelPositions = new Float32Array(ncategories * 3);
+    let positionIndex = 0;
+    let categoryObject = categoricalNames[traceInfo.name];
+    if (categoryObject === undefined) {
+        categoryObject = {};
+    }
+    for (let category in categoryToPosition) {
+        let renamedCategory = categoryObject[category];
+        if (renamedCategory !== undefined) {
+            labelStrings.push(renamedCategory);
+        } else {
+            labelStrings.push(category);
+        }
+        let p = categoryToPosition[category];
+        labelPositions[positionIndex] = p.position[0] / p.count;
+        labelPositions[positionIndex + 1] = p.position[1] / p.count;
+        labelPositions[positionIndex + 2] = p.position[2] / p.count;
+        positionIndex += 3;
+    }
+
+    return {labels: labelStrings, positions: labelPositions};
+}
+
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}) {
     const colors = traceInfo.colors;
     const positions = traceInfo.positions;
     const is3d = traceInfo.z != null;
@@ -128,35 +168,10 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     let activeVisualizers = scatterPlot.getActiveVisualizers();
     activeVisualizers = activeVisualizers.filter(vis => !(vis instanceof ScatterPlotVisualizer3DLabels));
     if (showLabels) {
-        let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
-        let categoryToPosition = {};
-        let ncategories = 0;
-        for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 3) {
-            let value = traceInfo.values[i];
-            let p = categoryToPosition[value];
-            if (p === undefined) {
-                p = {count: 0, position: [0, 0, 0]};
-                categoryToPosition[value] = p;
-                ncategories++;
-            }
-            p.count++;
-            p.position[0] += traceInfo.positions[j];
-            p.position[1] += traceInfo.positions[j + 1];
-            p.position[2] += traceInfo.positions[j + 2];
-        }
-        let labelStrings = [];
-        let labelPositions = new Float32Array(ncategories * 3);
-        let positionIndex = 0;
-        for (let category in categoryToPosition) {
-            labelStrings.push(category);
-            let p = categoryToPosition[category];
-            labelPositions[positionIndex] = p.position[0] / p.count;
-            labelPositions[positionIndex + 1] = p.position[1] / p.count;
-            labelPositions[positionIndex + 2] = p.position[2] / p.count;
-            positionIndex += 3;
-        }
 
-        labels3DVisualizer.setLabels(labelStrings, labelPositions);
+        const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+        let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
+        labels3DVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
         activeVisualizers.push(labels3DVisualizer);
     }
 
