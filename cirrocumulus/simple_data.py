@@ -65,12 +65,11 @@ class SimpleData:
         obs = []
         result = {'version': '1.0.0'}
         for key in adata.obs_keys():
-            if pd.api.types.is_categorical_dtype(adata.obs[key]):
+            if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(adata.obs[key]):
                 obs_cat.append(key)
             else:
                 obs.append(key)
         images = adata.uns['images'] if 'images' in adata.uns else None
-
         result['var'] = list(
             sorted(adata.var_names.values, key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
         result['obs'] = obs

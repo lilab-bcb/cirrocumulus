@@ -6,8 +6,10 @@ import scipy.sparse
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.simple_data import SimpleData
 
-
 # only works with local files
+from cirrocumulus.star_fusion_utils import read_star_fusion_file
+
+
 class AnndataDataset(AbstractDataset):
 
     def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
@@ -16,7 +18,6 @@ class AnndataDataset(AbstractDataset):
         self.backed = backed
         self.force_sparse = force_sparse
         self.extensions = extensions
-
 
     def get_suffixes(self):
         return self.extensions
@@ -27,6 +28,8 @@ class AnndataDataset(AbstractDataset):
             return anndata.read_loom(path)
         elif path_lc.endswith('.zarr'):
             return anndata.read_zarr(path)
+        elif path_lc.endswith('.tsv'):
+            return read_star_fusion_file(path)
         return anndata.read(path, backed=self.backed)
         # elif path.endswith('.mtx'):
         #

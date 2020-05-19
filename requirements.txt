@@ -1,6 +1,6 @@
 CacheControl==0.12.6
 Flask==1.1.2
-fsspec==0.7.3
+fsspec==0.7.4
 gcsfs==0.6.2
 google-auth===1.11.0
 google-cloud-datastore==1.12.0

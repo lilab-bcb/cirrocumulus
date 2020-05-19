@@ -10,9 +10,9 @@ import React from 'react';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
-import {createDotPlotConfig, createDotPlotLayout} from './util';
 
 import SizeLegend from './SizeLegend';
+import {createDotPlotConfig, createDotPlotLayout} from './util';
 
 const Plot = createPlotlyComponent(window.Plotly);
 const styles = theme => ({
@@ -99,9 +99,9 @@ class DotPlot extends React.PureComponent {
             sizeMax = 1;
         }
         let maxDiameter = 14;
-
+        let minDiameter = 2;
         let colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
-        let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, maxDiameter]).clamp(true);
+        let sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([minDiameter, maxDiameter]).clamp(true);
 
 
         let traces = [];
