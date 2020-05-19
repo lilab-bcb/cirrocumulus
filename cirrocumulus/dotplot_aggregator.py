@@ -1,9 +1,9 @@
 import numpy as np
+import pandas as pd
 import scipy.sparse
+from cirrocumulus.simple_data import SimpleData
 from natsort import natsorted
 from pandas import CategoricalDtype
-
-from cirrocumulus.simple_data import SimpleData
 
 
 class DotPlotAggregator:
@@ -23,11 +23,12 @@ class DotPlotAggregator:
         issparse = scipy.sparse.issparse(X)
         df = adata.obs
         for dimension in dimensions:
-            if not df[dimension].dtype.ordered:
-                df[dimension] = df[dimension].astype(
-                    CategoricalDtype(natsorted(df[dimension].dtype.categories), ordered=True))
-            if len(df[dimension].dtype.categories) <= 1:
-                continue
+            if pd.api.types.is_categorical_dtype(df[dimension]):
+                if not df[dimension].dtype.ordered:
+                    df[dimension] = df[dimension].astype(
+                        CategoricalDtype(natsorted(df[dimension].dtype.categories), ordered=True))
+                if len(df[dimension].dtype.categories) <= 1:
+                    continue
             grouped = adata.obs.groupby(dimension)
             group_names = []
             mean_output = None
