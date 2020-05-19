@@ -1,6 +1,5 @@
-from natsort.natsort import natsorted
-
 from cirrocumulus.simple_data import SimpleData
+from natsort.natsort import natsorted
 
 
 class FeatureAggregator:
@@ -30,7 +29,7 @@ class FeatureAggregator:
             for column in self.dimensions:
                 df = adata.obs.agg({column: lambda x: x.value_counts(sort=False)})
                 sorted_categories = natsorted(df.index)
-                df = df.loc[sorted_categories]
+                df = df.iloc[df.index.get_indexer_for(sorted_categories)]
                 dimension_summary = {'categories': df.index.to_list(),
                                      'counts': df[column].to_list()}
                 result[column] = dimension_summary
