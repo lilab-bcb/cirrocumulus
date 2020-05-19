@@ -1,10 +1,71 @@
 from cirrocumulus.anndata_dataset import AnndataDataset
 
 
-def create_app(dataset, backed):
+def create_app(dataset_paths, backed):
     from cirrocumulus.api import blueprint, auth_api, database_api
     from flask_compress import Compress
     from flask import Flask, send_from_directory
+    from cirrocumulus.api import dataset_api
+    from cirrocumulus.local_db_api import LocalDbAPI
+    from cirrocumulus.no_auth import NoAuth
+    import os
+
+    os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+    auth_api.provider = NoAuth()
+    database_api.provider = LocalDbAPI(os.path.normpath(dataset_paths[0]))
+    try:
+        from cirrocumulus.parquet_dataset import ParquetDataset
+        dataset_api.add(ParquetDataset())
+    except ModuleNotFoundError:
+        pass
+    anndataDataset = AnndataDataset('r' if backed else None)
+    if len(dataset_paths) > 1:
+        to_concat = []
+        all_ids = None
+        for path in dataset_paths:
+            d = anndataDataset.get_data(path)
+            all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
+            to_concat.append(d)
+        for i in range(len(to_concat)):
+            d = to_concat[i]
+            missing_ids = all_ids.difference(d.obs.index)
+            if len(missing_ids) > 0:
+                import scipy.sparse
+                import anndata
+                import pandas as pd
+                X = None
+                if d.shape[1] > 0:
+                    empty = scipy.sparse.csr_matrix((len(missing_ids), d.shape[1]))
+                    X = scipy.sparse.vstack((d.X, empty), format='csr')
+                missing_df = pd.DataFrame(index=missing_ids)
+                for column in d.obs:
+                    if pd.api.types.is_bool_dtype(d.obs[column]):
+                        missing_df[column] = False
+
+                obs = pd.concat((d.obs, missing_df))
+                # for column in d.obs:
+                #     if pd.api.types.is_categorical_dtype(d.obs[column]):
+                #         obs[column] = obs[column].astype('category')
+                d = anndata.AnnData(X=X, obs=obs, var=d.var)
+            d = d[all_ids]  # same order
+            to_concat[i] = d
+        X_list = []
+        obs = None
+        obsm = {}
+        var = None
+        for d in to_concat:
+            if d.shape[1] > 0:
+                X_list.append(d.X)
+                var = pd.concat((var, d.var)) if var is not None else d.var
+            obs = obs.join(d.obs) if obs is not None else d.obs
+            for key in d.obsm_keys():
+                obsm[key] = d.obsm[key]
+
+        X = scipy.sparse.hstack(X, format='csr') if len(X_list) > 1 else X_list[0]
+        adata = anndata.AnnData(X=X, obs=obs, var=var, obsm=obsm)
+        anndataDataset.add_data(os.path.normpath(dataset_paths[0]), adata)
+    dataset_api.add(anndataDataset)
+
     app = Flask(__name__, static_folder='client/')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.register_blueprint(blueprint, url_prefix='/api')
@@ -16,21 +77,6 @@ def create_app(dataset, backed):
     # from flask_cors import CORS
     # CORS(app)
     Compress(app)
-    from cirrocumulus.api import dataset_api
-    from cirrocumulus.local_db_api import LocalDbAPI
-    from cirrocumulus.no_auth import NoAuth
-    import os
-
-    os.environ['WERKZEUG_RUN_MAIN'] = 'true'
-    auth_api.provider = NoAuth()
-    database_api.provider = LocalDbAPI(os.path.normpath(dataset))
-
-    try:
-        from cirrocumulus.parquet_dataset import ParquetDataset
-        dataset_api.add(ParquetDataset())
-    except ModuleNotFoundError:
-        pass
-    dataset_api.add(AnndataDataset('r' if backed else None))
     return app
 
 
@@ -40,7 +86,7 @@ def main(argsv):
 
     parser = argparse.ArgumentParser(
         description='Run cirrocumulus')
-    parser.add_argument('dataset', help='Path to an h5ad file or parquet file')
+    parser.add_argument('dataset', help='Path to dataset', nargs='+')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host', help='Host IP address')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
