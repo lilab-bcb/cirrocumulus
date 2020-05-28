@@ -20,7 +20,7 @@ const authScopes = [
     'email',
     'profile',
     'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/contacts.readonly',
+    // 'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
@@ -156,7 +156,6 @@ export function initGapi() {
                     dispatch(_loadSavedView());
                 });
             } else {
-
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
                 let script = document.createElement('script');
                 script.type = 'text/javascript';
@@ -1503,6 +1502,7 @@ function _updateCharts(onError) {
 function handleEmbeddingResult(result) {
     return function (dispatch, getState) {
         const state = getState();
+
         let embeddingResult = result.embeddingResult;
         let selectedEmbedding = result.embedding;
         let isImage = selectedEmbedding.image != null;
@@ -1510,11 +1510,8 @@ function handleEmbeddingResult(result) {
 
 
         let embeddingData = state.embeddingData;
-
         const globalFeatureSummary = state.globalFeatureSummary;
-
         const obsCat = state.dataset.obsCat;
-
         const embeddingBins = embeddingResult.bins;
         const embeddingValues = embeddingResult.values;
         const coordinates = embeddingResult.coordinates;
@@ -1555,6 +1552,12 @@ function handleEmbeddingResult(result) {
                 colorScale.summary = traceSummary;
             } else {
                 let traceUniqueValues = traceSummary.categories;
+                // if (traceUniqueValues.length === 1 && traceUniqueValues[0] === true) {
+                //     traceUniqueValues = traceUniqueValues.concat([null]);
+                //     traceSummary.categories = traceUniqueValues;
+                //     traceSummary.counts = traceSummary.counts.concat([state.dataset.shape[0] - traceSummary.counts[0]]);
+                // }
+
                 let colors;
                 if (traceUniqueValues.length <= 10) {
                     colors = schemeCategory10;
