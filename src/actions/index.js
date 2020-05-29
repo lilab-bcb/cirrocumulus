@@ -17,9 +17,9 @@ import {
 export const API = '/api';
 
 const authScopes = [
-    'email',
-    'profile',
-    'https://www.googleapis.com/auth/userinfo.profile',
+    // 'email',
+    // 'profile',
+    // 'https://www.googleapis.com/auth/userinfo.profile',
     // 'https://www.googleapis.com/auth/contacts.readonly',
     'https://www.googleapis.com/auth/devstorage.full_control',
 ];
