@@ -67,7 +67,7 @@ def create_app(dataset_paths, backed):
         anndataDataset.add_data(os.path.normpath(dataset_paths[0]), adata)
     dataset_api.add(anndataDataset)
 
-    app = Flask(__name__, static_folder='client/')
+    app = Flask(__name__, static_folder='client', static_url_path='')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.register_blueprint(blueprint, url_prefix='/api')
 
@@ -75,18 +75,15 @@ def create_app(dataset_paths, backed):
     def root():
         return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
-   # from flask_cors import CORS
-    #CORS(app)
+    # from flask_cors import CORS
+    # CORS(app)
     Compress(app)
     return app
 
 
 def main(argsv):
     import argparse
-    import webbrowser
-
-    parser = argparse.ArgumentParser(
-        description='Run cirrocumulus')
+    parser = argparse.ArgumentParser(description='Run cirrocumulus')
     parser.add_argument('dataset', help='Path to dataset', nargs='+')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host', help='Host IP address')
@@ -95,16 +92,13 @@ def main(argsv):
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
-
-    if not args.no_open:
-        host = args.host if args.host is not None else '127.0.0.1'
-        webbrowser.open(host + ':' + str(args.port))
     app = create_app(args.dataset, args.backed)
-
+    if not args.no_open:
+        import webbrowser
+        host = args.host if args.host is not None else 'http://127.0.0.1'
+        url = host + ':' + str(args.port)
+        webbrowser.open(url)
     app.run(host=args.host, port=args.port, debug=False, threaded=False, processes=args.processes)
-    # from gevent.pywsgi import WSGIServer
-    # http_server = WSGIServer(('', args.port), app)
-    # http_server.serve_forever()
 
 
 if __name__ == "__main__":
