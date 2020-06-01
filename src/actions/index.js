@@ -17,11 +17,11 @@ import {
 export const API = '/api';
 
 const authScopes = [
-    // 'email',
+    'email',
     // 'profile',
     // 'https://www.googleapis.com/auth/userinfo.profile',
     // 'https://www.googleapis.com/auth/contacts.readonly',
-    'https://www.googleapis.com/auth/devstorage.full_control',
+    // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
@@ -164,7 +164,6 @@ export function initGapi() {
                     window.gapi.load('client:auth2', () => {
                         window.gapi.client.init({
                             clientId: serverInfo.clientId,
-                            discoveryDocs: [],
                             scope: authScopes.join(' '),
                         }).then(() => {
                             dispatch(_setLoadingApp({loading: false, progress: 0}));
