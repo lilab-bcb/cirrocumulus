@@ -118,7 +118,7 @@ class CategoricalLegend extends React.PureComponent {
         const categories = globalDimensionSummary.categories;
         const renamedCategories = categoricalNames[name] || {};
         clickEnabled = clickEnabled && categories.length > 1;
-        let style = {maxHeight: maxHeight};
+        let style = {maxHeight: maxHeight, display: 'inline-block'};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }

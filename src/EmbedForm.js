@@ -35,7 +35,8 @@ import {
     exportDatasetFilters,
     getDatasetFilterArray,
     getEmbeddingKey,
-    handleBrushFilterUpdated, handleCategoricalNameChange,
+    handleBrushFilterUpdated,
+    handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
     handleMeasureFilterUpdated,
@@ -465,6 +466,7 @@ class EmbedForm extends React.PureComponent {
                                         style={{
                                             paddingBottom: 3,
                                             paddingTop: 3,
+                                            display: 'block',
                                             borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                                         }}
                                         handleUpdate={handleMeasureFilterUpdated}
@@ -482,6 +484,7 @@ class EmbedForm extends React.PureComponent {
                                         style={{
                                             paddingBottom: 3,
                                             paddingTop: 3,
+                                            display: 'block',
                                             borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
                                         }}
                                         datasetFilter={datasetFilter}
