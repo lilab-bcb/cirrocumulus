@@ -78,6 +78,11 @@ class DatasetAPI:
         return provider.diff_exp(self.fs_adapter.get_fs(path), path, mask=mask, dataset=dataset,
             schema=self.schema(dataset), var_range=var_range)
 
+    def download(self, dataset, key):
+        path = dataset['url']
+        provider = self.get_dataset_provider(path)
+        return provider.read(self.fs_adapter.get_fs(path), key)
+
     def read(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']
         provider = self.get_dataset_provider(path)

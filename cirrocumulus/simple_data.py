@@ -69,7 +69,13 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
-        images = adata.uns['images'] if 'images' in adata.uns else None
+        spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
+
+        if spatial_node is not None:
+            spatial_node_keys = list(spatial_node.keys())
+            if len(spatial_node_keys) == 1:
+                spatial_node = spatial_node[spatial_node_keys[0]].keys()  # images', 'metadata', 'scalefactors']
+
         result['var'] = list(
             sorted(adata.var_names.values, key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
         result['obs'] = obs
@@ -77,26 +83,21 @@ class SimpleData:
         result['shape'] = adata.shape
         embeddings = []
         for key in adata.obsm_keys():
-            if key.startswith('X_'):
-                dim = min(3, adata.obsm[key].shape[1])
-                embedding = dict(name=key, dimensions=dim)
 
-                if images is not None and key in images:
-                    image_info = images[key]
-                    for image_key in image_info:
-                        if isinstance(image_info[image_key], np.ndarray) and len(image_info[image_key]) == 1:
-                            image_info[image_key] = image_info[image_key].tolist()[0]
-                    embedding.update(image_info)
-                    embedding['type'] = 'image'
-                if dim == 3:
-                    embeddings.append(embedding)
-                    embedding = embedding.copy()
-                    embedding['dimensions'] = 2
-                    embeddings.append(embedding)
-                else:
-                    embeddings.append(embedding)
+            dim = min(3, adata.obsm[key].shape[1])
+            embedding = dict(name=key, dimensions=dim)
+
+            if key == 'spatial':
+                if spatial_node is not None and 'scalefactors' in spatial_node and 'images' in spatial_node:
+                    embedding['spatial'] = dict(scalefactors=spatial_node['scalefactors'],
+                        images=list(spatial_node['images'].keys()))
+            if dim == 3:
+                embeddings.append(embedding)
+                embedding = embedding.copy()
+                embedding['dimensions'] = 2
+                embeddings.append(embedding)
             else:
-                print('Skipping {}'.format(key))
+                embeddings.append(embedding)
         result['embeddings'] = embeddings
         return result
 

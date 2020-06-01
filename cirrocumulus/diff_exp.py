@@ -110,7 +110,7 @@ def diff_exp(X, mask):
         )
         pvals[idx] = ss.t.sf(np.fabs(tscore), v) * 2.0  # two-sided
         tscores[idx] = tscore
-    qvals = fdrcorrection(pvals)
+    #  qvals = fdrcorrection(pvals)
     log_fold_change = mean1 - mean2
     x_avg = (mean1 + mean2) / 2
     x_max = x_avg.max()
@@ -118,5 +118,4 @@ def diff_exp(X, mask):
     weights = (x_avg - x_min) / (x_max - x_min)
     WAD = log_fold_change * weights
 
-    return dict(WAD=WAD, mean1=mean1, mean2=mean2, percent1=percent1, percent2=percent2, tqvals=qvals,
-        tscore=tscore)
+    return dict(WAD=WAD, mean1=mean1, mean2=mean2, percent1=percent1, percent2=percent2, tscore=tscore)

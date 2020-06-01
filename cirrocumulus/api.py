@@ -127,16 +127,27 @@ def handle_schema():
     return to_json(get_schema_and_dataset()[0])
 
 
-@blueprint.route('/image', methods=['GET'])
-def handle_image():
-    schema, dataset = get_schema_and_dataset()
-    image_id = request.args.get('image')
-    path = dataset['url']
-    import os
-    path = os.path.dirname(path)
-    image_path = os.path.join(path, 'images', image_id)
-    with dataset_api.fs.open(image_path) as s:
-        return Response(s.read(), mimetype='image/png')  # FIXME, correct mimetype
+# @blueprint.route('/download', methods=['GET'])
+# def handle_file():
+#     email = auth_api.auth()['email']
+#     dataset_id = request.args.get('id', '')
+#     dataset = database_api.get_dataset(email, dataset_id, False)
+#     file = request.args.get('file')
+#     path = dataset['url']
+#     import os
+#     path = os.path.dirname(path)
+#
+#     file_path = os.path.join(path, file)
+#     chunk_size = 4096
+#     with dataset_api.fs.open(file_path) as s:
+#         def generate():
+#             while True:
+#                 chunk = s.read(chunk_size)
+#                 if len(chunk) <= 0:
+#                     break
+#                 yield chunk
+#
+#         return Response(generate())  # TODO, correct mimetype
 
 
 @blueprint.route('/user', methods=['GET'])

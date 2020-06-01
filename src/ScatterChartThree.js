@@ -48,7 +48,7 @@ class ScatterChartThree extends React.PureComponent {
 
     componentDidMount() {
         this.init();
-        this.draw();
+        this.draw(); // TODO fix 2x draw
         this.draw();
     }
 
@@ -471,7 +471,6 @@ class ScatterChartThree extends React.PureComponent {
                 height: this.chartSize.height
             }}
                  ref={this.containerElementRef}>
-
             </div>
         </React.Fragment>;
     }
