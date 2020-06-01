@@ -63,6 +63,7 @@ def create_app(dataset_paths, backed):
 
         X = scipy.sparse.hstack(X, format='csr') if len(X_list) > 1 else X_list[0]
         adata = anndata.AnnData(X=X, obs=obs, var=var, obsm=obsm)
+        adata.var_names_make_unique()
         anndataDataset.add_data(os.path.normpath(dataset_paths[0]), adata)
     dataset_api.add(anndataDataset)
 
@@ -74,8 +75,8 @@ def create_app(dataset_paths, backed):
     def root():
         return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
-    # from flask_cors import CORS
-    # CORS(app)
+   # from flask_cors import CORS
+    #CORS(app)
     Compress(app)
     return app
 
