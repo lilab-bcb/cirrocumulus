@@ -1243,7 +1243,7 @@ function _updateCharts(onError) {
             traceInfo.active = active;
         });
 
-        let dotplotMeasures = [];
+        let dotplotMeasures = new Set();
         let dotplotDimensions = [];
         let dotPlotKeys = {}; // category-feature
         if (dotplot) {
@@ -1260,7 +1260,7 @@ function _updateCharts(onError) {
                         let key = category + '-' + feature;
                         dotPlotKeys[key] = true;
                         if (cachedDotPlotKeys[key] == null) {
-                            dotplotMeasures.push(feature);
+                            dotplotMeasures.add(feature);
                             added = true;
                         }
                     }
@@ -1393,12 +1393,12 @@ function _updateCharts(onError) {
             dispatch(_setDotPlotData(dotPlotData.slice()));
         }
 
-        if (dotplotDimensions.length > 0 && dotplotMeasures.length > 0) {
+        if (dotplotDimensions.length > 0 && dotplotMeasures.size > 0) {
             let p = fetch(API + '/grouped_stats',
                 {
                     body: JSON.stringify({
                         id: state.dataset.id,
-                        measures: dotplotMeasures,
+                        measures: Array.from(dotplotMeasures),
                         dimensions: dotplotDimensions
                     }),
                     method: 'POST',
