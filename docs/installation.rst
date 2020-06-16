@@ -5,12 +5,19 @@ Local Usage
 -------------
 
 - Install using pip::
-
-   pip install cirrocumulus
+    pip install cirrocumulus
 
 -  Launch via the command line::
 
     cirro launch <path to dataset>
+
+   -  Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
+
+
+
+- Launch using docker::
+    docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulus/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
+
 
 Google Cloud Platform (GCP) Deployment Instructions
 -----------------------------------------------------
