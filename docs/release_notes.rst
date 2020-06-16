@@ -1,3 +1,7 @@
+Version 1.1.0.post1 `June 15, 2020`
+------------------------------------
+* Fixed bug that sometimes prevented dotplot from showing
+
 Version 1.1.0 `June 1, 2020`
 ----------------------------------
 * Added support for STAR-Fusion output
