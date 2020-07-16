@@ -335,7 +335,7 @@ export function createDotPlotLayout(options) {
             b: 0,
             r: 0,
             t: 0,
-            autoexpand: false
+            autoexpand: true
         },
         fixedrange: true,
         legend: {yanchor: 'top'},
