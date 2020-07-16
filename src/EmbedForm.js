@@ -1,12 +1,12 @@
 import {Switch} from '@material-ui/core';
+import MuiAccordionPanel from '@material-ui/core/Accordion';
+import MuiAccordionPanelDetails from '@material-ui/core/AccordionDetails';
+import MuiAccordionPanelSummary from '@material-ui/core/AccordionSummary';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import Chip from '@material-ui/core/Chip';
 import Divider from '@material-ui/core/Divider';
-import MuiExpansionPanel from '@material-ui/core/ExpansionPanel';
-import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Grid from '@material-ui/core/Grid';
@@ -84,14 +84,14 @@ const summaryOptions = [
 const styles = theme => ({
     root: {
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         width: '100%',
-        'flex-direction': 'column',
+        flexDirection: 'column'
     },
     formControl: {
         display: 'block',
-        margin: theme.spacing(1),
         minWidth: 200,
+        margin: theme.spacing(1),
     },
     select: {
         minWidth: 200,
@@ -99,7 +99,7 @@ const styles = theme => ({
 });
 
 
-const ExpansionPanel = withStyles({
+const Accordion = withStyles({
     root: {
         border: '1px solid rgba(0, 0, 0, .125)',
         boxShadow: 'none',
@@ -114,9 +114,9 @@ const ExpansionPanel = withStyles({
         },
     },
     expanded: {},
-})(MuiExpansionPanel);
+})(MuiAccordionPanel);
 
-const ExpansionPanelSummary = withStyles({
+const AccordionPanelSummary = withStyles({
     root: {
         backgroundColor: 'rgba(0, 0, 0, .03)',
         borderBottom: '1px solid rgba(0, 0, 0, .125)',
@@ -132,13 +132,13 @@ const ExpansionPanelSummary = withStyles({
         },
     },
     expanded: {},
-})(MuiExpansionPanelSummary);
+})(MuiAccordionPanelSummary);
 
-const ExpansionPanelDetails = withStyles(theme => ({
+const AccordionPanelDetails = withStyles(theme => ({
     root: {
         padding: 0,
     },
-}))(MuiExpansionPanelDetails);
+}))(MuiAccordionPanelDetails);
 
 
 class EmbedForm extends React.PureComponent {
@@ -391,14 +391,14 @@ class EmbedForm extends React.PureComponent {
                                              onChange={this.onObservationsChange}/>
                 </FormControl>
 
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary
+                <Accordion defaultExpanded>
+                    <AccordionPanelSummary
                         aria-controls="summary-content"
                         id="summary-header"
                     >
                         <div>Filter</div>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails>
                         <div style={{marginLeft: 10}}>
                             <div>
                                 <Grid component="label" container alignItems="center" spacing={0}>
@@ -504,17 +504,17 @@ class EmbedForm extends React.PureComponent {
 
 
                         </div>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+                    </AccordionPanelDetails>
+                </Accordion>
 
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary
+                <Accordion defaultExpanded>
+                    <AccordionPanelSummary
                         aria-controls="view-options-content"
                         id="view-options-header"
                     >
                         <div>View Options</div>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails>
                         <div>
 
 
@@ -553,7 +553,7 @@ class EmbedForm extends React.PureComponent {
                                 <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
                                 <ColorSchemeSelector/>
                             </FormControl>
-                            {<FormControlLabel
+                            <div><FormControlLabel
                                 control={
                                     <Switch
                                         checked={interpolator.reversed || false}
@@ -562,9 +562,9 @@ class EmbedForm extends React.PureComponent {
                                     />
                                 }
                                 label="Reverse Colors"
-                            />}
+                            /></div>
 
-                            {!isSummarized && <FormControlLabel
+                            {!isSummarized && <div><FormControlLabel
                                 control={
                                     <Switch
                                         checked={binValues}
@@ -573,7 +573,7 @@ class EmbedForm extends React.PureComponent {
                                     />
                                 }
                                 label="Bin Plot"
-                            />}
+                            /></div>}
 
                             {!isSummarized && binValues &&
                             <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
@@ -626,16 +626,16 @@ class EmbedForm extends React.PureComponent {
 
                         </div>
 
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
-                <ExpansionPanel defaultExpanded>
-                    <ExpansionPanelSummary
+                    </AccordionPanelDetails>
+                </Accordion>
+                <Accordion defaultExpanded>
+                    <AccordionPanelSummary
                         aria-controls="filter-options-content"
                         id="filter-options-header"
                     >
                         <div>Saved Filters</div>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails>
                         <div>
                             {datasetFilters.length === 0 &&
                             <Box color="text.secondary">No saved filters</Box>}
@@ -656,8 +656,8 @@ class EmbedForm extends React.PureComponent {
                                 <Button onClick={this.props.handleExportDatasetFilters}>Export Filters</Button>
                             </div>}
                         </div>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+                    </AccordionPanelDetails>
+                </Accordion>
             </div>
         );
     }
