@@ -11,7 +11,7 @@ function scaleLinear(value, domain, range) {
 }
 
 
-export function createScatterPlot(containerElement) {
+export function createScatterPlot(containerElement, premultipliedAlpha) {
     const styles = makeStyles();
     styles.label3D.fontSize = 40;
 
@@ -20,7 +20,7 @@ export function createScatterPlot(containerElement) {
         selectEnabled: false,
         styles: styles,
 
-    });
+    }, premultipliedAlpha); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
 
     const activeVisualizers = [];
     const visualizer = new ScatterPlotVisualizerSprites(styles);

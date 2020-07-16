@@ -3,19 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@material-ui/core": "^4.10.2",
+    "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
-    "@testing-library/jest-dom": "^5.10.1",
-    "@testing-library/react": "^10.2.1",
-    "@testing-library/user-event": "^10.4.1",
+    "@testing-library/jest-dom": "^5.11.1",
+    "@testing-library/react": "^10.4.7",
     "classnames": "^2.2.6",
     "d3-format": "^1.4.4",
     "d3-scale": "^3.2.1",
     "d3-scale-chromatic": "^1.5.0",
     "d3-selection": "^1.4.1",
     "file-saver": "^2.0.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -27,13 +26,13 @@
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git",
-    "simplify-js": "^1.2.4",
-    "three": "^0.116.1"
+    "simplify-js": "^1.2.4"
   },
   "devDependencies": {
-    "source-map-loader": "^0.2.4",
-    "ts-loader": "^7.0.5",
-    "typescript": "^3.9.5",
+    "@testing-library/user-event": "^12.0.11",
+    "source-map-loader": "^1.0.1",
+    "ts-loader": "^8.0.1",
+    "typescript": "^3.9.6",
     "yarn": "^1.22.4"
   },
   "scripts": {

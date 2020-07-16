@@ -3,9 +3,9 @@ Flask==1.1.2
 fsspec==0.7.4
 gcsfs==0.6.2
 google-auth===1.11.0
-google-cloud-datastore==1.12.0
+google-cloud-datastore==1.13.1
 natsort==7.0.1
-numpy==1.18.5
-pandas==1.0.4
-scipy==1.4.1
+numpy==1.19.0
+pandas==1.0.5
+scipy==1.5.1
 pyarrow===0.16.0

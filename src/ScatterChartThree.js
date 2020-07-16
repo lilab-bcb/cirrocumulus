@@ -308,7 +308,7 @@ class ScatterChartThree extends React.PureComponent {
 
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
-            this.scatterPlot = createScatterPlot(containerElement);
+            this.scatterPlot = createScatterPlot(containerElement, false);
             this.scatterPlot.hoverCallback = (point) => {
                 if (point == null) {
                     this.tooltipElementRef.current.innerHTML = ' ';
