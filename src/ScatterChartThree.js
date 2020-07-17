@@ -1,6 +1,4 @@
-import {Tooltip} from '@material-ui/core';
-import IconButton from '@material-ui/core/IconButton';
-import PhotoLibraryIcon from '@material-ui/icons/PhotoLibrary';
+import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {Vector3, Vector4} from 'three';
@@ -24,6 +22,33 @@ function smoothstep(edge0, edge1, x) {
 function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
+
+const styles = theme => ({
+
+    root: {
+        '& > *': {
+            margin: theme.spacing(.4),
+        },
+        '& > .MuiIconButton-root': {
+            padding: 0,
+        },
+        '& > .cirro-active': {
+            fill: 'rgb(220, 0, 78)',
+            color: 'rgb(220, 0, 78)',
+        },
+        '& > .cirro-inactive': {
+            fill: 'rgba(0, 0, 0, 0.26)',
+            color: 'rgba(0, 0, 0, 0.26)'
+        },
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        display: 'inline-block',
+        verticalAlign: 'top',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+    }
+});
 
 class ScatterChartThree extends React.PureComponent {
 
@@ -299,8 +324,7 @@ class ScatterChartThree extends React.PureComponent {
 
     };
 
-    onGallery = (event) => {
-        event.preventDefault();
+    onGallery = () => {
         this.props.onGallery();
     };
 
@@ -318,7 +342,7 @@ class ScatterChartThree extends React.PureComponent {
                     if (typeof value === 'number') {
                         value = numberFormat(value);
                     }
-                    this.tooltipElementRef.current.innerHTML = ' ' + value;
+                    this.tooltipElementRef.current.innerHTML = '' + value;
                 }
 
             };
@@ -434,39 +458,31 @@ class ScatterChartThree extends React.PureComponent {
 
     render() {
         return <React.Fragment>
-            <ChartToolbar
-                dragmode={this.state.dragmode}
-                animating={this.state.animating}
-                editSelection={this.state.editSelection}
-                showLabels={this.state.showLabels}
-                is3d={this.props.traceInfo && this.props.traceInfo.z != null}
-                onHome={this.onHome}
-                toggleAnimation={this.onToggleAnimation}
-                onSaveImage={this.onSaveImage}
-                onShowLabels={this.onShowLabels}
-                onDragMode={this.onDragMode}
-                onCopyImage={this.onCopyImage}
-                onEditSelection={this.onEditSelection}>
-            </ChartToolbar>
-            <Tooltip title={"View Gallery"}>
-                <IconButton edge={false} size={'small'}
-
-                            aria-label="View Gallery" onClick={this.onGallery}>
-                    <PhotoLibraryIcon/>
-                </IconButton>
-            </Tooltip>
-
-
-            <div ref={this.tooltipElementRef} style={{
-                display: 'inline-block',
-                textOverflow: 'hidden',
-                paddingLeft: 5
-            }}>&nbsp;
+            <div className={this.props.classes.root}>
+                <ChartToolbar
+                    dragmode={this.state.dragmode}
+                    animating={this.state.animating}
+                    editSelection={this.state.editSelection}
+                    showLabels={this.state.showLabels}
+                    is3d={this.props.traceInfo && this.props.traceInfo.z != null}
+                    onHome={this.onHome}
+                    toggleAnimation={this.onToggleAnimation}
+                    onSaveImage={this.onSaveImage}
+                    onShowLabels={this.onShowLabels}
+                    onDragMode={this.onDragMode}
+                    onCopyImage={this.onCopyImage}
+                    onEditSelection={this.onEditSelection}
+                    onGallery={this.onGallery}>
+                </ChartToolbar>
+                <div ref={this.tooltipElementRef} style={{
+                    display: 'inline-block',
+                    paddingLeft: 5,
+                    verticalAlign: 'top'
+                }}>&nbsp;</div>
             </div>
 
             <div style={{
                 display: 'inline-block',
-                position: 'relative',
                 width: this.chartSize.width,
                 height: this.chartSize.height
             }}
@@ -476,7 +492,6 @@ class ScatterChartThree extends React.PureComponent {
     }
 }
 
-export default ScatterChartThree;
-
+export default withStyles(styles)(ScatterChartThree);
 
 

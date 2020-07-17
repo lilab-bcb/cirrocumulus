@@ -1,3 +1,7 @@
+Version 1.1.0.post3 `July 17, 2020`
+------------------------------------
+* Fixed embedding hover formatting issue
+
 Version 1.1.0.post2 `July 16, 2020`
 ------------------------------------
 * Fixed Safari bug that caused gallery images to be flipped

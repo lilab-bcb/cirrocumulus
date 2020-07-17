@@ -2,36 +2,15 @@ import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import withStyles from '@material-ui/core/styles/withStyles';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
 import PauseIcon from '@material-ui/icons/Pause';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import PhotoLibraryIcon from '@material-ui/icons/PhotoLibrary';
 import PhotoSizeSelectSmallIcon from '@material-ui/icons/PhotoSizeSelectSmall';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import React from 'react';
 
-const styles = theme => ({
-
-    root: {
-        '& > *': {
-            margin: theme.spacing(.4),
-        },
-        '& > .MuiIconButton-root': {
-            padding: 0,
-        },
-        '& > .cirro-active': {
-            fill: 'rgb(220, 0, 78)',
-            color: 'rgb(220, 0, 78)',
-        },
-        '& > .cirro-inactive': {
-            fill: 'rgba(0, 0, 0, 0.26)',
-            color: 'rgba(0, 0, 0, 0.26)'
-        },
-        display: 'inline-block',
-        verticalAlign: 'top'
-    }
-});
 
 const active = 'cirro-active';
 const inactive = 'cirro-inactive';
@@ -49,6 +28,10 @@ class ChartToolbar extends React.PureComponent {
 
     onShowLabels = () => {
         this.props.onShowLabels();
+    };
+
+    onGallery = () => {
+        this.props.onGallery();
     };
 
     setEditSelection = () => {
@@ -70,7 +53,7 @@ class ChartToolbar extends React.PureComponent {
 
         const {dragmode, editSelection, showLabels} = this.props;
         const {saveImageEl} = this.state;
-        return (<div className={this.props.classes.root}>
+        return (<React.Fragment>
             <Tooltip title={"Lasso Select"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'lasso' ? active : inactive}
                             aria-label="Lasso Select" onClick={() => this.setDragMode('lasso')}>
@@ -162,7 +145,13 @@ class ChartToolbar extends React.PureComponent {
 
             </Menu>
 
+            <Tooltip title={"View Gallery"}>
+                <IconButton edge={false} size={'small'}
 
+                            aria-label="View Gallery" onClick={this.onGallery}>
+                    <PhotoLibraryIcon/>
+                </IconButton>
+            </Tooltip>
             {/*<Tooltip title={"Copy Image"}>*/}
             {/*    <IconButton edge={false} size={'small'} aria-label="Copy Image" onClick={this.props.onCopyImage}>*/}
             {/*        <FileCopyIcon/>*/}
@@ -195,9 +184,9 @@ class ChartToolbar extends React.PureComponent {
             {/*        </svg>*/}
             {/*    </IconButton>*/}
             {/*</Tooltip>*/}
-        </div>);
+        </React.Fragment>);
     }
 }
 
 
-export default withStyles(styles)(ChartToolbar);
+export default ChartToolbar;
