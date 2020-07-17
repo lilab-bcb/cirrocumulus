@@ -153,7 +153,7 @@ class DotPlot extends React.PureComponent {
         const maxCategoryWidth = maxCategoryLength * 9;
         let layout = createDotPlotLayout({
             height: 80 + maxCategoryWidth + features.length * (maxDiameter + 1),
-            width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
+            // width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
         });
         layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: maxDiameter, r: maxDiameter};
         layout.yaxis.type = 'category';
