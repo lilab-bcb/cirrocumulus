@@ -88,7 +88,7 @@ def main(argsv):
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host', help='Host IP address')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
-    parser.add_argument('--processes', help='Number of processes', default=7, type=int)
+    # parser.add_argument('--processes', help='Number of processes', default=7, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
@@ -98,7 +98,7 @@ def main(argsv):
         host = args.host if args.host is not None else 'http://127.0.0.1'
         url = host + ':' + str(args.port)
         webbrowser.open(url)
-    app.run(host=args.host, port=args.port, debug=False, threaded=False, processes=args.processes)
+    app.run(host=args.host, port=args.port, debug=False)
 
 
 if __name__ == "__main__":
