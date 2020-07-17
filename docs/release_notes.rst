@@ -1,3 +1,8 @@
+Version 1.1.0.post2 `July 16, 2020`
+------------------------------------
+* Fixed Safari bug that caused gallery images to be flipped
+* Improved performance loading local h5ad files
+
 Version 1.1.0.post1 `June 15, 2020`
 ------------------------------------
 * Fixed bug that sometimes prevented dotplot from showing

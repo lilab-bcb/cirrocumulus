@@ -153,7 +153,7 @@ class DotPlot extends React.PureComponent {
         const maxCategoryWidth = maxCategoryLength * 9;
         let layout = createDotPlotLayout({
             height: 80 + maxCategoryWidth + features.length * (maxDiameter + 1),
-            // width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 1))
+            width: Math.max(300, maxFeatureWidth + categories.length * (maxDiameter + 2))
         });
         layout.margin = {l: maxFeatureWidth, b: maxCategoryWidth, t: maxDiameter, r: maxDiameter};
         layout.yaxis.type = 'category';
@@ -168,7 +168,7 @@ class DotPlot extends React.PureComponent {
         layout.xaxis.range = [-1, categories.length];
         const sortByInputId = dotplot.name + 'sort_by';
         const sortChoices = [dotplot.name].concat(features);
-        return (<div style={{maxWidth: 800, overflow: 'auto', border: '1px solid LightGrey'}}>
+        return (<div style={{border: '1px solid LightGrey'}}>
             <b>{dotplot.name}</b> <small>({categories.length})</small>
             <FormControl className={this.props.classes.formControl}>
                 <InputLabel shrink={true} htmlFor={sortByInputId}>Sort By</InputLabel>

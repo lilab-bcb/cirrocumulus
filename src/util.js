@@ -301,7 +301,7 @@ export function createDotPlotConfig() {
     return {
         showLink: false,
         scrollZoom: false,
-        responsive: true,
+        responsive: false,
         displaylogo: false,
         displayModeBar: true,
         modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
