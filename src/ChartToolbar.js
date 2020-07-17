@@ -28,7 +28,8 @@ const styles = theme => ({
             fill: 'rgba(0, 0, 0, 0.26)',
             color: 'rgba(0, 0, 0, 0.26)'
         },
-        display: 'inline-block'
+        display: 'inline-block',
+        verticalAlign: 'top'
     }
 });
 
