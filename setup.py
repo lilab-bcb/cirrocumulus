@@ -33,6 +33,7 @@ requires = [
         "flask",
         "flask-compress",
         "fsspec",
+        "loompy",
         "natsort",
         "numpy",
         "pandas",
