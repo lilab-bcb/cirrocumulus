@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -1075,7 +1075,6 @@ function _setEmail(payload) {
 export function setSearchTokens(value, type) {
     return function (dispatch, getState) {
         const state = getState();
-
         let searchTokens = state.searchTokens;
         // keep all other types
         let removeType = [type];
@@ -1224,8 +1223,10 @@ function _updateCharts(onError) {
         const searchTokens = splitSearchTokens(state.searchTokens);
         if (searchTokens.featureSets.length > 0) {
             // add to X
-            searchTokens.featureSets.forEach(name => {
-                searchTokens.X = searchTokens.X.concat(state.dataset.markers[name]);
+            searchTokens.featureSets.forEach(featureSet => {
+
+                const groupMarkers = state.dataset.markers[featureSet.group];
+                searchTokens.X = searchTokens.X.concat(groupMarkers[featureSet.text]);
             });
             searchTokens.X = Array.from(new Set(searchTokens.X));
         }

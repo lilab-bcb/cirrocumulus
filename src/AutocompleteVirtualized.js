@@ -78,6 +78,7 @@ ListboxComponent.propTypes = {
 
 
 const useStyles = makeStyles({
+    paper: {width: 230},
     listbox: {
         '& ul': {
             padding: 0,
@@ -88,8 +89,8 @@ const useStyles = makeStyles({
 
 
 const renderGroup = (params) => [
-    <ListSubheader key={params.key} component="div">
-        {params.key}
+    <ListSubheader component="div">
+        <Typography noWrap>{params.group}</Typography>
     </ListSubheader>,
     params.children,
 ];
@@ -169,12 +170,14 @@ export default function AutocompleteVirtualized(props) {
             multiple
             ref={ref}
             filterOptions={filterOptions}
-            style={{width: 200}}
             disableListWrap
             classes={classes}
+            getOptionSelected={props.groupBy ? (option, value) => option.text === value.text && option.group === value.group : (option, value) => option === value}
             value={props.value}
             openOnFocus={true}
             filterSelectedOptions={true}
+            getOptionLabel={props.groupBy ? (option) => option.text : (option) => option}
+            groupBy={props.groupBy ? (option) => option.group : null}
             blurOnSelect={true}
             ChipProps={{size: 'small'}}
             ListboxComponent={ListboxComponent}
@@ -182,7 +185,10 @@ export default function AutocompleteVirtualized(props) {
             options={props.options}
             onChange={props.onChange}
             renderInput={(params) => <TextField {...params} label={props.label}/>}
-            renderOption={(option) => <Typography noWrap>{option}</Typography>}
+            renderOption={props.groupBy ? (option) => <Typography title={option.text}
+                                                                  noWrap>{option.text}</Typography> : (option) =>
+                <Typography
+                    noWrap>{option}</Typography>}
             onPaste={onPaste}
             onDrop={onDrop}
             onDragOver={onDragOver}

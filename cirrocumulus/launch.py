@@ -1,7 +1,21 @@
 from cirrocumulus.anndata_dataset import AnndataDataset
 
 
-def create_app(dataset_paths, backed):
+def get_cell_type_genes(cell_type):
+    all_genes = []
+
+    for cell_type_markers in cell_type['markers']:
+        all_genes += cell_type_markers['genes']
+
+    for i in range(len(all_genes)):
+        gene = all_genes[i]
+        last_char = gene[len(gene) - 1]
+        if last_char == '+' or last_char == '-':
+            all_genes[i] = gene[:len(gene) - 1]
+    return all_genes
+
+
+def create_app(dataset_paths, backed, marker_paths):
     from cirrocumulus.api import blueprint, auth_api, database_api
     from flask_compress import Compress
     from flask import Flask, send_from_directory
@@ -12,7 +26,8 @@ def create_app(dataset_paths, backed):
 
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
-    database_api.provider = LocalDbAPI(os.path.normpath(dataset_paths[0]))
+    dataset_path = os.path.normpath(dataset_paths[0])
+    database_api.provider = LocalDbAPI(dataset_path)
     try:
         from cirrocumulus.parquet_dataset import ParquetDataset
         dataset_api.add(ParquetDataset())
@@ -67,6 +82,23 @@ def create_app(dataset_paths, backed):
         anndataDataset.add_data(os.path.normpath(dataset_paths[0]), adata)
     dataset_api.add(anndataDataset)
 
+    if marker_paths is not None and len(marker_paths) > 0:
+        d = anndataDataset.get_data(dataset_path)
+        marker_dict = d.uns.get('markers', {})
+        d.uns['markers'] = marker_dict
+        import json
+
+        for marker_path in marker_paths:
+            markers = {}
+            with open(marker_path, 'rt') as f:
+                m = json.load(f)
+                marker_dict[m['title']] = markers
+                for cell_type in m['cell_types']:
+                    markers[cell_type['name']] = get_cell_type_genes(cell_type)
+                    if 'subtypes' in cell_type:
+                        for cell_sub_type in cell_type['subtypes']['cell_types']:
+                            markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
+
     app = Flask(__name__, static_folder='client', static_url_path='')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.register_blueprint(blueprint, url_prefix='/api')
@@ -86,13 +118,17 @@ def main(argsv):
     parser = argparse.ArgumentParser(description='Run cirrocumulus')
     parser.add_argument('dataset', help='Path to dataset', nargs='+')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--host', help='Host IP address')
+    parser.add_argument('--host',
+        help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
+    parser.add_argument('--markers',
+        help='Path to JSON file. See https://github.com/klarman-cell-observatory/pegasus/blob/master/pegasus/annotate_cluster/human_brain_cell_markers.json for example.',
+        nargs='*')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     # parser.add_argument('--processes', help='Number of processes', default=7, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
-    app = create_app(args.dataset, args.backed)
+    app = create_app(args.dataset, args.backed, args.markers)
     if not args.no_open:
         import webbrowser
         host = args.host if args.host is not None else 'http://127.0.0.1'

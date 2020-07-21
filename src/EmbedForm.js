@@ -337,8 +337,15 @@ class EmbedForm extends React.PureComponent {
         const splitTokens = splitSearchTokens(searchTokens);
         const featureOptions = dataset == null ? [] : dataset.features;
         const markers = dataset == null || dataset.markers == null ? {} : dataset.markers;
-        const featureSetOptions = Object.keys(markers);
+        const featureSetOptions = [];
 
+        for (const group in markers) {
+            const groupMarkers = markers[group];
+            for (const name in groupMarkers) {
+                featureSetOptions.push({group: group, text: name});
+            }
+        }
+      
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
@@ -402,7 +409,7 @@ class EmbedForm extends React.PureComponent {
 
                     <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
                                              value={splitTokens.featureSets}
-                                             onChange={this.onFeatureSetsChange}/>
+                                             onChange={this.onFeatureSetsChange} groupBy={true}/>
                 </FormControl>}
 
                 <Accordion defaultExpanded>

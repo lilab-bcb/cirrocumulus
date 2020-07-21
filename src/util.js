@@ -227,7 +227,7 @@ export function isPointInside(point, vs) {
     const x = point.x, y = point.y;
 
     let inside = false;
-    for (const i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
         const xi = vs[i].x, yi = vs[i].y;
         const xj = vs[j].x, yj = vs[j].y;
 
@@ -296,61 +296,6 @@ export function convertBinsToPoints(bins, selectedBins) {
     return points;
 }
 
-
-export function createDotPlotConfig() {
-    return {
-        showLink: false,
-        scrollZoom: false,
-        responsive: false,
-        displaylogo: false,
-        displayModeBar: true,
-        modeBarButtonsToRemove: ['hoverCompareCartesian', 'hoverClosestCartesian', 'toggleSpikelines', 'sendDataToCloud', 'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
-    };
-}
-
-
-export function createDotPlotAxis() {
-    return {
-        showbackground: false,
-        autorange: false,
-        fixedrange: true,
-        showgrid: true,
-        zeroline: false,
-        showline: false,
-        title: '',
-        // type: 'category'
-        autotick: false
-    };
-}
-
-export function createDotPlotLayout(options) {
-    let {width, height} = options;
-    let layout = {
-        hovermode: 'closest',
-        dragmode: 'select',
-        width: width,
-        height: height,
-        margin: {
-            l: 0,
-            b: 0,
-            r: 0,
-            t: 0,
-            autoexpand: true
-        },
-        fixedrange: true,
-        legend: {yanchor: 'top'},
-        autosize: true,
-        displaylogo: false,
-        showlegend: false,
-        font: {
-            family: 'Roboto Condensed,Helvetica,Arial,sans-serif'
-        }
-    };
-
-    layout.xaxis = createDotPlotAxis();
-    layout.yaxis = createDotPlotAxis();
-    return layout;
-}
 
 export function splitSearchTokens(tokens) {
     let X = [];
