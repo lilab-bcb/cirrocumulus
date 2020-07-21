@@ -48,7 +48,7 @@ class DotPlotCanvas extends React.PureComponent {
         if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
             backingScale = window.devicePixelRatio;
         }
-        let _this = this;
+
         if (this.canvas == null) {
             let onMouseMove = (event) => {
                 const node = event.target;
@@ -56,8 +56,9 @@ class DotPlotCanvas extends React.PureComponent {
                 let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
                 xy[0] /= backingScale;
                 xy[1] /= backingScale;
-                const col = Math.floor((xy[0] - _this.xoffset) / (_this.maxRadius * 2));
-                const row = Math.floor((xy[1]) / (_this.maxRadius * 2));
+                const col = Math.floor((xy[0] - this.textWidth.x) / (this.maxRadius * 2));
+                const row = Math.floor((xy[1]) / (this.maxRadius * 2));
+
                 if (col >= 0 && col < this.dotplot.values.length && row >= 0 && row < this.categories.length) {
                     this.tooltipElementRef.current.innerHTML = '';
                     let featureDatum = this.dotplot.values[col];
@@ -349,6 +350,17 @@ class DotPlotCanvas extends React.PureComponent {
                 <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
 
             </Menu>
+
+            <div className="cirro-condensed" ref={this.tooltipElementRef} style={{
+                display: 'inline-block',
+                paddingLeft: 5,
+                verticalAlign: 'top',
+                whiteSpace: 'nowrap',
+                width: 500,
+                minWidth: 500,
+                maxWidth: 500,
+                textOverflow: 'ellipsis'
+            }}></div>
             <FormControl className={this.props.classes.formControl}>
                 <InputLabel shrink={true} htmlFor={sortByInputId}>Sort By</InputLabel>
                 <Select
@@ -361,16 +373,7 @@ class DotPlotCanvas extends React.PureComponent {
                     ))}
                 </Select>
             </FormControl>
-            <div className="cirro-condensed" ref={this.tooltipElementRef} style={{
-                display: 'inline-block',
-                paddingLeft: 5,
-                verticalAlign: 'top',
-                whiteSpace: 'nowrap',
-                width: 500,
-                minWidth: 500,
-                maxWidth: 500,
-                textOverflow: 'ellipsis'
-            }}></div>
+
             <div ref={this.divRef}></div>
 
             <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
