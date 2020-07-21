@@ -160,11 +160,15 @@ class EmbedForm extends React.PureComponent {
     };
 
     onFeaturesChange = (event, value) => {
-        this.props.handleSearchTokens(value, true);
+        this.props.handleSearchTokens(value, 'X');
     };
 
     onObservationsChange = (event, value) => {
-        this.props.handleSearchTokens(value, false);
+        this.props.handleSearchTokens(value, 'obs');
+    };
+
+    onFeatureSetsChange = (event, value) => {
+        this.props.handleSearchTokens(value, 'featureSet');
     };
 
 
@@ -332,6 +336,9 @@ class EmbedForm extends React.PureComponent {
         }
         const splitTokens = splitSearchTokens(searchTokens);
         const featureOptions = dataset == null ? [] : dataset.features;
+        const markers = dataset == null || dataset.markers == null ? {} : dataset.markers;
+        const featureSetOptions = Object.keys(markers);
+
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
@@ -390,6 +397,13 @@ class EmbedForm extends React.PureComponent {
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
                                              onChange={this.onObservationsChange}/>
                 </FormControl>
+
+                {featureSetOptions.length > 0 && <FormControl className={classes.formControl}>
+
+                    <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
+                                             value={splitTokens.featureSets}
+                                             onChange={this.onFeatureSetsChange}/>
+                </FormControl>}
 
                 <Accordion defaultExpanded>
                     <AccordionPanelSummary
@@ -762,8 +776,8 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleBinValues: value => {
             dispatch(setBinValues(value));
         },
-        handleSearchTokens: (value, isX) => {
-            dispatch(setSearchTokens(value == null ? [] : value, isX));
+        handleSearchTokens: (value, type) => {
+            dispatch(setSearchTokens(value == null ? [] : value, type));
         },
         handleOpenDatasetFilter: value => {
             dispatch(openDatasetFilter(value));

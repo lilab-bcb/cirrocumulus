@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -1067,17 +1067,27 @@ function _setEmail(payload) {
 }
 
 
-export function setSearchTokens(value, isX) {
+/**
+ *
+ * @param value
+ * @param type one of X, obs, featureSet
+ */
+export function setSearchTokens(value, type) {
     return function (dispatch, getState) {
         const state = getState();
 
         let searchTokens = state.searchTokens;
-        searchTokens = isX ? searchTokens.filter(item => item.type !== 'X') : searchTokens.filter(item => item.type === 'X');
-        if (isX) {
+        // keep all other types
+        let removeType = [type];
+        if (type === 'obs') {
+            removeType.push('obsCat');
+        }
+        searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
+        if (type === 'X' || type === 'featureSet') {
             searchTokens = searchTokens.concat(value.map(item => {
-                return {value: item, type: 'X'};
+                return {value: item, type: type};
             }));
-        } else {
+        } else if (type === 'obs') {
             const obsCat = state.dataset.obsCat;
             value.forEach(val => {
                 const type = obsCat.indexOf(val) !== -1 ? 'obsCat' : 'obs';
@@ -1212,8 +1222,16 @@ function _updateCharts(onError) {
         dispatch(_setLoading(true));
 
         const searchTokens = splitSearchTokens(state.searchTokens);
-        let dotplot = searchTokens.X.length > 0 && searchTokens.obsCat.length > 0;
-        if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0) {
+        if (searchTokens.featureSets.length > 0) {
+            // add to X
+            searchTokens.featureSets.forEach(name => {
+                searchTokens.X = searchTokens.X.concat(state.dataset.markers[name]);
+            });
+            searchTokens.X = Array.from(new Set(searchTokens.X));
+        }
+        let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
+        if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0
+            && searchTokens.featureSets.length === 0) {
             searchTokens.X = ['__count'];
         }
         const embeddings = state.embeddings;

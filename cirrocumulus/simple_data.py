@@ -64,6 +64,18 @@ class SimpleData:
         obs_cat = []
         obs = []
         result = {'version': '1.0.0'}
+
+        if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:
+            rank_genes_groups = adata.uns['rank_genes_groups']
+            groupby = str(rank_genes_groups['params']['groupby'])
+            group_names = rank_genes_groups['names'].dtype.names
+            n_genes = 10
+            markers = {}
+            for group_name in group_names:
+                gene_names = rank_genes_groups['names'][group_name]
+                # scores = rank_genes_groups['scores'][group_name]
+                markers[groupby + ' ' + group_name + ' markers'] = gene_names[:n_genes]
+            result['markers'] = markers
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(adata.obs[key]):
                 obs_cat.append(key)

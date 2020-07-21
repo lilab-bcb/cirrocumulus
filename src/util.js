@@ -356,14 +356,19 @@ export function splitSearchTokens(tokens) {
     let X = [];
     let obs = [];
     let obsCat = [];
+    let featureSets = [];
     tokens.forEach(token => {
         if (token.type === 'X') {
             X.push(token.value);
         } else if (token.type === 'obs') {
             obs.push(token.value);
-        } else {
+        } else if (token.type === 'obsCat') {
             obsCat.push(token.value);
+        } else if (token.type === 'featureSet') {
+            featureSets.push(token.value);
+        } else {
+            console.log('Unknown type: ' + token);
         }
     });
-    return {X: X, obs: obs, obsCat: obsCat};
+    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets};
 }

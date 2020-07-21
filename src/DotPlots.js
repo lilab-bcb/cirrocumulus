@@ -2,7 +2,7 @@ import React from 'react';
 
 import {connect} from 'react-redux';
 import {setDotPlotSortOrder} from './actions';
-import DotPlot from './DotPlot';
+import DotPlotCanvas from './DotPlotCanvas';
 
 
 class DotPlots extends React.PureComponent {
@@ -12,7 +12,7 @@ class DotPlots extends React.PureComponent {
             return <h4>Please enter one or more categorical observations and one or more features.</h4>;
         }
         return (<div>{activeDotPlots.map((data, i) => {
-            return <DotPlot onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;
+            return <DotPlotCanvas onSortOrderChanged={this.props.onSortOrderChanged} key={data.name} data={data}/>;
         })}</div>);
     }
 }
