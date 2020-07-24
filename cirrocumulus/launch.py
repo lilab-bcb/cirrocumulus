@@ -92,12 +92,17 @@ def create_app(dataset_paths, backed, marker_paths):
             markers = {}
             with open(marker_path, 'rt') as f:
                 m = json.load(f)
-                marker_dict[m['title']] = markers
-                for cell_type in m['cell_types']:
-                    markers[cell_type['name']] = get_cell_type_genes(cell_type)
-                    if 'subtypes' in cell_type:
-                        for cell_sub_type in cell_type['subtypes']['cell_types']:
-                            markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
+                if 'title' in m:
+                    marker_dict[m['title']] = markers
+                    for cell_type in m['cell_types']:
+                        markers[cell_type['name']] = get_cell_type_genes(cell_type)
+                        if 'subtypes' in cell_type:
+                            for cell_sub_type in cell_type['subtypes']['cell_types']:
+                                markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
+                else:
+                    markers = marker_dict.get('markers', {})
+                    marker_dict['markers'] = markers
+                    markers.update(m)
 
     app = Flask(__name__, static_folder='client', static_url_path='')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -121,7 +126,7 @@ def main(argsv):
     parser.add_argument('--host',
         help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
     parser.add_argument('--markers',
-        help='Path to JSON file. See https://github.com/klarman-cell-observatory/pegasus/blob/master/pegasus/annotate_cluster/human_brain_cell_markers.json for example.',
+        help='Path to JSON file that contains name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
         nargs='*')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     # parser.add_argument('--processes', help='Number of processes', default=7, type=int)
