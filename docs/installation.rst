@@ -18,7 +18,7 @@ Terra notebook
 - Click ``Open Terminal`` to connect to your running VM
 - Install cirrocumulus via pip if it was not installed in your docker image
 - Launch cirrocumulus via the command line
-- Use ngrok to expose cirrocumulus publicly
+- Use ngrok_ to expose cirrocumulus publicly
 
 Docker
 ^^^^^^^^
