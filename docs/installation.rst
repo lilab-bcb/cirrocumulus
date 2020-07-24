@@ -1,8 +1,8 @@
 Installation
 -------------
 
-Local Usage
--------------
+pip
+^^^^^
 
 - Install using pip::
 
@@ -10,17 +10,26 @@ Local Usage
 
 -  Launch via the command line::
 
-    cirro launch <path to dataset>
+    cirro launch <path_to_dataset>
 
-   -  Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
+
+Terra notebook
+^^^^^^^^^^^^^^^^
+- Click ``Open Terminal`` to connect to your running VM
+- Install cirrocumulus via pip if it was not installed in your docker image
+- Launch cirrocumulus via the command line
+- Use ngrok to expose cirrocumulus publicly
+
+Docker
+^^^^^^^^
 
 - Launch using docker::
 
     docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulus/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
 
 
-Google Cloud Platform (GCP) Deployment Instructions
------------------------------------------------------
+Google Cloud Platform (GCP)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  Clone the cirrocumulus repository::
 
@@ -83,7 +92,11 @@ Google Cloud Platform (GCP) Deployment Instructions
 
 
 Developer Instructions
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
 -  Install JavaScript dependencies::
 
@@ -97,6 +110,7 @@ Developer Instructions
 
     pip install -r requirements.txt -e .
 
+
 -  Add http://localhost:5000 to your Web application Outh client ID
    authorized JavaScript origins at APIs and Services > Credentials
 -  Download the App Engine service account JSON key from IAM & admin > Service accounts (DO NOT SHARE THIS!)
@@ -105,9 +119,9 @@ Developer Instructions
     export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”
 
 
-.. image:: https://travis-ci.org/klarman-cell-observatory/cirrocumulus.svg?branch=master
-    :target: https://travis-ci.org/klarman-cell-observatory/cirrocumulus
+
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
 .. _Node.js: https://nodejs.org/
+.. _ngrok: https://ngrok.com/

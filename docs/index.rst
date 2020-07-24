@@ -1,10 +1,11 @@
 .. include:: header.rst
-.. include:: release_notes.rst
+.. include:: quick_start.rst
 
 .. toctree::
-    :maxdepth: 1
-    :hidden:
+   :maxdepth: 1
+   :hidden:
 
 
-    installation
-    tutorial
+   installation
+   tutorial
+   release_notes

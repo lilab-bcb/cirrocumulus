@@ -7,7 +7,9 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Run on Google App Engine or on your local machine
 * Scale to > 6 million cells on commodity hardware
 * Share datasets with collaborators
-* Interactively create and share cell annotations
+* View dotplots of features of interest
+* Interactively create and share filters
+* Quickly load multiple features from predefined lists
 * Explore multiple features and embeddings simultaneously
 * Visualize 2-d and 3-d embeddings
 * Save publication quality images
