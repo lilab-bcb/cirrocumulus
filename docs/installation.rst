@@ -13,7 +13,7 @@ pip
     cirro launch <path_to_dataset>
 
 
-Terra notebook
+Terra_ notebook
 ^^^^^^^^^^^^^^^^
 - Click ``Open Terminal`` to connect to your running VM
 - Install cirrocumulus via pip if it was not installed in your docker image
@@ -125,3 +125,4 @@ Developer Instructions
 .. _App Engine: https://cloud.google.com/appengine/docs/
 .. _Node.js: https://nodejs.org/
 .. _ngrok: https://ngrok.com/
+.. _Terra: https://app.terra.bio/
