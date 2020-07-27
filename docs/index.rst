@@ -9,3 +9,5 @@
    installation
    tutorial
    release_notes
+   contact
+
