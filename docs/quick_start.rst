@@ -13,7 +13,7 @@ Run with `example data`_::
 
     cirro launch pbmc3k.h5ad --markers markers.json
 
-The `example data`_ consists of 3k PBMCs from a healthy donor and are freely available from 10x Genomics.
+The `example data`_ consists of 3k PBMCs from a healthy donor and is freely available from 10x Genomics.
 
 - Datasets can be provided in h5ad_ or loom_ formats. Additionally cirrocumulus can read in fusions produced by `STAR-Fusion`_.
 - Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
