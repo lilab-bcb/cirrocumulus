@@ -35,6 +35,10 @@ Terra_ notebook
 
     ./ngrok http 5000
 
+After you start ngrok, it will display a UI in your terminal with the public URL of your tunnel.
+
+- Navigate to your public URL in your browser.
+
 Docker
 ^^^^^^^^
 
