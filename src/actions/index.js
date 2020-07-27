@@ -1195,6 +1195,11 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             newDataset.owner = choice.owner;
             newDataset.name = choice.name;
             newDataset.features = result.var;
+            newDataset.features = newDataset.features.sort((a, b) => {
+                a = a.toLowerCase();
+                b = b.toLowerCase();
+                return (a < b ? -1 : (a === b ? 0 : 1));
+            });
             newDataset.id = id;
             dispatch(_setDataset(newDataset));
             if (loadDefaultView) {
