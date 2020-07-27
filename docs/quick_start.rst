@@ -20,4 +20,4 @@ The `example data`_ consists of 3k PBMCs from a Healthy Donor and are freely ava
 - Marker lists can be provided in JSON format to quickly load features from predefined lists.
 
 
-.. _example data: /docs/example_data.zip
+.. _example data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/example_data.zip
