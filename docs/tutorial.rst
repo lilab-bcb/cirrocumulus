@@ -32,7 +32,10 @@ Open Dataset - Command Line
 
  cirro launch <path_to_dataset>
 
--  Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
+- Datasets can be provided in h5ad, loom, or STAR-Fusion formats.
+- Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
+- Marker lists can be provided in JSON format to quickly load features from predefined lists.
+
 
 
 View Embedding and Attributes
