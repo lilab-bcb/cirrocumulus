@@ -32,6 +32,7 @@ Terra_ notebook
     && rm -f ngrok-stable-linux-amd64.zip
 
 - Use ngrok_ to expose cirrocumulus publicly::
+
     ./ngrok http 5000
 
 Docker
