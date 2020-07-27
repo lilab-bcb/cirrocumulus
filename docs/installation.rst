@@ -44,7 +44,7 @@ Docker
 
 - Launch using docker::
 
-    docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulus/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
+    docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulusprod/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
 
 
 Google Cloud Platform (GCP)
