@@ -317,6 +317,11 @@ class EmbedForm extends React.PureComponent {
                 datasetFilterKeys.push(f[0]);
             }
         });
+        datasetFilterKeys.sort((a, b) => {
+            a = a.toLowerCase();
+            b = b.toLowerCase();
+            return a < b ? -1 : (a === b ? 0 : 1);
+        });
         if (isBrushing) {
             datasetFilterKeys.push('selection');
         }
@@ -329,6 +334,11 @@ class EmbedForm extends React.PureComponent {
                 traceNames.add(trace.name);
                 filterTraces.push(trace);
             }
+        });
+        filterTraces.sort((a, b) => {
+            a = a.name.toLowerCase();
+            b = b.name.toLowerCase();
+            return a < b ? -1 : (a === b ? 0 : 1);
         });
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
@@ -345,7 +355,12 @@ class EmbedForm extends React.PureComponent {
                 featureSetOptions.push({group: group, text: name});
             }
         }
-      
+        featureSetOptions.sort((a, b) => {
+            a = a.text.toLowerCase();
+            b = b.text.toLowerCase();
+            return a < b ? -1 : (a === b ? 0 : 1);
+        });
+
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
@@ -356,7 +371,7 @@ class EmbedForm extends React.PureComponent {
         annotationOptions.sort((a, b) => {
             a = a.toLowerCase();
             b = b.toLowerCase();
-            return a < b ? -1 : (a == b ? 0 : 1);
+            return a < b ? -1 : (a === b ? 0 : 1);
         });
 
 
