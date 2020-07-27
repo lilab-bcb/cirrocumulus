@@ -30,7 +30,7 @@ After that, select the dataset you want to visualize from the drop-down menu on 
 Open Dataset - Command Line
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
- cirro launch <path to dataset>
+ cirro launch <path_to_dataset>
 
 -  Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
 

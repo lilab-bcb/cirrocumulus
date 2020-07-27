@@ -17,8 +17,22 @@ Terra_ notebook
 ^^^^^^^^^^^^^^^^
 - Click ``Open Terminal`` to connect to your running VM
 - Install cirrocumulus via pip if it was not installed in your docker image
-- Launch cirrocumulus via the command line
-- Use ngrok_ to expose cirrocumulus publicly
+- Download your dataset to your running VM using gsutil::
+
+    gsutil -m cp gs://fc-000/test.h5ad .
+
+- Launch cirrocumulus via the command line in the background::
+
+    cirro launch test.h5ad &
+
+- Install ngrok_::
+
+    wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip \
+    && unzip ngrok-stable-linux-amd64.zip \
+    && rm -f ngrok-stable-linux-amd64.zip
+
+- Use ngrok_ to expose cirrocumulus publicly::
+    ./ngrok http 5000
 
 Docker
 ^^^^^^^^
