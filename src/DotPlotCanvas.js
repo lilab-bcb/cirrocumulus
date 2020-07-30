@@ -96,7 +96,6 @@ class DotPlotCanvas extends React.PureComponent {
         canvas.style.height = height;
         context.font = '9px Roboto Condensed,Helvetica,Arial,sans-serif';
 
-
         context
             .clearRect(0, 0, width * backingScale, height * backingScale);
         context.scale(backingScale, backingScale);
@@ -150,9 +149,7 @@ class DotPlotCanvas extends React.PureComponent {
             context.restore();
 
         }
-        // context.beginPath();
-        // context.arc(xoffset, 10, 10, 0, 2 * Math.PI);
-        // context.fill();
+        context.textBaseline = 'alphabetic';
         context.setTransform(1, 0, 0, 1, 0, 0);
 
     }
@@ -250,9 +247,7 @@ class DotPlotCanvas extends React.PureComponent {
             sizeMax = 1;
         }
         this.categoryOrder = categoryOrder;
-
         this.features = features;
-
         this.colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
         this.sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, this.maxRadius]).clamp(true);
     }
@@ -300,11 +295,16 @@ class DotPlotCanvas extends React.PureComponent {
         }
         this.drawContext(context);
 
+        if (format !== 'svg') {
+            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
         context.translate(10, dotplotHeight + textWidth.y + 4);
-
         drawColorScheme(context, 150, colorScaleHeight, this.colorScale, true);
+
         context.translate(-10, colorScaleHeight + 4);
+
         drawSizeLegend(context, this.sizeScale, 3, 150);
+
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
             // let prefix = [];

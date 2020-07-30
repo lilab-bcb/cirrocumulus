@@ -37,7 +37,6 @@ export function drawColorScheme(context, width, height, colorScale, label, nstep
         context.textAlign = 'right';
         context.fillText(numberFormat(domain[1]), width, legendHeight + 2);
     }
-    context.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 class ColorSchemeLegend extends React.PureComponent {
