@@ -5,7 +5,6 @@ import scipy.sparse
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.simple_data import SimpleData
-
 # only works with local files
 from cirrocumulus.star_fusion_utils import read_star_fusion_file
 
@@ -58,32 +57,37 @@ class AnndataDataset(AbstractDataset):
 
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
         adata = self.get_data(path)
-        obs = None
-        X = None
+        force_sparse = self.force_sparse
+        df = None
 
         if len(var_keys) > 0:
             X = adata[:, var_keys].X
             if len(X.shape) == 1:
                 X = np.array([X]).T
-            if self.force_sparse and not scipy.sparse.issparse(X):
+            if force_sparse and not scipy.sparse.issparse(X):
                 X = scipy.sparse.csr_matrix(X)
-
-        for key in obs_keys:
-            if key == 'index':
-                values = adata.obs.index.values
+            if scipy.sparse.issparse(X):
+                df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
             else:
-                values = adata.obs[key].values
-            if obs is None:
-                obs = pd.DataFrame()
-            obs[key] = values
+                df = pd.DataFrame(data=X, columns=var_keys)
+
+        if len(obs_keys) > 0:
+            if df is None:
+                df = pd.DataFrame()
+            for key in obs_keys:
+                if key == 'index':
+                    values = adata.obs.index.values
+                else:
+                    values = adata.obs[key].values
+                df[key] = values
 
         if basis is not None and len(basis) > 0:
-            if obs is None:
-                obs = pd.DataFrame()
+            if df is None:
+                df = pd.DataFrame()
             for b in basis:
                 embedding_name = b['name']
                 embedding_data = adata.obsm[embedding_name]
                 dimensions = b['dimensions']
                 for i in range(dimensions):
-                    obs[b['coordinate_columns'][i]] = embedding_data[:, i]
-        return SimpleData(X, obs, pd.DataFrame(index=pd.Index(var_keys)))
+                    df[b['coordinate_columns'][i]] = embedding_data[:, i]
+        return df

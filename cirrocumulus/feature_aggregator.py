@@ -1,5 +1,6 @@
-from cirrocumulus.simple_data import SimpleData
 from natsort.natsort import natsorted
+
+from cirrocumulus.simple_data import SimpleData
 
 
 class FeatureAggregator:
@@ -23,19 +24,19 @@ class FeatureAggregator:
                     feature_result['numExpressed'] = int(values.loc['numExpressed'])
                 result[feature] = feature_result
 
-    def execute(self, adata):
+    def execute(self, df):
         result = {}
-        if adata.shape[0] > 0:
-            for column in self.dimensions:
-                df = adata.obs.agg({column: lambda x: x.value_counts(sort=False)})
-                sorted_categories = natsorted(df.index)
-                df = df.iloc[df.index.get_indexer_for(sorted_categories)]
-                dimension_summary = {'categories': df.index.to_list(),
-                                     'counts': df[column].to_list()}
-                result[column] = dimension_summary
 
-            if len(self.var_measures) > 0:
-                FeatureAggregator.add_to_result(SimpleData.X_stats(adata, self.var_measures), result)
-            if len(self.obs_measures) > 0:
-                FeatureAggregator.add_to_result(SimpleData.obs_stats(adata, self.obs_measures), result)
+        for column in self.dimensions:
+            df_counts = df.agg({column: lambda x: x.value_counts(sort=False)})
+            sorted_categories = natsorted(df_counts.index)
+            df_counts = df_counts.iloc[df_counts.index.get_indexer_for(sorted_categories)]
+            dimension_summary = {'categories': df_counts.index.to_list(),
+                                 'counts': df_counts[column].to_list()}
+            result[column] = dimension_summary
+
+        if len(self.var_measures) > 0:
+            FeatureAggregator.add_to_result(SimpleData.X_stats(df, self.var_measures), result)
+        if len(self.obs_measures) > 0:
+            FeatureAggregator.add_to_result(SimpleData.obs_stats(df, self.obs_measures), result)
         return result

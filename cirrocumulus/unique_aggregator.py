@@ -6,12 +6,12 @@ class UniqueAggregator:
     def __init__(self, column):
         self.column = column
 
-    def execute(self, adata):
+    def execute(self, df):
         # column can be cell index or bin number
         if self.column == 'index':
-            values = adata.obs.index
+            values = df.index
         else:
-            values = adata.obs[self.column].unique()
+            values = df[self.column].unique()
             if isinstance(values, pd.arrays.SparseArray):
                 values = values.to_dense()
             values.sort()

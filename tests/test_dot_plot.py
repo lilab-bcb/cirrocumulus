@@ -47,16 +47,16 @@ def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
     diff_results(get_df(test_data, measures, by), measures, dotplot_result)
 
 
-def test_save_grouped_stats(tmp_path, dataset_api, test_data, measures, by):
-    import zarr
-    url = str(tmp_path) + '.zarr'
-    make_ordered(test_data.obs, None)
-    test_data = test_data[:, measures]
-    test_data.write_zarr(url)
-    test_data[:, measures].write_zarr(url)
-    store = zarr.open(url)
-    results = DotPlotAggregator(var_measures=measures, dimensions=[by]).execute(test_data)
-    write_grouped_stats(store, test_data, results)
-    input_dataset = Entity(url, {'name': tmp_path, 'url': url})
-    result = dataset_api.read_precomputed_grouped_stats(input_dataset, obs_keys=[by], var_keys=measures)
-    diff_results(get_df(test_data, measures, by), measures, result)
+# def test_save_grouped_stats(tmp_path, dataset_api, test_data, measures, by):
+#     import zarr
+#     url = str(tmp_path) + '.zarr'
+#     make_ordered(test_data.obs, None)
+#     test_data = test_data[:, measures]
+#     test_data.write_zarr(url)
+#     test_data[:, measures].write_zarr(url)
+#     store = zarr.open(url)
+#     results = DotPlotAggregator(var_measures=measures, dimensions=[by]).execute(test_data)
+#     write_grouped_stats(store, test_data, results)
+#     input_dataset = Entity(url, {'name': tmp_path, 'url': url})
+#     result = dataset_api.read_precomputed_grouped_stats(input_dataset, obs_keys=[by], var_keys=measures)
+#     diff_results(get_df(test_data, measures, by), measures, result)

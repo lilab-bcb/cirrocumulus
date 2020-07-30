@@ -2,9 +2,6 @@ import pandas as pd
 from pytest import approx
 
 from cirrocumulus.data_processing import handle_stats
-from cirrocumulus.entity import Entity
-from cirrocumulus.feature_aggregator import FeatureAggregator
-from cirrocumulus.prepare_data import make_ordered, write_X_stats, write_obs_stats
 
 
 def diff_measures(test_data, summary, fields, is_x):
@@ -65,22 +62,3 @@ def test_all(dataset_api, input_dataset, test_data, measures, dimensions, contin
     diff_measures(test_data, summary, measures, True)
     diff_measures(test_data, summary, continuous_obs, False)
     diff_dimensions(test_data, summary, dimensions)
-
-
-def test_save_stats(tmp_path, dataset_api, test_data, measures, continuous_obs, dimensions):
-    import zarr
-    url = str(tmp_path) + '.zarr'
-    make_ordered(test_data.obs, None)
-    test_data = test_data[:, measures]
-    test_data.write_zarr(url)
-    store = zarr.open(url)
-
-    write_X_stats(store, FeatureAggregator(var_measures=measures).execute(test_data))
-    write_obs_stats(store, FeatureAggregator(dimensions=dimensions, obs_measures=continuous_obs).execute(test_data))
-
-    meta = {'name': tmp_path, 'url': url}
-    input_dataset = Entity(url, meta)
-    result = dataset_api.read_precomputed_stats(input_dataset, obs_keys=dimensions + continuous_obs, var_keys=measures)
-    diff_measures(test_data, result, measures, True)
-    diff_measures(test_data, result, continuous_obs, False)
-    diff_dimensions(test_data, result, dimensions)

@@ -1,23 +1,24 @@
+import pandas as pd
+import scipy.sparse
+
 from cirrocumulus.dotplot_aggregator import DotPlotAggregator
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.feature_aggregator import FeatureAggregator
 from cirrocumulus.ids_aggregator import IdsAggregator
-from cirrocumulus.simple_data import SimpleData
 from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
-def filter_adata(adata, data_filter):
-    keep_expr = get_adata_filter(adata, data_filter)
-    adata = SimpleData.view(adata, keep_expr) if keep_expr is not None else adata
-    return adata
+def apply_filter(df, data_filter):
+    keep_expr = get_filter_expr(df, data_filter)
+    return df[keep_expr] if keep_expr is not None else df
 
 
-def get_adata_filter(adata, data_filter):
-    import pandas as pd
-    import scipy.sparse
+def get_filter_expr(df, data_filter):
+    if df is None:
+        raise ValueError('df is None')
+
     keep_expr = None
     if data_filter is not None:
-
         user_filters = data_filter.get('filters', [])
         combine_filters = data_filter.get('combine', 'and')
         for filter_obj in user_filters:
@@ -34,55 +35,53 @@ def get_adata_filter(adata, data_filter):
                     field = selected_points_basis['full_name'] if selected_points_basis[
                                                                       'nbins'] is not None else 'index'
                     if field == 'index':
-                        keep = adata.obs.index.isin(p)
+                        keep = df.index.isin(p)
                     else:
-                        keep = adata.obs[field].isin(p)
+                        keep = df[field].isin(p)
                 else:
                     keep = None
                     for p in value['path']:
                         if 'z' in p:  # 3d
                             selection_keep = \
-                                (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
+                                (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                                (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                                (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                                (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
                                     'height']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
+                                (df[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
+                                (df[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
                         else:
                             selection_keep = \
-                                (adata.obs[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
-                                (adata.obs[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
+                                (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                                (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                                (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                                (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
 
                     keep = selection_keep | keep if keep is not None else selection_keep
 
             else:
-                if adata.obs is not None and field in adata.obs:
-                    X = adata.obs[field]
-                else:
-                    indices = SimpleData.get_var_indices(adata, [field])
-                    X = adata.X[:, indices[0]]
+                series = df[field]
                 if op == 'in':
-                    keep = (X.isin(value)).values
+                    keep = (series.isin(value)).values
                 elif op == '>':
-                    keep = (X > value)
+                    keep = (series > value)
                 elif op == '=':
-                    keep = (X == value)
+                    keep = (series == value)
                 elif op == '<':
-                    keep = (X < value)
+                    keep = (series < value)
                 elif op == '!=':
-                    keep = (X != value)
+                    keep = (series != value)
                 elif op == '>=':
-                    keep = (X >= value)
+                    keep = (series >= value)
                 elif op == '<=':
-                    keep = (X <= value)
+                    keep = (series <= value)
                 else:
                     raise ValueError('Unknown filter')
 
             if scipy.sparse.issparse(keep):
                 keep = keep.toarray().flatten()
+            if hasattr(keep, 'sparse'):
+                keep = keep.sparse.to_dense()
             if isinstance(keep, pd.Series):
                 keep = keep.values
             if keep_expr is not None:
@@ -149,20 +148,16 @@ def handle_embedding(dataset_api, dataset, basis, measures=[], dimensions=[], qu
         count = '__count' in var_measures
         if count:
             var_measures.remove('__count')
-        adata = dataset_api.read(dataset=dataset, obs_keys=dimensions + obs_measures,
+        df = dataset_api.read(dataset=dataset, obs_keys=dimensions + obs_measures,
             var_keys=var_measures, basis=[basis])
-        if basis['nbins'] is not None:
-            EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
-                nbins=basis['nbins'],
-                coordinate_columns=basis['coordinate_columns'],
-                bin_name=basis['full_name'])
+
         result = EmbeddingAggregator(obs_measures=obs_measures,
             var_measures=var_measures, dimensions=dimensions,
             count=count,
             nbins=basis['nbins'],
             basis=basis,
             agg_function=basis['agg'],
-            quick=quick).execute(adata)
+            quick=quick).execute(df)
     return result
 
 
@@ -172,9 +167,9 @@ def handle_grouped_stats(dataset_api, dataset, measures=[], dimensions=[]):
     if dataset_api.has_precomputed_stats(dataset):
         result['dotplot'] = precomputed_grouped_stats(dataset_api, dataset, measures, dimensions)
     else:
-        adata = dataset_api.read(dataset=dataset, obs_keys=dimensions, var_keys=measures)
+        df = dataset_api.read(dataset=dataset, obs_keys=dimensions, var_keys=measures)
         result['dotplot'] = DotPlotAggregator(var_measures=measures,
-            dimensions=dimensions).execute(adata)
+            dimensions=dimensions).execute(df)
     return result
 
 
@@ -185,8 +180,8 @@ def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
         result['summary'] = precomputed_summary(dataset_api, dataset, obs_measures, var_measures,
             dimensions)
     else:
-        adata = dataset_api.read(dataset=dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures)
-        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
+        df = dataset_api.read(dataset=dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures)
+        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
     return result
 
 
@@ -201,24 +196,24 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         filter_names.append(data_filter_obj['name'])
         reformatted_filters.append(filter_value)
 
-    adata_info = get_data(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
-    result_df = pd.DataFrame(index=adata_info['adata'].obs['index'])
+    df_info = get_data(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
+    result_df = pd.DataFrame(index=df_info['df'].obs['index'])
     for i in range(len(reformatted_filters)):
         data_filter = reformatted_filters[i]
         filter_name = filter_names[i]
-        adata_filtered = filter_adata(adata_info['adata'], data_filter)
-        df = pd.DataFrame(index=adata_filtered.obs['index'])
+        df_filtered = apply_filter(df_info['df'], data_filter)
+        df = pd.DataFrame(index=df_filtered.obs['index'])
         df[filter_name] = True
         result_df = result_df.join(df, rsuffix='r')
     result_df.fillna(False, inplace=True)
     return result_df.to_csv()
 
 
-def handle_diff_exp(dataset_api, dataset, data_filter, var_range):
-    adata_info = get_data(dataset_api, dataset, [], [], [], [data_filter])
-    adata = adata_info['adata']
-    mask = get_adata_filter(adata, data_filter)
-    return dataset_api.diff_exp(dataset, mask, var_range)
+# def handle_diff_exp(dataset_api, dataset, data_filter, var_range):
+#     df_info = get_data(dataset_api, dataset, [], [], [], [data_filter])
+#     df = df_info['df']
+#     mask = get_filter_expr(df, data_filter)
+#     return dataset_api.diff_exp(dataset, mask, var_range)
 
 
 def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None, stats=True):
@@ -227,23 +222,26 @@ def handle_selection(dataset_api, dataset, embeddings=[], measures=[], dimension
     basis_objs = selection_info['basis']
     obs_measures = selection_info['obs_measures']
     var_measures = selection_info['var_measures']
-    adata = selection_info['adata']
+    df = selection_info['df']
 
     result = {}
     if len(basis_objs) > 0:
         result['coordinates'] = {}
         for basis_obj in basis_objs:
             result['coordinates'][basis_obj['full_name']] = UniqueAggregator(
-                basis_obj['full_name'] if basis_obj['nbins'] is not None else 'index').execute(adata)
+                basis_obj['full_name'] if basis_obj['nbins'] is not None else 'index').execute(df)
     if stats:
-        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(adata)
-    result['count'] = adata.shape[0]
+        result['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
+    if len(dimensions) > 0 and len(var_measures) > 0:
+        result['dotplot'] = DotPlotAggregator(var_measures=var_measures,
+            dimensions=dimensions).execute(df)
+    result['count'] = df.shape[0]
     return result
 
 
 def handle_selection_ids(dataset_api, dataset, data_filter):
     selection_info = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
-    return {'ids': IdsAggregator().execute(selection_info['adata'])}
+    return {'ids': IdsAggregator().execute(selection_info['df'])}
 
 
 def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
@@ -270,23 +268,23 @@ def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], da
         if basis_obj['full_name'] not in basis_keys:
             basis_objs.append(basis_obj)
             basis_keys.add(basis_obj['full_name'])
-    adata = dataset_api.read(dataset=dataset, obs_keys=obs_keys, var_keys=var_keys, basis=basis_objs)
+    df = dataset_api.read(dataset=dataset, obs_keys=obs_keys, var_keys=var_keys, basis=basis_objs)
     for basis_obj in basis_objs:
         if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
-            EmbeddingAggregator.convert_coords_to_bin(df=adata.obs,
+            EmbeddingAggregator.convert_coords_to_bin(df=df,
                 nbins=basis_obj['nbins'],
                 bin_name=basis_obj['full_name'],
                 coordinate_columns=basis_obj['coordinate_columns'])
-    return {'adata': adata, 'basis': basis_objs, 'obs_measures': obs_measures, 'var_measures': var_measures,
+    return {'df': df, 'basis': basis_objs, 'obs_measures': obs_measures, 'var_measures': var_measures,
             'dimensions': dimensions}
 
 
 def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
-    adata_info = get_data(dataset_api, dataset, embeddings, measures, dimensions,
+    df_info = get_data(dataset_api, dataset, embeddings, measures, dimensions,
         [data_filter] if data_filter is not None else [])
-    adata = filter_adata(adata_info['adata'], data_filter)
-    adata_info['adata'] = adata
-    return adata_info
+    df = apply_filter(df_info['df'], data_filter)
+    df_info['df'] = df
+    return df_info
 
 
 def data_filter_keys(data_filter):

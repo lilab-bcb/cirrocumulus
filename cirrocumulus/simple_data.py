@@ -28,29 +28,20 @@ class SimpleData:
 
 
     @staticmethod
-    def obs_stats(adata, columns):
-        df = adata.obs[columns]
+    def obs_stats(df, columns):
+        df = df[columns]
         # variables on columns, stats on rows, transpose so that stats are on columns
         return df.agg(['min', 'max', 'sum', 'mean']).T
 
     @staticmethod
-    def X_stats(adata, var_ids):
-        indices = SimpleData.get_var_indices(adata, var_ids)
+    def X_stats(df, var_ids):
+        df = df[var_ids]
+        min_values = df.min().values
+        mean_values = df.mean().values
+        max_values = df.max().values
+        sums = df.sum().values
 
-        X = adata.X[:, indices]
-        min_values = X.min(axis=0)
-        mean_values = X.mean(axis=0)
-        max_values = X.max(axis=0)
-        sums = X.sum(axis=0)
-
-        if scipy.sparse.issparse(X):
-            min_values = min_values.toarray().flatten()
-            max_values = max_values.toarray().flatten()
-            mean_values = mean_values.A1
-            sums = sums.A1
-            num_expressed = X.getnnz(axis=0)
-        else:
-            num_expressed = (X != 0).sum(axis=0)
+        num_expressed = (df.values != 0).sum(axis=0)
 
         return pd.DataFrame(data={'min': min_values, 'max': max_values, 'sum': sums, 'numExpressed': num_expressed,
                                   'mean': mean_values}, index=var_ids)
