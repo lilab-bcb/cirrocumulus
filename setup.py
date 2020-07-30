@@ -36,7 +36,7 @@ requires = [
         "loompy",
         "natsort",
         "numpy",
-        "pandas",
+        "pandas>=1.0.0",
         "scipy"
 ]
 
