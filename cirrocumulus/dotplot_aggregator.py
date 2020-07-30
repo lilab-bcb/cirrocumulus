@@ -30,7 +30,7 @@ class DotPlotAggregator:
                         CategoricalDtype(natsorted(df[dimension].dtype.categories), ordered=True))
                 if len(df[dimension].dtype.categories) <= 1:
                     continue
-            agg_result = df.groupby(dimension).agg([mean, fraction_expressed])
+            agg_result = df.groupby(dimension, observed=True).agg([mean, fraction_expressed])
 
             values = []
             dotplot_result = {'categories': agg_result.index, 'name': dimension, 'values': values}
