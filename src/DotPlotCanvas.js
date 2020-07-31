@@ -22,14 +22,19 @@ const styles = theme => ({
 
 });
 
+let svgFont = '12px Helvetica,Arial,sans-serif';
+let canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
+let maxRadius = 9;
+let minRadius = 1;
+let gridColor = '#808080';
+let gridThickness = 0.5;
+
 class DotPlotCanvas extends React.PureComponent {
 
     constructor(props) {
         super(props);
         this.divRef = React.createRef();
         this.tooltipElementRef = React.createRef();
-        this.backingScale = 1;
-        this.maxRadius = 7;
         this.canvas = null;
         this.state = {saveImageEl: null};
     }
@@ -44,9 +49,9 @@ class DotPlotCanvas extends React.PureComponent {
         if (this.props.data == null) {
             return <div/>;
         }
-        let backingScale = this.backingScale;
+        let devicePixelRatio = 1;
         if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            backingScale = window.devicePixelRatio;
+            devicePixelRatio = window.devicePixelRatio;
         }
 
         if (this.canvas == null) {
@@ -54,10 +59,10 @@ class DotPlotCanvas extends React.PureComponent {
                 const node = event.target;
                 var rect = node.getBoundingClientRect();
                 let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
-                xy[0] /= backingScale;
-                xy[1] /= backingScale;
-                const col = Math.floor((xy[0] - this.textWidth.x) / (this.maxRadius * 2));
-                const row = Math.floor((xy[1]) / (this.maxRadius * 2));
+                xy[0] /= devicePixelRatio;
+                xy[1] /= devicePixelRatio;
+                const col = Math.floor((xy[0] - this.size.x) / (maxRadius * 2));
+                const row = Math.floor((xy[1]) / (maxRadius * 2));
 
                 if (col >= 0 && col < this.dotplot.values.length && row >= 0 && row < this.categories.length) {
                     this.tooltipElementRef.current.innerHTML = '';
@@ -81,29 +86,25 @@ class DotPlotCanvas extends React.PureComponent {
             this.canvas.addEventListener("mouseout", onMouseOut);
             this.divRef.current.append(this.canvas);
         }
-        const categories = this.categories;
-        const maxRadius = this.maxRadius;
-        let diameter = maxRadius * 2;
-        const dotplotHeight = categories.length * diameter;
 
-        const height = dotplotHeight + this.textWidth.y;
-        const width = categories.length * diameter + this.textWidth.x;
+        const height = this.size.height + this.size.y;
+        const width =this.size.width + this.size.x;
         let canvas = this.canvas;
         const context = canvas.getContext('2d');
-        canvas.width = width * backingScale;
-        canvas.height = height * backingScale;
-        canvas.style.width = width;
-        canvas.style.height = height;
-        context.font = '9px Roboto Condensed,Helvetica,Arial,sans-serif';
+        canvas.width = width * devicePixelRatio;
+        canvas.height = height * devicePixelRatio;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        context.font = canvasFont;
 
         context
-            .clearRect(0, 0, width * backingScale, height * backingScale);
-        context.scale(backingScale, backingScale);
+            .clearRect(0, 0, width * devicePixelRatio, height * devicePixelRatio);
+        context.scale(devicePixelRatio, devicePixelRatio);
         this.drawContext(context);
     }
 
     drawContext(context) {
-        const maxRadius = this.maxRadius;
+
         const dotplot = this.dotplot;
         const colorScale = this.colorScale;
         const features = this.features;
@@ -111,45 +112,63 @@ class DotPlotCanvas extends React.PureComponent {
         const categories = this.categories;
         const categoryOrder = this.categoryOrder;
         let diameter = maxRadius * 2;
-        const dotplotHeight = categories.length * diameter;
-
-
+        // context.strokeStyle = gridColor;
+        // context.lineWidth = gridThickness;
         dotplot.values.forEach((datum, featureIndex) => { // each feature
             for (let i = 0; i < datum.mean.length; i++) { // each category
                 const mean = datum.mean[categoryOrder[i]];
                 const frac = datum.fractionExpressed[categoryOrder[i]];
                 const color = colorScale(mean);
-                const xpix = featureIndex * diameter + maxRadius + this.textWidth.x;
+                const xpix = featureIndex * diameter + maxRadius + this.size.x ;
                 const ypix = i * diameter + maxRadius;
                 context.fillStyle = color;
                 context.beginPath();
                 context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 context.fill();
-                //const text = 'mean: ' + numberFormat(mean) + ', % expressed: ' + numberFormat(100 * frac);
+                // context.stroke();
             }
         });
-
+        // context.lineWidth = 1;
         context.textAlign = 'right';
         context.fillStyle = 'black';
         context.textBaseline = 'middle';
         for (let i = 0; i < categories.length; i++) {
             const category = categories[categoryOrder[i]];
             const pix = i * diameter + maxRadius;
-            context.fillText(category, this.textWidth.x - 1, pix);
+            context.fillText(category, this.size.x - 4, pix);
         }
         context.textAlign = 'right';
         context.textBaseline = 'top';
-        for (let i = 0; i < features.length; i++) { // each category
+        for (let i = 0; i < features.length; i++) {
             const text = features[i];
             const pix = i * diameter;
             context.save();
-            context.translate(this.textWidth.x + pix + 2, dotplotHeight);
+            context.translate(this.size.x + pix +4, this.size.height);
             context.rotate(-Math.PI / 2);
             context.fillText(text, 0, 0);
             context.restore();
 
         }
-        context.textBaseline = 'alphabetic';
+
+        // context.strokeStyle = gridColor;
+        // context.lineWidth = gridThickness;
+        //
+        //
+        // for (let i = 0; i < categories.length; i++) {
+        //     const ypix = i * diameter;
+        //     context.beginPath();
+        //     context.moveTo(this.size.x + 2, ypix);
+        //     context.lineTo(width, ypix);
+        //     context.stroke();
+        // }
+        // for (let i = 0; i < features.length; i++) {
+        //     const xpix = i * diameter + this.size.x + 2;
+        //     context.beginPath();
+        //     context.moveTo(xpix, 0);
+        //     context.lineTo(xpix, dotplotHeight);
+        //     context.stroke();
+        // }
+
         context.setTransform(1, 0, 0, 1, 0, 0);
 
     }
@@ -163,7 +182,7 @@ class DotPlotCanvas extends React.PureComponent {
         this.redraw();
     }
 
-    getTextWidth(context) {
+    getSize(context) {
         let maxFeatureWidth = 0;
         this.dotplot.values.forEach(datum => {
             maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(datum.name).width);
@@ -174,7 +193,10 @@ class DotPlotCanvas extends React.PureComponent {
             xoffset = Math.max(xoffset, context.measureText(value).width);
         });
         xoffset += 4;
-        return {x: xoffset, y: maxFeatureWidth};
+        const diameter = maxRadius*2
+        const height = this.categories.length * diameter;
+        const width =this.features.length * diameter
+        return {x: xoffset, y: maxFeatureWidth, width:width, height:height};
     }
 
     update() {
@@ -235,10 +257,6 @@ class DotPlotCanvas extends React.PureComponent {
 
             }
         }
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        context.font = '9px Roboto Condensed,Helvetica,Arial,sans-serif';
-        this.textWidth = this.getTextWidth(context);
         if (colorMin === colorMax) {
             colorMax++;
         }
@@ -246,10 +264,14 @@ class DotPlotCanvas extends React.PureComponent {
             sizeMin = 0;
             sizeMax = 1;
         }
-        this.categoryOrder = categoryOrder;
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = canvasFont;
         this.features = features;
+        this.size = this.getSize(context);
+        this.categoryOrder = categoryOrder;
         this.colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
-        this.sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([1, this.maxRadius]).clamp(true);
+        this.sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([minRadius, maxRadius]).clamp(true);
     }
 
     handleSaveImageMenu = (event) => {
@@ -259,31 +281,32 @@ class DotPlotCanvas extends React.PureComponent {
         this.setState({saveImageEl: null});
     };
 
+
     handleSaveImage = (format) => {
         this.setState({saveImageEl: null});
         let context;
         const categories = this.categories;
-        const maxRadius = this.maxRadius;
+
         let diameter = maxRadius * 2;
 
         let canvas;
         if (format === 'svg') {
             context = new window.C2S(10, 10);
-            context.font = '9px Helvetica,Arial,sans-serif';
+            context.font = svgFont;
         } else {
             canvas = document.createElement('canvas');
             context = canvas.getContext('2d');
-            context.font = '9px Roboto Condensed,Helvetica,Arial,sans-serif';
+            context.font = canvasFont;
         }
-        const dotplotHeight = categories.length * diameter;
-        const textWidth = this.getTextWidth(context);
+
+        const size = this.getSize(context);
         const colorScaleHeight = 40;
         const sizeScaleHeight = 40;
-        const height = dotplotHeight + textWidth.y + colorScaleHeight + sizeScaleHeight + 10;
-        const width = Math.max(150, categories.length * diameter + textWidth.x);
+        const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
+        const width = Math.max(200, size.width + size.x);
         if (format === 'svg') {
             context = new window.C2S(width, height);
-            context.font = '9px Helvetica,Arial,sans-serif';
+            context.font = svgFont;
         } else {
             canvas.width = width * window.devicePixelRatio;
             canvas.height = height * window.devicePixelRatio;
@@ -291,14 +314,14 @@ class DotPlotCanvas extends React.PureComponent {
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
             context.fillStyle = 'white';
             context.fillRect(0, 0, width, height);
-            context.font = '9px Roboto Condensed,Helvetica,Arial,sans-serif';
+            context.font = canvasFont;
         }
         this.drawContext(context);
 
         if (format !== 'svg') {
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
-        context.translate(10, dotplotHeight + textWidth.y + 4);
+        context.translate(10, size.height + size.y + 4);
         drawColorScheme(context, 150, colorScaleHeight, this.colorScale, true);
 
         context.translate(-10, colorScaleHeight + 4);
