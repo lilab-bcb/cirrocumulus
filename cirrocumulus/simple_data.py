@@ -36,15 +36,11 @@ class SimpleData:
     @staticmethod
     def X_stats(df, var_ids):
         df = df[var_ids]
-        min_values = df.min().values
-        mean_values = df.mean().values
-        max_values = df.max().values
-        sums = df.sum().values
+        return pd.DataFrame(
+            data={'min': np.min(df.values, axis=0), 'max': np.max(df.values, axis=0), 'sum': df.sum().values,
+                  'numExpressed': (df.values != 0).sum(axis=0),
+                  'mean': df.mean().values}, index=var_ids)
 
-        num_expressed = (df.values != 0).sum(axis=0)
-
-        return pd.DataFrame(data={'min': min_values, 'max': max_values, 'sum': sums, 'numExpressed': num_expressed,
-                                  'mean': mean_values}, index=var_ids)
 
     @staticmethod
     def get_var_indices(adata, names):
