@@ -53,18 +53,18 @@ class LocalDbAPI:
         categories = self.json_data['categories']
         for category_name in categories:
             category = categories[category_name]
-            category = category.copy()
-            category['category'] = category_name
-            results.append(category)
+            for category_key in category:
+                r = dict(category=category_name, original=category_key, new=category[category_key]['new'])
+                results.append(r)
         return results
 
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
-        entity = self.json_data['categories'].get(category)
-        if entity is None:
-            entity = {}
-            self.json_data['categories'][category] = entity
-        entity['original'] = original_name
-        entity['new'] = new_name
+        category_entity = self.json_data['categories'].get(category)
+        if category_entity is None:
+            category_entity = {}
+            self.json_data['categories'][category] = category_entity
+        entity = dict(new=new_name)
+        category_entity[original_name] = entity
         if dataset_id is not None:
             entity['dataset_id'] = dataset_id
         if email is not None:
