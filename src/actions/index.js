@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-// export const API = 'http://localhost:5000/api';
+//export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -874,8 +874,23 @@ function _loadSavedView() {
             } else {
                 savedView.datasetFilter = {};
             }
+
             dispatch(_setLoading(true));
             dispatch(setDataset(savedView.dataset, false, false))
+                .then(() => {
+                    let dataset = getState().dataset;
+                    if (savedView.embeddings) {
+                        let names = dataset.embeddings.map(e => getEmbeddingKey(e));
+                        let embeddings = [];
+                        savedView.embeddings.forEach(embedding => {
+                            let index = names.indexOf(getEmbeddingKey(embedding));
+                            if (index !== -1) {
+                                embeddings.push(dataset.embeddings[index]);
+                            }
+                        });
+                        savedView.embeddings = embeddings;
+                    }
+                })
                 .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
                 .then(() => dispatch(restoreView(savedView)))
                 .then(() => dispatch(_updateCharts()))
