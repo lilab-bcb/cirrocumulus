@@ -71,6 +71,34 @@ def handle_export_dataset_filters():
     return Response(text, mimetype='text/plain')
 
 
+@blueprint.route('/category_name', methods=['GET', 'PUT'])
+def handle_category_name():
+    """CRUD for category name.
+    """
+
+    email = auth_api.auth()['email']
+    if request.method == 'GET':
+        dataset_id = request.args.get('id', '')
+        if dataset_id == '':
+            return 'Please provide an id', 400
+        database_api.get_dataset(email, dataset_id)
+        return to_json(database_api.category_names(dataset_id))
+    content = request.get_json(force=True, cache=False)
+    category = content.get('c')
+    original_name = content.get('o')
+    new_name = content.get('n')
+    dataset_id = content.get('id')
+    database_api.get_dataset(email, dataset_id)
+    if request.method == 'PUT':
+        database_api.upsert_category_name(
+            email=email,
+            category=category,
+            dataset_id=dataset_id,
+            original_name=original_name,
+            new_name=new_name)
+        return '', 200
+
+
 @blueprint.route('/filter', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_dataset_filter():
     """CRUD for a dataset filter.

@@ -28,9 +28,9 @@
     "simplify-js": "^1.2.4"
   },
   "devDependencies": {
-    "@testing-library/user-event": "^12.0.17",
+    "@testing-library/user-event": "^12.1.0",
     "source-map-loader": "^1.0.1",
-    "ts-loader": "^8.0.1",
+    "ts-loader": "^8.0.2",
     "typescript": "^3.9.7",
     "yarn": "^1.22.4"
   },

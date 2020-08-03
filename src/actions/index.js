@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -557,13 +557,11 @@ function handleFilterUpdated() {
 
         if (filter == null) {
 
-            // if (Object.keys(getState().featureSummary).length !== 0 && Object.keys(getState().chart).length !== 0) {
-
             if (!isCurrentSelectionEmpty) {
                 dispatch(setSelection({chart: {}}));
             }
+
             dispatch(setFeatureSummary({}));
-            //}
             dispatch(_setLoading(false));
             return;
         }
@@ -580,6 +578,10 @@ function handleFilterUpdated() {
             }).then(result => result.json()).then(result => {
             const coordinates = result.coordinates;
             const count = result.count;
+            const dotplot = result.dotplot;
+            if (dotplot != null) {
+                // FIXME
+            }
             if (coordinates != null) {
                 let chartSelection = {};
                 for (let key in coordinates) {
@@ -620,6 +622,7 @@ function handleFilterUpdated() {
                     dispatch(setSelection({chart: {}}));
                 }
             }
+            // dispatch(_setDotPlotSelection());
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             dispatch(setFeatureSummary(result.summary));
         }).catch(err => {
@@ -699,8 +702,21 @@ export function handleColorChange(payload) {
     return {type: SET_CATEGORICAL_COLOR, payload: payload};
 }
 
-export function handleCategoricalNameChange(payload) {
+function _handleCategoricalNameChange(payload) {
     return {type: SET_CATEGORICAL_NAME, payload: payload};
+
+}
+
+export function handleCategoricalNameChange(payload) {
+    return function (dispatch, getState) {
+        const dataset_id = getState().dataset.id;
+        fetch(API + '/category_name',
+            {
+                body: JSON.stringify({c: payload.name, o: payload.oldValue, n: payload.value, id: dataset_id}),
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => dispatch(_handleCategoricalNameChange(payload)));
+    };
 }
 
 export function handleDimensionFilterUpdated(payload) {
@@ -1165,20 +1181,11 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             obs: [],
             obsCat: []
         }));
+        let categoryNameResults;
+        let datasetFilters;
+        let newDataset;
 
-
-        const filtersPromise = fetch(API + '/filters?id=' + id,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json())
-            .then(results => {
-                dispatch(setDatasetFilters(results));
-            });
-        const schemaPromise = fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
-            return response.json();
-        }).then(result => {
-            let newDataset = result;
-
+        function onPromisesComplete() {
             if (newDataset.embeddings) {
                 for (let i = 0; i < newDataset.embeddings.length; i++) {
                     if (newDataset.embeddings[i].nbins != null) {
@@ -1194,10 +1201,19 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
             newDataset.owner = choice.owner;
             newDataset.name = choice.name;
-            newDataset.features = result.var;
-            newDataset.features = newDataset.features.sort((a, b) => {
+            newDataset.features = newDataset.var;
+            newDataset.features.sort((a, b) => {
                 a = a.toLowerCase();
                 b = b.toLowerCase();
+                const aIsDigit = a[0] >= '0' && a[0] <= '9';
+                const bIsDigit = b[0] >= '0' && b[0] <= '9';
+                if (aIsDigit) {
+                    a = 'zzzzzz' + a;
+                }
+                if (bIsDigit) {
+                    b = 'zzzzzz' + b;
+                }
+                // put features that start with a number last
                 return (a < b ? -1 : (a === b ? 0 : 1));
             });
             newDataset.id = id;
@@ -1205,8 +1221,38 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             if (loadDefaultView) {
                 dispatch(loadDefaultDatasetEmbedding());
             }
+            categoryNameResults.forEach(result => {
+                dispatch(_handleCategoricalNameChange({
+                    name: result.category,
+                    oldValue: result.original,
+                    value: result.new
+                }));
+            });
+            dispatch(setDatasetFilters(datasetFilters));
+        }
+
+        const categoriesRenamePromise = fetch(API + '/category_name?id=' + id,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json())
+            .then(results => {
+                categoryNameResults = results;
+            });
+        const filtersPromise = fetch(API + '/filters?id=' + id,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json())
+            .then(results => {
+                datasetFilters = results;
+            });
+        const schemaPromise = fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            return response.json();
+        }).then(result => {
+            newDataset = result;
         });
-        return Promise.all([schemaPromise, filtersPromise]).finally(() => {
+        return Promise.all([schemaPromise, filtersPromise, categoriesRenamePromise]).then(() => {
+            onPromisesComplete();
+        }).finally(() => {
             if (setLoading) {
                 dispatch(_setLoading(false));
             }

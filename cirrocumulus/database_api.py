@@ -12,6 +12,12 @@ class DatabaseAPI:
     def datasets(self, email):
         return self.provider.datasets(email)
 
+    def category_names(self,  dataset_id):
+        return self.provider.category_names(dataset_id)
+
+    def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+        return self.provider.upsert_category_name(email, category, dataset_id, original_name, new_name)
+
     def delete_dataset(self, email, dataset_id):
         return self.provider.delete_dataset(email, dataset_id)
 
