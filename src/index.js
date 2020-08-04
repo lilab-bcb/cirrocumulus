@@ -25,9 +25,7 @@ const logger = store => next => action => {
 const store = createStore(
     rootReducer,
     applyMiddleware(
-        thunkMiddleware,
-        logger
-
+        thunkMiddleware
     ),
 );
 
