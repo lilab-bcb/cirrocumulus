@@ -447,7 +447,11 @@ function categoricalNames(state = {}, action) {
                 category = {};
                 state[action.payload.name] = category;
             }
-            category[action.payload.oldValue] = action.payload.value;
+            if(action.payload.value==null || action.payload.value==='') {
+                delete category[action.payload.oldValue];
+            }else {
+                category[action.payload.oldValue] = action.payload.value;
+            }
             return Object.assign({}, state);
         case SET_DATASET:
             return {};
