@@ -41,25 +41,25 @@ def test_measure(dataset_api, input_dataset, test_data, measures):
     diff_measures(test_data, summary, measures, True)
 
 
-# def test_continuous_obs(dataset_api, input_dataset, test_data, continuous_obs):
-#     process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
-#         measures=list(map(lambda x: 'obs/' + x, continuous_obs)))
-#     summary = process_results['summary']
-#     diff_measures(test_data, summary, continuous_obs, False)
-#
-#
-# def test_dimension(dataset_api, input_dataset, test_data, dimensions):
-#     process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
-#         dimensions=dimensions, )
-#     summary = process_results['summary']
-#     diff_dimensions(test_data, summary, dimensions)
-#
-#
-# def test_all(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs):
-#     process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
-#         measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)),
-#         dimensions=dimensions, )
-#     summary = process_results['summary']
-#     diff_measures(test_data, summary, measures, True)
-#     diff_measures(test_data, summary, continuous_obs, False)
-#     diff_dimensions(test_data, summary, dimensions)
+def test_continuous_obs(dataset_api, input_dataset, test_data, continuous_obs):
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+        measures=list(map(lambda x: 'obs/' + x, continuous_obs)))
+    summary = process_results['summary']
+    diff_measures(test_data, summary, continuous_obs, False)
+
+
+def test_dimension(dataset_api, input_dataset, test_data, dimensions):
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+        dimensions=dimensions, )
+    summary = process_results['summary']
+    diff_dimensions(test_data, summary, dimensions)
+
+
+def test_all(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs):
+    process_results = handle_stats(dataset_api=dataset_api, dataset=input_dataset,
+        measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)),
+        dimensions=dimensions, )
+    summary = process_results['summary']
+    diff_measures(test_data, summary, measures, True)
+    diff_measures(test_data, summary, continuous_obs, False)
+    diff_dimensions(test_data, summary, dimensions)
