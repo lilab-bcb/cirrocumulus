@@ -63,12 +63,16 @@ class LocalDbAPI:
         if category_entity is None:
             category_entity = {}
             self.json_data['categories'][category] = category_entity
-        entity = dict(new=new_name)
-        category_entity[original_name] = entity
-        if dataset_id is not None:
-            entity['dataset_id'] = dataset_id
-        if email is not None:
-            entity['email'] = email
+        if new_name == '':
+            if original_name in category_entity:
+                del category_entity[original_name]
+        else:
+            entity = dict(new=new_name)
+            category_entity[original_name] = entity
+            if dataset_id is not None:
+                entity['dataset_id'] = dataset_id
+            if email is not None:
+                entity['email'] = email
         self.__write_json()
 
     def dataset_filters(self, email, dataset_id):

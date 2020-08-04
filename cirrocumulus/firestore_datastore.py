@@ -35,12 +35,15 @@ class FirestoreDatastore:
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
         dataset_id = int(dataset_id)
         client = self.datastore_client
-        self.__get_key_and_dataset(email, dataset_id)
         key = client.key(CAT_NAME, str(dataset_id) + '-' + str(category) + '-' + str(original_name))
-        entity = datastore.Entity(key=key)
-        entity.update(dict(category=category, dataset_id=dataset_id, original=original_name, new=new_name))
-        client.put(entity)
-        return entity.id
+
+        if new_name == '':
+            client.delete(key)
+        else:
+            entity = datastore.Entity(key=key)
+            entity.update(dict(category=category, dataset_id=dataset_id, original=original_name, new=new_name))
+            client.put(entity)
+            return entity.id
 
     def user(self, email):
         client = self.datastore_client
