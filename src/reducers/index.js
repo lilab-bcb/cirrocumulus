@@ -34,6 +34,7 @@ import {
     SET_POINT_SIZE,
     SET_PRIMARY_TRACE_KEY,
     SET_SEARCH_TOKENS,
+    SET_SELECTED_DOT_PLOT_DATA,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -381,6 +382,25 @@ function dialog(state = null, action) {
     }
 }
 
+// [{
+//     "categories": array,
+//     "name": str,
+//     "values": [{
+//         "name": str,
+//         "fractionExpressed": array
+//         "mean": array,
+//         "active": bool
+//     }],
+//     selection:{
+//        "categories": array,
+//        "values": [{
+//         "name": str,
+//         "fractionExpressed": array
+//         "mean": array,
+//         "active": bool
+//      }],
+//     }
+// }]
 function dotPlotData(state = [], action) {
     switch (action.type) {
         case SET_DOT_PLOT_SORT_ORDER:
@@ -396,6 +416,29 @@ function dotPlotData(state = [], action) {
             }
             return state.slice();
         case SET_DOT_PLOT_DATA:
+            return action.payload;
+        case SET_DATASET:
+            return [];
+        default:
+            return state;
+    }
+}
+
+function selectedDotPlotData(state = [], action) {
+    switch (action.type) {
+        case SET_DOT_PLOT_SORT_ORDER:
+            const name = action.payload.name;
+            const sortBy = action.payload.value;
+            for (let i = 0; i < state.length; i++) {
+                let item = state[i];
+                if (item.name === name) {
+                    item.sortBy = sortBy;
+                    state[i] = Object.assign({}, item);
+                    break;
+                }
+            }
+            return state.slice();
+        case SET_SELECTED_DOT_PLOT_DATA:
             return action.payload;
         case SET_DATASET:
             return [];
@@ -447,9 +490,9 @@ function categoricalNames(state = {}, action) {
                 category = {};
                 state[action.payload.name] = category;
             }
-            if(action.payload.value==null || action.payload.value==='') {
+            if (action.payload.value == null || action.payload.value === '') {
                 delete category[action.payload.oldValue];
-            }else {
+            } else {
                 category[action.payload.oldValue] = action.payload.value;
             }
             return Object.assign({}, state);
@@ -582,6 +625,7 @@ export default combineReducers({
     primaryTraceKey,
     searchTokens,
     selection,
+    selectedDotPlotData,
     serverInfo,
     tab,
     unselectedMarkerOpacity,

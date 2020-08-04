@@ -21,7 +21,6 @@ class EmbeddingCharts extends React.PureComponent {
             userPoints = chartSelection ? chartSelection.userPoints : emptySet;
         }
 
-
         if (primaryTrace == null) {
             const chartSize = getChartSize();
             return <div style={{height: chartSize.height}}></div>;

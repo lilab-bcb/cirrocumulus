@@ -17,15 +17,17 @@ const theme = createMuiTheme(
         }
     }
 );
-// const logger = store => next => action => {
-//     console.log('dispatching', action);
-//     let result = next(action);
-//     return result;
-// };
+const logger = store => next => action => {
+    console.log(action);
+    let result = next(action);
+    return result;
+};
 const store = createStore(
     rootReducer,
     applyMiddleware(
-        thunkMiddleware
+        thunkMiddleware,
+        logger
+
     ),
 );
 

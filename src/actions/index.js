@@ -13,7 +13,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 export const API = '/api';
 
 const authScopes = [
@@ -78,6 +78,8 @@ export const SET_DATASET_CHOICES = 'SET_DATASET_CHOICES';
 export const RESTORE_VIEW = 'RESTORE_VIEW';
 
 export const SET_DOT_PLOT_DATA = 'SET_DOT_PLOT_DATA';
+export const SET_SELECTED_DOT_PLOT_DATA = 'SET_SELECTED_DOT_PLOT_DATA';
+
 export const SET_DOT_PLOT_SORT_ORDER = 'SET_DOT_PLOT_SORT_ORDER';
 export const SET_EMBEDDING_DATA = 'SET_EMBEDDING_DATA';
 
@@ -556,7 +558,10 @@ function handleFilterUpdated() {
         const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
         if (filter == null) {
-
+            state.dotPlotData.forEach(data => {
+                data.selection = null;
+            });
+            dispatch(_setDotPlotData(state.dotPlotData.slice()));
             if (!isCurrentSelectionEmpty) {
                 dispatch(setSelection({chart: {}}));
             }
@@ -576,55 +581,7 @@ function handleFilterUpdated() {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(result => result.json()).then(result => {
-            const coordinates = result.coordinates;
-            const count = result.count;
-            const dotplot = result.dotplot;
-            if (dotplot != null) {
-                // FIXME
-            }
-            if (coordinates != null) {
-                let chartSelection = {};
-                for (let key in coordinates) {
-                    const selectedIndicesOrBins = coordinates[key].indices_or_bins;
-                    const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
-                    if (embedding == null) {
-                        console.log(key + ' missing');
-                        continue;
-                    }
-                    let selectedPoints = selectedIndicesOrBins;
-                    if (embedding.bin) {
-                        // find embedding data with matching layout
-                        for (let i = 0; i < state.embeddingData.length; i++) {
-                            const embedding = state.embeddingData[i].embedding;
-                            let fullName = getEmbeddingKey(embedding);
-                            if (fullName === key) {
-                                const traceBins = state.embeddingData[i].bins;
-                                if (traceBins != null) {
-                                    selectedPoints = convertBinsToPoints(traceBins, selectedIndicesOrBins);
-                                    break;
-                                }
-                            }
-                        }
-
-                    }
-
-                    chartSelection[key] = {
-                        userPoints: new Set(selectedPoints),
-                        points: selectedIndicesOrBins
-                    };
-                }
-                dispatch(setSelection({
-                    count: count,
-                    chart: chartSelection
-                }));
-            } else {
-                if (!isCurrentSelectionEmpty) {
-                    dispatch(setSelection({chart: {}}));
-                }
-            }
-            // dispatch(_setDotPlotSelection());
-            // userPoints are in chart space, points are in server space, count is total number of cells selected
-            dispatch(setFeatureSummary(result.summary));
+            dispatch(handleSelectionResult(result, true));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
@@ -1093,6 +1050,11 @@ function _setDotPlotData(payload) {
     return {type: SET_DOT_PLOT_DATA, payload: payload};
 }
 
+function _setSelectedDotPlotData(payload) {
+    return {type: SET_SELECTED_DOT_PLOT_DATA, payload: payload};
+}
+
+
 function _setEmail(payload) {
     return {type: SET_EMAIL, payload: payload};
 }
@@ -1278,6 +1240,89 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 }
 
 
+function handleSelectionResult(selectionResult, clear) {
+    return function (dispatch, getState) {
+        const state = getState();
+        if (selectionResult) {
+            const coordinates = selectionResult.coordinates;
+            if (coordinates != null) {
+                let chartSelection = {};
+                for (let key in coordinates) {
+                    const selectedIndicesOrBins = coordinates[key].indices_or_bins;
+                    const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
+                    if (embedding == null) {
+                        console.log(key + ' missing');
+                        continue;
+                    }
+                    let selectedPoints = selectedIndicesOrBins;
+                    if (embedding.bin) {
+                        // find embedding data with matching layout
+                        for (let i = 0; i < state.embeddingData.length; i++) {
+                            const embedding = state.embeddingData[i].embedding;
+                            let fullName = getEmbeddingKey(embedding);
+                            if (fullName === key) {
+                                const traceBins = state.embeddingData[i].bins;
+                                if (traceBins != null) {
+                                    selectedPoints = convertBinsToPoints(traceBins, selectedIndicesOrBins);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+
+                    chartSelection[key] = {
+                        userPoints: new Set(selectedPoints),
+                        points: selectedIndicesOrBins
+                    };
+                }
+                dispatch(setSelection({
+                    count: selectionResult.count,
+                    chart: chartSelection
+                }));
+            } else {
+                const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
+                if (clear && !isCurrentSelectionEmpty) {
+                    dispatch(setSelection({count: selectionResult.count, chart: {}}));
+                }
+            }
+
+            // userPoints are in chart space, points are in server space, count is total number of cells selected
+
+            if (selectionResult.summary) {
+                // merge or clear selection
+                let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
+                dispatch(setFeatureSummary(selectionSummary));
+            }
+            if (selectionResult.dotplot) {
+                let selectedDotPlotData = state.selectedDotPlotData;
+                if(clear) {
+                    selectedDotPlotData = [];
+                }
+                const dotPlotNames = selectedDotPlotData.map(item => item.name);
+
+
+                selectionResult.dotplot.forEach(categoryData => {
+                    let index = dotPlotNames.indexOf(categoryData.name);
+                    if (index !== -1) {
+                        if (clear) {
+                            selectedDotPlotData[index] = categoryData;
+                        } else {
+                            selectedDotPlotData[index].values = selectedDotPlotData[index].values.concat(categoryData.values);
+                        }
+                        selectedDotPlotData[index] = Object.assign({}, selectedDotPlotData[index]);
+                    } else {
+                        selectedDotPlotData.push(categoryData);
+                    }
+                });
+                console.log(selectedDotPlotData);
+                dispatch(_setSelectedDotPlotData(selectedDotPlotData.slice()));
+            }
+        }
+    };
+
+}
+
 function _updateCharts(onError) {
     return function (dispatch, getState) {
         const state = getState();
@@ -1302,7 +1347,7 @@ function _updateCharts(onError) {
             searchTokens.X = ['__count'];
         }
         const embeddings = state.embeddings;
-        const dotPlotData = state.dotPlotData;
+        let dotPlotData = state.dotPlotData;
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
         let embeddingToVisibleFeatures = {};
@@ -1392,15 +1437,6 @@ function _updateCharts(onError) {
         let selectionSummaryMeasures = [];
         let selectionSummaryDimensions = [];
         const featureSummary = state.featureSummary;
-        let globalFeatureSummaryDimensions = [];
-        searchTokens.obsCat.forEach(feature => {
-            if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryDimensions.push(feature);
-            }
-            if (featureSummary[feature] == null) {
-                selectionSummaryDimensions.push(feature);
-            }
-        });
         let globalFeatureSummaryMeasures = [];
         searchTokens.X.forEach(feature => {
             if (feature !== '__count') {
@@ -1413,18 +1449,24 @@ function _updateCharts(onError) {
                 }
             }
         });
+        let globalFeatureSummaryDimensions = [];
+        searchTokens.obsCat.forEach(feature => {
+            if (globalFeatureSummary[feature] == null) {
+                globalFeatureSummaryDimensions.push(feature);
+            }
+            if (featureSummary[feature] == null || selectionSummaryMeasures.length > 0) {
+                selectionSummaryDimensions.push(feature);
+            }
+        });
+
         searchTokens.obs.forEach(feature => {
-
-
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasures.push('obs/' + feature);
             }
             if (featureSummary[feature] == null) {
                 selectionSummaryMeasures.push('obs/' + feature);
             }
-
         });
-
 
         if (globalFeatureSummaryMeasures.length > 0 || globalFeatureSummaryDimensions.length > 0) {
             let p = fetch(API + '/stats',
@@ -1446,28 +1488,43 @@ function _updateCharts(onError) {
             });
             promises.push(p);
         }
+        let newDotplotData;
 
-        function updateActiveDotPlotItems() {
-            dotPlotData.forEach((dotPlotDataItem, dotPlotDataItemIndex) => {
-                let active = searchTokens.obsCat.indexOf(dotPlotDataItem.name) !== -1;
-                dotPlotDataItem.active = active;
-                if (active) {
-                    let oneActiveFeature = false;
-                    dotPlotDataItem.values.forEach(datum => {
-                        datum.active = dotPlotKeys[dotPlotDataItem.name + '-' + datum.name];
-                        if (datum.active) {
-                            oneActiveFeature = true;
+        function updateDotPlotData() {
+            // merge with existing data
+            if (newDotplotData) {
+                newDotplotData.forEach(categoryItem => {
+                    let existingIndex = -1;
+                    for (let i = 0; i < dotPlotData.length; i++) {
+                        if (dotPlotData[i].name === categoryItem.name) {
+                            existingIndex = i;
+                            break;
                         }
-                    });
-                    dotPlotDataItem.active = oneActiveFeature;
-                    if (dotPlotDataItem.active) {
-                        dotPlotData[dotPlotDataItemIndex] = Object.assign({}, dotPlotDataItem);
-                        dotPlotDataItem.values.sort((a, b) => {
-                            a = a.name;
-                            b = b.name;
-                            return (a < b ? -1 : (a === b ? 0 : 1));
-                        });
                     }
+                    if (existingIndex === -1) {
+                        dotPlotData.push(categoryItem);
+                    } else {
+                        dotPlotData[existingIndex].values = dotPlotData[existingIndex].values.concat(categoryItem.values);
+                        dotPlotData[existingIndex] = Object.assign({}, dotPlotData[existingIndex]);
+                    }
+                });
+            }
+
+            dotPlotData = dotPlotData.filter(categoryItem => searchTokens.obsCat.indexOf(categoryItem.name) !== -1);
+            dotPlotData.forEach((categoryItem) => {
+                categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
+                categoryItem.values.sort((a, b) => {
+                    a = a.name;
+                    b = b.name;
+                    return (a < b ? -1 : (a === b ? 0 : 1));
+                });
+                if (categoryItem.selection) {
+                    categoryItem.selection.values = categoryItem.selection.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
+                    categoryItem.selection.values.sort((a, b) => {
+                        a = a.name;
+                        b = b.name;
+                        return (a < b ? -1 : (a === b ? 0 : 1));
+                    });
                 }
             });
             dotPlotData.sort((a, b) => {
@@ -1475,8 +1532,10 @@ function _updateCharts(onError) {
                 b = b.name;
                 return (a < b ? -1 : (a === b ? 0 : 1));
             });
+
             dispatch(_setDotPlotData(dotPlotData.slice()));
         }
+
 
         if (dotplotDimensions.length > 0 && dotplotMeasures.size > 0) {
             let p = fetch(API + '/grouped_stats',
@@ -1489,33 +1548,15 @@ function _updateCharts(onError) {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
                 }).then(r => r.json()).then(dotPlotResult => {
-                let newDotplotData = dotPlotResult.dotplot;
-                // merge with existing data and set active flags
-                newDotplotData.forEach(newDotplotDataItem => {
-                    let existingIndex = -1;
-                    for (let i = 0; i < dotPlotData.length; i++) {
-                        if (dotPlotData[i].name === newDotplotDataItem.name) {
-                            existingIndex = i;
-                            break;
-                        }
-                    }
-                    if (existingIndex === -1) {
-                        dotPlotData.push(newDotplotDataItem);
-                    } else {
-                        newDotplotDataItem.values.forEach(value => {
-                            dotPlotData[existingIndex].values.push(value);
-                        });
-                    }
-                });
-                updateActiveDotPlotItems();
+                newDotplotData = dotPlotResult.dotplot;
             });
             promises.push(p);
-        } else {
-            updateActiveDotPlotItems();
         }
 
         const filterJson = getFilterJson(state);
         // TODO update selection in new embedding space
+        let selectionResult = null;
+
         if (filterJson != null && (selectionSummaryMeasures.length > 0 || selectionSummaryDimensions.length > 0)) {
 
 
@@ -1531,6 +1572,7 @@ function _updateCharts(onError) {
             //     return value;
             // });
 
+
             let p = fetch(API + '/selection',
                 {
                     body: JSON.stringify({
@@ -1542,22 +1584,15 @@ function _updateCharts(onError) {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
                 }).then(r => r.json()).then(result => {
-                if (result.summary) {
-                    // merge selection
-                    let selectionSummary = Object.assign(getState().featureSummary, result.summary);
-                    dispatch(setFeatureSummary(selectionSummary));
-                }
-                // dispatch(setSelection({
-                //     count: count,
-                //     chart: chartSelection
-                // }));
-                //updateChartSelection(selectionCoordinates, chartSelection, state);
+                selectionResult = result;
             });
             promises.push(p);
         }
 
 
         return Promise.all(promises).then(() => {
+            updateDotPlotData();
+            dispatch(handleSelectionResult(selectionResult));
             for (let i = 0; i < embeddingResults.length; i++) {
                 dispatch(handleEmbeddingResult(embeddingResults[i]));
             }
@@ -1566,7 +1601,6 @@ function _updateCharts(onError) {
             //     b = b.name.toLowerCase();
             //     return a < b ? -1 : 1;
             // });
-
 
             dispatch(setEmbeddingData(embeddingData.slice()));
         }).finally(() => {

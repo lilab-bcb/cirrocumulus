@@ -88,7 +88,7 @@ class DotPlotCanvas extends React.PureComponent {
         }
 
         const height = this.size.height + this.size.y;
-        const width =this.size.width + this.size.x;
+        const width = this.size.width + this.size.x;
         let canvas = this.canvas;
         const context = canvas.getContext('2d');
         canvas.width = width * devicePixelRatio;
@@ -119,7 +119,7 @@ class DotPlotCanvas extends React.PureComponent {
                 const mean = datum.mean[categoryOrder[i]];
                 const frac = datum.fractionExpressed[categoryOrder[i]];
                 const color = colorScale(mean);
-                const xpix = featureIndex * diameter + maxRadius + this.size.x ;
+                const xpix = featureIndex * diameter + maxRadius + this.size.x;
                 const ypix = i * diameter + maxRadius;
                 context.fillStyle = color;
                 context.beginPath();
@@ -143,7 +143,7 @@ class DotPlotCanvas extends React.PureComponent {
             const text = features[i];
             const pix = i * diameter;
             context.save();
-            context.translate(this.size.x + pix +4, this.size.height);
+            context.translate(this.size.x + pix + 4, this.size.height);
             context.rotate(-Math.PI / 2);
             context.fillText(text, 0, 0);
             context.restore();
@@ -193,27 +193,27 @@ class DotPlotCanvas extends React.PureComponent {
             xoffset = Math.max(xoffset, context.measureText(value).width);
         });
         xoffset += 4;
-        const diameter = maxRadius*2
-        const height = this.categories.length * diameter;
-        const width =this.features.length * diameter
-        return {x: xoffset, y: maxFeatureWidth, width:width, height:height};
+        const diameter = maxRadius * 2;
+        const height = this.categories.length * diameter + 4;
+        const width = this.features.length * diameter + 4;
+        return {x: xoffset, y: maxFeatureWidth, width: width, height: height};
     }
 
     update() {
 
-        const dotplot = Object.assign({}, this.props.data);
+        let dotplot = Object.assign({}, this.props.data);
+        //console.log(dotplot)
+        if (dotplot != null && dotplot.selection) {
+            dotplot = dotplot.selection;
+        }
         this.dotplot = dotplot;
         const categories = dotplot.categories || [''];
         this.categories = categories;
-        const features = [];
+        const features = dotplot.values.map(feature=>feature.name)
 
-        dotplot.values.forEach(datum => {
-            features.push(datum.name);
-        });
         if (dotplot.sortBy == null) {
             dotplot.sortBy = features[0];
         }
-        dotplot.values = dotplot.values.filter(item => item.active);
         let colorMin = Number.MAX_VALUE;
         let colorMax = -Number.MAX_VALUE;
         let sizeMin = Number.MAX_VALUE;
@@ -352,7 +352,7 @@ class DotPlotCanvas extends React.PureComponent {
         const dotplot = this.dotplot;
         const features = this.features;
         const categories = this.categories;
-        const sortByInputId = dotplot.name + 'sort_by';
+
         const sortChoices = [dotplot.name].concat(features);
         return (<div style={{position: 'relative', border: '1px solid LightGrey'}}>
             <b>{dotplot.name}</b> <small>({categories.length})</small>
@@ -385,9 +385,9 @@ class DotPlotCanvas extends React.PureComponent {
                 textOverflow: 'ellipsis'
             }}></div>
             <FormControl className={this.props.classes.formControl}>
-                <InputLabel shrink={true} htmlFor={sortByInputId}>Sort By</InputLabel>
+                <InputLabel shrink={true}>Sort By</InputLabel>
                 <Select
-                    input={<Input id={sortByInputId}/>}
+                    input={<Input />}
                     onChange={this.onSortOrderChanged}
                     value={dotplot.sortBy}
                 >
