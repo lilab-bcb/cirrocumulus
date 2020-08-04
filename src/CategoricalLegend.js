@@ -4,9 +4,12 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
+
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 
@@ -88,6 +91,7 @@ class CategoricalLegend extends React.PureComponent {
     handleContextmenu = (value, index, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
+            e.stopPropagation();
             this.setState({contextmenuEl: e.target, categoryValue: value, color: this.props.scale(value)});
         }
     };
@@ -232,6 +236,7 @@ class CategoricalLegend extends React.PureComponent {
                                     height: 10,
                                     background: scale(category)
                                 }}/>
+
                             </td>}
                             <td>
                                 <div style={{
@@ -241,12 +246,18 @@ class CategoricalLegend extends React.PureComponent {
                                     display: 'inline-block',
                                     userSelect: 'none'
                                 }} title={'' + categoryText}>{'' + categoryText}</div>
+                                <IconButton style={{padding: 0, height:12}} size="small"
+                                            onClick={(e) => this.handleContextmenu(category, i, e)} aria-label="Menu"
+                                            aria-haspopup="true">
+                                    <ExpandMoreIcon/>
+                                </IconButton>
                             </td>
 
                             <td>
                                 <Tooltip title={globalTitle}>
-                                    <div>{intFormat(count)}</div>
+                                    <span>{intFormat(count)}</span>
                                 </Tooltip>
+
                                 {/*<div*/}
                                 {/*    title={globalTitle}*/}
                                 {/*    style={{*/}
