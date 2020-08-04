@@ -65,8 +65,8 @@ class ParquetDataset(AbstractDataset):
             result_df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
 
         if len(obs_keys) > 0:
-            if df is None:
-                df = pd.DataFrame()
+            if result_df is None:
+                result_df = pd.DataFrame()
             for key in obs_keys:
                 obs_path = os.path.join(path, 'obs')
                 cache_key = str(dataset_id) + '-' + key
