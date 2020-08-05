@@ -214,22 +214,6 @@ class DotPlotCanvas extends React.PureComponent {
         if (dotplot.sortBy == null) {
             dotplot.sortBy = features[0];
         }
-        let colorMin = Number.MAX_VALUE;
-        let colorMax = -Number.MAX_VALUE;
-        let sizeMin = Number.MAX_VALUE;
-        let sizeMax = -Number.MAX_VALUE;
-        // set min and max values for color and size
-        dotplot.values.forEach(datum => {
-            datum.fractionExpressed.forEach(value => {
-                sizeMin = Math.min(sizeMin, value);
-                sizeMax = Math.max(sizeMax, value);
-            });
-            datum.mean.forEach(value => {
-                colorMin = Math.min(colorMin, value);
-                colorMax = Math.max(colorMax, value);
-            });
-
-        });
         let categoryOrder = [];
         for (let i = 0; i < categories.length; i++) {
             categoryOrder.push(i);
@@ -257,21 +241,15 @@ class DotPlotCanvas extends React.PureComponent {
 
             }
         }
-        if (colorMin === colorMax) {
-            colorMax++;
-        }
-        if (sizeMin === sizeMax) {
-            sizeMin = 0;
-            sizeMax = 1;
-        }
+
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         context.font = canvasFont;
         this.features = features;
         this.size = this.getSize(context);
         this.categoryOrder = categoryOrder;
-        this.colorScale = scaleLinear().domain([colorMin, colorMax]).range(['blue', 'red']);
-        this.sizeScale = scaleLinear().domain([sizeMin, sizeMax]).range([minRadius, maxRadius]).clamp(true);
+        this.colorScale = scaleLinear().domain(this.props.meanRange).range(['blue', 'red']);
+        this.sizeScale = scaleLinear().domain(this.props.fractionRange).range([minRadius, maxRadius]).clamp(true);
     }
 
     handleSaveImageMenu = (event) => {
@@ -351,11 +329,11 @@ class DotPlotCanvas extends React.PureComponent {
         const {saveImageEl} = this.state;
         const dotplot = this.dotplot;
         const features = this.features;
-        const categories = this.categories;
+        // const categories = this.categories;
 
         const sortChoices = [dotplot.name].concat(features);
-        return (<div style={{position: 'relative', border: '1px solid LightGrey'}}>
-            <b>{dotplot.name}</b> <small>({categories.length})</small>
+        return (<div style={{position: 'relative'}}>
+            <b>{dotplot.name}</b> {this.props.subtitle && <small>({this.props.subtitle})</small>}
             <Tooltip title={"Save Image"}>
                 <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false} size={'small'}
                             aria-label="Save Image" onClick={this.handleSaveImageMenu}>
@@ -384,10 +362,12 @@ class DotPlotCanvas extends React.PureComponent {
                 maxWidth: 500,
                 textOverflow: 'ellipsis'
             }}></div>
-            <FormControl className={this.props.classes.formControl}>
+
+            {this.props.onSortOrderChanged?<FormControl className={this.props.classes.formControl}>
                 <InputLabel shrink={true}>Sort By</InputLabel>
                 <Select
-                    input={<Input />}
+
+                    input={<Input size={"small"}/>}
                     onChange={this.onSortOrderChanged}
                     value={dotplot.sortBy}
                 >
@@ -395,18 +375,18 @@ class DotPlotCanvas extends React.PureComponent {
                         <MenuItem key={item} value={item}>{item}</MenuItem>
                     ))}
                 </Select>
-            </FormControl>
+            </FormControl>:null}
 
             <div ref={this.divRef}></div>
 
-            <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
+            {this.props.legend && <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
                                width={186}
                                label={true} height={40}
-                               scale={this.colorScale}/>
-            <SizeLegend style={{display: 'block'}}
+                               scale={this.colorScale}/>}
+            {this.props.legend && <SizeLegend style={{display: 'block'}}
                         width={150}
                         label={true} height={40}
-                        scale={this.sizeScale}/>
+                        scale={this.sizeScale}/>}
 
         </div>);
 

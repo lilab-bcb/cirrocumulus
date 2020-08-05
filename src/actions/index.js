@@ -1,6 +1,7 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
+import {uniqBy} from 'lodash';
 import {isEqual, isPlainObject} from 'lodash';
 import CustomError from '../CustomError';
 import {getPositions} from '../ThreeUtil';
@@ -565,7 +566,7 @@ function handleFilterUpdated() {
             if (!isCurrentSelectionEmpty) {
                 dispatch(setSelection({chart: {}}));
             }
-
+            dispatch(_setSelectedDotPlotData([]));
             dispatch(setFeatureSummary({}));
             dispatch(_setLoading(false));
             return;
@@ -1296,7 +1297,7 @@ function handleSelectionResult(selectionResult, clear) {
             }
             if (selectionResult.dotplot) {
                 let selectedDotPlotData = state.selectedDotPlotData;
-                if(clear) {
+                if (clear) {
                     selectedDotPlotData = [];
                 }
                 const dotPlotNames = selectedDotPlotData.map(item => item.name);
@@ -1308,14 +1309,14 @@ function handleSelectionResult(selectionResult, clear) {
                         if (clear) {
                             selectedDotPlotData[index] = categoryData;
                         } else {
-                            selectedDotPlotData[index].values = selectedDotPlotData[index].values.concat(categoryData.values);
+                            selectedDotPlotData[index].values = categoryData.values.concat(selectedDotPlotData[index].values);
+                            selectedDotPlotData[index].values = uniqBy(selectedDotPlotData[index].values , (value=>value.name));
                         }
                         selectedDotPlotData[index] = Object.assign({}, selectedDotPlotData[index]);
                     } else {
                         selectedDotPlotData.push(categoryData);
                     }
                 });
-                console.log(selectedDotPlotData);
                 dispatch(_setSelectedDotPlotData(selectedDotPlotData.slice()));
             }
         }
@@ -1434,46 +1435,36 @@ function _updateCharts(onError) {
                 promises.push(p);
             }
         }
-        let selectionSummaryMeasures = [];
-        let selectionSummaryDimensions = [];
+
         const featureSummary = state.featureSummary;
-        let globalFeatureSummaryMeasures = [];
+        let globalFeatureSummaryX = [];
+        let globalFeatureSummaryObsContinuous = [];
+        let globalFeatureSummaryDimensions = [];
         searchTokens.X.forEach(feature => {
             if (feature !== '__count') {
-
                 if (globalFeatureSummary[feature] == null) {
-                    globalFeatureSummaryMeasures.push(feature);
-                }
-                if (featureSummary[feature] == null) {
-                    selectionSummaryMeasures.push(feature);
+                    globalFeatureSummaryX.push(feature);
                 }
             }
         });
-        let globalFeatureSummaryDimensions = [];
+        searchTokens.obs.forEach(feature => {
+            if (globalFeatureSummary[feature] == null) {
+                globalFeatureSummaryObsContinuous.push('obs/' + feature);
+            }
+        });
         searchTokens.obsCat.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryDimensions.push(feature);
             }
-            if (featureSummary[feature] == null || selectionSummaryMeasures.length > 0) {
-                selectionSummaryDimensions.push(feature);
-            }
         });
 
-        searchTokens.obs.forEach(feature => {
-            if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryMeasures.push('obs/' + feature);
-            }
-            if (featureSummary[feature] == null) {
-                selectionSummaryMeasures.push('obs/' + feature);
-            }
-        });
 
-        if (globalFeatureSummaryMeasures.length > 0 || globalFeatureSummaryDimensions.length > 0) {
+        if (globalFeatureSummaryX.length > 0 || globalFeatureSummaryObsContinuous.length > 0 || globalFeatureSummaryDimensions.length > 0) {
             let p = fetch(API + '/stats',
                 {
                     body: JSON.stringify({
                         id: state.dataset.id,
-                        measures: globalFeatureSummaryMeasures,
+                        measures: globalFeatureSummaryX.concat(globalFeatureSummaryObsContinuous),
                         dimensions: globalFeatureSummaryDimensions
                     }),
                     method: 'POST',
@@ -1494,18 +1485,19 @@ function _updateCharts(onError) {
             // merge with existing data
             if (newDotplotData) {
                 newDotplotData.forEach(categoryItem => {
-                    let existingIndex = -1;
+                    let index = -1;
                     for (let i = 0; i < dotPlotData.length; i++) {
                         if (dotPlotData[i].name === categoryItem.name) {
-                            existingIndex = i;
+                            index = i;
                             break;
                         }
                     }
-                    if (existingIndex === -1) {
+                    if (index === -1) {
                         dotPlotData.push(categoryItem);
                     } else {
-                        dotPlotData[existingIndex].values = dotPlotData[existingIndex].values.concat(categoryItem.values);
-                        dotPlotData[existingIndex] = Object.assign({}, dotPlotData[existingIndex]);
+                        dotPlotData[index].values = categoryItem.values.concat(dotPlotData[index].values);
+                        dotPlotData[index].values = uniqBy(dotPlotData[index].values , (value=>value.name));
+                        dotPlotData[index] = Object.assign({}, dotPlotData[index]);
                     }
                 });
             }
@@ -1557,7 +1549,7 @@ function _updateCharts(onError) {
         // TODO update selection in new embedding space
         let selectionResult = null;
 
-        if (filterJson != null && (selectionSummaryMeasures.length > 0 || selectionSummaryDimensions.length > 0)) {
+        if (filterJson != null && (globalFeatureSummaryX.length > 0 || globalFeatureSummaryDimensions.length > 0)) {
 
 
             // let selectedEmbeddings = state.embeddings;
@@ -1578,8 +1570,8 @@ function _updateCharts(onError) {
                     body: JSON.stringify({
                         id: state.dataset.id,
                         filter: filterJson,
-                        measures: selectionSummaryMeasures,
-                        dimensions: selectionSummaryDimensions
+                        measures: globalFeatureSummaryDimensions.length > 0 ? searchTokens.X : globalFeatureSummaryX,
+                        dimensions: searchTokens.obsCat
                     }),
                     method: 'POST',
                     headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},

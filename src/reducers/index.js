@@ -385,22 +385,33 @@ function dialog(state = null, action) {
 // [{
 //     "categories": array,
 //     "name": str,
+//     "fractionRange":[number],
+//     "meanRange":[number]
 //     "values": [{
 //         "name": str,
 //         "fractionExpressed": array
 //         "mean": array,
 //         "active": bool
-//     }],
-//     selection:{
-//        "categories": array,
-//        "values": [{
-//         "name": str,
-//         "fractionExpressed": array
-//         "mean": array,
-//         "active": bool
-//      }],
-//     }
+//     }]
 // }]
+
+function updateDotPlotDataRange(data) {
+    data.forEach(categoryItem => {
+        let fractionRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
+        let meanRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
+        categoryItem.values.forEach(feature => {
+            for (let i = 0, n = feature.mean.length; i < n; i++) {
+                fractionRange[0] = Math.min(feature.fractionExpressed[i], fractionRange[0]);
+                fractionRange[1] = Math.max(feature.fractionExpressed[i], fractionRange[1]);
+                meanRange[0] = Math.min(feature.mean[i], meanRange[0]);
+                meanRange[1] = Math.max(feature.mean[i], meanRange[1]);
+            }
+        });
+        categoryItem.meanRange = meanRange;
+        categoryItem.fractionRange = fractionRange;
+    });
+}
+
 function dotPlotData(state = [], action) {
     switch (action.type) {
         case SET_DOT_PLOT_SORT_ORDER:
@@ -416,6 +427,7 @@ function dotPlotData(state = [], action) {
             }
             return state.slice();
         case SET_DOT_PLOT_DATA:
+            updateDotPlotDataRange(action.payload);
             return action.payload;
         case SET_DATASET:
             return [];
@@ -439,6 +451,7 @@ function selectedDotPlotData(state = [], action) {
             }
             return state.slice();
         case SET_SELECTED_DOT_PLOT_DATA:
+            updateDotPlotDataRange(action.payload);
             return action.payload;
         case SET_DATASET:
             return [];
