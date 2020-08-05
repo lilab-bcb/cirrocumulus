@@ -10,7 +10,8 @@ from cirrocumulus.google_auth import GoogleAuth
 # called `app` in `main.py`.
 
 
-app = Flask(__name__, static_folder='cirrocumulus/client/')
+app = Flask(__name__, static_folder='cirrocumulus/client/', static_url_path='')
+
 app.register_blueprint(blueprint, url_prefix='/api')
 
 
@@ -35,8 +36,6 @@ auth_api.provider = GoogleAuth()
 database_api.provider = FirestoreDatastore()
 
 if __name__ == '__main__':
-    from flask_cors import CORS
-
-    CORS(app)
+    # from flask_cors import CORS
+    # CORS(app)
     app.run(host='127.0.0.1', port=5000, debug=True)
-
