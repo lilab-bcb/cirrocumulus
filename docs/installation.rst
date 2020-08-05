@@ -107,7 +107,7 @@ Google Cloud Platform (GCP)
       and set it to ``true``.
    -  Go back to https://<PROJECT>.appspot.com and start adding datasets.
 
--  Read more about `App Engine`_, such as how you can limit spending.
+-  Read more about `App Engine`_ in the `App Engine`_ documentation.
 
 
 Developer Instructions
@@ -117,27 +117,17 @@ Developer Instructions
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
--  Install JavaScript dependencies::
+- Change to the cirrocumulus directory::
 
-    npm i
+    cd cirrocumulus
 
--  Build the client::
+-  Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
 
-    npm run-script build
+    ./build.sh
 
--  Install Python module in editable mode::
+- Launch cirrocumulus via the command line::
 
-    pip install -r requirements.txt -e .
-
-
--  Add http://localhost:5000 to your Web application Outh client ID
-   authorized JavaScript origins at APIs and Services > Credentials
--  Download the App Engine service account JSON key from IAM & admin > Service accounts (DO NOT SHARE THIS!)
-   and set the environment variable GOOGLE_APPLICATION_CREDENTIALS::
-
-    export GOOGLE_APPLICATION_CREDENTIALS=“/home/user/Downloads/service-account-file.json”
-
-
+    cirro launch test.h5ad
 
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
