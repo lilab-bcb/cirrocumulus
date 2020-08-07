@@ -162,10 +162,10 @@ class PrepareData:
         self.stats = stats
         self.adata = anndata.read(input_path, backed=backed)
         if not backed:
-            s = self.adata.X.sum(axis=0)
-            if isinstance(s, np.matrix):
-                s = s.A1
-            self.adata = self.adata[:, s > 0]
+            sums = self.adata.X.sum(axis=0)
+            if isinstance(sums, np.matrix):
+                sums = sums.A1
+            self.adata = self.adata[:, sums > 0]
         index = make_unique(self.adata.var.index.append(pd.Index(self.adata.obs.columns)))
         self.adata.var.index = index[0:len(self.adata.var.index)]
         self.adata.obs.columns = index[len(self.adata.var.index):]
@@ -325,10 +325,10 @@ class PrepareData:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='(BETA!) Prepare a dataset for cirrocumulus cloud.')
+        description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad file')
     parser.add_argument('--out', help='Path to output directory')
-    parser.add_argument('--no-stats', dest="no_stats", help='Do not generate precomputed stats', action='store_true')
+    parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
@@ -360,5 +360,5 @@ if __name__ == '__main__':
     #     input_X_range[1] = int(input_X_range[1])
 
     prepare_data = PrepareData(args.dataset, args.backed, input_basis, nbins, summary, out,
-        X_range=input_X_range, dimensions=args.groups, stats=not args.no_stats)
+        X_range=input_X_range, dimensions=args.groups, stats=not args.stats)
     prepare_data.execute()

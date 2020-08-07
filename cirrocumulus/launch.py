@@ -1,3 +1,5 @@
+import os
+
 from cirrocumulus.anndata_dataset import AnndataDataset
 
 
@@ -15,16 +17,11 @@ def get_cell_type_genes(cell_type):
     return all_genes
 
 
-def create_app(dataset_paths, backed, marker_paths):
-    from cirrocumulus.api import blueprint, auth_api, database_api
-    from flask_compress import Compress
-    from flask import Flask, send_from_directory
+def configure(dataset_paths, backed, marker_paths):
     from cirrocumulus.api import dataset_api
+    from cirrocumulus.api import auth_api, database_api
     from cirrocumulus.local_db_api import LocalDbAPI
     from cirrocumulus.no_auth import NoAuth
-    import os
-
-    os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     auth_api.provider = NoAuth()
     dataset_path = os.path.normpath(dataset_paths[0])
     database_api.provider = LocalDbAPI(dataset_path)
@@ -104,6 +101,12 @@ def create_app(dataset_paths, backed, marker_paths):
                     marker_dict['markers'] = markers
                     markers.update(m)
 
+
+def create_app():
+    from cirrocumulus.api import blueprint
+    from flask_compress import Compress
+    from flask import Flask, send_from_directory
+    os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     app = Flask(__name__, static_folder='client', static_url_path='')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     app.register_blueprint(blueprint, url_prefix='/api')
@@ -112,8 +115,6 @@ def create_app(dataset_paths, backed, marker_paths):
     def root():
         return send_from_directory(os.path.abspath(os.path.join(app.root_path, "client")), "index.html")
 
-    # from flask_cors import CORS
-    # CORS(app)
     Compress(app)
     return app
 
@@ -133,7 +134,9 @@ def main(argsv):
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
-    app = create_app(args.dataset, args.backed, args.markers)
+    app = create_app()
+    # CORS(app)
+    configure(args.dataset, args.backed, args.markers)
     if not args.no_open:
         import webbrowser
         host = args.host if args.host is not None else 'http://127.0.0.1'

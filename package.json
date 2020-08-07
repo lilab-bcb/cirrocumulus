@@ -7,7 +7,7 @@
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
     "@testing-library/jest-dom": "^5.11.2",
-    "@testing-library/react": "^10.4.7",
+    "@testing-library/react": "^10.4.8",
     "classnames": "^2.2.6",
     "d3-format": "^1.4.4",
     "d3-scale": "^3.2.1",

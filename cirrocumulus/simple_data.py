@@ -66,7 +66,8 @@ class SimpleData:
                 markers[group_name] = gene_names[:n_genes]
 
         for key in adata.obs_keys():
-            if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(adata.obs[key]):
+            if pd.api.types.is_numeric_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
+                    adata.obs[key]) or pd.api.types.is_object_dtype(adata.obs[key]):
                 obs_cat.append(key)
             else:
                 obs.append(key)
@@ -77,8 +78,7 @@ class SimpleData:
             if len(spatial_node_keys) == 1:
                 spatial_node = spatial_node[spatial_node_keys[0]].keys()  # images', 'metadata', 'scalefactors']
 
-        result['var'] = list(
-            sorted(adata.var_names.values, key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
+        result['var'] = adata.var_names.values
         result['obs'] = obs
         result['obsCat'] = obs_cat
         result['shape'] = adata.shape

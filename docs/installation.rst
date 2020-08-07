@@ -69,7 +69,6 @@ Google Cloud Platform (GCP)
     npm i
 
 
-
 -  Build the client::
 
     npm run-script build
@@ -110,16 +109,13 @@ Google Cloud Platform (GCP)
 -  Read more about `App Engine`_ in the `App Engine`_ documentation.
 
 
-Developer Instructions
+Build From Source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Clone the cirrocumulus repository::
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
-- Change to the cirrocumulus directory::
-
-    cd cirrocumulus
 
 -  Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
 
