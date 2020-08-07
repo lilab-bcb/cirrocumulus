@@ -187,7 +187,6 @@ def handle_stats(dataset_api, dataset, measures=[], dimensions=[]):
 
 def handle_export_dataset_filters(dataset_api, dataset, data_filters):
     import json
-    import pandas as pd
 
     reformatted_filters = []
     filter_names = []
@@ -197,12 +196,12 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         reformatted_filters.append(filter_value)
 
     df_info = get_data(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
-    result_df = pd.DataFrame(index=df_info['df'].obs['index'])
+    result_df = pd.DataFrame(index=df_info['df']['index'])
     for i in range(len(reformatted_filters)):
         data_filter = reformatted_filters[i]
         filter_name = filter_names[i]
         df_filtered = apply_filter(df_info['df'], data_filter)
-        df = pd.DataFrame(index=df_filtered.obs['index'])
+        df = pd.DataFrame(index=df_filtered['index'])
         df[filter_name] = True
         result_df = result_df.join(df, rsuffix='r')
     result_df.fillna(False, inplace=True)
