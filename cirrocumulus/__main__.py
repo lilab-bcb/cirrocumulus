@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
-import sys
 
-from cirrocumulus import launch
+import sys
+from cirrocumulus import launch, prepare_data, serve
 
 
 def main():
-    command_list = [launch]
+    command_list = [launch, prepare_data, serve]
     parser = argparse.ArgumentParser(description='Run a cirro command')
     command_list_strings = list(map(lambda x: x.__name__[len('cirrocumulus.'):], command_list))
     parser.add_argument('command', help='The command', choices=command_list_strings)
