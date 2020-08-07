@@ -20,7 +20,8 @@ class MongoDb:
         collection = self.db.categories
         results = []
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(doc)
+            results.append({'category': doc['category'], 'dataset_id': doc['dataset_id'], 'original': doc['original'],
+                            'new': doc['new']})
         return results
 
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
@@ -28,16 +29,17 @@ class MongoDb:
         key = str(dataset_id) + '-' + str(category) + '-' + str(original_name)
 
         if new_name == '':
-            collection.delete_one(dict(_id=key))
+            collection.delete_one(dict(_id=ObjectId(key)))
         else:
-            collection.update_one(dict(_id=key),
+            collection.update_one(dict(_id=ObjectId(key)),
                 {'$set': dict(category=category, dataset_id=dataset_id, original=original_name, new=new_name)},
                 upsert=True)
             return key
 
     def user(self, email):
         collection = self.db.users
-        collection.update_one(dict(_id=email), {'$set': dict(last_login=datetime.datetime.now())}, upsert=True)
+        collection.update_one(dict(_id=ObjectId(email)), {'$set': dict(last_login=datetime.datetime.now())},
+            upsert=True)
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         collection = self.db.datasets
@@ -59,17 +61,22 @@ class MongoDb:
     def dataset_filters(self, email, dataset_id):
         collection = self.db.filters
         results = []
+
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(doc)
+            results.append(
+                {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
+                 'notes': doc['notes'], 'email': doc['email']})
         return results
 
     def delete_dataset_filter(self, email, filter_id):
         collection = self.db.filters
-        collection.delete_one(dict(_id=filter_id))
+        collection.delete_one(dict(_id=ObjectId(filter_id)))
 
     def get_dataset_filter(self, email, filter_id):
         collection = self.db.filters
-        return collection.find_one(dict(_id=ObjectId(filter_id)))
+        doc = collection.find_one(dict(_id=ObjectId(filter_id)))
+        return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
+                'notes': doc['notes'], 'email': doc['email']}
 
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
         collection = self.db.filters
@@ -87,13 +94,12 @@ class MongoDb:
         if filter_id is None:
             return str(collection.insert_one(entity_update).inserted_id)
         else:
-            collection.update_one(dict(_id=filter_id), {'$set', entity_update})
+            collection.update_one(dict(_id=ObjectId(filter_id)), {'$set', entity_update})
             return filter_id
 
     def delete_dataset(self, email, dataset_id):
         collection = self.db.datasets
-        collection.delete_one(dict(_id=dataset_id))
-
+        collection.delete_one(dict(_id=ObjectId(dataset_id)))
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         collection = self.db.datasets
@@ -110,5 +116,5 @@ class MongoDb:
             update_dict['_id'] = dataset_id
             return str(collection.insert_one(update_dict).inserted_id)
         else:
-            collection.update_one(dict(_id=dataset_id), {'$set', update_dict})
+            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set', update_dict})
         return dataset_id
