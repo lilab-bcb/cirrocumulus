@@ -66,7 +66,7 @@ class SimpleData:
                 markers[group_name] = gene_names[:n_genes]
 
         for key in adata.obs_keys():
-            if pd.api.types.is_numeric_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
+            if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
                     adata.obs[key]) or pd.api.types.is_object_dtype(adata.obs[key]):
                 obs_cat.append(key)
             else:
