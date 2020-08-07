@@ -237,7 +237,7 @@ class AppHeader extends React.PureComponent {
 
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
-                    {email != null &&
+                    {datasetChoices.length > 0 &&
                     <Select
                         style={{marginRight: 6}}
                         disableUnderline={true}
@@ -248,7 +248,7 @@ class AppHeader extends React.PureComponent {
                             name: 'dataset',
                             id: 'dataset-id',
                         }}
-                    > {datasetChoices.length > 0 && datasetChoices.length !== 1 &&
+                    > {datasetChoices.length !== 1 &&
                     <MenuItem key="" value="" disabled>
                         Choose a dataset
                     </MenuItem>}
