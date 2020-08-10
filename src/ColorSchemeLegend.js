@@ -63,6 +63,7 @@ class ColorSchemeLegend extends React.PureComponent {
         }
         context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
         drawColorScheme(context, width, height, colorScale, this.props.label);
+        context.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     componentDidMount() {
