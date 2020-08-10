@@ -1,17 +1,16 @@
+import json
 import os
-
-from flask import Flask, send_from_directory
 
 from cirrocumulus.api import blueprint, auth_api, database_api, dataset_api
 from cirrocumulus.firestore_datastore import FirestoreDatastore
 from cirrocumulus.google_auth import GoogleAuth
+from flask import Flask, send_from_directory
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
 
 
 app = Flask(__name__, static_folder='cirrocumulus/client/', static_url_path='')
-
 app.register_blueprint(blueprint, url_prefix='/api')
 
 
@@ -32,7 +31,10 @@ try:
     dataset_api.add(ZarrDatasetBacked())
 except ModuleNotFoundError:
     pass
-auth_api.provider = GoogleAuth()
+
+with open('cirrocumulus/config.json', 'r') as f:
+    config = json.load(f)
+auth_api.provider = GoogleAuth(config['clientId'])
 database_api.provider = FirestoreDatastore()
 
 if __name__ == '__main__':
