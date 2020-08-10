@@ -2,19 +2,22 @@ import datetime
 import json
 
 from bson import ObjectId
-from pymongo import MongoClient
-
 from cirrocumulus.entity import Entity
+from pymongo import MongoClient
 
 
 class MongoDb:
 
-    def __init__(self):
-        self.client = MongoClient()
-        self.db = self.client['cirrocumulus']
+    def __init__(self, db_uri, database='cirrocumulus', email=None):
+        self.client = MongoClient(db_uri)
+        self.db = self.client[database]
+        self.email = email
 
     def server(self):
-        return {}
+        d = {}
+        if self.email is not None:
+            d['email'] = self.email
+        return d
 
     def category_names(self, dataset_id):
         collection = self.db.categories

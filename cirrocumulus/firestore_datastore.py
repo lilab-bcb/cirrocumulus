@@ -20,8 +20,8 @@ class FirestoreDatastore:
 
     def server(self):
         client = self.datastore_client
-        server = dict(email=client.project + '@appspot.gserviceaccount.com')
-        return server
+        d = dict(email=client.project + '@appspot.gserviceaccount.com')
+        return d
 
     def category_names(self, dataset_id):
         client = self.datastore_client
