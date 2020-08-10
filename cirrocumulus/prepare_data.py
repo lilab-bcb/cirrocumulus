@@ -5,19 +5,18 @@ import logging
 import os
 
 import anndata
+import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.entity import Entity
 from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -323,10 +322,10 @@ class PrepareData:
                 f.write(to_json(result))
 
 
-if __name__ == '__main__':
+def main(argsv):
     parser = argparse.ArgumentParser(
         description='Prepare a dataset for cirrocumulus server.')
-    parser.add_argument('dataset', help='Path to a h5ad file')
+    parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file')
     parser.add_argument('--out', help='Path to output directory')
     parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
@@ -336,16 +335,27 @@ if __name__ == '__main__':
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argsv)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
 
     input_basis = []  # check if specified as comma delimited list
     input_X_range = None
     out = args.out
+    input_dataset = args.dataset
     if out is None:
-        out = os.path.basename(args.dataset)
+        out = os.path.basename(input_dataset)
         out = out[0:out.rindex('.')]
+    if input_dataset.lower().endswith('.rds'):
+        import subprocess
+        import tempfile
+        import pkg_resources
+
+        _, loom_file = tempfile.mkstemp(suffix='.loom')
+        os.remove(loom_file)
+        subprocess.check_call(
+            ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat2loom.R'), input_dataset, loom_file])
+        input_dataset = loom_file
     summary = 'max'
     nbins = -1
     # summary = args.summary
@@ -359,6 +369,10 @@ if __name__ == '__main__':
     #     input_X_range[0] = int(input_X_range[0])
     #     input_X_range[1] = int(input_X_range[1])
 
-    prepare_data = PrepareData(args.dataset, args.backed, input_basis, nbins, summary, out,
+    prepare_data = PrepareData(input_dataset, args.backed, input_basis, nbins, summary, out,
         X_range=input_X_range, dimensions=args.groups, stats=not args.stats)
     prepare_data.execute()
+
+
+if __name__ == '__main__':
+    main(sys.argv)
