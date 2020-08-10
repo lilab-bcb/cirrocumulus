@@ -5,18 +5,19 @@ import logging
 import os
 
 import anndata
-import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
+from natsort import natsorted
+from pandas import CategoricalDtype
+
+import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.entity import Entity
 from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -159,7 +160,8 @@ class PrepareData:
                  X_range=None, dimensions=None, stats=True):
         self.input_path = input_path
         self.stats = stats
-        self.adata = anndata.read(input_path, backed=backed)
+        self.adata = anndata.read_loom(input_path) if input_path.lower().endswith('.loom') else anndata.read(input_path,
+            backed=backed)
         if not backed:
             sums = self.adata.X.sum(axis=0)
             if isinstance(sums, np.matrix):
@@ -346,6 +348,7 @@ def main(argsv):
     if out is None:
         out = os.path.basename(input_dataset)
         out = out[0:out.rindex('.')]
+    loom_file = None
     if input_dataset.lower().endswith('.rds'):
         import subprocess
         import tempfile
@@ -370,9 +373,13 @@ def main(argsv):
     #     input_X_range[1] = int(input_X_range[1])
 
     prepare_data = PrepareData(input_dataset, args.backed, input_basis, nbins, summary, out,
-        X_range=input_X_range, dimensions=args.groups, stats=not args.stats)
+        X_range=input_X_range, dimensions=args.groups, stats=args.stats)
     prepare_data.execute()
+    if loom_file is not None:
+        os.remove(loom_file)
 
 
 if __name__ == '__main__':
+    import sys
+
     main(sys.argv)

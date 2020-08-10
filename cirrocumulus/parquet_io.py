@@ -1,5 +1,4 @@
 import gzip
-import json
 import logging
 import os
 
@@ -20,6 +19,7 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
 
 
 def save_adata(adata, output_directory):
+    import pandas._libs.json as ujson
     logger.info('Save adata')
     X_dir = os.path.join(output_directory, 'X')
     obs_dir = os.path.join(output_directory, 'obs')
@@ -30,10 +30,10 @@ def save_adata(adata, output_directory):
     os.makedirs(obs_dir, exist_ok=True)
     os.makedirs(obsm_dir, exist_ok=True)
     with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
-        json.dump(result, f)
+        # json.dump(result, f)
+        f.write(ujson.dumps(result, double_precision=2, orient='values'))
 
     save_adata_X(adata, X_dir)
-
     save_data_obs(adata, obs_dir)
     save_data_obsm(adata, obsm_dir)
 
