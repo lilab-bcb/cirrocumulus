@@ -414,6 +414,12 @@ function updateDotPlotDataRange(data) {
 
 function dotPlotData(state = [], action) {
     switch (action.type) {
+        case SET_CATEGORICAL_NAME:
+            for (let i = 0; i < state.length; i++) {
+                let item = state[i];
+                state[i] = Object.assign({}, item);
+            }
+            return state.slice();
         case SET_DOT_PLOT_SORT_ORDER:
             const name = action.payload.name;
             const sortBy = action.payload.value;
@@ -438,6 +444,12 @@ function dotPlotData(state = [], action) {
 
 function selectedDotPlotData(state = [], action) {
     switch (action.type) {
+        case SET_CATEGORICAL_NAME:
+            for (let i = 0; i < state.length; i++) {
+                let item = state[i];
+                state[i] = Object.assign({}, item);
+            }
+            return state.slice();
         case SET_DOT_PLOT_SORT_ORDER:
             const name = action.payload.name;
             const sortBy = action.payload.value;

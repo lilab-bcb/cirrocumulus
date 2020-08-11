@@ -69,8 +69,6 @@ class DotPlotCanvas extends React.PureComponent {
                     let featureDatum = this.dotplot.values[col];
                     const mean = featureDatum.mean[this.categoryOrder[row]];
                     const fractionExpressed = featureDatum.fractionExpressed[this.categoryOrder[row]];
-                    // categories[categoryOrder[row]] + ', ' + featureDatum.name
-
                     this.tooltipElementRef.current.innerHTML = 'mean: ' + numberFormat(mean) + ', % expressed: ' + numberFormat(100 * fractionExpressed);
                 } else {
                     this.tooltipElementRef.current.innerHTML = '';
@@ -104,7 +102,7 @@ class DotPlotCanvas extends React.PureComponent {
     }
 
     drawContext(context) {
-
+        const renamedCategories = this.props.renamedCategories || {};
         const dotplot = this.dotplot;
         const colorScale = this.colorScale;
         const features = this.features;
@@ -132,8 +130,13 @@ class DotPlotCanvas extends React.PureComponent {
         context.textAlign = 'right';
         context.fillStyle = 'black';
         context.textBaseline = 'middle';
+
         for (let i = 0; i < categories.length; i++) {
-            const category = categories[categoryOrder[i]];
+            let category = categories[categoryOrder[i]];
+            let newName = renamedCategories[category];
+            if (newName != null) {
+                category = newName;
+            }
             const pix = i * diameter + maxRadius;
             context.fillText(category, this.size.x - 4, pix);
         }
@@ -184,13 +187,18 @@ class DotPlotCanvas extends React.PureComponent {
 
     getSize(context) {
         let maxFeatureWidth = 0;
+        const renamedCategories = this.props.renamedCategories || {};
         this.dotplot.values.forEach(datum => {
             maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(datum.name).width);
         });
         maxFeatureWidth += 4;
         let xoffset = 0;
-        this.categories.forEach(value => {
-            xoffset = Math.max(xoffset, context.measureText(value).width);
+        this.categories.forEach(category => {
+            let renamed = renamedCategories[category];
+            if (renamed != null) {
+                category = renamed;
+            }
+            xoffset = Math.max(xoffset, context.measureText(category).width);
         });
         xoffset += 4;
         const diameter = maxRadius * 2;
@@ -209,7 +217,7 @@ class DotPlotCanvas extends React.PureComponent {
         this.dotplot = dotplot;
         const categories = dotplot.categories || [''];
         this.categories = categories;
-        const features = dotplot.values.map(feature=>feature.name)
+        const features = dotplot.values.map(feature => feature.name);
 
         if (dotplot.sortBy == null) {
             dotplot.sortBy = features[0];
@@ -326,8 +334,6 @@ class DotPlotCanvas extends React.PureComponent {
         const {saveImageEl} = this.state;
         const dotplot = this.dotplot;
         const features = this.features;
-        // const categories = this.categories;
-
         const sortChoices = [dotplot.name].concat(features);
         return (<div style={{position: 'relative'}}>
             <b>{dotplot.name}</b> {this.props.subtitle && <small>({this.props.subtitle})</small>}
@@ -360,7 +366,7 @@ class DotPlotCanvas extends React.PureComponent {
                 textOverflow: 'ellipsis'
             }}></div>
 
-            {this.props.onSortOrderChanged?<FormControl className={this.props.classes.formControl}>
+            {this.props.onSortOrderChanged ? <FormControl className={this.props.classes.formControl}>
                 <InputLabel shrink={true}>Sort By</InputLabel>
                 <Select
 
@@ -372,18 +378,18 @@ class DotPlotCanvas extends React.PureComponent {
                         <MenuItem key={item} value={item}>{item}</MenuItem>
                     ))}
                 </Select>
-            </FormControl>:null}
+            </FormControl> : null}
 
             <div ref={this.divRef}></div>
 
             {this.props.legend && <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
-                               width={186}
-                               label={true} height={40}
-                               scale={this.colorScale}/>}
+                                                     width={186}
+                                                     label={true} height={40}
+                                                     scale={this.colorScale}/>}
             {this.props.legend && <SizeLegend style={{display: 'block'}}
-                        width={150}
-                        label={true} height={40}
-                        scale={this.sizeScale}/>}
+                                              width={150}
+                                              label={true} height={40}
+                                              scale={this.sizeScale}/>}
 
         </div>);
 

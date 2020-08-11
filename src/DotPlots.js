@@ -7,8 +7,8 @@ import DotPlotCanvas from './DotPlotCanvas';
 
 class DotPlots extends React.PureComponent {
     render() {
-        const dotPlotData = this.props.dotPlotData;
-        const selectedDotPlotData = this.props.selectedDotPlotData;
+        const {dotPlotData, categoricalNames, selectedDotPlotData} = this.props;
+
         if (dotPlotData.length === 0) {
             return <h4>Please enter one or more categorical observations and one or more features.</h4>;
         }
@@ -39,10 +39,17 @@ class DotPlots extends React.PureComponent {
                 }
                 return (
                     <React.Fragment key={categoryItem.name}>
-                        <DotPlotCanvas legend={selectedData == null} meanRange={meanRange} fractionRange={fractionRange}
-                                       onSortOrderChanged={this.props.onSortOrderChanged} data={categoryItem}/>
+                        <DotPlotCanvas renamedCategories={categoricalNames[categoryItem.name]}
+                                       legend={selectedData == null}
+                                       meanRange={meanRange}
+                                       fractionRange={fractionRange}
+                                       onSortOrderChanged={this.props.onSortOrderChanged}
+                                       data={categoryItem}/>
                         {selectedData != null ?
-                            <DotPlotCanvas subtitle="selection" legend={true} meanRange={meanRange}
+                            <DotPlotCanvas renamedCategories={categoricalNames[categoryItem.name]}
+                                           subtitle="selection"
+                                           legend={true}
+                                           meanRange={meanRange}
                                            fractionRange={fractionRange}
                                            data={selectedData}/> : null}
                     </React.Fragment>
@@ -56,7 +63,8 @@ class DotPlots extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dotPlotData: state.dotPlotData,
-        selectedDotPlotData: state.selectedDotPlotData
+        selectedDotPlotData: state.selectedDotPlotData,
+        categoricalNames: state.categoricalNames
     };
 };
 const mapDispatchToProps = dispatch => {

@@ -584,9 +584,24 @@ class EmbedForm extends React.PureComponent {
                                 </Select>
                             </FormControl>
 
+                            <FormControl className={classes.formControl}>
+                                <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    input={<Input id="chart_size"/>}
+                                    onChange={this.onChartSizeChange}
+                                    value={chartSize}
+                                    multiple={false}>
+                                    {gallerySizeOptions.map(item => (
+                                        <MenuItem key={item.label} value={item.value}>
+                                            <ListItemText primary={item.label}/>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
 
                             <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="color-scheme">Color Scheme</InputLabel>
+                                <InputLabel htmlFor="color-scheme">Continuous Color Scale</InputLabel>
                                 <ColorSchemeSelector/>
                             </FormControl>
                             <div><FormControlLabel
@@ -633,21 +648,7 @@ class EmbedForm extends React.PureComponent {
                                     ))}
                                 </Select>
                             </FormControl>}
-                            <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
-                                <Select
-                                    className={classes.select}
-                                    input={<Input id="chart_size"/>}
-                                    onChange={this.onChartSizeChange}
-                                    value={chartSize}
-                                    multiple={false}>
-                                    {gallerySizeOptions.map(item => (
-                                        <MenuItem key={item.label} value={item.value}>
-                                            <ListItemText primary={item.label}/>
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+
 
                             <Divider/>
 
