@@ -355,11 +355,18 @@ class EmbedForm extends React.PureComponent {
                 featureSetOptions.push({group: group, text: name});
             }
         }
-        featureSetOptions.sort((a, b) => {
-            a = a.text.toLowerCase();
-            b = b.text.toLowerCase();
+
+        featureSetOptions.sort((item1, item2) => {
+            let a = item1.group.toLowerCase();
+            let b = item2.group.toLowerCase();
+            if (a !== b) {
+                return a < b ? -1 : 1;
+            }
+            a = item1.text.toLowerCase();
+            b = item2.text.toLowerCase();
             return a < b ? -1 : (a === b ? 0 : 1);
         });
+        console.log(featureSetOptions)
 
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
