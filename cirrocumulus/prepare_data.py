@@ -5,19 +5,18 @@ import logging
 import os
 
 import anndata
+import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.entity import Entity
 from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -162,6 +161,9 @@ class PrepareData:
         self.stats = stats
         self.adata = anndata.read_loom(input_path) if input_path.lower().endswith('.loom') else anndata.read(input_path,
             backed=backed)
+        # if 'seurat_clusters' in self.adata.obs:
+        #     self.adata.obs['seurat_clusters'] = self.adata.obs['seurat_clusters'].astype('category')
+
         if not backed:
             sums = self.adata.X.sum(axis=0)
             if isinstance(sums, np.matrix):
@@ -193,6 +195,9 @@ class PrepareData:
         for i in range(len(self.adata.obs.columns)):
             name = self.adata.obs.columns[i]
             c = self.adata.obs[name]
+            if pd.api.types.is_object_dtype(c):
+                self.adata.obs[name] = self.adata.obs[name].astype('category')
+                c = self.adata.obs[name]
             if not dimensions_supplied and pd.api.types.is_categorical_dtype(c):
                 if 1 < len(c.cat.categories) < 2000:
                     self.dimensions.append(name)
@@ -209,6 +214,7 @@ class PrepareData:
                 self.others.append(name)
         make_ordered(self.adata.obs, self.dimensions)
 
+
     def get_path(self, path):
         return os.path.join(self.base_output_dir, path)
 
@@ -217,6 +223,16 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
+        if not SimpleData.has_markers(self.adata):
+            marker_dict = {}
+            n_genes = 10
+            self.adata.uns['markers'] = marker_dict
+            for key in self.adata.obs.columns:
+                if pd.api.types.is_categorical_dtype(self.adata.obs[key]) and len(
+                        self.adata.obs[key].cat.categories) > 1:
+                    logger.info('Computing markers for {}'.format(key))
+                    SimpleData.find_markers(self.adata, key, marker_dict, n_genes)
+
         if X_range[0] == 0:
             save_adata(self.adata, self.base_output_dir)
 
