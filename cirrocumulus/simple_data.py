@@ -47,13 +47,43 @@ class SimpleData:
         return adata.var.index.get_indexer_for(names)
 
     @staticmethod
+    def find_markers(adata, key, marker_dict, n_genes):
+        import scipy.stats as ss
+        nfeatures = adata.shape[1]
+        gene_names = adata.var_names
+        markers = {}
+        marker_dict[key + ' markers'] = markers
+        for cat in adata.obs[key].cat.categories:
+            stats = np.zeros(nfeatures, dtype=np.float32)
+            pvals = np.full(nfeatures, 1.0)
+            mask = adata.obs[key] == cat
+            ds1 = adata[mask]
+            ds_rest = adata[~mask]
+            for i in range(nfeatures):
+                v1 = ds1.X[:, i]
+                v2 = ds_rest.X[:, i]
+                if v1.data.size > 0 and v2.data.size > 0:
+                    stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
+                        alternative="two-sided")
+            keep = stats > 0
+            pvals = pvals[keep]
+            order = np.argsort(pvals)
+            markers[str(cat)] = gene_names[order][:n_genes]
+
+    @staticmethod
+    def has_markers(adata):
+        return hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns
+
+    @staticmethod
     def schema(adata):
         obs_cat = []
         obs = []
         result = {'version': '1.0.0'}
         marker_dict = adata.uns.get('markers', {})
         result['markers'] = marker_dict
-        if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:
+        if 'seurat_clusters' in adata.obs:
+            adata.obs['seurat_clusters'] = adata.obs['seurat_clusters'].astype('category')
+        if SimpleData.has_markers(adata):
             rank_genes_groups = adata.uns['rank_genes_groups']
             groupby = str(rank_genes_groups['params']['groupby'])
             group_names = rank_genes_groups['names'].dtype.names
@@ -64,7 +94,6 @@ class SimpleData:
                 gene_names = rank_genes_groups['names'][group_name]
                 # scores = rank_genes_groups['scores'][group_name]
                 markers[group_name] = gene_names[:n_genes]
-
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
                     adata.obs[key]) or pd.api.types.is_object_dtype(adata.obs[key]):
