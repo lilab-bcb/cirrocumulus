@@ -1,0 +1,32 @@
+{
+  "CD4 T cells": [
+    "IL7R"
+  ],
+  "CD14+ Monocytes": [
+    "CD14",
+    "LYZ"
+  ],
+  "B cells": [
+    "MS4A1"
+  ],
+  "T cells": [
+    "CD8A",
+    "CD8"
+  ],
+  "NK cells": [
+    "GNLY",
+    "NKG7"
+  ],
+  "Monocytes": [
+    "FCGR3A",
+    "MS4A7",
+    "FCGR3A+"
+  ],
+  "Dendritic Cells": [
+    "FCER1A",
+    "CST3"
+  ],
+  "Megakaryocytes": [
+    "PPBP"
+  ]
+}
