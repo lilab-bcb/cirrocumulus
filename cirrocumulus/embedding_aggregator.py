@@ -11,11 +11,8 @@ def sum_agg(x):
 
 def max_agg(x):
     if hasattr(x, 'sparse'):
-        # if x.sparse.npoints > 0:
-        #     val = x.sparse.sp_values.max()
-        #     if x.sparse.density > 0:
-        #         val = max(val, x.sparse.fill_value)
-        #     return val
+        if x.sparse.npoints == 0:
+            return x.sparse.fill_value
         return np.max(x.values)
     return x.max()
 
