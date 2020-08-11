@@ -9,5 +9,8 @@ if (!require('loomR', quietly = TRUE))
 library(loomR)
 args <- commandArgs(trailingOnly = TRUE)
 s <- readRDS(args[1])
+if (file.exists(args[2])) {
+  unlink(args[2])
+}
 loom <- as.loom(s, filename = args[2], verbose = FALSE)
 loom$close_all()
