@@ -1,6 +1,15 @@
 Release Notes
 -------------
 
+- 1.1.2.post1 `August 11, 2020`
+    * Added pyarrow to requirements
+
+- 1.1.2 `August 11, 2020`
+    * Show separate dotplots for all cells and selected cells
+    * Added support for renaming clusters
+    * Added `prepare_data` command for generating cirrocumulus formatted files for viewing on the cloud
+    * Added 'serve' command to serve multiple users and datasets
+
 - 1.1.1 `July 24, 2020`
     * Load marker genes from h5ad or JSON file
 

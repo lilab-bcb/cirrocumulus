@@ -47,8 +47,33 @@ Docker
     docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulusprod/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
 
 
-Google Cloud Platform (GCP)
+
+
+Build From Source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+
+
+-  Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
+
+    ./build.sh
+
+- Launch cirrocumulus via the command line::
+
+    cirro launch test.h5ad
+
+Server Mode
+^^^^^^^^^^^^^^
+
+Cirrocumulus can also be run in `server` mode in order to serve multiple users and datasets.
+The server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
+
+
+Google App Engine
+^^^^^^^^^^^^^^^^^^^
 
 -  Clone the cirrocumulus repository::
 
@@ -75,17 +100,6 @@ Google Cloud Platform (GCP)
 
 -  Create or use an existing GCP project
 
--  Create an OAuth client id
-
-   -  In Google Console, navigate to APIs and Services > OAuth consent
-      screen. Set the OAuth consent screen application name and add
-      <PROJECT>.appspot.com to the list of “Authorized domains”
-   -  Go to Credentials and click “Create Credentials > OAuth client
-      ID”. Enter “Web application” for “Application Type” and
-      https://<PROJECT>.appspot.com for “Authorized JavaScript origins”.
-      Click “Create” to create the credentials.
-   -  Copy OAuth client id into ``cirrocumulus/cirrocumulus/config.json``.
-
 -  Create App Engine by navigating to App Engine > Dashboard. You may
    choose the region where your application is hosted. Select the Python
    3 Standard Environment.
@@ -109,25 +123,28 @@ Google Cloud Platform (GCP)
 -  Read more about `App Engine`_ in the `App Engine`_ documentation.
 
 
-Build From Source
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- Clone the cirrocumulus repository::
+Server Mode
+^^^^^^^^^^^^^
 
-    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+- Install cirrocumulus using pip or docker
 
+- Visit the `Google API Console`_ to obtain OAuth 2.0 credentials (optional)
 
--  Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
+    -  Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
+    -  Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type” and
+        your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
 
-    ./build.sh
+-  Install MongoDB_ and start MongoDB server
 
-- Launch cirrocumulus via the command line::
+-  Start the server via the command line::
 
-    cirro launch test.h5ad
-
+    cirro serve
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
 .. _Node.js: https://nodejs.org/
 .. _ngrok: https://ngrok.com/
 .. _Terra: https://app.terra.bio/
+.. _MongoDB: https://www.mongodb.com/
+.. _Google API Console: https://console.developers.google.com/
