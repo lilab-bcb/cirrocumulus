@@ -237,7 +237,7 @@ class AppHeader extends React.PureComponent {
 
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
-                    {datasetChoices.length > 0 &&
+                    {datasetChoices.length > 1 &&
                     <Select
                         style={{marginRight: 6}}
                         disableUnderline={true}
@@ -248,10 +248,10 @@ class AppHeader extends React.PureComponent {
                             name: 'dataset',
                             id: 'dataset-id',
                         }}
-                    > {datasetChoices.length !== 1 &&
-                    <MenuItem key="" value="" disabled>
-                        Choose a dataset
-                    </MenuItem>}
+                    >
+                        <MenuItem key="" value="" disabled>
+                            Choose a dataset
+                        </MenuItem>
                         {datasetChoices.map(dataset => <MenuItem
                             key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
                     </Select>}
