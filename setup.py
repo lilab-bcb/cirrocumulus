@@ -50,7 +50,7 @@ setup(
     #         'install': PostInstallCommand,
     # },
     # version="2.0.2",
-    description="scRNA-Seq visualization tool",
+    description="Single-cell visualization tool",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/klarman-cell-observatory/cirrocumulus",
