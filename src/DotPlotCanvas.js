@@ -210,12 +210,13 @@ class DotPlotCanvas extends React.PureComponent {
     update() {
 
         let dotplot = Object.assign({}, this.props.data);
-        //console.log(dotplot)
+        const renamedCategories = this.props.renamedCategories || {};
         if (dotplot != null && dotplot.selection) {
             dotplot = dotplot.selection;
         }
         this.dotplot = dotplot;
         const categories = dotplot.categories || [''];
+
         this.categories = categories;
         const features = dotplot.values.map(feature => feature.name);
 
@@ -226,7 +227,7 @@ class DotPlotCanvas extends React.PureComponent {
         for (let i = 0; i < categories.length; i++) {
             categoryOrder.push(i);
         }
-        if (dotplot.sortBy !== dotplot.name) {
+        if (dotplot.sortBy !== dotplot.name) { // sort by feature
             let sortByDatum;
             for (let i = 0; i < dotplot.values.length; i++) {
                 if (dotplot.values[i].name === dotplot.sortBy) {
@@ -248,6 +249,39 @@ class DotPlotCanvas extends React.PureComponent {
                 });
 
             }
+        } else { // sort by category
+            if (Object.keys(renamedCategories).length > 0) {
+                categoryOrder.sort((a, b) => {
+                    let val1 = categories[a];
+                    let renamed1 = renamedCategories[val1];
+                    if (renamed1 != null) {
+                        val1 = renamed1;
+                    }
+                    let val2 = categories[b];
+                    let renamed2 = renamedCategories[val2];
+                    if (renamed2 != null) {
+                        val2 = renamed2;
+                    }
+                    val1 = val1.toLowerCase();
+                    val2 = val2.toLowerCase();
+                    const num1 = parseFloat(val1);
+                    const num1Valid = !isNaN(num1);
+                    const num2 = parseFloat(val2);
+                    const num2Valid = !isNaN(num2);
+
+                    if (num1Valid && num2Valid) {
+                        return (num1 === num2 ? 0 : (num1 < num2 ? -1 : 1));
+                    }
+                    if (num1Valid) {
+                        return 1;
+                    }
+                    if (num2Valid) {
+                        return -1;
+                    }
+                    return val1 === val2 ? 0 : (val1 > val2 ? 1 : -1);
+                });
+            }
+
         }
 
         const canvas = document.createElement('canvas');
