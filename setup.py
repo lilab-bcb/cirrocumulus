@@ -37,6 +37,7 @@ requires = [
         "natsort",
         "numpy",
         "pandas>=1.0",
+        "pyarrow",
         "scipy"
 ]
 
