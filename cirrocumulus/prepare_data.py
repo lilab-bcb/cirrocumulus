@@ -5,18 +5,18 @@ import logging
 import os
 
 import anndata
-import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
+from natsort import natsorted
+from pandas import CategoricalDtype
+
+import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 from cirrocumulus.entity import Entity
-from cirrocumulus.parquet_io import save_adata
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -219,6 +219,7 @@ class PrepareData:
         return os.path.join(self.base_output_dir, path)
 
     def execute(self):
+        from cirrocumulus.parquet_io import save_adata
         basis_list = self.basis_list
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
