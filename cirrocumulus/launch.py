@@ -30,12 +30,12 @@ def configure(dataset_paths, backed, marker_paths):
         dataset_api.add(ParquetDataset())
     except ModuleNotFoundError:
         pass
-    anndataDataset = AnndataDataset('r' if backed else None)
+    anndata_dataset = AnndataDataset('r' if backed else None)
     if len(dataset_paths) > 1:
         to_concat = []
         all_ids = None
         for path in dataset_paths:
-            d = anndataDataset.get_data(path)
+            d = anndata_dataset.get_data(path)
             all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
             to_concat.append(d)
         for i in range(len(to_concat)):
@@ -76,11 +76,11 @@ def configure(dataset_paths, backed, marker_paths):
         X = scipy.sparse.hstack(X, format='csr') if len(X_list) > 1 else X_list[0]
         adata = anndata.AnnData(X=X, obs=obs, var=var, obsm=obsm)
         adata.var_names_make_unique()
-        anndataDataset.add_data(os.path.normpath(dataset_paths[0]), adata)
-    dataset_api.add(anndataDataset)
+        anndata_dataset.add_data(os.path.normpath(dataset_paths[0]), adata)
+    dataset_api.add(anndata_dataset)
 
     if marker_paths is not None and len(marker_paths) > 0:
-        d = anndataDataset.get_data(dataset_path)
+        d = anndata_dataset.get_data(dataset_path)
         marker_dict = d.uns.get('markers', {})
         d.uns['markers'] = marker_dict
         import json
@@ -88,18 +88,19 @@ def configure(dataset_paths, backed, marker_paths):
         for marker_path in marker_paths:
             markers = {}
             with open(marker_path, 'rt') as f:
-                m = json.load(f)
-                if 'title' in m:
-                    marker_dict[m['title']] = markers
-                    for cell_type in m['cell_types']:
+                marker_json = json.load(f)
+                if 'title' in marker_json:
+                    marker_dict[marker_json['title']] = markers
+                    for cell_type in marker_json['cell_types']:
                         markers[cell_type['name']] = get_cell_type_genes(cell_type)
                         if 'subtypes' in cell_type:
                             for cell_sub_type in cell_type['subtypes']['cell_types']:
                                 markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
                 else:
-                    markers = marker_dict.get('markers', {})
-                    marker_dict['markers'] = markers
-                    markers.update(m)
+                    key = os.path.splitext(os.path.basename(marker_json))[0]
+                    markers = marker_dict.get(key, {})
+                    marker_dict[key] = markers
+                    markers.update(marker_json)
 
 
 def create_app():
@@ -135,6 +136,7 @@ def main(argsv):
 
     args = parser.parse_args(argsv)
     app = create_app()
+    # from flask_cors import CORS
     # CORS(app)
     configure(args.dataset, args.backed, args.markers)
     if not args.no_open:
