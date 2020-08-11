@@ -263,9 +263,6 @@ class DotPlotCanvas extends React.PureComponent {
     handleSaveImage = (format) => {
         this.setState({saveImageEl: null});
         let context;
-        const categories = this.categories;
-
-        let diameter = maxRadius * 2;
 
         let canvas;
         if (format === 'svg') {
