@@ -156,8 +156,9 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 class PrepareData:
 
     def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output,
-                 X_range=None, dimensions=None, stats=True):
+                 X_range=None, dimensions=None, stats=True, markers=[]):
         self.input_path = input_path
+        self.markers = markers
         self.stats = stats
         self.adata = anndata.read_loom(input_path) if input_path.lower().endswith('.loom') else anndata.read(input_path,
             backed=backed)
@@ -214,7 +215,6 @@ class PrepareData:
                 self.others.append(name)
         make_ordered(self.adata.obs, self.dimensions)
 
-
     def get_path(self, path):
         return os.path.join(self.base_output_dir, path)
 
@@ -224,15 +224,15 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
-        if not SimpleData.has_markers(self.adata):
-            marker_dict = {}
+
+        marker_dict = self.adata.uns.get('markers', {})
+        self.adata.uns['markers'] = marker_dict
+        if self.markers is not None:
             n_genes = 10
-            self.adata.uns['markers'] = marker_dict
-            for key in self.adata.obs.columns:
-                if pd.api.types.is_categorical_dtype(self.adata.obs[key]) and len(
-                        self.adata.obs[key].cat.categories) > 1:
-                    logger.info('Computing markers for {}'.format(key))
-                    SimpleData.find_markers(self.adata, key, marker_dict, n_genes)
+            for field in self.markers:
+                if len(self.adata.obs[field].cat.categories) > 1:
+                    logger.info('Computing markers for {}'.format(field))
+                    SimpleData.find_markers(self.adata, field, marker_dict, n_genes)
 
         if X_range[0] == 0:
             save_adata(self.adata, self.base_output_dir)
@@ -350,6 +350,7 @@ def main(argsv):
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
+    parser.add_argument('--markers', help='List of groups to compute markers for if not', action='append')
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
@@ -390,7 +391,7 @@ def main(argsv):
     #     input_X_range[1] = int(input_X_range[1])
 
     prepare_data = PrepareData(input_dataset, args.backed, input_basis, nbins, summary, out,
-        X_range=input_X_range, dimensions=args.groups, stats=args.stats)
+        X_range=input_X_range, dimensions=args.groups, stats=args.stats, markers=args.markers)
     prepare_data.execute()
     if loom_file is not None:
         os.remove(loom_file)
