@@ -1,10 +1,9 @@
 import datetime
 import json
-from urllib.parse import urlparse
 
-import fsspec
 from google.cloud import datastore
 
+from database_api import load_dataset_schema
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -64,7 +63,6 @@ class FirestoreDatastore:
         for result in query.fetch():
             results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
         return results
-
 
     def dataset_filters(self, email, dataset_id):
         client = self.datastore_client
@@ -140,10 +138,13 @@ class FirestoreDatastore:
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         client = self.datastore_client
-        if dataset_id is not None:
+        if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
             dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url', 'precomputed'])
+            user = client.get(client.key(USER, email))
+            if 'importer' not in user or not user['importer']:
+                raise InvalidUsage('Not authorized', 403)
         readers = set(readers)
         if email in readers:
             readers.remove(email)
@@ -151,13 +152,10 @@ class FirestoreDatastore:
         update_dict = {'name': dataset_name,
                        'readers': list(readers),
                        'url': url}
-        if url.endswith('.json'):
-            pr = urlparse(url)
-            fs = fsspec.filesystem(pr.scheme if not pr.scheme == '' else 'file')
-            with fs.open(url) as s:
-                s = json.load(s)
-                update_dict['precomputed'] = s.get('precomputed', False)
-                update_dict['nObs'] = s.get('nObs')
+        json_schema = load_dataset_schema(url)
+        if json_schema is not None:
+            update_dict['precomputed'] = json_schema.get('precomputed', False)
+            update_dict['shape'] = json_schema.get('shape')
 
         if dataset_id is None:  # new dataset
             update_dict['owners'] = [email]
