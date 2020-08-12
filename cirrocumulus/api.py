@@ -280,7 +280,7 @@ def handle_dataset():
             return 'Please supply an id', 400
         readers = set(content.get('readers', []))
         dataset_name = content.get('name', '')
-        url = content.get('url', '')  # e.g. gs://foo/a/b/c.parquet
+        url = content.get('url', '')  # e.g. gs://foo/a/b/
         if dataset_name == '' or url == '':
             return 'Must supply dataset name and URL', 400
         dataset_id = database_api.upsert_dataset(email=email,
