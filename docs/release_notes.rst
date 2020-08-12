@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.2.post2 `August 12, 2020`
+    * Fixed bug in `prepare_data` for saving markers
+    * Added gunicorn and pymongo to requirements
+
 - 1.1.2.post1 `August 11, 2020`
     * Added pyarrow to requirements
 
