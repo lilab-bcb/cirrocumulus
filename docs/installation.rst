@@ -135,13 +135,20 @@ Server Mode
 
 - Install cirrocumulus using pip or docker
 
-- Visit the `Google API Console`_ to obtain OAuth 2.0 credentials (optional)
+- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials
 
     -  Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
     -  Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type” and
         your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
 
--  Install MongoDB_ and start MongoDB server
+-  Install MongoDB_ and start the MongoDB server
+
+- Insert datasets into the `datasets` collection with the properties name and url using the mongo shell::
+
+    mongo
+    use cirrocumulus
+    db.datasets.insertOne({"name":"pbmc3k local", "url":"file:///Users/xxxx/pbmc3k_final"})
+    db.datasets.insertOne({"name":"pbmc3k cloud", "url":"gs://foo/bar/pbmc3k_final"})
 
 -  Start the server via the command line::
 
