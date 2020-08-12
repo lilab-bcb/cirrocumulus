@@ -4,8 +4,8 @@ import json
 from bson import ObjectId
 from pymongo import MongoClient
 
+from cirrocumulus.database_api import load_dataset_schema
 from cirrocumulus.entity import Entity
-from database_api import load_dataset_schema
 
 
 class MongoDb:

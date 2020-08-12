@@ -3,7 +3,7 @@ import json
 
 from google.cloud import datastore
 
-from database_api import load_dataset_schema
+from cirrocumulus.database_api import load_dataset_schema
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
