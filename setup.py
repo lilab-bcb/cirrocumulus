@@ -33,11 +33,13 @@ requires = [
         "flask",
         "flask-compress",
         "fsspec",
+        "gunicorn",
         "loompy",
         "natsort",
         "numpy",
         "pandas>=1.0",
         "pyarrow",
+        "pymongo",
         "scipy"
 ]
 
@@ -70,9 +72,8 @@ setup(
             "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
-        test=[
-                'pytest'
-        ]
+        serve=[''],
+        test=['pytest']
     ),
     keywords="single cell/nucleus genomics visualization",
     packages=find_packages(),
