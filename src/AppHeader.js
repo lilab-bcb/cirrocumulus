@@ -301,7 +301,7 @@ class AppHeader extends React.PureComponent {
                                                    horizontal: 'right',
                                                }} open={this.state.moreMenuOpen}
                                                onClose={this.handleMoreMenuClose}>
-                            {email != null && user.importer &&
+                            {user != null && user.importer &&
                             <MenuItem onClick={this.handleImportDataset}>
                                 Import Dataset
                             </MenuItem>}
