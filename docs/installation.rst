@@ -75,7 +75,9 @@ The server can be deployed on a cloud VM, an on-premise machine, or on Google Ap
 Prepare Data
 ^^^^^^^^^^^^^^
 The command `cirro prepare_data` can be used to prepare a cirrocumulus formatted dataset from a h5ad, loom, or Seurat file.
-The cirrocumulus format allows efficient fetching of portions of a dataset over a network (e.g. Google or S3 bucket).
+The cirrocumulus format allows efficient fetching of portions of a dataset over a network (e.g. Google or S3 bucket). Example::
+
+    cirro prepare_data pbmc3k_final.rds
 
 
 Google App Engine
