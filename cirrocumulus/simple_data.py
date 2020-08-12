@@ -49,26 +49,27 @@ class SimpleData:
     @staticmethod
     def find_markers(adata, key, marker_dict, n_genes):
         import scipy.stats as ss
-        nfeatures = adata.shape[1]
-        gene_names = adata.var_names
         markers = {}
         marker_dict[key + ' markers'] = markers
         for cat in adata.obs[key].cat.categories:
-            stats = np.zeros(nfeatures, dtype=np.float32)
-            pvals = np.full(nfeatures, 1.0)
+
             mask = adata.obs[key] == cat
             ds1 = adata[mask]
             ds_rest = adata[~mask]
-            for i in range(nfeatures):
+            gene_names_keep = ds1.X.mean(axis=0) > ds_rest.X.mean(axis=0)
+            ds1 = ds1[:, gene_names_keep.A1]
+            ds_rest = ds_rest[:, gene_names_keep.A1]
+            stats = np.zeros(ds1.shape[1], dtype=np.float32)
+            pvals = np.full(ds1.shape[1], 1.0)
+            for i in range(ds1.shape[1]):
                 v1 = ds1.X[:, i]
                 v2 = ds_rest.X[:, i]
                 if v1.data.size > 0 and v2.data.size > 0:
                     stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
                         alternative="two-sided")
-            keep = stats > 0
-            pvals = pvals[keep]
+
             order = np.argsort(pvals)
-            markers[str(cat)] = gene_names[order][:n_genes]
+            markers[str(cat)] = ds1.var_names[order][:n_genes]
 
     @staticmethod
     def has_markers(adata):
