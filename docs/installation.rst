@@ -8,7 +8,7 @@ pip
 
     pip install cirrocumulus
 
--  Launch via the command line::
+- Launch via the command line::
 
     cirro launch <path_to_dataset>
 
@@ -57,7 +57,7 @@ Build From Source
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
 
--  Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
+- Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
 
     ./build.sh
 
@@ -83,53 +83,47 @@ The cirrocumulus format allows efficient fetching of portions of a dataset over 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
 
--  Clone the cirrocumulus repository::
+- Clone the cirrocumulus repository::
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
 
--  Change your current working directory to cirrocumulus::
+- Change your current working directory to cirrocumulus::
 
     cd cirrocumulus
 
--  Install `Node.js`_.
+- Install `Node.js`_.
 
--  Install TypeScript::
+- Install TypeScript::
 
     npm install -g typescript
 
--  Install JavaScript dependencies::
+- Install JavaScript dependencies::
 
     npm i
 
 
--  Build the client::
+- Build the client::
 
     npm run-script build
 
--  Create or use an existing GCP project
+- Create or use an existing GCP project
 
--  Create App Engine by navigating to App Engine > Dashboard. You may
-   choose the region where your application is hosted. Select the Python
-   3 Standard Environment.
--  Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your
-   first time using the Google Cloud SDK.
--  Deploy the application using the command below. Remember to replace
-   <PROJECT> with your project ID.::
+- Create App Engine by navigating to App Engine > Dashboard. You may choose the region where your application is hosted.
+  Select the Python 3 Standard Environment.
+
+- Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your first time using the Google Cloud SDK.
+
+- Deploy the application using the command below. Remember to replace <PROJECT> with your project ID. Your project is available at \https://<PROJECT>.appspot.com.::
 
     gcloud app deploy app.yaml --project=<PROJECT>
 
-   Your project is available at https://<PROJECT>.appspot.com.
+- Go to \https://<PROJECT>.appspot.com in your web browser and login.
 
--  Go to https://<PROJECT>.appspot.com in your web browser and login.
+    - By default, no one is allowed to add datasets to your application.
+    - In Google Console, navigate to Data Store > Entities and click on your email address. Add the property ``importer`` of type ``boolean`` and set it to ``true``.
+    - Go back to \https://<PROJECT>.appspot.com and start adding datasets.
 
-   -  By default, no one is allowed to add datasets to your application.
-   -  In Google Console, navigate to Data Store > Entities and click on
-      your email address. Add the property ``importer`` of type ``boolean``
-      and set it to ``true``.
-   -  Go back to https://<PROJECT>.appspot.com and start adding datasets.
-
--  Read more about `App Engine`_ in the `App Engine`_ documentation.
-
+- Read more about `App Engine`_ in the `App Engine`_ documentation.
 
 
 Server Mode
@@ -137,12 +131,13 @@ Server Mode
 
 - Install cirrocumulus using pip or docker
 
-- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials
-    -  Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
-    -  Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type” and
-        your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials.
 
--  Install MongoDB_ and start the MongoDB server
+    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
+    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
+      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+
+- Install MongoDB_ and start the MongoDB server
 
 - Insert datasets into the `datasets` collection with the properties name and url using the mongo shell::
 
@@ -151,7 +146,7 @@ Server Mode
     db.datasets.insertOne({"name":"pbmc3k local", "url":"file:///Users/xxxx/pbmc3k_final"})
     db.datasets.insertOne({"name":"pbmc3k cloud", "url":"gs://foo/bar/pbmc3k_final"})
 
--  Start the server via the command line::
+- Start the server via the command line::
 
     cirro serve
 
