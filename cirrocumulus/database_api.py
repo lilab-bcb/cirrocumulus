@@ -1,3 +1,26 @@
+def load_dataset_schema(url):
+    import os
+    from urllib.parse import urlparse
+    import fsspec
+    import json
+    ext = os.path.splitext(url)[1]
+    json_schema = None
+    if ext in ['.json', '.json.gz', '']:
+        pr = urlparse(url)
+        fs = fsspec.filesystem(pr.scheme if not pr.scheme == '' else 'file')
+        if ext == '':
+            url = os.path.join(url, 'index.json.gz')
+            ext = os.path.splitext(url)[1]
+        if ext == '.json.gz':
+            import gzip
+            with gzip.open(fs.open(url)) as f:
+                json_schema = json.load(f)
+        else:
+            with fs.open(url) as f:
+                json_schema = json.load(f)
+    return json_schema
+
+
 class DatabaseAPI:
 
     def __init__(self):
