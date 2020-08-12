@@ -138,7 +138,6 @@ Server Mode
 - Install cirrocumulus using pip or docker
 
 - Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials
-
     -  Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
     -  Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type” and
         your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
