@@ -366,7 +366,6 @@ class EmbedForm extends React.PureComponent {
             b = item2.text.toLowerCase();
             return a < b ? -1 : (a === b ? 0 : 1);
         });
-        console.log(featureSetOptions)
 
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
