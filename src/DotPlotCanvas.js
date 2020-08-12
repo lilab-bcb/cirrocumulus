@@ -221,7 +221,7 @@ class DotPlotCanvas extends React.PureComponent {
         const features = dotplot.values.map(feature => feature.name);
 
         if (dotplot.sortBy == null) {
-            dotplot.sortBy = features[0];
+            dotplot.sortBy = dotplot.name;
         }
         let categoryOrder = [];
         for (let i = 0; i < categories.length; i++) {
