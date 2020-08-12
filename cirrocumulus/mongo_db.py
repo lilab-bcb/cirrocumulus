@@ -2,8 +2,10 @@ import datetime
 import json
 
 from bson import ObjectId
-from cirrocumulus.entity import Entity
 from pymongo import MongoClient
+
+from cirrocumulus.entity import Entity
+from database_api import load_dataset_schema
 
 
 class MongoDb:
@@ -41,8 +43,12 @@ class MongoDb:
 
     def user(self, email):
         collection = self.db.users
-        collection.update_one(dict(_id=ObjectId(email)), {'$set': dict(last_login=datetime.datetime.now())},
+        last_login = datetime.datetime.now()
+        result = collection.update_one(dict(_id=ObjectId(email)), {'$set': dict(last_login=last_login)},
             upsert=True)
+        return Entity(str(result['_id']), {'last_login': result['last_login'],
+                                           'importer': result['importer']})
+
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         collection = self.db.datasets
@@ -113,7 +119,10 @@ class MongoDb:
         update_dict = {'name': dataset_name,
                        'readers': list(readers),
                        'url': url}
-
+        json_schema = load_dataset_schema(url)
+        if json_schema is not None:
+            update_dict['precomputed'] = json_schema.get('precomputed', False)
+            update_dict['shape'] = json_schema.get('shape')
         if dataset_id is None:  # new dataset
             update_dict['owners'] = [email]
             update_dict['_id'] = dataset_id
