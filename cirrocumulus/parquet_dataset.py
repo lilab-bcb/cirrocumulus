@@ -117,14 +117,14 @@ class ParquetDataset(AbstractDataset):
         if self.cached_dataset_id != dataset_id:
             self.cached_dataset_id = dataset_id
             self.cached_data = {}
-        # path is directory
+
         if not path.endswith('.parquet'):
             return self.read_data_sparse(file_system, path, obs_keys, var_keys, basis, dataset, schema)
+        # path is directory
         return self.read_data_dense(file_system, path, obs_keys, var_keys, basis, dataset, schema)
 
-
     def schema(self, file_system, path):
-        if path.endswith('.json') or path.endswith('.json.gz'):  # precomputed dataset
+        if path.endswith('.json') or path.endswith('.json.gz'):
             return super().schema(file_system, path)
         elif path.endswith('.parquet'):
             metadata = None
@@ -132,7 +132,6 @@ class ParquetDataset(AbstractDataset):
                 parquet_file = pq.ParquetFile(s)
                 schema = parquet_file.schema.to_arrow_schema()
                 result = {'version': '1'}
-                result['nObs'] = parquet_file.metadata.num_rows
                 for metadata_key in [b'pegasus']:
                     if metadata_key in schema.metadata:
                         metadata = json.loads(schema.metadata[metadata_key])
@@ -167,9 +166,6 @@ class ParquetDataset(AbstractDataset):
                         result['embeddings'].append(dict(name=name, dimensions=2))
                         if embedding_basename_to_count[name] == 3:
                             result['embeddings'].append(dict(name=name, dimensions=3))
-                    result['var'] = list(
-                        sorted(result['var'],
-                            key=lambda x: ('zzzzz' + x.lower()) if x[0].isdigit() else x.lower()))
                 else:
                     all_obs = metadata['obs']
 
@@ -186,5 +182,5 @@ class ParquetDataset(AbstractDataset):
                 result['obsCat'] = obs_cat
                 result['shape'] = (parquet_file.metadata.num_rows, len(result['var']))
                 return result
-        else:
+        else:  # directory
             return super().schema(file_system, os.path.join(path, 'index.json.gz'))
