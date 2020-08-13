@@ -2,8 +2,7 @@ Release Notes
 -------------
 
 - 1.1.3 `August 13, 2020`
-    * Improved support for Google authenticaion is `serve`
-    * Moved Google App Engine configuration to separate repository
+    * Improved support for Google authentication in `serve` command
 
 - 1.1.2.post2 `August 12, 2020`
     * Fixed bug in `prepare_data` for saving markers
