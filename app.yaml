@@ -1,4 +1,4 @@
-runtime: python37
+runtime: python38
 instance_class: F4_HIGHMEM
 automatic_scaling:
   target_cpu_utilization: 0.95
@@ -34,4 +34,5 @@ handlers:
     secure: always
     redirect_http_response_code: 301
 
-
+env_variables:
+  CIRRO_AUTH_CLIENT_ID: "xxx"
