@@ -1,10 +1,11 @@
-import json
 import os
 
+from flask import Flask, send_from_directory
+
 from cirrocumulus.api import blueprint, auth_api, database_api, dataset_api
+from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID
 from cirrocumulus.firestore_datastore import FirestoreDatastore
 from cirrocumulus.google_auth import GoogleAuth
-from flask import Flask, send_from_directory
 
 # If `entrypoint` is not defined in app.yaml, App Engine will look for an app
 # called `app` in `main.py`.
@@ -19,12 +20,10 @@ def root():
     return send_from_directory(os.path.abspath(os.path.join(app.root_path, "cirrocumulus", "client")), "index.html")
 
 
-try:
-    from cirrocumulus.parquet_dataset import ParquetDataset
+from cirrocumulus.parquet_dataset import ParquetDataset
 
-    dataset_api.add(ParquetDataset())
-except ModuleNotFoundError:
-    pass
+dataset_api.add(ParquetDataset())
+
 try:
     from cirrocumulus.zarr_dataset_backed import ZarrDatasetBacked
 
@@ -32,9 +31,7 @@ try:
 except ModuleNotFoundError:
     pass
 
-with open('cirrocumulus/config.json', 'r') as f:
-    config = json.load(f)
-auth_api.provider = GoogleAuth(config['clientId'])
+auth_api.provider = GoogleAuth(os.environ[CIRRO_AUTH_CLIENT_ID])
 database_api.provider = FirestoreDatastore()
 
 if __name__ == '__main__':
