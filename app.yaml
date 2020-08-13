@@ -1,0 +1,38 @@
+runtime: python38
+instance_class: F4_HIGHMEM
+automatic_scaling:
+  target_cpu_utilization: 0.95
+  target_throughput_utilization: 0.95
+  max_instances: 1
+  max_pending_latency: 10000ms
+  min_pending_latency: 10000ms
+  max_concurrent_requests: 80
+
+handlers:
+  - url: /api/.*
+    script: auto
+    secure: always
+    redirect_http_response_code: 301
+  - url: /
+    static_files: build/index.html
+    upload: build/index.html
+    secure: always
+    redirect_http_response_code: 301
+  - url: /(.*)
+    static_files: build/\1
+    upload: build/(.*)
+    secure: always
+    redirect_http_response_code: 301
+  - url: /static/css/(.*)
+    static_files: build//static/css/\1
+    upload: build//static/css/(.*)
+    secure: always
+    redirect_http_response_code: 301
+  - url: /static/js/(.*)
+    static_files: build//static/js/\1
+    upload: build//static/js/(.*)
+    secure: always
+    redirect_http_response_code: 301
+
+env_variables:
+  CIRRO_AUTH_CLIENT_ID: ""

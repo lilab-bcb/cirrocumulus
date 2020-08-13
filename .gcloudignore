@@ -1,0 +1,12 @@
+.gcloudignore
+.git
+.gitignore
+__pycache__/
+.eggs
+node_modules
+public
+LICENSE
+README.md
+.idea
+test-data
+service-account-file.json
