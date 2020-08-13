@@ -49,7 +49,6 @@ def handle_dataset_filters():
     if dataset_id == '':
         return 'Please provide an id', 400
 
-    database_api.get_dataset(email, dataset_id)
     dataset_filters = database_api.dataset_filters(email, dataset_id)
     # {'id': result.id, 'name': result['name']}
     return to_json(dataset_filters)
@@ -65,8 +64,8 @@ def handle_export_dataset_filters():
     if dataset_id == '':
         return 'Please provide an id', 400
 
-    dataset = database_api.get_dataset(email, dataset_id)
     dataset_filters = database_api.dataset_filters(email, dataset_id)
+    dataset = database_api.get_dataset(email, dataset_id)
     text = data_processing.handle_export_dataset_filters(dataset_api, dataset, dataset_filters)
     return Response(text, mimetype='text/plain')
 
@@ -81,14 +80,12 @@ def handle_category_name():
         dataset_id = request.args.get('id', '')
         if dataset_id == '':
             return 'Please provide an id', 400
-        database_api.get_dataset(email, dataset_id)
-        return to_json(database_api.category_names(dataset_id))
+        return to_json(database_api.category_names(email, dataset_id))
     content = request.get_json(force=True, cache=False)
     category = content.get('c')
     original_name = content.get('o')
     new_name = content.get('n')
     dataset_id = content.get('id')
-    database_api.get_dataset(email, dataset_id)
     if request.method == 'PUT':
         database_api.upsert_category_name(
             email=email,
@@ -135,24 +132,15 @@ def handle_dataset_filter():
         return to_json('', 204)
 
 
-def get_schema_and_dataset():
-    """Get dataset schema and dataset object
-    """
-
-    email = auth_api.auth()['email']
-    dataset_id = request.args.get('id', '')
-    if dataset_id == '':
-        return 'Please provide an id', 400
-    dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.schema(dataset)
-    return schema, dataset
-
-
 @blueprint.route('/schema', methods=['GET'])
 def handle_schema():
     """Get dataset schema.
     """
-    return to_json(get_schema_and_dataset()[0])
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+    dataset = database_api.get_dataset(email, dataset_id)
+    schema = dataset_api.schema(dataset)
+    return to_json(schema)
 
 
 # @blueprint.route('/download', methods=['GET'])
@@ -192,17 +180,6 @@ def get_email_and_dataset(content):
         return 'Please supply an id', 400
     dataset = database_api.get_dataset(email, dataset_id)
     return email, dataset
-
-
-# @blueprint.route('/diff_exp', methods=['POST'])
-# def handle_diff_exp():
-#     content = request.get_json(cache=False)
-#     email, dataset = get_email_and_dataset(content)
-#     data_filter = content.get('filter')
-#     var_range = content.get('var_range')
-#     return to_json(
-#         data_processing.handle_diff_exp(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
-#             var_range=var_range))
 
 
 @blueprint.route('/embedding', methods=['POST'])

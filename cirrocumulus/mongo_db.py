@@ -1,16 +1,15 @@
-import datetime
 import json
 
 from bson import ObjectId
 from pymongo import MongoClient
 
 from cirrocumulus.database_api import load_dataset_schema
-from cirrocumulus.entity import Entity
+from .invalid_usage import InvalidUsage
 
 
 class MongoDb:
 
-    def __init__(self, db_uri, database='cirrocumulus', email=None):
+    def __init__(self, db_uri='mongodb://localhost:27017/', database='cirrocumulus', email=None):
         self.client = MongoClient(db_uri)
         self.db = self.client[database]
         self.email = email
@@ -21,7 +20,8 @@ class MongoDb:
             d['email'] = self.email
         return d
 
-    def category_names(self, dataset_id):
+    def category_names(self, email, dataset_id):
+        self.get_dataset(email, dataset_id)
         collection = self.db.categories
         results = []
         for doc in collection.find(dict(dataset_id=dataset_id)):
@@ -30,44 +30,55 @@ class MongoDb:
         return results
 
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+        self.get_dataset(email, dataset_id)
         collection = self.db.categories
         key = str(dataset_id) + '-' + str(category) + '-' + str(original_name)
 
         if new_name == '':
-            collection.delete_one(dict(_id=ObjectId(key)))
+            collection.delete_one(dict(cat_id=key))
         else:
-            collection.update_one(dict(_id=ObjectId(key)),
+            collection.update_one(dict(cat_id=key),
                 {'$set': dict(category=category, dataset_id=dataset_id, original=original_name, new=new_name)},
                 upsert=True)
             return key
 
     def user(self, email):
         collection = self.db.users
-        last_login = datetime.datetime.now()
-        result = collection.update_one(dict(_id=ObjectId(email)), {'$set': dict(last_login=last_login)},
-            upsert=True)
-        return Entity(str(result['_id']), {'last_login': result['last_login'],
-                                           'importer': result['importer']})
-
+        doc = collection.find_one(dict(email=email))
+        if doc is None:
+            collection.insert_one(dict(email=email))
+            return {'id': email}
+        else:
+            return {'id': email,
+                    'importer': doc.get('importer', False)}
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         collection = self.db.datasets
         doc = collection.find_one(dict(_id=ObjectId(dataset_id)))
         if doc is None:
-            raise ValueError('{} not found'.format(dataset_id))
-        return Entity(str(doc['_id']), {'name': doc['name'],
-                                        'url': doc['url'],
-                                        'owner': 'owners' in doc and email in doc['owners']})
+            raise InvalidUsage('Please provide a valid id', 400)
+        readers = doc.get('readers')
+        if email not in readers:
+            raise InvalidUsage('Not authorized', 403)
+        if ensure_owner and email not in doc['owners']:
+            raise InvalidUsage('Not authorized', 403)
+        return {
+                'id': str(doc['_id']),
+                'name': doc['name'],
+                'readers': doc['readers'],
+                'url': doc['url'],
+                'owner': 'owners' in doc and email in doc['owners']}
 
     def datasets(self, email):
         collection = self.db.datasets
         results = []
-        for doc in collection.find():
+        for doc in collection.find(dict(readers=email)):
             results.append({'id': str(doc['_id']), 'name': doc['name'],
                             'owner': 'owners' in doc and email in doc['owners']})
         return results
 
     def dataset_filters(self, email, dataset_id):
+        self.get_dataset(email, dataset_id)
         collection = self.db.filters
         results = []
 
@@ -79,15 +90,19 @@ class MongoDb:
 
     def delete_dataset_filter(self, email, filter_id):
         collection = self.db.filters
+        doc = collection.find_one(dict(_id=ObjectId(filter_id)))
+        self.get_dataset(email, doc['dataset_id'])
         collection.delete_one(dict(_id=ObjectId(filter_id)))
 
     def get_dataset_filter(self, email, filter_id):
         collection = self.db.filters
         doc = collection.find_one(dict(_id=ObjectId(filter_id)))
+        self.get_dataset(email, doc['dataset_id'])
         return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
                 'notes': doc['notes'], 'email': doc['email']}
 
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
+        self.get_dataset(email, dataset_id)
         collection = self.db.filters
         entity_update = {}
         if filter_name is not None:
@@ -103,12 +118,15 @@ class MongoDb:
         if filter_id is None:
             return str(collection.insert_one(entity_update).inserted_id)
         else:
-            collection.update_one(dict(_id=ObjectId(filter_id)), {'$set', entity_update})
+            collection.update_one(dict(_id=ObjectId(filter_id)), {'$set': entity_update})
             return filter_id
 
     def delete_dataset(self, email, dataset_id):
+        self.get_dataset(email, dataset_id, True)
         collection = self.db.datasets
         collection.delete_one(dict(_id=ObjectId(dataset_id)))
+        self.db.filters.delete_many(dict(dataset_id=dataset_id))
+        self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         collection = self.db.datasets
@@ -124,8 +142,13 @@ class MongoDb:
             update_dict['precomputed'] = json_schema.get('precomputed', False)
             update_dict['shape'] = json_schema.get('shape')
         if dataset_id is None:  # new dataset
+            if email != '':
+                user = self.db.users.find_one(dict(email=email))
+                if 'importer' not in user or not user['importer']:
+                    raise InvalidUsage('Not authorized', 403)
             update_dict['owners'] = [email]
             return str(collection.insert_one(update_dict).inserted_id)
         else:
-            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set', update_dict})
+            self.get_dataset(email, dataset_id, True)
+            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': update_dict})
             return dataset_id

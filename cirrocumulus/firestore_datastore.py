@@ -21,10 +21,12 @@ class FirestoreDatastore:
         client = self.datastore_client
         return dict(mode='server', email=client.project + '@appspot.gserviceaccount.com')
 
-    def category_names(self, dataset_id):
+    def category_names(self, email, dataset_id):
+        dataset_id = int(dataset_id)
+        self.__get_key_and_dataset(email, dataset_id, False)
         client = self.datastore_client
         query = client.query(kind=CAT_NAME)
-        query.add_filter('dataset_id', '=', int(dataset_id))
+        query.add_filter('dataset_id', '=', dataset_id)
         results = []
         for result in query.fetch():
             results.append(result)
@@ -32,6 +34,7 @@ class FirestoreDatastore:
 
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
         dataset_id = int(dataset_id)
+        self.__get_key_and_dataset(email, dataset_id, False)
         client = self.datastore_client
         key = client.key(CAT_NAME, str(dataset_id) + '-' + str(category) + '-' + str(original_name))
 
@@ -57,7 +60,6 @@ class FirestoreDatastore:
         client = self.datastore_client
         query = client.query(kind=DATASET)
         query.add_filter('readers', '=', email)
-
         results = []
         for result in query.fetch():
             results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
@@ -132,8 +134,10 @@ class FirestoreDatastore:
         client.delete(key)
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        key, dataset = self.__get_key_and_dataset(email, dataset_id, ensure_owner)
-        return dataset
+        _, dataset = self.__get_key_and_dataset(email, dataset_id, ensure_owner)
+        result = dataset.to_dict()
+        result['id'] = dataset.id
+        return result
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         client = self.datastore_client

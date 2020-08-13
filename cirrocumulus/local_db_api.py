@@ -1,8 +1,6 @@
 import json
 import os
 
-from cirrocumulus.entity import Entity
-
 
 def create_dataset_meta(path):
     result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
@@ -45,10 +43,11 @@ class LocalDbAPI:
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        result = Entity(dataset_id, self.meta)
+        result = self.meta.copy()
+        result['id'] = dataset_id
         return result
 
-    def category_names(self, dataset_id):
+    def category_names(self, email, dataset_id):
         results = []
         categories = self.json_data['categories']
         for category_name in categories:
@@ -90,7 +89,6 @@ class LocalDbAPI:
 
     def get_dataset_filter(self, email, filter_id):
         return self.json_data['filters'][filter_id]
-
 
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
         if filter_id is None:

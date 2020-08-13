@@ -38,7 +38,7 @@ class DatasetAPI:
             self.suffix_to_provider[suffix.lower()] = provider
 
     def schema(self, dataset):
-        dataset_id = dataset.id
+        dataset_id = dataset['id']
         if self.cached_dataset_id == dataset_id:
             return self.cached_schema
         path = dataset['url']
@@ -47,7 +47,7 @@ class DatasetAPI:
         if 'summary' in dataset:
             value['summary'] = dataset['summary']
         self.cached_schema = value
-        self.cached_dataset_id = dataset.id
+        self.cached_dataset_id = dataset['id']
         return value
 
     def has_precomputed_stats(self, dataset):

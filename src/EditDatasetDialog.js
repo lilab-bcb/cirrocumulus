@@ -42,6 +42,7 @@ class EditDatasetDialog extends React.PureComponent {
                     method: 'GET',
                     headers: {'Authorization': 'Bearer ' + getIdToken()},
                 }).then(result => result.json()).then(datasetInfo => {
+                    console.log(datasetInfo)
                 let readers = datasetInfo.readers;
                 let myIndex = readers.indexOf(this.props.email);
                 if (myIndex !== -1) {
@@ -54,6 +55,7 @@ class EditDatasetDialog extends React.PureComponent {
                     readers: readers.join(', '),
                 });
             }).catch(err => {
+                console.log(err)
                 this.props.handleError('Unable to retrieve dataset details. Please try again.');
                 this.props.handleCancel();
             });

@@ -1,6 +1,7 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
+from cirrocumulus.parquet_dataset import ParquetDataset
 
 
 def get_cell_type_genes(cell_type):
@@ -25,11 +26,7 @@ def configure(dataset_paths, backed, marker_paths):
     auth_api.provider = NoAuth()
     dataset_path = os.path.normpath(dataset_paths[0])
     database_api.provider = LocalDbAPI(dataset_path)
-    try:
-        from cirrocumulus.parquet_dataset import ParquetDataset
-        dataset_api.add(ParquetDataset())
-    except ModuleNotFoundError:
-        pass
+    dataset_api.add(ParquetDataset())
     anndata_dataset = AnndataDataset('r' if backed else None)
     if len(dataset_paths) > 1:
         to_concat = []
@@ -135,7 +132,7 @@ def main(argsv):
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
-    app = create_app()
+    # app = create_app()
     # from flask_cors import CORS
     # CORS(app)
     configure(args.dataset, args.backed, args.markers)

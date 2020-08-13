@@ -1,8 +1,7 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {uniqBy} from 'lodash';
-import {isEqual, isPlainObject} from 'lodash';
+import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import CustomError from '../CustomError';
 import {getPositions} from '../ThreeUtil';
 import {
@@ -152,9 +151,12 @@ export function initGapi() {
 
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
             dispatch(setServerInfo(serverInfo));
-            if (serverInfo.clientId == '') { // serving files locally, no login required
+            if (serverInfo.clientId ==='') { // no login required
                 dispatch(_setLoadingApp({loading: false}));
-                dispatch(_setEmail(null));
+                dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
+                if(serverInfo.mode === 'server') {
+                    dispatch(setUser({importer:true}))
+                }
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
                 });
@@ -914,7 +916,7 @@ export function saveDataset(payload) {
         let isEdit = payload.dataset != null;
         dispatch(_setLoading(true));
 
-        const serverEmail = getState().serverInfo.email;
+        const serverInfo = getState().serverInfo;
         const updatePermissions = !isEdit || url !== payload.dataset.url;
         // if (updatePermissions) {
 
@@ -956,7 +958,9 @@ export function saveDataset(payload) {
                 dispatch(setMessage('Dataset updated'));
             } else {
                 dispatch(_addDataset({name: name, id: importDatasetResult.id, owner: true}));
-                dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverEmail + ' is a "Storage Object Viewer"' : 'Dataset created'));
+                if(serverInfo.email) {
+                    dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverInfo.email + ' is a "Storage Object Viewer"' : 'Dataset created'));
+                }
             }
 
         }).finally(() => {
@@ -1310,7 +1314,7 @@ function handleSelectionResult(selectionResult, clear) {
                             selectedDotPlotData[index] = categoryData;
                         } else {
                             selectedDotPlotData[index].values = categoryData.values.concat(selectedDotPlotData[index].values);
-                            selectedDotPlotData[index].values = uniqBy(selectedDotPlotData[index].values , (value=>value.name));
+                            selectedDotPlotData[index].values = uniqBy(selectedDotPlotData[index].values, (value => value.name));
                         }
                         selectedDotPlotData[index] = Object.assign({}, selectedDotPlotData[index]);
                     } else {
@@ -1496,7 +1500,7 @@ function _updateCharts(onError) {
                         dotPlotData.push(categoryItem);
                     } else {
                         dotPlotData[index].values = categoryItem.values.concat(dotPlotData[index].values);
-                        dotPlotData[index].values = uniqBy(dotPlotData[index].values , (value=>value.name));
+                        dotPlotData[index].values = uniqBy(dotPlotData[index].values, (value => value.name));
                         dotPlotData[index] = Object.assign({}, dotPlotData[index]);
                     }
                 });

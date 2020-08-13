@@ -40,7 +40,7 @@ class ParquetDataset(AbstractDataset):
         return result_df
 
     def read_data_sparse(self, file_system, path, obs_keys=[], var_keys=[], basis=[], dataset=None, schema=None):
-        dataset_id = dataset.id
+        dataset_id = dataset['id']
         # if basis, read index to get bins, x, and y
         result_df = None
 
@@ -113,7 +113,7 @@ class ParquetDataset(AbstractDataset):
         return pq.read_table(file_system.open(path), columns=keys).to_pandas()
 
     def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
-        dataset_id = dataset.id
+        dataset_id = dataset['id']
         if self.cached_dataset_id != dataset_id:
             self.cached_dataset_id = dataset_id
             self.cached_data = {}
