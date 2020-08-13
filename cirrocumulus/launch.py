@@ -132,7 +132,7 @@ def main(argsv):
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
-    # app = create_app()
+    app = create_app()
     # from flask_cors import CORS
     # CORS(app)
     configure(args.dataset, args.backed, args.markers)
