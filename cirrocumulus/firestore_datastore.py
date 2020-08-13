@@ -135,9 +135,8 @@ class FirestoreDatastore:
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         _, dataset = self.__get_key_and_dataset(email, dataset_id, ensure_owner)
-        result = dataset.to_dict()
-        result['id'] = dataset.id
-        return result
+        dataset['id'] = dataset.id
+        return dataset
 
     def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
         client = self.datastore_client
