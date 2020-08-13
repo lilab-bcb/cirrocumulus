@@ -83,6 +83,7 @@ The cirrocumulus format allows efficient fetching of portions of a dataset over 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
 
+
 - Clone the cirrocumulus repository::
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus
@@ -110,6 +111,13 @@ Google App Engine
 
 - Create App Engine by navigating to App Engine > Dashboard. You may choose the region where your application is hosted.
   Select the Python 3 Standard Environment.
+
+- Obtain OAuth 2.0 credentials.
+    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”. Your server URL is \https://<PROJECT>.appspot.com.
+    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
+      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+
+- Replace CIRRO_AUTH_CLIENT_ID in app.yaml with your OAuth client id.
 
 - Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your first time using the Google Cloud SDK.
 
@@ -139,16 +147,11 @@ Server Mode
 
 - Install MongoDB_ and start the MongoDB server
 
-- Insert datasets into the `datasets` collection with the properties name and url using the mongo shell::
-
-    mongo
-    use cirrocumulus
-    db.datasets.insertOne({"name":"pbmc3k local", "url":"file:///Users/xxxx/pbmc3k_final"})
-    db.datasets.insertOne({"name":"pbmc3k cloud", "url":"gs://foo/bar/pbmc3k_final"})
-
 - Start the server via the command line::
 
     cirro serve
+
+- Import a dataset
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
