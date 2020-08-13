@@ -320,14 +320,14 @@ class AppHeader extends React.PureComponent {
                             </IconButton>
                         </Tooltip>
 
-                        {email != null &&
+                        {email != null && email!==''&&
                         <Tooltip title={email}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleUserMenuOpen}>
                                 <AccountCircle/>
                             </IconButton>
                         </Tooltip>}
-                        {email != null &&
+                        {email != null && email!==''&&
                         <Menu id="menu-user"
                               anchorEl={this.state.userMenuAnchorEl}
                               anchorOrigin={{

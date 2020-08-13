@@ -34,7 +34,7 @@ class LocalDbAPI:
             self.json_data['categories'] = {}
 
     def server(self):
-        return dict(canWrite=True)
+        return dict(mode='client')
 
     def user(self, email):
         return {}

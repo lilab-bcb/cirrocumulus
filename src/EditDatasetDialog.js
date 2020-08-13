@@ -115,12 +115,12 @@ class EditDatasetDialog extends React.PureComponent {
                         value={this.state.url}
                         onChange={this.onUrlChanged}
                         margin="dense"
-                        helperText={"Please ensure that " + this.props.serverEmail + " has \"Storage Object Viewer\" permissions"}
-                        label="Dataset URL (gs://my_bucket/my_dataset.parquet)"
+                        helperText={this.props.serverInfo.serverEmail ? "Please ensure that " + this.props.serverInfo.serverEmail + " has \"Storage Object Viewer\" permissions" : ''}
+                        label={"Dataset URL (" + (this.props.serverInfo.serverEmail ? "gs://my_bucket/my_dataset" : "/Users/foo/my_dataset") + ")"}
                         fullWidth
                     />}
 
-                    {!this.state.loading &&
+                    {!this.state.loading && this.props.serverInfo.clientId !== '' &&
                     <TextField
                         value={this.state.readers}
                         onChange={this.onEmailChanged}
@@ -148,7 +148,7 @@ class EditDatasetDialog extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dialog === EDIT_DATASET_DIALOG ? state.dataset : null,
-        serverEmail: state.serverInfo.email,
+        serverInfo: state.serverInfo,
         email: state.email
     };
 };

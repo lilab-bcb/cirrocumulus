@@ -16,7 +16,7 @@ class MongoDb:
         self.email = email
 
     def server(self):
-        d = {}
+        d = dict(mode='server')
         if self.email is not None:
             d['email'] = self.email
         return d
@@ -125,8 +125,7 @@ class MongoDb:
             update_dict['shape'] = json_schema.get('shape')
         if dataset_id is None:  # new dataset
             update_dict['owners'] = [email]
-            update_dict['_id'] = dataset_id
             return str(collection.insert_one(update_dict).inserted_id)
         else:
             collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set', update_dict})
-        return dataset_id
+            return dataset_id

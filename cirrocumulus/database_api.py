@@ -3,15 +3,27 @@ def load_dataset_schema(url):
     from urllib.parse import urlparse
     import fsspec
     import json
-    ext = os.path.splitext(url)[1]
+
+    def get_extension(path):
+        name, ext = os.path.splitext(path)
+
+        if ext == '.gz':
+            name, ext = os.path.splitext(name)
+            if ext == '.json':
+                ext = '.json.gz'
+        return ext
+
+    extension = get_extension(url)
     json_schema = None
-    if ext in ['.json', '.json.gz', '']:
+    if extension in ['.json', '.json.gz', '']:
         pr = urlparse(url)
         fs = fsspec.filesystem(pr.scheme if not pr.scheme == '' else 'file')
-        if ext == '':
+        if extension == '':
             url = os.path.join(url, 'index.json.gz')
-            ext = os.path.splitext(url)[1]
-        if ext == '.json.gz':
+            extension = get_extension(url)
+        print(url)
+        print(extension)
+        if extension == '.json.gz':
             import gzip
             with gzip.open(fs.open(url)) as f:
                 json_schema = json.load(f)
