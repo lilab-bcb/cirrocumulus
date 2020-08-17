@@ -4,7 +4,8 @@ Cirrocumulus for Single-Cell Data Visualization
 
 Cirrocumulus is an interactive visualization tool for large-scale single-cell genomics data, with the following key features:
 
-* Run on Google App Engine or on your local machine
+* Run on your laptop, an on-premise server, a cloud VM, or Google App Engine
+* View spatial transcriptomics data
 * Scale to > 6 million cells on commodity hardware
 * Share datasets with collaborators
 * View dotplots of features of interest
