@@ -134,8 +134,8 @@ Google App Engine
 - Read more about `App Engine`_ in the `App Engine`_ documentation.
 
 
-Server Mode
-^^^^^^^^^^^^^
+Server
+^^^^^^^^
 
 - Install cirrocumulus using pip or docker
 
