@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.4 `August 17, 2020`
+    * Added spatial support
+
 - 1.1.3 `August 13, 2020`
     * Improved support for Google authentication in `serve` command
 
