@@ -55,6 +55,8 @@ class SimpleData:
             adata.obsm['tissue_hires'] = spatial_coords * scalefactors['tissue_hires_scalef']
             adata.uns['images'] = [dict(name='tissue_hires', image=tissue_hires_image_path,
                 spot_diameter=scalefactors['spot_diameter_fullres'] * scalefactors['tissue_hires_scalef'])]
+        else:
+            print('Spatial data not found')
 
     @staticmethod
     def view(adata, row_slice):

@@ -169,7 +169,6 @@ class ImageChart extends React.PureComponent {
         // });
         this.viewer = new OpenSeadragon({
             id: this.id,
-            crossOriginPolicy: "Anonymous",
             gestureSettingsMouse: {dblClickToZoom: true, clickToZoom: false},
             autoResize: false,
             showFullPageControl: false,
@@ -180,7 +179,6 @@ class ImageChart extends React.PureComponent {
             tileSources: this.props.traceInfo.tileSource
         });
         let viewer = this.viewer;
-        window.viewer = viewer;
 
         let _this = this;
         this.canvasOverlay = new CanvasOverlayHd(this.viewer, {
