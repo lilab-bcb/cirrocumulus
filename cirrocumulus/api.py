@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, request
+from flask import Blueprint, Response, request, stream_with_context
 
 import cirrocumulus.data_processing as data_processing
 from cirrocumulus.embedding_aggregator import get_basis
@@ -143,27 +143,32 @@ def handle_schema():
     return to_json(schema)
 
 
-# @blueprint.route('/download', methods=['GET'])
-# def handle_file():
-#     email = auth_api.auth()['email']
-#     dataset_id = request.args.get('id', '')
-#     dataset = database_api.get_dataset(email, dataset_id, False)
-#     file = request.args.get('file')
-#     path = dataset['url']
-#     import os
-#     path = os.path.dirname(path)
-#
-#     file_path = os.path.join(path, file)
-#     chunk_size = 4096
-#     with dataset_api.fs.open(file_path) as s:
-#         def generate():
-#             while True:
-#                 chunk = s.read(chunk_size)
-#                 if len(chunk) <= 0:
-#                     break
-#                 yield chunk
-#
-#         return Response(generate())  # TODO, correct mimetype
+@blueprint.route('/file', methods=['GET'])
+def handle_file():
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+    dataset = database_api.get_dataset(email, dataset_id)
+    file = request.args.get('file')
+    url = dataset['url']
+    import os
+    import mimetypes
+    file_path = os.path.join(os.path.dirname(url), os.path.abspath(file))
+    mimetype = mimetypes.guess_type(file_path)
+    # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
+    #     bytes = f.read()
+    # return Response(bytes, mimetype=mimetype[0])
+    chunk_size = 4096
+    f = dataset_api.fs_adapter.get_fs(file_path).open(file_path)
+
+    def generate():
+        while True:
+            chunk = f.read(chunk_size)
+            if len(chunk) <= 0:
+                f.close()
+                break
+            yield chunk
+
+    return Response(stream_with_context(generate()), mimetype=mimetype[0])
 
 
 @blueprint.route('/user', methods=['GET'])

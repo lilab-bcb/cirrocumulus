@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import scipy.sparse
@@ -6,9 +8,9 @@ import scipy.sparse
 class SimpleData:
 
     def __init__(self, X, obs, var):
-
         self.obs = obs
         self.var = var
+        self.uns = {}
         if X is not None:
             if len(X.shape) == 1:
                 X = np.array([X]).T
@@ -21,11 +23,44 @@ class SimpleData:
         self.shape = (n_obs, n_var)
 
     @staticmethod
+    def add_spatial(adata, spatial_directory):
+        # only 10x for now
+        scale_factors_path = os.path.join(spatial_directory, 'scalefactors_json.json')
+        tissue_hires_image_path = os.path.join(spatial_directory, 'tissue_hires_image.png')
+        tissue_positions_list_path = os.path.join(spatial_directory, 'tissue_positions_list.csv')
+        found = True
+        for path in [scale_factors_path, tissue_hires_image_path, tissue_positions_list_path]:
+            if not os.path.exists(path):
+                found = False
+                break
+        if found:
+            import json
+            with open(os.path.join(spatial_directory, 'scalefactors_json.json'), 'rt') as f:
+                scalefactors = json.load(f)
+                # {"spot_diameter_fullres": 89.49502418224989, "tissue_hires_scalef": 0.17011142,
+                # "fiducial_diameter_fullres": 144.56888521748058, "tissue_lowres_scalef": 0.051033426}
+            # barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
+            positions = pd.read_csv(tissue_positions_list_path, header=None)
+            positions.columns = [
+                    'barcode',
+                    'in_tissue',
+                    'array_row',
+                    'array_col',
+                    'pxl_col_in_fullres',
+                    'pxl_row_in_fullres',
+            ]
+            positions.index = positions['barcode']
+            positions = positions.reindex(adata.obs.index)
+            spatial_coords = positions[['pxl_row_in_fullres', 'pxl_col_in_fullres']].values
+            adata.obsm['tissue_hires'] = spatial_coords * scalefactors['tissue_hires_scalef']
+            adata.uns['images'] = [dict(name='tissue_hires', image=tissue_hires_image_path,
+                spot_diameter=scalefactors['spot_diameter_fullres'] * scalefactors['tissue_hires_scalef'])]
+
+    @staticmethod
     def view(adata, row_slice):
         X = adata.X[row_slice] if adata.X is not None else None
         obs = adata.obs[row_slice] if adata.obs is not None else None
         return SimpleData(X, obs, adata.var)
-
 
     @staticmethod
     def obs_stats(df, columns):
@@ -40,7 +75,6 @@ class SimpleData:
             data={'min': np.min(df.values, axis=0), 'max': np.max(df.values, axis=0), 'sum': df.sum().values,
                   'numExpressed': (df.values != 0).sum(axis=0),
                   'mean': df.mean().values}, index=var_ids)
-
 
     @staticmethod
     def get_var_indices(adata, names):
@@ -82,8 +116,6 @@ class SimpleData:
         result = {'version': '1.0.0'}
         marker_dict = adata.uns.get('markers', {})
         result['markers'] = marker_dict
-        if 'seurat_clusters' in adata.obs:
-            adata.obs['seurat_clusters'] = adata.obs['seurat_clusters'].astype('category')
         if SimpleData.has_markers(adata):
             rank_genes_groups = adata.uns['rank_genes_groups']
             groupby = str(rank_genes_groups['params']['groupby'])
@@ -101,27 +133,30 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
-        spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
+        # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
+        #
+        # if spatial_node is not None:
+        #     spatial_node_keys = list(spatial_node.keys())  # list of datasets
+        #     if len(spatial_node_keys) == 1:
+        #         spatial_node = spatial_node[spatial_node_keys[0]]
 
-        if spatial_node is not None:
-            spatial_node_keys = list(spatial_node.keys())
-            if len(spatial_node_keys) == 1:
-                spatial_node = spatial_node[spatial_node_keys[0]].keys()  # images', 'metadata', 'scalefactors']
-
+        images_node = adata.uns.get('images', [])
+        image_names = list(map(lambda x: x['name'], images_node))
         result['var'] = adata.var_names.values
         result['obs'] = obs
         result['obsCat'] = obs_cat
         result['shape'] = adata.shape
+
         embeddings = []
         for key in adata.obsm_keys():
-
             dim = min(3, adata.obsm[key].shape[1])
             embedding = dict(name=key, dimensions=dim)
+            try:
+                image_index = image_names.index(key)
+                embedding['spatial'] = images_node[image_index]
+            except ValueError:
+                pass
 
-            if key == 'spatial':
-                if spatial_node is not None and 'scalefactors' in spatial_node and 'images' in spatial_node:
-                    embedding['spatial'] = dict(scalefactors=spatial_node['scalefactors'],
-                        images=list(spatial_node['images'].keys()))
             if dim == 3:
                 embeddings.append(embedding)
                 embedding = embedding.copy()

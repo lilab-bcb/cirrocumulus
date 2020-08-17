@@ -4,11 +4,14 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
+import HomeIcon from '@material-ui/icons/Home';
 import PauseIcon from '@material-ui/icons/Pause';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import PhotoLibraryIcon from '@material-ui/icons/PhotoLibrary';
 import PhotoSizeSelectSmallIcon from '@material-ui/icons/PhotoSizeSelectSmall';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import ZoomInIcon from '@material-ui/icons/ZoomIn';
+import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import React from 'react';
 
 
@@ -54,11 +57,33 @@ class ChartToolbar extends React.PureComponent {
         const {dragmode, editSelection, showLabels} = this.props;
         const {saveImageEl} = this.state;
         return (<React.Fragment>
+
+            {this.props.onZoomIn && <Tooltip title={"Zoom In"}>
+                <IconButton edge={false} size={'small'}
+                            aria-label="Zoom In" onClick={this.props.onZoomIn}>
+                    <ZoomInIcon/>
+                </IconButton>
+            </Tooltip>}
+
+            {this.props.onZoomOut && <Tooltip title={"Zoom Out"}>
+                <IconButton edge={false} size={'small'}
+                            aria-label="Zoom In" onClick={this.props.onZoomOut}>
+                    <ZoomOutIcon/>
+                </IconButton>
+            </Tooltip>}
+
+            {this.props.onHome && <Tooltip title={"Home"}>
+                <IconButton edge={false} size={'small'}
+                            aria-label="Home" onClick={this.props.onHome}>
+                    <HomeIcon/>
+                </IconButton>
+            </Tooltip>}
+
+
             <Tooltip title={"Lasso Select"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'lasso' ? active : inactive}
                             aria-label="Lasso Select" onClick={() => this.setDragMode('lasso')}>
                     <svg width="24" height="21" viewBox="0 0 1031 1000">
-
                         <path
                             d="m1018 538c-36 207-290 336-568 286-277-48-473-256-436-463 10-57 36-108 76-151-13-66 11-137 68-183 34-28 75-41 114-42l-55-70 0 0c-2-1-3-2-4-3-10-14-8-34 5-45 14-11 34-8 45 4 1 1 2 3 2 5l0 0 113 140c16 11 31 24 45 40 4 3 6 7 8 11 48-3 100 0 151 9 278 48 473 255 436 462z m-624-379c-80 14-149 48-197 96 42 42 109 47 156 9 33-26 47-66 41-105z m-187-74c-19 16-33 37-39 60 50-32 109-55 174-68-42-25-95-24-135 8z m360 75c-34-7-69-9-102-8 8 62-16 128-68 170-73 59-175 54-244-5-9 20-16 40-20 61-28 159 121 317 333 354s407-60 434-217c28-159-121-318-333-355z"
                             transform="matrix(1 0 0 -1 0 850)"></path>
@@ -67,17 +92,16 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>
             <Tooltip title={"Box Select"}>
-                <IconButton edge={false} size={'small'} className={dragmode === 'select' ? active : inactive}
+                <IconButton edge={false} size={'small'}
                             aria-label="Box Select" onClick={() => this.setDragMode('select')}>
-                    <PhotoSizeSelectSmallIcon/>
+                    <PhotoSizeSelectSmallIcon className={dragmode === 'select' ? active : inactive}/>
                 </IconButton>
             </Tooltip>
 
             <Tooltip title={"Append to selection"}>
-                <IconButton edge={false} size={'small'}
-                            className={dragmode === 'select' && editSelection ? active : inactive}
-                            aria-label="Append to selection" onClick={this.setEditSelection}>
-                    <ExposureIcon/>
+                <IconButton edge={false} size={'small'} aria-label="Append to selection"
+                            onClick={this.setEditSelection}>
+                    <ExposureIcon className={editSelection ? active : inactive}/>
                 </IconButton>
             </Tooltip>
             {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
@@ -147,7 +171,6 @@ class ChartToolbar extends React.PureComponent {
 
             <Tooltip title={"View Gallery"}>
                 <IconButton edge={false} size={'small'}
-
                             aria-label="View Gallery" onClick={this.onGallery}>
                     <PhotoLibraryIcon/>
                 </IconButton>

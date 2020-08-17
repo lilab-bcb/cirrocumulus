@@ -2,6 +2,7 @@ import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.parquet_dataset import ParquetDataset
+from cirrocumulus.simple_data import SimpleData
 
 
 def get_cell_type_genes(cell_type):
@@ -18,7 +19,7 @@ def get_cell_type_genes(cell_type):
     return all_genes
 
 
-def configure(dataset_paths, backed, marker_paths):
+def configure(dataset_paths, spatial_directory, backed, marker_paths):
     from cirrocumulus.api import dataset_api
     from cirrocumulus.api import auth_api, database_api
     from cirrocumulus.local_db_api import LocalDbAPI
@@ -73,8 +74,12 @@ def configure(dataset_paths, backed, marker_paths):
         X = scipy.sparse.hstack(X, format='csr') if len(X_list) > 1 else X_list[0]
         adata = anndata.AnnData(X=X, obs=obs, var=var, obsm=obsm)
         adata.var_names_make_unique()
-        anndata_dataset.add_data(os.path.normpath(dataset_paths[0]), adata)
+        anndata_dataset.add_data(dataset_path, adata)
     dataset_api.add(anndata_dataset)
+
+    if spatial_directory is not None:
+        adata = anndata_dataset.get_data(dataset_path)
+        SimpleData.add_spatial(adata, spatial_directory)
 
     if marker_paths is not None and len(marker_paths) > 0:
         d = anndata_dataset.get_data(dataset_path)
@@ -128,14 +133,14 @@ def main(argsv):
         help='Path to JSON file that contains name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
         nargs='*')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
-    # parser.add_argument('--processes', help='Number of processes', default=7, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
+    parser.add_argument('--spatial', help='Directory containing spatial data (images, scaling factors, positions)')
 
     args = parser.parse_args(argsv)
     app = create_app()
     # from flask_cors import CORS
     # CORS(app)
-    configure(args.dataset, args.backed, args.markers)
+    configure(args.dataset, args.spatial, args.backed, args.markers)
     if not args.no_open:
         import webbrowser
         host = args.host if args.host is not None else 'http://127.0.0.1'

@@ -21,10 +21,9 @@ class EmbeddingChart extends React.PureComponent {
 
     render() {
         const {
-            traceInfo, categoricalNames, config, shape, nObsSelected, onDeselect, onSelect, globalFeatureSummary, featureSummary,
+            traceInfo, categoricalNames, shape, nObsSelected, globalFeatureSummary, featureSummary,
             datasetFilter, handleColorChange, handleNameChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
         } = this.props;
-
         const chartSize = getChartSize();
         return (
 
@@ -69,20 +68,23 @@ class EmbeddingChart extends React.PureComponent {
                                    onSelected={this.props.onSelect}
                                    pointSize={this.props.pointSize}
                                    markerOpacity={this.props.markerOpacity}
+                                   unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
                                    color={traceInfo.colors}
                                    onGallery={this.props.onGallery}
-                                   unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
+
                 />}
 
 
                 {traceInfo.isImage && <ImageChart
                     style={{display: 'inline-block'}}
-                    data={traceInfo.data}
+                    traceInfo={traceInfo}
+                    selection={this.props.selection}
                     onInitialized={this.onInitialized}
-                    layout={traceInfo.layout}
-                    config={config}
-                    onDeselect={onDeselect}
-                    onSelected={onSelect}
+                    markerOpacity={this.props.markerOpacity}
+                    unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
+                    onGallery={this.props.onGallery}
+                    onDeselect={this.props.onDeselect}
+                    onSelected={this.props.onSelect}
                 />}
 
 
@@ -97,7 +99,6 @@ const mapStateToProps = state => {
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
-        config: state.plotConfig,
         datasetFilter: state.datasetFilter,
         featureSummary: state.featureSummary,
         shape: state.dataset.shape,

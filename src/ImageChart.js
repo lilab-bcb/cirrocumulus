@@ -1,212 +1,349 @@
-import {uniqueId} from 'lodash';
+import withStyles from '@material-ui/core/styles/withStyles';
+import {bind, uniqueId} from 'lodash';
+import OpenSeadragon from 'openseadragon';
 import React from 'react';
-import {connect} from 'react-redux';
+import simplify from 'simplify-js';
+import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
-import {intFormat} from './formatters';
+import ChartToolbar from './ChartToolbar';
+import {saveImage} from './ChartUtil';
+import {numberFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
-import {arrayToSvgPath, isPointInside} from './util';
+import {arrayToSvgPath, getChartSize, isPointInside} from './util';
 
-const OpenSeadragon = window.OpenSeadragon;
 
+export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity) {
+    if (traceInfo.tileSource.ready) {
+        const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
+        if (chartSize == null) {
+            chartSize = {width: img.width, height: img.height};
+        }
+        const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
+        context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
+        context.scale(zoom, zoom);
+        drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+        context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+}
+
+function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity) {
+    context.lineWidth = 2 * 1 / zoom;
+    let spotRadius = traceInfo.embedding.spatial.spot_diameter / 2;
+    if (context.setLineDash) {
+        context.setLineDash([2, 2]);
+    }
+    for (let i = 0; i < traceInfo.x.length; i++) {
+        let x = traceInfo.x[i];
+        let y = traceInfo.y[i];
+        const isSelected = selection.size === 0 || selection.has(i);
+        context.globalAlpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
+        context.fillStyle = traceInfo.colors[i];
+        context.beginPath();
+        context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
+        context.fill();
+    }
+    context.globalAlpha = 1;
+    if (context.setLineDash) {
+        context.setLineDash([]);
+    }
+};
+const styles = theme => ({
+
+    root: {
+        '& > *': {
+            margin: theme.spacing(.4),
+        },
+        '& > .MuiIconButton-root': {
+            padding: 0,
+        },
+        position: 'absolute',
+        zIndex: 1,
+        top: 0,
+        left: 0,
+        display: 'inline-block',
+        verticalAlign: 'top',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+    }
+});
 
 class ImageChart extends React.PureComponent {
 
     constructor(props) {
         super(props);
         this.id = uniqueId('cirro-image');
+        this.chartSize = getChartSize();
+        this.tooltipElementRef = React.createRef();
+        this.state = {dragmode: 'pan', editSelection: false, showLabels: false};
     }
 
-    getSpotsInPolygon(points) {
-        let data = this.props.data;
+    findPointsInPolygon(points) {
+        let data = this.props.traceInfo;
         // let spotRadius = data[0].embedding.spotDiameter / 2;
         let indices = [];
-        for (let i = 0; i < data[0].x.length; i++) {
-            if (isPointInside({x: data[0].x[i], y: data[0].y[i]}, points)) {
+        for (let i = 0; i < data.x.length; i++) {
+            if (isPointInside({x: data.x[i], y: data.y[i]}, points)) {
                 indices.push(i);
             }
         }
         return indices;
     }
 
-    spotMouseMove(xpix, ypix) {
-        let data = this.props.data;
-        let spotRadius = data[0].embedding.spotDiameter / 2;
-        let coordIndex = -1;
-        for (let i = 0; i < data[0].x.length; i++) {
-            if (Math.abs(data[0].x[i] - xpix) <= spotRadius && Math.abs(data[0].y[i] - ypix) <= spotRadius) {
-                coordIndex = i;
-                break;
+    findPointsInRectangle(rect) {
+        let data = this.props.traceInfo;
+        const spotRadius = data.embedding.spatial.spot_diameter / 2;
+        let indices = [];
+        const x = parseFloat(rect.getAttribute('x'));
+        const y = parseFloat(rect.getAttribute('y'));
+        const x2 = x + parseFloat(rect.getAttribute('width'));
+        const y2 = y + parseFloat(rect.getAttribute('height'));
+        for (let i = 0; i < data.x.length; i++) {
+            const px = data.x[i];
+            const py = data.y[i];
+            if (px <= x2 && x <= px + spotRadius && py <= y2 && y <= py + spotRadius) {
+                indices.push(i);
             }
         }
-        let title = [];
-        if (coordIndex != -1) {
-            title.push(data[0].text[coordIndex]);
-            title.push('x: ' + intFormat(Math.round(data[0].x[coordIndex])));
-            title.push('y: ' + intFormat(Math.round(data[0].y[coordIndex])));
+        return indices;
+    }
+
+    findPointIndex(xpix, ypix) {
+        let data = this.props.traceInfo;
+        let spotRadius = data.embedding.spatial.spot_diameter / 2;
+        for (let i = 0; i < data.x.length; i++) {
+            if (Math.abs(data.x[i] - xpix) <= spotRadius && Math.abs(data.y[i] - ypix) <= spotRadius) {
+                return i;
+            }
         }
-        return title.join('<br/>');
+        return -1;
+    }
+
+    setTooltip(xpix, ypix) {
+        let data = this.props.traceInfo;
+        const point = this.findPointIndex(xpix, ypix);
+        if (point != -1) {
+            let value = data.values[point];
+            if (typeof value === 'number') {
+                value = numberFormat(value);
+            }
+            this.tooltipElementRef.current.innerHTML = '' + value;
+        } else {
+            this.tooltipElementRef.current.innerHTML = ' ';
+        }
     }
 
 
-    drawSpots = (opts) => {
-        let context = opts.context;
-        let data = this.props.data;
-        let spotRadius = data[0].embedding.spotDiameter / 2;
-        let selectedOpacity = data[0].marker.opacity;
-        let unselectedOpacity = data[0].unselected.marker.opacity;
-
-        let selectedPoints = data[0].selectedpoints;
-        let selectedPointsIndex = 0;
-        context.globalAlpha = selectedOpacity;
-        context.lineWidth = 2 * 1 / opts.zoom;
-        context.setLineDash([2, 2]);
-
-        // all spots
-        if (data[0].name === '__count' && !this.props.data.continuous) {
-            context.strokeStyle = 'black';
-            for (let i = 0; i < data[0].x.length; i++) {
-                let x = data[0].x[i];
-                let y = data[0].y[i];
-                let isSelected = false;
-                if (selectedPoints == null || i === selectedPoints[selectedPointsIndex]) {
-                    isSelected = true;
-                    selectedPointsIndex++;
-                }
-                context.globalAlpha = isSelected ? selectedOpacity : unselectedOpacity;
-                context.beginPath();
-                context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
-                context.stroke();
-            }
-        } else {
-            for (let i = 0; i < data[0].x.length; i++) {
-                let x = data[0].x[i];
-                let y = data[0].y[i];
-                let isSelected = false;
-                if (selectedPoints == null || i === selectedPoints[selectedPointsIndex]) {
-                    isSelected = true;
-                    selectedPointsIndex++;
-                }
-                context.globalAlpha = isSelected ? selectedOpacity : unselectedOpacity;
-                context.fillStyle = data[0].colors[i];
-                context.beginPath();
-                context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
-                context.fill();
-            }
+    drawContext(context, chartSize) {
+        const img = this.viewer.source.levels[this.viewer.source.levels.length - 1].context2D.canvas;
+        if (chartSize == null) {
+            chartSize = {width: img.width, height: img.height};
         }
-        context.globalAlpha = 1;
-        context.setLineDash([]);
-    };
+        const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
+        context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
+        this._drawSpots({context: context, zoom: zoom});
+    }
 
-    createViewer(url) {
-        let viewer = new OpenSeadragon({
+    _drawSpots(opts) {
+        let context = opts.context;
+        let traceInfo = this.props.traceInfo;
+        const selection = this.props.selection;
+
+        let markerOpacity = this.props.markerOpacity;
+        let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
+        drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+    }
+
+    createViewer() {
+        if (this.viewer) {
+            this.viewer.destroy();
+        }
+        // let tileSource = new OpenSeadragon.ImageTileSource({
+        //     url: url,
+        //     buildPyramid: true,
+        //     crossOriginPolicy: "Anonymous"
+        // });
+        // this.props.traceInfo.tileSource = tileSource;
+        // tileSource.addOnceHandler('ready', (src) => {
+        //     let img = tileSource._image;
+        //     console.log(src)
+        // });
+        this.viewer = new OpenSeadragon({
             id: this.id,
+            crossOriginPolicy: "Anonymous",
             gestureSettingsMouse: {dblClickToZoom: true, clickToZoom: false},
             autoResize: false,
             showFullPageControl: false,
             collectionMode: false,
             // visibilityRatio: 0.2,
-            prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
-            tileSources: {
-                type: 'image',
-                url: url,
-                buildPyramid: true,
-            },
+            showNavigationControl: false,
+            // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
+            tileSources: this.props.traceInfo.tileSource
         });
+        let viewer = this.viewer;
+        window.viewer = viewer;
 
-        this.viewer = viewer;
         let _this = this;
-
-
         this.canvasOverlay = new CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
-                _this.drawSpots(opts);
+                _this._drawSpots(opts);
             },
         });
-        let tooltip = document.createElement("div");
-        tooltip.style.background = 'rgba(0,0,0,0.5)';
-        tooltip.style.color = 'white';
-        tooltip.style.position = 'absolute';
-        this.viewer.canvas.appendChild(tooltip);
+        // let tooltip = document.createElement("div");
+        // tooltip.style.background = 'rgba(0,0,0,0.5)';
+        // tooltip.style.color = 'white';
+        // tooltip.style.position = 'absolute';
+        // this.viewer.canvas.appendChild(tooltip);
 
-        let selectionMode = -1; // -1=no lasso, 0=start, 1=dragging
         let lassoPathArray = [];
-
+        let startCoordinates = [0, 0];
+        let lastBoundingBox = {x: 0, y: 0, width: 0, height: 0};
 
         this.viewer.innerTracker.moveHandler = function (event) {
-            if (selectionMode === -1 && viewer.world.getItemCount() > 0) {
+            if (_this.tooltipElementRef.current == null) {
+                _this.tooltipElementRef.current.innerHTML = ' ';
+            } else if (_this.state.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
-                let title = _this.spotMouseMove(imagePoint.x, imagePoint.y);
-                if (title !== '') {
-                    tooltip.innerHTML = title;
-                    tooltip.style.left = (webPoint.x + 8) + 'px';
-                    tooltip.style.top = (webPoint.y + 8) + 'px';
-                    tooltip.style.display = '';
-                } else {
-                    tooltip.style.display = 'none';
-                }
+                _this.setTooltip(imagePoint.x, imagePoint.y);
+                // if (title !== '') {
+                //     tooltip.innerHTML = title;
+                //     tooltip.style.left = (webPoint.x + 8) + 'px';
+                //     tooltip.style.top = (webPoint.y + 8) + 'px';
+                //     tooltip.style.display = '';
+                // } else {
+                //     tooltip.style.display = 'none';
+                // }
             } else {
-                tooltip.style.display = 'none';
+                _this.tooltipElementRef.current.innerHTML = ' ';
             }
         };
         //
         // this.viewer.innerTracker.scrollHandler = function (event) {
-        //     if (selectionMode > -1) {
+        //     if (lassoState > -1) {
         //         event.preventDefaultAction = true;
         //     }
         // };
 
 
         this.viewer.addHandler('canvas-drag', function (event) {
-            if (selectionMode > -1 && viewer.world.getItemCount() > 0) {
+            if ((_this.state.dragmode === 'lasso' || _this.state.dragmode === 'select') && viewer.world.getItemCount() > 0) {
                 event.preventDefaultAction = true;
-                if (selectionMode === 0) {
-                    lassoPathArray = [];
-                }
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
                 lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
-                lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
-                selectionMode = 1;
+                if (_this.state.dragmode === 'lasso') {
+                    lassoPathArray = simplify(lassoPathArray);
+                    lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
+                } else {
+                    lastBoundingBox.x = Math.min(imagePoint.x, startCoordinates[0]);
+                    lastBoundingBox.y = Math.max(imagePoint.y, startCoordinates[1]);
+                    lastBoundingBox.width =
+                        Math.max(imagePoint.x, startCoordinates[0]) - lastBoundingBox.x;
+                    lastBoundingBox.height =
+                        lastBoundingBox.y - Math.min(imagePoint.y, startCoordinates[1]);
+
+                    rectElement.setAttribute('x', '' + lastBoundingBox.x);
+                    rectElement.setAttribute(
+                        'y',
+                        '' + (lastBoundingBox.y - lastBoundingBox.height)
+                    );
+                    rectElement.setAttribute('width', '' + lastBoundingBox.width);
+                    rectElement.setAttribute('height', '' + lastBoundingBox.height);
+                }
             }
         });
 
-        this.viewer.innerTracker.clickHandler = function (event) {
-            if (selectionMode > -1) {
-                selectionMode = -1;
+        this.viewer.addHandler('canvas-press', function (event) {
+            if (_this.state.dragmode === 'lasso' || _this.state.dragmode === 'select') {
                 event.preventDefaultAction = true;
-                let selectedpoints = _this.getSpotsInPolygon(lassoPathArray);
-                if (selectedpoints.length === 0) {
-                    selectedpoints = null;
-                }
-                _this.props.data[0].selectedpoints = selectedpoints;
-                if (selectedpoints == null) {
-                    _this.props.onDeselect();
+
+                let webPoint = event.position;
+                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+
+                if (_this.state.dragmode === 'lasso') {
+                    lassoPathArray = [];
+                    lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
+                    lassoPathArray = simplify(lassoPathArray);
+                    lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
                 } else {
-                    _this.props.onSelected({points: [{data: _this.props.data[0]}]});
+                    startCoordinates = [imagePoint.x, imagePoint.y];
+                    lastBoundingBox = {
+                        x: startCoordinates[0],
+                        y: startCoordinates[1],
+                        width: 1,
+                        height: 1,
+                    };
+
                 }
+            }
+        });
+
+        this.viewer.addHandler('canvas-release', function (event) {
+            if (_this.state.dragmode === 'lasso') {
+                event.preventDefaultAction = true;
+                const points = _this.findPointsInPolygon(lassoPathArray);
                 lassoPathArray = [];
                 lassoPath.setAttribute('d', '');
+                _this.props.onSelected({
+                    name: getEmbeddingKey(_this.props.traceInfo.embedding),
+                    clear: !_this.state.editSelection,
+                    value: {basis: _this.props.traceInfo.embedding, points: points}
+                });
+            } else if (_this.state.dragmode === 'select') {
+                event.preventDefaultAction = true;
+                const points = _this.findPointsInRectangle(rectElement);
+                rectElement.removeAttribute('x');
+                rectElement.removeAttribute('y');
+                rectElement.removeAttribute('width');
+                rectElement.removeAttribute('height');
+                _this.props.onSelected({
+                    name: getEmbeddingKey(_this.props.traceInfo.embedding),
+                    clear: !_this.state.editSelection,
+                    value: {basis: _this.props.traceInfo.embedding, points: points}
+                });
             }
+        });
 
-        };
+        // this.viewer.innerTracker.clickHandler = function (event) {
+        //     if (_this.state.dragmode === 'pan') {
+        //         let webPoint = event.position;
+        //         let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+        //         let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+        //         const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
+        //         if (point === -1) {
+        //             //   this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+        //         } else {
+        //             _this.props.onSelected({
+        //                 name: getEmbeddingKey(_this.props.traceInfo.embedding),
+        //                 clear: !_this.state.editSelection,
+        //                 value: {basis: _this.props.traceInfo.embedding, points: [point]}
+        //             });
+        //         }
+        //     }
+        // };
 
         viewer.addHandler('canvas-exit', function (event) {
-            tooltip.style.display = 'none';
+            if (_this.tooltipElementRef.current) {
+                _this.tooltipElementRef.current.innerHTML = ' ';
+            }
         });
 
         let svgOverlay = new OpenseadragonSvgOverlay(viewer);
         let lassoPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        lassoPath.setAttribute('stroke', 'black');
-        lassoPath.setAttribute('stroke-width', '2px');
-        lassoPath.setAttribute('fill', '#0bb');
-        lassoPath.setAttribute('fill-opacity', '0.1');
-        lassoPath.setAttribute('stroke-dasharray', '2 2');
+        let rectElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        [lassoPath, rectElement].forEach(elem => {
+            elem.setAttribute('stroke', 'black');
+            elem.setAttribute('stroke-width', '3px');
+            elem.setAttribute('fill', '#0bb');
+            elem.setAttribute('fill-opacity', '0.3');
+            elem.setAttribute('stroke-dasharray', '2 2');
+            svgOverlay.node().appendChild(elem);
+        });
 
-        svgOverlay.node().appendChild(lassoPath);
-        let pathOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -216,40 +353,97 @@ class ImageChart extends React.PureComponent {
     }
 
     componentWillUnmount() {
+        if (this.viewer) {
+            this.viewer.destroy();
+        }
+        this.viewer = null;
     }
 
     componentDidMount() {
         if (this.viewer == null) {
-            if (this.props.data[0].url == null) {
-                this.props.data[0].image.then(response => {
-                    return response.blob();
-                }).then(blob => URL.createObjectURL(blob)).then(url => {
-                    this.props.data[0].url = url;
-                    this.createViewer(url);
-                });
-            } else {
-                this.createViewer(this.props.data[0].url);
-            }
+            this.createViewer(this.props.traceInfo.url);
         }
     }
 
+
+    onSaveImage = (format) => {
+        const {traceInfo} = this.props;
+        const img = this.viewer.source.levels[this.viewer.source.levels.length - 1].context2D.canvas;
+        saveImage(traceInfo, {width: img.width, height: img.height}, bind(this.drawContext, this), format);
+    };
+
+    onEditSelection = () => {
+        this.setState((state, props) => {
+            return {editSelection: !state.editSelection};
+        });
+    };
+
+
+    onShowLabels = () => {
+        this.setState((state, props) => {
+            return {showLabels: !state.showLabels};
+        });
+    };
+
+    onGallery = () => {
+        this.props.onGallery();
+    };
+
+    onZoomIn = () => {
+        this.viewer.viewport.zoomBy(this.viewer.zoomPerClick / 1.0);
+        this.viewer.viewport.applyConstraints();
+    };
+
+    onZoomOut = () => {
+        this.viewer.viewport.zoomBy(1.0 / this.viewer.zoomPerClick);
+        this.viewer.viewport.applyConstraints();
+    };
+
+    onHome = () => {
+        this.viewer.viewport.goHome();
+        this.viewer.viewport.applyConstraints();
+    };
+
+    onDragMode = (mode) => {
+        this.setState({dragmode: mode});
+    };
+
     render() {
-        return <div style={{display: 'inline-block', width: this.props.layout.width, height: this.props.layout.height}}
-                    id={this.id}/>;
+
+        return <React.Fragment>
+            <div className={this.props.classes.root}>
+                <ChartToolbar
+                    dragmode={this.state.dragmode}
+                    animating={false}
+                    editSelection={this.state.editSelection}
+                    onZoomIn={this.onZoomIn}
+                    onZoomOut={this.onZoomOut}
+                    showLabels={this.state.showLabels}
+                    is3d={false}
+                    onHome={this.onHome}
+                    onSaveImage={this.onSaveImage}
+                    onShowLabels={this.onShowLabels}
+                    onDragMode={this.onDragMode}
+                    onEditSelection={this.onEditSelection}
+                    onGallery={this.onGallery}>
+                </ChartToolbar>
+                <div ref={this.tooltipElementRef} style={{
+                    display: 'inline-block',
+                    paddingLeft: 5,
+                    verticalAlign: 'top'
+                }}>&nbsp;</div>
+            </div>
+
+            <div style={{
+                display: 'inline-block',
+                width: this.chartSize.width,
+                height: this.chartSize.height
+            }}
+                 id={this.id}>
+            </div>
+        </React.Fragment>;
     }
 }
 
 
-const mapStateToProps = state => {
-    return {
-        embeddingData: state.embeddingData,
-        embeddingChartSize: state.embeddingChartSize
-    };
-};
-const mapDispatchToProps = dispatch => {
-    return {};
-};
-
-export default (connect(
-    mapStateToProps, mapDispatchToProps,
-)(ImageChart));
+export default withStyles(styles)(ImageChart);

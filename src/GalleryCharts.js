@@ -10,8 +10,6 @@ import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 
 class GalleryCharts extends React.PureComponent {
-
-
     constructor(props) {
         super(props);
         const containerElement = document.createElement('div');

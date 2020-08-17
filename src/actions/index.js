@@ -2,8 +2,10 @@ import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
+import OpenSeadragon from 'openseadragon';
 import CustomError from '../CustomError';
 import {getPositions} from '../ThreeUtil';
+
 import {
     CATEGORY_20B,
     CATEGORY_20C,
@@ -13,7 +15,7 @@ import {
     updateTraceColors
 } from '../util';
 
-//export const API = 'http://localhost:5000/api';
+// export const API = 'http://localhost:5000/api';
 
 export const API = '/api';
 
@@ -1620,7 +1622,7 @@ function handleEmbeddingResult(result) {
 
         let embeddingResult = result.embeddingResult;
         let selectedEmbedding = result.embedding;
-        let isImage = selectedEmbedding.image != null;
+        let isSpatial = selectedEmbedding.spatial != null;
         let interpolator = state.interpolator;
 
 
@@ -1704,30 +1706,25 @@ function handleEmbeddingResult(result) {
                 continuous: !isCategorical,
                 isCategorical: isCategorical,
                 values: values, // for color
+                isImage:isSpatial
                 // purity: purity,
                 // text: values,
             };
-            if (selectedEmbedding.type !== 'image') {
+            if (!isSpatial) {
                 chartData.positions = getPositions(chartData);
             }
             updateTraceColors(chartData);
 
-            if (selectedEmbedding.type === 'image') {
+            if (isSpatial) {
                 chartData.isImage = true;
-                chartData.image = fetch(API + '/image?id=' + state.dataset.id + '&image=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});
-                // layout.images = [{
-                //
-                //     "source": "https://images.plot.ly/language-icons/api-home/js-logo.png",
-                //     "xref": "x",
-                //     "yref": "y",
-                //     "layer": "above",
-                //     "x": 0,
-                //     "y": 0,
-                //     "sizex": 500,
-                //     "sizey": 500,
-                //     "xanchor": "left",
-                //     "yanchor": "top"
-                // }];
+                const url = API + '/file?id=' + state.dataset.id + '&file=' + selectedEmbedding.spatial.image + '&access_token=' + getIdToken();
+                let tileSource = new OpenSeadragon.ImageTileSource({
+                    url: url,
+                    buildPyramid: true,
+                    crossOriginPolicy: "Anonymous"
+                });
+                chartData.tileSource = tileSource;
+                // chartData.image = fetch(API + '/file?id=' + state.dataset.id + '&file=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});
             }
             embeddingData.push(chartData);
 

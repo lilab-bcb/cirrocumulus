@@ -19,9 +19,12 @@ class GoogleAuth:
 
     def auth(self):
         token = request.headers.get('Authorization')
-        if not token.startswith('Bearer '):
-            raise ValueError('Token should start with Bearer ')
-        token = token.split('Bearer ')[1]
+        if token is not None:
+            if not token.startswith('Bearer '):
+                raise ValueError('Token should start with Bearer ')
+            token = token.split('Bearer ')[1]
+        else:
+            token = request.args.get('access_token')
         idinfo = id_token.verify_oauth2_token(token, self.cached_request, self.clientId)
         if idinfo['aud'] != self.clientId:
             raise ValueError('Wrong aud')

@@ -1,3 +1,4 @@
+import OpenSeadragon from 'openseadragon';
 const svgNS = 'http://www.w3.org/2000/svg';
 
 
@@ -56,7 +57,7 @@ class OpenseadragonSvgOverlay {
             this._svg.setAttribute('height', this._containerHeight);
         }
 
-        let p = this._viewer.viewport.pixelFromPoint(new window.OpenSeadragon.Point(0, 0), true);
+        let p = this._viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         let zoom = this._viewer.viewport.getZoom(true);
         if (this._viewer.world.getItemCount() > 0) {
             zoom = this._viewer.world.getItemAt(0).viewportToImageZoom(zoom);
