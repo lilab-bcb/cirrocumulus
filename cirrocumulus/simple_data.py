@@ -152,6 +152,8 @@ class SimpleData:
         embeddings = []
         for key in adata.obsm_keys():
             dim = min(3, adata.obsm[key].shape[1])
+            if dim < 2:
+                continue
             embedding = dict(name=key, dimensions=dim)
             try:
                 image_index = image_names.index(key)
