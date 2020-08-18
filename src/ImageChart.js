@@ -9,10 +9,11 @@ import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
+import {getCategoryLabelsPositions} from './ThreeUtil';
 import {arrayToSvgPath, getChartSize, isPointInside} from './util';
 
 
-export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity) {
+export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
     if (traceInfo.tileSource.ready) {
         const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
         if (chartSize == null) {
@@ -22,7 +23,24 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         context.scale(zoom, zoom);
         drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+        drawLabels(context, zoom, traceInfo, showLabels, categoricalNames);
         context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+}
+
+function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
+    showLabels = showLabels && traceInfo.isCategorical;
+    if (showLabels) {
+        context.fillStyle = 'black';
+        const fontSize = Math.ceil(18 * 1 / zoom);
+        context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
+        context.textAlign = 'center';
+        const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+        for (let i = 0, index = 0, n = labelsPositions.labels.length; i < n; i++, index += 3) {
+            let x = labelsPositions.positions[index];
+            let y = labelsPositions.positions[index + 1];
+            context.fillText('' + labelsPositions.labels[i], x, y);
+        }
     }
 }
 
@@ -140,10 +158,10 @@ class ImageChart extends React.PureComponent {
         }
         const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
-        this._drawSpots({context: context, zoom: zoom});
+        this._drawOverlay({context: context, zoom: zoom});
     }
 
-    _drawSpots(opts) {
+    _drawOverlay(opts) {
         let context = opts.context;
         let traceInfo = this.props.traceInfo;
         const selection = this.props.selection;
@@ -151,6 +169,8 @@ class ImageChart extends React.PureComponent {
         let markerOpacity = this.props.markerOpacity;
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+        drawLabels(context, opts.zoom, traceInfo, this.state.showLabels, this.props.categoricalNames);
+
     }
 
     createViewer() {
@@ -183,7 +203,7 @@ class ImageChart extends React.PureComponent {
         let _this = this;
         this.canvasOverlay = new CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
-                _this._drawSpots(opts);
+                _this._drawOverlay(opts);
             },
         });
         // let tooltip = document.createElement("div");
