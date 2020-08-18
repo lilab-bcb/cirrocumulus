@@ -131,7 +131,7 @@ Google App Engine
     - In Google Console, navigate to Data Store > Entities and click on your email address. Add the property ``importer`` of type ``boolean`` and set it to ``true``.
     - Go back to \https://<PROJECT>.appspot.com and start adding datasets.
 
-- Read more about `App Engine`_ in the `App Engine`_ documentation.
+- Read more about App Engine in the `App Engine`_ documentation.
 
 
 Server
