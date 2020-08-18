@@ -106,6 +106,7 @@ export function getPositions(trace) {
 export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
     const categoryToPosition = {};
     let ncategories = 0;
+    const isImage = traceInfo.isImage;
     for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 3) {
         let value = traceInfo.values[i];
         let p = categoryToPosition[value];
@@ -115,9 +116,14 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
             ncategories++;
         }
         p.count++;
-        p.position[0] += traceInfo.positions[j];
-        p.position[1] += traceInfo.positions[j + 1];
-        p.position[2] += traceInfo.positions[j + 2];
+        if (isImage) {
+            p.position[0] += traceInfo.x[i];
+            p.position[1] += traceInfo.y[i];
+        } else {
+            p.position[0] += traceInfo.positions[j];
+            p.position[1] += traceInfo.positions[j + 1];
+            p.position[2] += traceInfo.positions[j + 2];
+        }
     }
     let labelStrings = [];
     let labelPositions = new Float32Array(ncategories * 3);

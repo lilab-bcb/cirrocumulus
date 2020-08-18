@@ -78,6 +78,7 @@ class EmbeddingChart extends React.PureComponent {
                 {traceInfo.isImage && <ImageChart
                     style={{display: 'inline-block'}}
                     traceInfo={traceInfo}
+                    categoricalNames={categoricalNames}
                     selection={this.props.selection}
                     onInitialized={this.onInitialized}
                     markerOpacity={this.props.markerOpacity}
