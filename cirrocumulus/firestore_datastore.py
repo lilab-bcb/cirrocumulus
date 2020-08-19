@@ -59,14 +59,20 @@ class FirestoreDatastore:
     def datasets(self, email):
         client = self.datastore_client
         query = client.query(kind=DATASET)
-        domain = get_email_domain(email)
-        if domain is None:
-            query.add_filter('readers', '=', email)
-        else:
-            query.add_filter('readers', 'in', [email, domain])
+        query.add_filter('readers', '=', email)
         results = []
         for result in query.fetch():
             results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
+        domain = get_email_domain(email)
+        if domain is not None:
+            query = client.query(kind=DATASET)
+            query.add_filter('readers', '=', domain)
+            unique_ids = set()
+            for result in results:
+                unique_ids.add(result['id'])
+            for result in query.fetch():
+                if result.id not in unique_ids:
+                    results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
         return results
 
     def dataset_filters(self, email, dataset_id):
