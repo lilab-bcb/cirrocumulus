@@ -168,7 +168,8 @@ def handle_file():
                 break
             yield chunk
 
-    return Response(stream_with_context(generate()), mimetype=mimetype[0])
+    response = Response(stream_with_context(generate()), mimetype=mimetype[0])
+    return response
 
 
 @blueprint.route('/user', methods=['GET'])

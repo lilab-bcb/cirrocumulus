@@ -3,7 +3,7 @@ import json
 from bson import ObjectId
 from pymongo import MongoClient
 
-from cirrocumulus.database_api import load_dataset_schema
+from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -58,7 +58,8 @@ class MongoDb:
         if doc is None:
             raise InvalidUsage('Please provide a valid id', 400)
         readers = doc.get('readers')
-        if email not in readers:
+        domain = get_email_domain(email)
+        if email not in readers and domain not in readers:
             raise InvalidUsage('Not authorized', 403)
         if ensure_owner and email not in doc['owners']:
             raise InvalidUsage('Not authorized', 403)
@@ -72,7 +73,12 @@ class MongoDb:
     def datasets(self, email):
         collection = self.db.datasets
         results = []
-        for doc in collection.find(dict(readers=email)):
+        domain = get_email_domain(email)
+        if domain is None:
+            query = dict(readers=email)
+        else:
+            query = dict(readers={'$in': [email, domain]})
+        for doc in collection.find(query):
             results.append({'id': str(doc['_id']), 'name': doc['name'],
                             'owner': 'owners' in doc and email in doc['owners']})
         return results

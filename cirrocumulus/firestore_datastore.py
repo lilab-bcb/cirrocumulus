@@ -3,7 +3,7 @@ import json
 
 from google.cloud import datastore
 
-from cirrocumulus.database_api import load_dataset_schema
+from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -59,7 +59,11 @@ class FirestoreDatastore:
     def datasets(self, email):
         client = self.datastore_client
         query = client.query(kind=DATASET)
-        query.add_filter('readers', '=', email)
+        domain = get_email_domain(email)
+        if domain is None:
+            query.add_filter('readers', '=', email)
+        else:
+            query.add_filter('readers', 'in', [email, domain])
         results = []
         for result in query.fetch():
             results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
@@ -122,7 +126,9 @@ class FirestoreDatastore:
         if dataset is None:
             raise InvalidUsage('Please provide a valid id', 400)
         readers = dataset.get('readers')
-        if email not in readers:
+
+        domain = get_email_domain(email)
+        if email not in readers and domain not in readers:
             raise InvalidUsage('Not authorized', 403)
         if ensure_owner and email not in dataset['owners']:
             raise InvalidUsage('Not authorized', 403)

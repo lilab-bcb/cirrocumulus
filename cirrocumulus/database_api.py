@@ -1,3 +1,11 @@
+def get_email_domain(email):
+    at_index = email.find('@')
+    domain = None
+    if at_index != -1:
+        domain = email[at_index + 1:]
+    return domain
+
+
 def load_dataset_schema(url):
     import os
     from urllib.parse import urlparse
