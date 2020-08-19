@@ -94,6 +94,19 @@ You can adjust the main plot using the view options on the left panel:
   :scale: 50%
   :align: center
 
+Mouse behavior for the main plot is:
+
+- 3-d plot:
+
+  - Rotate: Mouse left click
+  - Pan: Mouse right click
+  - Zoom: Mouse wheel
+
+
+- 2-d plot
+
+  - Pan: Mouse left click.
+  - Zoom: Mouse wheel.
 
 Gallery view
 ^^^^^^^^^^^^^^^^^^^
