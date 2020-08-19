@@ -90,7 +90,7 @@ function searchTokens(state = [], action) {
 function dataset(state = null, action) {
     switch (action.type) {
         case SET_DATASET:
-            document.title = action.payload == null ? 'Cirro' : action.payload.name;
+            document.title = action.payload == null ? 'Cirro' : action.payload.name + ' - Cirro';
             return action.payload;
         default:
             return state;
