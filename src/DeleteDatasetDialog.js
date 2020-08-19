@@ -28,6 +28,7 @@ class DeleteDatasetDialog extends React.PureComponent {
     };
 
     render() {
+        console.log('DeleteDatasetDialog');
         return (
             <Dialog
                 open={this.state.open}
@@ -38,7 +39,7 @@ class DeleteDatasetDialog extends React.PureComponent {
             >
                 <DialogTitle id="delete-dataset-dialog-title">Delete Dataset</DialogTitle>
                 <DialogContent>
-                    <h3>Are you sure you want to delete {this.props.dataset.name}?</h3>
+                    {this.props.dataset && <h3>Are you sure you want to delete {this.props.dataset.name}?</h3>}
                 </DialogContent>
                 <DialogActions>
                     <Button disabled={this.state.loading} onClick={this.handleClose} color="primary">

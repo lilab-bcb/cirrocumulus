@@ -127,7 +127,8 @@ class EditDatasetDialog extends React.PureComponent {
                         value={this.state.readers}
                         onChange={this.onEmailChanged}
                         margin="dense"
-                        label="Comma separated list of emails to share with"
+                        label="Share"
+                        helperText="Enter comma separated list of emails"
                         fullWidth
                         multiline
                     />}

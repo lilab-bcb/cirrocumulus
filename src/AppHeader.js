@@ -1,4 +1,4 @@
-import {IconButton, Menu, Tooltip} from '@material-ui/core';
+import {Divider, IconButton, Menu, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -217,10 +217,12 @@ class AppHeader extends React.PureComponent {
     };
     handleSettings = (event) => {
         this.props.handleDialog(EDIT_DATASET_DIALOG);
+        this.setState({moreMenuOpen: false});
     };
 
     handleDelete = (event) => {
         this.props.handleDialog(DELETE_DATASET_DIALOG);
+        this.setState({moreMenuOpen: false});
     };
 
     render() {
@@ -230,15 +232,19 @@ class AppHeader extends React.PureComponent {
         const shape = dataset != null && dataset.shape != null ? dataset.shape : [0, 0];
         const hasSelection = dataset != null && shape[0] > 0 && !isNaN(selection.count);
         const showNumberOfCells = !hasSelection && dataset != null && !(selection.count > 0) && shape[0] > 0 && (selection.count !== shape[0]);
-        const showMoreMenu = (email != null && user.importer) || dataset != null;
 
+
+        const showNewDataset = user != null && user.importer;
+        const showEditDeleteDataset = dataset !== null && dataset.owner;
+        const showMoreMenu = showNewDataset || dataset != null;
 
         return (
 
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
-                    {datasetChoices.length > 1 &&
-                    <Select
+
+
+                    {datasetChoices.length > 0 && <Select
                         style={{marginRight: 6}}
                         disableUnderline={true}
                         displayEmpty={true}
@@ -301,17 +307,14 @@ class AppHeader extends React.PureComponent {
                                                    horizontal: 'right',
                                                }} open={this.state.moreMenuOpen}
                                                onClose={this.handleMoreMenuClose}>
-                            {user != null && user.importer &&
-                            <MenuItem onClick={this.handleImportDataset}>
-                                Import Dataset
+                            {showNewDataset && <MenuItem onClick={this.handleImportDataset}>
+                                New Dataset
                             </MenuItem>}
-                            {dataset !== null && dataset.owner &&
-                            <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
-                            {dataset !== null && dataset.owner &&
-                            <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
-                            {dataset != null &&
-                            <MenuItem onClick={this.copyLink}>Copy Link
-                            </MenuItem>}
+
+                            {showEditDeleteDataset && <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
+                            {showEditDeleteDataset && <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
+                            {(showNewDataset || showEditDeleteDataset) && dataset!=null && <Divider/>}
+                            {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
                         </Menu>}
                         <Tooltip title={'Help'}>
                             <IconButton aria-label="Help"
