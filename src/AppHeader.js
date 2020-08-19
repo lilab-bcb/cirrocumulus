@@ -129,7 +129,16 @@ class AppHeader extends React.PureComponent {
 
         let json = {
             dataset: dataset.id,
-            embeddings: embeddings
+            embeddings: embeddings.map(embedding=>{
+                if(embedding.bin) {
+                    embedding = Object.assign({}, embedding);
+                    delete embedding._bin;
+                    return embedding;
+                }else {
+                    return {name:embedding.name, dimensions:embedding.dimensions}
+                }
+
+            })
         };
         if (searchTokens.length > 0) {
             json.q = searchTokens;
