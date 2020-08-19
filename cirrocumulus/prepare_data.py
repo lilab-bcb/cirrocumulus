@@ -350,7 +350,7 @@ def main(argsv):
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
-    parser.add_argument('--markers', help='List of groups to compute markers for if not', action='append')
+    parser.add_argument('--markers', help='List of groups to compute markers for', action='append')
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
