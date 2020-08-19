@@ -986,6 +986,8 @@ export function deleteDataset(payload) {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(() => {
             dispatch(_deleteDataset({id: payload.dataset.id}));
+            dispatch(setDialog(null));
+            dispatch(_setDataset(null));
             dispatch(setMessage('Dataset deleted'));
         }).finally(() => {
             dispatch(_setLoading(false));
