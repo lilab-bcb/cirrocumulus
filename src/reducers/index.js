@@ -10,6 +10,7 @@ import {
     SET_BIN_VALUES,
     SET_CATEGORICAL_COLOR,
     SET_CATEGORICAL_NAME,
+    SET_CHART_OPTIONS,
     SET_CHART_SIZE,
     SET_COMBINE_DATASET_FILTERS,
     SET_DATASET,
@@ -58,6 +59,11 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     value: getInterpolator(DEFAULT_INTERPOLATOR)
 };
 
+const DEFAULT_CHART_OPTIONS = {
+    animating: false, dragmode: 'pan', editSelection: false, showLabels: false,
+    showAxis: true
+};
+
 function chartSize(state = 500, action) {
     switch (action.type) {
         case SET_CHART_SIZE:
@@ -86,6 +92,15 @@ function searchTokens(state = [], action) {
     }
 }
 
+
+function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
+    switch (action.type) {
+        case SET_CHART_OPTIONS:
+            return Object.assign({}, action.payload);
+        default:
+            return state;
+    }
+}
 
 function dataset(state = null, action) {
     switch (action.type) {
@@ -624,6 +639,7 @@ export default combineReducers({
     binSummary,
     binValues,
     categoricalNames,
+    chartOptions,
     chartSize,
     combineDatasetFilters,
     datasetFilter,

@@ -92,7 +92,7 @@ class ImageChart extends React.PureComponent {
         this.id = uniqueId('cirro-image');
         this.chartSize = getChartSize();
         this.tooltipElementRef = React.createRef();
-        this.state = {dragmode: 'pan', editSelection: false, showLabels: false};
+        this.props.chartOptions = {dragmode: 'pan', editSelection: false, showLabels: false};
     }
 
     findPointsInPolygon(points) {
@@ -169,7 +169,7 @@ class ImageChart extends React.PureComponent {
         let markerOpacity = this.props.markerOpacity;
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
-        drawLabels(context, opts.zoom, traceInfo, this.state.showLabels, this.props.categoricalNames);
+        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions.showLabels, this.props.categoricalNames);
 
     }
 
@@ -219,7 +219,7 @@ class ImageChart extends React.PureComponent {
         this.viewer.innerTracker.moveHandler = function (event) {
             if (_this.tooltipElementRef.current == null) {
                 _this.tooltipElementRef.current.innerHTML = ' ';
-            } else if (_this.state.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
+            } else if (_this.props.chartOptions.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
@@ -245,13 +245,13 @@ class ImageChart extends React.PureComponent {
 
 
         this.viewer.addHandler('canvas-drag', function (event) {
-            if ((_this.state.dragmode === 'lasso' || _this.state.dragmode === 'select') && viewer.world.getItemCount() > 0) {
+            if ((_this.props.chartOptions.dragmode === 'lasso' || _this.props.chartOptions.dragmode === 'select') && viewer.world.getItemCount() > 0) {
                 event.preventDefaultAction = true;
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
                 lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
-                if (_this.state.dragmode === 'lasso') {
+                if (_this.props.chartOptions.dragmode === 'lasso') {
                     lassoPathArray = simplify(lassoPathArray);
                     lassoPath.setAttribute('d', arrayToSvgPath(lassoPathArray));
                 } else {
@@ -274,14 +274,14 @@ class ImageChart extends React.PureComponent {
         });
 
         this.viewer.addHandler('canvas-press', function (event) {
-            if (_this.state.dragmode === 'lasso' || _this.state.dragmode === 'select') {
+            if (_this.props.chartOptions.dragmode === 'lasso' || _this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
 
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
 
-                if (_this.state.dragmode === 'lasso') {
+                if (_this.props.chartOptions.dragmode === 'lasso') {
                     lassoPathArray = [];
                     lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
                     lassoPathArray = simplify(lassoPathArray);
@@ -300,17 +300,17 @@ class ImageChart extends React.PureComponent {
         });
 
         this.viewer.addHandler('canvas-release', function (event) {
-            if (_this.state.dragmode === 'lasso') {
+            if (_this.props.chartOptions.dragmode === 'lasso') {
                 event.preventDefaultAction = true;
                 const points = _this.findPointsInPolygon(lassoPathArray);
                 lassoPathArray = [];
                 lassoPath.setAttribute('d', '');
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
-                    clear: !_this.state.editSelection,
+                    clear: !_this.props.chartOptions.editSelection,
                     value: {basis: _this.props.traceInfo.embedding, points: points}
                 });
-            } else if (_this.state.dragmode === 'select') {
+            } else if (_this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
                 const points = _this.findPointsInRectangle(rectElement);
                 rectElement.removeAttribute('x');
@@ -319,14 +319,14 @@ class ImageChart extends React.PureComponent {
                 rectElement.removeAttribute('height');
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
-                    clear: !_this.state.editSelection,
+                    clear: !_this.props.chartOptions.editSelection,
                     value: {basis: _this.props.traceInfo.embedding, points: points}
                 });
             }
         });
 
         // this.viewer.innerTracker.clickHandler = function (event) {
-        //     if (_this.state.dragmode === 'pan') {
+        //     if (_this.props.chartOptions.dragmode === 'pan') {
         //         let webPoint = event.position;
         //         let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
         //         let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
@@ -336,7 +336,7 @@ class ImageChart extends React.PureComponent {
         //         } else {
         //             _this.props.onSelected({
         //                 name: getEmbeddingKey(_this.props.traceInfo.embedding),
-        //                 clear: !_this.state.editSelection,
+        //                 clear: !_this.props.chartOptions.editSelection,
         //                 value: {basis: _this.props.traceInfo.embedding, points: [point]}
         //             });
         //         }
@@ -391,16 +391,14 @@ class ImageChart extends React.PureComponent {
     };
 
     onEditSelection = () => {
-        this.setState((state, props) => {
-            return {editSelection: !state.editSelection};
-        });
+        this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
 
     onShowLabels = () => {
-        this.setState((state, props) => {
-            return {showLabels: !state.showLabels};
-        });
+        this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
     onGallery = () => {
@@ -423,7 +421,8 @@ class ImageChart extends React.PureComponent {
     };
 
     onDragMode = (mode) => {
-        this.setState({dragmode: mode});
+        this.props.chartOptions.dragmode = mode
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
     render() {
@@ -431,12 +430,12 @@ class ImageChart extends React.PureComponent {
         return <React.Fragment>
             <div className={this.props.classes.root}>
                 <ChartToolbar
-                    dragmode={this.state.dragmode}
+                    dragmode={this.props.chartOptions.dragmode}
                     animating={false}
-                    editSelection={this.state.editSelection}
+                    editSelection={this.props.chartOptions.editSelection}
                     onZoomIn={this.onZoomIn}
                     onZoomOut={this.onZoomOut}
-                    showLabels={this.state.showLabels}
+                    showLabels={this.props.chartOptions.showLabels}
                     is3d={false}
                     onHome={this.onHome}
                     onSaveImage={this.onSaveImage}

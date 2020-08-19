@@ -7,7 +7,8 @@ import {
     handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
-    handleMeasureFilterUpdated
+    handleMeasureFilterUpdated,
+    setChartOptions
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
@@ -62,6 +63,8 @@ class EmbeddingChart extends React.PureComponent {
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
+                                   setChartOptions={this.props.handleChartOptions}
+                                   chartOptions={this.props.chartOptions}
                                    categoricalNames={categoricalNames}
                                    selection={this.props.selection}
                                    onDeselect={this.props.onDeselect}
@@ -76,6 +79,8 @@ class EmbeddingChart extends React.PureComponent {
 
 
                 {traceInfo.isImage && <ImageChart
+                    setChartOptions={this.props.handleChartOptions}
+                    chartOptions={this.props.chartOptions}
                     style={{display: 'inline-block'}}
                     traceInfo={traceInfo}
                     categoricalNames={categoricalNames}
@@ -96,6 +101,7 @@ class EmbeddingChart extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        chartOptions: state.chartOptions,
         categoricalNames: state.categoricalNames,
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,
@@ -110,6 +116,9 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
+        handleChartOptions: (options) => {
+            dispatch(setChartOptions(options));
+        },
         handleDimensionFilterUpdated: (e) => {
             dispatch(handleDimensionFilterUpdated(e));
         },

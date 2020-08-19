@@ -2,6 +2,9 @@ import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+
+import BorderInnerIcon from '@material-ui/icons/BorderInner';
+import Brightness3Icon from '@material-ui/icons/Brightness3';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
 import HomeIcon from '@material-ui/icons/Home';
@@ -13,7 +16,6 @@ import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import React from 'react';
-
 
 const active = 'cirro-active';
 const inactive = 'cirro-inactive';
@@ -31,6 +33,14 @@ class ChartToolbar extends React.PureComponent {
 
     onShowLabels = () => {
         this.props.onShowLabels();
+    };
+
+    onShowAxis = () => {
+        this.props.onShowAxis();
+    };
+
+    onDarkMode = () => {
+        this.props.onDarkMode();
     };
 
     onGallery = () => {
@@ -54,7 +64,7 @@ class ChartToolbar extends React.PureComponent {
 
     render() {
 
-        const {dragmode, editSelection, showLabels} = this.props;
+        const {dragmode, editSelection, showLabels, showAxis, darkMode} = this.props;
         const {saveImageEl} = this.state;
         return (<React.Fragment>
 
@@ -128,6 +138,21 @@ class ChartToolbar extends React.PureComponent {
                 <IconButton edge={false} size={'small'} className={showLabels ? active : inactive}
                             aria-label="Show Labels" onClick={() => this.onShowLabels()}>
                     <FontDownloadIcon/>
+                </IconButton>
+            </Tooltip>}
+
+
+            {this.props.is3d && this.props.onShowAxis && <Tooltip title={"Show Axis"}>
+                <IconButton edge={false} size={'small'} className={showAxis ? active : inactive}
+                            aria-label="Show Axis" onClick={() => this.onShowAxis()}>
+                    <BorderInnerIcon/>
+                </IconButton>
+            </Tooltip>}
+
+            {this.props.onDarkMode && <Tooltip title={"Dark Mode"}>
+                <IconButton edge={false} size={'small'} className={darkMode ? active : inactive}
+                            aria-label="Dark Mode" onClick={() => this.onDarkMode()}>
+                    <Brightness3Icon/>
                 </IconButton>
             </Tooltip>}
 

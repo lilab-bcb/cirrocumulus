@@ -58,12 +58,9 @@ class ScatterChartThree extends React.PureComponent {
         this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.chartSize = getChartSize();
-
-        this.state = {animating: false, dragmode: 'pan', editSelection: false, showLabels: false};
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
         // });
-
     }
 
 
@@ -96,7 +93,7 @@ class ScatterChartThree extends React.PureComponent {
 
     drawContext(context, chartSize, format) {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames} = this.props;
-        const showLabels = this.state.showLabels && traceInfo.isCategorical;
+        const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
 
         const pointSize = this.calculatePointSize(traceInfo);
         let scaleFactor = this.props.pointSize;
@@ -225,21 +222,30 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     onEditSelection = () => {
-        this.setState((state, props) => {
-            return {editSelection: !state.editSelection};
-        });
+        this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
 
     onShowLabels = () => {
-        this.setState((state, props) => {
-            return {showLabels: !state.showLabels};
-        });
+        this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
+        this.props.setChartOptions(this.props.chartOptions);
 
     };
 
     onGallery = () => {
         this.props.onGallery();
+    };
+
+    onShowAxis = () => {
+        const axes = this.scatterPlot.scene.getObjectByName('axes');
+        let visible = false;
+        if (axes) {
+            visible = !axes.visible;
+            axes.visible = visible;
+        }
+        this.props.chartOptions.showAxis = !this.props.chartOptions.showAxis;
+        this.props.setChartOptions(this.props.showAxis);
     };
 
     onDragMode = (mode) => {
@@ -252,17 +258,19 @@ class ScatterChartThree extends React.PureComponent {
             this.scatterPlot.rectangleSelector.setSelectionMode('LASSO');
             this.scatterPlot.setInteractionMode('SELECT');
         }
-        this.setState({dragmode: mode});
+        this.props.chartOptions.dragmode = mode;
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
     onToggleAnimation = () => {
         if (this.scatterPlot.orbitIsAnimating()) {
             this.scatterPlot.stopOrbitAnimation();
-            this.setState({animating: false});
+            this.props.chartOptions.animating  = false;
         } else {
             this.scatterPlot.startOrbitAnimation();
-            this.setState({animating: true});
+            this.props.chartOptions.animating  = true;
         }
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
 
@@ -312,7 +320,7 @@ class ScatterChartThree extends React.PureComponent {
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
-                        clear: !this.state.editSelection,
+                        clear: !this.props.chartOptions.editSelection,
                         value: {basis: traceInfo.embedding, points: selectedPoints}
                     });
                 }
@@ -371,12 +379,12 @@ class ScatterChartThree extends React.PureComponent {
                     //
                     // this.props.onSelected({
                     //     name: getEmbeddingKey(traceInfo.embedding),
-                    //     clear: !this.state.editSelection,
+                    //     clear: !this.props.chartOptions.editSelection,
                     //     value: {basis: traceInfo.embedding, path: path}
                     // });
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
-                        clear: !this.state.editSelection,
+                        clear: !this.props.chartOptions.editSelection,
                         value: {basis: traceInfo.embedding, points: selectedpoints}
                     });
                 }
@@ -390,7 +398,7 @@ class ScatterChartThree extends React.PureComponent {
 
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize, categoricalNames} = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.state.showLabels, categoricalNames);
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.props.chartOptions.showLabels, categoricalNames);
     }
 
 
@@ -398,10 +406,10 @@ class ScatterChartThree extends React.PureComponent {
         return <React.Fragment>
             <div className={this.props.classes.root}>
                 <ChartToolbar
-                    dragmode={this.state.dragmode}
-                    animating={this.state.animating}
-                    editSelection={this.state.editSelection}
-                    showLabels={this.state.showLabels}
+                    dragmode={this.props.chartOptions.dragmode}
+                    animating={this.props.chartOptions.animating}
+                    editSelection={this.props.chartOptions.editSelection}
+                    showLabels={this.props.chartOptions.showLabels}
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}
@@ -409,6 +417,8 @@ class ScatterChartThree extends React.PureComponent {
                     onDragMode={this.onDragMode}
                     onCopyImage={this.onCopyImage}
                     onEditSelection={this.onEditSelection}
+                    onShowAxis={this.onShowAxis}
+                    showAxis={this.props.chartOptions.showAxis}
                     onGallery={this.onGallery}>
                 </ChartToolbar>
                 <div ref={this.tooltipElementRef} style={{
