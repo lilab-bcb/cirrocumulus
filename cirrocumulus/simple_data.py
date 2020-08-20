@@ -109,7 +109,7 @@ class SimpleData:
 
     @staticmethod
     def has_markers(adata):
-        return hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns
+        return hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns or 'de_res' in adata.varm
 
     @staticmethod
     def schema(adata):
@@ -118,17 +118,42 @@ class SimpleData:
         result = {'version': '1.0.0'}
         marker_dict = adata.uns.get('markers', {})
         result['markers'] = marker_dict
+        n_genes = 10
         if SimpleData.has_markers(adata):
-            rank_genes_groups = adata.uns['rank_genes_groups']
-            groupby = str(rank_genes_groups['params']['groupby'])
-            group_names = rank_genes_groups['names'].dtype.names
-            n_genes = 10
-            markers = {}
-            marker_dict[groupby + ' markers'] = markers
-            for group_name in group_names:
-                gene_names = rank_genes_groups['names'][group_name]
-                # scores = rank_genes_groups['scores'][group_name]
-                markers[group_name] = gene_names[:n_genes]
+            if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:  # scanpy
+                rank_genes_groups = adata.uns['rank_genes_groups']
+                groupby = str(rank_genes_groups['params']['groupby'])
+                group_names = rank_genes_groups['names'].dtype.names
+                markers = {}
+                marker_dict[groupby + ' markers'] = markers
+                for group_name in group_names:
+                    gene_names = rank_genes_groups['names'][group_name]
+                    # scores = rank_genes_groups['scores'][group_name]
+                    markers[group_name] = gene_names[:n_genes]
+            else:  # pegasus
+                de_res = adata.varm['de_res']
+                names = de_res.dtype.names
+                base_names = [name[:name.rindex(':')] for name in names]
+                fields = ['auroc', 'log_fold_change']
+                field_use = None
+                for field in fields:
+                    if field in base_names:
+                        field_use = field
+                        break
+                if field_use is None:
+                    print('Pegasus differential expression results not found')
+                else:
+                    markers = {}
+                    marker_dict['markers'] = markers
+                    for name in names:
+                        index = name.rindex(':')
+                        base_name = name[:index]
+
+                        if base_name == field_use:
+                            cluster_name = name[index + 1:]
+                            indices = np.argsort(de_res[name])
+                            markers[cluster_name] = adata.var.index[indices[len(indices) - n_genes:]]
+
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
                     adata.obs[key]) or pd.api.types.is_object_dtype(adata.obs[key]):
