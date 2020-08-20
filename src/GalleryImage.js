@@ -18,13 +18,13 @@ class GalleryImage extends React.PureComponent {
 
     draw() {
         let start = new Date().getTime();
-        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize} = this.props;
+        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
         if (!traceInfo.isImage) {
-            updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize);
+            updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize, false, {}, chartOptions.showFog, chartOptions.showAxis);
             const canvas = containerElement.querySelector('canvas');
             this.setState({url: canvas.toDataURL()});
         } else {

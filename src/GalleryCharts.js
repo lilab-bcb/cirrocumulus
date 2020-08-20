@@ -45,7 +45,7 @@ class GalleryCharts extends React.PureComponent {
     }
 
     render() {
-        const {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, selection} = this.props;
+        const {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
 
         for (let i = 0; i < galleryTraces.length; i++) {
@@ -62,6 +62,7 @@ class GalleryCharts extends React.PureComponent {
             color={traceInfo.colors}
             scatterPlot={this.scatterPlot}
             markerOpacity={markerOpacity}
+            chartOptions={chartOptions}
             pointSize={pointSize}
             chartSize={chartSize}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
@@ -99,7 +100,8 @@ const mapStateToProps = state => {
         selection: state.selection,
         primaryTraceKey: state.primaryTraceKey,
         pointSize: state.pointSize,
-        chartSize: state.chartSize
+        chartSize: state.chartSize,
+        chartOptions: state.chartOptions
     };
 };
 const mapDispatchToProps = dispatch => {

@@ -1,5 +1,6 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizer3DLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {getPointVisualizer} from './ScatterChartThree';
 import {getRgbScale} from './util';
 
 function scaleLinear(value, domain, range) {
@@ -149,7 +150,7 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
     return {labels: labelStrings, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}) {
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}, showFog = true, showAxis = true) {
     const colors = traceInfo.colors;
     const positions = traceInfo.positions;
     const is3d = traceInfo.z != null;
@@ -160,9 +161,16 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
             positions[k] = isSelected ? 1 : 0;
         }
     }
+    scatterPlot.setDimensions(traceInfo.dimensions);
+    let spriteVisualizer = getPointVisualizer(scatterPlot);
+    spriteVisualizer.styles.fog.enabled = showFog;
+    const axes = scatterPlot.scene.getObjectByName('axes');
+    if (axes) {
+        axes.visible = showAxis;
+    }
     scatterPlot.setPointColors(colors);
     scatterPlot.setPointPositions(positions);
-    scatterPlot.setDimensions(traceInfo.dimensions);
+
     // const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
 
     const scale = new Float32Array(traceInfo.npoints);
@@ -174,7 +182,6 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     let activeVisualizers = scatterPlot.getActiveVisualizers();
     activeVisualizers = activeVisualizers.filter(vis => !(vis instanceof ScatterPlotVisualizer3DLabels));
     if (showLabels) {
-
         const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
         let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
         labels3DVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);

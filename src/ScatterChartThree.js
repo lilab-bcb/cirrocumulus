@@ -23,7 +23,7 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
-function getPointVisualizer(scatterPlot) {
+export function getPointVisualizer(scatterPlot) {
     for (let i = 0; i < scatterPlot.visualizers.length; i++) {
         if (scatterPlot.visualizers[i].id === 'SPRITES') {
             return scatterPlot.visualizers[i];
@@ -100,7 +100,7 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     drawContext(context, chartSize, format) {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames} = this.props;
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames, chartOptions} = this.props;
         const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
 
         const pointSize = this.calculatePointSize(traceInfo);
@@ -145,6 +145,7 @@ class ScatterChartThree extends React.PureComponent {
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         let gl_PointSize = (outputPointSize * scaleFactor) / 4;
+        const showFog = chartOptions.showFog;
         for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
             const isSelected = selection.size === 0 || selection.has(i);
             pos.x = positions[k];
@@ -163,12 +164,14 @@ class ScatterChartThree extends React.PureComponent {
                 cameraSpacePos.w = 1;
                 cameraSpacePos.applyMatrix4(modelViewMatrix);
                 outputPointSize = -pointSize / cameraSpacePos.z;
-                const fogDepth = pointSize / outputPointSize * 1.2;
                 gl_PointSize = (outputPointSize * scaleFactor) / 4;
-                const fogFactor = smoothstep(fog.near, fog.far, fogDepth);
-                r = mix(r, fog.color.r, fogFactor);
-                g = mix(g, fog.color.g, fogFactor);
-                b = mix(b, fog.color.b, fogFactor);
+                if (showFog) {
+                    const fogDepth = pointSize / outputPointSize * 1.2;
+                    const fogFactor = smoothstep(fog.near, fog.far, fogDepth);
+                    r = mix(r, fog.color.r, fogFactor);
+                    g = mix(g, fog.color.g, fogFactor);
+                    b = mix(b, fog.color.b, fogFactor);
+                }
             }
             pos.x = (pos.x * widthHalf) + widthHalf;
             pos.y = -(pos.y * heightHalf) + heightHalf;
@@ -246,12 +249,11 @@ class ScatterChartThree extends React.PureComponent {
 
     onShowAxis = () => {
         const axes = this.scatterPlot.scene.getObjectByName('axes');
-        let visible = false;
-        if (axes) {
-            visible = !axes.visible;
-            axes.visible = visible;
-        }
         this.props.chartOptions.showAxis = !this.props.chartOptions.showAxis;
+        if (axes) {
+            axes.visible = this.props.chartOptions.showAxis;
+        }
+
         this.props.setChartOptions(this.props.chartOptions);
     };
 
@@ -294,6 +296,12 @@ class ScatterChartThree extends React.PureComponent {
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
             this.scatterPlot = createScatterPlot(containerElement, false);
+            const axes = this.scatterPlot.scene.getObjectByName('axes');
+            if (axes) {
+                axes.visible = this.props.chartOptions.showAxis;
+            }
+            let spriteVisualizer = getPointVisualizer(this.scatterPlot);
+            spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
             this.scatterPlot.hoverCallback = (point) => {
                 if (point == null) {
                     this.tooltipElementRef.current.innerHTML = ' ';
@@ -412,8 +420,8 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     draw() {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, color, pointSize, categoricalNames} = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.props.chartOptions.showLabels, categoricalNames);
+        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.props.chartOptions.showLabels, categoricalNames, chartOptions.showFog, chartOptions.showAxis);
     }
 
 
