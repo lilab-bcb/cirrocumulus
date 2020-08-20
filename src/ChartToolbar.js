@@ -155,12 +155,7 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>}
 
-            {this.props.onDarkMode && <Tooltip title={"Dark Mode"}>
-                <IconButton edge={false} size={'small'} className={darkMode ? active : ''}
-                            aria-label="Dark Mode" onClick={() => this.onDarkMode()}>
-                    <Brightness2Icon/>
-                </IconButton>
-            </Tooltip>}
+
 
             {this.props.is3d && this.props.onShowFog && <Tooltip title={"Show Fog"}>
                 <IconButton edge={false} size={'small'} className={this.props.showFog ? active : ''}
@@ -206,6 +201,13 @@ class ChartToolbar extends React.PureComponent {
                 <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
 
             </Menu>
+
+            {this.props.onDarkMode && <Tooltip title={"Dark Theme"}>
+                <IconButton edge={false} size={'small'} className={darkMode ? active : ''}
+                            aria-label="Dark Theme" onClick={() => this.onDarkMode()}>
+                    <Brightness2Icon/>
+                </IconButton>
+            </Tooltip>}
 
             <Tooltip title={"View Gallery"}>
                 <IconButton edge={false} size={'small'}
