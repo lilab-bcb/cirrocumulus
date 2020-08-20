@@ -5,6 +5,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 
 import BorderInnerIcon from '@material-ui/icons/BorderInner';
 import Brightness3Icon from '@material-ui/icons/Brightness3';
+import CloudQueueIcon from '@material-ui/icons/CloudQueue';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
 import HomeIcon from '@material-ui/icons/Home';
@@ -42,6 +43,11 @@ class ChartToolbar extends React.PureComponent {
     onDarkMode = () => {
         this.props.onDarkMode();
     };
+
+    onShowFog = () => {
+        this.props.onShowFog();
+    };
+
 
     onGallery = () => {
         this.props.onGallery();
@@ -153,6 +159,13 @@ class ChartToolbar extends React.PureComponent {
                 <IconButton edge={false} size={'small'} className={darkMode ? active : inactive}
                             aria-label="Dark Mode" onClick={() => this.onDarkMode()}>
                     <Brightness3Icon/>
+                </IconButton>
+            </Tooltip>}
+
+            {this.props.is3d &&this.props.onShowFog && <Tooltip title={"Show Fog"}>
+                <IconButton edge={false} size={'small'} className={this.props.showFog ? active : inactive}
+                            aria-label="Show Fog" onClick={() => this.onShowFog()}>
+                    <CloudQueueIcon/>
                 </IconButton>
             </Tooltip>}
 

@@ -61,7 +61,7 @@ const DEFAULT_INTERPOLATOR_OBJ = {
 
 const DEFAULT_CHART_OPTIONS = {
     animating: false, dragmode: 'pan', editSelection: false, showLabels: false,
-    showAxis: true
+    showAxis: true, showFog: true
 };
 
 function chartSize(state = 500, action) {

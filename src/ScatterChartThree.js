@@ -23,6 +23,14 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
+function getPointVisualizer(scatterPlot) {
+    for (let i = 0; i < scatterPlot.visualizers.length; i++) {
+        if (scatterPlot.visualizers[i].id === 'SPRITES') {
+            return scatterPlot.visualizers[i];
+        }
+    }
+}
+
 const styles = theme => ({
 
     root: {
@@ -111,6 +119,7 @@ class ScatterChartThree extends React.PureComponent {
         const is3d = traceInfo.dimensions === 3;
         let outputPointSize = 0;
         let fog = this.scatterPlot.scene.fog;
+        let spriteVisualizer = getPointVisualizer(this.scatterPlot);
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;
             const minScale = 0.1;  // minimum scaling factor
@@ -131,13 +140,6 @@ class ScatterChartThree extends React.PureComponent {
         // projection matrix.
         // gl_Position = projectionMatrix * cameraSpacePos;
 
-        let spriteVisualizer;
-        for (let i = 0; i < this.scatterPlot.visualizers.length; i++) {
-            if (this.scatterPlot.visualizers[i].id === 'SPRITES') {
-                spriteVisualizer = this.scatterPlot.visualizers[i];
-                break;
-            }
-        }
 
         let object = spriteVisualizer.points;
         let modelViewMatrix = object.modelViewMatrix.clone();
@@ -230,7 +232,12 @@ class ScatterChartThree extends React.PureComponent {
     onShowLabels = () => {
         this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
         this.props.setChartOptions(this.props.chartOptions);
+    };
 
+    onDarkMode = () => {
+        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
+        this.scatterPlot.setDayNightMode(this.props.chartOptions.darkMode);
+        this.props.setChartOptions(this.props.chartOptions);
     };
 
     onGallery = () => {
@@ -245,8 +252,16 @@ class ScatterChartThree extends React.PureComponent {
             axes.visible = visible;
         }
         this.props.chartOptions.showAxis = !this.props.chartOptions.showAxis;
-        this.props.setChartOptions(this.props.showAxis);
+        this.props.setChartOptions(this.props.chartOptions);
     };
+
+    onShowFog = () => {
+        let spriteVisualizer = getPointVisualizer(this.scatterPlot);
+        this.props.chartOptions.showFog = !this.props.chartOptions.showFog;
+        spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
+        this.props.setChartOptions(this.props.chartOptions);
+    };
+
 
     onDragMode = (mode) => {
         if (mode === 'pan') {
@@ -265,10 +280,10 @@ class ScatterChartThree extends React.PureComponent {
     onToggleAnimation = () => {
         if (this.scatterPlot.orbitIsAnimating()) {
             this.scatterPlot.stopOrbitAnimation();
-            this.props.chartOptions.animating  = false;
+            this.props.chartOptions.animating = false;
         } else {
             this.scatterPlot.startOrbitAnimation();
-            this.props.chartOptions.animating  = true;
+            this.props.chartOptions.animating = true;
         }
         this.props.setChartOptions(this.props.chartOptions);
     };
@@ -410,6 +425,10 @@ class ScatterChartThree extends React.PureComponent {
                     animating={this.props.chartOptions.animating}
                     editSelection={this.props.chartOptions.editSelection}
                     showLabels={this.props.chartOptions.showLabels}
+                    // darkMode={this.props.darkMode}
+                    // onDarkMode={this.onDarkMode}
+                    showFog={this.props.chartOptions.showFog}
+                    onShowFog={this.onShowFog}
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}
