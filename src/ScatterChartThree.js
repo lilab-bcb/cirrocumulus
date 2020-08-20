@@ -2,7 +2,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind} from 'lodash';
 import React from 'react';
-import {Vector3, Vector4} from 'three';
+import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
@@ -239,7 +239,7 @@ class ScatterChartThree extends React.PureComponent {
 
     onDarkMode = () => {
         this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
-        this.scatterPlot.setDayNightMode(this.props.chartOptions.darkMode);
+        this.scatterPlot.scene.background = this.props.chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
         this.props.setChartOptions(this.props.chartOptions);
     };
 
@@ -421,7 +421,8 @@ class ScatterChartThree extends React.PureComponent {
 
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, this.props.chartOptions.showLabels, categoricalNames, chartOptions.showFog, chartOptions.showAxis);
+        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
+            chartOptions.showLabels, categoricalNames, chartOptions.showFog, chartOptions.showAxis, chartOptions.darkMode);
     }
 
 
@@ -433,8 +434,8 @@ class ScatterChartThree extends React.PureComponent {
                     animating={this.props.chartOptions.animating}
                     editSelection={this.props.chartOptions.editSelection}
                     showLabels={this.props.chartOptions.showLabels}
-                    // darkMode={this.props.darkMode}
-                    // onDarkMode={this.onDarkMode}
+                    darkMode={this.props.chartOptions.darkMode}
+                    onDarkMode={this.onDarkMode}
                     showFog={this.props.chartOptions.showFog}
                     onShowFog={this.onShowFog}
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}

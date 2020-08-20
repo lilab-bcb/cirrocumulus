@@ -3,6 +3,7 @@ import {bind, uniqueId} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import React from 'react';
 import simplify from 'simplify-js';
+import {Color} from 'three';
 import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import ChartToolbar from './ChartToolbar';
@@ -425,6 +426,11 @@ class ImageChart extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
+    onDarkMode = () => {
+        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
+        this.props.setChartOptions(this.props.chartOptions);
+    };
+
     render() {
 
         return <React.Fragment>
@@ -435,6 +441,8 @@ class ImageChart extends React.PureComponent {
                     editSelection={this.props.chartOptions.editSelection}
                     onZoomIn={this.onZoomIn}
                     onZoomOut={this.onZoomOut}
+                    darkMode={this.props.chartOptions.darkMode}
+                    onDarkMode={this.onDarkMode}
                     showLabels={this.props.chartOptions.showLabels}
                     is3d={false}
                     onHome={this.onHome}

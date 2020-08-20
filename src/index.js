@@ -1,5 +1,3 @@
-import {createMuiTheme} from '@material-ui/core/styles';
-import {ThemeProvider} from '@material-ui/styles';
 import React from 'react';
 import {render} from 'react-dom';
 import {Provider} from 'react-redux';
@@ -10,13 +8,7 @@ import App from './App';
 import rootReducer from './reducers';
 // import * as serviceWorker from './serviceWorker';
 
-const theme = createMuiTheme(
-    {
-        "palette": {
-            "type": "light"
-        }
-    }
-);
+
 const logger = store => next => action => {
     console.log(action);
     let result = next(action);
@@ -32,9 +24,9 @@ const store = createStore(
 function main() {
     render(
         <Provider store={store}>
-            <ThemeProvider theme={theme}>
-                <App/>
-            </ThemeProvider>
+            {/*<React.StrictMode>*/}
+            <App/>
+            {/*</React.StrictMode>*/}
         </Provider>,
         document.getElementById('root'),
     );

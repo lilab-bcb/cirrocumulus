@@ -4,8 +4,9 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import {withStyles} from '@material-ui/core/styles';
+import {createMuiTheme, withStyles} from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/Close';
+import {ThemeProvider} from '@material-ui/styles';
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
@@ -26,7 +27,21 @@ import EmbedForm from './EmbedForm';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
+const lightTheme = createMuiTheme(
+    {
+        "palette": {
+            "type": "light"
+        }
+    }
+);
 
+const darkTheme = createMuiTheme(
+    {
+        "palette": {
+            "type": "dark"
+        }
+    }
+);
 export const drawerWidth = 240;
 
 
@@ -77,87 +92,88 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {classes, dataset, dialog, loading, loadingApp, message, tab} = this.props;
+        const {classes, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
 
-        return (
-            <div className={classes.root}>
-                {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
-                <EditDatasetDialog/>}
-                {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
-                {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
-                {dialog === HELP_DIALOG && <HelpDialog/>}
+        return (<ThemeProvider theme={!chartOptions.darkMode?lightTheme:darkTheme}>
+                <div className={classes.root}>
+                    {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
+                    <EditDatasetDialog/>}
+                    {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
+                    {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
+                    {dialog === HELP_DIALOG && <HelpDialog/>}
 
-                <AppHeader/>
-                <Drawer
-                    className={classes.drawer}
-                    variant="permanent"
-                    classes={{
-                        paper: classes.drawerPaper,
-                    }}
-                    anchor="left"
-                >
-                    {dataset != null && <EmbedForm key={dataset.id}/>}
-                </Drawer>
+                    <AppHeader/>
+                    <Drawer
+                        className={classes.drawer}
+                        variant="permanent"
+                        classes={{
+                            paper: classes.drawerPaper,
+                        }}
+                        anchor="left"
+                    >
+                        {dataset != null && <EmbedForm key={dataset.id}/>}
+                    </Drawer>
 
-                <main className={classes.content}>
-                    {loadingApp.loading &&
-                    <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
-                                                    value={loadingApp.progress}/></h2>
-                    </div>}
+                    <main className={classes.content}>
+                        {loadingApp.loading &&
+                        <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
+                                                        value={loadingApp.progress}/></h2>
+                        </div>}
 
-                    {dataset != null && <React.Fragment>
-                        <div
-                            role="tabpanel"
-                            hidden={tab !== 'embedding'}
-                        >
-                            <EmbeddingCharts onGallery={this.onGallery}/>
-                            <div ref={this.galleryRef}>
-                                <GalleryCharts/>
+                        {dataset != null && <React.Fragment>
+                            <div
+                                role="tabpanel"
+                                hidden={tab !== 'embedding'}
+                            >
+                                <EmbeddingCharts onGallery={this.onGallery}/>
+                                <div ref={this.galleryRef}>
+                                    <GalleryCharts/>
+                                </div>
+
                             </div>
-
-                        </div>
-                        <div
-                            role="tabpanel"
-                            hidden={tab !== 'dot_plot'}
-                        >
-                            <DotPlotsPlotly/>
-                        </div>
-                    </React.Fragment>}
+                            <div
+                                role="tabpanel"
+                                hidden={tab !== 'dot_plot'}
+                            >
+                                <DotPlotsPlotly/>
+                            </div>
+                        </React.Fragment>}
 
 
-                </main>
+                    </main>
 
-                {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
-                    <DialogTitle id="loading-dialog-title"><CircularProgress size={20}/> Loading...</DialogTitle>
-                </Dialog>}
+                    {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
+                        <DialogTitle id="loading-dialog-title"><CircularProgress size={20}/> Loading...</DialogTitle>
+                    </Dialog>}
 
 
-                {message != null && <Snackbar
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'left',
-                    }}
-                    ContentProps={{
-                        'aria-describedby': 'message-id',
-                    }}
-                    onClose={this.handleMessageClose}
-                    open={true}
-                    autoHideDuration={6000}
-                    action={[
-                        <IconButton
-                            key="close"
-                            aria-label="Close"
-                            color="inherit"
-                            onClick={this.handleMessageClose}
-                        >
-                            <CloseIcon/>
-                        </IconButton>,
-                    ]}
-                    message={<span id="message-id">{message instanceof Error
-                        ? message.message
-                        : message}</span>}
-                />}
-            </div>
+                    {message != null && <Snackbar
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                        }}
+                        ContentProps={{
+                            'aria-describedby': 'message-id',
+                        }}
+                        onClose={this.handleMessageClose}
+                        open={true}
+                        autoHideDuration={6000}
+                        action={[
+                            <IconButton
+                                key="close"
+                                aria-label="Close"
+                                color="inherit"
+                                onClick={this.handleMessageClose}
+                            >
+                                <CloseIcon/>
+                            </IconButton>,
+                        ]}
+                        message={<span id="message-id">{message instanceof Error
+                            ? message.message
+                            : message}</span>}
+                    />}
+                </div>
+            </ThemeProvider>
         );
     }
 }
@@ -169,7 +185,8 @@ const mapStateToProps = state => {
         loading: state.loading,
         loadingApp: state.loadingApp,
         message: state.message,
-        tab: state.tab
+        tab: state.tab,
+        chartOptions:state.chartOptions
     };
 };
 const mapDispatchToProps = dispatch => {

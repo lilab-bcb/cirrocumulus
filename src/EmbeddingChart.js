@@ -1,3 +1,4 @@
+import Paper from '@material-ui/core/Paper';
 import React from 'react';
 
 
@@ -29,7 +30,7 @@ class EmbeddingChart extends React.PureComponent {
         return (
 
             <div style={{position: 'relative'}}>
-                <div style={{position: 'absolute', right: 10, zIndex: 1000}}>
+                <Paper elevation={0} style={{position: 'absolute', right: 10, zIndex: 1000}}>
                     {traceInfo.continuous ?
                         <ColorSchemeLegendWrapper
                             width={140}
@@ -58,7 +59,7 @@ class EmbeddingChart extends React.PureComponent {
                                            nObsSelected={nObsSelected}
                                            globalFeatureSummary={globalFeatureSummary}
                                            featureSummary={featureSummary}/>}
-                </div>
+                </Paper>
 
 
                 {!traceInfo.isImage &&

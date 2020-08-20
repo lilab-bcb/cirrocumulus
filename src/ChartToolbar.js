@@ -4,7 +4,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 
 import BorderInnerIcon from '@material-ui/icons/BorderInner';
-import Brightness3Icon from '@material-ui/icons/Brightness3';
+import Brightness2Icon from '@material-ui/icons/Brightness3';
 import CloudQueueIcon from '@material-ui/icons/CloudQueue';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
@@ -19,7 +19,7 @@ import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import React from 'react';
 
 const active = 'cirro-active';
-const inactive = 'cirro-inactive';
+
 
 //"zoom" | "pan" | "select" | "lasso" | "orbit" | "turntable"
 class ChartToolbar extends React.PureComponent {
@@ -97,9 +97,9 @@ class ChartToolbar extends React.PureComponent {
 
 
             <Tooltip title={"Lasso Select"}>
-                <IconButton edge={false} size={'small'} className={dragmode === 'lasso' ? active : inactive}
+                <IconButton edge={false} size={'small'} className={dragmode === 'lasso' ? active : ''}
                             aria-label="Lasso Select" onClick={() => this.setDragMode('lasso')}>
-                    <svg width="24" height="21" viewBox="0 0 1031 1000">
+                    <svg className={"MuiSvgIcon-root"} width="24" height="21" viewBox="0 0 1031 1000">
                         <path
                             d="m1018 538c-36 207-290 336-568 286-277-48-473-256-436-463 10-57 36-108 76-151-13-66 11-137 68-183 34-28 75-41 114-42l-55-70 0 0c-2-1-3-2-4-3-10-14-8-34 5-45 14-11 34-8 45 4 1 1 2 3 2 5l0 0 113 140c16 11 31 24 45 40 4 3 6 7 8 11 48-3 100 0 151 9 278 48 473 255 436 462z m-624-379c-80 14-149 48-197 96 42 42 109 47 156 9 33-26 47-66 41-105z m-187-74c-19 16-33 37-39 60 50-32 109-55 174-68-42-25-95-24-135 8z m360 75c-34-7-69-9-102-8 8 62-16 128-68 170-73 59-175 54-244-5-9 20-16 40-20 61-28 159 121 317 333 354s407-60 434-217c28-159-121-318-333-355z"
                             transform="matrix(1 0 0 -1 0 850)"></path>
@@ -110,14 +110,14 @@ class ChartToolbar extends React.PureComponent {
             <Tooltip title={"Box Select"}>
                 <IconButton edge={false} size={'small'}
                             aria-label="Box Select" onClick={() => this.setDragMode('select')}>
-                    <PhotoSizeSelectSmallIcon className={dragmode === 'select' ? active : inactive}/>
+                    <PhotoSizeSelectSmallIcon className={dragmode === 'select' ? active : ''}/>
                 </IconButton>
             </Tooltip>
 
             <Tooltip title={"Append to selection"}>
                 <IconButton edge={false} size={'small'} aria-label="Append to selection"
                             onClick={this.setEditSelection}>
-                    <ExposureIcon className={editSelection ? active : inactive}/>
+                    <ExposureIcon className={editSelection ? active : ''}/>
                 </IconButton>
             </Tooltip>
             {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
@@ -130,7 +130,7 @@ class ChartToolbar extends React.PureComponent {
             </Tooltip>}
 
             <Tooltip title={"Pan"}>
-                <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : inactive}
+                <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : ''}
                             aria-label="Pan" onClick={() => this.setDragMode('pan')}>
                     <svg viewBox="0 0 1000 1000" height="16" width="16">
                         <path
@@ -141,7 +141,7 @@ class ChartToolbar extends React.PureComponent {
             </Tooltip>
 
             {this.props.onShowLabels && <Tooltip title={"Show Labels"}>
-                <IconButton edge={false} size={'small'} className={showLabels ? active : inactive}
+                <IconButton edge={false} size={'small'} className={showLabels ? active : ''}
                             aria-label="Show Labels" onClick={() => this.onShowLabels()}>
                     <FontDownloadIcon/>
                 </IconButton>
@@ -149,21 +149,21 @@ class ChartToolbar extends React.PureComponent {
 
 
             {this.props.is3d && this.props.onShowAxis && <Tooltip title={"Show Axis"}>
-                <IconButton edge={false} size={'small'} className={showAxis ? active : inactive}
+                <IconButton edge={false} size={'small'} className={showAxis ? active : ''}
                             aria-label="Show Axis" onClick={() => this.onShowAxis()}>
                     <BorderInnerIcon/>
                 </IconButton>
             </Tooltip>}
 
             {this.props.onDarkMode && <Tooltip title={"Dark Mode"}>
-                <IconButton edge={false} size={'small'} className={darkMode ? active : inactive}
+                <IconButton edge={false} size={'small'} className={darkMode ? active : ''}
                             aria-label="Dark Mode" onClick={() => this.onDarkMode()}>
-                    <Brightness3Icon/>
+                    <Brightness2Icon/>
                 </IconButton>
             </Tooltip>}
 
-            {this.props.is3d &&this.props.onShowFog && <Tooltip title={"Show Fog"}>
-                <IconButton edge={false} size={'small'} className={this.props.showFog ? active : inactive}
+            {this.props.is3d && this.props.onShowFog && <Tooltip title={"Show Fog"}>
+                <IconButton edge={false} size={'small'} className={this.props.showFog ? active : ''}
                             aria-label="Show Fog" onClick={() => this.onShowFog()}>
                     <CloudQueueIcon/>
                 </IconButton>
@@ -171,7 +171,7 @@ class ChartToolbar extends React.PureComponent {
 
 
             {/*<Tooltip title={"Zoom"}>*/}
-            {/*    <IconButton className={dragmode === 'zoom' ? active : inactive}*/}
+            {/*    <IconButton className={dragmode === 'zoom' ? active : ''}*/}
             {/*                aria-label="Zoom" onClick={() => this.setDragMode('zoom')}>*/}
             {/*        <svg viewBox="0 0 1000 1000" height="16" width="16">*/}
             {/*            <path*/}
@@ -180,7 +180,7 @@ class ChartToolbar extends React.PureComponent {
             {/*        </svg>*/}
             {/*    </IconButton>*/}
             {/*</Tooltip>*/}
-            {/*<IconButton className={dragmode === ChartToolbar.MODE_ZOOM_OUT ? active : inactive}*/}
+            {/*<IconButton className={dragmode === ChartToolbar.MODE_ZOOM_OUT ? active : ''}*/}
             {/*            aria-label="Zoom Out" onClick={this.onZoomOut}>*/}
             {/*    <svg viewBox="0 0 875 1000" height="16" width="16">*/}
             {/*        <path d="m0 788l0-876 875 0 0 876-875 0z m688-500l-500 0 0 125 500 0 0-125z"*/}

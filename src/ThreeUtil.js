@@ -1,5 +1,6 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizer3DLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {Color} from 'three';
 import {getPointVisualizer} from './ScatterChartThree';
 import {getRgbScale} from './util';
 
@@ -150,7 +151,7 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
     return {labels: labelStrings, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}, showFog = true, showAxis = true) {
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}, showFog = true, showAxis = true, darkMode = false) {
     const colors = traceInfo.colors;
     const positions = traceInfo.positions;
     const is3d = traceInfo.z != null;
@@ -161,6 +162,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
             positions[k] = isSelected ? 1 : 0;
         }
     }
+    scatterPlot.scene.background = darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
     let spriteVisualizer = getPointVisualizer(scatterPlot);
     spriteVisualizer.styles.fog.enabled = showFog;

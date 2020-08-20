@@ -1,7 +1,7 @@
+import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
-import Link from '@material-ui/core/Link';
-import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
 import {drawImage} from './ImageChart';
@@ -24,7 +24,8 @@ class GalleryImage extends React.PureComponent {
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
         if (!traceInfo.isImage) {
-            updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize, false, {}, chartOptions.showFog, chartOptions.showAxis);
+            updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
+                false, {}, chartOptions.showFog, chartOptions.showAxis, chartOptions.darkMode);
             const canvas = containerElement.querySelector('canvas');
             this.setState({url: canvas.toDataURL()});
         } else {
@@ -91,10 +92,6 @@ class GalleryImage extends React.PureComponent {
         return (<Card variant="outlined" style={{display: 'inline-block'}}>
             <CardContent>
 
-                <Typography style={{textAlign: 'center'}} variant="caption" component="h4">
-                    <Link href="#"
-                          onClick={this.onSelect}>{name}</Link>
-                </Typography>
                 {this.state.url && <img alt="" src={this.state.url}
                                         width={this.props.chartSize * window.devicePixelRatio}
                                         height={this.props.chartSize * window.devicePixelRatio}
@@ -102,7 +99,11 @@ class GalleryImage extends React.PureComponent {
                                             width: this.props.chartSize,
                                             height: this.props.chartSize
                                         }}/>}
+
             </CardContent>
+            <CardActions>
+                <Button style={{margin: 'auto'}} onClick={this.onSelect} size="small">{name}</Button>
+            </CardActions>
         </Card>);
 
     }

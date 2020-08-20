@@ -56,15 +56,10 @@ class ContinuousLegend extends React.PureComponent {
             //  summaryNames.push('rest');
         }
         return (
-            <div style={{
-                // padding: 10,
-                // verticalAlign: 'top',
-                // maxHeight: maxHeight,
-                // overflow: 'auto'
-            }}>
-                <b>{displayName}</b>
+            <React.Fragment>
+                <h4 style={{margin: 0}}>{displayName}</h4>
                 {globalSummary != null && name !== '__count' && this.getTable(summaryNames, selectionSummary, globalSummary)}
-            </div>);
+            </React.Fragment>);
     }
 }
 

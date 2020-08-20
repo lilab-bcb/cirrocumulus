@@ -479,15 +479,15 @@ class EmbedForm extends React.PureComponent {
                                     })}
                                     <Divider/>
                                     <Tooltip title={"Clear All"}>
-                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                     </Tooltip>
                                     <Tooltip title={"Save Filter"}>
-                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                        <IconButton size={'small'}  disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
                                     </Tooltip>
                                     <Tooltip title={"Download Selected IDs"}>
-                                        <IconButton color="primary" disabled={datasetFilterKeys.length === 0}
+                                        <IconButton size={'small'}  disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                     </Tooltip>
                                     {/*<Tooltip title={"Compute Markers"}>*/}
