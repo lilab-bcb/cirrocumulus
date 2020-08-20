@@ -364,11 +364,11 @@ class EmbedForm extends React.PureComponent {
             }
             a = item1.text.toLowerCase();
             b = item2.text.toLowerCase();
-            const aNumber =parseFloat(a)
-            const bNumber = parseFloat(b)
+            const aNumber = parseFloat(a);
+            const bNumber = parseFloat(b);
             if (!isNaN(aNumber) && !isNaN(bNumber)) {
-               a = aNumber;
-               b = bNumber
+                a = aNumber;
+                b = bNumber;
             }
             return a < b ? -1 : (a === b ? 0 : 1);
         });
