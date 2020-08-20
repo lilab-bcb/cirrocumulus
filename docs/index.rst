@@ -7,7 +7,7 @@
 
 
    installation
-   tutorial
+   documentation
    release_notes
    contact
 
