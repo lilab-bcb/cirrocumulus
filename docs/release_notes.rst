@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.5.post1 `August 24, 2020`
+    * Fixed dotplot background color in dark mode
 
 - 1.1.5 `August 24, 2020`
     * Allow dataset sharing within an email domain

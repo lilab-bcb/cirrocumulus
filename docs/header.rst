@@ -10,6 +10,7 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Share datasets with collaborators
 * View dotplots of features of interest
 * Interactively create and share filters
+* Collaboratively annotate cell types
 * Quickly load multiple features from predefined lists
 * Explore multiple features and embeddings simultaneously
 * Visualize 2-d and 3-d embeddings
