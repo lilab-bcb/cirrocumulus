@@ -1,6 +1,13 @@
 Release Notes
 -------------
 
+- 1.1.5 `August 24, 2020`
+    * Allow dataset sharing within an email domain
+    * Added additional 3-d chart options
+    * Added dark theme
+    * Added timeout to `serve` command
+    * Support markers generated with `Pegasus`_
+
 - 1.1.4 `August 17, 2020`
     * Added spatial support
 
@@ -71,3 +78,6 @@ Release Notes
 
 - 0.0.2 `Nov 5, 2019`
     * Initial release
+
+
+.. _Pegasus: http://pegasus.readthedocs.io/
