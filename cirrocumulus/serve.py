@@ -52,6 +52,8 @@ def main(argsv):
     parser.add_argument('--email', help='Email address that server runs as')
     parser.add_argument('--auth_client_id', help='OAuth client id')
     parser.add_argument('-w', '--workers', dest='workers', help='The number of worker processes', type=int)
+    parser.add_argument('-t', '--timeout', dest='timeout',
+        help='Workers silent for more than this many seconds are killed and restarted', type=int, default=30)
     parser.add_argument('-b', '--bind', dest='bind',
         help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).')
 
@@ -77,6 +79,7 @@ def main(argsv):
             'gunicorn',
             '-b', bind,
             '-w', str(workers),
+            '-t', str(args.timeout),
             '-n', 'cirrocumulus-webserver',
             'cirrocumulus.serve:cached_app()'
     ]
