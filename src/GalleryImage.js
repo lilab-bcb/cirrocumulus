@@ -1,3 +1,4 @@
+import {Tooltip} from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
@@ -102,7 +103,9 @@ class GalleryImage extends React.PureComponent {
 
             </CardContent>
             <CardActions>
-                <Button style={{margin: 'auto'}} onClick={this.onSelect} size="small">{name}</Button>
+                <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
+                    <Button style={{margin: 'auto'}} onClick={this.onSelect} size="small">{name}</Button>
+                </Tooltip>
             </CardActions>
         </Card>);
 
