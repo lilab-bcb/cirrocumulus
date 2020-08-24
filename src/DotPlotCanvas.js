@@ -5,6 +5,7 @@ import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import Paper from '@material-ui/core/Paper';
 import Select from '@material-ui/core/Select';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {scaleLinear} from 'd3-scale';
@@ -370,50 +371,51 @@ class DotPlotCanvas extends React.PureComponent {
         const features = this.features;
         const sortChoices = [dotplot.name].concat(features);
         return (<div style={{position: 'relative'}}>
-            <b>{dotplot.name}</b> {this.props.subtitle && <small>({this.props.subtitle})</small>}
-            <Tooltip title={"Save Image"}>
-                <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false} size={'small'}
-                            aria-label="Save Image" onClick={this.handleSaveImageMenu}>
-                    <PhotoCameraIcon/>
-                </IconButton>
-            </Tooltip>
-            <Menu
-                id="save-image-menu"
-                anchorEl={saveImageEl}
-                keepMounted
-                open={Boolean(saveImageEl)}
-                onClose={this.handleSaveImageMenuClose}
-            >
-                <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
-                <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
-
-            </Menu>
-
-            <div className="cirro-condensed" ref={this.tooltipElementRef} style={{
-                display: 'inline-block',
-                paddingLeft: 5,
-                verticalAlign: 'top',
-                whiteSpace: 'nowrap',
-                width: 500,
-                minWidth: 500,
-                maxWidth: 500,
-                textOverflow: 'ellipsis'
-            }}></div>
-
-            {this.props.onSortOrderChanged ? <FormControl className={this.props.classes.formControl}>
-                <InputLabel shrink={true}>Sort By</InputLabel>
-                <Select
-
-                    input={<Input size={"small"}/>}
-                    onChange={this.onSortOrderChanged}
-                    value={dotplot.sortBy}
+            <Paper elevation={0}>
+                <b>{dotplot.name}</b> {this.props.subtitle && <small>({this.props.subtitle})</small>}
+                <Tooltip title={"Save Image"}>
+                    <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false} size={'small'}
+                                aria-label="Save Image" onClick={this.handleSaveImageMenu}>
+                        <PhotoCameraIcon/>
+                    </IconButton>
+                </Tooltip>
+                <Menu
+                    id="save-image-menu"
+                    anchorEl={saveImageEl}
+                    keepMounted
+                    open={Boolean(saveImageEl)}
+                    onClose={this.handleSaveImageMenuClose}
                 >
-                    {sortChoices.map(item => (
-                        <MenuItem key={item} value={item}>{item}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl> : null}
+                    <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
+                    <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
 
+                </Menu>
+
+                <div className="cirro-condensed" ref={this.tooltipElementRef} style={{
+                    display: 'inline-block',
+                    paddingLeft: 5,
+                    verticalAlign: 'top',
+                    whiteSpace: 'nowrap',
+                    width: 500,
+                    minWidth: 500,
+                    maxWidth: 500,
+                    textOverflow: 'ellipsis'
+                }}></div>
+
+                {this.props.onSortOrderChanged ? <FormControl className={this.props.classes.formControl}>
+                    <InputLabel shrink={true}>Sort By</InputLabel>
+                    <Select
+
+                        input={<Input size={"small"}/>}
+                        onChange={this.onSortOrderChanged}
+                        value={dotplot.sortBy}
+                    >
+                        {sortChoices.map(item => (
+                            <MenuItem key={item} value={item}>{item}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl> : null}
+            </Paper>
             <div ref={this.divRef}></div>
 
             {this.props.legend && <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
