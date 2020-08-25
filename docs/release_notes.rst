@@ -1,5 +1,9 @@
 Release Notes
 -------------
+- 1.1.5.post2 `August 25, 2020`
+    * Save additional chart options when copying link
+    * Support multiple differential expression results produced by `Scanpy`_
+
 - 1.1.5.post1 `August 24, 2020`
     * Fixed dotplot background color in dark mode
 
@@ -83,3 +87,4 @@ Release Notes
 
 
 .. _Pegasus: http://pegasus.readthedocs.io/
+.. _Scanpy: https://scanpy.readthedocs.io/
