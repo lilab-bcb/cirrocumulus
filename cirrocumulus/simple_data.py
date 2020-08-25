@@ -121,15 +121,22 @@ class SimpleData:
         n_genes = 10
         if SimpleData.has_markers(adata):
             if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:  # scanpy
-                rank_genes_groups = adata.uns['rank_genes_groups']
-                groupby = str(rank_genes_groups['params']['groupby'])
-                group_names = rank_genes_groups['names'].dtype.names
-                markers = {}
-                marker_dict[groupby + ' markers'] = markers
-                for group_name in group_names:
-                    gene_names = rank_genes_groups['names'][group_name]
-                    # scores = rank_genes_groups['scores'][group_name]
-                    markers[group_name] = gene_names[:n_genes]
+                for key in adata.uns.keys():
+                    rank_genes_groups = adata.uns[key]
+                    if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
+                        groupby = str(rank_genes_groups['params']['groupby'])
+                        group_names = rank_genes_groups['names'].dtype.names
+                        markers = {}
+                        markers_key = groupby + ' markers'
+                        duplicate_counter = 1
+                        while markers_key in markers:
+                            markers_key = groupby + ' markers-{}'.format(duplicate_counter)
+                            duplicate_counter += 1
+                        marker_dict[markers_key] = markers
+                        for group_name in group_names:
+                            gene_names = rank_genes_groups['names'][group_name]
+                            # scores = rank_genes_groups['scores'][group_name]
+                            markers[group_name] = gene_names[:n_genes]
             else:  # pegasus
                 de_res = adata.varm['de_res']
                 names = de_res.dtype.names
