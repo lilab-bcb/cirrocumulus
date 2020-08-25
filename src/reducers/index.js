@@ -53,6 +53,12 @@ export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
+export const DEFAULT_DRAG_MODE = 'pan';
+export const DEFAULT_SHOW_LABELS = false;
+export const DEFAULT_SHOW_AXIS = true;
+export const DEFAULT_SHOW_FOG = true;
+export const DEFAULT_DARK_MODE = false;
+
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
     reversed: false,
@@ -60,8 +66,8 @@ const DEFAULT_INTERPOLATOR_OBJ = {
 };
 
 const DEFAULT_CHART_OPTIONS = {
-    animating: false, dragmode: 'pan', editSelection: false, showLabels: false,
-    showAxis: true, showFog: true, darkMode: false
+    animating: false, dragmode: DEFAULT_DRAG_MODE, editSelection: false, showLabels: DEFAULT_SHOW_LABELS,
+    showAxis: DEFAULT_SHOW_AXIS, showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE
 };
 
 function chartSize(state = 500, action) {
@@ -97,6 +103,8 @@ function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
     switch (action.type) {
         case SET_CHART_OPTIONS:
             return Object.assign({}, action.payload);
+        case RESTORE_VIEW:
+            return action.payload.chartOptions ? action.payload.chartOptions : state;
         default:
             return state;
     }

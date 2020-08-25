@@ -26,7 +26,12 @@ import {
 } from './actions';
 import {drawerWidth} from './App';
 import {intFormat} from './formatters';
-import {DEFAULT_INTERPOLATOR, DEFAULT_MARKER_OPACITY, DEFAULT_UNSELECTED_MARKER_OPACITY} from "./reducers";
+import {
+    DEFAULT_CHART_OPTIONS, DEFAULT_DARK_MODE, DEFAULT_DRAG_MODE,
+    DEFAULT_INTERPOLATOR,
+    DEFAULT_MARKER_OPACITY, DEFAULT_SHOW_AXIS, DEFAULT_SHOW_FOG, DEFAULT_SHOW_LABELS,
+    DEFAULT_UNSELECTED_MARKER_OPACITY
+} from "./reducers";
 
 
 const styles = theme => ({
@@ -124,22 +129,37 @@ class AppHeader extends React.PureComponent {
 
     copyLink = (event) => {
 
-        const {dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {chartOptions, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
             dataset: dataset.id,
-            embeddings: embeddings.map(embedding=>{
-                if(embedding.bin) {
+            embeddings: embeddings.map(embedding => {
+                if (embedding.bin) {
                     embedding = Object.assign({}, embedding);
                     delete embedding._bin;
                     return embedding;
-                }else {
-                    return {name:embedding.name, dimensions:embedding.dimensions}
+                } else {
+                    return {name: embedding.name, dimensions: embedding.dimensions};
                 }
 
             })
         };
+        let jsonChartOptions = {};
+
+       const defaultChartOptions = {showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
+           showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE};
+
+        for (let key in defaultChartOptions) {
+            let value = chartOptions[key];
+            if (value !== defaultChartOptions[key]) {
+                jsonChartOptions[key] = value;
+            }
+        }
+        if (Object.keys(jsonChartOptions).length > 0) {
+            json.chartOptions = jsonChartOptions;
+        }
+
         if (searchTokens.length > 0) {
             json.q = searchTokens;
         }
@@ -322,7 +342,7 @@ class AppHeader extends React.PureComponent {
 
                             {showEditDeleteDataset && <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
                             {showEditDeleteDataset && <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
-                            {(showNewDataset || showEditDeleteDataset) && dataset!=null && <Divider/>}
+                            {(showNewDataset || showEditDeleteDataset) && dataset != null && <Divider/>}
                             {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
                         </Menu>}
                         <Tooltip title={'Help'}>
@@ -332,14 +352,14 @@ class AppHeader extends React.PureComponent {
                             </IconButton>
                         </Tooltip>
 
-                        {email != null && email!==''&&
+                        {email != null && email !== '' &&
                         <Tooltip title={email}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleUserMenuOpen}>
                                 <AccountCircle/>
                             </IconButton>
                         </Tooltip>}
-                        {email != null && email!==''&&
+                        {email != null && email !== '' &&
                         <Menu id="menu-user"
                               anchorEl={this.state.userMenuAnchorEl}
                               anchorOrigin={{
@@ -370,7 +390,7 @@ class AppHeader extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
-
+        chartOptions: state.chartOptions,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
         binSummary: state.binSummary,
