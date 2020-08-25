@@ -1,3 +1,5 @@
 recursive-include cirrocumulus/client/ *
 recursive-include public/ *
 prune test-data
+exclude .gitignore app.yml build.sh Dockerfile .travis.yml .gcloudignore
+prune docs
