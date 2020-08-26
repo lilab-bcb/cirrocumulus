@@ -138,10 +138,17 @@ class ImageChart extends React.PureComponent {
     }
 
     setTooltip(xpix, ypix) {
-        let data = this.props.traceInfo;
+        let traceInfo = this.props.traceInfo;
         const point = this.findPointIndex(xpix, ypix);
         if (point != -1) {
-            let value = data.values[point];
+            let value = traceInfo.values[point];
+            let categoryObject = this.props.categoricalNames[traceInfo.name];
+            if (categoryObject) {
+                let renamedValue = categoryObject[value];
+                if (renamedValue != null) {
+                    value = renamedValue;
+                }
+            }
             if (typeof value === 'number') {
                 value = numberFormat(value);
             }

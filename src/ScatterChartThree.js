@@ -311,6 +311,14 @@ class ScatterChartThree extends React.PureComponent {
                 } else {
                     const traceInfo = this.props.traceInfo;
                     let value = traceInfo.values[point];
+                    let categoryObject = this.props.categoricalNames[traceInfo.name];
+                    if (categoryObject) {
+                        let renamedValue = categoryObject[value];
+                        if (renamedValue != null) {
+                            value = renamedValue;
+                        }
+                    }
+
                     if (typeof value === 'number') {
                         value = numberFormat(value);
                     }
