@@ -185,6 +185,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     activeVisualizers = activeVisualizers.filter(vis => !(vis instanceof ScatterPlotVisualizer3DLabels));
     if (showLabels) {
         const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+        scatterPlot.styles.label3D.color = darkMode ? 'white' : 'black';
         let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
         labels3DVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
         activeVisualizers.push(labels3DVisualizer);
