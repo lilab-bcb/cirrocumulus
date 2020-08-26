@@ -1,7 +1,7 @@
 import {color} from 'd3-color';
-import {makeStyles, ScatterPlot, ScatterPlotVisualizer3DLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {makeStyles, ScatterPlot, ScatterPlotVisualizerCanvasLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
 import {Color} from 'three';
-import {getPointVisualizer} from './ScatterChartThree';
+import {getVisualizer, LABELS_VISUALIZER_ID, POINT_VISUALIZER_ID} from './ScatterChartThree';
 import {getRgbScale} from './util';
 
 function scaleLinear(value, domain, range) {
@@ -13,7 +13,7 @@ function scaleLinear(value, domain, range) {
 }
 
 
-export function createScatterPlot(containerElement, premultipliedAlpha) {
+export function createScatterPlot(containerElement, premultipliedAlpha, labels) {
     const styles = makeStyles();
     styles.label3D.fontSize = 40;
 
@@ -23,11 +23,11 @@ export function createScatterPlot(containerElement, premultipliedAlpha) {
         styles: styles,
 
     }, premultipliedAlpha); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
-
-    const activeVisualizers = [];
-    const visualizer = new ScatterPlotVisualizerSprites(styles);
-    activeVisualizers.push(visualizer);
-    scatterPlot.setActiveVisualizers(activeVisualizers);
+    let visualizers = [new ScatterPlotVisualizerSprites(styles)];
+    if (labels) {
+        visualizers.push(new ScatterPlotVisualizerCanvasLabels(containerElement, styles));
+    }
+    scatterPlot.setActiveVisualizers(visualizers);
     return scatterPlot;
 }
 
@@ -164,7 +164,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     }
     scatterPlot.scene.background = darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
-    let spriteVisualizer = getPointVisualizer(scatterPlot);
+    let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
     spriteVisualizer.styles.fog.enabled = showFog;
     const axes = scatterPlot.scene.getObjectByName('axes');
     if (axes) {
@@ -180,17 +180,15 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     scatterPlot.setPointScaleFactors(scale);
 
     showLabels = showLabels && traceInfo.isCategorical;
-
-    let activeVisualizers = scatterPlot.getActiveVisualizers();
-    activeVisualizers = activeVisualizers.filter(vis => !(vis instanceof ScatterPlotVisualizer3DLabels));
-    if (showLabels) {
-        const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
-        scatterPlot.styles.label3D.color = darkMode ? 'white' : 'black';
-        let labels3DVisualizer = new ScatterPlotVisualizer3DLabels(scatterPlot.styles);
-        labels3DVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
-        activeVisualizers.push(labels3DVisualizer);
+    const labelsVisualizer = getVisualizer(scatterPlot, LABELS_VISUALIZER_ID);
+    if (labelsVisualizer) {
+        labelsVisualizer.labelsActive = showLabels;
+        if (showLabels) {
+            const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+            labelsVisualizer.fillStyle = darkMode ? 'white' : 'black';
+            labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
+        }
     }
 
-    scatterPlot.setActiveVisualizers(activeVisualizers);
     scatterPlot.render();
 }

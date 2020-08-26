@@ -1,5 +1,4 @@
 import {Typography} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind} from 'lodash';
@@ -25,9 +24,12 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
-export function getPointVisualizer(scatterPlot) {
+export const POINT_VISUALIZER_ID = 'SPRITES';
+export const LABELS_VISUALIZER_ID = 'CANVAS_LABELS';
+
+export function getVisualizer(scatterPlot, id) {
     for (let i = 0; i < scatterPlot.visualizers.length; i++) {
-        if (scatterPlot.visualizers[i].id === 'SPRITES') {
+        if (scatterPlot.visualizers[i].id === id) {
             return scatterPlot.visualizers[i];
         }
     }
@@ -121,7 +123,7 @@ class ScatterChartThree extends React.PureComponent {
         const is3d = traceInfo.dimensions === 3;
         let outputPointSize = 0;
         let fog = this.scatterPlot.scene.fog;
-        let spriteVisualizer = getPointVisualizer(this.scatterPlot);
+        let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;
             const minScale = 0.1;  // minimum scaling factor
@@ -203,7 +205,6 @@ class ScatterChartThree extends React.PureComponent {
                 pos.x = (pos.x * widthHalf) + widthHalf;
                 pos.y = -(pos.y * heightHalf) + heightHalf;
                 context.fillText(labelsPositions.labels[i], pos.x, pos.y);
-
             }
         }
     }
@@ -260,7 +261,7 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     onShowFog = () => {
-        let spriteVisualizer = getPointVisualizer(this.scatterPlot);
+        let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
         this.props.chartOptions.showFog = !this.props.chartOptions.showFog;
         spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
         this.props.setChartOptions(this.props.chartOptions);
@@ -297,12 +298,12 @@ class ScatterChartThree extends React.PureComponent {
 
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
-            this.scatterPlot = createScatterPlot(containerElement, false);
+            this.scatterPlot = createScatterPlot(containerElement, false, true);
             const axes = this.scatterPlot.scene.getObjectByName('axes');
             if (axes) {
                 axes.visible = this.props.chartOptions.showAxis;
             }
-            let spriteVisualizer = getPointVisualizer(this.scatterPlot);
+            let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
             this.scatterPlot.hoverCallback = (point) => {
                 if (point == null) {
