@@ -27,7 +27,8 @@
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git",
-    "simplify-js": "^1.2.4"
+    "simplify-js": "^1.2.4",
+    "three": "^0.118.3"
   },
   "devDependencies": {
     "@testing-library/user-event": "^12.1.3",
