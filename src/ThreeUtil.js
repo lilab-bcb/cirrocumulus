@@ -1,5 +1,6 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerCanvasLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {Color} from 'three';
 import {getVisualizer, LABELS_VISUALIZER_ID, POINT_VISUALIZER_ID} from './ScatterChartThree';
 import {getRgbScale} from './util';
 
