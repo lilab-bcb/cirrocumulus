@@ -70,6 +70,7 @@ class ScatterChartThree extends React.PureComponent {
         this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.chartSize = getChartSize();
+        this.lastHoverIndex = -1;
         // window.addEventListener('resize', () => {
         //     scatterGL.resize();
         // });
@@ -310,19 +311,58 @@ class ScatterChartThree extends React.PureComponent {
                     this.tooltipElementRef.current.innerHTML = ' ';
                 } else {
                     const traceInfo = this.props.traceInfo;
-                    let value = traceInfo.values[point];
-                    let categoryObject = this.props.categoricalNames[traceInfo.name];
-                    if (categoryObject) {
-                        let renamedValue = categoryObject[value];
-                        if (renamedValue != null) {
-                            value = renamedValue;
+                    const positions = traceInfo.positions;
+                    const camera = this.scatterPlot.camera;
+                    const widthHalf = this.chartSize.width / 2;
+                    const heightHalf = this.chartSize.height / 2;
+                    const pos = new Vector3();
+                    let selectedIndex = -1;
+                    const tolerance = 2;
+                    if (this.lastHoverIndex !== -1) {
+                        pos.x = positions[this.lastHoverIndex * 3];
+                        pos.y = positions[this.lastHoverIndex * 3 + 1];
+                        pos.z = positions[this.lastHoverIndex * 3 + 2];
+                        pos.project(camera);
+                        pos.x = (pos.x * widthHalf) + widthHalf;
+                        pos.y = -(pos.y * heightHalf) + heightHalf;
+                        if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                            selectedIndex = this.lastHoverIndex;
                         }
                     }
 
-                    if (typeof value === 'number') {
-                        value = numberFormat(value);
+                    if (selectedIndex === -1) {
+                        for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                            pos.x = positions[k];
+                            pos.y = positions[k + 1];
+                            pos.z = positions[k + 2];
+                            pos.project(camera);
+                            pos.x = (pos.x * widthHalf) + widthHalf;
+                            pos.y = -(pos.y * heightHalf) + heightHalf;
+                            if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                                selectedIndex = i;
+                                break;
+                            }
+                        }
                     }
-                    this.tooltipElementRef.current.innerHTML = '' + value;
+                    this.lastHoverIndex = selectedIndex;
+                    if (selectedIndex !== -1) {
+                        let value = traceInfo.values[selectedIndex];
+                        let categoryObject = this.props.categoricalNames[traceInfo.name];
+                        if (categoryObject) {
+                            let renamedValue = categoryObject[value];
+                            if (renamedValue != null) {
+                                value = renamedValue;
+                            }
+                        }
+
+                        if (typeof value === 'number') {
+                            value = numberFormat(value);
+                        }
+                        this.tooltipElementRef.current.innerHTML = '' + value;
+                    } else {
+                        this.tooltipElementRef.current.innerHTML = ' ';
+                    }
+
                 }
 
             };
@@ -330,11 +370,8 @@ class ScatterChartThree extends React.PureComponent {
                 const traceInfo = this.props.traceInfo;
                 const positions = traceInfo.positions;
                 const camera = this.scatterPlot.camera;
-                const chartSize = this.chartSize;
-                const width = chartSize.width;
-                const height = chartSize.height;
-                const widthHalf = width / 2;
-                const heightHalf = height / 2;
+                const widthHalf = this.chartSize.width / 2;
+                const heightHalf = this.chartSize.height / 2;
                 const pos = new Vector3();
                 const selectedPoints = [];
 
@@ -349,6 +386,7 @@ class ScatterChartThree extends React.PureComponent {
                         selectedPoints.push(i);
                     }
                 }
+
                 if (selectedPoints.length === 0) {
                     this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
@@ -359,76 +397,48 @@ class ScatterChartThree extends React.PureComponent {
                     });
                 }
             };
-            this.scatterPlot.selectCallback = (selectedpoints) => {
+            this.scatterPlot.boxCallback = (rect) => {
                 if (this.scatterPlot.interactionMode === 'PAN') {
                     return;
                 }
-                if (selectedpoints != null && selectedpoints.length === 0) {
-                    selectedpoints = null;
-                }
                 const traceInfo = this.props.traceInfo;
-                if (selectedpoints == null) {
+                const positions = traceInfo.positions;
+                const camera = this.scatterPlot.camera;
+                const widthHalf = this.chartSize.width / 2;
+                const heightHalf = this.chartSize.height / 2;
+                const pos = new Vector3();
+                const selectedPoints = [];
+
+                for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                    pos.x = positions[k];
+                    pos.y = positions[k + 1];
+                    pos.z = positions[k + 2];
+                    pos.project(camera);
+                    pos.x = (pos.x * widthHalf) + widthHalf;
+                    pos.y = -(pos.y * heightHalf) + heightHalf;
+                    if (pos.x >= rect.x && pos.x <= (rect.x + rect.width) && pos.y >= rect.y && pos.y <= (rect.y + rect.height)) {
+                        selectedPoints.push(i);
+                    }
+                }
+
+                if (selectedPoints.length === 0) {
                     this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
-                    // let xmin = Number.MAX_VALUE;
-                    // let ymin = Number.MAX_VALUE;
-                    // let zmin = Number.MAX_VALUE;
-                    // let xmax = -Number.MAX_VALUE;
-                    // let ymax = -Number.MAX_VALUE;
-                    // let zmax = -Number.MAX_VALUE;
-                    //
-                    // const is3d = traceInfo.dimensions === 3;
-                    // selectedpoints.forEach(index => {
-                    //     const x = traceInfo.x[index];
-                    //     xmin = Math.min(xmin, x);
-                    //     xmax = Math.max(xmax, x);
-                    //     const y = traceInfo.y[index];
-                    //     ymin = Math.min(ymin, y);
-                    //     ymax = Math.max(ymax, y);
-                    //     if (is3d) {
-                    //         const z = traceInfo.z[index];
-                    //         zmin = Math.min(zmin, z);
-                    //         zmax = Math.max(zmax, z);
-                    //     }
-                    // });
-                    //
-                    //
-                    // let path = {
-                    //     shape: 'rect',
-                    //     x: xmin,
-                    //     y: ymin,
-                    //     width: xmax - xmin,
-                    //     height: ymax - ymin
-                    // };
-                    // if (is3d) {
-                    //     path.shape = 'rect 3d';
-                    //     if (zmin > zmax) {
-                    //         const tmp = zmin;
-                    //         zmin = zmax;
-                    //         zmax = tmp;
-                    //     }
-                    //     path.z = zmin;
-                    //     path.depth = zmax - zmin;
-                    // }
-                    //
-                    // this.props.onSelected({
-                    //     name: getEmbeddingKey(traceInfo.embedding),
-                    //     clear: !this.props.chartOptions.editSelection,
-                    //     value: {basis: traceInfo.embedding, path: path}
-                    // });
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.props.chartOptions.editSelection,
-                        value: {basis: traceInfo.embedding, points: selectedpoints}
+                        value: {basis: traceInfo.embedding, points: selectedPoints}
                     });
                 }
             };
-
-
-            const canvas = this.containerElementRef.current.querySelector('canvas');
-            canvas.style.outline = '0px';
         }
+        ;
+
+
+        const canvas = this.containerElementRef.current.querySelector('canvas');
+        canvas.style.outline = '0px';
     }
+
 
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;

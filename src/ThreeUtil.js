@@ -186,6 +186,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
         if (showLabels) {
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
             labelsVisualizer.fillStyle = darkMode ? 'white' : 'black';
+            labelsVisualizer.shadowColor = !darkMode ? 'white' : 'black';
             labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
         }
     }
