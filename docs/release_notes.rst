@@ -1,5 +1,10 @@
 Release Notes
 -------------
+
+- 1.1.5.post3 `August 26, 2020`
+    * Fixed embedding label and tooltip color in dark mode
+    * Fixed embedding label font size
+
 - 1.1.5.post2 `August 25, 2020`
     * Save additional chart options when copying link
     * Support multiple differential expression results produced by `Scanpy`_
