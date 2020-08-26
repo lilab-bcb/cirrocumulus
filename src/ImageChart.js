@@ -1,9 +1,9 @@
+import {Typography} from '@material-ui/core';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {bind, uniqueId} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import React from 'react';
 import simplify from 'simplify-js';
-import {Color} from 'three';
 import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import ChartToolbar from './ChartToolbar';
@@ -422,7 +422,7 @@ class ImageChart extends React.PureComponent {
     };
 
     onDragMode = (mode) => {
-        this.props.chartOptions.dragmode = mode
+        this.props.chartOptions.dragmode = mode;
         this.props.setChartOptions(this.props.chartOptions);
     };
 
@@ -452,11 +452,11 @@ class ImageChart extends React.PureComponent {
                     onEditSelection={this.onEditSelection}
                     onGallery={this.onGallery}>
                 </ChartToolbar>
-                <div ref={this.tooltipElementRef} style={{
+                <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
                     paddingLeft: 5,
                     verticalAlign: 'top'
-                }}>&nbsp;</div>
+                }}>&nbsp;</Typography>
             </div>
 
             <div style={{

@@ -1,3 +1,5 @@
+import {Typography} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind} from 'lodash';
@@ -449,11 +451,11 @@ class ScatterChartThree extends React.PureComponent {
                     showAxis={this.props.chartOptions.showAxis}
                     onGallery={this.onGallery}>
                 </ChartToolbar>
-                <div ref={this.tooltipElementRef} style={{
+                <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
                     paddingLeft: 5,
                     verticalAlign: 'top'
-                }}>&nbsp;</div>
+                }}>&nbsp;</Typography>
             </div>
 
             <div style={{
