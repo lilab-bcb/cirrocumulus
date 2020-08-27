@@ -33,13 +33,13 @@ class HelpDialog extends React.PureComponent {
             >
                 <DialogTitle id="help-dataset-dialog-title">Help</DialogTitle>
                 <DialogContent>
-                    <Typography variant="h6">Primary View Controls</Typography>
-                    <Typography variant="subtitle1">3D</Typography>
+                    <Typography variant="h6">Primary Embedding Controls</Typography>
+                    <Typography variant="subtitle1">3-d Plot</Typography>
                     Rotate: Mouse left click.<br/>
                     Pan: Mouse right click.<br/>
                     Zoom: Mouse wheel.<br/>
 
-                    <Typography variant="subtitle1">2D</Typography>
+                    <Typography variant="subtitle1">2-d Plot</Typography>
                     Pan: Mouse left click.<br/>
                     Zoom: Mouse wheel.<br/>
                     <Divider/>

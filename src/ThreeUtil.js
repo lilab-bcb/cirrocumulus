@@ -117,18 +117,18 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
         let value = traceInfo.values[i];
         let p = categoryToPosition[value];
         if (p === undefined) {
-            p = {count: 0, position: [0, 0, 0]};
+            p = {x: [], y: [], z: []};
             categoryToPosition[value] = p;
             ncategories++;
         }
         p.count++;
         if (isImage) {
-            p.position[0] += traceInfo.x[i];
-            p.position[1] += traceInfo.y[i];
+            p.x.push(traceInfo.x[i]);
+            p.y.push(traceInfo.y[i]);
         } else {
-            p.position[0] += traceInfo.positions[j];
-            p.position[1] += traceInfo.positions[j + 1];
-            p.position[2] += traceInfo.positions[j + 2];
+            p.x.push(traceInfo.positions[j]);
+            p.y.push(traceInfo.positions[j + 1]);
+            p.z.push(traceInfo.positions[j + 2]);
         }
     }
     let labelStrings = [];
@@ -146,9 +146,13 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
             labelStrings.push(category);
         }
         let p = categoryToPosition[category];
-        labelPositions[positionIndex] = p.position[0] / p.count;
-        labelPositions[positionIndex + 1] = p.position[1] / p.count;
-        labelPositions[positionIndex + 2] = p.position[2] / p.count;
+        p.x.sort((a, b) => a - b);
+        p.y.sort((a, b) => a - b);
+        p.z.sort((a, b) => a - b);
+        const mid = p.x.length / 2;
+        labelPositions[positionIndex] = mid % 1 ? p.x[mid - 0.5] : (p.x[mid - 1] + p.x[mid]) / 2;
+        labelPositions[positionIndex + 1] = mid % 1 ? p.y[mid - 0.5] : (p.y[mid - 1] + p.y[mid]) / 2;
+        labelPositions[positionIndex + 2] = mid % 1 ? p.z[mid - 0.5] : (p.z[mid - 1] + p.z[mid]) / 2;
         positionIndex += 3;
     }
 
