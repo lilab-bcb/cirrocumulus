@@ -194,8 +194,9 @@ class CategoricalLegend extends React.PureComponent {
                     open={Boolean(this.state.contextmenuEl)}
                     onClose={this.handleContextmenuClose}
                 >
-                    <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
                     <MenuItem onClick={this.handleEditName}>Edit Name</MenuItem>
+                    <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
+
                 </Menu>
                 <table>
                     <thead>
@@ -246,10 +247,10 @@ class CategoricalLegend extends React.PureComponent {
                                     display: 'inline-block',
                                     userSelect: 'none'
                                 }} title={'' + categoryText}>{'' + categoryText}</div>
-                                <IconButton style={{padding: 0, height:12}} size="small"
+                                <IconButton style={{padding: 0, fontSize: 14}} size="small"
                                             onClick={(e) => this.handleContextmenu(category, i, e)} aria-label="Menu"
                                             aria-haspopup="true">
-                                    <ExpandMoreIcon/>
+                                    <ExpandMoreIcon fontSize={"inherit"}/>
                                 </IconButton>
                             </td>
 
