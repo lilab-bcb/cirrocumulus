@@ -183,6 +183,7 @@ export default function AutocompleteVirtualized(props) {
             ListboxComponent={ListboxComponent}
             renderGroup={renderGroup}
             options={props.options}
+            autoHighlight={true}
             onChange={props.onChange}
             renderInput={(params) => <TextField {...params} label={props.label}/>}
             renderOption={props.groupBy ? (option) => <Typography title={option.text}
