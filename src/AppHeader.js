@@ -31,6 +31,7 @@ import {intFormat} from './formatters';
 import {
     DEFAULT_DARK_MODE,
     DEFAULT_INTERPOLATOR,
+    DEFAULT_LABEL_FONT_SIZE,
     DEFAULT_MARKER_OPACITY,
     DEFAULT_SHOW_AXIS,
     DEFAULT_SHOW_FOG,
@@ -154,7 +155,8 @@ class AppHeader extends React.PureComponent {
 
         const defaultChartOptions = {
             showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
-            showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE
+            showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
+            labelFontSize: DEFAULT_LABEL_FONT_SIZE
         };
 
         for (let key in defaultChartOptions) {
