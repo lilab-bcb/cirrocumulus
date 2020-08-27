@@ -38,7 +38,7 @@ class HelpDialog extends React.PureComponent {
                     Rotate: Mouse left click.<br/>
                     Pan: Mouse right click.<br/>
                     Zoom: Mouse wheel.<br/>
-                    Holding ctrl reverses the mouse clicks.<br/>
+
                     <Typography variant="subtitle1">2D</Typography>
                     Pan: Mouse left click.<br/>
                     Zoom: Mouse wheel.<br/>
@@ -48,6 +48,9 @@ class HelpDialog extends React.PureComponent {
                     <Divider/>
                     <Typography variant="h6">Dot Plot</Typography>
                     Enter one or more categorical observations and one or more features.
+                    <Divider/>
+                    <Typography variant="h6">Additional documentation is available <a target="_blank"
+                                                                                      href="http://cirrocumulus.readthedocs.io/">here</a>.</Typography>
                 </DialogContent>
 
             </Dialog>

@@ -34,7 +34,7 @@ import {
     downloadSelectedIds,
     exportDatasetFilters,
     getDatasetFilterArray,
-    getEmbeddingKey,
+    getEmbeddingKey, getTraceKey,
     handleBrushFilterUpdated,
     handleCategoricalNameChange,
     handleColorChange,
@@ -53,7 +53,7 @@ import {
     setMarkerOpacityUI,
     setNumberOfBins,
     setNumberOfBinsUI,
-    setPointSize,
+    setPointSize, setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
@@ -171,6 +171,15 @@ class EmbedForm extends React.PureComponent {
         this.props.handleSearchTokens(value, 'featureSet');
     };
 
+    onFeatureClick = (value) => {
+        let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
+        for (let i = 0; i < galleryTraces.length; i++) {
+            if (galleryTraces[i].name == value) {
+                this.props.handlePrimaryTraceKey(getTraceKey(galleryTraces[i]));
+                break;
+            }
+        }
+    }
 
     onMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -416,7 +425,7 @@ class EmbedForm extends React.PureComponent {
                     {/*                    onChange={this.props.handleFeatures}*/}
                     {/*                    helperText={'Enter or paste list'}*/}
                     {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized label={"Features"} options={featureOptions} value={splitTokens.X}
+                    <AutocompleteVirtualized  onChipClick={this.onFeatureClick} label={"Features"} options={featureOptions} value={splitTokens.X}
                                              onChange={this.onFeaturesChange}/>
                 </FormControl>
 
@@ -429,6 +438,7 @@ class EmbedForm extends React.PureComponent {
                     {/*                    isMulti={true}/>*/}
                     <AutocompleteVirtualized label={"Observations"} options={annotationOptions}
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
+                                             onChipClick={this.onFeatureClick}
                                              onChange={this.onObservationsChange}/>
                 </FormControl>
 
@@ -745,11 +755,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleDialog: (value) => {
             dispatch(setDialog(value));
         },
+        handlePrimaryTraceKey: (value) => {
+            dispatch(setPrimaryTraceKey(value));
+        },
+
         handleChartSize: (value) => {
             dispatch(setChartSize(value));
-        },
-        handleDiffExp: (value) => {
-            dispatch(diffExp(value));
         },
         handleCombineDatasetFilters: (value) => {
             dispatch(setCombineDatasetFilters(value));

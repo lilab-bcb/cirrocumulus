@@ -8,6 +8,7 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
 import AccountCircle from '@material-ui/icons/AccountCircle';
+import Brightness2Icon from '@material-ui/icons/Brightness3';
 import HelpIcon from '@material-ui/icons/Help';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import React from 'react';
@@ -19,6 +20,7 @@ import {
     IMPORT_DATASET_DIALOG,
     login,
     logout,
+    setChartOptions,
     setDataset,
     setDialog,
     setMessage,
@@ -150,8 +152,10 @@ class AppHeader extends React.PureComponent {
         };
         let jsonChartOptions = {};
 
-       const defaultChartOptions = {showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
-           showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE};
+        const defaultChartOptions = {
+            showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
+            showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE
+        };
 
         for (let key in defaultChartOptions) {
             let value = chartOptions[key];
@@ -234,6 +238,11 @@ class AppHeader extends React.PureComponent {
 
     };
 
+
+    onDarkMode = () => {
+        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
+        this.props.handleChartOptions(this.props.chartOptions);
+    };
 
     handleLogout = () => {
         this.setState({userMenuOpen: false});
@@ -348,13 +357,20 @@ class AppHeader extends React.PureComponent {
                             {(showNewDataset || showEditDeleteDataset) && dataset != null && <Divider/>}
                             {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
                         </Menu>}
+
+
+                        {<Tooltip title={"Toggle Light/Dark Theme"}>
+                            <IconButton edge={false} className={this.props.chartOptions.darkMode ? 'cirro-active' : ''}
+                                        aria-label="Toggle Theme" onClick={() => this.onDarkMode()}>
+                                <Brightness2Icon/>
+                            </IconButton>
+                        </Tooltip>}
                         <Tooltip title={'Help'}>
                             <IconButton aria-label="Help"
                                         onClick={this.handleHelp}>
                                 <HelpIcon/>
                             </IconButton>
                         </Tooltip>
-
                         {email != null && email !== '' &&
                         <Tooltip title={email}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
@@ -439,6 +455,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleDialog: (value) => {
             dispatch(setDialog(value));
+        },
+        handleChartOptions: (value) => {
+            dispatch(setChartOptions(value));
         }
     };
 };

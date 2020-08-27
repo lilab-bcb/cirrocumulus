@@ -1,4 +1,5 @@
 import {Typography} from '@material-ui/core';
+import Chip from '@material-ui/core/Chip';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import {makeStyles, useTheme} from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
@@ -165,6 +166,10 @@ export default function AutocompleteVirtualized(props) {
     };
 
     const filterOptions = createFilterOptions({matchFrom: 'start'});
+    const onClick = (event) => {
+        event.stopPropagation();
+        props.onChipClick(event.target.innerText);
+    };
     return (
         <Autocomplete
             multiple
@@ -185,6 +190,18 @@ export default function AutocompleteVirtualized(props) {
             options={props.options}
             autoHighlight={true}
             onChange={props.onChange}
+            renderTags={props.onChipClick == null ? null : (value, getTagProps) =>
+                value.map((option, index) => {
+                    return (
+                        <Chip
+                            variant="default"
+                            onClick={onClick}
+                            label={option}
+                            size="small"
+                            {...getTagProps({index})}
+                        />);
+                })
+            }
             renderInput={(params) => <TextField {...params} label={props.label}/>}
             renderOption={props.groupBy ? (option) => <Typography title={option.text}
                                                                   noWrap>{option.text}</Typography> : (option) =>

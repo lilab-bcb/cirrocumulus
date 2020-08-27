@@ -263,8 +263,8 @@ class DotPlotCanvas extends React.PureComponent {
                     if (renamed2 != null) {
                         val2 = renamed2;
                     }
-                    val1 = val1.toLowerCase();
-                    val2 = val2.toLowerCase();
+                    val1 = ('' + val1).toLowerCase();
+                    val2 = ('' + val2).toLowerCase();
                     const num1 = parseFloat(val1);
                     const num1Valid = !isNaN(num1);
                     const num2 = parseFloat(val2);

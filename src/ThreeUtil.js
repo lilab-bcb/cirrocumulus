@@ -1,11 +1,5 @@
 import {color} from 'd3-color';
-import {
-    makeStyles,
-    ScatterPlot,
-    ScatterPlotVisualizerCanvasLabels,
-    ScatterPlotVisualizerSprites,
-    ScatterPlotVisualizerSvgLabels
-} from 'scatter-gl';
+import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color} from 'three';
 import {getVisualizer} from './ScatterChartThree';
 import {getRgbScale} from './util';
@@ -161,7 +155,7 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
     return {labels: labelStrings, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, showLabels = false, categoricalNames = {}, showFog = true, showAxis = true, darkMode = false) {
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions) {
     const colors = traceInfo.colors;
     const positions = traceInfo.positions;
     const is3d = traceInfo.z != null;
@@ -172,13 +166,13 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
             positions[k] = isSelected ? 1 : 0;
         }
     }
-    scatterPlot.scene.background = darkMode ? new Color("rgb(0, 0, 0)") : null;
+    scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
     let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-    spriteVisualizer.styles.fog.enabled = showFog;
+    spriteVisualizer.styles.fog.enabled = chartOptions.showFog;
     const axes = scatterPlot.scene.getObjectByName('axes');
     if (axes) {
-        axes.visible = showAxis;
+        axes.visible = chartOptions.showAxis;
     }
     scatterPlot.setPointColors(colors);
     scatterPlot.setPointPositions(positions);
@@ -189,15 +183,16 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     scale.fill(pointSize);
     scatterPlot.setPointScaleFactors(scale);
 
-    showLabels = showLabels && traceInfo.isCategorical;
+    const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
     const labelsVisualizer = getVisualizer(scatterPlot, LABELS_VISUALIZER_ID);
     if (labelsVisualizer) {
         labelsVisualizer.labelsActive = showLabels;
         if (showLabels) {
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
-            labelsVisualizer.fillStyle = darkMode ? 'white' : 'black';
-            labelsVisualizer.shadowColor = darkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+            labelsVisualizer.fillStyle = chartOptions.darkMode ? 'white' : 'black';
+            labelsVisualizer.shadowColor = chartOptions.darkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
             labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
+            labelsVisualizer.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
         }
     }
 

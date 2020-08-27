@@ -1,8 +1,7 @@
 import {Tooltip} from '@material-ui/core';
-import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
-import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
 import {drawImage} from './ImageChart';
@@ -26,7 +25,7 @@ class GalleryImage extends React.PureComponent {
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
         if (!traceInfo.isImage) {
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
-                false, {}, chartOptions.showFog, chartOptions.showAxis, chartOptions.darkMode);
+                {}, chartOptions);
             const canvas = containerElement.querySelector('canvas');
             this.setState({url: canvas.toDataURL()});
         } else {
@@ -92,21 +91,21 @@ class GalleryImage extends React.PureComponent {
         }
         return (<Card variant="outlined" style={{display: 'inline-block'}}>
             <CardContent>
-
+                <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
+                    <Typography color="textPrimary" onClick={this.onSelect}>
+                        {name}
+                    </Typography>
+                </Tooltip>
                 {this.state.url && <img alt="" src={this.state.url}
                                         width={this.props.chartSize * window.devicePixelRatio}
                                         height={this.props.chartSize * window.devicePixelRatio}
+                                        onClick={this.onSelect}
                                         style={{
                                             width: this.props.chartSize,
                                             height: this.props.chartSize
                                         }}/>}
 
             </CardContent>
-            <CardActions>
-                <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
-                    <Button style={{margin: 'auto'}} onClick={this.onSelect} size="small">{name}</Button>
-                </Tooltip>
-            </CardActions>
         </Card>);
 
     }

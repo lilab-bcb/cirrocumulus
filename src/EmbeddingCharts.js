@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getEmbeddingKey, getTraceKey} from './actions';
+import {getEmbeddingKey, getTraceKey, MORE_OPTIONS_DIALOG, setDialog} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 import {getChartSize} from './util';
 
@@ -31,6 +31,7 @@ class EmbeddingCharts extends React.PureComponent {
                 traceInfo={primaryTrace}
                 selection={userPoints}
                 color={primaryTrace.colors}
+                onMoreOptions={this.props.handleMoreOptions}
                 onGallery={this.props.onGallery}
             />
         );
@@ -48,7 +49,11 @@ const mapStateToProps = state => {
     };
 };
 const mapDispatchToProps = dispatch => {
-    return {};
+    return {
+        handleMoreOptions: () => {
+            dispatch(setDialog(MORE_OPTIONS_DIALOG));
+        }
+    };
 };
 
 export default (connect(

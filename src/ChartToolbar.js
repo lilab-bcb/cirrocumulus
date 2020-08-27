@@ -4,7 +4,6 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 
 import BorderInnerIcon from '@material-ui/icons/BorderInner';
-import Brightness2Icon from '@material-ui/icons/Brightness3';
 import CloudQueueIcon from '@material-ui/icons/CloudQueue';
 import ExposureIcon from '@material-ui/icons/Exposure';
 import FontDownloadIcon from '@material-ui/icons/FontDownload';
@@ -14,6 +13,7 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import PhotoLibraryIcon from '@material-ui/icons/PhotoLibrary';
 import PhotoSizeSelectSmallIcon from '@material-ui/icons/PhotoSizeSelectSmall';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import SettingsIcon from '@material-ui/icons/Settings';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import React from 'react';
@@ -51,6 +51,10 @@ class ChartToolbar extends React.PureComponent {
 
     onGallery = () => {
         this.props.onGallery();
+    };
+
+    handleMoreOptions = () => {
+        this.props.onMoreOptions();
     };
 
     setEditSelection = () => {
@@ -156,7 +160,6 @@ class ChartToolbar extends React.PureComponent {
             </Tooltip>}
 
 
-
             {this.props.is3d && this.props.onShowFog && <Tooltip title={"Show Fog"}>
                 <IconButton edge={false} size={'small'} className={this.props.showFog ? active : ''}
                             aria-label="Show Fog" onClick={() => this.onShowFog()}>
@@ -202,12 +205,14 @@ class ChartToolbar extends React.PureComponent {
 
             </Menu>
 
-            {this.props.onDarkMode && <Tooltip title={"Dark Theme"}>
-                <IconButton edge={false} size={'small'} className={darkMode ? active : ''}
-                            aria-label="Dark Theme" onClick={() => this.onDarkMode()}>
-                    <Brightness2Icon/>
+
+            <Tooltip title={"More Options"}>
+                <IconButton edge={false} size={'small'}
+                            aria-label="More Options" onClick={this.handleMoreOptions}>
+                    <SettingsIcon/>
                 </IconButton>
-            </Tooltip>}
+            </Tooltip>
+
 
             <Tooltip title={"View Gallery"}>
                 <IconButton edge={false} size={'small'}

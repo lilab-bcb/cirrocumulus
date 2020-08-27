@@ -14,6 +14,7 @@ import {
     EDIT_DATASET_DIALOG,
     HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
+    MORE_OPTIONS_DIALOG,
     SAVE_DATASET_FILTER_DIALOG,
     setDialog,
     setMessage,
@@ -26,7 +27,9 @@ import EmbeddingCharts from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
+import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
+
 const lightTheme = createMuiTheme(
     {
         "palette": {
@@ -94,14 +97,14 @@ class App extends PureComponent {
         // need to add filter, selection
         const {classes, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
 
-        return (<ThemeProvider theme={!chartOptions.darkMode?lightTheme:darkTheme}>
+        return (<ThemeProvider theme={!chartOptions.darkMode ? lightTheme : darkTheme}>
                 <div className={classes.root}>
                     {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
                     <EditDatasetDialog/>}
                     {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
                     {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
                     {dialog === HELP_DIALOG && <HelpDialog/>}
-
+                    {dialog === MORE_OPTIONS_DIALOG && <MoreOptionsDialog/>}
                     <AppHeader/>
                     <Drawer
                         className={classes.drawer}
@@ -186,7 +189,7 @@ const mapStateToProps = state => {
         loadingApp: state.loadingApp,
         message: state.message,
         tab: state.tab,
-        chartOptions:state.chartOptions
+        chartOptions: state.chartOptions
     };
 };
 const mapDispatchToProps = dispatch => {

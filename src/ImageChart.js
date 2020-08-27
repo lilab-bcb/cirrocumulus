@@ -33,7 +33,7 @@ function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
     showLabels = showLabels && traceInfo.isCategorical;
     if (showLabels) {
         context.fillStyle = 'black';
-        const fontSize = Math.ceil(18 * 1 / zoom);
+        const fontSize = Math.ceil(this.props.chartOptions.labelFontSize * 1 / zoom);
         context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
         context.textAlign = 'center';
         const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
@@ -433,10 +433,6 @@ class ImageChart extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
-    onDarkMode = () => {
-        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
-        this.props.setChartOptions(this.props.chartOptions);
-    };
 
     render() {
 
@@ -448,8 +444,7 @@ class ImageChart extends React.PureComponent {
                     editSelection={this.props.chartOptions.editSelection}
                     onZoomIn={this.onZoomIn}
                     onZoomOut={this.onZoomOut}
-                    darkMode={this.props.chartOptions.darkMode}
-                    onDarkMode={this.onDarkMode}
+                    onMoreOptions={this.onMoreOptions}
                     showLabels={this.props.chartOptions.showLabels}
                     is3d={false}
                     onHome={this.onHome}

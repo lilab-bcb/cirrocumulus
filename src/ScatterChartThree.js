@@ -3,7 +3,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind} from 'lodash';
 import React from 'react';
-import {Color, Vector3, Vector4} from 'three';
+import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
@@ -194,7 +194,7 @@ class ScatterChartThree extends React.PureComponent {
             context.fillStyle = 'black';
 
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
-            context.font = '14px ' + font;
+            context.font = 'bold ' + this.props.chartOptions.labelFontSize + 'px ' + font;
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
             for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
                 pos.x = labelsPositions.positions[k];
@@ -228,6 +228,11 @@ class ScatterChartThree extends React.PureComponent {
         saveImage(traceInfo, this.chartSize, bind(this.drawContext, this), format);
     };
 
+    onMoreOptions = () => {
+        this.props.onMoreOptions();
+    };
+
+
     onEditSelection = () => {
         this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
         this.props.setChartOptions(this.props.chartOptions);
@@ -239,11 +244,6 @@ class ScatterChartThree extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
-    onDarkMode = () => {
-        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
-        this.scatterPlot.scene.background = this.props.chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
-        this.props.setChartOptions(this.props.chartOptions);
-    };
 
     onGallery = () => {
         this.props.onGallery();
@@ -441,7 +441,7 @@ class ScatterChartThree extends React.PureComponent {
     draw() {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
         updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
-            chartOptions.showLabels, categoricalNames, chartOptions.showFog, chartOptions.showAxis, chartOptions.darkMode);
+            categoricalNames, chartOptions);
     }
 
 
@@ -453,10 +453,9 @@ class ScatterChartThree extends React.PureComponent {
                     animating={this.props.chartOptions.animating}
                     editSelection={this.props.chartOptions.editSelection}
                     showLabels={this.props.chartOptions.showLabels}
-                    darkMode={this.props.chartOptions.darkMode}
-                    onDarkMode={this.onDarkMode}
                     showFog={this.props.chartOptions.showFog}
                     onShowFog={this.onShowFog}
+                    onMoreOptions={this.onMoreOptions}
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}

@@ -58,6 +58,8 @@ export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = true;
 export const DEFAULT_DARK_MODE = false;
+export const DEFAULT_LABEL_FONT_SIZE = 14;
+export const DEFAULT_LABEL_SHADOW_SIZE = 2;
 
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
@@ -66,8 +68,14 @@ const DEFAULT_INTERPOLATOR_OBJ = {
 };
 
 const DEFAULT_CHART_OPTIONS = {
-    animating: false, dragmode: DEFAULT_DRAG_MODE, editSelection: false, showLabels: DEFAULT_SHOW_LABELS,
-    showAxis: DEFAULT_SHOW_AXIS, showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE
+    animating: false,
+    dragmode: DEFAULT_DRAG_MODE,
+    editSelection: false,
+    showLabels: DEFAULT_SHOW_LABELS,
+    showAxis: DEFAULT_SHOW_AXIS,
+    showFog: DEFAULT_SHOW_FOG,
+    darkMode: DEFAULT_DARK_MODE,
+    labelFontSize: DEFAULT_LABEL_FONT_SIZE
 };
 
 function chartSize(state = 500, action) {
