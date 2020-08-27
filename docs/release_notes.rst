@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.6 `August 27, 2020`
+    * Added option to set embedding label font size
+    * Show shadow around embedding label
+
 - 1.1.5.post3 `August 26, 2020`
     * Fixed embedding label and tooltip color in dark mode
     * Fixed embedding label font size
