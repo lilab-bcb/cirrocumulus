@@ -1,7 +1,13 @@
 import {color} from 'd3-color';
-import {makeStyles, ScatterPlot, ScatterPlotVisualizerCanvasLabels, ScatterPlotVisualizerSprites} from 'scatter-gl';
+import {
+    makeStyles,
+    ScatterPlot,
+    ScatterPlotVisualizerCanvasLabels,
+    ScatterPlotVisualizerSprites,
+    ScatterPlotVisualizerSvgLabels
+} from 'scatter-gl';
 import {Color} from 'three';
-import {getVisualizer, LABELS_VISUALIZER_ID, POINT_VISUALIZER_ID} from './ScatterChartThree';
+import {getVisualizer} from './ScatterChartThree';
 import {getRgbScale} from './util';
 
 function scaleLinear(value, domain, range) {
@@ -12,6 +18,9 @@ function scaleLinear(value, domain, range) {
     return percentDomain * rangeDifference + range[0];
 }
 
+export const POINT_VISUALIZER_ID = 'SPRITES';
+
+export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
 
 export function createScatterPlot(containerElement, premultipliedAlpha, labels) {
     const styles = makeStyles();
@@ -25,7 +34,8 @@ export function createScatterPlot(containerElement, premultipliedAlpha, labels) 
     }, premultipliedAlpha); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
     let visualizers = [new ScatterPlotVisualizerSprites(styles)];
     if (labels) {
-        visualizers.push(new ScatterPlotVisualizerCanvasLabels(containerElement, styles));
+        // visualizers.push(new ScatterPlotVisualizerCanvasLabels(containerElement, styles));
+        visualizers.push(new ScatterPlotVisualizerSvgLabels(containerElement, styles));
     }
     scatterPlot.setActiveVisualizers(visualizers);
     return scatterPlot;
@@ -186,7 +196,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
         if (showLabels) {
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
             labelsVisualizer.fillStyle = darkMode ? 'white' : 'black';
-            labelsVisualizer.shadowColor = !darkMode ? 'white' : 'black';
+            labelsVisualizer.shadowColor = darkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
             labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
         }
     }

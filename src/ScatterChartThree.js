@@ -8,7 +8,7 @@ import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
-import {createScatterPlot, getCategoryLabelsPositions, updateScatterChart} from './ThreeUtil';
+import {createScatterPlot, getCategoryLabelsPositions, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
 import {getChartSize, isPointInside} from './util';
 
 function clamp(x, min_v, max_v) {
@@ -24,8 +24,6 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
-export const POINT_VISUALIZER_ID = 'SPRITES';
-export const LABELS_VISUALIZER_ID = 'CANVAS_LABELS';
 
 export function getVisualizer(scatterPlot, id) {
     for (let i = 0; i < scatterPlot.visualizers.length; i++) {
@@ -196,7 +194,7 @@ class ScatterChartThree extends React.PureComponent {
             context.fillStyle = 'black';
 
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
-            context.font = '24px ' + font; // FIXME adjust size
+            context.font = '14px ' + font;
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
             for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
                 pos.x = labelsPositions.positions[k];
