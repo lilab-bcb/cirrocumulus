@@ -114,6 +114,10 @@ class ScatterChartThree extends React.PureComponent {
         const camera = this.scatterPlot.camera;
         const width = chartSize.width;
         const height = chartSize.height;
+        if(chartOptions.darkMode) {
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, width, height);
+        }
         const widthHalf = width / 2;
         const heightHalf = height / 2;
         const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
@@ -191,11 +195,14 @@ class ScatterChartThree extends React.PureComponent {
             context.fill();
         }
         if (showLabels) {
-            context.fillStyle = 'black';
-
+            context.fillStyle = chartOptions.darkMode ? 'white' : 'black';
+            context.strokeStyle = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
+            context.strokeWidth = chartOptions.labelStrokeWidth;
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
             context.font = 'bold ' + this.props.chartOptions.labelFontSize + 'px ' + font;
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+            context.textAlign = 'center';
+            context.textBaseline = "middle";
             for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
                 pos.x = labelsPositions.positions[k];
                 pos.y = labelsPositions.positions[k + 1];
@@ -203,6 +210,8 @@ class ScatterChartThree extends React.PureComponent {
                 pos.project(camera);
                 pos.x = (pos.x * widthHalf) + widthHalf;
                 pos.y = -(pos.y * heightHalf) + heightHalf;
+
+                context.strokeText(labelsPositions.labels[i], pos.x, pos.y);
                 context.fillText(labelsPositions.labels[i], pos.x, pos.y);
             }
         }
