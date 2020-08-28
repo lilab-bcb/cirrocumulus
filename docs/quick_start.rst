@@ -9,7 +9,8 @@ Launch cirrocumulus via the command line::
 
     cirro launch <path_to_dataset>
 
-- Datasets can be provided in h5ad_ or loom_ formats. Additionally cirrocumulus can read in fusions produced by `STAR-Fusion`_.
+- Datasets can be provided in h5ad_ or loom_ formats. Additionally cirrocumulus can read in fusions produced by `STAR-Fusion`_. Seurat objects
+  can be loaded after converting to h5ad_ or loom_ format (see vignette_).
 - Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
 - Marker lists can be provided in JSON format to quickly load features from predefined lists.
 
@@ -28,3 +29,4 @@ Run with `example spatial data`_  from `10x Genomics <https://support.10xgenomic
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
+.. _vignette: https://satijalab.org/seurat/v3.2/conversion_vignette.html
