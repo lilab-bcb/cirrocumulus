@@ -20,6 +20,10 @@ import {getChartSize} from './util';
 
 class EmbeddingChart extends React.PureComponent {
 
+    setChartRef = (element) => {
+        this.props.chartOptions.ref = element;
+    };
+
 
     render() {
         const {
@@ -76,6 +80,7 @@ class EmbeddingChart extends React.PureComponent {
                                    color={traceInfo.colors}
                                    onGallery={this.props.onGallery}
                                    onMoreOptions={this.props.onMoreOptions}
+                                   ref={this.setChartRef}
 
                 />}
 
@@ -94,6 +99,7 @@ class EmbeddingChart extends React.PureComponent {
                     onSelected={this.props.onSelect}
                     onGallery={this.props.onGallery}
                     onMoreOptions={this.props.onMoreOptions}
+                    ref={this.setChartRef}
                 />}
 
 

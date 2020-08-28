@@ -156,11 +156,11 @@ export function initGapi() {
 
         fetch(API + '/server').then(result => result.json()).then(serverInfo => {
             dispatch(setServerInfo(serverInfo));
-            if (serverInfo.clientId ==='') { // no login required
+            if (serverInfo.clientId === '') { // no login required
                 dispatch(_setLoadingApp({loading: false}));
                 dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
-                if(serverInfo.mode === 'server') {
-                    dispatch(setUser({importer:true}))
+                if (serverInfo.mode === 'server') {
+                    dispatch(setUser({importer: true}));
                 }
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
@@ -834,6 +834,7 @@ function _loadSavedView() {
                     };
                 }
             }
+
             if (savedView.datasetFilter != null) {
                 for (let key in savedView.datasetFilter) {
                     let value = savedView.datasetFilter[key];
@@ -859,6 +860,9 @@ function _loadSavedView() {
                             }
                         });
                         savedView.embeddings = embeddings;
+                        if (savedView.camera != null) {
+                            savedView.chartOptions.camera = savedView.camera;
+                        }
                     }
                 })
                 .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
@@ -871,6 +875,7 @@ function _loadSavedView() {
                             dispatch(setDotPlotSortOrder({name: name, value: savedView.sort[name]}));
                         }
                     }
+
                 })
                 .finally(() => dispatch(_setLoading(false)))
                 .catch(err => {
@@ -968,7 +973,7 @@ export function saveDataset(payload) {
                 dispatch(setMessage('Dataset updated'));
             } else {
                 dispatch(_addDataset({name: name, id: importDatasetResult.id, owner: true}));
-                if(serverInfo.email) {
+                if (serverInfo.email) {
                     dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverInfo.email + ' is a "Storage Object Viewer"' : 'Dataset created'));
                 }
             }
@@ -1609,7 +1614,21 @@ function _updateCharts(onError) {
             //     b = b.name.toLowerCase();
             //     return a < b ? -1 : 1;
             // });
-
+            if (state.chartOptions.activeEmbedding != null) { // put last so that it becomes active
+                let index = -1;
+                for (let i = 0; i < embeddingData.length; i++) {
+                    if (state.chartOptions.activeEmbedding === getTraceKey(embeddingData[i])) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index !== -1) {
+                    let activeTrace = embeddingData[index];
+                    embeddingData.splice(index, 1);
+                    embeddingData.push(activeTrace);
+                }
+                state.chartOptions.activeEmbedding = null;
+            }
             dispatch(setEmbeddingData(embeddingData.slice()));
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -1715,7 +1734,7 @@ function handleEmbeddingResult(result) {
                 continuous: !isCategorical,
                 isCategorical: isCategorical,
                 values: values, // for color
-                isImage:isSpatial
+                isImage: isSpatial
                 // purity: purity,
                 // text: values,
             };

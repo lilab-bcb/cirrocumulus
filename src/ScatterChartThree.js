@@ -81,8 +81,14 @@ class ScatterChartThree extends React.PureComponent {
 
     componentDidMount() {
         this.init();
+
         this.draw(); // TODO fix 2x draw
         this.draw();
+        if (this.props.chartOptions.camera) {
+            this.scatterPlot.updateFromCameraDef(this.props.chartOptions.camera);
+            this.props.chartOptions.camera = null;
+            this.draw();
+        }
     }
 
     componentWillUnmount() {
@@ -114,7 +120,7 @@ class ScatterChartThree extends React.PureComponent {
         const camera = this.scatterPlot.camera;
         const width = chartSize.width;
         const height = chartSize.height;
-        if(chartOptions.darkMode) {
+        if (chartOptions.darkMode) {
             context.fillStyle = 'black';
             context.fillRect(0, 0, width, height);
         }

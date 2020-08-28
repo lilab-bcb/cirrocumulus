@@ -136,7 +136,7 @@ class AppHeader extends React.PureComponent {
 
     copyLink = (event) => {
 
-        const {chartOptions, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {chartOptions, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
         let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
@@ -152,8 +152,17 @@ class AppHeader extends React.PureComponent {
 
             })
         };
-        let jsonChartOptions = {};
 
+        const chartRef = chartOptions.ref;
+        if (json.embeddings.length > 0 && chartRef != null && chartRef.scatterPlot) {
+            json.camera = chartRef.scatterPlot.getCameraDef();
+
+        }
+
+        let jsonChartOptions = {};
+        if (json.embeddings.length > 0) {
+            jsonChartOptions.activeEmbedding = primaryTraceKey;
+        }
         const defaultChartOptions = {
             showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
             showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
@@ -416,6 +425,7 @@ const mapStateToProps = state => {
         chartOptions: state.chartOptions,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
+        primaryTraceKey: state.primaryTraceKey,
         binSummary: state.binSummary,
         binValues: state.binValues,
         combineDatasetFilters: state.combineDatasetFilters,
