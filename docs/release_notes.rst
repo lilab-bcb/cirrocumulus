@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.7 `August 28, 2020`
+    * Use median instead of mean for categorical label position on data
+    * Fixed Safari embedding label shadow bug
+    * Save pan and zoom values in link URL
+
 - 1.1.6 `August 27, 2020`
     * Added option to set embedding label font size
     * Show shadow around embedding label
