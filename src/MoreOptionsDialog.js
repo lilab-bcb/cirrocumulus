@@ -12,13 +12,13 @@ class MoreOptionsDialog extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {labelFontSize: '', labelShadowSize: ''};
+        this.state = {labelFontSize: '', labelStrokeWidth: ''};
     }
 
     componentDidMount() {
         this.setState({
             labelFontSize: this.props.chartOptions.labelFontSize,
-            labelShadowSize: this.props.chartOptions.labelShadowSize
+            labelStrokeWidth: this.props.chartOptions.labelStrokeWidth
         });
     }
 
@@ -41,17 +41,17 @@ class MoreOptionsDialog extends React.PureComponent {
         this.setState({labelFontSize: event.target.value});
     };
 
-    onLabelShadowSize = (event) => {
-        this.setState({labelShadowSize: event.target.value});
+    onLabelStrokeWidth = (event) => {
+        this.setState({labelStrokeWidth: event.target.value});
     };
 
-    onLabelShadowSizeKeyPress = (event) => {
+    onLabelStrokeWidthKeyPress = (event) => {
         if (event.key === 'Enter') {
             let value = parseFloat(event.target.value);
             if (!isNaN(value) && value >= 0) {
-                this.props.chartOptions.labelShadowSize = value;
+                this.props.chartOptions.labelStrokeWidth = value;
                 this.props.handleChartOptions(this.props.chartOptions);
-                this.setState({labelShadowSize: value});
+                this.setState({labelStrokeWidth: value});
             }
         }
     };
@@ -74,6 +74,15 @@ class MoreOptionsDialog extends React.PureComponent {
                         onKeyPress={this.onLabelFontSizeKeyPress}
                         margin="dense"
                         label="Label Font Size"
+                        fullWidth
+                    />
+
+                    <TextField
+                        value={this.state.labelStrokeWidth}
+                        onChange={this.onLabelStrokeWidth}
+                        onKeyPress={this.onLabelStrokeWidthKeyPress}
+                        margin="dense"
+                        label="Label Shadow Size"
                         fullWidth
                     />
 

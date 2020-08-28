@@ -59,7 +59,7 @@ export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = true;
 export const DEFAULT_DARK_MODE = false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
-export const DEFAULT_LABEL_SHADOW_SIZE = 2;
+export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
@@ -75,7 +75,8 @@ const DEFAULT_CHART_OPTIONS = {
     showAxis: DEFAULT_SHOW_AXIS,
     showFog: DEFAULT_SHOW_FOG,
     darkMode: DEFAULT_DARK_MODE,
-    labelFontSize: DEFAULT_LABEL_FONT_SIZE
+    labelFontSize: DEFAULT_LABEL_FONT_SIZE,
+    labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
 };
 
 function chartSize(state = 500, action) {

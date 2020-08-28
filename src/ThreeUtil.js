@@ -194,7 +194,8 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
         if (showLabels) {
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
             labelsVisualizer.fillStyle = chartOptions.darkMode ? 'white' : 'black';
-            labelsVisualizer.shadowColor = chartOptions.darkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+            labelsVisualizer.shadowColor = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
+            labelsVisualizer.shadowStroke = chartOptions.labelStrokeWidth;
             labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
             labelsVisualizer.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
         }
