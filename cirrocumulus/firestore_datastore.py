@@ -1,9 +1,9 @@
 import datetime
 import json
 
+from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from google.cloud import datastore
 
-from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -85,14 +85,14 @@ class FirestoreDatastore:
             results.append(result)
         return results
 
-    def delete_dataset_filter(self, email, filter_id):
+    def delete_dataset_filter(self, email, dataset_id, filter_id):
         client = self.datastore_client
         key = client.key(DATASET_FILTER, int(filter_id))
         dataset_filter = client.get(key)
         self.__get_key_and_dataset(email, dataset_filter['dataset_id'])
         client.delete(key)
 
-    def get_dataset_filter(self, email, filter_id):
+    def get_dataset_filter(self, email, dataset_id, filter_id):
         client = self.datastore_client
         dataset_filter = client.get(client.key(DATASET_FILTER, int(filter_id)))
         self.__get_key_and_dataset(email, dataset_filter['dataset_id'])

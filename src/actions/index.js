@@ -212,7 +212,7 @@ export function openDatasetFilter(filterId) {
 
         dispatch(_setLoading(true));
 
-        fetch(API + '/filter?id=' + filterId,
+        fetch(API + '/filter?id=' + filterId + '&ds_id=' +  getState().dataset.id,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(response => response.json())
@@ -251,7 +251,7 @@ export function deleteDatasetFilter(filterId) {
         dispatch(_setLoading(true));
         fetch(API + '/filter',
             {
-                body: JSON.stringify({id: filterId}),
+                body: JSON.stringify({id: filterId, ds_id: getState().dataset.id}),
                 method: 'DELETE',
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             })

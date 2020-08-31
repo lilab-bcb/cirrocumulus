@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
+from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from pymongo import MongoClient
 
-from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -94,13 +94,13 @@ class MongoDb:
                  'notes': doc['notes'], 'email': doc['email']})
         return results
 
-    def delete_dataset_filter(self, email, filter_id):
+    def delete_dataset_filter(self, email, dataset_id, filter_id):
         collection = self.db.filters
         doc = collection.find_one(dict(_id=ObjectId(filter_id)))
         self.get_dataset(email, doc['dataset_id'])
         collection.delete_one(dict(_id=ObjectId(filter_id)))
 
-    def get_dataset_filter(self, email, filter_id):
+    def get_dataset_filter(self, email, dataset_id, filter_id):
         collection = self.db.filters
         doc = collection.find_one(dict(_id=ObjectId(filter_id)))
         self.get_dataset(email, doc['dataset_id'])

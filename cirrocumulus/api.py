@@ -1,7 +1,7 @@
-from flask import Blueprint, Response, request, stream_with_context
-
 import cirrocumulus.data_processing as data_processing
 from cirrocumulus.embedding_aggregator import get_basis
+from flask import Blueprint, Response, request, stream_with_context
+
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -103,10 +103,11 @@ def handle_dataset_filter():
 
     email = auth_api.auth()['email']
     if request.method == 'GET':
-        dataset_filter_id = request.args.get('id', '')
-        if dataset_filter_id == '':
+        filter_id = request.args.get('id', '')
+        dataset_id = request.args.get('ds_id', '')
+        if filter_id == '' or dataset_id == '':
             return 'Please provide an id', 400
-        return to_json(database_api.get_dataset_filter(email, dataset_filter_id))
+        return to_json(database_api.get_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id))
     content = request.get_json(force=True, cache=False)
     filter_id = content.get('id')
     dataset_id = content.get('ds_id')
@@ -128,7 +129,7 @@ def handle_dataset_filter():
             filter_notes=filter_notes)
         return to_json({'id': filter_id})
     elif request.method == 'DELETE':
-        database_api.delete_dataset_filter(email, filter_id)
+        database_api.delete_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id)
         return to_json('', 204)
 
 

@@ -10,46 +10,56 @@ def create_dataset_meta(path):
     return result
 
 
+def write_json(json_data, json_path):
+    with open(json_path, 'wt') as f:
+        json.dump(json_data, f)
+
+
 class LocalDbAPI:
 
-    def __init__(self, path):
-        self.path = path
-        self.json_data = {}
-        basename = os.path.splitext(path)[0]
-        old_path = basename + '_filters.json'
-        self.json_path = basename + '.json'
-        if os.path.exists(old_path) and os.path.getsize(old_path) > 0:
-            with open(old_path, 'rt') as f:
-                self.json_data['filters'] = json.load(f)
+    def __init__(self, paths):
+        self.dataset_to_info = {}  # json_data, meta, json_path
 
-        if os.path.exists(self.json_path) and os.path.getsize(self.json_path) > 0:
-            with open(self.json_path, 'rt') as f:
-                self.json_data.update(json.load(f))
-        self.meta = create_dataset_meta(self.path)
-        if 'filters' not in self.json_data:
-            self.json_data['filters'] = {}
-        if 'categories' not in self.json_data:
-            self.json_data['categories'] = {}
+        for path in paths:
+            json_data = {}
+            basename = os.path.splitext(path)[0]
+            old_path = basename + '_filters.json'
+            json_path = basename + '.json'
+            if os.path.exists(old_path) and os.path.getsize(old_path) > 0:
+                with open(old_path, 'rt') as f:
+                    json_data['filters'] = json.load(f)
+
+            if os.path.exists(json_path) and os.path.getsize(json_path) > 0:
+                with open(json_path, 'rt') as f:
+                    json_data.update(json.load(f))
+            meta = create_dataset_meta(path)
+            if 'filters' not in json_data:
+                json_data['filters'] = {}
+            if 'categories' not in json_data:
+                json_data['categories'] = {}
+            self.dataset_to_info[path] = dict(json_data=json_data, meta=meta, json_path=json_path)
 
     def server(self):
         return dict(mode='client')
 
     def user(self, email):
-        return {}
+        return dict()
 
     def datasets(self, email):
         results = []
-        results.append(self.meta)
+        for key in self.dataset_to_info:
+            results.append(self.dataset_to_info[key]['meta'])
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        result = self.meta.copy()
+        result = self.dataset_to_info[dataset_id]['meta']
         result['id'] = dataset_id
         return result
 
     def category_names(self, email, dataset_id):
         results = []
-        categories = self.json_data['categories']
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        categories = json_data['categories']
         for category_name in categories:
             category = categories[category_name]
             for category_key in category:
@@ -58,10 +68,11 @@ class LocalDbAPI:
         return results
 
     def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
-        category_entity = self.json_data['categories'].get(category)
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        category_entity = json_data['categories'].get(category)
         if category_entity is None:
             category_entity = {}
-            self.json_data['categories'][category] = category_entity
+            json_data['categories'][category] = category_entity
         if new_name == '':
             if original_name in category_entity:
                 del category_entity[original_name]
@@ -72,33 +83,36 @@ class LocalDbAPI:
                 entity['dataset_id'] = dataset_id
             if email is not None:
                 entity['email'] = email
-        self.__write_json()
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
 
     def dataset_filters(self, email, dataset_id):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
         results = []
-        filters = self.json_data['filters']
+        filters = json_data['filters']
         for key in filters:
             r = filters[key]
             r['id'] = key
             results.append(r)
         return results
 
-    def delete_dataset_filter(self, email, filter_id):
-        del self.json_data['filters'][filter_id]
-        self.__write_json()
+    def delete_dataset_filter(self, email, dataset_id, filter_id):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        del json_data['filters'][filter_id]
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
 
-    def get_dataset_filter(self, email, filter_id):
-        return self.json_data['filters'][filter_id]
+    def get_dataset_filter(self, email, dataset_id, filter_id):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        return json_data['filters'][filter_id]
 
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
         if filter_id is None:
             import uuid
             filter_id = str(uuid.uuid4())
-
-        entity = self.json_data['filters'].get(filter_id)
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        entity = json_data['filters'].get(filter_id)
         if entity is None:
             entity = {}
-            self.json_data['filters'][filter_id] = entity
+            json_data['filters'][filter_id] = entity
         if filter_name is not None:
             entity['name'] = filter_name
         if dataset_filter is not None:
@@ -109,9 +123,5 @@ class LocalDbAPI:
             entity['dataset_id'] = dataset_id
         if filter_notes is not None:
             entity['notes'] = filter_notes
-        self.__write_json()
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
         return filter_id
-
-    def __write_json(self):
-        with open(self.json_path, 'wt') as f:
-            json.dump(self.json_data, f)
