@@ -73,6 +73,14 @@ class SimpleData:
     @staticmethod
     def X_stats(df, var_ids):
         df = df[var_ids]
+        if len(df) == 0:
+            zeros = np.full(len(var_ids), 0)
+            empty = np.full(len(var_ids), np.nan)
+            return pd.DataFrame(
+                data={'min': empty, 'max': empty, 'sum': zeros,
+                      'numExpressed': zeros,
+                      'mean': empty}, index=var_ids)
+
         return pd.DataFrame(
             data={'min': np.min(df.values, axis=0), 'max': np.max(df.values, axis=0), 'sum': df.sum().values,
                   'numExpressed': (df.values != 0).sum(axis=0),
