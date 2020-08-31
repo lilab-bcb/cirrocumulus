@@ -212,7 +212,7 @@ export function openDatasetFilter(filterId) {
 
         dispatch(_setLoading(true));
 
-        fetch(API + '/filter?id=' + filterId + '&ds_id=' +  getState().dataset.id,
+        fetch(API + '/filter?id=' + filterId + '&ds_id=' + getState().dataset.id,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(response => response.json())
@@ -1503,6 +1503,7 @@ function _updateCharts(onError) {
         let newDotplotData;
 
         function updateDotPlotData() {
+            console.log('updateDotPlotData');
             // merge with existing data
             if (newDotplotData) {
                 newDotplotData.forEach(categoryItem => {
@@ -1540,6 +1541,7 @@ function _updateCharts(onError) {
                     });
                 }
             });
+            dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length>0);
             dotPlotData.sort((a, b) => {
                 a = a.name;
                 b = b.name;
