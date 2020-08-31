@@ -6,6 +6,7 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 
 * Run on your laptop, an on-premise server, a cloud VM, or Google App Engine
 * View spatial transcriptomics data
+* Share the visualization state in a URL
 * Scale to > 6 million cells on commodity hardware
 * Share datasets with collaborators
 * View dotplots of features of interest
