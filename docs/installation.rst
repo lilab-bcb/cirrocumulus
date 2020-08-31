@@ -49,23 +49,25 @@ Docker
     docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulusprod/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
 
 
+UGER (Broad users only)
+^^^^^^^^^^^^^^^^^^^^^^^^
+Request an interactive UGER node with 4G memory::
 
+    reuse UGER
+    qrsh -q interactive -l h_vmem=4g
 
-Build From Source
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Add conda to your path::
 
-- Clone the cirrocumulus repository::
+    reuse Anaconda3
 
-    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+Activate the cumulus virtual environment::
 
+    source activate /seq/regev_genome_portal/conda_env/cumulus
 
-- Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
+Launch, specifying the host IP address::
 
-    ./build.sh
+    cirro launch <path_to_dataset> --host $(hostname -i)
 
-- Launch cirrocumulus via the command line::
-
-    cirro launch test.h5ad
 
 Server Mode
 ^^^^^^^^^^^^^^
@@ -154,6 +156,23 @@ Server
     cirro serve
 
 - Import a dataset
+
+
+Build From Source
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+
+
+- Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
+
+    ./build.sh
+
+- Launch cirrocumulus via the command line::
+
+    cirro launch test.h5ad
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
