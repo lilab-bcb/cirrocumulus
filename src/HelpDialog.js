@@ -50,6 +50,7 @@ class HelpDialog extends React.PureComponent {
                     Enter one or more categorical observations and one or more features.
                     <Divider/>
                     <Typography variant="h6">Additional documentation is available <a target="_blank"
+                                                                                      rel="noopener noreferrer"
                                                                                       href="http://cirrocumulus.readthedocs.io/">here</a>.</Typography>
                 </DialogContent>
 
