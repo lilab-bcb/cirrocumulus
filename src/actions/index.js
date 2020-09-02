@@ -39,7 +39,7 @@ export const ADD_DATASET = 'ADD_DATASET';
 export const DELETE_DATASET = 'DELETE_DATASET';
 export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
-export const DIFF_EXP_RESULTS = 'DIFF_EXP_RESULTS';
+export const SET_SAVED_DATASET_STATE = 'SET_SAVED_DATASET_STATE';
 
 export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
 export const SET_CATEGORICAL_NAME = 'SET_CATEGORICAL_NAME';
@@ -409,54 +409,6 @@ function getFilterJson(state) {
 }
 
 
-export function diffExp() {
-    return function (dispatch, getState) {
-        dispatch(_setLoading(true));
-        let filter = getFilterJson(getState(), true);
-        let nfeatures = getState().dataset.features.length;
-        let batchSize = 3000; // TODO
-        let promises = [];
-        let results = null;
-        let start = 0;
-        let end = batchSize;
-        let batches = Math.ceil(nfeatures / batchSize);
-        for (let i = 0; i < batches; i++) {
-            end = Math.min(end + batchSize, nfeatures);
-            start = Math.min(start + batchSize, nfeatures);
-            if (end > start) {
-                let p = fetch(API + '/diff_exp',
-                    {
-                        body: JSON.stringify({id: getState().dataset.id, filter: filter, var_range: [start, end]}),
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-                    }).then(result => result.json()).then(result => {
-                    if (results == null) {
-                        results = result;
-                    } else {
-                        for (let key in result) {
-                            results[key] = results[key].concat(result[key]);
-                        }
-                    }
-                });
-                promises.push(p);
-            }
-        }
-
-        Promise.all(promises).then(() => {
-            let keys = Object.keys(results);
-            let indices = new Uint16Array(results[keys[0]].length); // for sort order
-            for (let i = 0, n = indices.length; i < n; i++) {
-                indices[i] = i;
-            }
-            dispatch(setDiffExpResults({arrays: results, indices: indices}));
-        }).finally(() => {
-            dispatch(_setLoading(false));
-        }).catch(err => {
-            handleError(dispatch, err);
-        });
-    };
-}
-
 export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
@@ -518,10 +470,6 @@ export function setCombineDatasetFilters(payload) {
         dispatch(_setCombineDatasetFilters(payload));
         dispatch(handleFilterUpdated());
     };
-}
-
-export function setDiffExpResults(payload) {
-    return {type: DIFF_EXP_RESULTS, payload: payload};
 }
 
 export function setChartSize(payload) {
@@ -811,6 +759,76 @@ function loadDefaultDataset() {
     };
 }
 
+function restoreSavedView(savedView) {
+    return function (dispatch, getState) {
+        if (savedView.colorScheme != null) {
+            let interpolator = getInterpolator(savedView.colorScheme);
+            if (interpolator != null) {
+                savedView.colorScheme = {
+                    name: savedView.colorScheme,
+                    value: interpolator,
+                    reversed: false // FIXME
+                };
+            }
+        }
+
+        if (savedView.datasetFilter != null) {
+            for (let key in savedView.datasetFilter) {
+                let value = savedView.datasetFilter[key];
+                if (!window.Array.isArray(value)) {
+                    value.uiValue = value.value;
+                }
+            }
+        } else {
+            savedView.datasetFilter = {};
+        }
+
+        dispatch(_setLoading(true));
+        let datasetPromise;
+        if (savedView.dataset != null) {
+            datasetPromise = dispatch(setDataset(savedView.dataset, false, false));
+        } else {
+            datasetPromise = Promise.resolve();
+        }
+        datasetPromise
+            .then(() => {
+                let dataset = getState().dataset;
+                if (savedView.embeddings) {
+                    let names = dataset.embeddings.map(e => getEmbeddingKey(e));
+                    let embeddings = [];
+                    savedView.embeddings.forEach(embedding => {
+                        let index = names.indexOf(getEmbeddingKey(embedding));
+                        if (index !== -1) {
+                            embeddings.push(dataset.embeddings[index]);
+                        }
+                    });
+                    savedView.embeddings = embeddings;
+                    if (savedView.camera != null) {
+                        savedView.chartOptions.camera = savedView.camera;
+                    }
+                }
+            })
+            .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
+            .then(() => dispatch(restoreView(savedView)))
+            .then(() => dispatch(_updateCharts()))
+            .then(() => dispatch(handleFilterUpdated()))
+            .then(() => {
+                if (savedView.sort != null) {
+                    for (let name in savedView.sort) {
+                        dispatch(setDotPlotSortOrder({name: name, value: savedView.sort[name]}));
+                    }
+                }
+
+            })
+            .finally(() => dispatch(_setLoading(false)))
+            .catch(err => {
+                console.log(err);
+                dispatch(setMessage('Unable to restore saved view.'));
+                dispatch(loadDefaultDataset());
+            });
+    };
+}
+
 function _loadSavedView() {
     return function (dispatch, getState) {
         let savedView = {dataset: null};
@@ -824,65 +842,7 @@ function _loadSavedView() {
         }
 
         if (savedView.dataset != null) {
-            if (savedView.colorScheme != null) {
-                let interpolator = getInterpolator(savedView.colorScheme);
-                if (interpolator != null) {
-                    savedView.colorScheme = {
-                        name: savedView.colorScheme,
-                        value: interpolator,
-                        reversed: false // FIXME
-                    };
-                }
-            }
-
-            if (savedView.datasetFilter != null) {
-                for (let key in savedView.datasetFilter) {
-                    let value = savedView.datasetFilter[key];
-                    if (!window.Array.isArray(value)) {
-                        value.uiValue = value.value;
-                    }
-                }
-            } else {
-                savedView.datasetFilter = {};
-            }
-
-            dispatch(_setLoading(true));
-            dispatch(setDataset(savedView.dataset, false, false))
-                .then(() => {
-                    let dataset = getState().dataset;
-                    if (savedView.embeddings) {
-                        let names = dataset.embeddings.map(e => getEmbeddingKey(e));
-                        let embeddings = [];
-                        savedView.embeddings.forEach(embedding => {
-                            let index = names.indexOf(getEmbeddingKey(embedding));
-                            if (index !== -1) {
-                                embeddings.push(dataset.embeddings[index]);
-                            }
-                        });
-                        savedView.embeddings = embeddings;
-                        if (savedView.camera != null) {
-                            savedView.chartOptions.camera = savedView.camera;
-                        }
-                    }
-                })
-                .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
-                .then(() => dispatch(restoreView(savedView)))
-                .then(() => dispatch(_updateCharts()))
-                .then(() => dispatch(handleFilterUpdated()))
-                .then(() => {
-                    if (savedView.sort != null) {
-                        for (let name in savedView.sort) {
-                            dispatch(setDotPlotSortOrder({name: name, value: savedView.sort[name]}));
-                        }
-                    }
-
-                })
-                .finally(() => dispatch(_setLoading(false)))
-                .catch(err => {
-                    console.log(err);
-                    dispatch(setMessage('Unable to restore saved view.'));
-                    dispatch(loadDefaultDataset());
-                });
+            dispatch(restoreSavedView(savedView));
         } else {
             dispatch(loadDefaultDataset());
         }
@@ -1141,11 +1101,13 @@ export function setBinSummary(payload) {
 }
 
 export function setBinValues(payload) {
-    return function (dispatch, getState) {
-        dispatch({type: SET_BIN_VALUES, payload: payload});
-    };
+    return {type: SET_BIN_VALUES, payload: payload};
 }
 
+
+export function setSavedDatasetState(payload) {
+    return {type: SET_SAVED_DATASET_STATE, payload: payload};
+}
 
 function setDatasetFilters(payload) {
     return {type: SET_DATASET_FILTERS, payload: payload};
@@ -1157,6 +1119,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         if (setLoading) {
             dispatch(_setLoading(true));
         }
+        let savedDatasetState = getState().savedDatasetState[id];
         const datasetChoices = getState().datasetChoices;
         let choice = null;
         for (let i = 0; i < datasetChoices.length; i++) {
@@ -1217,9 +1180,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             });
             newDataset.id = id;
             dispatch(_setDataset(newDataset));
-            if (loadDefaultView) {
-                dispatch(loadDefaultDatasetEmbedding());
-            }
+
             categoryNameResults.forEach(result => {
                 dispatch(_handleCategoricalNameChange({
                     name: result.category,
@@ -1228,6 +1189,12 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                 }));
             });
             dispatch(setDatasetFilters(datasetFilters));
+            if (savedDatasetState) {
+
+                dispatch(restoreSavedView(savedDatasetState));
+            } else if (loadDefaultView) {
+                dispatch(loadDefaultDatasetEmbedding());
+            }
         }
 
         const categoriesRenamePromise = fetch(API + '/category_name?id=' + id,
@@ -1540,7 +1507,7 @@ function _updateCharts(onError) {
                     });
                 }
             });
-            dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length>0);
+            dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length > 0);
             dotPlotData.sort((a, b) => {
                 a = a.name;
                 b = b.name;

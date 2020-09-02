@@ -3,7 +3,6 @@ import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
     DELETE_DATASET,
-    DIFF_EXP_RESULTS,
     getTraceKey,
     RESTORE_VIEW,
     SET_BIN_SUMMARY,
@@ -34,6 +33,7 @@ import {
     SET_NUMBER_OF_BINS_UI,
     SET_POINT_SIZE,
     SET_PRIMARY_TRACE_KEY,
+    SET_SAVED_DATASET_STATE,
     SET_SEARCH_TOKENS,
     SET_SELECTED_DOT_PLOT_DATA,
     SET_SELECTED_EMBEDDING,
@@ -138,17 +138,6 @@ function embeddings(state = [], action) {
             return [];
         case RESTORE_VIEW:
             return action.payload.embeddings != null ? action.payload.embeddings : state;
-        default:
-            return state;
-    }
-}
-
-function diffExpResults(state = null, action) {
-    switch (action.type) {
-        case DIFF_EXP_RESULTS:
-            return action.payload;
-        case SET_DATASET:
-            return null;
         default:
             return state;
     }
@@ -614,6 +603,17 @@ export function pointSize(state = DEFAULT_POINT_SIZE, action) {
     }
 }
 
+
+// used to restore state when toggling datasets
+export function savedDatasetState(state = {}, action) {
+    switch (action.type) {
+        case SET_SAVED_DATASET_STATE:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 export function primaryTraceKey(state = null, action) {
     switch (action.type) {
         case SET_PRIMARY_TRACE_KEY:
@@ -665,7 +665,6 @@ export default combineReducers({
     datasetChoices,
     dialog,
     dotPlotData,
-    diffExpResults,
     email,
     embeddingData,
     embeddings,
@@ -681,6 +680,7 @@ export default combineReducers({
     message,
     pointSize,
     primaryTraceKey,
+    savedDatasetState,
     searchTokens,
     selection,
     selectedDotPlotData,

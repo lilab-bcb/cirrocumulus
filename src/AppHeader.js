@@ -24,6 +24,7 @@ import {
     setDataset,
     setDialog,
     setMessage,
+    setSavedDatasetState,
     setTab,
 } from './actions';
 import {drawerWidth} from './App';
@@ -134,10 +135,8 @@ class AppHeader extends React.PureComponent {
         this.setState({moreMenuOpen: true, moreMenuAnchorEl: event.currentTarget});
     };
 
-    copyLink = (event) => {
-
+    getLinkJson = () => {
         const {chartOptions, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
-        let linkText = window.location.protocol + '//' + window.location.host;
 
         let json = {
             dataset: dataset.id,
@@ -216,7 +215,13 @@ class AppHeader extends React.PureComponent {
         if (interpolator.name !== DEFAULT_INTERPOLATOR) {
             json.colorScheme = interpolator.name;
         }
-        linkText += '?q=' + JSON.stringify(json);
+        return json;
+    };
+
+    copyLink = (event) => {
+
+        let linkText = window.location.protocol + '//' + window.location.host;
+        linkText += '?q=' + JSON.stringify(this.getLinkJson());
         const container = document.activeElement;
         const fakeElem = document.createElement('textarea');
         const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
@@ -267,6 +272,13 @@ class AppHeader extends React.PureComponent {
         this.setState({moreMenuOpen: false});
     };
     handleDataset = (event) => {
+        if (this.props.dataset != null) {
+            const savedDatasetState = this.props.savedDatasetState;
+            const link = this.getLinkJson();
+            link.dataset = null;
+            savedDatasetState[this.props.dataset.id] = link;
+            this.props.handleSavedDatasetState(savedDatasetState);
+        }
         this.props.handleDataset(event.target.value);
     };
     handleSettings = (event) => {
@@ -432,7 +444,7 @@ const mapStateToProps = state => {
         datasetFilter: state.datasetFilter,
         markerOpacity: state.markerOpacity,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-
+        savedDatasetState: state.savedDatasetState,
         datasetChoices: state.datasetChoices,
         dialog: state.dialog,
         dotPlotData: state.dotPlotData,
@@ -464,6 +476,11 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleLogout: () => {
             dispatch(logout());
         },
+
+        handleSavedDatasetState: value => {
+            dispatch(setSavedDatasetState(value));
+        },
+
         handleDataset: value => {
             dispatch(setDataset(value));
         },
