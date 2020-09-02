@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.7.post1 `September 2, 2020`
+    * Fixed bug passing `markers` to `launch` command
+    * `launch` command takes multiple datasets
+
 - 1.1.7 `August 28, 2020`
     * Use median instead of mean for categorical label position on data
     * Fixed Safari embedding label shadow bug
