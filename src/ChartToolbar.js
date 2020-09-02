@@ -40,9 +40,6 @@ class ChartToolbar extends React.PureComponent {
         this.props.onShowAxis();
     };
 
-    onDarkMode = () => {
-        this.props.onDarkMode();
-    };
 
     onShowFog = () => {
         this.props.onShowFog();
@@ -74,7 +71,7 @@ class ChartToolbar extends React.PureComponent {
 
     render() {
 
-        const {dragmode, editSelection, showLabels, showAxis, darkMode} = this.props;
+        const {dragmode, editSelection, showLabels, showAxis} = this.props;
         const {saveImageEl} = this.state;
         return (<React.Fragment>
 
