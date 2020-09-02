@@ -35,7 +35,7 @@ def get_markers(marker_paths):
                         for cell_sub_type in cell_type['subtypes']['cell_types']:
                             markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
             else:
-                key = os.path.splitext(os.path.basename(marker_json))[0]
+                key = os.path.splitext(os.path.basename(marker_path))[0]
                 markers = marker_dict.get(key, {})
                 marker_dict[key] = markers
                 markers.update(marker_json)
