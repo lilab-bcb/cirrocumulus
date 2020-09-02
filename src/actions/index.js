@@ -1503,7 +1503,6 @@ function _updateCharts(onError) {
         let newDotplotData;
 
         function updateDotPlotData() {
-            console.log('updateDotPlotData');
             // merge with existing data
             if (newDotplotData) {
                 newDotplotData.forEach(categoryItem => {

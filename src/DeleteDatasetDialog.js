@@ -28,7 +28,6 @@ class DeleteDatasetDialog extends React.PureComponent {
     };
 
     render() {
-        console.log('DeleteDatasetDialog');
         return (
             <Dialog
                 open={this.state.open}

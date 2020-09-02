@@ -42,7 +42,6 @@ class EditDatasetDialog extends React.PureComponent {
                     method: 'GET',
                     headers: {'Authorization': 'Bearer ' + getIdToken()},
                 }).then(result => result.json()).then(datasetInfo => {
-                    console.log(datasetInfo)
                 let readers = datasetInfo.readers;
                 let myIndex = readers.indexOf(this.props.email);
                 if (myIndex !== -1) {
