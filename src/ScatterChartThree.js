@@ -283,6 +283,7 @@ class ScatterChartThree extends React.PureComponent {
 
 
     onDragMode = (mode) => {
+
         if (mode === 'pan') {
             this.scatterPlot.setInteractionMode('PAN');
         } else if (mode === 'select') {
@@ -313,6 +314,16 @@ class ScatterChartThree extends React.PureComponent {
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
             this.scatterPlot = createScatterPlot(containerElement, false, true);
+            if (this.props.chartOptions.dragmode === 'pan') {
+                this.scatterPlot.setInteractionMode('PAN');
+            } else if (this.props.chartOptions.dragmode === 'select') {
+                this.scatterPlot.setInteractionMode('SELECT');
+                this.scatterPlot.rectangleSelector.setSelectionMode('BOX');
+            } else if (this.props.chartOptions.dragmode === 'lasso') {
+                this.scatterPlot.setInteractionMode('SELECT');
+                this.scatterPlot.rectangleSelector.setSelectionMode('LASSO');
+
+            }
             const axes = this.scatterPlot.scene.getObjectByName('axes');
             if (axes) {
                 axes.visible = this.props.chartOptions.showAxis;
