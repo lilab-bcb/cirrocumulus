@@ -3,6 +3,25 @@ import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import OpenSeadragon from 'openseadragon';
+import {
+    deleteDatasetFilterPromise,
+    exportDatasetFiltersPromise,
+    getCategoryNamesPromise,
+    getDatasetFilterPromise,
+    getDatasetsPromise,
+    getEmbeddingPromise,
+    getFileUrl,
+    getFiltersPromise,
+    getGroupedStatsPromise,
+    getSchemaPromise,
+    getSelectedIdsPromise,
+    getSelectionPromise,
+    getServerPromise,
+    getStatsPromise,
+    setCategoryNamePromise,
+    upsertDatasetFilterPromise
+} from '../api_util';
+
 import CustomError from '../CustomError';
 import {getPositions} from '../ThreeUtil';
 
@@ -16,7 +35,6 @@ import {
 } from '../util';
 
 // export const API = 'http://localhost:5000/api';
-
 export const API = '/api';
 
 const authScopes = [
@@ -154,7 +172,7 @@ export function initGapi() {
 
         window.setTimeout(loadingAppProgress, 500);
 
-        fetch(API + '/server').then(result => result.json()).then(serverInfo => {
+        getServerPromise().then(serverInfo => {
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '') { // no login required
                 dispatch(_setLoadingApp({loading: false}));
@@ -212,10 +230,7 @@ export function openDatasetFilter(filterId) {
 
         dispatch(_setLoading(true));
 
-        fetch(API + '/filter?id=' + filterId + '&ds_id=' + getState().dataset.id,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(response => response.json())
+        getDatasetFilterPromise(filterId, getState().dataset.id)
             .then(result => {
                 result.id = filterId;
                 let filterValue = JSON.parse(result.value);
@@ -249,12 +264,7 @@ export function openDatasetFilter(filterId) {
 export function deleteDatasetFilter(filterId) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        fetch(API + '/filter',
-            {
-                body: JSON.stringify({id: filterId, ds_id: getState().dataset.id}),
-                method: 'DELETE',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            })
+        deleteDatasetFilterPromise(filterId, getState().dataset.id)
             .then(() => {
                 let datasetFilters = getState().datasetFilters;
                 for (let i = 0; i < datasetFilters.length; i++) {
@@ -308,12 +318,7 @@ export function saveDatasetFilter(payload) {
             savedDatasetFilter[key] = requestBody[key];
         }
         dispatch(_setLoading(true));
-        fetch(API + '/filter',
-            {
-                body: JSON.stringify(requestBody),
-                method: payload.filterId != null ? 'PUT' : 'POST',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(response => response.json())
+        upsertDatasetFilterPromise(requestBody, payload.filterId != null)
             .then(result => {
                 requestBody.id = result.id;
                 let datasetFilters = getState().datasetFilters;
@@ -413,12 +418,10 @@ export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
         let filter = getFilterJson(getState(), true);
-        fetch(API + '/selected_ids',
-            {
-                body: JSON.stringify({id: getState().dataset.id, filter: filter}),
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json()).then(result => {
+        getSelectedIdsPromise({
+            id: getState().dataset.id,
+            filter: filter
+        }).then(result => result.json()).then(result => {
             const blob = new Blob([result.ids.join('\n')], {type: "text/plain;charset=utf-8"});
             saveAs(blob, "selection.txt");
         }).finally(() => {
@@ -432,15 +435,11 @@ export function downloadSelectedIds() {
 export function exportDatasetFilters() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        fetch(API + '/export_filters?id=' + getState().dataset.id, {
-            headers: {'Authorization': 'Bearer ' + getIdToken()},
-        }).then(result => {
-            if (!result.ok) {
+        exportDatasetFiltersPromise(getState().dataset.id).then(result => {
+            if (result == null) {
                 handleError(dispatch, 'Unable to export filters');
                 return;
             }
-            return result.text();
-        }).then(result => {
             const blob = new Blob([result], {type: "text/plain;charset=utf-8"});
             saveAs(blob, "filters.csv");
         }).finally(() => {
@@ -536,18 +535,14 @@ function handleFilterUpdated() {
             return getEmbeddingJson(e);
         });
 
-        fetch(API + '/selection',
-            {
-                body: JSON.stringify(json),
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json()).then(result => {
+        getSelectionPromise(json).then(result => {
             dispatch(handleSelectionResult(result, true));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
     };
 }
+
 
 export function handleBrushFilterUpdated(payload) {
     return function (dispatch, getState) {
@@ -628,12 +623,12 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        fetch(API + '/category_name',
-            {
-                body: JSON.stringify({c: payload.name, o: payload.oldValue, n: payload.value, id: dataset_id}),
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => dispatch(_handleCategoricalNameChange(payload)));
+        setCategoryNamePromise({
+            c: payload.name,
+            o: payload.oldValue,
+            n: payload.value,
+            id: dataset_id
+        }).then(result => dispatch(_handleCategoricalNameChange(payload)));
     };
 }
 
@@ -1197,23 +1192,15 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
         }
 
-        const categoriesRenamePromise = fetch(API + '/category_name?id=' + id,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json())
+        const categoriesRenamePromise = getCategoryNamesPromise(id).then(result => result.json())
             .then(results => {
                 categoryNameResults = results;
             });
-        const filtersPromise = fetch(API + '/filters?id=' + id,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json())
+        const filtersPromise = getFiltersPromise(id).then(result => result.json())
             .then(results => {
                 datasetFilters = results;
             });
-        const schemaPromise = fetch(API + '/schema?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
-            return response.json();
-        }).then(result => {
+        const schemaPromise = getSchemaPromise(id).then(result => {
             newDataset = result;
         });
         return Promise.all([schemaPromise, filtersPromise, categoriesRenamePromise]).then(() => {
@@ -1407,17 +1394,11 @@ function _updateCharts(onError) {
                 }
             }
             if (measures.length > 0 || dimensions.length > 0) {
-
-                let p = fetch(API + '/embedding',
-                    {
-                        body: JSON.stringify(Object.assign({
-                            id: state.dataset.id,
-                            measures: measures,
-                            dimensions: dimensions
-                        }, getEmbeddingJson(embedding))),
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-                    }).then(r => r.json()).then(result => {
+                let p = getEmbeddingPromise(Object.assign({
+                    id: state.dataset.id,
+                    measures: measures,
+                    dimensions: dimensions
+                }, getEmbeddingJson(embedding))).then(result => {
                     embeddingResults.push({embeddingResult: result, embedding: embedding});
                 });
                 promises.push(p);
@@ -1448,17 +1429,11 @@ function _updateCharts(onError) {
 
 
         if (globalFeatureSummaryX.length > 0 || globalFeatureSummaryObsContinuous.length > 0 || globalFeatureSummaryDimensions.length > 0) {
-            let p = fetch(API + '/stats',
-                {
-                    body: JSON.stringify({
-                        id: state.dataset.id,
-                        measures: globalFeatureSummaryX.concat(globalFeatureSummaryObsContinuous),
-                        dimensions: globalFeatureSummaryDimensions
-                    }),
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-                }).then(r => r.json()).then(result => {
-
+            let p = getStatsPromise({
+                id: state.dataset.id,
+                measures: globalFeatureSummaryX.concat(globalFeatureSummaryObsContinuous),
+                dimensions: globalFeatureSummaryDimensions
+            }).then(result => {
                 const newSummary = result.summary || {};
                 for (let key in newSummary) {
                     globalFeatureSummary[key] = newSummary[key];
@@ -1519,16 +1494,11 @@ function _updateCharts(onError) {
 
 
         if (dotplotDimensions.length > 0 && dotplotMeasures.size > 0) {
-            let p = fetch(API + '/grouped_stats',
-                {
-                    body: JSON.stringify({
-                        id: state.dataset.id,
-                        measures: Array.from(dotplotMeasures),
-                        dimensions: dotplotDimensions
-                    }),
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-                }).then(r => r.json()).then(dotPlotResult => {
+            let p = getGroupedStatsPromise({
+                id: state.dataset.id,
+                measures: Array.from(dotplotMeasures),
+                dimensions: dotplotDimensions
+            }).then(dotPlotResult => {
                 newDotplotData = dotPlotResult.dotplot;
             });
             promises.push(p);
@@ -1554,17 +1524,12 @@ function _updateCharts(onError) {
             // });
 
 
-            let p = fetch(API + '/selection',
-                {
-                    body: JSON.stringify({
-                        id: state.dataset.id,
-                        filter: filterJson,
-                        measures: globalFeatureSummaryDimensions.length > 0 ? searchTokens.X : globalFeatureSummaryX,
-                        dimensions: searchTokens.obsCat
-                    }),
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-                }).then(r => r.json()).then(result => {
+            let p = getSelectionPromise({
+                id: state.dataset.id,
+                filter: filterJson,
+                measures: globalFeatureSummaryDimensions.length > 0 ? searchTokens.X : globalFeatureSummaryX,
+                dimensions: searchTokens.obsCat
+            }).then(result => {
                 selectionResult = result;
             });
             promises.push(p);
@@ -1713,7 +1678,7 @@ function handleEmbeddingResult(result) {
 
             if (isSpatial) {
                 chartData.isImage = true;
-                const url = API + '/file?id=' + state.dataset.id + '&file=' + selectedEmbedding.spatial.image + '&access_token=' + getIdToken();
+                const url = getFileUrl(state.dataset.id, selectedEmbedding.spatial.image);
                 let tileSource = new OpenSeadragon.ImageTileSource({
                     url: url,
                     buildPyramid: true,
@@ -1745,10 +1710,7 @@ function handleError(dispatch, err, message) {
 export function listDatasets() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        return fetch(API + '/datasets', {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-            .then(response => {
-                return response.json();
-            })
+        return getDatasetsPromise()
             .then(choices => {
                 dispatch(_setDatasetChoices(choices));
             })
