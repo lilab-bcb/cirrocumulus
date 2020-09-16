@@ -8,7 +8,9 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Paper from '@material-ui/core/Paper';
 import Select from '@material-ui/core/Select';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
-import {scaleLinear} from 'd3-scale';
+import {scaleLinear, scaleSequential} from 'd3-scale';
+import {interpolateReds} from 'd3-scale-chromatic';
+import * as scaleChromatic from 'd3-scale-chromatic';
 import React from 'react';
 import ColorSchemeLegend, {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
@@ -291,7 +293,7 @@ class DotPlotCanvas extends React.PureComponent {
         this.features = features;
         this.size = this.getSize(context);
         this.categoryOrder = categoryOrder;
-        this.colorScale = scaleLinear().domain(this.props.meanRange).range(['blue', 'red']);
+        this.colorScale = scaleSequential(interpolateReds).domain(this.props.meanRange).clamp(true);
         this.sizeScale = scaleLinear().domain(this.props.fractionRange).range([minRadius, maxRadius]).clamp(true);
     }
 
