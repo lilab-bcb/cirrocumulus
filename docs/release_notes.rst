@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.7.post2 `September 16, 2020`
+    * Save state when toggling between datasets
+    * Fixed bug in dotplot tooltips
+    * Changed dotplot color scheme
+
 - 1.1.7.post1 `September 2, 2020`
     * Fixed bug passing `markers` to `launch` command
     * `launch` command takes multiple datasets
