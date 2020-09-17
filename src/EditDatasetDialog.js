@@ -8,7 +8,8 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import {connect} from 'react-redux';
-import {API, EDIT_DATASET_DIALOG, getIdToken, saveDataset, setDialog, setMessage} from './actions';
+import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
+import {getDatasetPromise} from './api_util';
 
 function getUniqueArray(text) {
     let tokens = text.split(',');
@@ -37,11 +38,7 @@ class EditDatasetDialog extends React.PureComponent {
 
     componentDidMount() {
         if (this.props.dataset != null) {
-            fetch(API + '/dataset?id=' + this.props.dataset.id,
-                {
-                    method: 'GET',
-                    headers: {'Authorization': 'Bearer ' + getIdToken()},
-                }).then(result => result.json()).then(datasetInfo => {
+            getDatasetPromise(this.props.dataset.id).then(datasetInfo => {
                 let readers = datasetInfo.readers;
                 let myIndex = readers.indexOf(this.props.email);
                 if (myIndex !== -1) {
@@ -54,7 +51,7 @@ class EditDatasetDialog extends React.PureComponent {
                     readers: readers.join(', '),
                 });
             }).catch(err => {
-                console.log(err)
+                console.log(err);
                 this.props.handleError('Unable to retrieve dataset details. Please try again.');
                 this.props.handleCancel();
             });

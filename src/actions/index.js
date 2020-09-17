@@ -5,6 +5,7 @@ import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import {
     deleteDatasetFilterPromise,
+    deleteDatasetPromise,
     exportDatasetFiltersPromise,
     getCategoryNamesPromise,
     getDatasetFilterPromise,
@@ -18,8 +19,10 @@ import {
     getSelectionPromise,
     getServerPromise,
     getStatsPromise,
+    getUserPromise,
     setCategoryNamePromise,
-    upsertDatasetFilterPromise
+    upsertDatasetFilterPromise,
+    upsertDatasetPromise
 } from '../api_util';
 
 import CustomError from '../CustomError';
@@ -144,12 +147,7 @@ function getEmbeddingJson(embedding) {
 
 function getUser() {
     return function (dispatch, state) {
-        fetch(API + '/user', {
-            headers: {
-                'Authorization': 'Bearer ' + getIdToken(),
-                'Content-Type': 'application/json'
-            }
-        }).then(result => result.json()).then(user => dispatch(setUser(user)));
+        getUserPromise().then(user => dispatch(setUser(user)));
     };
 }
 
@@ -202,6 +200,7 @@ export function initGapi() {
                 document.getElementsByTagName('head')[0].appendChild(script);
             }
         }).catch(err => {
+            console.log(err);
             dispatch(_setLoadingApp({loading: false, progress: 0}));
             handleError(dispatch, 'Unable to load app. Please try again.');
         });
@@ -883,9 +882,9 @@ export function saveDataset(payload) {
         // let slash = bucket.indexOf('/');
         // let object = encodeURIComponent(bucket.substring(slash + 1));
         // bucket = encodeURIComponent(bucket.substring(0, slash));
-        let isEdit = payload.dataset != null;
-        dispatch(_setLoading(true));
 
+        dispatch(_setLoading(true));
+        const isEdit = payload.dataset != null;
         const serverInfo = getState().serverInfo;
         const updatePermissions = !isEdit || url !== payload.dataset.url;
         // if (updatePermissions) {
@@ -911,18 +910,7 @@ export function saveDataset(payload) {
             // if (!permissionsResponse.ok) {
             //     dispatch(setMessage('Unable to set dataset read permissions. Please ensure that you are the dataset owner or manually add ' + serverEmail + ' as a reader.'));
             // }
-        }).then(() => fetch(API + '/dataset',
-            {
-                body: JSON.stringify(
-                    {
-                        id: payload.dataset != null ? payload.dataset.id : null,
-                        url: url,
-                        name: name,
-                        readers: readers
-                    }),
-                method: isEdit ? 'PUT' : 'POST',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            })).then(importDatasetResponse => importDatasetResponse.json()).then(importDatasetResult => {
+        }).then(() => upsertDatasetPromise(payload.dataset ? payload.dataset.id : null, url, name, readers)).then(importDatasetResult => {
             if (isEdit) {
                 dispatch(updateDataset({name: name, id: importDatasetResult.id, owner: true}));
                 dispatch(setMessage('Dataset updated'));
@@ -945,13 +933,7 @@ export function saveDataset(payload) {
 export function deleteDataset(payload) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        fetch(API + '/dataset',
-            {
-                body: JSON.stringify(
-                    {id: payload.dataset.id}),
-                method: 'DELETE',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(() => {
+        deleteDatasetPromise(payload.dataset.id).then(() => {
             dispatch(_deleteDataset({id: payload.dataset.id}));
             dispatch(setDialog(null));
             dispatch(_setDataset(null));
