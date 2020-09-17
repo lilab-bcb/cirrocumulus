@@ -1,7 +1,7 @@
 Release Notes
 -------------
 
-- 1.1.7.post2 `September 16, 2020`
+- 1.1.7.post2 `September 17, 2020`
     * Save state when toggling between datasets
     * Fixed bug in dotplot tooltips
     * Changed dotplot color scheme
