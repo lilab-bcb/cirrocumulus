@@ -143,16 +143,16 @@ export function updateTraceColors(traceInfo) {
  * obtained from the indexSort method. Does not handle ties.
  *
  */
-function rankIndexArray(index) {
-    const rank = [];
+export function rankIndexArray(index) {
     const n = index.length;
+    const rank = new Uint32Array(n);
     for (let j = 0; j < n; j++) {
         rank[index[j]] = j + 1;
     }
     return rank;
 };
 
-function indexSort(array, ascending) {
+export function indexSort(array, ascending) {
     const pairs = [];
     for (let i = 0, length = array.length; i < length; i++) {
         pairs.push({

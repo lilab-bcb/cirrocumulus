@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color} from 'three';
 import {getVisualizer} from './ScatterChartThree';
-import {getRgbScale} from './util';
+import {getRgbScale, indexSort, rankIndexArray} from './util';
 
 function scaleLinear(value, domain, range) {
     const domainDifference = domain[1] - domain[0];
@@ -61,6 +61,13 @@ export function getPositions(trace) {
     let zExtent = [Infinity, -Infinity];
     const npoints = trace.x.length;
     const is3d = trace.z != null;
+    let ranks;
+    if (!is3d) {
+        ranks = rankIndexArray(indexSort(trace.values, true));
+        // ranks go from 1 to values.length. Higher rank means higher value.
+        zExtent[0] = 0;
+        zExtent[1] = 1;
+    }
     // Determine max and min of each axis of our data.
     for (let i = 0; i < npoints; i++) {
         const x = trace.x[i];
@@ -80,7 +87,7 @@ export function getPositions(trace) {
     const getRange = (extent) => Math.abs(extent[1] - extent[0]);
     const xRange = getRange(xExtent);
     const yRange = getRange(yExtent);
-    const zRange = is3d ? getRange(zExtent) : 1;
+    const zRange = getRange(zExtent);
     const maxRange = Math.max(xRange, yRange, zRange);
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
     const makeScaleRange = (range, base) => [
@@ -98,12 +105,7 @@ export function getPositions(trace) {
 
         positions[dst++] = scaleLinear(trace.x[i], xExtent, xScale);
         positions[dst++] = scaleLinear(trace.y[i], yExtent, yScale);
-
-        if (is3d) {
-            positions[dst++] = scaleLinear(trace.z[i], zExtent, zScale);
-        } else {
-            positions[dst++] = 0.0;
-        }
+        positions[dst++] = scaleLinear(is3d ? trace.z[i] : ranks[i] / (ranks.length + 1), zExtent, zScale);
     }
     return positions;
 
@@ -161,13 +163,19 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
 
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions) {
     const colors = traceInfo.colors;
-    const positions = traceInfo.positions;
+    let positions = traceInfo.positions;
     const is3d = traceInfo.z != null;
-    for (let i = 0, j = 3, k = 2; i < traceInfo.npoints; i++, j += 4, k += 3) {
-        const isSelected = selection.size === 0 || selection.has(i);
+    const npoints = traceInfo.npoints;
+    const isSelectionEmpty = selection.size === 0;
+    const updateZ = !isSelectionEmpty && !is3d;
+    if (updateZ) {
+        positions = positions.slice();
+    }
+    for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
+        const isSelected = isSelectionEmpty || selection.has(i);
         colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        if (!is3d) {
-            positions[k] = isSelected ? 1 : 0;
+        if (updateZ && isSelected) {
+            positions[k] = 1;
         }
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
