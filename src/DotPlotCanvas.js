@@ -10,7 +10,6 @@ import Select from '@material-ui/core/Select';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {scaleLinear, scaleSequential} from 'd3-scale';
 import {interpolateReds} from 'd3-scale-chromatic';
-import * as scaleChromatic from 'd3-scale-chromatic';
 import React from 'react';
 import ColorSchemeLegend, {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
@@ -62,8 +61,8 @@ class DotPlotCanvas extends React.PureComponent {
                 const node = event.target;
                 var rect = node.getBoundingClientRect();
                 let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
-                xy[0] /= devicePixelRatio;
-                xy[1] /= devicePixelRatio;
+                // xy[0] /= devicePixelRatio;
+                // xy[1] /= devicePixelRatio;
                 const col = Math.floor((xy[0] - this.size.x) / (maxRadius * 2));
                 const row = Math.floor((xy[1]) / (maxRadius * 2));
 
