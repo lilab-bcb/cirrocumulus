@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.7.post3 `September 18, 2020`
+    * Plot higher values on top of lower values in embedding plot
+
 - 1.1.7.post2 `September 17, 2020`
     * Save state when toggling between datasets
     * Fixed bug in dotplot tooltips
