@@ -10,6 +10,7 @@ import Select from '@material-ui/core/Select';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {scaleLinear, scaleSequential} from 'd3-scale';
 import {interpolateReds} from 'd3-scale-chromatic';
+import natsort from 'natsort';
 import React from 'react';
 import ColorSchemeLegend, {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
@@ -253,6 +254,7 @@ class DotPlotCanvas extends React.PureComponent {
             }
         } else { // sort by category
             if (Object.keys(renamedCategories).length > 0) {
+                const sorter = natsort();
                 categoryOrder.sort((a, b) => {
                     let val1 = categories[a];
                     let renamed1 = renamedCategories[val1];
@@ -264,23 +266,7 @@ class DotPlotCanvas extends React.PureComponent {
                     if (renamed2 != null) {
                         val2 = renamed2;
                     }
-                    val1 = ('' + val1).toLowerCase();
-                    val2 = ('' + val2).toLowerCase();
-                    const num1 = parseFloat(val1);
-                    const num1Valid = !isNaN(num1);
-                    const num2 = parseFloat(val2);
-                    const num2Valid = !isNaN(num2);
-
-                    if (num1Valid && num2Valid) {
-                        return (num1 === num2 ? 0 : (num1 < num2 ? -1 : 1));
-                    }
-                    if (num1Valid) {
-                        return 1;
-                    }
-                    if (num2Valid) {
-                        return -1;
-                    }
-                    return val1 === val2 ? 0 : (val1 > val2 ? 1 : -1);
+                    return sorter(val1, val2);
                 });
             }
 

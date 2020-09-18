@@ -26,15 +26,16 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
+import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
-    diffExp,
     downloadSelectedIds,
     exportDatasetFilters,
     getDatasetFilterArray,
-    getEmbeddingKey, getTraceKey,
+    getEmbeddingKey,
+    getTraceKey,
     handleBrushFilterUpdated,
     handleCategoricalNameChange,
     handleColorChange,
@@ -53,7 +54,8 @@ import {
     setMarkerOpacityUI,
     setNumberOfBins,
     setNumberOfBinsUI,
-    setPointSize, setPrimaryTraceKey,
+    setPointSize,
+    setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
@@ -179,7 +181,7 @@ class EmbedForm extends React.PureComponent {
                 break;
             }
         }
-    }
+    };
 
     onMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -365,21 +367,9 @@ class EmbedForm extends React.PureComponent {
             }
         }
 
+        const sorter = natsort();
         featureSetOptions.sort((item1, item2) => {
-            let a = item1.group.toLowerCase();
-            let b = item2.group.toLowerCase();
-            if (a !== b) {
-                return a < b ? -1 : 1;
-            }
-            a = item1.text.toLowerCase();
-            b = item2.text.toLowerCase();
-            const aNumber = parseFloat(a);
-            const bNumber = parseFloat(b);
-            if (!isNaN(aNumber) && !isNaN(bNumber)) {
-                a = aNumber;
-                b = bNumber;
-            }
-            return a < b ? -1 : (a === b ? 0 : 1);
+            return sorter(item1.group, item2.group);
         });
 
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
@@ -389,11 +379,7 @@ class EmbedForm extends React.PureComponent {
         const obs = dataset == null ? [] : dataset.obs;
 
         let annotationOptions = obs.concat(obsCat);
-        annotationOptions.sort((a, b) => {
-            a = a.toLowerCase();
-            b = b.toLowerCase();
-            return a < b ? -1 : (a === b ? 0 : 1);
-        });
+        annotationOptions.sort(sorter);
 
 
         return (
@@ -425,7 +411,8 @@ class EmbedForm extends React.PureComponent {
                     {/*                    onChange={this.props.handleFeatures}*/}
                     {/*                    helperText={'Enter or paste list'}*/}
                     {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized  onChipClick={this.onFeatureClick} label={"Features"} options={featureOptions} value={splitTokens.X}
+                    <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features"}
+                                             options={featureOptions} value={splitTokens.X}
                                              onChange={this.onFeaturesChange}/>
                 </FormControl>
 
@@ -493,11 +480,11 @@ class EmbedForm extends React.PureComponent {
                                                     onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                     </Tooltip>
                                     <Tooltip title={"Save Filter"}>
-                                        <IconButton size={'small'}  disabled={datasetFilterKeys.length === 0}
+                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
                                     </Tooltip>
                                     <Tooltip title={"Download Selected IDs"}>
-                                        <IconButton size={'small'}  disabled={datasetFilterKeys.length === 0}
+                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                     </Tooltip>
                                     {/*<Tooltip title={"Compute Markers"}>*/}
