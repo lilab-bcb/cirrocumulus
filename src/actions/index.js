@@ -5,11 +5,9 @@ import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import {
     deleteDatasetFilterPromise,
-    deleteDatasetPromise,
     exportDatasetFiltersPromise,
     getCategoryNamesPromise,
     getDatasetFilterPromise,
-    getDatasetsPromise,
     getEmbeddingPromise,
     getFileUrl,
     getFiltersPromise,
@@ -17,15 +15,19 @@ import {
     getSchemaPromise,
     getSelectedIdsPromise,
     getSelectionPromise,
-    getServerPromise,
     getStatsPromise,
-    getUserPromise,
     setCategoryNamePromise,
-    upsertDatasetFilterPromise,
-    upsertDatasetPromise
+    upsertDatasetFilterPromise
 } from '../api_util';
 
 import CustomError from '../CustomError';
+import {
+    deleteDatasetPromise,
+    getDatasetsPromise,
+    getServerPromise,
+    getUserPromise,
+    upsertDatasetPromise
+} from '../server_api';
 import {getPositions} from '../ThreeUtil';
 
 import {

@@ -9,7 +9,7 @@ import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
-import {getDatasetPromise} from './api_util';
+import {getDatasetPromise} from './server_api';
 
 function getUniqueArray(text) {
     let tokens = text.split(',');
