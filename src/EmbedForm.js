@@ -75,8 +75,8 @@ const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'
     value: 3,
     label: '300%'
 }, {value: 4, label: '400%'}];
-const gallerySizeOptions = [{value: 400, label: 'Small'}, {value: 500, label: 'Medium'}, {
-    value: 600,
+const gallerySizeOptions = [{value: 300, label: 'Small'}, {value: 500, label: 'Medium'}, {
+    value: 800,
     label: 'Large'
 }];
 const summaryOptions = [

@@ -9,18 +9,21 @@ import {getTraceKey, setEmbeddingData, setPrimaryTraceKey} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 
+function createContainer(chartSize) {
+    const containerElement = document.createElement('div');
+    containerElement.style.position = 'absolute';
+    containerElement.style.left = '-9999px';
+    containerElement.style.width = chartSize + 'px';
+    containerElement.style.height = chartSize + 'px';
+    return containerElement;
+}
+
 class GalleryCharts extends React.PureComponent {
     constructor(props) {
         super(props);
-        const containerElement = document.createElement('div');
-        containerElement.style.position = 'absolute';
-        containerElement.style.left = '-9999px';
-        containerElement.style.width = props.chartSize + 'px';
-        containerElement.style.height = props.chartSize + 'px';
-        document.body.appendChild(containerElement);
-        this.scatterPlot = createScatterPlot(containerElement, window.ApplePaySession);
-        this.scatterPlot.interactive = false;
-        this.containerElement = containerElement;
+        this.containerElement = createContainer(this.props.chartSize);
+        document.body.appendChild(this.containerElement);
+        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession);
         this.emptySet = new Set();
 
     }
@@ -36,16 +39,15 @@ class GalleryCharts extends React.PureComponent {
         this.props.handleEmbeddingData(this.props.embeddingData.slice());
     };
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.chartSize !== this.props.chartSize) {
-            this.containerElement.style.width = this.props.chartSize + 'px';
-            this.containerElement.style.height = this.props.chartSize + 'px';
-            this.scatterPlot.resize(false);
-        }
-    }
 
     render() {
-        const {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
+        let {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
+        if (this.containerElement.style.width !== this.props.chartSize + 'px') {
+            document.body.removeChild(this.containerElement);
+            this.containerElement = createContainer(this.props.chartSize);
+            document.body.appendChild(this.containerElement);
+            this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession);
+        }
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
 
         for (let i = 0; i < galleryTraces.length; i++) {

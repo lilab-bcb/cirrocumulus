@@ -5,7 +5,9 @@ import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
 import {drawImage} from './ImageChart';
-import {updateScatterChart} from './ThreeUtil';
+import {getVisualizer} from './ScatterChartThree';
+import {getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
+import {getChartSize} from './util';
 
 
 class GalleryImage extends React.PureComponent {
@@ -13,6 +15,7 @@ class GalleryImage extends React.PureComponent {
         super(props);
         this.state = {url: null, forceUpdate: false};
         this.canvasRef = React.createRef();
+        this.zoomFactor = getScaleFactor(getChartSize());
     }
 
 
@@ -24,6 +27,8 @@ class GalleryImage extends React.PureComponent {
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
         if (!traceInfo.isImage) {
+            let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
+            spriteVisualizer.zoomFactor = this.zoomFactor;
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
                 {}, chartOptions);
             const canvas = containerElement.querySelector('canvas');

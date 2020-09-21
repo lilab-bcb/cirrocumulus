@@ -1,8 +1,12 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
-import {Color} from 'three';
+import {Color, OrthographicCamera, Vector3} from 'three';
 import {getVisualizer} from './ScatterChartThree';
 import {getRgbScale, indexSort, rankIndexArray} from './util';
+
+export const POINT_VISUALIZER_ID = 'SPRITES';
+
+export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
 
 function scaleLinear(value, domain, range) {
     const domainDifference = domain[1] - domain[0];
@@ -12,9 +16,35 @@ function scaleLinear(value, domain, range) {
     return percentDomain * rangeDifference + range[0];
 }
 
-export const POINT_VISUALIZER_ID = 'SPRITES';
 
-export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
+export function getScaleFactor(size) {
+    const ORTHO_CAMERA_FRUSTUM_HALF_EXTENT = 1.2;
+    const aspectRatio = size.width / size.height;
+    let left = -ORTHO_CAMERA_FRUSTUM_HALF_EXTENT;
+    let right = ORTHO_CAMERA_FRUSTUM_HALF_EXTENT;
+    let bottom = -ORTHO_CAMERA_FRUSTUM_HALF_EXTENT;
+    let top = ORTHO_CAMERA_FRUSTUM_HALF_EXTENT;
+    // Scale up the larger of (w, h) to match the aspect ratio.
+    if (aspectRatio > 1) {
+        left *= aspectRatio;
+        right *= aspectRatio;
+    } else {
+        top /= aspectRatio;
+        bottom /= aspectRatio;
+    }
+    let camera = new OrthographicCamera(
+        left,
+        right,
+        top,
+        bottom,
+        -1000,
+        1000
+    );
+    camera.up = new Vector3(0, 0, 1);
+
+    camera.updateProjectionMatrix();
+    return camera.projectionMatrix.elements[0];
+}
 
 export function createScatterPlot(containerElement, premultipliedAlpha, labels) {
     const styles = makeStyles();
