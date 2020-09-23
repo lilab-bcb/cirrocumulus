@@ -37,6 +37,12 @@ class DotPlots extends React.PureComponent {
                     fractionRange[0] = 0;
                     fractionRange[1] = 1;
                 }
+                if (meanRange[0] > 0) {
+                    meanRange[0] = 0;
+                }
+                if (fractionRange[0] > 0) {
+                    fractionRange[0] = 0;
+                }
                 return (
                     <React.Fragment key={categoryItem.name}>
                         <DotPlotCanvas renamedCategories={categoricalNames[categoryItem.name]}
