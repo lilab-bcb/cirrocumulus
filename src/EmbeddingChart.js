@@ -11,11 +11,8 @@ import {
     handleMeasureFilterUpdated,
     setChartOptions
 } from './actions';
-import CategoricalLegend from './CategoricalLegend';
-import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import ScatterChartThree from './ScatterChartThree';
-import {getChartSize} from './util';
 
 
 class EmbeddingChart extends React.PureComponent {
@@ -28,46 +25,49 @@ class EmbeddingChart extends React.PureComponent {
     render() {
         const {
             traceInfo, categoricalNames, shape, nObsSelected, globalFeatureSummary, featureSummary,
-            datasetFilter, handleColorChange, handleNameChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated
+            datasetFilter, handleColorChange, handleNameChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated, primaryChartSize, handleDomain
         } = this.props;
-        const chartSize = getChartSize();
+
         return (
 
             <div style={{position: 'relative'}}>
                 <Paper elevation={0} style={{position: 'absolute', right: 10, zIndex: 1000}}>
-                    {traceInfo.continuous ?
-                        <ColorSchemeLegendWrapper
-                            width={140}
-                            label={true}
-                            showColorScheme={true}
-                            height={30}
-                            handleUpdate={handleMeasureFilterUpdated}
-                            datasetFilter={datasetFilter}
-                            scale={traceInfo.colorScale}
-                            featureSummary={featureSummary}
-                            globalFeatureSummary={globalFeatureSummary}
-                            nObs={shape[0]}
-                            nObsSelected={nObsSelected}
-                            name={traceInfo.name}
-                        /> :
-                        <CategoricalLegend datasetFilter={datasetFilter}
-                                           handleClick={handleDimensionFilterUpdated}
-                                           handleColorChange={handleColorChange}
-                                           handleNameChange={handleNameChange}
-                                           name={traceInfo.name}
-                                           categoricalNames={categoricalNames}
-                                           scale={traceInfo.colorScale}
-                                           maxHeight={chartSize.height - 24}
-                                           clickEnabled={true}
-                                           nObs={shape[0]}
-                                           nObsSelected={nObsSelected}
-                                           globalFeatureSummary={globalFeatureSummary}
-                                           featureSummary={featureSummary}/>}
+                    <h4 style={{marginTop: '3.2px'}}>{traceInfo.name}</h4>
+                    {/*{traceInfo.continuous ?*/}
+                    {/*    <ColorSchemeLegendWrapper*/}
+                    {/*        width={140}*/}
+                    {/*        label={true}*/}
+                    {/*        showColorScheme={true}*/}
+                    {/*        height={30}*/}
+                    {/*        handleDomain={handleDomain}*/}
+                    {/*        handleUpdate={handleMeasureFilterUpdated}*/}
+                    {/*        datasetFilter={datasetFilter}*/}
+                    {/*        scale={traceInfo.colorScale}*/}
+                    {/*        featureSummary={featureSummary}*/}
+                    {/*        globalFeatureSummary={globalFeatureSummary}*/}
+                    {/*        nObs={shape[0]}*/}
+                    {/*        nObsSelected={nObsSelected}*/}
+                    {/*        name={traceInfo.name}*/}
+                    {/*    /> :*/}
+                    {/*    <CategoricalLegend datasetFilter={datasetFilter}*/}
+                    {/*                       handleClick={handleDimensionFilterUpdated}*/}
+                    {/*                       handleColorChange={handleColorChange}*/}
+                    {/*                       handleNameChange={handleNameChange}*/}
+                    {/*                       name={traceInfo.name}*/}
+                    {/*                       categoricalNames={categoricalNames}*/}
+                    {/*                       scale={traceInfo.colorScale}*/}
+                    {/*                       maxHeight={primaryChartSize.height - 24}*/}
+                    {/*                       clickEnabled={true}*/}
+                    {/*                       nObs={shape[0]}*/}
+                    {/*                       nObsSelected={nObsSelected}*/}
+                    {/*                       globalFeatureSummary={globalFeatureSummary}*/}
+                    {/*                       featureSummary={featureSummary}/>}*/}
                 </Paper>
 
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
+                                   chartSize={primaryChartSize}
                                    setChartOptions={this.props.handleChartOptions}
                                    chartOptions={this.props.chartOptions}
                                    categoricalNames={categoricalNames}
@@ -90,6 +90,7 @@ class EmbeddingChart extends React.PureComponent {
                     chartOptions={this.props.chartOptions}
                     style={{display: 'inline-block'}}
                     traceInfo={traceInfo}
+                    chartSize={primaryChartSize}
                     categoricalNames={categoricalNames}
                     selection={this.props.selection}
                     onInitialized={this.onInitialized}
@@ -111,6 +112,7 @@ class EmbeddingChart extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         chartOptions: state.chartOptions,
+        primaryChartSize: state.primaryChartSize,
         categoricalNames: state.categoricalNames,
         numberOfBins: state.numberOfBins,
         binValues: state.binValues,
@@ -125,6 +127,8 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
+
+
         handleChartOptions: (options) => {
             dispatch(setChartOptions(options));
         },

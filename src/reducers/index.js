@@ -17,6 +17,7 @@ import {
     SET_DATASET_FILTER,
     SET_DATASET_FILTERS,
     SET_DIALOG,
+    SET_DOMAIN,
     SET_DOT_PLOT_DATA,
     SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
@@ -32,6 +33,7 @@ import {
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
     SET_POINT_SIZE,
+    SET_PRIMARY_CHART_SIZE,
     SET_PRIMARY_TRACE_KEY,
     SET_SAVED_DATASET_STATE,
     SET_SEARCH_TOKENS,
@@ -67,6 +69,11 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     value: getInterpolator(DEFAULT_INTERPOLATOR)
 };
 
+const DEFAULT_PRIMARY_CHART_SIZE = {
+    width: window.innerWidth - 280,
+    height: Math.max(300, window.innerHeight - 220)
+};
+
 const DEFAULT_CHART_OPTIONS = {
     animating: false,
     dragmode: DEFAULT_DRAG_MODE,
@@ -82,6 +89,16 @@ const DEFAULT_CHART_OPTIONS = {
 function chartSize(state = 500, action) {
     switch (action.type) {
         case SET_CHART_SIZE:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
+
+function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
+    switch (action.type) {
+        case SET_PRIMARY_CHART_SIZE:
             return action.payload;
         default:
             return state;
@@ -557,6 +574,14 @@ function embeddingData(state = [], action) {
             return action.payload;
         case SET_SELECTION:
             return state.slice();
+        case SET_DOMAIN:
+            state.forEach((traceInfo, stateIndex) => {
+                if (traceInfo.continuous && traceInfo.name === action.payload.name) {
+                    traceInfo.colorScale.domain(action.payload.domain);
+                    updateTraceColors(traceInfo);
+                }
+            });
+            return state.slice();
         case SET_CATEGORICAL_COLOR:
             state.forEach((traceInfo, stateIndex) => {
                 if (!traceInfo.continuous && traceInfo.name === action.payload.name) {
@@ -677,6 +702,7 @@ export default combineReducers({
     markerOpacityUI,
     numberOfBins,
     numberOfBinsUI,
+    primaryChartSize,
     message,
     pointSize,
     primaryTraceKey,

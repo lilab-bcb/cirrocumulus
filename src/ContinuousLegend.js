@@ -45,7 +45,7 @@ class ContinuousLegend extends React.PureComponent {
     }
 
     render() {
-        const {name, featureSummary, globalFeatureSummary, maxHeight} = this.props;
+        const {name, featureSummary, globalFeatureSummary, selected} = this.props;
         const displayName = name === '__count' ? 'count' : name;
         const selectionSummary = featureSummary[name];
         const globalSummary = globalFeatureSummary[name];
@@ -55,9 +55,10 @@ class ContinuousLegend extends React.PureComponent {
             summaryNames.push('selection');
             //  summaryNames.push('rest');
         }
+        const style = {margin: 0};
         return (
             <React.Fragment>
-                <h4 style={{margin: 0}}>{displayName}</h4>
+                <h4 style={style}><b>{displayName}</b></h4>
                 {globalSummary != null && name !== '__count' && this.getTable(summaryNames, selectionSummary, globalSummary)}
             </React.Fragment>);
     }

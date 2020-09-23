@@ -11,7 +11,7 @@ import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
 import {getCategoryLabelsPositions} from './ThreeUtil';
-import {arrayToSvgPath, getChartSize, isPointInside} from './util';
+import {arrayToSvgPath, isPointInside} from './util';
 
 
 export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
@@ -91,7 +91,6 @@ class ImageChart extends React.PureComponent {
     constructor(props) {
         super(props);
         this.id = uniqueId('cirro-image');
-        this.chartSize = getChartSize();
         this.tooltipElementRef = React.createRef();
         this.props.chartOptions = {dragmode: 'pan', editSelection: false, showLabels: false};
     }
@@ -368,13 +367,14 @@ class ImageChart extends React.PureComponent {
             elem.setAttribute('stroke-dasharray', '2 2');
             svgOverlay.node().appendChild(elem);
         });
-
-
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.canvasOverlay) {
             this.canvasOverlay._updateCanvas();
+        }
+        if (this.prevProps.chartSize !== this.props.chartSize) {
+            this.viewer.resize();
         }
     }
 
@@ -463,8 +463,8 @@ class ImageChart extends React.PureComponent {
 
             <div style={{
                 display: 'inline-block',
-                width: this.chartSize.width,
-                height: this.chartSize.height
+                width: this.props.chartSize.width,
+                height: this.props.chartSize.height
             }}
                  id={this.id}>
             </div>

@@ -3,31 +3,12 @@ import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import OpenSeadragon from 'openseadragon';
-import {
-    deleteDatasetFilterPromise,
-    exportDatasetFiltersPromise,
-    getCategoryNamesPromise,
-    getDatasetFilterPromise,
-    getEmbeddingPromise,
-    getFileUrl,
-    getFiltersPromise,
-    getGroupedStatsPromise,
-    getSchemaPromise,
-    getSelectedIdsPromise,
-    getSelectionPromise,
-    getStatsPromise,
-    setCategoryNamePromise,
-    upsertDatasetFilterPromise
-} from '../api_util';
-
 import CustomError from '../CustomError';
-import {
-    deleteDatasetPromise,
-    getDatasetsPromise,
-    getServerPromise,
-    getUserPromise,
-    upsertDatasetPromise
-} from '../server_api';
+import {RestDataset} from '../RestDataset';
+
+import {RestServerApi} from '../RestServerApi';
+
+
 import {getPositions} from '../ThreeUtil';
 
 import {
@@ -56,6 +37,7 @@ export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
 export const SET_PRIMARY_TRACE_KEY = 'SET_PRIMARY_TRACE_KEY';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
+export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
 export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
@@ -64,6 +46,7 @@ export const UPDATE_DATASET = 'UPDATE_DATASET';
 export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
 export const SET_SAVED_DATASET_STATE = 'SET_SAVED_DATASET_STATE';
 
+export const SET_DOMAIN = 'SET_DOMAIN';
 export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
 export const SET_CATEGORICAL_NAME = 'SET_CATEGORICAL_NAME';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
@@ -148,8 +131,8 @@ function getEmbeddingJson(embedding) {
 
 
 function getUser() {
-    return function (dispatch, state) {
-        getUserPromise().then(user => dispatch(setUser(user)));
+    return function (dispatch, getState) {
+        getState().serverInfo.api.getUserPromise().then(user => dispatch(setUser(user)));
     };
 }
 
@@ -172,7 +155,8 @@ export function initGapi() {
 
         window.setTimeout(loadingAppProgress, 500);
 
-        getServerPromise().then(serverInfo => {
+        return fetch(API + '/server').then(result => result.json()).then(serverInfo => {
+            serverInfo.api = new RestServerApi();
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '') { // no login required
                 dispatch(_setLoadingApp({loading: false}));
@@ -231,7 +215,7 @@ export function openDatasetFilter(filterId) {
 
         dispatch(_setLoading(true));
 
-        getDatasetFilterPromise(filterId, getState().dataset.id)
+        getState().serverInfo.api.getDatasetFilterPromise(filterId, getState().dataset.id)
             .then(result => {
                 result.id = filterId;
                 let filterValue = JSON.parse(result.value);
@@ -265,7 +249,7 @@ export function openDatasetFilter(filterId) {
 export function deleteDatasetFilter(filterId) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        deleteDatasetFilterPromise(filterId, getState().dataset.id)
+        getState().serverInfo.api.deleteDatasetFilterPromise(filterId, getState().dataset.id)
             .then(() => {
                 let datasetFilters = getState().datasetFilters;
                 for (let i = 0; i < datasetFilters.length; i++) {
@@ -319,7 +303,7 @@ export function saveDatasetFilter(payload) {
             savedDatasetFilter[key] = requestBody[key];
         }
         dispatch(_setLoading(true));
-        upsertDatasetFilterPromise(requestBody, payload.filterId != null)
+        getState().serverInfo.api.upsertDatasetFilterPromise(requestBody, payload.filterId != null)
             .then(result => {
                 requestBody.id = result.id;
                 let datasetFilters = getState().datasetFilters;
@@ -419,10 +403,9 @@ export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
         let filter = getFilterJson(getState(), true);
-        getSelectedIdsPromise({
-            id: getState().dataset.id,
+        getState().dataset.api.getSelectedIdsPromise({
             filter: filter
-        }).then(result => result.json()).then(result => {
+        }).then(result => {
             const blob = new Blob([result.ids.join('\n')], {type: "text/plain;charset=utf-8"});
             saveAs(blob, "selection.txt");
         }).finally(() => {
@@ -436,7 +419,7 @@ export function downloadSelectedIds() {
 export function exportDatasetFilters() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        exportDatasetFiltersPromise(getState().dataset.id).then(result => {
+        getState().serverInfo.api.exportDatasetFiltersPromise(getState().dataset.id).then(result => {
             if (result == null) {
                 handleError(dispatch, 'Unable to export filters');
                 return;
@@ -477,6 +460,10 @@ export function setChartSize(payload) {
 }
 
 
+export function setPrimaryChartSize(payload) {
+    return {type: SET_PRIMARY_CHART_SIZE, payload: payload};
+}
+
 export function setPrimaryTraceKey(payload) {
     return {type: SET_PRIMARY_TRACE_KEY, payload: payload};
 }
@@ -507,14 +494,15 @@ function handleFilterUpdated() {
         const searchTokens = splitSearchTokens(state.searchTokens);
         let filter = getFilterJson(state);
 
-        let json = {
-            id: state.dataset.id,
-            measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
-            dimensions: searchTokens.obsCat,
+        let q = {
+            selection: {
+                measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
+                dimensions: searchTokens.obsCat
+            }
         };
 
         if (filter) {
-            json.filter = filter;
+            q.selection.filter = filter;
         }
         const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
@@ -532,12 +520,12 @@ function handleFilterUpdated() {
             return;
         }
         let selectedEmbeddings = state.embeddings;
-        json.embeddings = selectedEmbeddings.map(e => {
+        q.selection.embeddings = selectedEmbeddings.map(e => {
             return getEmbeddingJson(e);
         });
 
-        getSelectionPromise(json).then(result => {
-            dispatch(handleSelectionResult(result, true));
+        getState().dataset.api.getDataPromise(q).then(result => {
+            dispatch(handleSelectionResult(result.selection, true));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
@@ -616,6 +604,10 @@ export function handleColorChange(payload) {
     return {type: SET_CATEGORICAL_COLOR, payload: payload};
 }
 
+export function handleDomainChange(payload) {
+    return {type: SET_DOMAIN, payload: payload};
+}
+
 function _handleCategoricalNameChange(payload) {
     return {type: SET_CATEGORICAL_NAME, payload: payload};
 
@@ -624,7 +616,7 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        setCategoryNamePromise({
+        getState().serverInfo.api.setCategoryNamePromise({
             c: payload.name,
             o: payload.oldValue,
             n: payload.value,
@@ -912,7 +904,7 @@ export function saveDataset(payload) {
             // if (!permissionsResponse.ok) {
             //     dispatch(setMessage('Unable to set dataset read permissions. Please ensure that you are the dataset owner or manually add ' + serverEmail + ' as a reader.'));
             // }
-        }).then(() => upsertDatasetPromise(payload.dataset ? payload.dataset.id : null, url, name, readers)).then(importDatasetResult => {
+        }).then(() => getState().serverInfo.api.upsertDatasetPromise(payload.dataset ? payload.dataset.id : null, url, name, readers)).then(importDatasetResult => {
             if (isEdit) {
                 dispatch(updateDataset({name: name, id: importDatasetResult.id, owner: true}));
                 dispatch(setMessage('Dataset updated'));
@@ -935,7 +927,7 @@ export function saveDataset(payload) {
 export function deleteDataset(payload) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        deleteDatasetPromise(payload.dataset.id).then(() => {
+        getState().serverInfo.api.deleteDatasetPromise(payload.dataset.id).then(() => {
             dispatch(_deleteDataset({id: payload.dataset.id}));
             dispatch(setDialog(null));
             dispatch(_setDataset(null));
@@ -1100,28 +1092,30 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
         let savedDatasetState = getState().savedDatasetState[id];
         const datasetChoices = getState().datasetChoices;
-        let choice = null;
+        let selectedChoice = null; // has id, owner, name
         for (let i = 0; i < datasetChoices.length; i++) {
             if (datasetChoices[i].id === id) {
-                choice = datasetChoices[i];
+                selectedChoice = datasetChoices[i];
                 break;
             }
         }
-        if (choice == null) {
+        if (selectedChoice == null) {
             dispatch(_setLoading(false));
             dispatch(setMessage('Unable to find dataset'));
             return Promise.reject('Unable to find dataset');
         }
         // force re-render selected dataset dropdown
-        dispatch(_setDataset({
-            owner: choice.owner,
-            name: choice.name,
+        let dataset = {
+            owner: selectedChoice.owner,
+            name: selectedChoice.name,
             id: id,
+            url: selectedChoice.url,
             embeddings: [],
             features: [],
             obs: [],
             obsCat: []
-        }));
+        };
+        dispatch(_setDataset(dataset));
         let categoryNameResults;
         let datasetFilters;
         let newDataset;
@@ -1140,8 +1134,9 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                     }
                 }
             }
-            newDataset.owner = choice.owner;
-            newDataset.name = choice.name;
+            newDataset.api = dataset.api;
+            newDataset.owner = selectedChoice.owner;
+            newDataset.name = selectedChoice.name;
             newDataset.features = newDataset.var;
             newDataset.features.sort((a, b) => {
                 a = a.toLowerCase();
@@ -1176,26 +1171,34 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
         }
 
-        const categoriesRenamePromise = getCategoryNamesPromise(id).then(result => result.json())
-            .then(results => {
+        let url = dataset.url || '';
+        // if (url.startsWith("http")) {
+        //     dataset.api = new ByteRangeDataset();
+        // } else {
+        //     dataset.api = new RestDataset();
+        // }
+        dataset.api = new RestDataset();
+        const initPromise = dataset.api.init(id, dataset.url);
+
+        return initPromise.then(() => {
+            const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
                 categoryNameResults = results;
             });
-        const filtersPromise = getFiltersPromise(id).then(result => result.json())
-            .then(results => {
+            const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
                 datasetFilters = results;
             });
-        const schemaPromise = getSchemaPromise(id).then(result => {
-            newDataset = result;
-        });
-        return Promise.all([schemaPromise, filtersPromise, categoriesRenamePromise]).then(() => {
-            onPromisesComplete();
-        }).finally(() => {
+            const schemaPromise = dataset.api.getSchemaPromise().then(result => {
+                newDataset = result;
+            });
+            return [categoriesRenamePromise, filtersPromise, schemaPromise];
+        }).then(promises => Promise.all(promises)).then(() => onPromisesComplete()).finally(() => {
             if (setLoading) {
                 dispatch(_setLoading(false));
             }
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve dataset. Please try again.');
         });
+
     };
 }
 
@@ -1360,9 +1363,9 @@ function _updateCharts(onError) {
                 }
             });
         }
-        let promises = [];
-        let embeddingResults = [];
 
+        let q = {};
+        let embeddingsUsed = [];
         for (let embeddingName in embeddingToVisibleFeatures) {
             let visibleFeatures = embeddingToVisibleFeatures[embeddingName];
             let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingName)];
@@ -1378,14 +1381,14 @@ function _updateCharts(onError) {
                 }
             }
             if (measures.length > 0 || dimensions.length > 0) {
-                let p = getEmbeddingPromise(Object.assign({
-                    id: state.dataset.id,
+                embeddingsUsed.push(embedding);
+                if (!q.embedding) {
+                    q.embedding = [];
+                }
+                q.embedding.push(Object.assign({
                     measures: measures,
                     dimensions: dimensions
-                }, getEmbeddingJson(embedding))).then(result => {
-                    embeddingResults.push({embeddingResult: result, embedding: embedding});
-                });
-                promises.push(p);
+                }, getEmbeddingJson(embedding)));
             }
         }
 
@@ -1413,22 +1416,13 @@ function _updateCharts(onError) {
 
 
         if (globalFeatureSummaryX.length > 0 || globalFeatureSummaryObsContinuous.length > 0 || globalFeatureSummaryDimensions.length > 0) {
-            let p = getStatsPromise({
-                id: state.dataset.id,
+            q.stats = {
                 measures: globalFeatureSummaryX.concat(globalFeatureSummaryObsContinuous),
                 dimensions: globalFeatureSummaryDimensions
-            }).then(result => {
-                const newSummary = result.summary || {};
-                for (let key in newSummary) {
-                    globalFeatureSummary[key] = newSummary[key];
-                }
-                dispatch(setGlobalFeatureSummary(globalFeatureSummary));
-            });
-            promises.push(p);
+            };
         }
-        let newDotplotData;
 
-        function updateDotPlotData() {
+        function updateDotPlotData(newDotplotData) {
             // merge with existing data
             if (newDotplotData) {
                 newDotplotData.forEach(categoryItem => {
@@ -1478,20 +1472,14 @@ function _updateCharts(onError) {
 
 
         if (dotplotDimensions.length > 0 && dotplotMeasures.size > 0) {
-            let p = getGroupedStatsPromise({
-                id: state.dataset.id,
+            q.groupedStats = {
                 measures: Array.from(dotplotMeasures),
                 dimensions: dotplotDimensions
-            }).then(dotPlotResult => {
-                newDotplotData = dotPlotResult.dotplot;
-            });
-            promises.push(p);
+            };
         }
 
         const filterJson = getFilterJson(state);
         // TODO update selection in new embedding space
-        let selectionResult = null;
-
         if (filterJson != null && (globalFeatureSummaryX.length > 0 || globalFeatureSummaryDimensions.length > 0)) {
 
 
@@ -1506,32 +1494,34 @@ function _updateCharts(onError) {
             //     }
             //     return value;
             // });
-
-
-            let p = getSelectionPromise({
-                id: state.dataset.id,
+            let selectionQuery = {
                 filter: filterJson,
                 measures: globalFeatureSummaryDimensions.length > 0 ? searchTokens.X : globalFeatureSummaryX,
                 dimensions: searchTokens.obsCat
-            }).then(result => {
-                selectionResult = result;
-            });
-            promises.push(p);
+            };
+            q.selection = selectionQuery;
         }
+        let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
+        return dataPromise.then(result => {
+            updateDotPlotData(result.dotplot);
+            const newSummary = result.summary || {};
+            for (let key in newSummary) {
+                globalFeatureSummary[key] = newSummary[key];
+            }
+            dispatch(setGlobalFeatureSummary(globalFeatureSummary));
 
-
-        return Promise.all(promises).then(() => {
-            updateDotPlotData();
-            dispatch(handleSelectionResult(selectionResult));
-            for (let i = 0; i < embeddingResults.length; i++) {
-                dispatch(handleEmbeddingResult(embeddingResults[i]));
+            if (result.embedding) {
+                for (let i = 0; i < result.embedding.length; i++) {
+                    dispatch(handleEmbeddingResult(result.embedding[i], embeddingsUsed[i]));
+                }
             }
             // embeddingData.sort((a, b) => {
             //     a = a.name.toLowerCase();
             //     b = b.name.toLowerCase();
             //     return a < b ? -1 : 1;
             // });
-            if (state.chartOptions.activeEmbedding != null) { // put last so that it becomes active
+
+            if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
                 let index = -1;
                 for (let i = 0; i < embeddingData.length; i++) {
                     if (state.chartOptions.activeEmbedding === getTraceKey(embeddingData[i])) {
@@ -1547,6 +1537,9 @@ function _updateCharts(onError) {
                 state.chartOptions.activeEmbedding = null;
             }
             dispatch(setEmbeddingData(embeddingData.slice()));
+            if (result.selection) {
+                dispatch(handleSelectionResult(result.selection));
+            }
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -1561,30 +1554,43 @@ function _updateCharts(onError) {
 }
 
 // depends on global feature summary
-function handleEmbeddingResult(result) {
+function handleEmbeddingResult(embedding, embeddingDef) {
     return function (dispatch, getState) {
         const state = getState();
 
-        let embeddingResult = result.embeddingResult;
-        let selectedEmbedding = result.embedding;
-        let isSpatial = selectedEmbedding.spatial != null;
+        // let embeddingResult = result.embeddingResult;
+
+        let isSpatial = embedding.spatial != null;
         let interpolator = state.interpolator;
 
 
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
         const obsCat = state.dataset.obsCat;
-        const embeddingBins = embeddingResult.bins;
-        const embeddingValues = embeddingResult.values;
-        const coordinates = embeddingResult.coordinates;
-        const is3d = selectedEmbedding.dimensions === 3;
+        const embeddingBins = embedding.bins;
+        const embeddingValues = embedding.values;
+        const coordinates = embedding.coordinates;
+
+
+        let coordinateNames = [null, null, null]; // x, y, z
+        for (let name in coordinates) {
+            if (name.endsWith('_1')) {
+                coordinateNames[0] = name;
+            } else if (name.endsWith('_2')) {
+                coordinateNames[1] = name;
+            } else if (name.endsWith('_3')) {
+                coordinateNames[2] = name;
+            }
+        }
+        let x = coordinates[coordinateNames[0]];
+        let y = coordinates[coordinateNames[1]];
+        let z = coordinateNames[2] ? coordinates[coordinateNames[2]] : null;
+        const is3d = z != null;
 
         // add new embedding values
         for (let name in embeddingValues) {
             let traceSummary = globalFeatureSummary[name];
-            let x = coordinates[selectedEmbedding.name + '_1'];
-            let y = coordinates[selectedEmbedding.name + '_2'];
-            let z = coordinates[selectedEmbedding.name + '_3'];
+
             let values = embeddingValues[name];
             let purity = null;
             if (isPlainObject(values)) {
@@ -1606,12 +1612,11 @@ function handleEmbeddingResult(result) {
                         min = value < min ? value : min;
                         max = value > max ? value : max;
                     }
-                    //  console.log(name + ' range: ' + min + ' to ' + max);
                     traceSummary = {min: min, max: max};
                     globalFeatureSummary[name] = traceSummary;
                 }
                 colorScale = scaleSequential(interpolator.value).domain(interpolator.reversed ? [traceSummary.max, traceSummary.min] : [traceSummary.min, traceSummary.max]);
-                colorScale.summary = traceSummary;
+
             } else {
                 let traceUniqueValues = traceSummary.categories;
                 // if (traceUniqueValues.length === 1 && traceUniqueValues[0] === true) {
@@ -1637,7 +1642,7 @@ function handleEmbeddingResult(result) {
 
 
             let chartData = {
-                embedding: Object.assign({}, selectedEmbedding),
+                embedding: Object.assign({}, embeddingDef),
                 name: name,
                 x: x,
                 y: y,
@@ -1662,7 +1667,7 @@ function handleEmbeddingResult(result) {
 
             if (isSpatial) {
                 chartData.isImage = true;
-                const url = getFileUrl(state.dataset.id, selectedEmbedding.spatial.image);
+                const url = getState().dataset.api.getFileUrl(embeddingDef.spatial.image);
                 let tileSource = new OpenSeadragon.ImageTileSource({
                     url: url,
                     buildPyramid: true,
@@ -1694,8 +1699,13 @@ function handleError(dispatch, err, message) {
 export function listDatasets() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        return getDatasetsPromise()
+        return getState().serverInfo.api.getDatasetsPromise()
             .then(choices => {
+                choices.sort((a, b) => {
+                    a = a.name.toLowerCase();
+                    b = b.name.toLowerCase();
+                    return a < b ? -1 : (a === b ? 0 : -1);
+                });
                 dispatch(_setDatasetChoices(choices));
             })
             .finally(() => {

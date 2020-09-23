@@ -23,7 +23,7 @@ class GalleryCharts extends React.PureComponent {
         super(props);
         this.containerElement = createContainer(this.props.chartSize);
         document.body.appendChild(this.containerElement);
-        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession);
+        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         this.emptySet = new Set();
 
     }
@@ -41,7 +41,7 @@ class GalleryCharts extends React.PureComponent {
 
 
     render() {
-        let {chartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
+        let {chartSize, embeddingData, primaryChartSize, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
@@ -67,6 +67,7 @@ class GalleryCharts extends React.PureComponent {
             chartOptions={chartOptions}
             pointSize={pointSize}
             chartSize={chartSize}
+            primaryChartSize={primaryChartSize}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
             selection={selection}
             containerElement={this.containerElement}
@@ -103,6 +104,7 @@ const mapStateToProps = state => {
         primaryTraceKey: state.primaryTraceKey,
         pointSize: state.pointSize,
         chartSize: state.chartSize,
+        primaryChartSize: state.primaryChartSize,
         chartOptions: state.chartOptions
     };
 };

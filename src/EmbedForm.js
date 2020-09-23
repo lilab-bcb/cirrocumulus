@@ -1,4 +1,4 @@
-import {Switch} from '@material-ui/core';
+import {InputLabel, Switch} from '@material-ui/core';
 import MuiAccordionPanel from '@material-ui/core/Accordion';
 import MuiAccordionPanelDetails from '@material-ui/core/AccordionDetails';
 import MuiAccordionPanelSummary from '@material-ui/core/AccordionSummary';
@@ -12,7 +12,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
+
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
@@ -40,6 +40,7 @@ import {
     handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
+    handleDomainChange,
     handleMeasureFilterUpdated,
     openDatasetFilter,
     removeDatasetFilter,
@@ -314,7 +315,7 @@ class EmbedForm extends React.PureComponent {
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleNameChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
-            combineDatasetFilters, selection
+            combineDatasetFilters, selection, primaryTraceKey
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
@@ -340,17 +341,30 @@ class EmbedForm extends React.PureComponent {
         // for filters we only need one embedding trace per feature
         const traceNames = new Set();
         const filterTraces = [];
+        let primaryTraceName;
         embeddingData.forEach(trace => {
+            if (primaryTraceKey === getTraceKey(trace)) {
+                primaryTraceName = trace.name;
+            }
             if (trace.active && trace.name !== '__count' && !traceNames.has(trace.name)) {
                 traceNames.add(trace.name);
                 filterTraces.push(trace);
             }
         });
+        // put active trace 1st
         filterTraces.sort((a, b) => {
+            if (a.name === primaryTraceName) {
+                return -1;
+            }
+            if (b.name === primaryTraceName) {
+                return 1;
+            }
             a = a.name.toLowerCase();
             b = b.name.toLowerCase();
             return a < b ? -1 : (a === b ? 0 : 1);
         });
+
+
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
             savedDatasetFilter = {};
@@ -436,28 +450,98 @@ class EmbedForm extends React.PureComponent {
                                              onChange={this.onFeatureSetsChange} groupBy={true}/>
                 </FormControl>}
 
+
                 <Accordion defaultExpanded>
                     <AccordionPanelSummary
                         aria-controls="summary-content"
                         id="summary-header"
                     >
-                        <div>Filter</div>
+                        <div>Active List</div>
                     </AccordionPanelSummary>
                     <AccordionPanelDetails>
-                        <div style={{marginLeft: 10}}>
-                            <div>
-                                <Grid component="label" container alignItems="center" spacing={0}>
-                                    <Grid item>AND</Grid>
-                                    <Grid item>
-                                        <Switch
-                                            size="small"
-                                            checked={combineDatasetFilters === 'or'}
-                                            onChange={this.handleCombineDatasetFilters}
-                                        />
-                                    </Grid>
-                                    <Grid item>OR</Grid>
+                        <div style={{marginLeft: 10, maxHeight: 500}}>
+
+
+                            {filterTraces.map(traceInfo =>
+
+                                traceInfo.continuous ?
+                                    <ColorSchemeLegendWrapper
+                                        key={traceInfo.name}
+                                        handleDomain={this.props.handleDomain}
+                                        selected={traceInfo.name === primaryTraceName}
+                                        width={140}
+                                        showColorScheme={false}
+                                        height={30}
+                                        style={{
+                                            paddingBottom: 3,
+                                            paddingTop: 3,
+                                            display: 'block',
+                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                        }}
+                                        handleUpdate={handleMeasureFilterUpdated}
+                                        datasetFilter={datasetFilter}
+                                        scale={traceInfo.colorScale}
+                                        featureSummary={featureSummary}
+                                        globalFeatureSummary={globalFeatureSummary}
+                                        nObs={shape[0]}
+                                        nObsSelected={nObsSelected}
+                                        maxHeight={null}
+                                        name={traceInfo.name}
+                                    /> :
+                                    <CategoricalLegend
+                                        selected={traceInfo.name === primaryTraceName}
+                                        key={traceInfo.name}
+                                        style={{
+                                            paddingBottom: 3,
+                                            paddingTop: 3,
+                                            display: 'block',
+                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                        }}
+                                        datasetFilter={datasetFilter}
+                                        handleClick={handleDimensionFilterUpdated}
+                                        handleColorChange={handleColorChange}
+                                        handleNameChange={handleNameChange}
+                                        categoricalNames={categoricalNames}
+                                        name={traceInfo.name}
+                                        scale={traceInfo.colorScale}
+                                        maxHeight={300}
+                                        clickEnabled={true}
+                                        nObs={shape[0]}
+                                        nObsSelected={nObsSelected}
+                                        globalFeatureSummary={globalFeatureSummary}
+                                        featureSummary={featureSummary}/>
+                            )}
+
+
+                        </div>
+                    </AccordionPanelDetails>
+                </Accordion>
+
+                <Accordion defaultExpanded>
+                    <AccordionPanelSummary
+                        aria-controls="filter-content"
+                        id="filter-header"
+                    >
+                        <div>Filters</div>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails>
+                        <div style={{marginLeft: 10, maxHeight: 500}}>
+
+                            <Grid component="label" alignContent={"flex-start"} container alignItems="center"
+                                  spacing={0}>
+                                <Grid item><InputLabel shrink={true} variant={"standard"}>Combine
+                                    Filters</InputLabel></Grid>
+                                <Grid item>AND</Grid>
+                                <Grid item>
+                                    <Switch
+                                        size="small"
+                                        checked={combineDatasetFilters === 'or'}
+                                        onChange={this.handleCombineDatasetFilters}
+                                    />
                                 </Grid>
-                            </div>
+                                <Grid item>OR</Grid>
+                            </Grid>
+
                             {datasetFilterKeys.length > 0 && !isNaN(selection.count) &&
                             <React.Fragment>
                                 <div style={{marginBottom: 2}}>
@@ -500,58 +584,9 @@ class EmbedForm extends React.PureComponent {
                             }
 
 
-                            {filterTraces.map(traceInfo =>
-
-                                traceInfo.continuous ?
-                                    <ColorSchemeLegendWrapper
-                                        key={traceInfo.name}
-                                        width={140}
-                                        showColorScheme={false}
-                                        height={30}
-                                        style={{
-                                            paddingBottom: 3,
-                                            paddingTop: 3,
-                                            display: 'block',
-                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                        }}
-                                        handleUpdate={handleMeasureFilterUpdated}
-                                        datasetFilter={datasetFilter}
-                                        scale={traceInfo.colorScale}
-                                        featureSummary={featureSummary}
-                                        globalFeatureSummary={globalFeatureSummary}
-                                        nObs={shape[0]}
-                                        nObsSelected={nObsSelected}
-                                        maxHeight={null}
-                                        name={traceInfo.name}
-                                    /> :
-                                    <CategoricalLegend
-                                        key={traceInfo.name}
-                                        style={{
-                                            paddingBottom: 3,
-                                            paddingTop: 3,
-                                            display: 'block',
-                                            borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                        }}
-                                        datasetFilter={datasetFilter}
-                                        handleClick={handleDimensionFilterUpdated}
-                                        handleColorChange={handleColorChange}
-                                        handleNameChange={handleNameChange}
-                                        categoricalNames={categoricalNames}
-                                        name={traceInfo.name}
-                                        scale={traceInfo.colorScale}
-                                        maxHeight={300}
-                                        clickEnabled={true}
-                                        nObs={shape[0]}
-                                        nObsSelected={nObsSelected}
-                                        globalFeatureSummary={globalFeatureSummary}
-                                        featureSummary={featureSummary}/>
-                            )}
-
-
                         </div>
                     </AccordionPanelDetails>
                 </Accordion>
-
                 <Accordion defaultExpanded>
                     <AccordionPanelSummary
                         aria-controls="view-options-content"
@@ -574,7 +609,7 @@ class EmbedForm extends React.PureComponent {
                                        className={classes.formControl} value={markerOpacity}/>
                             <TextField type="text"
                                        onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
-                                       onChange={this.onUnselectedMarkerOpacityChange} label="Unselected Marker Opacity"
+                                       onChange={this.onUnselectedMarkerOpacityChange} label="Filtered Marker Opacity"
                                        className={classes.formControl} value={unselectedMarkerOpacity}/>
 
                             <FormControl className={classes.formControl}>
@@ -610,7 +645,7 @@ class EmbedForm extends React.PureComponent {
                             </FormControl>
 
                             <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="color-scheme">Continuous Color Scale</InputLabel>
+                                <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
                                 <ColorSchemeSelector/>
                             </FormControl>
                             <div><FormControlLabel
@@ -726,6 +761,7 @@ const mapStateToProps = state => {
         interpolator: state.interpolator,
         markerOpacity: state.markerOpacityUI,
         pointSize: state.pointSize,
+        primaryTraceKey: state.primaryTraceKey,
         savedDatasetFilter: state.savedDatasetFilter,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
@@ -820,7 +856,10 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleExportDatasetFilters: () => {
             dispatch(exportDatasetFilters());
-        }
+        },
+        handleDomain: (value) => {
+            dispatch(handleDomainChange(value));
+        },
     };
 };
 

@@ -46,7 +46,7 @@ export function getScaleFactor(size) {
     return camera.projectionMatrix.elements[0];
 }
 
-export function createScatterPlot(containerElement, premultipliedAlpha, labels) {
+export function createScatterPlot(containerElement, premultipliedAlpha, labels, interactive = true) {
     const styles = makeStyles();
     styles.label3D.fontSize = 40;
 
@@ -54,6 +54,7 @@ export function createScatterPlot(containerElement, premultipliedAlpha, labels) 
         camera: {},
         selectEnabled: false,
         styles: styles,
+        interactive: interactive
 
     }, premultipliedAlpha); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
     let visualizers = [new ScatterPlotVisualizerSprites(styles)];
@@ -101,16 +102,28 @@ export function getPositions(trace) {
     // Determine max and min of each axis of our data.
     for (let i = 0; i < npoints; i++) {
         const x = trace.x[i];
-        if (x < xExtent[0]) xExtent[0] = x;
-        if (x > xExtent[1]) xExtent[1] = x;
+        if (x < xExtent[0]) {
+            xExtent[0] = x;
+        }
+        if (x > xExtent[1]) {
+            xExtent[1] = x;
+        }
 
         const y = trace.y[i];
-        if (y < yExtent[0]) yExtent[0] = y;
-        if (y > yExtent[1]) yExtent[1] = y;
+        if (y < yExtent[0]) {
+            yExtent[0] = y;
+        }
+        if (y > yExtent[1]) {
+            yExtent[1] = y;
+        }
         if (is3d) {
             const z = trace.z[i];
-            if (z < zExtent[0]) zExtent[0] = z;
-            if (z > zExtent[1]) zExtent[1] = z;
+            if (z < zExtent[0]) {
+                zExtent[0] = z;
+            }
+            if (z > zExtent[1]) {
+                zExtent[1] = z;
+            }
         }
     }
 

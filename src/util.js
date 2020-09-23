@@ -65,11 +65,6 @@ export const CATEGORY_20C = [
     '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
-export function getChartSize() {
-    // leave room for drawer and header
-    return {width: window.screen.availWidth - 280, height: window.screen.availHeight - 220};
-}
-
 /**
  *
  * @param array. Array of format,data

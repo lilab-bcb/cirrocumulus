@@ -7,7 +7,6 @@ import {getEmbeddingKey} from './actions';
 import {drawImage} from './ImageChart';
 import {getVisualizer} from './ScatterChartThree';
 import {getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
-import {getChartSize} from './util';
 
 
 class GalleryImage extends React.PureComponent {
@@ -15,7 +14,6 @@ class GalleryImage extends React.PureComponent {
         super(props);
         this.state = {url: null, forceUpdate: false};
         this.canvasRef = React.createRef();
-        this.zoomFactor = getScaleFactor(getChartSize());
     }
 
 
@@ -74,11 +72,15 @@ class GalleryImage extends React.PureComponent {
 
 
     componentDidMount() {
+        this.zoomFactor = getScaleFactor(this.props.primaryChartSize);
         this.draw();
     }
 
 
     componentDidUpdate(prevProps, prevState) {
+        if (prevProps.primaryChartSize !== this.props.primaryChartSize) {
+            this.zoomFactor = getScaleFactor(this.props.primaryChartSize);
+        }
         this.draw();
     }
 

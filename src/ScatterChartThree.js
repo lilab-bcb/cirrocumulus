@@ -9,7 +9,7 @@ import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
 import {createScatterPlot, getCategoryLabelsPositions, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
-import {getChartSize, isPointInside} from './util';
+import {isPointInside} from './util';
 
 function clamp(x, min_v, max_v) {
     return Math.min(Math.max(x, min_v), max_v);
@@ -67,21 +67,18 @@ class ScatterChartThree extends React.PureComponent {
         this.containerElementRef = React.createRef();
         this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
-        this.chartSize = getChartSize();
         this.lastHoverIndex = -1;
-        // window.addEventListener('resize', () => {
-        //     scatterGL.resize();
-        // });
     }
 
-
     componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.chartSize !== this.props.chartSize) {
+            this.scatterPlot.resize();
+        }
         this.draw();
     }
 
     componentDidMount() {
         this.init();
-
         this.draw(); // TODO fix 2x draw
         this.draw();
         if (this.props.chartOptions.camera) {
@@ -239,8 +236,8 @@ class ScatterChartThree extends React.PureComponent {
 
 
     onSaveImage = (format) => {
-        const {traceInfo} = this.props;
-        saveImage(traceInfo, this.chartSize, bind(this.drawContext, this), format);
+        const {traceInfo, chartSize} = this.props;
+        saveImage(traceInfo, chartSize, bind(this.drawContext, this), format);
     };
 
     onMoreOptions = () => {
@@ -337,8 +334,8 @@ class ScatterChartThree extends React.PureComponent {
                     const traceInfo = this.props.traceInfo;
                     const positions = traceInfo.positions;
                     const camera = this.scatterPlot.camera;
-                    const widthHalf = this.chartSize.width / 2;
-                    const heightHalf = this.chartSize.height / 2;
+                    const widthHalf = this.props.chartSize.width / 2;
+                    const heightHalf = this.props.chartSize.height / 2;
                     const pos = new Vector3();
                     let selectedIndex = -1;
                     const tolerance = 2;
@@ -394,8 +391,8 @@ class ScatterChartThree extends React.PureComponent {
                 const traceInfo = this.props.traceInfo;
                 const positions = traceInfo.positions;
                 const camera = this.scatterPlot.camera;
-                const widthHalf = this.chartSize.width / 2;
-                const heightHalf = this.chartSize.height / 2;
+                const widthHalf = this.props.chartSize.width / 2;
+                const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
                 const selectedPoints = [];
 
@@ -428,8 +425,8 @@ class ScatterChartThree extends React.PureComponent {
                 const traceInfo = this.props.traceInfo;
                 const positions = traceInfo.positions;
                 const camera = this.scatterPlot.camera;
-                const widthHalf = this.chartSize.width / 2;
-                const heightHalf = this.chartSize.height / 2;
+                const widthHalf = this.props.chartSize.width / 2;
+                const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
                 const selectedPoints = [];
 
@@ -502,8 +499,8 @@ class ScatterChartThree extends React.PureComponent {
 
             <div style={{
                 display: 'inline-block',
-                width: this.chartSize.width,
-                height: this.chartSize.height
+                width: this.props.chartSize.width,
+                height: this.props.chartSize.height
             }}
                  ref={this.containerElementRef}>
             </div>

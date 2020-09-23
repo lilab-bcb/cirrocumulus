@@ -9,7 +9,7 @@ import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
-import {getDatasetPromise} from './server_api';
+
 
 function getUniqueArray(text) {
     let tokens = text.split(',');
@@ -38,7 +38,7 @@ class EditDatasetDialog extends React.PureComponent {
 
     componentDidMount() {
         if (this.props.dataset != null) {
-            getDatasetPromise(this.props.dataset.id).then(datasetInfo => {
+            this.props.serverInfo.api.getDatasetPromise(this.props.dataset.id).then(datasetInfo => {
                 let readers = datasetInfo.readers;
                 let myIndex = readers.indexOf(this.props.email);
                 if (myIndex !== -1) {

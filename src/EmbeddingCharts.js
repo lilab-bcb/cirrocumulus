@@ -1,16 +1,33 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getEmbeddingKey, getTraceKey, MORE_OPTIONS_DIALOG, setDialog} from './actions';
+import {getEmbeddingKey, getTraceKey, MORE_OPTIONS_DIALOG, setDialog, setPrimaryChartSize} from './actions';
 import EmbeddingChart from './EmbeddingChart';
-import {getChartSize} from './util';
+
 
 const emptySet = new Set();
 
 class EmbeddingCharts extends React.PureComponent {
 
+    constructor(props) {
+        super(props);
+        this.resizeListener = () => {
+            let width = window.innerWidth - 280;
+            // let height = Math.max(1, this.containerElementRef.offsetHeight);
+            let height = Math.max(300, window.innerHeight - 220);
+            this.props.handlePrimaryChartSize({width: width, height: height});
+        };
+
+        window.addEventListener('resize', this.resizeListener);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.resizeListener);
+
+    }
+
     render() {
-        const {primaryTraceKey, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+        const {primaryTraceKey, primaryChartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
         const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
         let userPoints = emptySet;
@@ -22,11 +39,12 @@ class EmbeddingCharts extends React.PureComponent {
         }
 
         if (primaryTrace == null) {
-            const chartSize = getChartSize();
-            return <div style={{height: chartSize.height}}></div>;
+
+            return <div style={{height: primaryChartSize.height}}></div>;
         }
         return (<EmbeddingChart
                 markerOpacity={markerOpacity}
+                chartSize={primaryChartSize}
                 unselectedMarkerOpacity={unselectedMarkerOpacity}
                 traceInfo={primaryTrace}
                 selection={userPoints}
@@ -42,6 +60,7 @@ class EmbeddingCharts extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         embeddingData: state.embeddingData,
+        primaryChartSize: state.primaryChartSize,
         markerOpacity: state.markerOpacity,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         selection: state.selection,
@@ -52,7 +71,11 @@ const mapDispatchToProps = dispatch => {
     return {
         handleMoreOptions: () => {
             dispatch(setDialog(MORE_OPTIONS_DIALOG));
+        },
+        handlePrimaryChartSize: value => {
+            dispatch(setPrimaryChartSize(value));
         }
+
     };
 };
 
