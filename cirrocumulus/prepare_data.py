@@ -14,8 +14,7 @@ from pandas import CategoricalDtype
 import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
-from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
-from cirrocumulus.entity import Entity
+from cirrocumulus.io_util import get_markers, filter_markers
 from cirrocumulus.simple_data import SimpleData
 
 logger = logging.getLogger("cirro")
@@ -155,11 +154,16 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 
 class PrepareData:
 
-    def __init__(self, input_path, backed, basis_list, nbins, bin_agg_function, output,
-                 X_range=None, dimensions=None, stats=True, markers=[]):
+    def __init__(self, input_path, backed, output, X_range=None, dimensions=None, groups=[], markers=[]):
         self.input_path = input_path
+        self.groups = groups
         self.markers = markers
-        self.stats = stats
+        self.stats = False
+        self.nbins = None
+        self.bin_agg_function = None
+        # if basis_list is None or len(basis_list) == 0:
+        #     basis_list = list(self.adata.obsm_keys())
+        self.basis_list_to_precompute = None
         self.adata = anndata.read_loom(input_path) if input_path.lower().endswith('.loom') else anndata.read(input_path,
             backed=backed)
         # if 'seurat_clusters' in self.adata.obs:
@@ -177,18 +181,14 @@ class PrepareData:
         logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
         self.base_output_dir = output
-        if basis_list is None or len(basis_list) == 0:
-            basis_list = list(self.adata.obsm_keys())
-        self.basis_list = basis_list
-        self.nbins = nbins
+
         self.dataset_api = DatasetAPI()
-        self.bin_agg_function = bin_agg_function
         ds = AnndataDataset()
         ds.path_to_data[input_path] = self.adata
         self.dataset_api.add(ds)
 
-        self.input_dataset = Entity(input_path,
-            {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path})
+        self.input_dataset = {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path,
+                              'id': input_path}
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
         self.dimensions = [] if not dimensions_supplied else dimensions
         self.measures = []
@@ -219,30 +219,36 @@ class PrepareData:
         return os.path.join(self.base_output_dir, path)
 
     def execute(self):
-        from cirrocumulus.parquet_io import save_adata
-        basis_list = self.basis_list
+
+        basis_list = self.basis_list_to_precompute
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
 
         marker_dict = self.adata.uns.get('markers', {})
         self.adata.uns['markers'] = marker_dict
-        if self.markers is not None:
+        if self.groups is not None:
             n_genes = 10
-            for field in self.markers:
+            for field in self.groups:
                 if len(self.adata.obs[field].cat.categories) > 1:
                     logger.info('Computing markers for {}'.format(field))
                     SimpleData.find_markers(self.adata, field, marker_dict, n_genes)
-
+        output_format = 'parquet'
         if X_range[0] == 0:
-            save_adata(self.adata, self.base_output_dir)
+            if output_format == 'parquet':
+                from cirrocumulus.parquet_io import save_adata_pq
+                save_adata_pq(self.adata, self.base_output_dir)
+            elif output_format == 'json':
+                from cirrocumulus.json_io import save_adata_json
+                save_adata_json(self.adata, self.base_output_dir, False)
 
-        if self.stats:
-            self.summary_stats()
-            self.grouped_stats()
+        # if self.stats:
+        #     self.summary_stats()
+        #     self.grouped_stats()
 
-        for basis_name in basis_list:
-            self.grid_embedding(basis_name, bin_agg_function, nbins)
+        if nbins is not None and basis_list is not None:
+            for basis_name in basis_list:
+                self.grid_embedding(basis_name, bin_agg_function, nbins)
         self.schema()
 
     def summary_stats(self):
@@ -255,13 +261,13 @@ class PrepareData:
         base_dir = self.base_output_dir
 
         if X_range[0] == 0:
-            process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
-                measures=measures, dimensions=dimensions)
+            process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+                stats=dict(measures=measures, dimensions=dimensions))
             write_obs_stats(base_dir, process_results['summary'])
 
         logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
-        process_results = data_processing.handle_stats(dataset_api=dataset_api, dataset=input_dataset,
-            measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
+        process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+            stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[]))
         write_X_stats(base_dir, process_results['summary'])
         write_X_bins(base_dir)
 
@@ -274,64 +280,68 @@ class PrepareData:
         X_range = self.X_range
         base_dir = self.base_output_dir
         logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
-        process_results = data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset,
-            measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions)
+        process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+            grouped_stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions))
         dotplot_results = process_results['dotplot']
 
         write_grouped_stats(base_dir, dotplot_results)
 
 
-    def grid_embedding(self, basis_name, summary, nbins):
-        if nbins <= 0:
-            return
-        logger.info('{} embedding'.format(basis_name))
-        basis = get_basis(basis_name, nbins, summary, 2, False)
-
-        dimensions = self.dimensions
-        measures = self.measures
-        dataset_api = self.dataset_api
-        input_dataset = self.input_dataset
-        adata = self.adata
-        X_range = self.X_range
-        full_basis_name = basis['full_name']
-
-        basis_group = require_binned_basis_group(store, basis)
-        obs_group = basis_group.require_group('obs')
-        coords_group = basis_group.require_group('coords')
-
-        if X_range[0] == 0:
-            df_with_coords = pd.DataFrame()
-            obsm = adata.obsm[basis_name]
-            for i in range(len(basis['coordinate_columns'])):
-                df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
-            EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
-                bin_name=full_basis_name)
-            coords_group['bins'] = df_with_coords[full_basis_name].values
-            coords_group['bin_coords'] = df_with_coords[basis['coordinate_columns']].values
-
-            result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
-                measures=measures + ['__count'], dimensions=dimensions, quick=False)
-            write_basis_obs(basis, coords_group, obs_group, result)
-            logger.info('{} embedding finished writing obs'.format(basis_name))
-        # write X to obsm_summary/name
-        logger.info('{} embedding X {}-{}'.format(basis_name, X_range[0], X_range[1]))
-        result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
-            measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
-        write_basis_X(coords_group, basis_group, adata, result)
-        # write_pq(dict(value=result['values'][column]), output_directory, column)
+    # def grid_embedding(self, basis_name, summary, nbins):
+    #     if nbins <= 0:
+    #         return
+    #     logger.info('{} embedding'.format(basis_name))
+    #     basis = get_basis(basis_name, nbins, summary, 2, False)
+    #
+    #     dimensions = self.dimensions
+    #     measures = self.measures
+    #     dataset_api = self.dataset_api
+    #     input_dataset = self.input_dataset
+    #     adata = self.adata
+    #     X_range = self.X_range
+    #     full_basis_name = basis['full_name']
+    #
+    #     basis_group = require_binned_basis_group(store, basis)
+    #     obs_group = basis_group.require_group('obs')
+    #     coords_group = basis_group.require_group('coords')
+    #
+    #     if X_range[0] == 0:
+    #         df_with_coords = pd.DataFrame()
+    #         obsm = adata.obsm[basis_name]
+    #         for i in range(len(basis['coordinate_columns'])):
+    #             df_with_coords[basis['coordinate_columns'][i]] = obsm[:, i]
+    #         EmbeddingAggregator.convert_coords_to_bin(df_with_coords, nbins, basis['coordinate_columns'],
+    #             bin_name=full_basis_name)
+    #         coords_group['bins'] = df_with_coords[full_basis_name].values
+    #         coords_group['bin_coords'] = df_with_coords[basis['coordinate_columns']].values
+    #
+    #         result = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
+    #             measures=measures + ['__count'], dimensions=dimensions, quick=False)
+    #         write_basis_obs(basis, coords_group, obs_group, result)
+    #         logger.info('{} embedding finished writing obs'.format(basis_name))
+    #     # write X to obsm_summary/name
+    #     logger.info('{} embedding X {}-{}'.format(basis_name, X_range[0], X_range[1]))
+    #     result = data_processing.handle_embedding(dataset_api=dataset_api, dataset=input_dataset, basis=basis,
+    #         measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[])
+    #     write_basis_X(coords_group, basis_group, adata, result)
+    #     # write_pq(dict(value=result['values'][column]), output_directory, column)
 
     def schema(self):
-        basis_list = self.basis_list
+        basis_list = self.basis_list_to_precompute
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
         if X_range[0] == 0:
             output_file = os.path.join(self.base_output_dir, 'index.json.gz')
             result = SimpleData.schema(self.adata)
+            marker_dict = self.adata.uns.get('markers', {})
+            if self.markers is not None:
+                marker_dict.update(get_markers(self.markers))
+            result['markers'] = filter_markers(self.adata, marker_dict)
             result['format'] = 'parquet'
             if self.stats:
                 result['precomputed'] = True  # has stats
-            if nbins > 0:
+            if nbins is not None:
                 result['embeddings'] = []
                 for basis_name in basis_list:
                     result['embeddings'].append(
@@ -346,11 +356,14 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file')
     parser.add_argument('--out', help='Path to output directory')
-    parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
+    # parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
-    parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
-    parser.add_argument('--markers', help='List of groups to compute markers for', action='append')
+    #  parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
+    parser.add_argument('--markers',
+        help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
+        action='append')
+    parser.add_argument('--groups', help='List of groups to compute markers for (e.g. louvain)', action='append')
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
@@ -390,8 +403,8 @@ def main(argsv):
     #     input_X_range[0] = int(input_X_range[0])
     #     input_X_range[1] = int(input_X_range[1])
 
-    prepare_data = PrepareData(input_dataset, args.backed, input_basis, nbins, summary, out,
-        X_range=input_X_range, dimensions=args.groups, stats=args.stats, markers=args.markers)
+    prepare_data = PrepareData(input_path=input_dataset, backed=args.backed, output=out,
+        dimensions=args.groups, groups=args.groups, markers=args.markers)
     prepare_data.execute()
     if loom_file is not None:
         os.remove(loom_file)

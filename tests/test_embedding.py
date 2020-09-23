@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cirrocumulus.data_processing import handle_embedding
+from cirrocumulus.data_processing import handle_data
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
 
 
@@ -25,7 +25,6 @@ def group_df(test_data, measures, dimensions, continuous_obs, basis):
         coordinate_columns=basis['coordinate_columns'],
         bin_name=basis['full_name'])
     # group by bin then agg
-
     return df.groupby(basis['full_name']).agg(agg_dict)
 
 
@@ -55,22 +54,17 @@ def diff_binning(grouped_df, measures, dimensions, continuous_obs, basis, result
 #         np.testing.assert_array_equal(results['values'][key], test_data.obs[key], err_msg=key)
 
 
-@pytest.fixture(autouse=True, params=[True, False])
-def quick(request):
-    return request.param
-
-
-@pytest.fixture(autouse=True, params=['max', 'sum', 'mean'])
+@pytest.fixture(autouse=True, params=['sum', 'mean', 'max'])
 def agg_function(request):
     return request.param
 
 
-def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis, quick,
+def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis,
                  agg_function):
     nbins = 100
-    basis = get_basis(basis, nbins, agg_function)
-    grouped_df = group_df(test_data, measures, dimensions, continuous_obs, basis)
-    results = handle_embedding(dataset_api=dataset_api, dataset=input_dataset,
-        basis=basis, measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)), dimensions=dimensions,
-        quick=quick)
-    diff_binning(grouped_df, measures, dimensions, continuous_obs, basis, results)
+    basis_dict = get_basis(basis, nbins, agg_function)
+    grouped_df = group_df(test_data, measures, dimensions, continuous_obs, basis_dict)
+    embedding_list = [dict(nbins=nbins, ndim=2, basis=basis, dimensions=dimensions, agg=agg_function)]
+    embedding_list[0]['measures'] = measures + list(map(lambda x: 'obs/' + x, continuous_obs))
+    results = handle_data(dataset_api=dataset_api, dataset=input_dataset, embedding_list=embedding_list)
+    diff_binning(grouped_df, measures, dimensions, continuous_obs, basis_dict, results['embedding'][0])

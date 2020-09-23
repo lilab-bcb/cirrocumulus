@@ -6,7 +6,7 @@ import scipy.sparse
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.simple_data import SimpleData
 # only works with local files
-from cirrocumulus.star_fusion_utils import read_star_fusion_file
+from cirrocumulus.io_util import read_star_fusion_file
 
 
 class AnndataDataset(AbstractDataset):

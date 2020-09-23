@@ -1,7 +1,6 @@
-import cirrocumulus.data_processing as data_processing
-from cirrocumulus.embedding_aggregator import get_basis
 from flask import Blueprint, Response, request, stream_with_context
 
+import cirrocumulus.data_processing as data_processing
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -15,15 +14,6 @@ dataset_api = DatasetAPI()
 
 auth_api = AuthAPI()
 database_api = DatabaseAPI()
-
-
-def check_bin_input(nbins):
-    if nbins is not None:
-        nbins = int(nbins)
-        nbins = min(1000, nbins)
-        if nbins <= 0:
-            nbins = None
-    return nbins
 
 
 @blueprint.errorhandler(InvalidUsage)
@@ -189,21 +179,17 @@ def get_email_and_dataset(content):
     return email, dataset
 
 
-@blueprint.route('/embedding', methods=['POST'])
-def handle_embedding():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
+@blueprint.route('/data', methods=['POST'])
+def handle_data():
+    json_request = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(json_request)
 
-    nbins = check_bin_input(content.get('nbins', None))
-    agg_function = content.get('agg', 'max')
-    ndim = content.get('ndim', '2')
-    precomputed = content.get('precomputed', False)
-    dimensions = content.get('dimensions', [])
-    measures = content.get('measures', [])
-    basis = get_basis(content.get('basis'), nbins=nbins, agg=agg_function, dimensions=ndim, precomputed=precomputed)
     return to_json(
-        data_processing.handle_embedding(dataset_api=dataset_api, dataset=dataset, basis=basis, measures=measures,
-            dimensions=dimensions))
+        data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
+            embedding_list=json_request.get('embedding'),
+            stats=json_request.get('stats'),
+            grouped_stats=json_request.get('groupedStats'),
+            selection=json_request.get('selection')))
 
 
 @blueprint.route('/selection', methods=['POST'])
@@ -215,26 +201,6 @@ def handle_selection():
     return to_json(data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
         measures=content.get('measures', []), dimensions=content.get('dimensions', []),
         embeddings=content.get('embeddings', [])))
-
-
-@blueprint.route('/stats', methods=['POST'])
-def handle_stats():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
-    measures = content.get('measures', [])
-    dimensions = content.get('dimensions', [])
-    return to_json(data_processing.handle_stats(dataset_api=dataset_api, dataset=dataset,
-        measures=measures, dimensions=dimensions))
-
-
-@blueprint.route('/grouped_stats', methods=['POST'])
-def handle_grouped_stats():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
-    dimensions = content.get('dimensions', [])
-    measures = content.get('measures', [])
-    return to_json(data_processing.handle_grouped_stats(dataset_api=dataset_api, dataset=dataset,
-        measures=measures, dimensions=dimensions))
 
 
 @blueprint.route('/selected_ids', methods=['POST'])

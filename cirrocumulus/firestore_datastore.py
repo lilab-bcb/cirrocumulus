@@ -1,9 +1,9 @@
 import datetime
 import json
 
-from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from google.cloud import datastore
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -62,7 +62,8 @@ class FirestoreDatastore:
         query.add_filter('readers', '=', email)
         results = []
         for result in query.fetch():
-            results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
+            results.append(
+                {'id': result.id, 'name': result['name'], 'owner': email in result['owners'], 'url': result['url']})
         domain = get_email_domain(email)
         if domain is not None:
             query = client.query(kind=DATASET)
@@ -72,7 +73,8 @@ class FirestoreDatastore:
                 unique_ids.add(result['id'])
             for result in query.fetch():
                 if result.id not in unique_ids:
-                    results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners']})
+                    results.append({'id': result.id, 'name': result['name'], 'owner': email in result['owners'],
+                                    'url': result['url']})
         return results
 
     def dataset_filters(self, email, dataset_id):
@@ -166,10 +168,6 @@ class FirestoreDatastore:
         update_dict = {'name': dataset_name,
                        'readers': list(readers),
                        'url': url}
-        json_schema = load_dataset_schema(url)
-        if json_schema is not None:
-            update_dict['precomputed'] = json_schema.get('precomputed', False)
-            update_dict['shape'] = json_schema.get('shape')
 
         if dataset_id is None:  # new dataset
             update_dict['owners'] = [email]

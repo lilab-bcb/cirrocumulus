@@ -6,7 +6,11 @@ def mean_agg(x):
 
 
 def sum_agg(x):
-    return x.values.sum()
+    if hasattr(x, 'sparse'):
+        if x.sparse.npoints == 0:
+            return x.sparse.fill_value
+        return x.sum()
+    return x.sum()
 
 
 def max_agg(x):

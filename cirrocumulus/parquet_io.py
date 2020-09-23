@@ -18,7 +18,7 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
         write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata(adata, output_directory):
+def save_adata_pq(adata, output_directory):
     import pandas._libs.json as ujson
     logger.info('Save adata')
     X_dir = os.path.join(output_directory, 'X')

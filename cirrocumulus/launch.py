@@ -1,45 +1,9 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
+from cirrocumulus.io_util import get_markers, filter_markers
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.simple_data import SimpleData
-
-
-def get_cell_type_genes(cell_type):
-    all_genes = []
-
-    for cell_type_markers in cell_type['markers']:
-        all_genes += cell_type_markers['genes']
-
-    for i in range(len(all_genes)):
-        gene = all_genes[i]
-        last_char = gene[len(gene) - 1]
-        if last_char == '+' or last_char == '-':
-            all_genes[i] = gene[:len(gene) - 1]
-    return all_genes
-
-
-def get_markers(marker_paths):
-    marker_dict = {}
-    import json
-
-    for marker_path in marker_paths:
-        markers = {}
-        with open(marker_path, 'rt') as f:
-            marker_json = json.load(f)
-            if 'title' in marker_json:
-                marker_dict[marker_json['title']] = markers
-                for cell_type in marker_json['cell_types']:
-                    markers[cell_type['name']] = get_cell_type_genes(cell_type)
-                    if 'subtypes' in cell_type:
-                        for cell_sub_type in cell_type['subtypes']['cell_types']:
-                            markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
-            else:
-                key = os.path.splitext(os.path.basename(marker_path))[0]
-                markers = marker_dict.get(key, {})
-                marker_dict[key] = markers
-                markers.update(marker_json)
-    return marker_dict
 
 
 def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
@@ -118,7 +82,8 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
             d = anndata_dataset.get_data(dataset_id)
             existing_marker_dict = d.uns.get('markers', {})
             existing_marker_dict.update(marker_dict)
-            d.uns['markers'] = existing_marker_dict
+            # remove genes in dict that are not in dataset
+            d.uns['markers'] = filter_markers(d, existing_marker_dict)
 
 
 def create_app():

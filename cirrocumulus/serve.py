@@ -14,8 +14,8 @@ def cached_app():
 
     if app is None:
         app = create_app()
-        # from flask_cors import CORS
-        # CORS(app)
+        from flask_cors import CORS
+        CORS(app)
         configure()
     return app
 

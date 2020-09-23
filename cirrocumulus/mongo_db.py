@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
-from cirrocumulus.database_api import load_dataset_schema, get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -80,7 +80,7 @@ class MongoDb:
             query = dict(readers={'$in': [email, domain]})
         for doc in collection.find(query):
             results.append({'id': str(doc['_id']), 'name': doc['name'],
-                            'owner': 'owners' in doc and email in doc['owners']})
+                            'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url']})
         return results
 
     def dataset_filters(self, email, dataset_id):
@@ -143,10 +143,6 @@ class MongoDb:
         update_dict = {'name': dataset_name,
                        'readers': list(readers),
                        'url': url}
-        json_schema = load_dataset_schema(url)
-        if json_schema is not None:
-            update_dict['precomputed'] = json_schema.get('precomputed', False)
-            update_dict['shape'] = json_schema.get('shape')
         if dataset_id is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))

@@ -2,10 +2,8 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirrocumulus.data_processing import handle_grouped_stats
-from cirrocumulus.dotplot_aggregator import DotPlotAggregator
-from cirrocumulus.entity import Entity
-from cirrocumulus.prepare_data import write_grouped_stats, make_ordered
+from cirrocumulus.data_processing import handle_data
+from cirrocumulus.prepare_data import make_ordered
 
 
 def diff_results(summarized_df, measures, results):
@@ -41,8 +39,8 @@ def get_df(test_data, measures, by):
 
 
 def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
-    process_results = handle_grouped_stats(dataset_api=dataset_api, dataset=input_dataset, measures=measures,
-        dimensions=[by])
+    process_results = handle_data(dataset_api=dataset_api, dataset=input_dataset, grouped_stats=dict(measures=measures,
+        dimensions=[by]))
     dotplot_result = process_results['dotplot']
     diff_results(get_df(test_data, measures, by), measures, dotplot_result)
 
