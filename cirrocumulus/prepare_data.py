@@ -5,17 +5,16 @@ import logging
 import os
 
 import anndata
+import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
-from cirrocumulus.io_util import get_markers, filter_markers
+from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -154,7 +153,8 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 
 class PrepareData:
 
-    def __init__(self, input_path, backed, output, X_range=None, dimensions=None, groups=[], markers=[]):
+    def __init__(self, input_path, backed, output, X_range=None, dimensions=None, groups=[], markers=[],
+                 spatial_directory=None):
         self.input_path = input_path
         self.groups = groups
         self.markers = markers
@@ -168,7 +168,9 @@ class PrepareData:
             backed=backed)
         # if 'seurat_clusters' in self.adata.obs:
         #     self.adata.obs['seurat_clusters'] = self.adata.obs['seurat_clusters'].astype('category')
-
+        if spatial_directory is not None:
+            if not add_spatial(self.adata, spatial_directory):
+                print('No spatial data found in {}'.format(spatial_directory))
         if not backed:
             sums = self.adata.X.sum(axis=0)
             if isinstance(sums, np.matrix):
@@ -364,6 +366,8 @@ def main(argsv):
         help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
         action='append')
     parser.add_argument('--groups', help='List of groups to compute markers for (e.g. louvain)', action='append')
+    parser.add_argument('--spatial', help=SPATIAL_HELP)
+
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
@@ -404,7 +408,7 @@ def main(argsv):
     #     input_X_range[1] = int(input_X_range[1])
 
     prepare_data = PrepareData(input_path=input_dataset, backed=args.backed, output=out,
-        dimensions=args.groups, groups=args.groups, markers=args.markers)
+        dimensions=args.groups, groups=args.groups, markers=args.markers, spatial_directory=args.spatial)
     prepare_data.execute()
     if loom_file is not None:
         os.remove(loom_file)
