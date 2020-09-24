@@ -15,7 +15,7 @@ import {arrayToSvgPath, isPointInside} from './util';
 
 
 function getSpotRadius(trace) {
-    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20;
+    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 15; // TODO
 }
 
 export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
