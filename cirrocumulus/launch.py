@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
-from cirrocumulus.io_util import get_markers, filter_markers, add_spatial
+from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.parquet_dataset import ParquetDataset
 
 
@@ -115,10 +115,7 @@ def main(argsv):
         nargs='*')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-    parser.add_argument('--spatial',
-        help='Directory containing 10x visium spatial data (tissue_hires_image.png, scalefactors_json.json, and tissue_positions_list.csv) '
-             + 'or a directory containing `image.png`, `positions.image.csv` with headers barcode, x, and y, and optionally `diameter.image.txt` containing spot diameter',
-        nargs='*')
+    parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
 
     args = parser.parse_args(argsv)
     app = create_app()
