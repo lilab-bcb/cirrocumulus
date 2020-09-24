@@ -1,6 +1,15 @@
 Release Notes
 -------------
 
+- 1.1.8 `September 24, 2020`
+    * Added support for generic spatial data in addition to 10x visium
+    * Made primary embedding chart responsive
+    * Added option to set min and max of color scale
+    * Updated gallery chart size
+    * Updated `prepare_data` command
+    * Changed dotplot default min to zero
+    * Added option to dotplot mean and percent expressed scales
+
 - 1.1.7.post3 `September 18, 2020`
     * Plot higher values on top of lower values in embedding plot
 
