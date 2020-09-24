@@ -23,16 +23,13 @@ class EmbeddingChart extends React.PureComponent {
 
 
     render() {
-        const {
-            traceInfo, categoricalNames, shape, nObsSelected, globalFeatureSummary, featureSummary,
-            datasetFilter, handleColorChange, handleNameChange, handleDimensionFilterUpdated, handleMeasureFilterUpdated, primaryChartSize, handleDomain
-        } = this.props;
-
+        const {traceInfo, categoricalNames, primaryChartSize} = this.props;
+        const traceName = traceInfo.name === '__count' ? '' : traceInfo.name;
         return (
 
             <div style={{position: 'relative'}}>
                 <Paper elevation={0} style={{position: 'absolute', right: 10, zIndex: 1000}}>
-                    <h4 style={{marginTop: '3.2px'}}>{traceInfo.name}</h4>
+                    <h4 style={{marginTop: '3.2px'}}>{traceName}</h4>
                     {/*{traceInfo.continuous ?*/}
                     {/*    <ColorSchemeLegendWrapper*/}
                     {/*        width={140}*/}
