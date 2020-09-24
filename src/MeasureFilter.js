@@ -1,3 +1,4 @@
+import {InputLabel} from '@material-ui/core';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
@@ -47,9 +48,11 @@ class MeasureFilter extends React.PureComponent {
 
         return (
 
-            <div style={{display: 'inline-flex', paddingLeft: 10}}>
+            <div style={{display: 'inline-flex', paddingLeft: 10, marginBottom: 10}}>
+                <InputLabel shrink={true} id={id + '_label'}>Filter</InputLabel>
 
                 <Select
+                    labelId={id + '_label'}
                     id={id}
                     style={{marginRight: 6}}
                     value={filter.operation}
@@ -66,6 +69,7 @@ class MeasureFilter extends React.PureComponent {
 
                 <TextField onKeyPress={this.handleValueKeyPress}
                            onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 90}}/>
+
             </div>
         );
     }
