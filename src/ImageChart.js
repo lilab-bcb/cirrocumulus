@@ -57,15 +57,41 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
         context.setLineDash([2, 2]);
     }
     const isSelectionEmpty = selection.size === 0;
-    for (let i = 0; i < traceInfo.x.length; i++) {
-        let x = traceInfo.x[i];
-        let y = traceInfo.y[i];
-        const isSelected = isSelectionEmpty || selection.has(i);
-        context.globalAlpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        context.fillStyle = traceInfo.colors[i];
-        context.beginPath();
-        context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
-        context.fill();
+    if (!isSelectionEmpty) { // draw unselected cells 1st
+        context.globalAlpha = unselectedMarkerOpacity;
+        for (let i = 0; i < traceInfo.x.length; i++) {
+            let x = traceInfo.x[i];
+            let y = traceInfo.y[i];
+            const isSelected = selection.has(i);
+            if (!isSelected) {
+                context.fillStyle = traceInfo.colors[i];
+                context.beginPath();
+                context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
+                context.fill();
+            }
+        }
+        context.globalAlpha = markerOpacity;
+        for (let i = 0; i < traceInfo.x.length; i++) {
+            let x = traceInfo.x[i];
+            let y = traceInfo.y[i];
+            const isSelected = selection.has(i);
+            if (isSelected) {
+                context.fillStyle = traceInfo.colors[i];
+                context.beginPath();
+                context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
+                context.fill();
+            }
+        }
+    } else {
+        context.globalAlpha = markerOpacity;
+        for (let i = 0; i < traceInfo.x.length; i++) {
+            let x = traceInfo.x[i];
+            let y = traceInfo.y[i];
+            context.fillStyle = traceInfo.colors[i];
+            context.beginPath();
+            context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
+            context.fill();
+        }
     }
     context.globalAlpha = 1;
     if (context.setLineDash) {
