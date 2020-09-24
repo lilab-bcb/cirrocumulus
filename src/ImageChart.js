@@ -14,6 +14,10 @@ import {getCategoryLabelsPositions} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
 
 
+function getSpotRadius(trace) {
+    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20;
+}
+
 export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
     if (traceInfo.tileSource.ready) {
         const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
@@ -46,15 +50,17 @@ function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
 }
 
 function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity) {
+    const spotRadius = getSpotRadius(traceInfo);
+
     context.lineWidth = 2 * 1 / zoom;
-    let spotRadius = traceInfo.embedding.spatial.spot_diameter / 2;
     if (context.setLineDash) {
         context.setLineDash([2, 2]);
     }
+    const isSelectionEmpty = selection.size === 0;
     for (let i = 0; i < traceInfo.x.length; i++) {
         let x = traceInfo.x[i];
         let y = traceInfo.y[i];
-        const isSelected = selection.size === 0 || selection.has(i);
+        const isSelected = isSelectionEmpty || selection.has(i);
         context.globalAlpha = isSelected ? markerOpacity : unselectedMarkerOpacity;
         context.fillStyle = traceInfo.colors[i];
         context.beginPath();
@@ -108,7 +114,7 @@ class ImageChart extends React.PureComponent {
 
     findPointsInRectangle(rect) {
         let data = this.props.traceInfo;
-        const spotRadius = data.embedding.spatial.spot_diameter != null ? data.embedding.spatial.spot_diameter / 2 : 10; // FIXME
+        const spotRadius = getSpotRadius(data);
         let indices = [];
         const x = parseFloat(rect.getAttribute('x'));
         const y = parseFloat(rect.getAttribute('y'));
@@ -124,9 +130,10 @@ class ImageChart extends React.PureComponent {
         return indices;
     }
 
+
     findPointIndex(xpix, ypix) {
         let data = this.props.traceInfo;
-        let spotRadius = data.embedding.spatial.spot_diameter / 2;
+        let spotRadius = getSpotRadius(data);
         for (let i = 0; i < data.x.length; i++) {
             if (Math.abs(data.x[i] - xpix) <= spotRadius && Math.abs(data.y[i] - ypix) <= spotRadius) {
                 return i;

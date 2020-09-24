@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 import scipy.sparse
@@ -21,42 +19,6 @@ class SimpleData:
             n_obs = len(obs) if obs is not None else 0
         self.X = X
         self.shape = (n_obs, n_var)
-
-    @staticmethod
-    def add_spatial(adata, spatial_directory):
-        # only 10x for now
-        scale_factors_path = os.path.join(spatial_directory, 'scalefactors_json.json')
-        tissue_hires_image_path = os.path.join(spatial_directory, 'tissue_hires_image.png')
-        tissue_positions_list_path = os.path.join(spatial_directory, 'tissue_positions_list.csv')
-        found = True
-        for path in [scale_factors_path, tissue_hires_image_path, tissue_positions_list_path]:
-            if not os.path.exists(path):
-                found = False
-                break
-        if found:
-            import json
-            with open(os.path.join(spatial_directory, 'scalefactors_json.json'), 'rt') as f:
-                scalefactors = json.load(f)
-                # {"spot_diameter_fullres": 89.49502418224989, "tissue_hires_scalef": 0.17011142,
-                # "fiducial_diameter_fullres": 144.56888521748058, "tissue_lowres_scalef": 0.051033426}
-            # barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
-            positions = pd.read_csv(tissue_positions_list_path, header=None)
-            positions.columns = [
-                    'barcode',
-                    'in_tissue',
-                    'array_row',
-                    'array_col',
-                    'pxl_col_in_fullres',
-                    'pxl_row_in_fullres',
-            ]
-            positions.index = positions['barcode']
-            positions = positions.reindex(adata.obs.index)
-            spatial_coords = positions[['pxl_row_in_fullres', 'pxl_col_in_fullres']].values
-            adata.obsm['tissue_hires'] = spatial_coords * scalefactors['tissue_hires_scalef']
-            adata.uns['images'] = [dict(name='tissue_hires', image=tissue_hires_image_path,
-                spot_diameter=scalefactors['spot_diameter_fullres'] * scalefactors['tissue_hires_scalef'])]
-        else:
-            print('Spatial data not found')
 
     @staticmethod
     def view(adata, row_slice):

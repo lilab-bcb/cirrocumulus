@@ -1,9 +1,8 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
-from cirrocumulus.io_util import get_markers, filter_markers
+from cirrocumulus.io_util import get_markers, filter_markers, add_spatial
 from cirrocumulus.parquet_dataset import ParquetDataset
-from cirrocumulus.simple_data import SimpleData
 
 
 def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
@@ -74,7 +73,8 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
             spatial_directory = spatial_directories[i]
             if spatial_directory != '':
                 adata = anndata_dataset.get_data(dataset_ids[i])
-                SimpleData.add_spatial(adata, spatial_directory)
+                if not add_spatial(adata, spatial_directory):
+                    print('No spatial data found in {}'.format(spatial_directory))
 
     if marker_paths is not None and len(marker_paths) > 0:
         marker_dict = get_markers(marker_paths)
@@ -115,7 +115,9 @@ def main(argsv):
         nargs='*')
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-    parser.add_argument('--spatial', help='Directory containing spatial data (images, scaling factors, positions)',
+    parser.add_argument('--spatial',
+        help='Directory containing 10x visium spatial data (tissue_hires_image.png, scalefactors_json.json, and tissue_positions_list.csv) '
+             + 'or a directory containing `image.png`, `positions.image.csv` with headers barcode, x, and y, and optionally `diameter.image.txt` containing spot diameter',
         nargs='*')
 
     args = parser.parse_args(argsv)

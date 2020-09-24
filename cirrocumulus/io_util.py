@@ -4,6 +4,79 @@ import anndata
 import pandas as pd
 
 
+def __add_visium(adata, spatial_directory):
+    scale_factors_path = os.path.join(spatial_directory, 'scalefactors_json.json')
+    tissue_hires_image_path = os.path.join(spatial_directory, 'tissue_hires_image.png')
+    tissue_positions_list_path = os.path.join(spatial_directory, 'tissue_positions_list.csv')
+    is_visium = True
+    for path in [scale_factors_path, tissue_hires_image_path, tissue_positions_list_path]:
+        if not os.path.exists(path):
+            is_visium = False
+            break
+    if is_visium:
+        import json
+        with open(os.path.join(spatial_directory, 'scalefactors_json.json'), 'rt') as f:
+            scalefactors = json.load(f)
+            # {"spot_diameter_fullres": 89.49502418224989, "tissue_hires_scalef": 0.17011142,
+            # "fiducial_diameter_fullres": 144.56888521748058, "tissue_lowres_scalef": 0.051033426}
+        # barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
+        positions = pd.read_csv(tissue_positions_list_path, header=None)
+        positions.columns = [
+                'barcode',
+                'in_tissue',
+                'array_row',
+                'array_col',
+                'pxl_col_in_fullres',
+                'pxl_row_in_fullres',
+        ]
+        positions.index = positions['barcode']
+        positions = positions.reindex(adata.obs.index)
+        spatial_coords = positions[['pxl_row_in_fullres', 'pxl_col_in_fullres']].values
+        adata.obsm['tissue_hires'] = spatial_coords * scalefactors['tissue_hires_scalef']
+        adata.uns['images'] = [dict(name='tissue_hires', image=tissue_hires_image_path,
+            spot_diameter=scalefactors['spot_diameter_fullres'] * scalefactors['tissue_hires_scalef'])]
+        return True
+    else:
+        return False
+
+
+def __add_generic_spatial(adata, spatial_directory):
+    # positions.image.csv with barcode, x, y
+    # image.png
+    # diameter.image.txt (optional)
+    image_extensions = set(['.png', '.jpeg', '.jpg'])
+    found = False
+    for f in os.listdir(spatial_directory):
+        name, ext = os.path.splitext(f)
+        ext = ext.lower()
+        if ext in image_extensions:
+            positions_path = os.path.join(spatial_directory, 'positions.' + name + '.csv')
+
+            if os.path.exists(positions_path):
+                diameter_path = os.path.join(spatial_directory, 'diameter.' + name + '.txt')
+                spot_diameter = None
+                if os.path.exists(diameter_path):
+                    with open(diameter_path, 'rt') as diameter_in:
+                        spot_diameter = float(diameter_in.readline().strip())
+
+                positions = pd.read_csv(positions_path, index_col='barcode')
+                if not pd.api.types.is_string_dtype(positions.index):
+                    positions.index = positions.index.astype(str)
+                positions = positions.reindex(adata.obs.index)
+                adata.obsm[name] = positions[['x', 'y']].values
+                adata.uns['images'] = [dict(name=name, image=os.path.join(spatial_directory, f),
+                    spot_diameter=spot_diameter)]
+                found = True
+    return found
+
+
+def add_spatial(adata, spatial_directory):
+    if not __add_visium(adata, spatial_directory):
+        return __add_generic_spatial(adata, spatial_directory)
+    else:
+        return True
+
+
 def get_cell_type_genes(cell_type):
     all_genes = []
 
