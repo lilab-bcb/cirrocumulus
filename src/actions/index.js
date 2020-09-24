@@ -1565,7 +1565,7 @@ function handleEmbeddingResult(embedding, embeddingDef) {
 
         // let embeddingResult = result.embeddingResult;
 
-        let isSpatial = embedding.spatial != null;
+        let isSpatial = embeddingDef.spatial != null;
         let interpolator = state.interpolator;
 
 
