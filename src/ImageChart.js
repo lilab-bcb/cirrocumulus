@@ -92,7 +92,6 @@ class ImageChart extends React.PureComponent {
         super(props);
         this.id = uniqueId('cirro-image');
         this.tooltipElementRef = React.createRef();
-        this.props.chartOptions = {dragmode: 'pan', editSelection: false, showLabels: false};
     }
 
     findPointsInPolygon(points) {
@@ -109,7 +108,7 @@ class ImageChart extends React.PureComponent {
 
     findPointsInRectangle(rect) {
         let data = this.props.traceInfo;
-        const spotRadius = data.embedding.spatial.spot_diameter / 2;
+        const spotRadius = data.embedding.spatial.spot_diameter != null ? data.embedding.spatial.spot_diameter / 2 : 10; // FIXME
         let indices = [];
         const x = parseFloat(rect.getAttribute('x'));
         const y = parseFloat(rect.getAttribute('y'));
@@ -197,7 +196,7 @@ class ImageChart extends React.PureComponent {
         this.viewer = new OpenSeadragon({
             id: this.id,
             gestureSettingsMouse: {dblClickToZoom: true, clickToZoom: false},
-            autoResize: false,
+            autoResize: true,
             showFullPageControl: false,
             collectionMode: false,
             // visibilityRatio: 0.2,
@@ -373,9 +372,9 @@ class ImageChart extends React.PureComponent {
         if (this.canvasOverlay) {
             this.canvasOverlay._updateCanvas();
         }
-        if (this.prevProps.chartSize !== this.props.chartSize) {
-            this.viewer.resize();
-        }
+        // if (this.viewer && prevProps.chartSize !== this.props.chartSize) {
+        //     this.viewer.viewport.resize();
+        // }
     }
 
     componentWillUnmount() {
