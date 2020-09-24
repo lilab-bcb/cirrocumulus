@@ -226,7 +226,8 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         X_range = self.X_range
-
+        if not os.path.exists(self.base_output_dir):
+            os.makedirs(self.base_output_dir, exist_ok=True)
         marker_dict = self.adata.uns.get('markers', {})
         self.adata.uns['markers'] = marker_dict
         if self.groups is not None:
@@ -235,6 +236,16 @@ class PrepareData:
                 if len(self.adata.obs[field].cat.categories) > 1:
                     logger.info('Computing markers for {}'.format(field))
                     SimpleData.find_markers(self.adata, field, marker_dict, n_genes)
+        images = self.adata.uns.get('images')
+        if images is not None:
+            image_dir = os.path.join(self.base_output_dir, 'images')
+            if not os.path.exists(image_dir):
+                os.mkdir(image_dir)
+            for image in images:
+                path = image['image']
+                import shutil
+                shutil.copy(path, os.path.join(image_dir, os.path.basename(path)))
+                image['image'] = 'images/' + os.path.basename(path)
         output_format = 'parquet'
         if X_range[0] == 0:
             if output_format == 'parquet':
