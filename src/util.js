@@ -1,3 +1,4 @@
+import {shuffle} from 'd3-array';
 import {color} from 'd3-color';
 import {scaleLinear} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
@@ -180,12 +181,7 @@ export function randomSeq(n, start = 0) {
     for (let i = 0; i < n; i++, start++) {
         indices[i] = start;
     }
-    for (let i = n - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * i);
-        const temp = indices[i];
-        indices[i] = indices[j];
-        indices[j] = temp;
-    }
+    shuffle(indices);
     return indices;
 }
 
