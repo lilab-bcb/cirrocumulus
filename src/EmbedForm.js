@@ -245,14 +245,6 @@ class EmbedForm extends React.PureComponent {
         this.props.handleEmbeddings(embeddings.slice(0));
     };
 
-
-    handleReverseColors = (event) => {
-        const value = event.target.checked;
-        const interpolator = this.props.interpolator;
-        interpolator.reversed = value;
-        this.props.handleInterpolator(Object.assign({}, interpolator));
-    };
-
     handleBinValuesChange = (event) => {
         const value = event.target.checked;
         this.props.handleBinValues(value);
@@ -648,16 +640,6 @@ class EmbedForm extends React.PureComponent {
                                 <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
                                 <ColorSchemeSelector/>
                             </FormControl>
-                            <div><FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={interpolator.reversed || false}
-                                        value={'reverseColors'}
-                                        onChange={this.handleReverseColors}
-                                    />
-                                }
-                                label="Reverse Colors"
-                            /></div>
 
                             {!isSummarized && <div><FormControlLabel
                                 control={

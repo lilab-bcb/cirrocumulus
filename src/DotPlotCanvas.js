@@ -8,13 +8,11 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Paper from '@material-ui/core/Paper';
 import Select from '@material-ui/core/Select';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
-import {scaleLinear, scaleSequential} from 'd3-scale';
-import {interpolateReds} from 'd3-scale-chromatic';
 import natsort from 'natsort';
 import React from 'react';
-import ColorSchemeLegend, {drawColorScheme} from './ColorSchemeLegend';
+import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
-import SizeLegend, {drawSizeLegend} from './SizeLegend';
+import {drawSizeLegend} from './SizeLegend';
 
 const styles = theme => ({
     root: {},
@@ -27,8 +25,7 @@ const styles = theme => ({
 
 let svgFont = '12px Helvetica,Arial,sans-serif';
 let canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
-let maxRadius = 9;
-let minRadius = 1;
+
 let gridColor = '#808080';
 let gridThickness = 0.5;
 
@@ -60,6 +57,7 @@ class DotPlotCanvas extends React.PureComponent {
         if (this.canvas == null) {
             let onMouseMove = (event) => {
                 const node = event.target;
+                const maxRadius = this.props.sizeScale.range()[1];
                 var rect = node.getBoundingClientRect();
                 let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
                 // xy[0] /= devicePixelRatio;
@@ -107,11 +105,12 @@ class DotPlotCanvas extends React.PureComponent {
     drawContext(context) {
         const renamedCategories = this.props.renamedCategories || {};
         const dotplot = this.dotplot;
-        const colorScale = this.colorScale;
+        const colorScale = this.props.colorScale;
         const features = this.features;
-        const sizeScale = this.sizeScale;
+        const sizeScale = this.props.sizeScale;
         const categories = this.categories;
         const categoryOrder = this.categoryOrder;
+        const maxRadius = sizeScale.range()[1];
         let diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
@@ -204,6 +203,7 @@ class DotPlotCanvas extends React.PureComponent {
             xoffset = Math.max(xoffset, context.measureText(category).width);
         });
         xoffset += 4;
+        const maxRadius = this.props.sizeScale.range()[1];
         const diameter = maxRadius * 2;
         const height = this.categories.length * diameter + 4;
         const width = this.features.length * diameter + 4;
@@ -278,8 +278,7 @@ class DotPlotCanvas extends React.PureComponent {
         this.features = features;
         this.size = this.getSize(context);
         this.categoryOrder = categoryOrder;
-        this.colorScale = scaleSequential(interpolateReds).domain(this.props.meanRange).clamp(true);
-        this.sizeScale = scaleLinear().domain(this.props.fractionRange).range([minRadius, maxRadius]).clamp(true);
+
     }
 
     handleSaveImageMenu = (event) => {
@@ -405,14 +404,6 @@ class DotPlotCanvas extends React.PureComponent {
             </Paper>
             <div ref={this.divRef}></div>
 
-            {this.props.legend && <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
-                                                     width={186}
-                                                     label={true} height={40}
-                                                     scale={this.colorScale}/>}
-            {this.props.legend && <SizeLegend style={{display: 'block'}}
-                                              width={150}
-                                              label={true} height={40}
-                                              scale={this.sizeScale}/>}
 
         </div>);
 

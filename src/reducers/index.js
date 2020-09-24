@@ -65,7 +65,6 @@ export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
-    reversed: false,
     value: getInterpolator(DEFAULT_INTERPOLATOR)
 };
 
@@ -600,13 +599,6 @@ function embeddingData(state = [], action) {
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous) {
                     let domain = traceInfo.colorScale.domain();
-                    // ensure domain is in order min to max if not reversed, otherwise max to min
-                    if (action.payload.reversed) {
-                        domain.sort((a, b) => b - a);
-                    } else {
-                        domain.sort((a, b) => a - b);
-                    }
-
                     traceInfo.colorScale = scaleSequential(action.payload.value).domain(domain);
                     updateTraceColors(traceInfo);
                 }

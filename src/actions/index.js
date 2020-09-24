@@ -2,10 +2,10 @@ import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
+import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
 import CustomError from '../CustomError';
 import {RestDataset} from '../RestDataset';
-
 import {RestServerApi} from '../RestServerApi';
 
 
@@ -755,7 +755,6 @@ function restoreSavedView(savedView) {
                 savedView.colorScheme = {
                     name: savedView.colorScheme,
                     value: interpolator,
-                    reversed: false // FIXME
                 };
             }
         }
@@ -1444,30 +1443,36 @@ function _updateCharts(onError) {
             }
 
             dotPlotData = dotPlotData.filter(categoryItem => searchTokens.obsCat.indexOf(categoryItem.name) !== -1);
-            dotPlotData.forEach((categoryItem) => {
+            dotPlotData.forEach((categoryItem, categoryIndex) => {
+                const nfeatures = categoryItem.values.length;
                 categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
+                if (nfeatures !== categoryItem.values.length) {
+                    dotPlotData[categoryIndex] = Object.assign({}, categoryItem);
+                }
+                // sort features
                 categoryItem.values.sort((a, b) => {
                     a = a.name;
                     b = b.name;
-                    return (a < b ? -1 : (a === b ? 0 : 1));
+                    return natsort(a, b);
                 });
                 if (categoryItem.selection) {
                     categoryItem.selection.values = categoryItem.selection.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
                     categoryItem.selection.values.sort((a, b) => {
                         a = a.name;
                         b = b.name;
-                        return (a < b ? -1 : (a === b ? 0 : 1));
+                        return natsort(a, b);
                     });
                 }
             });
             dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length > 0);
+            // sort categories
             dotPlotData.sort((a, b) => {
                 a = a.name;
                 b = b.name;
-                return (a < b ? -1 : (a === b ? 0 : 1));
+                return natsort(a, b);
             });
 
-            dispatch(_setDotPlotData(dotPlotData.slice()));
+            dispatch(_setDotPlotData(dotPlotData));
         }
 
 
@@ -1615,7 +1620,7 @@ function handleEmbeddingResult(embedding, embeddingDef) {
                     traceSummary = {min: min, max: max};
                     globalFeatureSummary[name] = traceSummary;
                 }
-                colorScale = scaleSequential(interpolator.value).domain(interpolator.reversed ? [traceSummary.max, traceSummary.min] : [traceSummary.min, traceSummary.max]);
+                colorScale = scaleSequential(interpolator.value).domain([traceSummary.min, traceSummary.max]);
 
             } else {
                 let traceUniqueValues = traceSummary.categories;

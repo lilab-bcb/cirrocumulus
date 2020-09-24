@@ -1,21 +1,21 @@
+import {InputLabel} from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import ContinuousLegend from './ContinuousLegend';
-import {numberFormat} from './formatters';
 import MeasureFilter from './MeasureFilter';
 
 class ColorSchemeLegendWrapper extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {min: numberFormat(this.props.scale.domain()[0]), max: numberFormat(this.props.scale.domain()[1])};
+        this.state = {min: '', max: ''};
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.name !== this.props.name) {
             this.setState({
-                min: numberFormat(this.props.scale.domain()[0]),
-                max: numberFormat(this.props.scale.domain()[1])
+                min: '',
+                max: ''
             });
         }
     }
@@ -32,7 +32,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
             }
             let domain = this.props.scale.domain();
             domain[0] = value;
-            this.setState({min: numberFormat(value)});
+            this.setState({min: event.target.value});
             this.props.handleDomain({name: this.props.name, domain: domain});
 
         }
@@ -50,7 +50,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
             }
             let domain = this.props.scale.domain();
             domain[1] = value;
-            this.setState({max: numberFormat(value)});
+            this.setState({max: event.target.value});
             this.props.handleDomain({name: this.props.name, domain: domain});
 
         }
@@ -75,13 +75,15 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                                   globalFeatureSummary={globalFeatureSummary}
                                   maxHeight={maxHeight}></ContinuousLegend>
                 {name !== '__count' && this.props.handleDomain &&
+                <InputLabel shrink={true} variant={"standard"}>Custom Color Scale</InputLabel>}
+                {name !== '__count' && this.props.handleDomain &&
                 <TextField margin="none" style={{width: 90, marginRight: 4}} size="small" type="text"
                            onKeyPress={this.onMinKeyPress}
-                           onChange={this.onMinChange} label="Color Min"
+                           onChange={this.onMinChange} placeholder="Min"
                            value={this.state.min}/>}
                 {name !== '__count' && this.props.handleDomain &&
                 <TextField margin="none" style={{width: 90}} size="small" type="text" onKeyPress={this.onMaxKeyPress}
-                           onChange={this.onMaxChange} label="Color Max"
+                           onChange={this.onMaxChange} placeholder="Max"
                            value={this.state.max}/>}
                 {name !== '__count' &&
                 <MeasureFilter datasetFilter={datasetFilter} name={name} handleUpdate={handleUpdate}/>}

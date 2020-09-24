@@ -2,8 +2,7 @@ import React from 'react';
 
 import {connect} from 'react-redux';
 import {setDotPlotSortOrder} from './actions';
-import DotPlotCanvas from './DotPlotCanvas';
-
+import {DotPlotGroup} from './DotPlotGroup';
 
 class DotPlots extends React.PureComponent {
     render() {
@@ -19,48 +18,9 @@ class DotPlots extends React.PureComponent {
         return <div>
             {dotPlotData.map((categoryItem) => {
                 let selectedData = selectedDotPlotNameToData[categoryItem.name];
-                let meanRange = categoryItem.meanRange;
-                let fractionRange = categoryItem.fractionRange;
-                if (selectedData != null) {
-                    meanRange = meanRange.slice();
-                    fractionRange = fractionRange.slice();
-                    meanRange[0] = Math.min(meanRange[0], selectedData.meanRange[0]);
-                    meanRange[1] = Math.max(meanRange[1], selectedData.meanRange[1]);
-                    fractionRange[0] = Math.min(fractionRange[0], selectedData.fractionRange[0]);
-                    fractionRange[1] = Math.max(fractionRange[1], selectedData.fractionRange[1]);
-
-                }
-                if (meanRange[0] === meanRange[1]) {
-                    meanRange[1]++;
-                }
-                if (fractionRange[0] === fractionRange[1]) {
-                    fractionRange[0] = 0;
-                    fractionRange[1] = 1;
-                }
-                if (meanRange[0] > 0) {
-                    meanRange[0] = 0;
-                }
-                if (fractionRange[0] > 0) {
-                    fractionRange[0] = 0;
-                }
-                return (
-                    <React.Fragment key={categoryItem.name}>
-                        <DotPlotCanvas renamedCategories={categoricalNames[categoryItem.name]}
-                                       legend={selectedData == null}
-                                       meanRange={meanRange}
-                                       fractionRange={fractionRange}
-                                       onSortOrderChanged={this.props.onSortOrderChanged}
-                                       data={categoryItem}/>
-                        {selectedData != null ?
-                            <DotPlotCanvas renamedCategories={categoricalNames[categoryItem.name]}
-                                           subtitle="selection"
-                                           legend={true}
-                                           meanRange={meanRange}
-                                           fractionRange={fractionRange}
-                                           data={selectedData}/> : null}
-                    </React.Fragment>
-                );
-
+                let renamedCategories = categoricalNames[categoryItem.name];
+                return <DotPlotGroup key={categoryItem.name} categoryItem={categoryItem} selectedData={selectedData}
+                                     renamedCategories={renamedCategories}/>;
             })}
         </div>;
     }
