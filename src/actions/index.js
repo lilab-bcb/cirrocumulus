@@ -16,6 +16,8 @@ import {
     CATEGORY_20C,
     convertBinsToPoints,
     getInterpolator,
+    indexSort,
+    randomSeq,
     splitSearchTokens,
     updateTraceColors
 } from '../util';
@@ -1671,6 +1673,7 @@ function handleEmbeddingResult(embedding, embeddingDef) {
             updateTraceColors(chartData);
 
             if (isSpatial) {
+                chartData.indices = !isCategorical ? indexSort(chartData.values, true) : randomSeq(chartData.values.length);
                 chartData.isImage = true;
                 const url = getState().dataset.api.getFileUrl(embeddingDef.spatial.image);
                 let tileSource = new OpenSeadragon.ImageTileSource({

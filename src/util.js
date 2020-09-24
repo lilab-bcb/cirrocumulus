@@ -168,12 +168,26 @@ function indexSortPairs(array, ascending) {
             return (a.value < b.value ? 1 : (a.value === b.value ? (a.index < b.index ? 1 : -1) : -1));
         });
     }
-    const indices = [];
-    array.forEach(function (item) {
-        indices.push(item.index);
-    });
+    const indices = new Uint32Array(array.length);
+    for (let i = 0, n = array.length; i < n; i++) {
+        indices[i] = array[i].index;
+    }
     return indices;
 };
+
+export function randomSeq(n, start = 0) {
+    const indices = new Uint32Array(n);
+    for (let i = 0; i < n; i++, start++) {
+        indices[i] = start;
+    }
+    for (let i = n - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * i);
+        const temp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = temp;
+    }
+    return indices;
+}
 
 /**
  * Computes the False Discovery Rate using the BH procedure.
@@ -228,7 +242,9 @@ export function isPointInside(point, vs) {
 
         const intersect = ((yi > y) != (yj > y))
             && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
+        if (intersect) {
+            inside = !inside;
+        }
     }
 
     return inside;

@@ -2,7 +2,7 @@ import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color, OrthographicCamera, Vector3} from 'three';
 import {getVisualizer} from './ScatterChartThree';
-import {getRgbScale, indexSort, rankIndexArray} from './util';
+import {getRgbScale, indexSort, randomSeq, rankIndexArray} from './util';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
 
@@ -94,7 +94,7 @@ export function getPositions(trace) {
     const is3d = trace.z != null;
     let ranks;
     if (!is3d) {
-        ranks = rankIndexArray(indexSort(trace.values, true));
+        ranks = !trace.isCategorical ? rankIndexArray(indexSort(trace.values, true)) : randomSeq(trace.values.length, 1);
         // ranks go from 1 to values.length. Higher rank means higher value.
         zExtent[0] = 0;
         zExtent[1] = 1;

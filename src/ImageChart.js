@@ -15,7 +15,7 @@ import {arrayToSvgPath, isPointInside} from './util';
 
 
 function getSpotRadius(trace) {
-    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 15; // TODO
+    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 18; // TODO
 }
 
 export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
@@ -57,14 +57,17 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
         context.setLineDash([2, 2]);
     }
     const isSelectionEmpty = selection.size === 0;
+    const indices = traceInfo.indices;
     if (!isSelectionEmpty) { // draw unselected cells 1st
         context.globalAlpha = unselectedMarkerOpacity;
+
         for (let i = 0; i < traceInfo.x.length; i++) {
-            let x = traceInfo.x[i];
-            let y = traceInfo.y[i];
-            const isSelected = selection.has(i);
+            let index = indices[i];
+            let x = traceInfo.x[index];
+            let y = traceInfo.y[index];
+            const isSelected = selection.has(index);
             if (!isSelected) {
-                context.fillStyle = traceInfo.colors[i];
+                context.fillStyle = traceInfo.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
                 context.fill();
@@ -72,11 +75,12 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
         }
         context.globalAlpha = markerOpacity;
         for (let i = 0; i < traceInfo.x.length; i++) {
-            let x = traceInfo.x[i];
-            let y = traceInfo.y[i];
-            const isSelected = selection.has(i);
+            let index = indices[i];
+            let x = traceInfo.x[index];
+            let y = traceInfo.y[index];
+            const isSelected = selection.has(index);
             if (isSelected) {
-                context.fillStyle = traceInfo.colors[i];
+                context.fillStyle = traceInfo.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
                 context.fill();
@@ -85,9 +89,10 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
     } else {
         context.globalAlpha = markerOpacity;
         for (let i = 0; i < traceInfo.x.length; i++) {
-            let x = traceInfo.x[i];
-            let y = traceInfo.y[i];
-            context.fillStyle = traceInfo.colors[i];
+            let index = indices[i];
+            let x = traceInfo.x[index];
+            let y = traceInfo.y[index];
+            context.fillStyle = traceInfo.colors[index];
             context.beginPath();
             context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
             context.fill();
