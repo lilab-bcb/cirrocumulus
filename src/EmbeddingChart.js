@@ -1,4 +1,4 @@
-import {Typography} from '@material-ui/core';
+import {Tooltip, Typography} from '@material-ui/core';
 import React from 'react';
 
 
@@ -30,12 +30,14 @@ class EmbeddingChart extends React.PureComponent {
 
             <div style={{position: 'relative'}}>
 
-                <Typography color="textPrimary" component={"h4"} style={{
-                    marginTop: '3.2px',
-                    position: 'absolute',
-                    right: 22,
-                    zIndex: 1000
-                }}>{traceName}</Typography>
+                <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
+                    <Typography color="textPrimary" component={"h4"} style={{
+                        marginTop: '3.2px',
+                        position: 'absolute',
+                        right: 22,
+                        zIndex: 1000
+                    }}>{traceName}</Typography>
+                </Tooltip>
                 {/*{traceInfo.continuous ?*/}
                 {/*    <ColorSchemeLegendWrapper*/}
                 {/*        width={140}*/}
