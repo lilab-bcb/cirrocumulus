@@ -87,6 +87,7 @@ class EmbeddingChart extends React.PureComponent {
                     chartOptions={this.props.chartOptions}
                     style={{display: 'inline-block'}}
                     traceInfo={traceInfo}
+                    pointSize={this.props.pointSize}
                     chartSize={primaryChartSize}
                     categoricalNames={categoricalNames}
                     selection={this.props.selection}

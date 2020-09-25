@@ -14,11 +14,11 @@ import {getCategoryLabelsPositions} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
 
 
-function getSpotRadius(trace) {
-    return trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 18; // TODO
+export function getSpotRadius(trace, pointSize) {
+    return pointSize*(trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
 }
 
-export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames) {
+export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames, spotRadius) {
     if (traceInfo.tileSource.ready) {
         const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
         if (chartSize == null) {
@@ -27,7 +27,7 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         context.scale(zoom, zoom);
-        drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+        drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, zoom, traceInfo, showLabels, categoricalNames);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
@@ -49,8 +49,7 @@ function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
     }
 }
 
-function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity) {
-    const spotRadius = getSpotRadius(traceInfo);
+function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius) {
 
     context.lineWidth = 2 * 1 / zoom;
     if (context.setLineDash) {
@@ -145,7 +144,7 @@ class ImageChart extends React.PureComponent {
 
     findPointsInRectangle(rect) {
         let data = this.props.traceInfo;
-        const spotRadius = getSpotRadius(data);
+        const spotRadius = getSpotRadius(data, this.props.pointSize);
         let indices = [];
         const x = parseFloat(rect.getAttribute('x'));
         const y = parseFloat(rect.getAttribute('y'));
@@ -164,7 +163,7 @@ class ImageChart extends React.PureComponent {
 
     findPointIndex(xpix, ypix) {
         let data = this.props.traceInfo;
-        let spotRadius = getSpotRadius(data);
+        const spotRadius = getSpotRadius(data, this.props.pointSize);
         for (let i = 0; i < data.x.length; i++) {
             if (Math.abs(data.x[i] - xpix) <= spotRadius && Math.abs(data.y[i] - ypix) <= spotRadius) {
                 return i;
@@ -212,7 +211,8 @@ class ImageChart extends React.PureComponent {
 
         let markerOpacity = this.props.markerOpacity;
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
-        drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity);
+        const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);
+        drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions.showLabels, this.props.categoricalNames);
 
     }

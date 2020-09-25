@@ -4,7 +4,7 @@ import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
-import {drawImage} from './ImageChart';
+import {drawImage, getSpotRadius} from './ImageChart';
 import {getVisualizer} from './ScatterChartThree';
 import {getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
 
@@ -49,7 +49,7 @@ class GalleryImage extends React.PureComponent {
                 drawImage(canvas.getContext('2d'), {
                     width: this.props.chartSize,
                     height: this.props.chartSize
-                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity);
+                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, false, getSpotRadius(traceInfo, pointSize));
                 this.setState({url: canvas.toDataURL()});
                 canvas = null;
             }
