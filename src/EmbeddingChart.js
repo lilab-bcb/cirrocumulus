@@ -1,4 +1,4 @@
-import Paper from '@material-ui/core/Paper';
+import {Typography} from '@material-ui/core';
 import React from 'react';
 
 
@@ -25,41 +25,46 @@ class EmbeddingChart extends React.PureComponent {
     render() {
         const {traceInfo, categoricalNames, primaryChartSize} = this.props;
         const traceName = traceInfo.name === '__count' ? '' : traceInfo.name;
+
         return (
 
             <div style={{position: 'relative'}}>
-                <Paper elevation={0} style={{position: 'absolute', right: 10, zIndex: 1000}}>
-                    <h4 style={{marginTop: '3.2px'}}>{traceName}</h4>
-                    {/*{traceInfo.continuous ?*/}
-                    {/*    <ColorSchemeLegendWrapper*/}
-                    {/*        width={140}*/}
-                    {/*        label={true}*/}
-                    {/*        showColorScheme={true}*/}
-                    {/*        height={30}*/}
-                    {/*        handleDomain={handleDomain}*/}
-                    {/*        handleUpdate={handleMeasureFilterUpdated}*/}
-                    {/*        datasetFilter={datasetFilter}*/}
-                    {/*        scale={traceInfo.colorScale}*/}
-                    {/*        featureSummary={featureSummary}*/}
-                    {/*        globalFeatureSummary={globalFeatureSummary}*/}
-                    {/*        nObs={shape[0]}*/}
-                    {/*        nObsSelected={nObsSelected}*/}
-                    {/*        name={traceInfo.name}*/}
-                    {/*    /> :*/}
-                    {/*    <CategoricalLegend datasetFilter={datasetFilter}*/}
-                    {/*                       handleClick={handleDimensionFilterUpdated}*/}
-                    {/*                       handleColorChange={handleColorChange}*/}
-                    {/*                       handleNameChange={handleNameChange}*/}
-                    {/*                       name={traceInfo.name}*/}
-                    {/*                       categoricalNames={categoricalNames}*/}
-                    {/*                       scale={traceInfo.colorScale}*/}
-                    {/*                       maxHeight={primaryChartSize.height - 24}*/}
-                    {/*                       clickEnabled={true}*/}
-                    {/*                       nObs={shape[0]}*/}
-                    {/*                       nObsSelected={nObsSelected}*/}
-                    {/*                       globalFeatureSummary={globalFeatureSummary}*/}
-                    {/*                       featureSummary={featureSummary}/>}*/}
-                </Paper>
+
+                <Typography color="textPrimary" component={"h4"} style={{
+                    marginTop: '3.2px',
+                    position: 'absolute',
+                    right: 22,
+                    zIndex: 1000
+                }}>{traceName}</Typography>
+                {/*{traceInfo.continuous ?*/}
+                {/*    <ColorSchemeLegendWrapper*/}
+                {/*        width={140}*/}
+                {/*        label={true}*/}
+                {/*        showColorScheme={true}*/}
+                {/*        height={30}*/}
+                {/*        handleDomain={handleDomain}*/}
+                {/*        handleUpdate={handleMeasureFilterUpdated}*/}
+                {/*        datasetFilter={datasetFilter}*/}
+                {/*        scale={traceInfo.colorScale}*/}
+                {/*        featureSummary={featureSummary}*/}
+                {/*        globalFeatureSummary={globalFeatureSummary}*/}
+                {/*        nObs={shape[0]}*/}
+                {/*        nObsSelected={nObsSelected}*/}
+                {/*        name={traceInfo.name}*/}
+                {/*    /> :*/}
+                {/*    <CategoricalLegend datasetFilter={datasetFilter}*/}
+                {/*                       handleClick={handleDimensionFilterUpdated}*/}
+                {/*                       handleColorChange={handleColorChange}*/}
+                {/*                       handleNameChange={handleNameChange}*/}
+                {/*                       name={traceInfo.name}*/}
+                {/*                       categoricalNames={categoricalNames}*/}
+                {/*                       scale={traceInfo.colorScale}*/}
+                {/*                       maxHeight={primaryChartSize.height - 24}*/}
+                {/*                       clickEnabled={true}*/}
+                {/*                       nObs={shape[0]}*/}
+                {/*                       nObsSelected={nObsSelected}*/}
+                {/*                       globalFeatureSummary={globalFeatureSummary}*/}
+                {/*                       featureSummary={featureSummary}/>}*/}
 
 
                 {!traceInfo.isImage &&
