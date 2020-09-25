@@ -161,6 +161,7 @@ class PrepareData:
         self.stats = False
         self.nbins = None
         self.bin_agg_function = None
+        self.output_format = 'parquet'
         # if basis_list is None or len(basis_list) == 0:
         #     basis_list = list(self.adata.obsm_keys())
         self.basis_list_to_precompute = None
@@ -246,14 +247,15 @@ class PrepareData:
                 import shutil
                 shutil.copy(path, os.path.join(image_dir, os.path.basename(path)))
                 image['image'] = 'images/' + os.path.basename(path)
-        output_format = 'parquet'
+
         if X_range[0] == 0:
-            if output_format == 'parquet':
+            schema = self.get_schema()
+            if self.output_format == 'parquet':
                 from cirrocumulus.parquet_io import save_adata_pq
-                save_adata_pq(self.adata, self.base_output_dir)
-            elif output_format == 'json':
+                save_adata_pq(self.adata, schema, self.base_output_dir)
+            elif self.output_format == 'json':
                 from cirrocumulus.json_io import save_adata_json
-                save_adata_json(self.adata, self.base_output_dir, False)
+                save_adata_json(self.adata, schema, self.base_output_dir)
 
         # if self.stats:
         #     self.summary_stats()
@@ -262,7 +264,7 @@ class PrepareData:
         if nbins is not None and basis_list is not None:
             for basis_name in basis_list:
                 self.grid_embedding(basis_name, bin_agg_function, nbins)
-        self.schema()
+
 
     def summary_stats(self):
         dimensions = self.dimensions
@@ -339,29 +341,25 @@ class PrepareData:
     #     write_basis_X(coords_group, basis_group, adata, result)
     #     # write_pq(dict(value=result['values'][column]), output_directory, column)
 
-    def schema(self):
+    def get_schema(self):
         basis_list = self.basis_list_to_precompute
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
-        X_range = self.X_range
-        if X_range[0] == 0:
-            output_file = os.path.join(self.base_output_dir, 'index.json.gz')
-            result = SimpleData.schema(self.adata)
-            marker_dict = self.adata.uns.get('markers', {})
-            if self.markers is not None:
-                marker_dict.update(get_markers(self.markers))
-            result['markers'] = filter_markers(self.adata, marker_dict)
-            result['format'] = 'parquet'
-            if self.stats:
-                result['precomputed'] = True  # has stats
-            if nbins is not None:
-                result['embeddings'] = []
-                for basis_name in basis_list:
-                    result['embeddings'].append(
-                        {'precomputed': True, 'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function,
-                         'dimensions': 2})
-            with gzip.open(output_file, 'wt') as f:
-                f.write(to_json(result))
+        result = SimpleData.schema(self.adata)
+        marker_dict = self.adata.uns.get('markers', {})
+        if self.markers is not None:
+            marker_dict.update(get_markers(self.markers))
+        result['markers'] = filter_markers(self.adata, marker_dict)
+        result['format'] = self.output_format
+        if self.stats:
+            result['precomputed'] = True  # has stats
+        if nbins is not None:
+            result['embeddings'] = []
+            for basis_name in basis_list:
+                result['embeddings'].append(
+                    {'precomputed': True, 'name': basis_name, 'nbins': nbins, 'agg': bin_agg_function,
+                     'dimensions': 2})
+        return result
 
 
 def main(argsv):

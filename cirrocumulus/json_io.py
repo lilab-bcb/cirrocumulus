@@ -8,39 +8,42 @@ import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
 
-from cirrocumulus.simple_data import SimpleData
-
 logger = logging.getLogger("cirro")
 
+LINE_END = '\n'.encode('UTF-8')
 
-def write_json(d, f, name, index, compress):
-    c = ujson.dumps(d, double_precision=2, orient='values').encode('UTF-8')
+
+def write_json(d, f, name, index, compress=False):
+    output = {}
+    output[name] = d
+    c = ujson.dumps(output, double_precision=2, orient='values').encode('UTF-8')
     if compress:
         c = gzip.compress(c)
     start = f.tell()
     end = start + len(c)
     index[name] = [start, end - 1]
     f.write(c)
+    f.write(LINE_END)
 
 
 def read_adata_json(path, keys):
-    with gzip.open(path + '.idx.json', 'rt') as f:
+    with open(path + '.idx.json', 'rt') as f:
         index = json.load(f)
+    compress = False
 
-    def read_key(key):
-        start, end = index[key]
+    def read_key(f, index_key):
+        start, end = index['index'][index_key]
         f.seek(start)
-        b = f.read(end - start)
-        if xx:
+        b = f.read(end - start + 1)
+        if compress:
             b = gzip.decompress(b)
         return json.loads(b.decode('UTF-8'))
 
     df = pd.DataFrame()
     with open(path, 'rb') as f:
-        index = schema['index']
-        shape = schema['shape']
+        shape = read_key('schema')['shape']
         for key in keys:
-            value = read_key(key)
+            value = read_key(f, key)
             if isinstance(value, dict):
                 if 'index' in value:
                     array = np.zeros(shape[0])
@@ -56,9 +59,9 @@ def read_adata_json(path, keys):
     return df
 
 
-def save_adata_json(adata, output_path, compress):
+def save_adata_json(adata, schema, output_path):
     logger.info('Save adata')
-
+    compress = False
     index = {}  # key to byte start-end
     if not os.path.exists(output_path):
         os.mkdir(output_path)
@@ -67,12 +70,12 @@ def save_adata_json(adata, output_path, compress):
         save_adata_X(adata, f, index, compress)
         save_data_obs(adata, f, index, compress)
         save_data_obsm(adata, f, index, compress)
+        write_json(schema, f, 'schema', index)
 
-    with open(os.path.join(output_path, 'index.json'), 'wt') as f:
+    with open(os.path.join(output_path, 'data.json.idx.json'), 'wt') as f:
         # json.dump(result, f)
-        schema = SimpleData.schema(adata)
-        schema['format'] = 'BGZF' if compress else 'JSON'
-        result = dict(index=index, schema=schema, file=os.path.basename(data_file))
+
+        result = dict(index=index, file=os.path.basename(data_file))
         f.write(ujson.dumps(result, double_precision=2, orient='values'))
 
 

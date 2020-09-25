@@ -7,8 +7,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirrocumulus.simple_data import SimpleData
-
 logger = logging.getLogger("cirro")
 
 
@@ -18,20 +16,18 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
         write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata_pq(adata, output_directory):
+def save_adata_pq(adata, schema, output_directory):
     import pandas._libs.json as ujson
     logger.info('Save adata')
     X_dir = os.path.join(output_directory, 'X')
     obs_dir = os.path.join(output_directory, 'obs')
     obsm_dir = os.path.join(output_directory, 'obsm')
-    result = SimpleData.schema(adata)
-    result['format'] = 'parquet'
     os.makedirs(X_dir, exist_ok=True)
     os.makedirs(obs_dir, exist_ok=True)
     os.makedirs(obsm_dir, exist_ok=True)
     with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
         # json.dump(result, f)
-        f.write(ujson.dumps(result, double_precision=2, orient='values'))
+        f.write(ujson.dumps(schema, double_precision=2, orient='values'))
 
     save_adata_X(adata, X_dir)
     save_data_obs(adata, obs_dir)

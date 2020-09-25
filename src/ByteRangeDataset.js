@@ -130,7 +130,8 @@ export class ByteRangeDataset {
             if (this.key2vector[key] == null && key !== '__count') {
                 let p = fetch(this.url, this.getByteRange(key)).then(response => {
                     return response.json();
-                }).then(data => {
+                }).then(result => {
+                    const data = result[key];
                     if (isArray(data)) {
                         this.key2vector[key] = new Vector(key, data);
                     } else {
