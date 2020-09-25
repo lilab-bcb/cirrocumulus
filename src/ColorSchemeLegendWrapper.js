@@ -77,13 +77,17 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                 {name !== '__count' && this.props.handleDomain &&
                 <InputLabel shrink={true} variant={"standard"}>Custom Color Scale</InputLabel>}
                 {name !== '__count' && this.props.handleDomain &&
-                <TextField margin="none" style={{width: 90, marginRight: 4}} size="small" type="text"
+                <TextField InputLabelProps={{shrink: true}} margin="none"
+                           style={{width: 90, marginRight: 4, marginTop: 0}}
+                           size="small" type="text"
                            onKeyPress={this.onMinKeyPress}
-                           onChange={this.onMinChange} placeholder="Min"
+                           onChange={this.onMinChange} label="Min"
                            value={this.state.min}/>}
                 {name !== '__count' && this.props.handleDomain &&
-                <TextField margin="none" style={{width: 90}} size="small" type="text" onKeyPress={this.onMaxKeyPress}
-                           onChange={this.onMaxChange} placeholder="Max"
+                <TextField InputLabelProps={{shrink: true}} margin="none" style={{width: 90, marginTop: 0}} size="small"
+                           type="text"
+                           onKeyPress={this.onMaxKeyPress}
+                           onChange={this.onMaxChange} label="Max"
                            value={this.state.max}/>}
                 {name !== '__count' &&
                 <MeasureFilter datasetFilter={datasetFilter} name={name} handleUpdate={handleUpdate}/>}
