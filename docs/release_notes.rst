@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.8.post1 `September 25, 2020`
+    * Shuffle plot order in embedding plot for categorical values
+    * Fixed scrolling bug in active feature list
+
 - 1.1.8 `September 24, 2020`
     * Added support for generic spatial data in addition to 10x visium
     * Made primary embedding chart responsive
