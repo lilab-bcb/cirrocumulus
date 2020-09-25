@@ -156,8 +156,9 @@ class ScatterChartThree extends React.PureComponent {
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         let gl_PointSize = (outputPointSize * scaleFactor) / 4;
         const showFog = chartOptions.showFog;
+        const isSelectionEmpty = selection.size === 0;
         for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
-            const isSelected = selection.size === 0 || selection.has(i);
+            const isSelected = isSelectionEmpty || selection.has(i);
             pos.x = positions[k];
             pos.y = positions[k + 1];
             pos.z = positions[k + 2];
