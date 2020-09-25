@@ -117,6 +117,7 @@ Google App Engine
   Select the Python 3 Standard Environment.
 
 - Obtain OAuth 2.0 credentials.
+
     - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”. Your server URL is \https://<PROJECT>.appspot.com.
     - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
       and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
