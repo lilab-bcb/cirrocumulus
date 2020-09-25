@@ -143,22 +143,27 @@ export class DotPlotGroup extends React.PureComponent {
                             label={true} height={40}
                             scale={sizeScale}/>
                 <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
-                <TextField margin="none" style={{width: 90, marginRight: 4}} size="small" type="text"
+                <TextField
+                    InputLabelProps={{shrink: true}}  style={{width: 90, marginRight: 4}}
+                           size="small" type="text"
                            onKeyPress={this.onMinKeyPress}
-                           onChange={this.onMinChange} placeholder={"Min"}
+                           onChange={this.onMinChange} label={"Min"}
                            value={this.state.min}/>
-                <TextField margin="none" style={{width: 90}} size="small" type="text" onKeyPress={this.onMaxKeyPress}
-                           onChange={this.onMaxChange} placeholder={"Max"}
+                <TextField  InputLabelProps={{shrink: true}}  style={{width: 90}} size="small"
+                           type="text"
+                           onKeyPress={this.onMaxKeyPress}
+                           onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
 
-                <InputLabel shrink={true} variant={"standard"}>Custom Percent Expressed</InputLabel>
-                <TextField margin="none" style={{width: 90, marginRight: 4}} size="small" type="text"
+                <InputLabel style={{marginTop:16}} shrink={true} variant={"standard"}>Custom Percent Expressed</InputLabel>
+                <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                           size="small" type="text"
                            onKeyPress={this.onMinSizeKeyPress}
-                           onChange={this.onMinSizeChange} placeholder={"Min"}
+                           onChange={this.onMinSizeChange} label={"Min"}
                            value={this.state.minSize}/>
-                <TextField margin="none" style={{width: 90}} size="small" type="text"
+                <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
                            onKeyPress={this.onMaxSizeKeyPress}
-                           onChange={this.onMaxSizeChange} placeholder={"Max"}
+                           onChange={this.onMaxSizeChange} label={"Max"}
                            value={this.state.maxSize}/>
             </React.Fragment>
         );
