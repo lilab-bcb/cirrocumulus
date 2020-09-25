@@ -1,6 +1,5 @@
 import {Tooltip} from '@material-ui/core';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
+import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
@@ -96,24 +95,32 @@ class GalleryImage extends React.PureComponent {
         if (name === '__count') {
             name = 'count';
         }
-        return (<Card variant="outlined" style={{display: 'inline-block'}}>
-            <CardContent>
-                <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
-                    <Typography color="textPrimary" onClick={this.onSelect}>
-                        {name}
-                    </Typography>
-                </Tooltip>
-                {this.state.url && <img alt="" src={this.state.url}
-                                        width={this.props.chartSize * window.devicePixelRatio}
-                                        height={this.props.chartSize * window.devicePixelRatio}
-                                        onClick={this.onSelect}
-                                        style={{
-                                            width: this.props.chartSize,
-                                            height: this.props.chartSize
-                                        }}/>}
+        return (
+            <Box border={1} style={{display: 'inline-block', margin: 2}}>
+                <div style={{position: 'relative'}}>
+                    <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
+                        <Typography color="textPrimary" component={"h4"}
+                                    onClick={this.onSelect}
+                                    style={{
+                                        marginTop: '3.2px',
+                                        position: 'absolute',
+                                        left: 4,
+                                        zIndex: 1000
+                                    }}>{name}</Typography>
+                    </Tooltip>
 
-            </CardContent>
-        </Card>);
+                    {this.state.url && <img alt="" src={this.state.url}
+                                            width={this.props.chartSize * window.devicePixelRatio}
+                                            height={this.props.chartSize * window.devicePixelRatio}
+                                            onClick={this.onSelect}
+                                            style={{
+                                                width: this.props.chartSize,
+                                                height: this.props.chartSize
+                                            }}/>}
+
+                </div>
+            </Box>
+        );
 
     }
 }
