@@ -1,9 +1,12 @@
 Release Notes
 -------------
 
+- 1.1.8.post2 `September 29, 2020`
+    * Removed active list. Select a feature/category to view details and filter
+
 - 1.1.8.post1 `September 25, 2020`
     * Shuffle plot order in embedding plot for categorical values
-    * Fixed scrolling bug in active feature list
+    * Fixed scrolling bug in active list
 
 - 1.1.8 `September 24, 2020`
     * Added support for generic spatial data in addition to 10x visium
