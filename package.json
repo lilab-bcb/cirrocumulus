@@ -16,6 +16,7 @@
     "d3-selection": "^2.0.0",
     "file-saver": "^2.0.2",
     "lodash": "^4.17.20",
+    "memoize-one": "^5.1.1",
     "natsort": "^2.0.2",
     "openseadragon": "^2.4.2",
     "prop-types": "^15.7.2",
