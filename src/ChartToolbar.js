@@ -141,7 +141,7 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>
 
-            {this.props.onShowLabels && <Tooltip title={"Show Labels"}>
+            {this.props.onShowLabels && <Tooltip title={"Show Categorical Labels"}>
                 <IconButton edge={false} size={'small'} className={showLabels ? active : ''}
                             aria-label="Show Labels" onClick={() => this.onShowLabels()}>
                     <FontDownloadIcon/>
