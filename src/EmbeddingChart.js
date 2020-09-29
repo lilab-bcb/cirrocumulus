@@ -1,5 +1,6 @@
 import {Tooltip, Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
+import Link from '@material-ui/core/Link';
 import React from 'react';
 
 
@@ -21,13 +22,29 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import ScatterChartThree from './ScatterChartThree';
 
-
 class EmbeddingChart extends React.PureComponent {
+
+    constructor(props) {
+        super(props);
+        this.state = {showDetails: true};
+    }
 
     setChartRef = (element) => {
         this.props.chartOptions.ref = element;
+
     };
-    
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.traceInfo.name !== this.props.traceInfo.name) {
+            this.setState({showDetails: true});
+        }
+    }
+
+    handleExpandClick = (e) => {
+        e.preventDefault();
+        this.setState({showDetails: !this.state.showDetails});
+    };
+
     render() {
         const {
             onChartOptions, onMoreOptions, onDomain, onDimensionFilterUpdated,
@@ -41,13 +58,17 @@ class EmbeddingChart extends React.PureComponent {
                 <Box color="text.primary" style={{
                     marginTop: '3.2px',
                     position: 'absolute',
+                    textAlign: 'right',
                     right: 8,
                     zIndex: 1000
                 }}>
                     <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
-                        <Typography component={"h4"}>{displayName} {!traceInfo.continuous ?
-                            <small>({globalFeatureSummary[traceInfo.name].categories.length})</small> : null}</Typography>
+                        {displayName !== '' ? <Link onClick={this.handleExpandClick}>
+                            <Typography
+                                component={"h4"}>{displayName} {!traceInfo.continuous ?
+                                <small>({globalFeatureSummary[traceInfo.name].categories.length})</small> : null}</Typography></Link> : null}
                     </Tooltip>
+
                     {traceInfo.continuous ?
                         <ColorSchemeLegendWrapper
                             key={traceInfo.name}
@@ -56,10 +77,7 @@ class EmbeddingChart extends React.PureComponent {
                             showColorScheme={false}
                             height={30}
                             style={{
-                                paddingBottom: 3,
-                                paddingTop: 3,
-                                display: 'block',
-                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                display: this.state.showDetails ? 'block' : 'none',
                             }}
                             handleUpdate={onMeasureFilterUpdated}
                             datasetFilter={datasetFilter}
@@ -74,10 +92,7 @@ class EmbeddingChart extends React.PureComponent {
                         <CategoricalLegend
                             key={traceInfo.name}
                             style={{
-                                paddingBottom: 3,
-                                paddingTop: 3,
-                                display: 'block',
-                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                                display: this.state.showDetails ? 'block' : 'none',
                             }}
                             datasetFilter={datasetFilter}
                             handleClick={onDimensionFilterUpdated}

@@ -68,7 +68,7 @@ class MeasureFilter extends React.PureComponent {
                 </Select>
 
                 <TextField onKeyPress={this.handleValueKeyPress}
-                           onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 90}}/>
+                           onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 60}}/>
 
             </div>
         );
