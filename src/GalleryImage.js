@@ -104,7 +104,7 @@ class GalleryImage extends React.PureComponent {
                                     style={{
                                         marginTop: '3.2px',
                                         position: 'absolute',
-                                        left: 4,
+                                        right: 4,
                                         zIndex: 1000
                                     }}>{name}</Typography>
                     </Tooltip>
