@@ -48,7 +48,7 @@ class MeasureFilter extends React.PureComponent {
 
         return (
 
-            <div style={{display: 'inline-flex', paddingLeft: 10, marginBottom: 10}}>
+            <div style={{display: 'flex'}}>
                 <InputLabel shrink={true} id={id + '_label'}>Filter</InputLabel>
 
                 <Select

@@ -8,8 +8,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
-
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 
@@ -163,9 +162,7 @@ class CategoricalLegend extends React.PureComponent {
                         </DialogActions>
                     </React.Fragment>}
                 </Dialog>
-                <b>{name}</b> <small>({categories.length})</small>
-
-
+                
                 {/*<Popover*/}
                 {/*    open={Boolean(this.state.anchorEl)}*/}
                 {/*    anchorEl={this.state.anchorEl}*/}
@@ -250,7 +247,7 @@ class CategoricalLegend extends React.PureComponent {
                                 <IconButton style={{padding: 0, fontSize: 14}} size="small"
                                             onClick={(e) => this.handleContextmenu(category, i, e)} aria-label="Menu"
                                             aria-haspopup="true">
-                                    <ExpandMoreIcon fontSize={"inherit"}/>
+                                    <ArrowDropDownIcon fontSize={"inherit"}/>
                                 </IconButton>
                             </td>
 

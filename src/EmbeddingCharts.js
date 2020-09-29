@@ -1,7 +1,7 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getEmbeddingKey, getTraceKey, MORE_OPTIONS_DIALOG, setDialog, setPrimaryChartSize} from './actions';
+import {getEmbeddingKey, getTraceKey, setPrimaryChartSize} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 
 
@@ -23,11 +23,11 @@ class EmbeddingCharts extends React.PureComponent {
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.resizeListener);
-
     }
 
+
     render() {
-        const {primaryTraceKey, primaryChartSize, embeddingData, markerOpacity, unselectedMarkerOpacity, selection} = this.props;
+        const {primaryTraceKey, embeddingData, selection, onGallery, primaryChartSize} = this.props;
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
         const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
         let userPoints = emptySet;
@@ -39,18 +39,13 @@ class EmbeddingCharts extends React.PureComponent {
         }
 
         if (primaryTrace == null) {
-
             return <div style={{height: primaryChartSize.height}}></div>;
         }
+
         return (<EmbeddingChart
-                markerOpacity={markerOpacity}
-                chartSize={primaryChartSize}
-                unselectedMarkerOpacity={unselectedMarkerOpacity}
+                onGallery={onGallery}
                 traceInfo={primaryTrace}
                 selection={userPoints}
-                color={primaryTrace.colors}
-                onMoreOptions={this.props.handleMoreOptions}
-                onGallery={this.props.onGallery}
             />
         );
     }
@@ -60,22 +55,16 @@ class EmbeddingCharts extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         embeddingData: state.embeddingData,
+        primaryTraceKey: state.primaryTraceKey,
         primaryChartSize: state.primaryChartSize,
-        markerOpacity: state.markerOpacity,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-        selection: state.selection,
-        primaryTraceKey: state.primaryTraceKey
+        selection: state.selection
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handleMoreOptions: () => {
-            dispatch(setDialog(MORE_OPTIONS_DIALOG));
-        },
         handlePrimaryChartSize: value => {
             dispatch(setPrimaryChartSize(value));
         }
-
     };
 };
 

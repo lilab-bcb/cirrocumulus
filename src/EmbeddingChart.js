@@ -1,4 +1,5 @@
 import {Tooltip, Typography} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import React from 'react';
 
 
@@ -8,9 +9,15 @@ import {
     handleCategoricalNameChange,
     handleColorChange,
     handleDimensionFilterUpdated,
+    handleDomainChange,
     handleMeasureFilterUpdated,
-    setChartOptions
+    MORE_OPTIONS_DIALOG,
+    setChartOptions,
+    setDialog,
+    setPrimaryChartSize
 } from './actions';
+import CategoricalLegend from './CategoricalLegend';
+import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import ScatterChartThree from './ScatterChartThree';
 
@@ -20,91 +27,111 @@ class EmbeddingChart extends React.PureComponent {
     setChartRef = (element) => {
         this.props.chartOptions.ref = element;
     };
-
-
+    
     render() {
-        const {traceInfo, categoricalNames, primaryChartSize} = this.props;
-        const traceName = traceInfo.name === '__count' ? '' : traceInfo.name;
+        const {
+            onChartOptions, onMoreOptions, onDomain, onDimensionFilterUpdated,
+            onColorChange, onNameChange, onMeasureFilterUpdated, onSelect, onDeselect, onGallery,
+            traceInfo, selection, datasetFilter, chartOptions, featureSummary, markerOpacity, unselectedMarkerOpacity, pointSize, globalFeatureSummary, shape, nObsSelected, categoricalNames, primaryChartSize
+        } = this.props;
+        const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
         return (
-
             <div style={{position: 'relative'}}>
-
-                <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
-                    <Typography color="textPrimary" component={"h4"} style={{
-                        marginTop: '3.2px',
-                        position: 'absolute',
-                        right: 22,
-                        zIndex: 1000
-                    }}>{traceName}</Typography>
-                </Tooltip>
-                {/*{traceInfo.continuous ?*/}
-                {/*    <ColorSchemeLegendWrapper*/}
-                {/*        width={140}*/}
-                {/*        label={true}*/}
-                {/*        showColorScheme={true}*/}
-                {/*        height={30}*/}
-                {/*        handleDomain={handleDomain}*/}
-                {/*        handleUpdate={handleMeasureFilterUpdated}*/}
-                {/*        datasetFilter={datasetFilter}*/}
-                {/*        scale={traceInfo.colorScale}*/}
-                {/*        featureSummary={featureSummary}*/}
-                {/*        globalFeatureSummary={globalFeatureSummary}*/}
-                {/*        nObs={shape[0]}*/}
-                {/*        nObsSelected={nObsSelected}*/}
-                {/*        name={traceInfo.name}*/}
-                {/*    /> :*/}
-                {/*    <CategoricalLegend datasetFilter={datasetFilter}*/}
-                {/*                       handleClick={handleDimensionFilterUpdated}*/}
-                {/*                       handleColorChange={handleColorChange}*/}
-                {/*                       handleNameChange={handleNameChange}*/}
-                {/*                       name={traceInfo.name}*/}
-                {/*                       categoricalNames={categoricalNames}*/}
-                {/*                       scale={traceInfo.colorScale}*/}
-                {/*                       maxHeight={primaryChartSize.height - 24}*/}
-                {/*                       clickEnabled={true}*/}
-                {/*                       nObs={shape[0]}*/}
-                {/*                       nObsSelected={nObsSelected}*/}
-                {/*                       globalFeatureSummary={globalFeatureSummary}*/}
-                {/*                       featureSummary={featureSummary}/>}*/}
+                <Box color="text.primary" style={{
+                    marginTop: '3.2px',
+                    position: 'absolute',
+                    right: 8,
+                    zIndex: 1000
+                }}>
+                    <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
+                        <Typography component={"h4"}>{displayName} {!traceInfo.continuous ?
+                            <small>({globalFeatureSummary[traceInfo.name].categories.length})</small> : null}</Typography>
+                    </Tooltip>
+                    {traceInfo.continuous ?
+                        <ColorSchemeLegendWrapper
+                            key={traceInfo.name}
+                            handleDomain={onDomain}
+                            width={140}
+                            showColorScheme={false}
+                            height={30}
+                            style={{
+                                paddingBottom: 3,
+                                paddingTop: 3,
+                                display: 'block',
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                            }}
+                            handleUpdate={onMeasureFilterUpdated}
+                            datasetFilter={datasetFilter}
+                            scale={traceInfo.colorScale}
+                            featureSummary={featureSummary}
+                            globalFeatureSummary={globalFeatureSummary}
+                            nObs={shape[0]}
+                            nObsSelected={nObsSelected}
+                            maxHeight={null}
+                            name={traceInfo.name}
+                        /> :
+                        <CategoricalLegend
+                            key={traceInfo.name}
+                            style={{
+                                paddingBottom: 3,
+                                paddingTop: 3,
+                                display: 'block',
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
+                            }}
+                            datasetFilter={datasetFilter}
+                            handleClick={onDimensionFilterUpdated}
+                            handleColorChange={onColorChange}
+                            handleNameChange={onNameChange}
+                            categoricalNames={categoricalNames}
+                            name={traceInfo.name}
+                            scale={traceInfo.colorScale}
+                            maxHeight={300}
+                            clickEnabled={true}
+                            nObs={shape[0]}
+                            nObsSelected={nObsSelected}
+                            globalFeatureSummary={globalFeatureSummary}
+                            featureSummary={featureSummary}/>
+                    }
+                </Box>
 
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
                                    chartSize={primaryChartSize}
-                                   setChartOptions={this.props.handleChartOptions}
-                                   chartOptions={this.props.chartOptions}
+                                   setChartOptions={onChartOptions}
+                                   chartOptions={chartOptions}
                                    categoricalNames={categoricalNames}
-                                   selection={this.props.selection}
-                                   onDeselect={this.props.onDeselect}
-                                   onSelected={this.props.onSelect}
-                                   pointSize={this.props.pointSize}
-                                   markerOpacity={this.props.markerOpacity}
-                                   unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
+                                   selection={selection}
+                                   onDeselect={onDeselect}
+                                   onSelected={onSelect}
+                                   pointSize={pointSize}
+                                   markerOpacity={markerOpacity}
+                                   unselectedMarkerOpacity={unselectedMarkerOpacity}
                                    color={traceInfo.colors}
-                                   onGallery={this.props.onGallery}
-                                   onMoreOptions={this.props.onMoreOptions}
+                                   onGallery={onGallery}
+                                   onMoreOptions={onMoreOptions}
                                    ref={this.setChartRef}
 
                 />}
 
 
                 {traceInfo.isImage && <ImageChart
-                    setChartOptions={this.props.handleChartOptions}
-                    chartOptions={this.props.chartOptions}
+                    setChartOptions={onChartOptions}
+                    chartOptions={chartOptions}
                     style={{display: 'inline-block'}}
                     traceInfo={traceInfo}
-                    pointSize={this.props.pointSize}
+                    pointSize={pointSize}
                     chartSize={primaryChartSize}
                     categoricalNames={categoricalNames}
-                    selection={this.props.selection}
+                    selection={selection}
                     onInitialized={this.onInitialized}
-                    markerOpacity={this.props.markerOpacity}
-                    unselectedMarkerOpacity={this.props.unselectedMarkerOpacity}
-                    onDeselect={this.props.onDeselect}
-                    onSelected={this.props.onSelect}
-                    onGallery={this.props.onGallery}
-                    onMoreOptions={this.props.onMoreOptions}
+                    markerOpacity={markerOpacity}
+                    unselectedMarkerOpacity={unselectedMarkerOpacity}
+                    onDeselect={onDeselect}
+                    onSelected={onSelect}
+                    onGallery={onGallery}
+                    onMoreOptions={onMoreOptions}
                     ref={this.setChartRef}
                 />}
 
@@ -117,36 +144,46 @@ class EmbeddingChart extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         chartOptions: state.chartOptions,
-        primaryChartSize: state.primaryChartSize,
-        categoricalNames: state.categoricalNames,
-        numberOfBins: state.numberOfBins,
-        binValues: state.binValues,
         embeddingChartSize: state.embeddingChartSize,
-        datasetFilter: state.datasetFilter,
+        pointSize: state.pointSize,
+        embeddingData: state.embeddingData,
+        primaryChartSize: state.primaryChartSize,
+        markerOpacity: state.markerOpacity,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        primaryTraceKey: state.primaryTraceKey,
+        categoricalNames: state.categoricalNames,
+        globalFeatureSummary: state.globalFeatureSummary,
         featureSummary: state.featureSummary,
         shape: state.dataset.shape,
         nObsSelected: state.selection.count,
-        pointSize: state.pointSize,
-        globalFeatureSummary: state.globalFeatureSummary
+        dataset: state.dataset,
+        datasetFilter: state.datasetFilter
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
-
-
-        handleChartOptions: (options) => {
+        onChartOptions: (options) => {
             dispatch(setChartOptions(options));
         },
-        handleDimensionFilterUpdated: (e) => {
+        onMoreOptions: () => {
+            dispatch(setDialog(MORE_OPTIONS_DIALOG));
+        },
+        onPrimaryChartSize: value => {
+            dispatch(setPrimaryChartSize(value));
+        },
+        onDomain: (value) => {
+            dispatch(handleDomainChange(value));
+        },
+        onDimensionFilterUpdated: (e) => {
             dispatch(handleDimensionFilterUpdated(e));
         },
-        handleColorChange: (e) => {
+        onColorChange: (e) => {
             dispatch(handleColorChange(e));
         },
-        handleNameChange: (e) => {
+        onNameChange: (e) => {
             dispatch(handleCategoricalNameChange(e));
         },
-        handleMeasureFilterUpdated: (e) => {
+        onMeasureFilterUpdated: (e) => {
             dispatch(handleMeasureFilterUpdated(e));
         },
         onSelect: (e) => {
@@ -154,7 +191,8 @@ const mapDispatchToProps = dispatch => {
         },
         onDeselect: (e) => {
             dispatch(handleBrushFilterUpdated(e));
-        }
+        },
+
     };
 };
 

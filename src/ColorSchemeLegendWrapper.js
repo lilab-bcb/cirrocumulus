@@ -28,12 +28,12 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
         if (event.key === 'Enter') {
             let value = parseFloat(event.target.value);
             if (isNaN(value)) {
-                value = this.props.globalFeatureSummary[this.props.name].min;
+                delete this.props.globalFeatureSummary[this.props.name].customMin;
+            } else {
+                this.props.globalFeatureSummary[this.props.name].customMin = value;
             }
-            let domain = this.props.scale.domain();
-            domain[0] = value;
             this.setState({min: event.target.value});
-            this.props.handleDomain({name: this.props.name, domain: domain});
+            this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
 
         }
     };
@@ -46,12 +46,13 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
         if (event.key === 'Enter') {
             let value = parseFloat(event.target.value);
             if (isNaN(value)) {
-                value = this.props.globalFeatureSummary[this.props.name].max;
+                delete this.props.globalFeatureSummary[this.props.name].customMax;
+            } else {
+                this.props.globalFeatureSummary[this.props.name].customMax = value;
             }
-            let domain = this.props.scale.domain();
-            domain[1] = value;
+
             this.setState({max: event.target.value});
-            this.props.handleDomain({name: this.props.name, domain: domain});
+            this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
 
         }
     };

@@ -77,7 +77,6 @@ export const SET_POINT_SIZE = 'SET_POINT_SIZE';
 export const SET_EMAIL = 'SET_EMAIL';
 export const SET_USER = 'SET_USER';
 export const SET_DATASET = 'SET_DATASET';
-
 export const SET_DIALOG = 'SET_DIALOG';
 
 export const MORE_OPTIONS_DIALOG = 'MORE_OPTIONS_DIALOG';
@@ -974,6 +973,7 @@ function _setDatasetChoices(payload) {
     return {type: SET_DATASET_CHOICES, payload: payload};
 }
 
+
 function _setLoading(payload) {
     return {type: SET_LOADING, payload: payload};
 }
@@ -1622,7 +1622,14 @@ function handleEmbeddingResult(embedding, embeddingDef) {
                     traceSummary = {min: min, max: max};
                     globalFeatureSummary[name] = traceSummary;
                 }
-                colorScale = scaleSequential(interpolator.value).domain([traceSummary.min, traceSummary.max]);
+                let domain = [traceSummary.min, traceSummary.max];
+                if (traceSummary.customMin != null && !isNaN(traceSummary.customMin)) {
+                    domain[0] = traceSummary.customMin;
+                }
+                if (traceSummary.customMax != null && !isNaN(traceSummary.customMax)) {
+                    domain[1] = traceSummary.customMax;
+                }
+                colorScale = scaleSequential(interpolator.value).domain(domain);
 
             } else {
                 let traceUniqueValues = traceSummary.categories;

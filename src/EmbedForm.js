@@ -26,6 +26,7 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
+import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -36,12 +37,6 @@ import {
     getDatasetFilterArray,
     getEmbeddingKey,
     getTraceKey,
-    handleBrushFilterUpdated,
-    handleCategoricalNameChange,
-    handleColorChange,
-    handleDimensionFilterUpdated,
-    handleDomainChange,
-    handleMeasureFilterUpdated,
     openDatasetFilter,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
@@ -63,12 +58,11 @@ import {
     setUnselectedMarkerOpacityUI
 } from './actions';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
-import CategoricalLegend from './CategoricalLegend';
-import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
 import {splitSearchTokens} from './util';
 
+const sorter = natsort();
 const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
@@ -144,6 +138,28 @@ const AccordionPanelDetails = withStyles(theme => ({
 }))(MuiAccordionPanelDetails);
 
 
+const getAnnotationOptions = memoize(
+    (obs, obsCat) => {
+        let annotationOptions = obs.concat(obsCat);
+        annotationOptions.sort(sorter);
+        return annotationOptions;
+    }
+);
+const getFeatureSetOptions = memoize((markers) => {
+        const featureSetOptions = [];
+        for (const group in markers) {
+            const groupMarkers = markers[group];
+            for (const name in groupMarkers) {
+                featureSetOptions.push({group: group, text: name});
+            }
+        }
+        featureSetOptions.sort((item1, item2) => {
+            return sorter(item1.group, item2.group);
+        });
+        return featureSetOptions;
+    }
+);
+
 class EmbedForm extends React.PureComponent {
 
 
@@ -158,6 +174,7 @@ class EmbedForm extends React.PureComponent {
     onMarkerOpacityChange = (event) => {
         this.props.handleMarkerOpacityUI(event.target.value);
     };
+
     onPointSizeChange = (event) => {
         this.props.handlePointSize(event.target.value);
     };
@@ -226,7 +243,6 @@ class EmbedForm extends React.PureComponent {
         }
     };
 
-
     onChartSizeChange = (event) => {
         const value = event.target.value;
         this.props.handleChartSize(value);
@@ -281,6 +297,7 @@ class EmbedForm extends React.PureComponent {
         event.preventDefault();
         this.props.downloadSelectedIds();
     };
+
     handleDiffExp = (event) => {
         event.preventDefault();
         this.props.handleDiffExp();
@@ -293,6 +310,7 @@ class EmbedForm extends React.PureComponent {
     onDatasetFilterCleared = () => {
         this.props.removeDatasetFilter(null);
     };
+
     onDatasetFilterSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
@@ -301,9 +319,10 @@ class EmbedForm extends React.PureComponent {
         this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
     };
 
+
     render() {
         const {
-            categoricalNames, chartSize, numberOfBinsUI, interpolator, binValues, binSummary, embeddings, classes, embeddingData,
+            categoricalNames, chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes, embeddingData,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
             featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
             handleColorChange, handleNameChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
@@ -331,30 +350,30 @@ class EmbedForm extends React.PureComponent {
         }
 
         // for filters we only need one embedding trace per feature
-        const traceNames = new Set();
-        const filterTraces = [];
-        let primaryTraceName;
-        embeddingData.forEach(trace => {
-            if (primaryTraceKey === getTraceKey(trace)) {
-                primaryTraceName = trace.name;
-            }
-            if (trace.active && trace.name !== '__count' && !traceNames.has(trace.name)) {
-                traceNames.add(trace.name);
-                filterTraces.push(trace);
-            }
-        });
-        // put active trace 1st
-        filterTraces.sort((a, b) => {
-            if (a.name === primaryTraceName) {
-                return -1;
-            }
-            if (b.name === primaryTraceName) {
-                return 1;
-            }
-            a = a.name.toLowerCase();
-            b = b.name.toLowerCase();
-            return a < b ? -1 : (a === b ? 0 : 1);
-        });
+        // const traceNames = new Set();
+        // const filterTraces = [];
+        // let primaryTraceName;
+        // embeddingData.forEach(trace => {
+        //     if (primaryTraceKey === getTraceKey(trace)) {
+        //         primaryTraceName = trace.name;
+        //     }
+        //     if (trace.active && trace.name !== '__count' && !traceNames.has(trace.name)) {
+        //         traceNames.add(trace.name);
+        //         filterTraces.push(trace);
+        //     }
+        // });
+        // // put active trace 1st
+        // filterTraces.sort((a, b) => {
+        //     if (a.name === primaryTraceName) {
+        //         return -1;
+        //     }
+        //     if (b.name === primaryTraceName) {
+        //         return 1;
+        //     }
+        //     a = a.name.toLowerCase();
+        //     b = b.name.toLowerCase();
+        //     return a < b ? -1 : (a === b ? 0 : 1);
+        // });
 
 
         let savedDatasetFilter = this.props.savedDatasetFilter;
@@ -364,29 +383,13 @@ class EmbedForm extends React.PureComponent {
         const splitTokens = splitSearchTokens(searchTokens);
         const featureOptions = dataset == null ? [] : dataset.features;
         const markers = dataset == null || dataset.markers == null ? {} : dataset.markers;
-        const featureSetOptions = [];
-
-        for (const group in markers) {
-            const groupMarkers = markers[group];
-            for (const name in groupMarkers) {
-                featureSetOptions.push({group: group, text: name});
-            }
-        }
-
-        const sorter = natsort();
-        featureSetOptions.sort((item1, item2) => {
-            return sorter(item1.group, item2.group);
-        });
-
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
         const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
-
-        let annotationOptions = obs.concat(obsCat);
-        annotationOptions.sort(sorter);
-
+        const annotationOptions = getAnnotationOptions(obs, obsCat);
+        const featureSetOptions = getFeatureSetOptions(markers);
 
         return (
             <div className={classes.root}>
@@ -443,72 +446,70 @@ class EmbedForm extends React.PureComponent {
                 </FormControl>}
 
 
-                <Accordion defaultExpanded>
-                    <AccordionPanelSummary
-                        aria-controls="summary-content"
-                        id="summary-header"
-                    >
-                        <div>Active List</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails>
-                        <div style={{marginLeft: 10, maxHeight: 500, overflow:'auto'}}>
+                {/*<Accordion defaultExpanded>*/}
+                {/*    <AccordionPanelSummary*/}
+                {/*        aria-controls="summary-content"*/}
+                {/*        id="summary-header"*/}
+                {/*    >*/}
+                {/*        <div>Active List</div>*/}
+                {/*    </AccordionPanelSummary>*/}
+                {/*    <AccordionPanelDetails>*/}
+                {/*        <div style={{marginLeft: 10, maxHeight: 500, overflow: 'auto'}}>*/}
+                {/*            {filterTraces.map(traceInfo => {*/}
+
+                {/*                    return traceInfo.continuous ?*/}
+                {/*                        <ColorSchemeLegendWrapper*/}
+                {/*                            key={traceInfo.name}*/}
+                {/*                            handleDomain={this.props.handleDomain}*/}
+                {/*                            selected={traceInfo.name === primaryTraceName}*/}
+                {/*                            width={140}*/}
+                {/*                            showColorScheme={false}*/}
+                {/*                            height={30}*/}
+                {/*                            style={{*/}
+                {/*                                paddingBottom: 3,*/}
+                {/*                                paddingTop: 3,*/}
+                {/*                                display: 'block',*/}
+                {/*                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'*/}
+                {/*                            }}*/}
+                {/*                            handleUpdate={handleMeasureFilterUpdated}*/}
+                {/*                            datasetFilter={datasetFilter}*/}
+                {/*                            scale={traceInfo.colorScale}*/}
+                {/*                            featureSummary={featureSummary}*/}
+                {/*                            globalFeatureSummary={globalFeatureSummary}*/}
+                {/*                            nObs={shape[0]}*/}
+                {/*                            nObsSelected={nObsSelected}*/}
+                {/*                            maxHeight={null}*/}
+                {/*                            name={traceInfo.name}*/}
+                {/*                        /> :*/}
+                {/*                        <CategoricalLegend*/}
+                {/*                            selected={traceInfo.name === primaryTraceName}*/}
+                {/*                            key={traceInfo.name}*/}
+                {/*                            style={{*/}
+                {/*                                paddingBottom: 3,*/}
+                {/*                                paddingTop: 3,*/}
+                {/*                                display: 'block',*/}
+                {/*                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'*/}
+                {/*                            }}*/}
+                {/*                            datasetFilter={datasetFilter}*/}
+                {/*                            handleClick={handleDimensionFilterUpdated}*/}
+                {/*                            handleColorChange={handleColorChange}*/}
+                {/*                            handleNameChange={handleNameChange}*/}
+                {/*                            categoricalNames={categoricalNames}*/}
+                {/*                            name={traceInfo.name}*/}
+                {/*                            scale={traceInfo.colorScale}*/}
+                {/*                            maxHeight={300}*/}
+                {/*                            clickEnabled={true}*/}
+                {/*                            nObs={shape[0]}*/}
+                {/*                            nObsSelected={nObsSelected}*/}
+                {/*                            globalFeatureSummary={globalFeatureSummary}*/}
+                {/*                            featureSummary={featureSummary}/>;*/}
+                {/*                }*/}
+                {/*            )}*/}
 
 
-                            {filterTraces.map(traceInfo => {
-
-                                    return traceInfo.continuous ?
-                                        <ColorSchemeLegendWrapper
-                                            key={traceInfo.name}
-                                            handleDomain={this.props.handleDomain}
-                                            selected={traceInfo.name === primaryTraceName}
-                                            width={140}
-                                            showColorScheme={false}
-                                            height={30}
-                                            style={{
-                                                paddingBottom: 3,
-                                                paddingTop: 3,
-                                                display: 'block',
-                                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                            }}
-                                            handleUpdate={handleMeasureFilterUpdated}
-                                            datasetFilter={datasetFilter}
-                                            scale={traceInfo.colorScale}
-                                            featureSummary={featureSummary}
-                                            globalFeatureSummary={globalFeatureSummary}
-                                            nObs={shape[0]}
-                                            nObsSelected={nObsSelected}
-                                            maxHeight={null}
-                                            name={traceInfo.name}
-                                        /> :
-                                        <CategoricalLegend
-                                            selected={traceInfo.name === primaryTraceName}
-                                            key={traceInfo.name}
-                                            style={{
-                                                paddingBottom: 3,
-                                                paddingTop: 3,
-                                                display: 'block',
-                                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'
-                                            }}
-                                            datasetFilter={datasetFilter}
-                                            handleClick={handleDimensionFilterUpdated}
-                                            handleColorChange={handleColorChange}
-                                            handleNameChange={handleNameChange}
-                                            categoricalNames={categoricalNames}
-                                            name={traceInfo.name}
-                                            scale={traceInfo.colorScale}
-                                            maxHeight={300}
-                                            clickEnabled={true}
-                                            nObs={shape[0]}
-                                            nObsSelected={nObsSelected}
-                                            globalFeatureSummary={globalFeatureSummary}
-                                            featureSummary={featureSummary}/>;
-                                }
-                            )}
-
-
-                        </div>
-                    </AccordionPanelDetails>
-                </Accordion>
+                {/*        </div>*/}
+                {/*    </AccordionPanelDetails>*/}
+                {/*</Accordion>*/}
 
                 <Accordion defaultExpanded>
                     <AccordionPanelSummary
@@ -777,24 +778,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         removeDatasetFilter: (filter) => {
             dispatch(removeDatasetFilter(filter));
         },
-        handleDimensionFilterUpdated: (e) => {
-            dispatch(handleDimensionFilterUpdated(e));
-        },
-        handleColorChange: (e) => {
-            dispatch(handleColorChange(e));
-        },
-        handleNameChange: (e) => {
-            dispatch(handleCategoricalNameChange(e));
-        },
-        handleMeasureFilterUpdated: (e) => {
-            dispatch(handleMeasureFilterUpdated(e));
-        },
-        onSelect: (e) => {
-            dispatch(handleBrushFilterUpdated(e));
-        },
-        onDeselect: (e) => {
-            dispatch(handleBrushFilterUpdated(e));
-        },
         handleEmbeddings: value => {
             dispatch(setSelectedEmbedding(value));
         },
@@ -840,9 +823,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleExportDatasetFilters: () => {
             dispatch(exportDatasetFilters());
         },
-        handleDomain: (value) => {
-            dispatch(handleDomainChange(value));
-        },
+
     };
 };
 

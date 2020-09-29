@@ -58,7 +58,7 @@ export const DEFAULT_INTERPOLATOR = 'Viridis';
 export const DEFAULT_DRAG_MODE = 'pan';
 export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
-export const DEFAULT_SHOW_FOG = true;
+export const DEFAULT_SHOW_FOG = false;
 export const DEFAULT_DARK_MODE = false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
@@ -576,7 +576,15 @@ function embeddingData(state = [], action) {
         case SET_DOMAIN:
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous && traceInfo.name === action.payload.name) {
-                    traceInfo.colorScale.domain(action.payload.domain);
+                    const summary = action.payload.summary;
+                    let domain = [summary.min, summary.max];
+                    if (summary.customMin != null && !isNaN(summary.customMin)) {
+                        domain[0] = summary.customMin;
+                    }
+                    if (summary.customMax != null && !isNaN(summary.customMax)) {
+                        domain[1] = summary.customMax;
+                    }
+                    traceInfo.colorScale.domain(domain);
                     updateTraceColors(traceInfo);
                 }
             });
