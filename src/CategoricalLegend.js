@@ -162,7 +162,7 @@ class CategoricalLegend extends React.PureComponent {
                         </DialogActions>
                     </React.Fragment>}
                 </Dialog>
-                
+
                 {/*<Popover*/}
                 {/*    open={Boolean(this.state.anchorEl)}*/}
                 {/*    anchorEl={this.state.anchorEl}*/}
@@ -195,7 +195,7 @@ class CategoricalLegend extends React.PureComponent {
                     <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
 
                 </Menu>
-                <table>
+                <table style={{textAlign: 'left'}}>
                     <thead>
                     <tr>
                         {clickEnabled && <td></td>}
