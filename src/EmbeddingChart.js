@@ -65,6 +65,7 @@ class EmbeddingChart extends React.PureComponent {
                     <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
                         {displayName !== '' ? <Link onClick={this.handleExpandClick}>
                             <Typography
+                                color="textPrimary" style={{marginRight: 14}}
                                 component={"h4"}>{displayName} {!traceInfo.continuous ?
                                 <small>({globalFeatureSummary[traceInfo.name].categories.length})</small> : null}</Typography></Link> : null}
                     </Tooltip>
