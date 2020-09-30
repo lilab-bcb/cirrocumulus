@@ -322,11 +322,9 @@ class EmbedForm extends React.PureComponent {
 
     render() {
         const {
-            categoricalNames, chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes, embeddingData,
+            chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
-            featureSummary, shape, nObsSelected, globalFeatureSummary, unselectedMarkerOpacity, dataset,
-            handleColorChange, handleNameChange, handleMeasureFilterUpdated, handleDimensionFilterUpdated, pointSize,
-            combineDatasetFilters, selection, primaryTraceKey
+            unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
@@ -730,11 +728,6 @@ class EmbedForm extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        categoricalNames: state.categoricalNames,
-        featureSummary: state.featureSummary,
-        shape: state.dataset.shape,
-        nObsSelected: state.selection.count,
-        globalFeatureSummary: state.globalFeatureSummary,
         dataset: state.dataset,
         binValues: state.binValues,
         binSummary: state.binSummary,
