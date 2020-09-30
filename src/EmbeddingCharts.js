@@ -18,12 +18,11 @@ class EmbeddingCharts extends React.PureComponent {
             this.props.handlePrimaryChartSize({width: width, height: height});
         };
         window.addEventListener('resize', this.resizeListener);
-        window.addEventListener('webglcontextlost', this.resizeListener);
+
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.resizeListener);
-        window.removeEventListener('webglcontextlost', this.resizeListener);
     }
 
 

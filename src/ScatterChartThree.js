@@ -68,12 +68,16 @@ class ScatterChartThree extends React.PureComponent {
         this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
+        this.state = {forceUpdate: false};
+
+
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.chartSize !== this.props.chartSize) {
             this.scatterPlot.resize();
         }
+        this.init();
         this.draw();
     }
 
@@ -308,7 +312,6 @@ class ScatterChartThree extends React.PureComponent {
 
 
     init() {
-
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
             this.scatterPlot = createScatterPlot(containerElement, false, true);
@@ -453,12 +456,19 @@ class ScatterChartThree extends React.PureComponent {
                     });
                 }
             };
+            const canvas = this.containerElementRef.current.querySelector('canvas');
+            canvas.style.outline = '0px';
+            const webglcontextlost = (e) => {
+                e.preventDefault();
+                this.scatterPlot = null;
+            };
+            const webglcontextrestored = (e) => {
+                this.setState({forceUpdate: !this.state.forceUpdate});
+            };
+            canvas.addEventListener('webglcontextlost', webglcontextlost);
+            canvas.addEventListener('webglcontextrestored', webglcontextrestored);
         }
-        ;
 
-
-        const canvas = this.containerElementRef.current.querySelector('canvas');
-        canvas.style.outline = '0px';
     }
 
 
