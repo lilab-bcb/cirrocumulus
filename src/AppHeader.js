@@ -136,7 +136,7 @@ class AppHeader extends React.PureComponent {
     };
 
     getLinkJson = () => {
-        const {chartOptions, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {chartOptions, combineDatasetFilters, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
 
         let json = {
             dataset: dataset.id,
@@ -196,8 +196,9 @@ class AppHeader extends React.PureComponent {
         }
         if (Object.keys(datasetFilterJson).length > 0) {
             json.datasetFilter = datasetFilterJson;
-        }
 
+        }
+        json.combineDatasetFilters = combineDatasetFilters;
         if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
             json.markerOpacity = markerOpacity;
         }
@@ -216,6 +217,17 @@ class AppHeader extends React.PureComponent {
             json.colorScheme = interpolator.name;
         }
         return json;
+    };
+
+    handleDataset = (event) => {
+        if (this.props.dataset != null) {
+            const savedDatasetState = this.props.savedDatasetState;
+            const link = this.getLinkJson();
+            link.dataset = null;
+            savedDatasetState[this.props.dataset.id] = link;
+            this.props.handleSavedDatasetState(savedDatasetState);
+        }
+        this.props.handleDataset(event.target.value);
     };
 
     copyLink = (event) => {
@@ -271,16 +283,7 @@ class AppHeader extends React.PureComponent {
         this.props.handleDialog(IMPORT_DATASET_DIALOG);
         this.setState({moreMenuOpen: false});
     };
-    handleDataset = (event) => {
-        if (this.props.dataset != null) {
-            const savedDatasetState = this.props.savedDatasetState;
-            const link = this.getLinkJson();
-            link.dataset = null;
-            savedDatasetState[this.props.dataset.id] = link;
-            this.props.handleSavedDatasetState(savedDatasetState);
-        }
-        this.props.handleDataset(event.target.value);
-    };
+
     handleSettings = (event) => {
         this.props.handleDialog(EDIT_DATASET_DIALOG);
         this.setState({moreMenuOpen: false});
