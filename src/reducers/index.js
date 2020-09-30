@@ -512,6 +512,8 @@ function selectedDotPlotData(state = [], action) {
 
 function datasetFilters(state = [], action) {
     switch (action.type) {
+        case SET_DATASET:
+            return [];
         case SET_DATASET_FILTERS:
             //action.payload.sort()
             return action.payload;
@@ -523,6 +525,8 @@ function datasetFilters(state = [], action) {
 
 function datasetFilter(state = {}, action) {
     switch (action.type) {
+        case SET_DATASET:
+            return {};
         case SET_DATASET_FILTER:
             return action.payload;
         case RESTORE_VIEW:
@@ -536,6 +540,8 @@ function combineDatasetFilters(state = 'and', action) {
     switch (action.type) {
         case SET_COMBINE_DATASET_FILTERS:
             return action.payload;
+        case SET_DATASET:
+            return "and";
         case RESTORE_VIEW:
             return action.payload.combineDatasetFilters != null ? action.payload.combineDatasetFilters : state;
         default:
@@ -641,6 +647,8 @@ export function savedDatasetState(state = {}, action) {
 
 export function primaryTraceKey(state = null, action) {
     switch (action.type) {
+        case SET_DATASET:
+            return null;
         case SET_PRIMARY_TRACE_KEY:
             return action.payload;
         case SET_EMBEDDING_DATA:
