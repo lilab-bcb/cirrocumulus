@@ -314,7 +314,7 @@ class ScatterChartThree extends React.PureComponent {
     init() {
         if (this.scatterPlot == null) {
             const containerElement = this.containerElementRef.current;
-            this.scatterPlot = createScatterPlot(containerElement, false, true);
+            this.scatterPlot = createScatterPlot(containerElement, window.ApplePaySession, true);
             if (this.props.chartOptions.dragmode === 'pan') {
                 this.scatterPlot.setInteractionMode('PAN');
             } else if (this.props.chartOptions.dragmode === 'select') {
