@@ -3,7 +3,9 @@ import os
 import anndata
 import pandas as pd
 
-SPATIAL_HELP = 'Directory containing 10x visium spatial data (tissue_hires_image.png, scalefactors_json.json, and tissue_positions_list.csv) ' + 'or a directory containing `image.png`, `positions.image.csv` with headers barcode, x, and y, and optionally `diameter.image.txt` containing spot diameter',
+SPATIAL_HELP = 'Directory containing 10x visium spatial data (tissue_hires_image.png, scalefactors_json.json, ' \
+               + 'and tissue_positions_list.csv) ' + 'or a directory containing `image.png`, `positions.image.csv` ' \
+               + 'with headers barcode, x, and y, and optionally `diameter.image.txt` containing spot diameter'
 
 
 def __add_visium(adata, spatial_directory):
