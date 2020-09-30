@@ -54,8 +54,8 @@ class EmbeddingChart extends React.PureComponent {
         const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
         return (
-            <div style={{position: 'relative'}}>
-                <Box color="text.primary" style={{
+            <div  style={{position: 'relative'}}>
+                <Box bgcolor="background.default" color="text.primary" style={{
                     marginTop: '3.2px',
                     position: 'absolute',
                     textAlign: 'right',

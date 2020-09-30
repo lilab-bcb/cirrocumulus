@@ -15,7 +15,7 @@ import {arrayToSvgPath, isPointInside} from './util';
 
 
 export function getSpotRadius(trace, pointSize) {
-    return pointSize*(trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
+    return pointSize * (trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
 }
 
 export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames, spotRadius) {
@@ -30,6 +30,7 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, zoom, traceInfo, showLabels, categoricalNames);
         context.setTransform(1, 0, 0, 1, 0, 0);
+
     }
 }
 
@@ -50,7 +51,6 @@ function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
 }
 
 function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius) {
-
     context.lineWidth = 2 * 1 / zoom;
     if (context.setLineDash) {
         context.setLineDash([2, 2]);
@@ -208,7 +208,6 @@ class ImageChart extends React.PureComponent {
         let context = opts.context;
         let traceInfo = this.props.traceInfo;
         const selection = this.props.selection;
-
         let markerOpacity = this.props.markerOpacity;
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);

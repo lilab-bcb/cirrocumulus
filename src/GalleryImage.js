@@ -18,7 +18,7 @@ class GalleryImage extends React.PureComponent {
 
     draw() {
         let start = new Date().getTime();
-        const {scatterPlot, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
+        const {scatterPlot, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
@@ -42,13 +42,14 @@ class GalleryImage extends React.PureComponent {
                 let canvas = document.createElement('canvas');
                 canvas.width = this.props.chartSize * window.devicePixelRatio;
                 canvas.height = this.props.chartSize * window.devicePixelRatio;
-                canvas.style.width = this.props.chartSize * window.devicePixelRatio + ' px';
-                canvas.style.height = this.props.chartSize * window.devicePixelRatio + ' px';
+                // canvas.style.width = this.props.chartSize * window.devicePixelRatio + ' px';
+                // canvas.style.height = this.props.chartSize * window.devicePixelRatio + ' px';
+                const context = canvas.getContext('2d');
 
-                drawImage(canvas.getContext('2d'), {
-                    width: this.props.chartSize,
-                    height: this.props.chartSize
-                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, false, getSpotRadius(traceInfo, pointSize));
+                drawImage(context, {
+                    width: this.props.chartSize * window.devicePixelRatio,
+                    height: this.props.chartSize * window.devicePixelRatio
+                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, false, categoricalNames, getSpotRadius(traceInfo, pointSize));
                 this.setState({url: canvas.toDataURL()});
                 canvas = null;
             }
@@ -96,7 +97,8 @@ class GalleryImage extends React.PureComponent {
             name = 'count';
         }
         return (
-            <Box borderColor="text.primary" border={1} style={{display: 'inline-block', margin: 2}}>
+            <Box bgcolor="background.default" borderColor="text.primary" border={1}
+                 style={{display: 'inline-block', margin: 2}}>
                 <div style={{position: 'relative'}}>
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
                         <Typography color="textPrimary" component={"h4"}

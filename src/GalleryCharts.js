@@ -41,7 +41,7 @@ class GalleryCharts extends React.PureComponent {
 
 
     render() {
-        let {chartSize, embeddingData, primaryChartSize, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
+        let {categoricalNames, chartSize, embeddingData, primaryChartSize, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
@@ -67,6 +67,7 @@ class GalleryCharts extends React.PureComponent {
             chartOptions={chartOptions}
             pointSize={pointSize}
             chartSize={chartSize}
+            categoricalNames={categoricalNames}
             primaryChartSize={primaryChartSize}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
             selection={selection}
@@ -97,6 +98,7 @@ class GalleryCharts extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        categoricalNames: state.categoricalNames,
         embeddingData: state.embeddingData,
         markerOpacity: state.markerOpacity,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
