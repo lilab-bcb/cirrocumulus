@@ -99,13 +99,18 @@ export class ByteRangeDataset {
         this.id = id;
         this.key2bytes = null; // maps key to byte range
         this.key2vector = {}; // maps key to vector
+        this.url = url;
+        this.schema = null;
         return new Promise((resolve, reject) => {
-            fetch(url).then(r => r.json()).then(result => {
+            fetch(url + '.idx.json').then(r => r.json()).then(result => {
                 this.key2bytes = result.index;
-                this.schema = result.schema;
-
-                this.url = url.substring(0, url.lastIndexOf('/') + 1) + result.file;
-                resolve();
+            }).then(() => {
+                fetch(url, this.getByteRange('schema')).then(response => {
+                    return response.json();
+                }).then(result => {
+                    this.schema = result["schema"];
+                    resolve();
+                });
             });
         });
     }
@@ -116,10 +121,6 @@ export class ByteRangeDataset {
             throw key + ' not found';
         }
         return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
-    }
-
-    canBin() {
-        return false;
     }
 
 
@@ -311,6 +312,10 @@ export class ByteRangeDataset {
     getVector(key, indices = null) {
         let v = this.key2vector[key];
         return indices == null ? v : new SlicedVector(v, indices);
+    }
+
+    getFileUrl(file) {
+        return this.url.substring(0, this.url.lastIndexOf('/') + 1) + file;
     }
 
     getVectors(keys, indices = null) {

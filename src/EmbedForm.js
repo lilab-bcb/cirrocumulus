@@ -138,6 +138,14 @@ const AccordionPanelDetails = withStyles(theme => ({
 }))(MuiAccordionPanelDetails);
 
 
+const getEmbeddingKeys = memoize(
+    (embeddings) => {
+        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
+        embeddingKeys.sort(sorter);
+        return embeddingKeys;
+    }
+);
+
 const getAnnotationOptions = memoize(
     (obs, obsCat) => {
         let annotationOptions = obs.concat(obsCat);
@@ -324,7 +332,7 @@ class EmbedForm extends React.PureComponent {
         const {
             chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
             searchTokens, markerOpacity, datasetFilter, datasetFilters,
-            unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection
+            unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection, serverInfo
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
@@ -382,13 +390,14 @@ class EmbedForm extends React.PureComponent {
         const featureOptions = dataset == null ? [] : dataset.features;
         const markers = dataset == null || dataset.markers == null ? {} : dataset.markers;
         const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
-        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
+
         const isSummarized = dataset == null ? false : dataset.precomputed != null;
         const obsCat = dataset == null ? [] : dataset.obsCat;
         const obs = dataset == null ? [] : dataset.obs;
+        const embeddingKeys = getEmbeddingKeys(embeddings);
         const annotationOptions = getAnnotationOptions(obs, obsCat);
         const featureSetOptions = getFeatureSetOptions(markers);
-
+        const fancy = serverInfo.fancy;
         return (
             <div className={classes.root}>
                 <FormControl className={classes.formControl}>
@@ -555,23 +564,16 @@ class EmbedForm extends React.PureComponent {
                                         <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                     </Tooltip>
-                                    <Tooltip title={"Save Filter"}>
+                                    {fancy && <Tooltip title={"Save Filter"}>
                                         <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
-                                    </Tooltip>
+                                    </Tooltip>}
                                     <Tooltip title={"Download Selected IDs"}>
                                         <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                     onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                     </Tooltip>
-                                    {/*<Tooltip title={"Compute Markers"}>*/}
-                                    {/*    <Button color="primary" variant="outlined"*/}
-                                    {/*            disabled={datasetFilterKeys.length === 0}*/}
-                                    {/*            size={"small"}*/}
-                                    {/*            onClick={this.handleDiffExp}>Markers</Button>*/}
-                                    {/*</Tooltip>*/}
                                     <Divider/>
                                 </div>
-
                             </React.Fragment>
                             }
 
@@ -641,7 +643,7 @@ class EmbedForm extends React.PureComponent {
                                 <ColorSchemeSelector/>
                             </FormControl>
 
-                            {!isSummarized && <div><FormControlLabel
+                            {!isSummarized && fancy && <div><FormControlLabel
                                 control={
                                     <Switch
                                         checked={binValues}
@@ -691,7 +693,7 @@ class EmbedForm extends React.PureComponent {
 
                     </AccordionPanelDetails>
                 </Accordion>
-                <Accordion defaultExpanded>
+                {fancy && <Accordion defaultExpanded>
                     <AccordionPanelSummary
                         aria-controls="filter-options-content"
                         id="filter-options-header"
@@ -720,7 +722,7 @@ class EmbedForm extends React.PureComponent {
                             </div>}
                         </div>
                     </AccordionPanelDetails>
-                </Accordion>
+                </Accordion>}
             </div>
         );
     }
@@ -740,6 +742,7 @@ const mapStateToProps = state => {
         pointSize: state.pointSize,
         primaryTraceKey: state.primaryTraceKey,
         savedDatasetFilter: state.savedDatasetFilter,
+        serverInfo: state.serverInfo,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,

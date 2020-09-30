@@ -4,6 +4,7 @@ import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
+import {ByteRangeDataset} from '../ByteRangeDataset';
 import CustomError from '../CustomError';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
@@ -158,6 +159,12 @@ export function initGapi() {
 
         return fetch(API + '/server').then(result => result.json()).then(serverInfo => {
             serverInfo.api = new RestServerApi();
+            if (serverInfo.clientId == null) {
+                serverInfo.clientId = '';
+            }
+            if (serverInfo.fancy == null) {
+                serverInfo.fancy = true;
+            }
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '') { // no login required
                 dispatch(_setLoadingApp({loading: false}));
@@ -617,12 +624,13 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        getState().serverInfo.api.setCategoryNamePromise({
-            c: payload.name,
-            o: payload.oldValue,
-            n: payload.value,
-            id: dataset_id
-        }).then(result => dispatch(_handleCategoricalNameChange(payload)));
+        const p = getState().serverInfo.fancy? getState().serverInfo.api.setCategoryNamePromise({
+                c: payload.name,
+                o: payload.oldValue,
+                n: payload.value,
+                id: dataset_id
+            }):Promise.resolve();
+       p.then(() => dispatch(_handleCategoricalNameChange(payload)));
     };
 }
 
@@ -727,7 +735,8 @@ function loadDefaultDatasetEmbedding() {
     return function (dispatch, getState) {
         const dataset = getState().dataset;
         const embeddingNames = dataset.embeddings.map(e => e.name);
-        let priority = {'X_fle': 1, 'X_umap': 2, 'X_tsne': 3, 'X_fitsne': 4};
+        let priority = {'tissue_hires': 1, 'X_fle': 2, 'X_umap': 3, 'X_tsne': 4, 'X_fitsne': 5};
+
         embeddingNames.sort((a, b) => {
             a = priority[a] || Number.MAX_VALUE;
             b = priority[b] || Number.MAX_VALUE;
@@ -1118,7 +1127,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         };
         dispatch(_setDataset(dataset));
         let categoryNameResults;
-        let datasetFilters;
+        let datasetFilters = [];
         let newDataset;
 
         function onPromisesComplete() {
@@ -1156,13 +1165,15 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             newDataset.id = id;
             dispatch(_setDataset(newDataset));
 
-            categoryNameResults.forEach(result => {
-                dispatch(_handleCategoricalNameChange({
-                    name: result.category,
-                    oldValue: result.original,
-                    value: result.new
-                }));
-            });
+            if (categoryNameResults != null) {
+                categoryNameResults.forEach(result => {
+                    dispatch(_handleCategoricalNameChange({
+                        name: result.category,
+                        oldValue: result.original,
+                        value: result.new
+                    }));
+                });
+            }
             dispatch(setDatasetFilters(datasetFilters));
             if (savedDatasetState) {
 
@@ -1173,25 +1184,32 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
 
         let url = dataset.url || '';
-        // if (url.startsWith("http")) {
-        //     dataset.api = new ByteRangeDataset();
-        // } else {
-        //     dataset.api = new RestDataset();
-        // }
-        dataset.api = new RestDataset();
+        const isByteRangeDataset = url.startsWith("http") || url.startsWith('//');
+        if (isByteRangeDataset) {
+            dataset.api = new ByteRangeDataset();
+        } else {
+            dataset.api = new RestDataset();
+        }
         const initPromise = dataset.api.init(id, dataset.url);
 
         return initPromise.then(() => {
-            const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
-                categoryNameResults = results;
-            });
-            const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
-                datasetFilters = results;
-            });
+            let promises = [];
+            if (!isByteRangeDataset) {
+                const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
+                    categoryNameResults = results;
+                });
+
+                const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
+                    datasetFilters = results;
+                });
+                promises.push(categoriesRenamePromise);
+                promises.push(filtersPromise);
+            }
             const schemaPromise = dataset.api.getSchemaPromise().then(result => {
                 newDataset = result;
             });
-            return [categoriesRenamePromise, filtersPromise, schemaPromise];
+            promises.push(schemaPromise);
+            return promises;
         }).then(promises => Promise.all(promises)).then(() => onPromisesComplete()).finally(() => {
             if (setLoading) {
                 dispatch(_setLoading(false));

@@ -16,10 +16,10 @@ export function valueCounts(v) {
 }
 
 export function getIndices(v, f) {
-    let result = [];
+    let result = new Set();
     for (let i = 0, size = v.size(); i < size; i++) {
         if (f(v.get(i))) {
-            result.push(i);
+            result.add(i);
         }
     }
     return result;
