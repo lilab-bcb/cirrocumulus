@@ -46,7 +46,7 @@ class GalleryCharts extends React.PureComponent {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
             document.body.appendChild(this.containerElement);
-            this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession);
+            this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         }
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
 
