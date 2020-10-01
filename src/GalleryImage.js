@@ -97,7 +97,7 @@ class GalleryImage extends React.PureComponent {
             name = 'count';
         }
         return (
-            <Box bgcolor="background.default" borderColor="text.primary" border={1}
+            <Box borderColor="text.primary" border={1}
                  style={{display: 'inline-block', margin: 2}}>
                 <div style={{position: 'relative'}}>
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>

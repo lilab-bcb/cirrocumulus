@@ -484,7 +484,7 @@ class ImageChart extends React.PureComponent {
                     onShowLabels={this.onShowLabels}
                     onDragMode={this.onDragMode}
                     onEditSelection={this.onEditSelection}
-                  >
+                >
                 </ChartToolbar>
                 <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',

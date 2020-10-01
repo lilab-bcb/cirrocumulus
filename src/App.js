@@ -48,29 +48,30 @@ const darkTheme = createMuiTheme(
 export const drawerWidth = 240;
 
 
-const styles = theme => ({
-    root: {
-        display: 'flex',
-    },
-    appBar: {
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: drawerWidth,
-    },
-    drawer: {
-        width: drawerWidth,
-        flexShrink: 0,
-    },
-    drawerPaper: {
-        width: drawerWidth,
-    },
-    toolbar: theme.mixins.toolbar,
-    content: {
-        flexGrow: 1,
-        backgroundColor: 'white',
-        paddingTop: theme.spacing(6.5),
-        paddingLeft: theme.spacing(1)
-    },
-});
+const styles = (theme) => {
+    return {
+        root: {
+            display: 'flex',
+        },
+        appBar: {
+            width: `calc(100% - ${drawerWidth}px)`,
+            marginLeft: drawerWidth,
+        },
+        drawer: {
+            width: drawerWidth,
+            flexShrink: 0,
+        },
+        drawerPaper: {
+            width: drawerWidth,
+        },
+        toolbar: theme.mixins.toolbar,
+        content: {
+            flexGrow: 1,
+            paddingTop: theme.spacing(6.5),
+            paddingLeft: theme.spacing(1)
+        }
+    };
+};
 
 class App extends PureComponent {
 
@@ -96,8 +97,10 @@ class App extends PureComponent {
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
         const {classes, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
-
-        return (<ThemeProvider theme={!chartOptions.darkMode ? lightTheme : darkTheme}>
+        const theme = !chartOptions.darkMode ? lightTheme : darkTheme;
+        const color = theme.palette.primary.main;
+        const bgcolor = chartOptions.darkMode ? 'black' : 'white';
+        return (<ThemeProvider theme={theme}>
                 <div className={classes.root}>
                     {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
                     <EditDatasetDialog/>}
@@ -117,7 +120,7 @@ class App extends PureComponent {
                         {dataset != null && <EmbedForm key={dataset.id}/>}
                     </Drawer>
 
-                    <main className={classes.content}>
+                    <main style={{backgroundColor: bgcolor, color: color}} className={classes.content}>
                         {loadingApp.loading &&
                         <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
                                                         value={loadingApp.progress}/></h2>
