@@ -2,7 +2,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {numberFormat0} from './formatters';
 
-export function drawSizeLegend(context, scale, nsteps, width, margin = 20) {
+export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
     let value = domain[0];
 
@@ -14,7 +14,8 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20) {
 
 
     context.textBaseline = 'top';
-    context.fillStyle = 'black';
+    context.fillStyle = textColor;
+    context.strokeStyle = textColor;
     context.textAlign = 'center';
 
     for (let i = 0; i < nsteps; i++) {
@@ -48,6 +49,7 @@ class SizeLegend extends React.PureComponent {
         const context = node.getContext('2d');
         const height = this.props.height;
         const width = this.props.width;
+        const textColor = this.props.textColor || 'black';
         context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
         context
             .clearRect(0, 0, width * backingScale, height * backingScale);
@@ -57,7 +59,7 @@ class SizeLegend extends React.PureComponent {
             return;
         }
 
-        drawSizeLegend(context, scale, this.props.nsteps || 3, width);
+        drawSizeLegend(context, scale, this.props.nsteps || 3, width, 20, textColor);
         context.setTransform(1, 0, 0, 1, 0, 0);
 
     }

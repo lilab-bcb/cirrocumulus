@@ -5,8 +5,8 @@ import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import Paper from '@material-ui/core/Paper';
 import Select from '@material-ui/core/Select';
+import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import natsort from 'natsort';
 import React from 'react';
@@ -26,8 +26,6 @@ const styles = theme => ({
 let svgFont = '12px Helvetica,Arial,sans-serif';
 let canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
 
-let gridColor = '#808080';
-let gridThickness = 0.5;
 
 class DotPlotCanvas extends React.PureComponent {
 
@@ -110,6 +108,7 @@ class DotPlotCanvas extends React.PureComponent {
         const sizeScale = this.props.sizeScale;
         const categories = this.categories;
         const categoryOrder = this.categoryOrder;
+        const textColor = this.props.textColor;
         const maxRadius = sizeScale.range()[1];
         let diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
@@ -130,7 +129,7 @@ class DotPlotCanvas extends React.PureComponent {
         });
         // context.lineWidth = 1;
         context.textAlign = 'right';
-        context.fillStyle = 'black';
+        context.fillStyle = textColor;
         context.textBaseline = 'middle';
 
         for (let i = 0; i < categories.length; i++) {
@@ -304,10 +303,12 @@ class DotPlotCanvas extends React.PureComponent {
         }
 
         const size = this.getSize(context);
+
         const colorScaleHeight = 40;
         const sizeScaleHeight = 40;
         const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
         const width = Math.max(200, size.width + size.x);
+        let scale = 1;
         if (format === 'svg') {
             context = new window.C2S(width, height);
             context.font = svgFont;
@@ -315,22 +316,27 @@ class DotPlotCanvas extends React.PureComponent {
             canvas.width = width * window.devicePixelRatio;
             canvas.height = height * window.devicePixelRatio;
             context = canvas.getContext('2d');
+            scale = window.devicePixelRatio;
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
-            context.fillStyle = 'white';
-            context.fillRect(0, 0, width, height);
             context.font = canvasFont;
+        }
+        const textColor = this.props.textColor;
+        if (textColor === 'white') {
+            context.fillStyle = 'black';
+            context.fillRect(0, 0, width, height);
         }
         this.drawContext(context);
 
-        if (format !== 'svg') {
-            context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-        context.translate(10, size.height + size.y + 4);
-        drawColorScheme(context, 150, colorScaleHeight, this.colorScale, true);
+        // if (format !== 'svg') {
+        //     context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // }
 
-        context.translate(-10, colorScaleHeight + 4);
+        context.translate(scale * 10, scale * (size.height + size.y + 4));
+        drawColorScheme(context, 150, colorScaleHeight, this.props.colorScale, true, 10, textColor);
 
-        drawSizeLegend(context, this.sizeScale, 3, 150);
+        context.translate(-10, (colorScaleHeight + 4));
+
+        drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
 
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
@@ -357,10 +363,13 @@ class DotPlotCanvas extends React.PureComponent {
         const features = this.features;
         const sortChoices = [dotplot.name].concat(features);
         return (<div style={{position: 'relative'}}>
-            <Paper elevation={0}>
-                <b>{dotplot.name}</b> {this.props.subtitle && <small>({this.props.subtitle})</small>}
+            <div>
+                <Typography style={{display: 'inline-block'}} component={"h4"}
+                            color="textPrimary">{dotplot.name}{this.props.subtitle &&
+                <small>({this.props.subtitle})</small>}</Typography>
                 <Tooltip title={"Save Image"}>
-                    <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false} size={'small'}
+                    <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
+                                size={'small'}
                                 aria-label="Save Image" onClick={this.handleSaveImageMenu}>
                         <PhotoCameraIcon/>
                     </IconButton>
@@ -377,7 +386,7 @@ class DotPlotCanvas extends React.PureComponent {
 
                 </Menu>
 
-                <div className="cirro-condensed" ref={this.tooltipElementRef} style={{
+                <Typography color="textPrimary" className="cirro-condensed" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
                     paddingLeft: 5,
                     verticalAlign: 'top',
@@ -386,7 +395,7 @@ class DotPlotCanvas extends React.PureComponent {
                     minWidth: 500,
                     maxWidth: 500,
                     textOverflow: 'ellipsis'
-                }}></div>
+                }}></Typography>
 
                 {this.props.onSortOrderChanged ? <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Sort By</InputLabel>
@@ -401,9 +410,8 @@ class DotPlotCanvas extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl> : null}
-            </Paper>
+            </div>
             <div ref={this.divRef}></div>
-
 
         </div>);
 

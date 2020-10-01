@@ -2,7 +2,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {numberFormat} from './formatters';
 
-export function drawColorScheme(context, width, height, colorScale, label, nsteps = 10) {
+export function drawColorScheme(context, width, height, colorScale, label, nsteps = 10, textColor = 'black') {
     let domain = colorScale.domain();
     if (domain[0] === domain[1]) {
         return;
@@ -30,7 +30,7 @@ export function drawColorScheme(context, width, height, colorScale, label, nstep
     if (label > 0) {
 
         context.textBaseline = 'top';
-        context.fillStyle = 'black';
+        context.fillStyle = textColor;
 
         context.textAlign = 'left';
         context.fillText(numberFormat(domain[0]), 0, legendHeight + 2);
@@ -53,6 +53,7 @@ class ColorSchemeLegend extends React.PureComponent {
         const context = node.getContext('2d');
         const height = this.props.height;
         const width = this.props.width;
+        const textColor = this.props.textColor || 'black';
         context
             .clearRect(0, 0, width * backingScale, height * backingScale);
         context.scale(backingScale, backingScale);
@@ -61,8 +62,9 @@ class ColorSchemeLegend extends React.PureComponent {
         if (colorScale == null) {
             return;
         }
+
         context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
-        drawColorScheme(context, width, height, colorScale, this.props.label);
+        drawColorScheme(context, width, height, colorScale, this.props.label, 10, textColor);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 

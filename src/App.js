@@ -120,7 +120,7 @@ class App extends PureComponent {
                         {dataset != null && <EmbedForm key={dataset.id}/>}
                     </Drawer>
 
-                    <main className={classes.content}>
+                    <main style={{backgroundColor: bgcolor, color: color}} className={classes.content}>
                         {loadingApp.loading &&
                         <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
                                                         value={loadingApp.progress}/></h2>
@@ -130,7 +130,6 @@ class App extends PureComponent {
                             <div
                                 role="tabpanel"
                                 hidden={tab !== 'embedding'}
-                                style={{backgroundColor: bgcolor, color: color}}
                             >
                                 <EmbeddingCharts onGallery={this.onGallery}/>
                                 <div ref={this.galleryRef}>

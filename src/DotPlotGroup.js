@@ -67,7 +67,7 @@ export class DotPlotGroup extends React.PureComponent {
 
     render() {
 
-        const {categoryItem, renamedCategories, selectedData} = this.props;
+        const {textColor, categoryItem, renamedCategories, selectedData} = this.props;
         let meanRange = categoryItem.meanRange;
         let fractionRange = categoryItem.fractionRange;
 
@@ -123,6 +123,7 @@ export class DotPlotGroup extends React.PureComponent {
                                legend={selectedData == null}
                                meanRange={meanRange}
                                fractionRange={fractionRange}
+                               textColor={textColor}
                                onSortOrderChanged={this.props.onSortOrderChanged}
                                data={categoryItem}/>
                 {selectedData != null ?
@@ -131,31 +132,35 @@ export class DotPlotGroup extends React.PureComponent {
                                    sizeScale={sizeScale}
                                    subtitle="selection"
                                    legend={true}
+                                   textColor={textColor}
                                    meanRange={meanRange}
                                    fractionRange={fractionRange}
                                    data={selectedData}/> : null}
                 <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
                                    width={186}
+                                   textColor={textColor}
                                    label={true} height={40}
                                    scale={colorScale}/>
                 <SizeLegend style={{display: 'block'}}
                             width={150}
+                            textColor={textColor}
                             label={true} height={40}
                             scale={sizeScale}/>
                 <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
                 <TextField
-                    InputLabelProps={{shrink: true}}  style={{width: 90, marginRight: 4}}
-                           size="small" type="text"
-                           onKeyPress={this.onMinKeyPress}
-                           onChange={this.onMinChange} label={"Min"}
-                           value={this.state.min}/>
-                <TextField  InputLabelProps={{shrink: true}}  style={{width: 90}} size="small"
+                    InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                    size="small" type="text"
+                    onKeyPress={this.onMinKeyPress}
+                    onChange={this.onMinChange} label={"Min"}
+                    value={this.state.min}/>
+                <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
                            type="text"
                            onKeyPress={this.onMaxKeyPress}
                            onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
 
-                <InputLabel style={{marginTop:16}} shrink={true} variant={"standard"}>Custom Percent Expressed</InputLabel>
+                <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Percent
+                    Expressed</InputLabel>
                 <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
                            size="small" type="text"
                            onKeyPress={this.onMinSizeKeyPress}

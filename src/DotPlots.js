@@ -6,11 +6,12 @@ import {DotPlotGroup} from './DotPlotGroup';
 
 class DotPlots extends React.PureComponent {
     render() {
-        const {dotPlotData, categoricalNames, selectedDotPlotData} = this.props;
+        const {chartOptions, dotPlotData, categoricalNames, selectedDotPlotData} = this.props;
 
         if (dotPlotData.length === 0) {
             return <h4>Please enter one or more categorical observations and one or more features.</h4>;
         }
+        const textColor = chartOptions.darkMode ? 'white' : 'black';
         let selectedDotPlotNameToData = {};
         selectedDotPlotData.forEach(categoryItem => {
             selectedDotPlotNameToData[categoryItem.name] = categoryItem;
@@ -20,7 +21,7 @@ class DotPlots extends React.PureComponent {
                 let selectedData = selectedDotPlotNameToData[categoryItem.name];
                 let renamedCategories = categoricalNames[categoryItem.name];
                 return <DotPlotGroup key={categoryItem.name} categoryItem={categoryItem} selectedData={selectedData}
-                                     renamedCategories={renamedCategories}/>;
+                                     renamedCategories={renamedCategories} textColor={textColor}/>;
             })}
         </div>;
     }
@@ -28,6 +29,8 @@ class DotPlots extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        chartOptions: state.chartOptions,
+
         dotPlotData: state.dotPlotData,
         selectedDotPlotData: state.selectedDotPlotData,
         categoricalNames: state.categoricalNames
