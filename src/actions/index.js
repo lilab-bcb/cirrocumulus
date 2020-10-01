@@ -1315,13 +1315,20 @@ function _updateCharts(onError) {
 
         const searchTokens = splitSearchTokens(state.searchTokens);
         if (searchTokens.featureSets.length > 0) {
-            // add to X
+            // add to X, maintaining insertion order
+            const uniqueX = new Set(searchTokens.X );
             searchTokens.featureSets.forEach(featureSet => {
-
                 const groupMarkers = state.dataset.markers[featureSet.group];
-                searchTokens.X = searchTokens.X.concat(groupMarkers[featureSet.text]);
+                const features = groupMarkers[featureSet.text];
+                features.forEach(feature=>{
+                    if(!uniqueX.has(feature)){
+                        searchTokens.X.push(feature);
+                        uniqueX.add(feature);
+                    }
+                });
+
             });
-            searchTokens.X = Array.from(new Set(searchTokens.X));
+
         }
         let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0
@@ -1411,7 +1418,6 @@ function _updateCharts(onError) {
             }
         }
 
-        const featureSummary = state.featureSummary;
         let globalFeatureSummaryX = [];
         let globalFeatureSummaryObsContinuous = [];
         let globalFeatureSummaryDimensions = [];
@@ -1492,6 +1498,19 @@ function _updateCharts(onError) {
                 return natsort(a, b);
             });
 
+            // sort features
+            let featureSortOrder = {};
+            searchTokens.X.forEach((name, index)=>{
+                featureSortOrder[name] = index;
+            });
+            dotPlotData.forEach((categoryItem) => {
+                categoryItem.values.sort((a, b)=>{
+                    a = featureSortOrder[a.name];
+                    b = featureSortOrder[b.name];
+                    return a-b;
+                });
+
+            });
             dispatch(_setDotPlotData(dotPlotData));
         }
 
