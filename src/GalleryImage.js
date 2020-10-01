@@ -27,7 +27,7 @@ class GalleryImage extends React.PureComponent {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
-                {}, chartOptions);
+                categoricalNames, chartOptions);
             const canvas = containerElement.querySelector('canvas');
             this.setState({url: canvas.toDataURL()});
         } else {
@@ -49,7 +49,7 @@ class GalleryImage extends React.PureComponent {
                 drawImage(context, {
                     width: this.props.chartSize * window.devicePixelRatio,
                     height: this.props.chartSize * window.devicePixelRatio
-                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, false, categoricalNames, getSpotRadius(traceInfo, pointSize));
+                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, getSpotRadius(traceInfo, pointSize));
                 this.setState({url: canvas.toDataURL()});
                 canvas = null;
             }

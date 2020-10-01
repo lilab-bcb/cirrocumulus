@@ -18,7 +18,7 @@ export function getSpotRadius(trace, pointSize) {
     return pointSize * (trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
 }
 
-export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, showLabels, categoricalNames, spotRadius) {
+export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, spotRadius) {
     if (traceInfo.tileSource.ready) {
         const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
         if (chartSize == null) {
@@ -28,17 +28,17 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         context.scale(zoom, zoom);
         drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, zoom, traceInfo, showLabels, categoricalNames);
+        drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames);
         context.setTransform(1, 0, 0, 1, 0, 0);
 
     }
 }
 
-function drawLabels(context, zoom, traceInfo, showLabels, categoricalNames) {
-    showLabels = showLabels && traceInfo.isCategorical;
+function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames) {
+    const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
     if (showLabels) {
         context.fillStyle = 'black';
-        const fontSize = Math.ceil(this.props.chartOptions.labelFontSize * 1 / zoom);
+        const fontSize = Math.ceil(chartOptions.labelFontSize * 1 / zoom);
         context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
         context.textAlign = 'center';
         const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
@@ -212,7 +212,7 @@ class ImageChart extends React.PureComponent {
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);
         drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions.showLabels, this.props.categoricalNames);
+        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions, this.props.categoricalNames);
 
     }
 
@@ -445,10 +445,6 @@ class ImageChart extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
-    onGallery = () => {
-        this.props.onGallery();
-    };
-
     onZoomIn = () => {
         this.viewer.viewport.zoomBy(this.viewer.zoomPerClick / 1.0);
         this.viewer.viewport.applyConstraints();
@@ -471,24 +467,24 @@ class ImageChart extends React.PureComponent {
 
 
     render() {
-
         return <React.Fragment>
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
-                    animating={false}
                     editSelection={this.props.chartOptions.editSelection}
+                    showLabels={this.props.chartOptions.showLabels}
+                    onMoreOptions={this.props.onMoreOptions}
+                    onGallery={this.props.onGallery}
+                    animating={false}
                     onZoomIn={this.onZoomIn}
                     onZoomOut={this.onZoomOut}
-                    onMoreOptions={this.onMoreOptions}
-                    showLabels={this.props.chartOptions.showLabels}
                     is3d={false}
                     onHome={this.onHome}
                     onSaveImage={this.onSaveImage}
                     onShowLabels={this.onShowLabels}
                     onDragMode={this.onDragMode}
                     onEditSelection={this.onEditSelection}
-                    onGallery={this.onGallery}>
+                  >
                 </ChartToolbar>
                 <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
