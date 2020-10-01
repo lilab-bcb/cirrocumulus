@@ -245,10 +245,6 @@ class ScatterChartThree extends React.PureComponent {
         saveImage(traceInfo, chartSize, bind(this.drawContext, this), format);
     };
 
-    onMoreOptions = () => {
-        this.props.onMoreOptions();
-    };
-
 
     onEditSelection = () => {
         this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
@@ -261,10 +257,6 @@ class ScatterChartThree extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
-
-    onGallery = () => {
-        this.props.onGallery();
-    };
 
     onShowAxis = () => {
         const axes = this.scatterPlot.scene.getObjectByName('axes');
@@ -484,12 +476,13 @@ class ScatterChartThree extends React.PureComponent {
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
-                    animating={this.props.chartOptions.animating}
                     editSelection={this.props.chartOptions.editSelection}
                     showLabels={this.props.chartOptions.showLabels}
+                    onMoreOptions={this.props.onMoreOptions}
+                    onGallery={this.props.onGallery}
+                    animating={this.props.chartOptions.animating}
                     showFog={this.props.chartOptions.showFog}
                     onShowFog={this.onShowFog}
-                    onMoreOptions={this.onMoreOptions}
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}
@@ -499,7 +492,7 @@ class ScatterChartThree extends React.PureComponent {
                     onEditSelection={this.onEditSelection}
                     onShowAxis={this.onShowAxis}
                     showAxis={this.props.chartOptions.showAxis}
-                    onGallery={this.onGallery}>
+                    >
                 </ChartToolbar>
                 <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
