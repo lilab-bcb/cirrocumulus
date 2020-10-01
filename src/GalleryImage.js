@@ -4,21 +4,20 @@ import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
 import {drawImage, getSpotRadius} from './ImageChart';
-import {getVisualizer} from './ScatterChartThree';
-import {getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
+import {drawLabels, getVisualizer} from './ScatterChartThree';
+import {getCategoryLabelsPositions, getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
 
 
 class GalleryImage extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = {url: null, forceUpdate: false};
+        this.state = {url: null, overlayUrl: null, forceUpdate: false};
         this.canvasRef = React.createRef();
     }
 
 
     draw() {
-        let start = new Date().getTime();
-        const {scatterPlot, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
+        const {scatterPlot, chartSize, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
@@ -29,7 +28,25 @@ class GalleryImage extends React.PureComponent {
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
                 categoricalNames, chartOptions);
             const canvas = containerElement.querySelector('canvas');
-            this.setState({url: canvas.toDataURL()});
+            const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
+            let overlayUrl = null;
+
+            if (showLabels) {
+                const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+                const labelCanvas = document.createElement('canvas');
+                labelCanvas.width = chartSize * window.devicePixelRatio;
+                labelCanvas.height = chartSize * window.devicePixelRatio;
+                const context = labelCanvas.getContext('2d');
+                context.scale(window.devicePixelRatio, window.devicePixelRatio);
+                context.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
+                drawLabels(context, labelsPositions, chartOptions, {
+                    width: chartSize,
+                    height: chartSize
+                }, scatterPlot.camera);
+                overlayUrl = labelCanvas.toDataURL();
+            }
+
+            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl});
         } else {
             if (!traceInfo.tileSource.ready) {
                 this.setState({url: null});
@@ -40,17 +57,15 @@ class GalleryImage extends React.PureComponent {
                 });
             } else {
                 let canvas = document.createElement('canvas');
-                canvas.width = this.props.chartSize * window.devicePixelRatio;
-                canvas.height = this.props.chartSize * window.devicePixelRatio;
-                // canvas.style.width = this.props.chartSize * window.devicePixelRatio + ' px';
-                // canvas.style.height = this.props.chartSize * window.devicePixelRatio + ' px';
+                canvas.width = chartSize * window.devicePixelRatio;
+                canvas.height = chartSize * window.devicePixelRatio;
                 const context = canvas.getContext('2d');
-
+                context.scale(window.devicePixelRatio, window.devicePixelRatio);
                 drawImage(context, {
-                    width: this.props.chartSize * window.devicePixelRatio,
-                    height: this.props.chartSize * window.devicePixelRatio
+                    width: chartSize,
+                    height: chartSize
                 }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, getSpotRadius(traceInfo, pointSize));
-                this.setState({url: canvas.toDataURL()});
+                this.setState({url: canvas.toDataURL(), overlayUrl: null});
                 canvas = null;
             }
         }
@@ -99,7 +114,8 @@ class GalleryImage extends React.PureComponent {
         return (
             <Box borderColor="text.primary" border={1}
                  style={{display: 'inline-block', margin: 2}}>
-                <div style={{position: 'relative'}}>
+                <div style={{position: 'relative', width: this.props.chartSize, height: this.props.chartSize}}>
+
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
                         <Typography color="textPrimary" component={"h4"}
                                     onClick={this.onSelect}
@@ -111,14 +127,26 @@ class GalleryImage extends React.PureComponent {
                                     }}>{name}</Typography>
                     </Tooltip>
 
-                    {this.state.url && <img alt="" src={this.state.url}
-                                            width={this.props.chartSize * window.devicePixelRatio}
-                                            height={this.props.chartSize * window.devicePixelRatio}
-                                            onClick={this.onSelect}
-                                            style={{
-                                                width: this.props.chartSize,
-                                                height: this.props.chartSize
-                                            }}/>}
+                    {this.state.url &&
+                    <div style={{position: 'absolute', left: 0, top: 0}}>
+                        <img alt="" src={this.state.url}
+                             width={this.props.chartSize * window.devicePixelRatio}
+                             height={this.props.chartSize * window.devicePixelRatio}
+                             onClick={this.onSelect}
+                             style={{
+                                 width: this.props.chartSize,
+                                 height: this.props.chartSize
+                             }}/>
+                    </div>}
+                    {this.state.overlayUrl &&
+                    <div style={{position: 'absolute', left: 0, top: 0}}>
+                        <img alt="" src={this.state.overlayUrl}
+                             onClick={this.onSelect}
+                             style={{
+                                 width: this.props.chartSize,
+                                 height: this.props.chartSize
+                             }}/></div>}
+
 
                 </div>
             </Box>

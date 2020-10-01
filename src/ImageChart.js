@@ -30,21 +30,25 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames);
         context.setTransform(1, 0, 0, 1, 0, 0);
-
     }
 }
 
 function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames) {
     const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
     if (showLabels) {
-        context.fillStyle = 'black';
-        const fontSize = Math.ceil(chartOptions.labelFontSize * 1 / zoom);
-        context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
         context.textAlign = 'center';
+        context.textBaseline = "middle";
+        const darkMode = true;
+        const fontSize = Math.ceil(chartOptions.labelFontSize / zoom);
+        context.fillStyle = darkMode ? 'white' : 'black';
+        context.strokeStyle = darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
+        context.lineWidth = chartOptions.labelStrokeWidth;
+        context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
         const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
         for (let i = 0, index = 0, n = labelsPositions.labels.length; i < n; i++, index += 3) {
             let x = labelsPositions.positions[index];
             let y = labelsPositions.positions[index + 1];
+            context.strokeText('' + labelsPositions.labels[i], x, y);
             context.fillText('' + labelsPositions.labels[i], x, y);
         }
     }
@@ -213,7 +217,6 @@ class ImageChart extends React.PureComponent {
         const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);
         drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions, this.props.categoricalNames);
-
     }
 
     createViewer() {

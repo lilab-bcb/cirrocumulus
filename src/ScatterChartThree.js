@@ -24,6 +24,29 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
+export function drawLabels(context, labelsPositions, chartOptions, chartSize, camera) {
+    const pos = new Vector3();
+    context.fillStyle = chartOptions.darkMode ? 'white' : 'black';
+    context.strokeStyle = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
+    context.lineWidth = chartOptions.labelStrokeWidth;
+    context.textAlign = 'center';
+    context.textBaseline = "middle";
+    const width = chartSize.width;
+    const height = chartSize.height;
+    const widthHalf = width / 2;
+    const heightHalf = height / 2;
+    for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
+        pos.x = labelsPositions.positions[k];
+        pos.y = labelsPositions.positions[k + 1];
+        pos.z = labelsPositions.positions[k + 2];
+        pos.project(camera);
+        pos.x = (pos.x * widthHalf) + widthHalf;
+        pos.y = -(pos.y * heightHalf) + heightHalf;
+
+        context.strokeText(labelsPositions.labels[i], pos.x, pos.y);
+        context.fillText(labelsPositions.labels[i], pos.x, pos.y);
+    }
+}
 
 export function getVisualizer(scatterPlot, id) {
     for (let i = 0; i < scatterPlot.visualizers.length; i++) {
@@ -203,25 +226,10 @@ class ScatterChartThree extends React.PureComponent {
             context.fill();
         }
         if (showLabels) {
-            context.fillStyle = chartOptions.darkMode ? 'white' : 'black';
-            context.strokeStyle = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
-            context.strokeWidth = chartOptions.labelStrokeWidth;
-            let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
-            context.font = 'bold ' + this.props.chartOptions.labelFontSize + 'px ' + font;
             const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
-            context.textAlign = 'center';
-            context.textBaseline = "middle";
-            for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
-                pos.x = labelsPositions.positions[k];
-                pos.y = labelsPositions.positions[k + 1];
-                pos.z = labelsPositions.positions[k + 2];
-                pos.project(camera);
-                pos.x = (pos.x * widthHalf) + widthHalf;
-                pos.y = -(pos.y * heightHalf) + heightHalf;
-
-                context.strokeText(labelsPositions.labels[i], pos.x, pos.y);
-                context.fillText(labelsPositions.labels[i], pos.x, pos.y);
-            }
+            let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
+            context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
+            drawLabels(context, labelsPositions, chartOptions, chartSize, camera);
         }
     }
 
@@ -492,7 +500,7 @@ class ScatterChartThree extends React.PureComponent {
                     onEditSelection={this.onEditSelection}
                     onShowAxis={this.onShowAxis}
                     showAxis={this.props.chartOptions.showAxis}
-                    >
+                >
                 </ChartToolbar>
                 <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
                     display: 'inline-block',
