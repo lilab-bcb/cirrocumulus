@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.8.post3 `October 1, 2020`
+    * Show labels in gallery
+    * Updated dark mode
+
 - 1.1.8.post2 `September 29, 2020`
     * Removed active list. Select a feature/category to view details and filter
 
