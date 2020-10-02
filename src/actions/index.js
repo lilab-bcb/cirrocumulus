@@ -1756,11 +1756,6 @@ export function listDatasets() {
         dispatch(_setLoading(true));
         return getState().serverInfo.api.getDatasetsPromise()
             .then(choices => {
-                choices.sort((a, b) => {
-                    a = a.name.toLowerCase();
-                    b = b.name.toLowerCase();
-                    return a < b ? -1 : (a === b ? 0 : -1);
-                });
                 dispatch(_setDatasetChoices(choices));
             })
             .finally(() => {

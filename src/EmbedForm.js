@@ -429,7 +429,7 @@ class EmbedForm extends React.PureComponent {
                     {/*                    isMulti={true}/>*/}
                     <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features"}
                                              options={featureOptions} value={splitTokens.X}
-                                             onChange={this.onFeaturesChange}/>
+                                             onChange={this.onFeaturesChange} />
                 </FormControl>
 
                 <FormControl className={classes.formControl}>
@@ -442,81 +442,15 @@ class EmbedForm extends React.PureComponent {
                     <AutocompleteVirtualized label={"Observations"} options={annotationOptions}
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
                                              onChipClick={this.onFeatureClick}
-                                             onChange={this.onObservationsChange}/>
+                                             onChange={this.onObservationsChange} />
                 </FormControl>
 
                 {featureSetOptions.length > 0 && <FormControl className={classes.formControl}>
 
                     <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
                                              value={splitTokens.featureSets}
-                                             onChange={this.onFeatureSetsChange} groupBy={true}/>
+                                             onChange={this.onFeatureSetsChange} groupBy={true} />
                 </FormControl>}
-
-
-                {/*<Accordion defaultExpanded>*/}
-                {/*    <AccordionPanelSummary*/}
-                {/*        aria-controls="summary-content"*/}
-                {/*        id="summary-header"*/}
-                {/*    >*/}
-                {/*        <div>Active List</div>*/}
-                {/*    </AccordionPanelSummary>*/}
-                {/*    <AccordionPanelDetails>*/}
-                {/*        <div style={{marginLeft: 10, maxHeight: 500, overflow: 'auto'}}>*/}
-                {/*            {filterTraces.map(traceInfo => {*/}
-
-                {/*                    return traceInfo.continuous ?*/}
-                {/*                        <ColorSchemeLegendWrapper*/}
-                {/*                            key={traceInfo.name}*/}
-                {/*                            handleDomain={this.props.handleDomain}*/}
-                {/*                            selected={traceInfo.name === primaryTraceName}*/}
-                {/*                            width={140}*/}
-                {/*                            showColorScheme={false}*/}
-                {/*                            height={30}*/}
-                {/*                            style={{*/}
-                {/*                                paddingBottom: 3,*/}
-                {/*                                paddingTop: 3,*/}
-                {/*                                display: 'block',*/}
-                {/*                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'*/}
-                {/*                            }}*/}
-                {/*                            handleUpdate={handleMeasureFilterUpdated}*/}
-                {/*                            datasetFilter={datasetFilter}*/}
-                {/*                            scale={traceInfo.colorScale}*/}
-                {/*                            featureSummary={featureSummary}*/}
-                {/*                            globalFeatureSummary={globalFeatureSummary}*/}
-                {/*                            nObs={shape[0]}*/}
-                {/*                            nObsSelected={nObsSelected}*/}
-                {/*                            maxHeight={null}*/}
-                {/*                            name={traceInfo.name}*/}
-                {/*                        /> :*/}
-                {/*                        <CategoricalLegend*/}
-                {/*                            selected={traceInfo.name === primaryTraceName}*/}
-                {/*                            key={traceInfo.name}*/}
-                {/*                            style={{*/}
-                {/*                                paddingBottom: 3,*/}
-                {/*                                paddingTop: 3,*/}
-                {/*                                display: 'block',*/}
-                {/*                                borderBottom: '1px solid rgba(0, 0, 0, 0.12)'*/}
-                {/*                            }}*/}
-                {/*                            datasetFilter={datasetFilter}*/}
-                {/*                            handleClick={handleDimensionFilterUpdated}*/}
-                {/*                            handleColorChange={handleColorChange}*/}
-                {/*                            handleNameChange={handleNameChange}*/}
-                {/*                            categoricalNames={categoricalNames}*/}
-                {/*                            name={traceInfo.name}*/}
-                {/*                            scale={traceInfo.colorScale}*/}
-                {/*                            maxHeight={300}*/}
-                {/*                            clickEnabled={true}*/}
-                {/*                            nObs={shape[0]}*/}
-                {/*                            nObsSelected={nObsSelected}*/}
-                {/*                            globalFeatureSummary={globalFeatureSummary}*/}
-                {/*                            featureSummary={featureSummary}/>;*/}
-                {/*                }*/}
-                {/*            )}*/}
-
-
-                {/*        </div>*/}
-                {/*    </AccordionPanelDetails>*/}
-                {/*</Accordion>*/}
 
                 <Accordion defaultExpanded>
                     <AccordionPanelSummary

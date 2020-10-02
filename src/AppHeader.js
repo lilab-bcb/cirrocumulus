@@ -2,11 +2,11 @@ import {Divider, IconButton, Menu, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
 import {withStyles} from '@material-ui/core/styles';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Toolbar from '@material-ui/core/Toolbar';
+import Typography from '@material-ui/core/Typography';
 import AccountCircle from '@material-ui/icons/AccountCircle';
 import Brightness2Icon from '@material-ui/icons/Brightness3';
 import HelpIcon from '@material-ui/icons/Help';
@@ -28,6 +28,7 @@ import {
     setTab,
 } from './actions';
 import {drawerWidth} from './App';
+import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
 import {
     DEFAULT_DARK_MODE,
@@ -219,7 +220,7 @@ class AppHeader extends React.PureComponent {
         return json;
     };
 
-    handleDataset = (event) => {
+    handleDataset = (id) => {
         if (this.props.dataset != null) {
             const savedDatasetState = this.props.savedDatasetState;
             const link = this.getLinkJson();
@@ -227,7 +228,7 @@ class AppHeader extends React.PureComponent {
             savedDatasetState[this.props.dataset.id] = link;
             this.props.handleSavedDatasetState(savedDatasetState);
         }
-        this.props.handleDataset(event.target.value);
+        this.props.handleDataset(id);
     };
 
     copyLink = (event) => {
@@ -300,8 +301,6 @@ class AppHeader extends React.PureComponent {
         } = this.props;
         const shape = dataset != null && dataset.shape != null ? dataset.shape : [0, 0];
         const hasSelection = dataset != null && shape[0] > 0 && !isNaN(selection.count);
-        const showNumberOfCells = !hasSelection && dataset != null && !(selection.count > 0) && shape[0] > 0 && (selection.count !== shape[0]);
-
 
         const showNewDataset = user != null && user.importer;
         const showEditDeleteDataset = dataset !== null && dataset.owner;
@@ -312,30 +311,28 @@ class AppHeader extends React.PureComponent {
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
 
+                    {/*{datasetChoices.length > 0 && <Select*/}
+                    {/*    style={{marginRight: 6}}*/}
+                    {/*    disableUnderline={true}*/}
+                    {/*    displayEmpty={true}*/}
+                    {/*    value={dataset == null ? '' : dataset.id}*/}
+                    {/*    onChange={this.handleDataset}*/}
+                    {/*    inputProps={{*/}
+                    {/*        name: 'dataset',*/}
+                    {/*        id: 'dataset-id',*/}
+                    {/*    }}*/}
+                    {/*>*/}
+                    {/*    <MenuItem key="" value="" disabled>*/}
+                    {/*        Choose a dataset*/}
+                    {/*    </MenuItem>*/}
+                    {/*    {datasetChoices.map(dataset => <MenuItem*/}
+                    {/*        key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}*/}
+                    {/*</Select>}*/}
 
-                    {datasetChoices.length > 0 && <Select
-                        style={{marginRight: 6}}
-                        disableUnderline={true}
-                        displayEmpty={true}
-                        value={dataset == null ? '' : dataset.id}
-                        onChange={this.handleDataset}
-                        inputProps={{
-                            name: 'dataset',
-                            id: 'dataset-id',
-                        }}
-                    >
-                        <MenuItem key="" value="" disabled>
-                            Choose a dataset
-                        </MenuItem>
-                        {datasetChoices.map(dataset => <MenuItem
-                            key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}
-                    </Select>}
-
-                    <div className={"cirro-condensed"} style={{display: 'inline-block'}}>
-                        {hasSelection && intFormat(selection.count)}
-                        {hasSelection && ' / ' + intFormat(shape[0]) + ' cells'}
-                        {showNumberOfCells && intFormat(shape[0]) + ' cells'}
-                    </div>
+                    {dataset != null &&
+                    <Typography component={"h3"}><b>{dataset.name}</b>
+                        <small> {hasSelection && intFormat(selection.count) + '/'}{intFormat(shape[0])} cells</small></Typography>
+                    }
 
                     {dataset != null && <Tabs
                         value={tab}
@@ -357,7 +354,7 @@ class AppHeader extends React.PureComponent {
 
                     </div>
                     <div style={{marginLeft: 'auto'}}>
-
+                        <DatasetSelector onChange={this.handleDataset}/>
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleMoreMenuOpen}>
