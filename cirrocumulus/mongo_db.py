@@ -79,7 +79,7 @@ class MongoDb:
         else:
             query = dict(readers={'$in': [email, domain]})
         for doc in collection.find(query):
-            results.append({'id': str(doc['_id']), 'name': doc['name'],
+            results.append({'id': str(doc['_id']), 'name': doc['name'], 'description': doc.get('description'),
                             'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url']})
         return results
 
@@ -134,13 +134,14 @@ class MongoDb:
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description):
         collection = self.db.datasets
         readers = set(readers)
         if email in readers:
             readers.remove(email)
         readers.add(email)
         update_dict = {'name': dataset_name,
+                       'description': description,
                        'readers': list(readers),
                        'url': url}
         if dataset_id is None:  # new dataset

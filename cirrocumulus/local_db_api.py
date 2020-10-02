@@ -3,7 +3,7 @@ import os
 
 
 def create_dataset_meta(path):
-    result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0]}
+    result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0], 'description': ''}
     if os.path.basename(path).endswith('.json'):
         with open(path, 'rt') as f:
             result.update(json.load(f))

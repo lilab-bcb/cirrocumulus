@@ -226,16 +226,17 @@ def handle_dataset():
     if request.method == 'PUT' or request.method == 'POST':
         content = request.get_json(force=True, cache=False)
         dataset_id = content.get('id', '')
-        if request.method == 'POST' and dataset_id == '':
+        if request.method == 'PUT' and dataset_id == '':
             return 'Please supply an id', 400
         readers = set(content.get('readers', []))
         dataset_name = content.get('name', '')
+        description = content.get('description', '')
         url = content.get('url', '')  # e.g. gs://foo/a/b/
         if dataset_name == '' or url == '':
             return 'Must supply dataset name and URL', 400
         dataset_id = database_api.upsert_dataset(email=email,
             dataset_id=dataset_id if request.method == 'PUT' else None,
-            dataset_name=dataset_name, url=url, readers=readers)
+            dataset_name=dataset_name, url=url, readers=readers, description=description)
         return to_json({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
