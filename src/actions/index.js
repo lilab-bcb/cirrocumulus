@@ -624,13 +624,13 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.fancy? getState().serverInfo.api.setCategoryNamePromise({
-                c: payload.name,
-                o: payload.oldValue,
-                n: payload.value,
-                id: dataset_id
-            }):Promise.resolve();
-       p.then(() => dispatch(_handleCategoricalNameChange(payload)));
+        const p = getState().serverInfo.fancy ? getState().serverInfo.api.setCategoryNamePromise({
+            c: payload.name,
+            o: payload.oldValue,
+            n: payload.value,
+            id: dataset_id
+        }) : Promise.resolve();
+        p.then(() => dispatch(_handleCategoricalNameChange(payload)));
     };
 }
 
@@ -874,13 +874,15 @@ export function getIdToken() {
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
-        const readers = payload.readers;
+
         const name = payload.name;
         const url = payload.url;
 
-        if (name == '' || url === '') {
+        if (name === '' || url === '') {
             return;
         }
+        const readers = payload.readers;
+        const description = payload.description;
         // let bucket = url.substring('gs://'.length);
         // let slash = bucket.indexOf('/');
         // let object = encodeURIComponent(bucket.substring(slash + 1));
@@ -913,12 +915,18 @@ export function saveDataset(payload) {
             // if (!permissionsResponse.ok) {
             //     dispatch(setMessage('Unable to set dataset read permissions. Please ensure that you are the dataset owner or manually add ' + serverEmail + ' as a reader.'));
             // }
-        }).then(() => getState().serverInfo.api.upsertDatasetPromise(payload.dataset ? payload.dataset.id : null, url, name, readers)).then(importDatasetResult => {
+        }).then(() => getState().serverInfo.api.upsertDatasetPromise(payload.dataset ? payload.dataset.id : null,
+            {name: name, readers: readers, description: description, url: url})).then(importDatasetResult => {
             if (isEdit) {
-                dispatch(updateDataset({name: name, id: importDatasetResult.id, owner: true}));
+                dispatch(updateDataset({
+                    name: name,
+                    id: importDatasetResult.id,
+                    description: description,
+                    owner: true
+                }));
                 dispatch(setMessage('Dataset updated'));
             } else {
-                dispatch(_addDataset({name: name, id: importDatasetResult.id, owner: true}));
+                dispatch(_addDataset({name: name, id: importDatasetResult.id, description: description, owner: true}));
                 if (serverInfo.email) {
                     dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverInfo.email + ' is a "Storage Object Viewer"' : 'Dataset created'));
                 }
@@ -1115,22 +1123,19 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             return Promise.reject('Unable to find dataset');
         }
         // force re-render selected dataset dropdown
-        let dataset = {
-            owner: selectedChoice.owner,
-            name: selectedChoice.name,
-            id: id,
-            url: selectedChoice.url,
-            embeddings: [],
-            features: [],
-            obs: [],
-            obsCat: []
-        };
+        let dataset = Object.assign({}, selectedChoice);
+        dataset.id = id;
+        dataset.embeddings = [];
+        dataset.features = [];
+        dataset.obs = [];
+        dataset.obsCat = [];
         dispatch(_setDataset(dataset));
         let categoryNameResults;
         let datasetFilters = [];
         let newDataset;
 
         function onPromisesComplete() {
+            newDataset = Object.assign(dataset, newDataset);
             if (newDataset.embeddings) {
                 for (let i = 0; i < newDataset.embeddings.length; i++) {
                     if (newDataset.embeddings[i].nbins != null) {
@@ -1145,8 +1150,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                 }
             }
             newDataset.api = dataset.api;
-            newDataset.owner = selectedChoice.owner;
-            newDataset.name = selectedChoice.name;
             newDataset.features = newDataset.var;
             newDataset.features.sort((a, b) => {
                 a = a.toLowerCase();
@@ -1316,12 +1319,12 @@ function _updateCharts(onError) {
         const searchTokens = splitSearchTokens(state.searchTokens);
         if (searchTokens.featureSets.length > 0) {
             // add to X, maintaining insertion order
-            const uniqueX = new Set(searchTokens.X );
+            const uniqueX = new Set(searchTokens.X);
             searchTokens.featureSets.forEach(featureSet => {
                 const groupMarkers = state.dataset.markers[featureSet.group];
                 const features = groupMarkers[featureSet.text];
-                features.forEach(feature=>{
-                    if(!uniqueX.has(feature)){
+                features.forEach(feature => {
+                    if (!uniqueX.has(feature)) {
                         searchTokens.X.push(feature);
                         uniqueX.add(feature);
                     }
@@ -1500,14 +1503,14 @@ function _updateCharts(onError) {
 
             // sort features
             let featureSortOrder = {};
-            searchTokens.X.forEach((name, index)=>{
+            searchTokens.X.forEach((name, index) => {
                 featureSortOrder[name] = index;
             });
             dotPlotData.forEach((categoryItem) => {
-                categoryItem.values.sort((a, b)=>{
+                categoryItem.values.sort((a, b) => {
                     a = featureSortOrder[a.name];
                     b = featureSortOrder[b.name];
-                    return a-b;
+                    return a - b;
                 });
 
             });

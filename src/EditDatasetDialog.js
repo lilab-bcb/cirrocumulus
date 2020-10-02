@@ -29,7 +29,8 @@ class EditDatasetDialog extends React.PureComponent {
         super(props);
         this.state = {
             url: '',
-            datasetName: this.props.dataset != null ? this.props.dataset.name : '',
+            name: this.props.dataset != null ? this.props.dataset.name : '',
+            description: this.props.dataset != null ? (this.props.dataset.description != null ? this.props.dataset.description : '') : '',
             readers: '',
             loading: this.props.dataset != null,
         };
@@ -37,6 +38,7 @@ class EditDatasetDialog extends React.PureComponent {
 
 
     componentDidMount() {
+
         if (this.props.dataset != null) {
             this.props.serverInfo.api.getDatasetPromise(this.props.dataset.id).then(datasetInfo => {
                 let readers = datasetInfo.readers;
@@ -45,7 +47,8 @@ class EditDatasetDialog extends React.PureComponent {
                     readers.splice(myIndex, 1);
                 }
                 this.setState({
-                    datasetName: datasetInfo.name,
+                    name: datasetInfo.name,
+                    description: this.props.dataset.description != null ? this.props.dataset.description : '',
                     loading: false,
                     url: datasetInfo.url,
                     readers: readers.join(', '),
@@ -63,14 +66,21 @@ class EditDatasetDialog extends React.PureComponent {
     };
 
     handleSave = () => {
-        let datasetName = this.state.datasetName.trim();
+        let name = this.state.name.trim();
         let url = this.state.url.trim();
-        if (datasetName === '' || url === '') {
+        if (name === '' || url === '') {
             return;
         }
+        let description = this.state.description.trim();
         this.setState({loading: true});
         let readers = getUniqueArray(this.state.readers);
-        this.props.handleSave({dataset: this.props.dataset, name: datasetName, url: url, readers: readers});
+        this.props.handleSave({
+            dataset: this.props.dataset,
+            name: name,
+            description: description,
+            url: url,
+            readers: readers
+        });
     };
 
     onEmailChanged = (event) => {
@@ -79,8 +89,11 @@ class EditDatasetDialog extends React.PureComponent {
     onUrlChanged = (event) => {
         this.setState({url: event.target.value});
     };
-    onDatasetNameChanged = (event) => {
-        this.setState({datasetName: event.target.value});
+    onNameChanged = (event) => {
+        this.setState({name: event.target.value});
+    };
+    onDescriptionChanged = (event) => {
+        this.setState({description: event.target.value});
     };
 
     render() {
@@ -100,11 +113,21 @@ class EditDatasetDialog extends React.PureComponent {
                     <TextField
                         disabled={this.state.loading}
                         required={true}
-                        value={this.state.datasetName}
-                        onChange={this.onDatasetNameChanged}
+                        value={this.state.name}
+                        onChange={this.onNameChanged}
                         margin="dense"
                         label="Dataset name"
                         fullWidth
+                    />
+                    <TextField
+                        disabled={this.state.loading}
+                        required={false}
+                        value={this.state.description}
+                        onChange={this.onDescriptionChanged}
+                        margin="dense"
+                        label="Dataset Description"
+                        fullWidth
+                        multiline={true}
                     />
 
                     {!this.state.loading &&

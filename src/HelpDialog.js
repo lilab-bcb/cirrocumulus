@@ -44,7 +44,7 @@ class HelpDialog extends React.PureComponent {
                     Zoom: Mouse wheel.<br/>
                     <Divider/>
                     <Typography variant="h6">Gallery</Typography>
-                    Drag and drop to reorder the plots. Click the plot make it the primary view.
+                    Drag chart to reorder. Click plot to set primary view.
                     <Divider/>
                     <Typography variant="h6">Dot Plot</Typography>
                     Enter one or more categorical observations and one or more features.

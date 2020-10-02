@@ -31,17 +31,14 @@ export class RestServerApi {
             });
     }
 
-    upsertDatasetPromise(datasetId, url, name, readers) {
+    upsertDatasetPromise(datasetId, dataset) {
         let isEdit = datasetId != null;
+        if (datasetId != null) {
+            dataset.id = datasetId;
+        }
         return fetch(API + '/dataset',
             {
-                body: JSON.stringify(
-                    {
-                        id: datasetId,
-                        url: url,
-                        name: name,
-                        readers: readers
-                    }),
+                body: JSON.stringify(dataset),
                 method: isEdit ? 'PUT' : 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(importDatasetResponse => importDatasetResponse.json());

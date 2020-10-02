@@ -140,6 +140,47 @@ function dataset(state = null, action) {
         case SET_DATASET:
             document.title = action.payload == null ? 'Cirro' : action.payload.name + ' - Cirro';
             return action.payload;
+        case UPDATE_DATASET:
+            if (action.payload.id === state.id) { // update name, description, url
+                document.title = action.payload.name + ' - Cirro';
+                return Object.assign(state, action.payload);
+            }
+        default:
+            return state;
+    }
+}
+
+function datasetChoices(state = [], action) {
+    switch (action.type) {
+        case SET_DATASET_CHOICES:
+            return action.payload;
+        case SET_EMAIL:
+            if (action.payload == null) {
+                return [];
+            }
+            return state;
+        case ADD_DATASET:
+            state = state.concat([action.payload]);
+            state.sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+            return state;
+        case UPDATE_DATASET:
+        case DELETE_DATASET:
+            let index = -1;
+            for (let i = 0; i < state.length; i++) {
+                if (state[i].id === action.payload.id) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index !== -1) {
+                if (action.type === UPDATE_DATASET) {
+                    state[index] = action.payload;
+                } else {
+                    state.splice(index, 1);
+                }
+                return state.slice();
+            }
+            return state;
         default:
             return state;
     }
@@ -365,41 +406,6 @@ function loadingApp(state = {loading: false, progress: 0}, action) {
     }
 }
 
-function datasetChoices(state = [], action) {
-    switch (action.type) {
-        case SET_DATASET_CHOICES:
-            return action.payload;
-        case SET_EMAIL:
-            if (action.payload == null) {
-                return [];
-            }
-            return state;
-        case ADD_DATASET:
-            state = state.concat([action.payload]);
-            state.sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
-            return state;
-        case UPDATE_DATASET:
-        case DELETE_DATASET:
-            let index = -1;
-            for (let i = 0; i < state.length; i++) {
-                if (state[i].id === action.payload.id) {
-                    index = i;
-                    break;
-                }
-            }
-            if (index !== -1) {
-                if (action.type === UPDATE_DATASET) {
-                    state[index] = action.payload;
-                } else {
-                    state.splice(index, 1);
-                }
-                return state.slice();
-            }
-            return state;
-        default:
-            return state;
-    }
-}
 
 function tab(state = 'embedding', action) {
     switch (action.type) {
