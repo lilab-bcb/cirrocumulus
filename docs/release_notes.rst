@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.8.post4 `October 2, 2020`
+    * Added dataset descriptions
+
 - 1.1.8.post3 `October 1, 2020`
     * Show labels in gallery
     * Updated dark mode
