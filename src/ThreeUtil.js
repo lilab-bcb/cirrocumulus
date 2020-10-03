@@ -207,19 +207,13 @@ export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions) {
     const colors = traceInfo.colors;
     let positions = traceInfo.positions;
-    const is3d = traceInfo.z != null;
+
     const npoints = traceInfo.npoints;
     const isSelectionEmpty = selection.size === 0;
-    const updateZ = !isSelectionEmpty && !is3d;
-    if (updateZ) {
-        positions = positions.slice();
-    }
+
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
         colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
-        if (updateZ && isSelected) {
-            positions[k] = 1;
-        }
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
