@@ -4,7 +4,7 @@ import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
-import {ByteRangeDataset} from '../ByteRangeDataset';
+import {JsonDataset} from '../JsonDataset';
 import CustomError from '../CustomError';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
@@ -24,7 +24,7 @@ import {
 } from '../util';
 
 // export const API = 'http://localhost:5000/api';
-export const API = '/api';
+export const API = 'api';
 
 const authScopes = [
     'email',
@@ -1189,7 +1189,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         let url = dataset.url || '';
         const isByteRangeDataset = url.startsWith("http") || url.startsWith('//');
         if (isByteRangeDataset) {
-            dataset.api = new ByteRangeDataset();
+            dataset.api = new JsonDataset();
         } else {
             dataset.api = new RestDataset();
         }
