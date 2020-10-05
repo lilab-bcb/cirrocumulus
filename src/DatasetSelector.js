@@ -36,6 +36,9 @@ export class DatasetSelector extends React.PureComponent {
         const {anchorEl} = this.state;
         const selectedId = dataset != null ? dataset.id : null;
         const open = Boolean(this.state.anchorEl);
+        if (datasetChoices.length <= 1 && dataset != null) {
+            return null;
+        }
         return (
             <React.Fragment>
                 <Button variant="contained" onClick={this.handleClick}
