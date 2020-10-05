@@ -55,8 +55,8 @@ export class DatasetSelector extends React.PureComponent {
                 >
                     <List style={{maxWidth: 500}} dense disablePadding component="nav" aria-label="datasets">
                         {datasetChoices.map(choice => {
-                            return <ListItem selected={choice.id === selectedId} key={choice.id} button
-                                             onClick={(e) => this.handleListItemClick(choice.id)}>
+                            return <ListItem alignItems="flex-start" selected={choice.id === selectedId} key={choice.id}
+                                             button onClick={(e) => this.handleListItemClick(choice.id)}>
                                 <ListItemText
                                     primary={choice.name} secondary={choice.description}/>
                             </ListItem>;
