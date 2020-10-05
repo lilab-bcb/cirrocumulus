@@ -5,16 +5,17 @@ import logging
 import os
 
 import anndata
-import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
+from natsort import natsorted
+from pandas import CategoricalDtype
+
+import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -154,14 +155,14 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 class PrepareData:
 
     def __init__(self, input_path, backed, output, X_range=None, dimensions=None, groups=[], markers=[],
-                 spatial_directory=None):
+                 spatial_directory=None, output_format='parquet'):
         self.input_path = input_path
         self.groups = groups
         self.markers = markers
         self.stats = False
         self.nbins = None
         self.bin_agg_function = None
-        self.output_format = 'parquet'
+        self.output_format = output_format
         # if basis_list is None or len(basis_list) == 0:
         #     basis_list = list(self.adata.obsm_keys())
         self.basis_list_to_precompute = None
@@ -256,6 +257,8 @@ class PrepareData:
             elif self.output_format == 'json':
                 from cirrocumulus.json_io import save_adata_json
                 save_adata_json(self.adata, schema, self.base_output_dir)
+            else:
+                raise ValueError("Unknown format")
 
         # if self.stats:
         #     self.summary_stats()
@@ -376,7 +379,7 @@ def main(argsv):
         action='append')
     parser.add_argument('--groups', help='List of groups to compute markers for (e.g. louvain)', action='append')
     parser.add_argument('--spatial', help=SPATIAL_HELP)
-
+    # parser.add_argument('--output_format', help='Output file format', choices=['json', 'parquet'], default='parquet')
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
     # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
     # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
@@ -389,6 +392,7 @@ def main(argsv):
     input_X_range = None
     out = args.out
     input_dataset = args.dataset
+    output_format = 'parquet'  # args.output_format
     if out is None:
         out = os.path.basename(input_dataset)
         out = out[0:out.rindex('.')]
@@ -417,7 +421,8 @@ def main(argsv):
     #     input_X_range[1] = int(input_X_range[1])
 
     prepare_data = PrepareData(input_path=input_dataset, backed=args.backed, output=out,
-        dimensions=args.groups, groups=args.groups, markers=args.markers, spatial_directory=args.spatial)
+        dimensions=args.groups, groups=args.groups, markers=args.markers, spatial_directory=args.spatial,
+        output_format=output_format)
     prepare_data.execute()
     if loom_file is not None:
         os.remove(loom_file)
