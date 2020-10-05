@@ -1273,11 +1273,10 @@ function handleSelectionResult(selectionResult, clear) {
             }
 
             // userPoints are in chart space, points are in server space, count is total number of cells selected
-
             if (selectionResult.summary) {
                 // merge or clear selection
                 let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
-                dispatch(setFeatureSummary(selectionSummary));
+                dispatch(setFeatureSummary(Object.assign({}, selectionSummary)));
             }
             if (selectionResult.dotplot) {
                 let selectedDotPlotData = state.selectedDotPlotData;
@@ -1303,6 +1302,7 @@ function handleSelectionResult(selectionResult, clear) {
                 });
                 dispatch(_setSelectedDotPlotData(selectedDotPlotData.slice()));
             }
+
         }
     };
 
