@@ -93,46 +93,55 @@ function getStats(dimensions, obsMeasures, varMeasures) {
     return results;
 }
 
-export class ByteRangeDataset {
+export class JsonDataset {
 
     init(id, url) {
         this.id = id;
-        this.key2bytes = null; // maps key to byte range
         this.key2vector = {}; // maps key to vector
-        this.url = url;
+
         this.schema = null;
+        if (!url.endsWith('.json')) {
+            url = url + 'schema.json';
+        }
+        this.url = url;
+        this.baseUrl = this.url.substring(0, this.url.lastIndexOf('/') + 1);
+        // return new Promise((resolve, reject) => {
+        //     fetch(url + '.idx.json').then(r => r.json()).then(result => {
+        //         this.key2bytes = result.index;
+        //     }).then(() => {
+        //         fetch(url, this.getByteRange('schema')).then(response => {
+        //             return response.json();
+        //         }).then(result => {
+        //             this.schema = result["schema"];
+        //             resolve();
+        //         });
+        //     });
+        // });
         return new Promise((resolve, reject) => {
-            fetch(url + '.idx.json').then(r => r.json()).then(result => {
-                this.key2bytes = result.index;
-            }).then(() => {
-                fetch(url, this.getByteRange('schema')).then(response => {
-                    return response.json();
-                }).then(result => {
-                    this.schema = result["schema"];
-                    resolve();
-                });
+            fetch(url).then(r => r.json()).then(result => {
+                this.schema = result;
+                resolve();
             });
         });
     }
 
-    getByteRange(key) {
-        let range = this.key2bytes[key];
-        if (!range) {
-            throw key + ' not found';
-        }
-        return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
-    }
+    // getByteRange(key) {
+    //     let range = this.key2bytes[key];
+    //     if (!range) {
+    //         throw key + ' not found';
+    //     }
+    //     return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
+    // }
 
+    _fetch(key) {
+        return fetch(this.baseUrl + key + '.json').then(r => r.json());
+    }
 
     fetchData(keys) {
         let promises = [];
         keys.forEach(key => {
-
             if (this.key2vector[key] == null && key !== '__count') {
-                let p = fetch(this.url, this.getByteRange(key)).then(response => {
-                    return response.json();
-                }).then(result => {
-                    const data = result[key];
+                let p = this._fetch(key).then(data => {
                     if (isArray(data)) {
                         this.key2vector[key] = new Vector(key, data);
                     } else {
@@ -275,6 +284,7 @@ export class ByteRangeDataset {
                     if (dimensions.length > 0 && measures.length > 0) {
                         results.dotplot = groupedStats(this.getVectors(dimensions), this.getVectors(measures));
                     }
+
                 }
 
                 if (q.selection) {
@@ -315,7 +325,7 @@ export class ByteRangeDataset {
     }
 
     getFileUrl(file) {
-        return this.url.substring(0, this.url.lastIndexOf('/') + 1) + file;
+        return this.baseUrl + file;
     }
 
     getVectors(keys, indices = null) {

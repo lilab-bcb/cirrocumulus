@@ -1,5 +1,5 @@
 import {isObject} from 'lodash';
-import {getBasis} from './ByteRangeDataset';
+import {getBasis} from './JsonDataset';
 import {getIndices} from './VectorUtil';
 
 function combine(a, b, op) {
