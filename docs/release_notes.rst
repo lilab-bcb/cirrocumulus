@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.8.post5 `October 5, 2020`
+    * Updated dataset chooser
+
 - 1.1.8.post4 `October 2, 2020`
     * Added dataset descriptions
 
