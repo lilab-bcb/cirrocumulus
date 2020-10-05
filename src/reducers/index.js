@@ -166,7 +166,7 @@ function datasetChoices(state = [], action) {
             }
             return state;
         case ADD_DATASET:
-            state = state.push(action.payload);
+            state.push(action.payload);
             state.sort((a, b) => {
                 a = a.name.toLowerCase();
                 b = b.name.toLowerCase();
