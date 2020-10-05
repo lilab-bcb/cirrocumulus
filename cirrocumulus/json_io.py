@@ -63,16 +63,17 @@ def save_adata_json(adata, schema, output_path):
     logger.info('Save adata')
     compress = False
     index = {}  # key to byte start-end
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
-    data_file = os.path.join(output_path, 'data.json')
-    with open(data_file, 'wb') as f:
+
+    if not output_path.lower().endswith('.jsonl'):
+        output_path += '.jsonl'
+
+    with open(output_path, 'wb') as f:
         save_adata_X(adata, f, index, compress)
         save_data_obs(adata, f, index, compress)
         save_data_obsm(adata, f, index, compress)
         write_json(schema, f, 'schema', index)
 
-    with open(os.path.join(output_path, 'data.json.idx.json'), 'wt') as f:
+    with open(output_path + '.idx.json', 'wt') as f:
         # json.dump(result, f)
 
         result = dict(index=index, file=os.path.basename(data_file))
