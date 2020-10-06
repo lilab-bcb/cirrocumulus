@@ -1,4 +1,5 @@
 import {Typography} from '@material-ui/core';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {bind, uniqueId} from 'lodash';
 import OpenSeadragon from 'openseadragon';
@@ -132,6 +133,7 @@ class ImageChart extends React.PureComponent {
         super(props);
         this.id = uniqueId('cirro-image');
         this.tooltipElementRef = React.createRef();
+        this.state = {loading: false};
     }
 
     findPointsInPolygon(points) {
@@ -228,11 +230,14 @@ class ImageChart extends React.PureComponent {
         //     buildPyramid: true,
         //     crossOriginPolicy: "Anonymous"
         // });
-        // this.props.traceInfo.tileSource = tileSource;
-        // tileSource.addOnceHandler('ready', (src) => {
-        //     let img = tileSource._image;
-        //     console.log(src)
-        // });
+        if (!this.props.traceInfo.tileSource.ready) {
+            this.setState({loading: true});
+            this.props.traceInfo.tileSource.addOnceHandler('ready', (src) => {
+                this.setState({loading: false});
+            });
+        } else {
+            this.setState({loading: false});
+        }
         this.viewer = new OpenSeadragon({
             id: this.id,
             gestureSettingsMouse: {dblClickToZoom: true, clickToZoom: false},
@@ -503,6 +508,7 @@ class ImageChart extends React.PureComponent {
             }}
                  id={this.id}>
             </div>
+            {this.state.loading && <CircularProgress style={{position:'absolute', left:this.props.chartSize.width/2, top:this.props.chartSize.height/2}} size={20}/>}
         </React.Fragment>;
     }
 }

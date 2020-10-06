@@ -1,5 +1,6 @@
 import {Tooltip} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
@@ -11,7 +12,7 @@ import {getCategoryLabelsPositions, getScaleFactor, POINT_VISUALIZER_ID, updateS
 class GalleryImage extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = {url: null, overlayUrl: null, forceUpdate: false};
+        this.state = {url: null, overlayUrl: null, loading: false};
         this.canvasRef = React.createRef();
     }
 
@@ -46,14 +47,12 @@ class GalleryImage extends React.PureComponent {
                 overlayUrl = labelCanvas.toDataURL();
             }
 
-            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl});
+            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl, loading: false});
         } else {
             if (!traceInfo.tileSource.ready) {
-                this.setState({url: null});
+                this.setState({url: null, overlayUrl: null, loading: true});
                 traceInfo.tileSource.addOnceHandler('ready', () => {
-                    this.setState((state, props) => {
-                        return {forceUpdate: !state.forceUpdate};
-                    });
+                    this.setState({loading: false});
                 });
             } else {
                 let canvas = document.createElement('canvas');
@@ -65,7 +64,7 @@ class GalleryImage extends React.PureComponent {
                     width: chartSize,
                     height: chartSize
                 }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, getSpotRadius(traceInfo, pointSize));
-                this.setState({url: canvas.toDataURL(), overlayUrl: null});
+                this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false});
                 canvas = null;
             }
         }
@@ -127,6 +126,21 @@ class GalleryImage extends React.PureComponent {
                                     }}>{name}</Typography>
                     </Tooltip>
 
+                    {this.state.url &&
+                    <div style={{position: 'absolute', left: 0, top: 0}}>
+                        <img alt="" src={this.state.url}
+                             width={this.props.chartSize * window.devicePixelRatio}
+                             height={this.props.chartSize * window.devicePixelRatio}
+                             onClick={this.onSelect}
+                             style={{
+                                 width: this.props.chartSize,
+                                 height: this.props.chartSize
+                             }}/>
+                    </div>}
+
+                    {this.state.loading && <CircularProgress
+                        style={{position: 'absolute', left: this.props.chartSize / 2, top: this.props.chartSize / 2}}
+                        size={20}/>}
                     {this.state.url &&
                     <div style={{position: 'absolute', left: 0, top: 0}}>
                         <img alt="" src={this.state.url}
