@@ -234,7 +234,7 @@ class AppHeader extends React.PureComponent {
     copyLink = (event) => {
 
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        linkText += '?q=' + JSON.stringify(this.getLinkJson());
+        linkText += '?q=' + encodeURIComponent(JSON.stringify(this.getLinkJson()));
         const container = document.activeElement;
         const fakeElem = document.createElement('textarea');
         const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
