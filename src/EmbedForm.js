@@ -209,6 +209,10 @@ class EmbedForm extends React.PureComponent {
         }
     };
 
+    onFilterChipClicked = (event) => {
+        this.onFeatureClick(event.target.innerText);
+    };
+
     onMarkerOpacityKeyPress = (event) => {
         if (event.key === 'Enter') {
             let opacity = parseFloat(event.target.value);
@@ -429,7 +433,7 @@ class EmbedForm extends React.PureComponent {
                     {/*                    isMulti={true}/>*/}
                     <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features"}
                                              options={featureOptions} value={splitTokens.X}
-                                             onChange={this.onFeaturesChange} />
+                                             onChange={this.onFeaturesChange}/>
                 </FormControl>
 
                 <FormControl className={classes.formControl}>
@@ -442,14 +446,14 @@ class EmbedForm extends React.PureComponent {
                     <AutocompleteVirtualized label={"Observations"} options={annotationOptions}
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
                                              onChipClick={this.onFeatureClick}
-                                             onChange={this.onObservationsChange} />
+                                             onChange={this.onObservationsChange}/>
                 </FormControl>
 
                 {featureSetOptions.length > 0 && <FormControl className={classes.formControl}>
 
                     <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
                                              value={splitTokens.featureSets}
-                                             onChange={this.onFeatureSetsChange} groupBy={true} />
+                                             onChange={this.onFeatureSetsChange} groupBy={true}/>
                 </FormControl>}
 
                 <Accordion defaultExpanded>
@@ -483,10 +487,10 @@ class EmbedForm extends React.PureComponent {
                                     {intFormat(selection.count) + " / " + intFormat(dataset.shape[0]) + ": "}
                                     {datasetFilterKeys.map(key => {
                                         return <Chip
-                                            size="small"
                                             onDelete={() => {
                                                 this.onDatasetFilterChipDeleted(key);
                                             }}
+                                            onClick={this.onFilterChipClicked} size={"small"} variant={"default"}
                                             style={{marginRight: 2, verticalAlign: 'bottom'}}
                                             key={key}
                                             label={key}
