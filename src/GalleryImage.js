@@ -113,7 +113,7 @@ class GalleryImage extends React.PureComponent {
         return (
             <Box borderColor="text.primary" border={1}
                  style={{display: 'inline-block', margin: 2}}>
-                <div style={{position: 'relative', width: this.props.chartSize, height: this.props.chartSize}}>
+                <div style={{position: 'relative', width: this.props.chartSize, height: this.props.chartSize, cursor:'pointer'}}>
 
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
                         <Typography color="textPrimary" component={"h4"}
