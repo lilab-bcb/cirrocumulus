@@ -4,19 +4,34 @@ import json
 import logging
 import os
 
-import anndata
-import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
+from natsort import natsorted
+from pandas import CategoricalDtype
+
+import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
+
+
+def read_adata(path, backed=False, spatial_directory=None):
+    import anndata
+    adata = anndata.read_loom(path) if path.lower().endswith('.loom') else anndata.read(path,
+        backed=backed)
+    if spatial_directory is not None:
+        if not add_spatial(adata, spatial_directory):
+            print('No spatial data found in {}'.format(spatial_directory))
+    if not backed:
+        sums = adata.X.sum(axis=0)
+        if isinstance(sums, np.matrix):
+            sums = sums.A1
+        adata = adata[:, sums > 0]
+    return adata
 
 
 def to_json(data):
@@ -153,9 +168,8 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 
 class PrepareData:
 
-    def __init__(self, input_path, backed, output, X_range=None, dimensions=None, groups=[], markers=[],
-                 spatial_directory=None, output_format='parquet'):
-        self.input_path = input_path
+    def __init__(self, adata, output, X_range=None, dimensions=None, groups=[], markers=[], output_format='parquet'):
+        self.adata = adata
         self.groups = groups
         self.markers = markers
         self.stats = False
@@ -165,33 +179,23 @@ class PrepareData:
         # if basis_list is None or len(basis_list) == 0:
         #     basis_list = list(self.adata.obsm_keys())
         self.basis_list_to_precompute = None
-        self.adata = anndata.read_loom(input_path) if input_path.lower().endswith('.loom') else anndata.read(input_path,
-            backed=backed)
+
         # if 'seurat_clusters' in self.adata.obs:
         #     self.adata.obs['seurat_clusters'] = self.adata.obs['seurat_clusters'].astype('category')
-        if spatial_directory is not None:
-            if not add_spatial(self.adata, spatial_directory):
-                print('No spatial data found in {}'.format(spatial_directory))
-        if not backed:
-            sums = self.adata.X.sum(axis=0)
-            if isinstance(sums, np.matrix):
-                sums = sums.A1
-            self.adata = self.adata[:, sums > 0]
+
         index = make_unique(self.adata.var.index.append(pd.Index(self.adata.obs.columns)))
         self.adata.var.index = index[0:len(self.adata.var.index)]
         self.adata.obs.columns = index[len(self.adata.var.index):]
 
-        logger.info('{} - {} x {}'.format(input_path, self.adata.shape[0], self.adata.shape[1]))
         self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
         self.base_output_dir = output
 
         self.dataset_api = DatasetAPI()
         ds = AnndataDataset()
-        ds.path_to_data[input_path] = self.adata
+        ds.path_to_data[''] = self.adata
         self.dataset_api.add(ds)
 
-        self.input_dataset = {'name': os.path.splitext(os.path.basename(input_path))[0], 'url': input_path,
-                              'id': input_path}
+        self.input_dataset = {'name': '', 'url': '', 'id': ''}
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
         self.dimensions = [] if not dimensions_supplied else dimensions
         self.measures = []
@@ -425,9 +429,9 @@ def main(argsv):
     #     input_X_range[0] = int(input_X_range[0])
     #     input_X_range[1] = int(input_X_range[1])
 
-    prepare_data = PrepareData(input_path=input_dataset, backed=args.backed, output=out,
-        dimensions=args.groups, groups=args.groups, markers=args.markers, spatial_directory=args.spatial,
-        output_format=output_format)
+    adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial)
+    prepare_data = PrepareData(adata=adata, output=out, dimensions=args.groups, groups=args.groups,
+        markers=args.markers, output_format=output_format)
     prepare_data.execute()
     if loom_file is not None:
         os.remove(loom_file)

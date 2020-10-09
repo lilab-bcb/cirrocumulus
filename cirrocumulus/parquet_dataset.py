@@ -118,9 +118,10 @@ class ParquetDataset(AbstractDataset):
             self.cached_dataset_id = dataset_id
             self.cached_data = {}
 
+        # path is directory
         if not path.endswith('.parquet'):
             return self.read_data_sparse(file_system, path, obs_keys, var_keys, basis, dataset, schema)
-        # path is directory
+
         return self.read_data_dense(file_system, path, obs_keys, var_keys, basis, dataset, schema)
 
     def schema(self, file_system, path):

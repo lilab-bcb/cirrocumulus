@@ -1,6 +1,5 @@
 import os
 
-import anndata
 import pandas as pd
 
 SPATIAL_HELP = 'Directory containing 10x visium spatial data (tissue_hires_image.png, scalefactors_json.json, ' \
@@ -148,6 +147,7 @@ def read_star_fusion_file(input_csv: str):
     Returns
     -------
     """
+    import anndata
     df = pd.read_csv(input_csv, sep='\t')
     df = df.sort_values('JunctionReadCount', ascending=False)
     df['value'] = True
