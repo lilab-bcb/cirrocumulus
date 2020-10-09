@@ -91,7 +91,6 @@ class SimpleData:
         result = {'version': '1.0.0'}
         marker_results = []
         marker_results += adata.uns.get('markers', [])
-        print('here', len(marker_results))
         result['markers'] = marker_results
         n_genes = 10
         if SimpleData.has_markers(adata):
