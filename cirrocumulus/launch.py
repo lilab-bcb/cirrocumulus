@@ -77,13 +77,13 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
                     print('No spatial data found in {}'.format(spatial_directory))
 
     if marker_paths is not None and len(marker_paths) > 0:
-        marker_dict = get_markers(marker_paths)
+        markers = get_markers(marker_paths)
         for dataset_id in dataset_ids:
             d = anndata_dataset.get_data(dataset_id)
-            existing_marker_dict = d.uns.get('markers', {})
-            existing_marker_dict.update(marker_dict)
+            existing_markers = d.uns.get('markers', [])
+            markers += existing_markers
             # remove genes in dict that are not in dataset
-            d.uns['markers'] = filter_markers(d, existing_marker_dict)
+            d.uns['markers'] = filter_markers(d, markers)
 
 
 def create_app():
