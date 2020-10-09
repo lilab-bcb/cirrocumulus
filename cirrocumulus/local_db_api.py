@@ -36,7 +36,6 @@ class LocalDbAPI:
                 with open(json_path, 'rt') as f:
                     json_data.update(json.load(f))
             meta = create_dataset_meta(path)
-            print(json_data)
             if 'filters' not in json_data:
                 json_data['filters'] = {}
             if 'categories' not in json_data:
