@@ -16,12 +16,13 @@ import {
     IMPORT_DATASET_DIALOG,
     MORE_OPTIONS_DIALOG,
     SAVE_DATASET_FILTER_DIALOG,
+    SAVE_FEATURE_SET_DIALOG,
     setDialog,
     setMessage,
 } from './actions';
 import AppHeader from './AppHeader';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
-import DotPlotsPlotly from './DotPlots';
+import DotPlots from './DotPlots';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import EmbedForm from './EmbedForm';
@@ -29,6 +30,7 @@ import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
+import SaveSetDialog from './SaveSetDialog';
 
 const lightTheme = createMuiTheme(
     {
@@ -108,6 +110,7 @@ class App extends PureComponent {
                     {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
                     {dialog === HELP_DIALOG && <HelpDialog/>}
                     {dialog === MORE_OPTIONS_DIALOG && <MoreOptionsDialog/>}
+                    {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
                     <AppHeader/>
                     <Drawer
                         className={classes.drawer}
@@ -141,7 +144,7 @@ class App extends PureComponent {
                                 role="tabpanel"
                                 hidden={tab !== 'dot_plot'}
                             >
-                                <DotPlotsPlotly/>
+                                <DotPlots/>
                             </div>
                         </React.Fragment>}
 

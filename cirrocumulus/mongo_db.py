@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
+from cirrocumulus.database_api import get_email_domain
 from pymongo import MongoClient
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -155,3 +155,38 @@ class MongoDb:
             self.get_dataset(email, dataset_id, True)
             collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': update_dict})
             return dataset_id
+
+    def get_feature_sets(self, email, dataset_id):
+        self.get_dataset(email, dataset_id)
+        collection = self.db.feature_sets
+        results = []
+        for doc in collection.find(dict(dataset_id=dataset_id)):
+            results.append(
+                dict(id=str(doc['_id']), category=doc['category'], name=doc['name'], features=doc['features']))
+        return results
+
+    def delete_feature_set(self, email, dataset_id, set_id):
+        collection = self.db.feature_sets
+        doc = collection.find_one(dict(_id=ObjectId(set_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        collection.delete_one(dict(_id=ObjectId(set_id)))
+
+    def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
+        self.get_dataset(email, dataset_id)
+        collection = self.db.feature_sets
+        entity_update = {}
+        if name is not None:
+            entity_update['name'] = name
+        if features is not None:
+            entity_update['features'] = features
+        if email is not None:
+            entity_update['email'] = email
+        if dataset_id is not None:
+            entity_update['dataset_id'] = dataset_id
+        if category is not None:
+            entity_update['category'] = category
+        if set_id is None:
+            return str(collection.insert_one(entity_update).inserted_id)
+        else:
+            collection.update_one(dict(_id=ObjectId(set_id)), {'$set': entity_update})
+            return set_id

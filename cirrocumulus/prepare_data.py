@@ -5,17 +5,16 @@ import logging
 import os
 
 import anndata
+import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
-from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
+from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -230,14 +229,15 @@ class PrepareData:
         X_range = self.X_range
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
-        marker_dict = self.adata.uns.get('markers', {})
-        self.adata.uns['markers'] = marker_dict
+        markers = self.adata.uns.get('markers', [])
+        self.adata.uns['markers'] = markers
         if self.groups is not None:
             n_genes = 10
             for field in self.groups:
                 if len(self.adata.obs[field].cat.categories) > 1:
                     logger.info('Computing markers for {}'.format(field))
-                    SimpleData.find_markers(self.adata, field, marker_dict, n_genes)
+                    markers += SimpleData.find_markers(self.adata, field, n_genes)
+            self.adata.uns['markers'] = markers
         images = self.adata.uns.get('images')
         if images is not None:
             image_dir = os.path.join(self.base_output_dir, 'images')
@@ -349,10 +349,15 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         result = SimpleData.schema(self.adata)
-        marker_dict = self.adata.uns.get('markers', {})
+        markers = self.adata.uns.get('markers', [])
         if self.markers is not None:
-            marker_dict.update(get_markers(self.markers))
-        result['markers'] = filter_markers(self.adata, marker_dict)
+            markers += get_markers(self.markers)
+        markers = filter_markers(self.adata, markers)
+        for marker in markers:
+            if marker.get('id') is None:
+                marker['id'] = unique_id()
+            marker['readonly'] = True
+        result['markers'] = markers
         result['format'] = self.output_format
         if self.stats:
             result['precomputed'] = True  # has stats

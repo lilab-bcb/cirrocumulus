@@ -4,8 +4,8 @@ import {saveAs} from 'file-saver';
 import {isEqual, isPlainObject, uniqBy} from 'lodash';
 import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
-import {JsonDataset} from '../JsonDataset';
 import CustomError from '../CustomError';
+import {JsonDataset} from '../JsonDataset';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
@@ -78,12 +78,14 @@ export const SET_POINT_SIZE = 'SET_POINT_SIZE';
 export const SET_EMAIL = 'SET_EMAIL';
 export const SET_USER = 'SET_USER';
 export const SET_DATASET = 'SET_DATASET';
+export const SET_MARKERS = 'SET_MARKERS';
 export const SET_DIALOG = 'SET_DIALOG';
 
 export const MORE_OPTIONS_DIALOG = 'MORE_OPTIONS_DIALOG';
 export const EDIT_DATASET_DIALOG = 'EDIT_DATASET_DIALOG';
 export const IMPORT_DATASET_DIALOG = 'IMPORT_DATASET_DIALOG';
 export const SAVE_DATASET_FILTER_DIALOG = 'SAVE_DATASET_FILTER_DIALOG';
+export const SAVE_FEATURE_SET_DIALOG = 'SAVE_FEATURE_SET_DIALOG';
 export const HELP_DIALOG = 'HELP_DIALOG';
 export const DELETE_DATASET_DIALOG = 'DELETE_DATASET_DIALOG';
 
@@ -275,6 +277,65 @@ export function deleteDatasetFilter(filterId) {
             dispatch(setDialog(null));
         }).catch(err => {
             handleError(dispatch, err, 'Unable to delete filter. Please try again.');
+        });
+    };
+}
+
+export function deleteFeatureSet(id) {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        getState().serverInfo.api.deleteFeatureSet(id, getState().dataset.id)
+            .then(result => {
+
+                let markers = getState().markers;
+                for (let i = 0; i < markers.length; i++) {
+                    if (markers[i].id === id) {
+                        markers.splice(i, 1);
+                        // remove from searchTokens
+                        break;
+                    }
+                }
+                dispatch(setMarkers(markers.slice()));
+                dispatch(setMessage('Set deleted'));
+            }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to delete set. Please try again.');
+        });
+    };
+}
+
+export function saveFeatureSet(payload) {
+    return function (dispatch, getState) {
+        const state = getState();
+        const searchTokens = state.searchTokens;
+        const splitTokens = splitSearchTokens(searchTokens);
+        let features = splitTokens.X;
+        const requestBody = {
+            ds_id: state.dataset.id,
+            name: payload.name,
+            features: features,
+            category: payload.category
+        };
+
+        dispatch(_setLoading(true));
+        getState().serverInfo.api.upsertFeatureSet(requestBody, false)
+            .then(result => {
+
+                let markers = getState().markers;
+                markers.push({
+                    category: payload.category,
+                    name: payload.name,
+                    features: features,
+                    id: result.id
+                });
+                dispatch(setMarkers(markers.slice()));
+                dispatch(setMessage('Set saved'));
+            }).finally(() => {
+            dispatch(_setLoading(false));
+            dispatch(setDialog(null));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to save set. Please try again.');
         });
     };
 }
@@ -986,6 +1047,10 @@ export function setDialog(payload) {
     return {type: SET_DIALOG, payload: payload};
 }
 
+export function setMarkers(payload) {
+    return {type: SET_MARKERS, payload: payload};
+}
+
 function _setDatasetChoices(payload) {
     return {type: SET_DATASET_CHOICES, payload: payload};
 }
@@ -1320,15 +1385,25 @@ function _updateCharts(onError) {
         if (searchTokens.featureSets.length > 0) {
             // add to X, maintaining insertion order
             const uniqueX = new Set(searchTokens.X);
+            const markers = state.markers;
             searchTokens.featureSets.forEach(featureSet => {
-                const groupMarkers = state.dataset.markers[featureSet.group];
-                const features = groupMarkers[featureSet.text];
-                features.forEach(feature => {
-                    if (!uniqueX.has(feature)) {
-                        searchTokens.X.push(feature);
-                        uniqueX.add(feature);
+                let features = null;
+                for (let i = 0; i < markers.length; i++) {
+                    if (markers[i].id === featureSet.id) {
+                        features = markers[i].features;
+                        break;
                     }
-                });
+                }
+                if (features) {
+                    features.forEach(feature => {
+                        if (!uniqueX.has(feature)) {
+                            searchTokens.X.push(feature);
+                            uniqueX.add(feature);
+                        }
+                    });
+                } else {
+                    console.log(featureSet.id + ' not found in ' + markers.map(s => s.id));
+                }
 
             });
 
@@ -1729,7 +1804,6 @@ function handleEmbeddingResult(embedding, embeddingDef) {
                     crossOriginPolicy: "Anonymous"
                 });
                 chartData.tileSource = tileSource;
-                // chartData.image = fetch(API + '/file?id=' + state.dataset.id + '&file=' + selectedEmbedding.image, {headers: {'Authorization': 'Bearer ' + getIdToken()}});
             }
             embeddingData.push(chartData);
 

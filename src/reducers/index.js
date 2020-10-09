@@ -29,6 +29,7 @@ import {
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
     SET_MARKER_OPACITY_UI,
+    SET_MARKERS,
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
     SET_NUMBER_OF_BINS_UI,
@@ -211,6 +212,24 @@ function embeddings(state = [], action) {
             return [];
         case RESTORE_VIEW:
             return action.payload.embeddings != null ? action.payload.embeddings : state;
+        default:
+            return state;
+    }
+}
+
+function markers(state = [], action) {
+    switch (action.type) {
+        case SET_MARKERS:
+            return action.payload;
+        case SET_DATASET:
+            const result = action.payload.markers || [];
+            if (action.payload.markers_read_only) {
+                action.payload.markers_read_only.forEach(item => {
+                    item.readOnly = true;
+                    result.push(item);
+                });
+            }
+            return result;
         default:
             return state;
     }
@@ -721,6 +740,7 @@ export default combineReducers({
     dialog,
     dotPlotData,
     email,
+    markers,
     embeddingData,
     embeddings,
     featureSummary,

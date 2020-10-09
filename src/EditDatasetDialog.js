@@ -112,15 +112,17 @@ class EditDatasetDialog extends React.PureComponent {
                     {this.state.loading && <CircularProgress/>}
                     <TextField
                         disabled={this.state.loading}
+                        autoComplete="off"
                         required={true}
                         value={this.state.name}
                         onChange={this.onNameChanged}
                         margin="dense"
-                        label="Dataset name"
+                        label="Dataset Name"
                         fullWidth
                     />
                     <TextField
                         disabled={this.state.loading}
+                        autoComplete="off"
                         required={false}
                         value={this.state.description}
                         onChange={this.onDescriptionChanged}
@@ -133,6 +135,7 @@ class EditDatasetDialog extends React.PureComponent {
                     {!this.state.loading &&
                     <TextField
                         required={true}
+                        autoComplete="off"
                         value={this.state.url}
                         onChange={this.onUrlChanged}
                         margin="dense"

@@ -1,14 +1,15 @@
 import datetime
 import json
 
+from cirrocumulus.database_api import get_email_domain
 from google.cloud import datastore
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
 CAT_NAME = 'Cat_Name'
 DATASET_FILTER = 'Dataset_Filter'
+FEATURE_SET = 'F_Set'
 USER = 'User'
 
 
@@ -179,3 +180,48 @@ class FirestoreDatastore:
         client.put(dataset)
         dataset_id = dataset.id
         return dataset_id
+
+    def get_feature_sets(self, email, dataset_id):
+        client = self.datastore_client
+        query = client.query(kind=FEATURE_SET)
+        dataset_id = int(dataset_id)
+        self.__get_key_and_dataset(email, dataset_id, False)
+        query.add_filter('dataset_id', '=', dataset_id)
+        results = []
+        for result in query.fetch():
+            results.append(
+                dict(id=result.id, category=result['category'], name=result['name'], features=result['features']))
+        return results
+
+    def delete_feature_set(self, email, dataset_id, set_id):
+        client = self.datastore_client
+        key = client.key(FEATURE_SET, int(set_id))
+        result = client.get(key)
+        self.__get_key_and_dataset(email, result['dataset_id'])
+        client.delete(key)
+
+    def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
+        dataset_id = int(dataset_id)
+        client = self.datastore_client
+        self.__get_key_and_dataset(email, dataset_id)
+        if set_id is None:
+            entity = datastore.Entity(client.key(FEATURE_SET))
+        else:
+            set_id = int(set_id)
+            key = client.key(FEATURE_SET, set_id)
+            entity = client.get(key)
+        entity_update = {}
+        if name is not None:
+            entity_update['name'] = name
+        if category is not None:
+            entity_update['category'] = category
+        if email is not None:
+            entity_update['email'] = email
+        if dataset_id is not None:
+            entity_update['dataset_id'] = dataset_id
+        if features is not None:
+            entity_update['features'] = features
+
+        entity.update(entity_update)
+        client.put(entity)
+        return entity.id

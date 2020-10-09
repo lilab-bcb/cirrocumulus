@@ -80,3 +80,12 @@ class DatabaseAPI:
 
     def delete_dataset_filter(self, email, dataset_id, filter_id):
         return self.provider.delete_dataset_filter(email, dataset_id, filter_id)
+
+    def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
+        return self.provider.upsert_feature_set(email, dataset_id, set_id, category, name, features)
+
+    def get_feature_sets(self, email, dataset_id):
+        return self.provider.get_feature_sets(email, dataset_id)
+
+    def delete_feature_set(self, email, dataset_id, set_id):
+        return self.provider.delete_feature_set(email, dataset_id, set_id)

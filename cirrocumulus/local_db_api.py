@@ -1,12 +1,15 @@
 import json
 import os
 
+from cirrocumulus.io_util import unique_id
+
 
 def create_dataset_meta(path):
     result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0], 'description': ''}
     if os.path.basename(path).endswith('.json'):
         with open(path, 'rt') as f:
             result.update(json.load(f))
+
     return result
 
 
@@ -33,6 +36,7 @@ class LocalDbAPI:
                 with open(json_path, 'rt') as f:
                     json_data.update(json.load(f))
             meta = create_dataset_meta(path)
+            print(json_data)
             if 'filters' not in json_data:
                 json_data['filters'] = {}
             if 'categories' not in json_data:
@@ -95,6 +99,33 @@ class LocalDbAPI:
             results.append(r)
         return results
 
+    def get_feature_sets(self, email, dataset_id):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        return json_data.get('markers', [])
+
+    def delete_feature_set(self, email, dataset_id, set_id):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        markers = json_data['markers']
+        for i in range(len(markers)):
+            if markers[i]['id'] == set_id:
+                markers.pop(i)
+                break
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
+
+    def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
+        if set_id is None:
+            set_id = unique_id()
+        else:
+            self.delete_feature_set(email=email, dataset_id=dataset_id, set_id=set_id)
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        markers = json_data.get('markers')
+        if markers is None:
+            markers = []
+            json_data['markers'] = markers
+        markers.append(dict(id=set_id, features=features, name=name, category=category))
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
+        return set_id
+
     def delete_dataset_filter(self, email, dataset_id, filter_id):
         json_data = self.dataset_to_info[dataset_id]['json_data']
         del json_data['filters'][filter_id]
@@ -106,8 +137,7 @@ class LocalDbAPI:
 
     def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
         if filter_id is None:
-            import uuid
-            filter_id = str(uuid.uuid4())
+            filter_id = unique_id()
         json_data = self.dataset_to_info[dataset_id]['json_data']
         entity = json_data['filters'].get(filter_id)
         if entity is None:

@@ -53,10 +53,11 @@ class SimpleData:
         return adata.var.index.get_indexer_for(names)
 
     @staticmethod
-    def find_markers(adata, key, marker_dict, n_genes):
+    def find_markers(adata, key, n_genes):
         import scipy.stats as ss
-        markers = {}
-        marker_dict[key + ' markers'] = markers
+        marker_results = []  # array of category, name, id, features
+        category = key + ' markers'
+
         for cat in adata.obs[key].cat.categories:
 
             mask = adata.obs[key] == cat
@@ -75,7 +76,9 @@ class SimpleData:
                         alternative="two-sided")
 
             order = np.argsort(pvals)
-            markers[str(cat)] = ds1.var_names[order][:n_genes]
+            features = ds1.var_names[order][:n_genes]
+            marker_results.append(dict(category=category, name=str(cat), features=features, id=xxx))
+        return marker_results
 
     @staticmethod
     def has_markers(adata):
@@ -86,8 +89,10 @@ class SimpleData:
         obs_cat = []
         obs = []
         result = {'version': '1.0.0'}
-        marker_dict = adata.uns.get('markers', {})
-        result['markers'] = marker_dict
+        marker_results = []
+        marker_results += adata.uns.get('markers', [])
+        print('here', len(marker_results))
+        result['markers'] = marker_results
         n_genes = 10
         if SimpleData.has_markers(adata):
             if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:  # scanpy
@@ -96,17 +101,12 @@ class SimpleData:
                     if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
                         groupby = str(rank_genes_groups['params']['groupby'])
                         group_names = rank_genes_groups['names'].dtype.names
-                        markers = {}
-                        markers_key = groupby + ' markers'
-                        duplicate_counter = 1
-                        while markers_key in markers:
-                            markers_key = groupby + ' markers-{}'.format(duplicate_counter)
-                            duplicate_counter += 1
-                        marker_dict[markers_key] = markers
+                        category = groupby + ' markers'
                         for group_name in group_names:
                             gene_names = rank_genes_groups['names'][group_name]
                             # scores = rank_genes_groups['scores'][group_name]
-                            markers[group_name] = gene_names[:n_genes]
+                            features = gene_names[:n_genes]
+                            marker_results.append(dict(category=category, name=str(group_name), features=features))
             else:  # pegasus
                 de_res = adata.varm['de_res']
                 names = de_res.dtype.names
@@ -120,8 +120,7 @@ class SimpleData:
                 if field_use is None:
                     print('Pegasus differential expression results not found')
                 else:
-                    markers = {}
-                    marker_dict['markers'] = markers
+
                     for name in names:
                         index = name.rindex(':')
                         base_name = name[:index]
@@ -129,7 +128,8 @@ class SimpleData:
                         if base_name == field_use:
                             cluster_name = name[index + 1:]
                             indices = np.argsort(de_res[name])
-                            markers[cluster_name] = adata.var.index[indices[len(indices) - n_genes:]]
+                            features = adata.var.index[indices[len(indices) - n_genes:]]
+                            marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
 
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(

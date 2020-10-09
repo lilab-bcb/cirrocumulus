@@ -9,14 +9,15 @@ import Chip from '@material-ui/core/Chip';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
 import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
-
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
+import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -26,12 +27,14 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
+import isPlainObject from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {
     deleteDatasetFilter,
+    deleteFeatureSet,
     downloadSelectedIds,
     exportDatasetFilters,
     getDatasetFilterArray,
@@ -40,6 +43,7 @@ import {
     openDatasetFilter,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
+    SAVE_FEATURE_SET_DIALOG,
     setBinSummary,
     setBinValues,
     setChartSize,
@@ -95,7 +99,49 @@ const styles = theme => ({
     },
 });
 
+const getEmbeddingKeys = memoize(
+    (embeddings) => {
+        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
+        embeddingKeys.sort(sorter);
+        return embeddingKeys;
+    }
+);
 
+const getAnnotationOptions = memoize(
+    (obs, obsCat) => {
+        const options = [];
+        obs.forEach(item => {
+            options.push({group: 'Continuous', text: item, id: item});
+        });
+        obsCat.forEach(item => {
+            options.push({group: 'Categorical', text: item, id: item});
+        });
+        options.sort((item1, item2) => {
+            const c = sorter(item1.group, item2.group);
+            if (c !== 0) {
+                return c;
+            }
+            return sorter(item1.text, item2.text);
+        });
+        return options;
+    }
+);
+const getFeatureSetOptions = memoize((markers) => {
+        const options = [];
+        markers.forEach(item => {
+            options.push({group: item.category, text: item.name, id: item.id});
+        });
+
+        options.sort((item1, item2) => {
+            const c = sorter(item1.group, item2.group);
+            if (c !== 0) {
+                return c;
+            }
+            return sorter(item1.text, item2.text);
+        });
+        return options;
+    }
+);
 const Accordion = withStyles({
     root: {
         border: '1px solid rgba(0, 0, 0, .125)',
@@ -138,38 +184,13 @@ const AccordionPanelDetails = withStyles(theme => ({
 }))(MuiAccordionPanelDetails);
 
 
-const getEmbeddingKeys = memoize(
-    (embeddings) => {
-        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
-        embeddingKeys.sort(sorter);
-        return embeddingKeys;
-    }
-);
-
-const getAnnotationOptions = memoize(
-    (obs, obsCat) => {
-        let annotationOptions = obs.concat(obsCat);
-        annotationOptions.sort(sorter);
-        return annotationOptions;
-    }
-);
-const getFeatureSetOptions = memoize((markers) => {
-        const featureSetOptions = [];
-        for (const group in markers) {
-            const groupMarkers = markers[group];
-            for (const name in groupMarkers) {
-                featureSetOptions.push({group: group, text: name});
-            }
-        }
-        featureSetOptions.sort((item1, item2) => {
-            return sorter(item1.group, item2.group);
-        });
-        return featureSetOptions;
-    }
-);
-
 class EmbedForm extends React.PureComponent {
 
+
+    constructor(props) {
+        super(props);
+        this.state = {featureSetAnchorEl: null,  readonly: false};
+    }
 
     openDatasetFilter = (filterId) => {
         this.props.handleOpenDatasetFilter(filterId);
@@ -192,14 +213,19 @@ class EmbedForm extends React.PureComponent {
     };
 
     onObservationsChange = (event, value) => {
-        this.props.handleSearchTokens(value, 'obs');
+        this.props.handleSearchTokens(value.map(item => item.id), 'obs');
+    };
+
+    onSaveFeatureList = () => {
+        this.props.handleDialog(SAVE_FEATURE_SET_DIALOG);
     };
 
     onFeatureSetsChange = (event, value) => {
         this.props.handleSearchTokens(value, 'featureSet');
     };
 
-    onFeatureClick = (value) => {
+    onFeatureClick = (event, option) => {
+        const value = isPlainObject(option) ? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name == value) {
@@ -207,6 +233,33 @@ class EmbedForm extends React.PureComponent {
                 break;
             }
         }
+    };
+    onFeatureSetClick = (event, option) => {
+        const id = option.id;
+        const target = event.target;
+        let searchTokens = this.props.searchTokens;
+        let isReadOnly = false;
+        for (let i = 0; i < searchTokens.length; i++) {
+            if (searchTokens[i].value.id === id) {
+                isReadOnly = searchTokens[i].value.readonly;
+                break;
+            }
+        }
+        this.setState({featureSetAnchorEl: target, featureSetId: id, readonly: isReadOnly});
+
+    };
+
+    onFeatureSetMenuClose = (event) => {
+        this.setState({featureSetAnchorEl: null,  readonly: false});
+    };
+
+    onDeleteFeatureSet = (event) => {
+        event.stopPropagation();
+        let searchTokens = this.props.searchTokens;
+        let value = searchTokens.filter(token => token.type === 'featureSet' && token.value.id !== this.state.featureSetId);
+        this.props.handleSearchTokens(value, 'featureSet');
+        this.props.handleDeleteFeatureSet(this.state.featureSetId);
+        this.setState({featureSetAnchorEl: null, featureSetId: null, readonly: false});
     };
 
     onFilterChipClicked = (event) => {
@@ -310,10 +363,6 @@ class EmbedForm extends React.PureComponent {
         this.props.downloadSelectedIds();
     };
 
-    handleDiffExp = (event) => {
-        event.preventDefault();
-        this.props.handleDiffExp();
-    };
 
     onDatasetFilterChipDeleted = (name) => {
         this.props.removeDatasetFilter(name);
@@ -335,7 +384,7 @@ class EmbedForm extends React.PureComponent {
     render() {
         const {
             chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
-            searchTokens, markerOpacity, datasetFilter, datasetFilters,
+            searchTokens, markerOpacity, datasetFilter, datasetFilters, markers,
             unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection, serverInfo
         } = this.props;
 
@@ -391,19 +440,28 @@ class EmbedForm extends React.PureComponent {
             savedDatasetFilter = {};
         }
         const splitTokens = splitSearchTokens(searchTokens);
-        const featureOptions = dataset == null ? [] : dataset.features;
-        const markers = dataset == null || dataset.markers == null ? {} : dataset.markers;
-        const availableEmbeddings = dataset == null ? [] : dataset.embeddings;
+        const featureOptions = dataset.features;
+        const availableEmbeddings = dataset.embeddings;
 
-        const isSummarized = dataset == null ? false : dataset.precomputed != null;
-        const obsCat = dataset == null ? [] : dataset.obsCat;
-        const obs = dataset == null ? [] : dataset.obs;
+        const isSummarized = dataset.precomputed != null;
+        const obsCat = dataset.obsCat;
+        const obs = dataset.obs;
         const embeddingKeys = getEmbeddingKeys(embeddings);
         const annotationOptions = getAnnotationOptions(obs, obsCat);
         const featureSetOptions = getFeatureSetOptions(markers);
         const fancy = serverInfo.fancy;
+        const featureSetAnchorEl = this.state.featureSetAnchorEl;
         return (
             <div className={classes.root}>
+                <Menu
+                    id="delete-set-menu"
+                    anchorEl={featureSetAnchorEl}
+                    open={Boolean(featureSetAnchorEl)}
+                    onClose={this.onFeatureSetMenuClose}
+                >
+                    <MenuItem disabled={this.state.readonly} onClick={this.onDeleteFeatureSet}>Delete</MenuItem>
+
+                </Menu>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="embedding-label">Embeddings</InputLabel>
                     <Select
@@ -431,9 +489,11 @@ class EmbedForm extends React.PureComponent {
                     {/*                    onChange={this.props.handleFeatures}*/}
                     {/*                    helperText={'Enter or paste list'}*/}
                     {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features"}
+                    <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features/Genes"}
                                              options={featureOptions} value={splitTokens.X}
-                                             onChange={this.onFeaturesChange}/>
+                                             onChange={this.onFeaturesChange}
+                                             helperText={"Enter or paste list"}
+                    />
                 </FormControl>
 
                 <FormControl className={classes.formControl}>
@@ -443,17 +503,28 @@ class EmbedForm extends React.PureComponent {
                     {/*                    onChange={this.props.handleFeatures}*/}
                     {/*                    helperText={'Enter or paste list'}*/}
                     {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized label={"Observations"} options={annotationOptions}
+                    <AutocompleteVirtualized label={"Cell Metadata"} options={annotationOptions}
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
                                              onChipClick={this.onFeatureClick}
+                                             groupBy={true}
+                                             getOptionSelected={(option, value) => option.id === value}
                                              onChange={this.onObservationsChange}/>
                 </FormControl>
 
-                {featureSetOptions.length > 0 && <FormControl className={classes.formControl}>
+                {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
                     <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
                                              value={splitTokens.featureSets}
-                                             onChange={this.onFeatureSetsChange} groupBy={true}/>
+                                             onChipClick={this.onFeatureSetClick}
+                                             groupBy={true}
+                                             onChange={this.onFeatureSetsChange}
+                                             getChipText={option => option.text}/>
+                    {fancy && splitTokens.X.length > 0 && <FormHelperText>
+                        <Tooltip title={"Save Current Feature List"}>
+                            <IconButton size={'small'} onClick={this.onSaveFeatureList}>
+                                <SaveIcon/>
+                            </IconButton>
+                        </Tooltip></FormHelperText>}
                 </FormControl>}
 
                 <Accordion defaultExpanded>
@@ -669,6 +740,7 @@ class EmbedForm extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
+        markers: state.markers,
         binValues: state.binValues,
         binSummary: state.binSummary,
         numberOfBins: state.numberOfBins,
@@ -756,6 +828,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         },
         handleExportDatasetFilters: () => {
             dispatch(exportDatasetFilters());
+        },
+        handleDeleteFeatureSet: value => {
+            dispatch(deleteFeatureSet(value));
         },
 
     };

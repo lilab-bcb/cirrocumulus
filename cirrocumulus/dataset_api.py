@@ -43,12 +43,14 @@ class DatasetAPI:
             return self.cached_schema
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        value = provider.schema(self.fs_adapter.get_fs(path), path)
+        schema_dict = provider.schema(self.fs_adapter.get_fs(path), path)
         if 'summary' in dataset:
-            value['summary'] = dataset['summary']
-        self.cached_schema = value
+            schema_dict['summary'] = dataset['summary']
+        if 'markers' in schema_dict:
+            schema_dict['markers_read_only'] = schema_dict.pop('markers')
+        self.cached_schema = schema_dict
         self.cached_dataset_id = dataset['id']
-        return value
+        return schema_dict
 
     def has_precomputed_stats(self, dataset):
         path = dataset['url']

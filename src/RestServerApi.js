@@ -73,6 +73,25 @@ export class RestServerApi {
             }).then(response => response.json());
     }
 
+    upsertFeatureSet(data, isUpdate) {
+        return fetch(API + '/feature_set',
+            {
+                body: JSON.stringify(data),
+                method: isUpdate ? 'PUT' : 'POST',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(response => response.json());
+    }
+
+    deleteFeatureSet(setId, datasetId) {
+        return fetch(API + '/feature_set',
+            {
+                body: JSON.stringify({id: setId, ds_id: datasetId}),
+                method: 'DELETE',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            });
+    }
+
+
     exportDatasetFiltersPromise(datasetId) {
         return fetch(API + '/export_filters?id=' + datasetId, {
             headers: {'Authorization': 'Bearer ' + getIdToken()},

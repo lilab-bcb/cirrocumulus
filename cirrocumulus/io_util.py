@@ -44,6 +44,11 @@ def __add_visium(adata, spatial_directory):
         return False
 
 
+def unique_id():
+    import uuid
+    return str(uuid.uuid4())
+
+
 def __add_generic_spatial(adata, spatial_directory):
     # positions.image.csv with barcode, x, y
     # image.png
@@ -95,39 +100,40 @@ def get_cell_type_genes(cell_type):
     return all_genes
 
 
-# remove genes in dict that are not in dataset
-def filter_markers(adata, marker_dict):
-    for category_name in marker_dict:
-        markers = marker_dict[category_name]
-        for key in markers:
-            prior_size = len(markers[key])
-            filtered_markers = set(markers[key]).intersection(adata.var.index)
-            if len(filtered_markers) != prior_size:
-                markers[key] = list(filtered_markers)
-    return marker_dict
+# remove genes that are not in dataset
+def filter_markers(adata, markers):
+    for result in markers:
+        features = result['features']
+        prior_size = len(features)
+        filtered_markers = set(features).intersection(adata.var.index)
+        if len(filtered_markers) != prior_size:
+            result['features'] = list(filtered_markers)
+    return markers
 
 
 def get_markers(marker_paths):
-    marker_dict = {}
     import json
-
+    marker_results = []
     for marker_path in marker_paths:
-        markers = {}
+
         with open(marker_path, 'rt') as f:
             marker_json = json.load(f)
             if 'title' in marker_json:
-                marker_dict[marker_json['title']] = markers
+                title = marker_json['title']
                 for cell_type in marker_json['cell_types']:
-                    markers[cell_type['name']] = get_cell_type_genes(cell_type)
+                    name = cell_type['name']
+                    features = get_cell_type_genes(cell_type)
+                    marker_results.append(dict(category=title, name=name, features=features))
                     if 'subtypes' in cell_type:
                         for cell_sub_type in cell_type['subtypes']['cell_types']:
-                            markers[cell_sub_type['name']] = get_cell_type_genes(cell_sub_type)
+                            subtype_name = cell_sub_type['name']
+                            subtype_features = get_cell_type_genes(cell_sub_type)
+                            marker_results.append(dict(category=title, name=subtype_name, features=subtype_features))
             else:
                 key = os.path.splitext(os.path.basename(marker_path))[0]
-                markers = marker_dict.get(key, {})
-                marker_dict[key] = markers
-                markers.update(marker_json)
-    return marker_dict
+                for name in marker_json:
+                    marker_results.append(dict(category=key, name=name, features=marker_json[name]))
+    return marker_results
 
 
 def read_star_fusion_file(input_csv: str):

@@ -1,6 +1,6 @@
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context
 
-import cirrocumulus.data_processing as data_processing
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -86,6 +86,44 @@ def handle_category_name():
         return '', 200
 
 
+@blueprint.route('/feature_set', methods=['POST', 'DELETE'])
+def handle_feature_set():
+    """CRUD for a feature set.
+    """
+
+    email = auth_api.auth()['email']
+    # if request.method == 'GET':
+    #     filter_id = request.args.get('id', '')
+    #     dataset_id = request.args.get('ds_id', '')
+    #     if filter_id == '' or dataset_id == '':
+    #         return 'Please provide an id', 400
+    #     return to_json(database_api.get_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id))
+    content = request.get_json(force=True, cache=False)
+    set_id = content.get('id')
+    dataset_id = content.get('ds_id')
+    # POST=new, PUT=update , DELETE=delete, GET=get
+    if request.method == 'PUT' or request.method == 'POST':
+        if request.method == 'PUT' and set_id is None:
+            return 'Please supply an id', 400
+        if request.method == 'POST' and dataset_id is None:
+            return 'Please supply a ds_id', 400
+
+        name = content.get('name')
+        category = content.get('category')
+        features = content.get('features')
+        set_id = database_api.upsert_feature_set(
+            email=email,
+            dataset_id=dataset_id,
+            set_id=set_id if request.method == 'PUT' else None,
+            name=name,
+            category=category,
+            features=features)
+        return to_json({'id': set_id})
+    elif request.method == 'DELETE':
+        database_api.delete_feature_set(email, dataset_id=dataset_id, set_id=set_id)
+        return to_json('', 204)
+
+
 @blueprint.route('/filter', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_dataset_filter():
     """CRUD for a dataset filter.
@@ -131,6 +169,7 @@ def handle_schema():
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset)
+    schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
     return to_json(schema)
 
 

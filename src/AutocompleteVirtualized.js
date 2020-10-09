@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {VariableSizeList} from 'react-window';
 
-const LISTBOX_PADDING = 8; // px
+const LISTBOX_PADDING = 0; // px
 
 function renderRow(props) {
     const {data, index, style} = props;
@@ -35,12 +35,12 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
     const theme = useTheme();
     const smUp = useMediaQuery(theme.breakpoints.up('sm'), {noSsr: true});
     const itemCount = itemData.length;
-    const itemSize = smUp ? 36 : 48;
+    const itemSize = smUp ? 24 : 36;
 
     const getChildSize = (child) => {
-        if (React.isValidElement(child) && child.type === ListSubheader) {
-            return 48;
-        }
+        // if (React.isValidElement(child) && child.type === ListSubheader) {
+        //     return 48;
+        // }
 
         return itemSize;
     };
@@ -57,7 +57,7 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
             <OuterElementContext.Provider value={other}>
                 <VariableSizeList
                     itemData={itemData}
-                    height={getHeight() + 2 * LISTBOX_PADDING}
+                    height={getHeight() + LISTBOX_PADDING}
                     width="100%"
                     key={itemCount}
                     outerElementType={OuterElementType}
@@ -90,7 +90,7 @@ const useStyles = makeStyles({
 
 
 const renderGroup = (params) => [
-    <ListSubheader component="div">
+    <ListSubheader disableGutters component="div">
         <Typography noWrap>{params.group}</Typography>
     </ListSubheader>,
     params.children,
@@ -166,10 +166,18 @@ export default function AutocompleteVirtualized(props) {
     };
 
     const filterOptions = createFilterOptions({matchFrom: 'start'});
-    const onClick = (event) => {
-        event.stopPropagation();
-        props.onChipClick(event.target.innerText);
+    const onClick = (event, option) => {
+        props.onChipClick(event, option);
     };
+
+    let getOptionSelected = props.getOptionSelected;
+    if (getOptionSelected == null) {
+        getOptionSelected = props.groupBy ? (option, value) => option.id === value.id && option.group === value.group : (option, value) => option === value;
+    }
+    let getChipText = props.getChipText;
+    if (getChipText == null) {
+        getChipText = (option) => option;
+    }
     return (
         <Autocomplete
             multiple
@@ -177,7 +185,7 @@ export default function AutocompleteVirtualized(props) {
             filterOptions={filterOptions}
             disableListWrap
             classes={classes}
-            getOptionSelected={props.groupBy ? (option, value) => option.text === value.text && option.group === value.group : (option, value) => option === value}
+            getOptionSelected={getOptionSelected}
             value={props.value}
             openOnFocus={true}
             filterSelectedOptions={true}
@@ -195,14 +203,15 @@ export default function AutocompleteVirtualized(props) {
                     return (
                         <Chip
                             variant="default"
-                            onClick={onClick}
-                            label={option}
+                            onClick={event => onClick(event, option)}
+                            label={getChipText(option)}
                             size="small"
                             {...getTagProps({index})}
                         />);
                 })
             }
-            renderInput={(params) => <TextField {...params} label={props.label}/>}
+            renderInput={(params) => <TextField margin="dense" {...params} label={props.label}
+                                                helperText={props.helperText}/>}
             renderOption={props.groupBy ? (option) => <Typography title={option.text}
                                                                   noWrap>{option.text}</Typography> : (option) =>
                 <Typography
