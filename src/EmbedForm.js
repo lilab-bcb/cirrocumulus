@@ -189,7 +189,7 @@ class EmbedForm extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {featureSetAnchorEl: null,  readonly: false};
+        this.state = {featureSetAnchorEl: null, readonly: false};
     }
 
     openDatasetFilter = (filterId) => {
@@ -237,20 +237,25 @@ class EmbedForm extends React.PureComponent {
     onFeatureSetClick = (event, option) => {
         const id = option.id;
         const target = event.target;
-        let searchTokens = this.props.searchTokens;
+        let markers = this.props.markers;
         let isReadOnly = false;
-        for (let i = 0; i < searchTokens.length; i++) {
-            if (searchTokens[i].value.id === id) {
-                isReadOnly = searchTokens[i].value.readonly;
+        let found = false;
+        for (let i = 0; i < markers.length; i++) {
+            if (markers[i].id === id) {
+                isReadOnly = markers[i].readonly;
+                found = true;
                 break;
             }
         }
-        this.setState({featureSetAnchorEl: target, featureSetId: id, readonly: isReadOnly});
+        if (!found) {
+            console.log(id + ' not found');
+        }
+        this.setState({featureSetAnchorEl: target, featureSetId: id, readonly: isReadOnly || !found});
 
     };
 
     onFeatureSetMenuClose = (event) => {
-        this.setState({featureSetAnchorEl: null,  readonly: false});
+        this.setState({featureSetAnchorEl: null, readonly: false});
     };
 
     onDeleteFeatureSet = (event) => {
