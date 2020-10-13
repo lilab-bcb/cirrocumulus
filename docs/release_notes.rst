@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.9.post1 `October 13, 2020`
+    * Fixed error reading old datasets generated with `cirro prepare_data`
+
 - 1.1.9 `October 13, 2020`
     * Added user interface to create gene/feature sets
 
