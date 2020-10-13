@@ -1,4 +1,5 @@
 import {scaleSequential} from 'd3-scale';
+import {isPlainObject} from 'lodash';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -222,12 +223,45 @@ function markers(state = [], action) {
         case SET_MARKERS:
             return action.payload;
         case SET_DATASET:
-            const result = action.payload.markers || [];
-            if (action.payload.markers_read_only) {
-                action.payload.markers_read_only.forEach(item => {
-                    item.readOnly = true;
-                    result.push(item);
-                });
+            let result = action.payload.markers || [];
+            if (isPlainObject(result)) { // old style, category=>name=>features
+                let newResults = [];
+                for (let categoryName in result) {
+                    let category = result[categoryName];
+                    for (let name in category) {
+                        newResults.push({
+                            category: categoryName,
+                            name: name,
+                            id: name,
+                            readonly: true,
+                            features: category[name]
+                        });
+                    }
+                }
+                result = newResults;
+            }
+
+            if (action.payload.markers_read_only != null) {
+                if (isPlainObject(action.payload.markers_read_only)) { // old style, name => features
+                    let markers = action.payload.markers_read_only;
+                    for (let categoryName in markers) {
+                        let category = markers[categoryName];
+                        for (let name in category) {
+                            result.push({
+                                category: categoryName,
+                                name: name,
+                                id: name,
+                                readonly: true,
+                                features: category[name]
+                            });
+                        }
+                    }
+                } else {
+                    action.payload.markers_read_only.forEach(item => {
+                        item.readonly = true;
+                        result.push(item);
+                    });
+                }
             }
             return result;
         default:
