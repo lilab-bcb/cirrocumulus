@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.9 `October 13, 2020`
+    * Added user interface to create gene/feature sets
+
 - 1.1.8.post5 `October 5, 2020`
     * Updated dataset chooser
 
