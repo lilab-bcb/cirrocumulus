@@ -223,7 +223,7 @@ function markers(state = [], action) {
         case SET_MARKERS:
             return action.payload;
         case SET_DATASET:
-            let result = action.payload.markers || [];
+            let result = action.payload == null ? [] : action.payload.markers || [];
             if (isPlainObject(result)) { // old style, category=>name=>features
                 let newResults = [];
                 for (let categoryName in result) {
