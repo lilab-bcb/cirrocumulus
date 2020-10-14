@@ -297,15 +297,15 @@ class AppHeader extends React.PureComponent {
 
     render() {
         const {
-            dataset, loadingApp, email, datasetChoices, selection, classes, serverInfo, tab, user
+            dataset, loadingApp, email, selection, classes, serverInfo, tab, user
         } = this.props;
-        const shape = dataset != null && dataset.shape != null ? dataset.shape : [0, 0];
-        const hasSelection = dataset != null && shape[0] > 0 && !isNaN(selection.count);
+        const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
+        const hasSelection = dataset != null && shape != null && shape[0] > 0 && !isNaN(selection.count);
 
         const showNewDataset = user != null && user.importer;
         const showEditDeleteDataset = dataset !== null && dataset.owner;
         const showMoreMenu = showNewDataset || dataset != null;
-
+        const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
         return (
 
             <AppBar position="fixed" color="default" className={classes.appBar}>
@@ -331,7 +331,7 @@ class AppHeader extends React.PureComponent {
 
                     {dataset != null &&
                     <Typography component={"h3"}><b>{dataset.name}</b>
-                        <small> {hasSelection && intFormat(selection.count) + '/'}{intFormat(shape[0])} cells</small></Typography>
+                        <small> {hasSelection && shape != null && intFormat(selection.count) + '/'}{intFormat(shape[0])} cells</small></Typography>
                     }
 
                     {dataset != null && <Tabs
@@ -354,7 +354,7 @@ class AppHeader extends React.PureComponent {
 
                     </div>
                     <div style={{marginLeft: 'auto'}}>
-                        <DatasetSelector onChange={this.handleDataset}/>
+                        {!isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleMoreMenuOpen}>
@@ -420,9 +420,8 @@ class AppHeader extends React.PureComponent {
                         </Menu>}
 
 
-                        {!loadingApp.loading && email == null && serverInfo.clientId !== '' &&
-                        <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
-                                onClick={this.props.handleLogin}>Sign In</Button>}
+                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
+                                                onClick={this.props.handleLogin}>Sign In</Button>}
                     </div>
                 </Toolbar>
             </AppBar>
