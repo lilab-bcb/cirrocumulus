@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.9.post2 `October 20, 2020`
+    * Fixed serving spatial images using `cirro serve`
 
 - 1.1.9.post1 `October 13, 2020`
     * Fixed error reading old datasets generated with `cirro prepare_data`
