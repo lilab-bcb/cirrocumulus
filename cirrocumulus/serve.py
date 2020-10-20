@@ -1,6 +1,6 @@
 import os
 
-from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL
+from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL, CIRRO_SERVE
 from cirrocumulus.launch import create_app
 
 app = None
@@ -14,6 +14,7 @@ def cached_app():
 
     if app is None:
         app = create_app()
+
         # from flask_cors import CORS
         # CORS(app)
         configure()
@@ -28,7 +29,7 @@ def configure():
     db_uri = os.environ.get(CIRRO_DB_URI, DEFAULT_DB_URI)
     database = os.environ.get(CIRRO_DATABASE, DEFAULT_DATABASE)
     email = os.environ.get(CIRRO_EMAIL)
-
+    os.environ[CIRRO_SERVE] = 'true'
     if auth_client_id is None:
         auth_api.provider = NoAuth()
     else:

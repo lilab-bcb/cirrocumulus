@@ -1,4 +1,5 @@
 import cirrocumulus.data_processing as data_processing
+from cirrocumulus.envir import CIRRO_SERVE
 from flask import Blueprint, Response, request, stream_with_context
 
 from .auth_api import AuthAPI
@@ -6,7 +7,6 @@ from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
 from .util import *
-
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -180,9 +180,20 @@ def handle_file():
     dataset = database_api.get_dataset(email, dataset_id)
     file = request.args.get('file')
     url = dataset['url']
+
     import os
     import mimetypes
-    file_path = os.path.join(os.path.dirname(url), os.path.abspath(file))
+    # when serving dataset, image must be relative to dataset directory
+    if os.environ.get(CIRRO_SERVE) == 'true':
+        _, ext = os.path.splitext(url)
+        if ext != '':
+            url = os.path.dirname(url)
+
+        if file[0] == '/' or file.find('..') != -1:
+            raise ValueError('Incorrect path')
+        file_path = os.path.join(url, file)
+    else:
+        file_path = file
     mimetype = mimetypes.guess_type(file_path)
     # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
     #     bytes = f.read()
