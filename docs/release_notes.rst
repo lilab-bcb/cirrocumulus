@@ -1,5 +1,9 @@
 Release Notes
 -------------
+
+- 1.1.9.post3 `October 21, 2020`
+    * Fixed error on startup using `cirro launch`
+
 - 1.1.9.post2 `October 20, 2020`
     * Fixed serving spatial images using `cirro serve`
 
