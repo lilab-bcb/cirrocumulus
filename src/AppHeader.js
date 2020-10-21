@@ -330,9 +330,16 @@ class AppHeader extends React.PureComponent {
                     {/*</Select>}*/}
 
                     {dataset != null &&
-                    <Typography component={"h3"}><b>{dataset.name}</b>
-                        <small> {hasSelection && shape != null && intFormat(selection.count) + '/'}{intFormat(shape[0])} cells</small></Typography>
+                    <Typography component={"h3"}>
+                        <b>{dataset.name}</b>
+                        <small>&nbsp;
+                            {hasSelection && shape != null && intFormat(selection.count) + ' / '}
+                            {shape != null && intFormat(shape[0]) + ' cells'}
+                        </small>
+
+                    </Typography>
                     }
+
 
                     {dataset != null && <Tabs
                         value={tab}
