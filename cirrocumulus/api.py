@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 import cirrocumulus.data_processing as data_processing
 from cirrocumulus.envir import CIRRO_SERVE
 from flask import Blueprint, Response, request, stream_with_context
@@ -188,12 +190,18 @@ def handle_file():
         _, ext = os.path.splitext(url)
         if ext != '':
             url = os.path.dirname(url)
-
         if file[0] == '/' or file.find('..') != -1:
             raise ValueError('Incorrect path')
         file_path = os.path.join(url, file)
     else:
         file_path = file
+        pr = urlparse(file_path)
+        if (pr.scheme == '' or pr.scheme == 'file') and not os.path.exists(file_path):
+            _, ext = os.path.splitext(url)
+            if ext != '':
+                url = os.path.dirname(url)
+            file_path = os.path.join(url, file)
+
     mimetype = mimetypes.guess_type(file_path)
     # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
     #     bytes = f.read()
