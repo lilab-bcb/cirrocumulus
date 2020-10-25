@@ -27,7 +27,6 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
-import isPlainObject from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
@@ -213,7 +212,15 @@ class EmbedForm extends React.PureComponent {
     };
 
     onObservationsChange = (event, value) => {
-        this.props.handleSearchTokens(value.map(item => item.id), 'obs');
+        let values = [];
+        value.forEach(val=>{
+            if(val.text!==undefined) {
+                values.push(val.text);
+            }else {
+                values.push(val);
+            }
+        });
+        this.props.handleSearchTokens(values, 'obs');
     };
 
     onSaveFeatureList = () => {
@@ -225,7 +232,7 @@ class EmbedForm extends React.PureComponent {
     };
 
     onFeatureClick = (event, option) => {
-        const value = isPlainObject(option) ? option.text : option;
+        const value = option.text!==undefined? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name == value) {
@@ -508,7 +515,8 @@ class EmbedForm extends React.PureComponent {
                     {/*                    onChange={this.props.handleFeatures}*/}
                     {/*                    helperText={'Enter or paste list'}*/}
                     {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized label={"Cell Metadata"} options={annotationOptions}
+                    <AutocompleteVirtualized label={"Cell Metadata"}
+                                             options={annotationOptions}
                                              value={splitTokens.obs.concat(splitTokens.obsCat)}
                                              onChipClick={this.onFeatureClick}
                                              groupBy={true}
