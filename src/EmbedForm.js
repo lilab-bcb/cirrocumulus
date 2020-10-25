@@ -213,10 +213,10 @@ class EmbedForm extends React.PureComponent {
 
     onObservationsChange = (event, value) => {
         let values = [];
-        value.forEach(val=>{
-            if(val.text!==undefined) {
+        value.forEach(val => {
+            if (val.text !== undefined) {
                 values.push(val.text);
-            }else {
+            } else {
                 values.push(val);
             }
         });
@@ -232,7 +232,7 @@ class EmbedForm extends React.PureComponent {
     };
 
     onFeatureClick = (event, option) => {
-        const value = option.text!==undefined? option.text : option;
+        const value = option.text !== undefined ? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name == value) {
