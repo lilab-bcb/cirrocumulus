@@ -1,7 +1,7 @@
 Release Notes
 -------------
 
-- 1.1.9.post4 `October 25, 2020`
+- 1.1.10 `October 25, 2020`
     * Fixed error selecting more than one cell metadata field
 
 - 1.1.9.post3 `October 21, 2020`
