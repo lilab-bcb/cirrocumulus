@@ -93,6 +93,9 @@ export class DotPlotGroup extends React.PureComponent {
         if (fractionRange[0] > 0) {
             fractionRange[0] = 0;
         }
+        if (fractionRange[1] < 1) {
+            fractionRange[1] = 1;
+        }
 
 
         if (categoryItem.minCustom != null && !isNaN(categoryItem.minCustom)) {
