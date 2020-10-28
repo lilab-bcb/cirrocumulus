@@ -1,8 +1,12 @@
 import Button from '@material-ui/core/Button';
+import IconButton from '@material-ui/core/IconButton';
+import InputAdornment from '@material-ui/core/InputAdornment';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Popover from '@material-ui/core/Popover';
+import TextField from '@material-ui/core/TextField';
+import ClearIcon from '@material-ui/icons/Clear';
 import FolderOpenIcon from '@material-ui/icons/FolderOpen';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -12,15 +16,15 @@ export class DatasetSelector extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {anchorEl: null};
+        this.state = {anchorEl: null, searchText: ''};
     }
 
     handleClick = (event) => {
-        this.setState({anchorEl: event.currentTarget});
+        this.setState({anchorEl: event.currentTarget, searchText: ''});
     };
 
     handleClose = () => {
-        this.setState({anchorEl: null});
+        this.setState({anchorEl: null, searchText: ''});
     };
 
     handleListItemClick = (id) => {
@@ -28,17 +32,30 @@ export class DatasetSelector extends React.PureComponent {
         if (id !== selectedId) {
             this.props.onChange(id);
         }
-        this.setState({anchorEl: null});
+        this.setState({anchorEl: null, searchText: ''});
+    };
+
+    handleClearSearchText = () => {
+        this.setState({searchText: ''});
+    };
+
+    onSearchChange = (event) => {
+        this.setState({searchText: event.target.value});
     };
 
     render() {
-        const {datasetChoices, dataset} = this.props;
-        const {anchorEl} = this.state;
+        const {dataset, datasetChoices} = this.props;
+        const {anchorEl, searchText} = this.state;
+
         const selectedId = dataset != null ? dataset.id : null;
         const open = Boolean(this.state.anchorEl);
-        if (datasetChoices.length <= 1 && dataset != null) {
-            return null;
+        let filteredChoices = datasetChoices;
+        const searchTextLower = this.state.searchText.toLowerCase().trim();
+        if (searchTextLower != '') {
+            filteredChoices = filteredChoices.filter(choice => choice.name.toLowerCase().indexOf(searchTextLower) !== -1 ||
+                (choice.description != null && choice.description.toLowerCase().indexOf(searchTextLower) !== -1));
         }
+
         return (
             <React.Fragment>
                 <Button variant="contained" onClick={this.handleClick}
@@ -56,8 +73,24 @@ export class DatasetSelector extends React.PureComponent {
                              horizontal: 'center',
                          }}
                 >
-                    <List style={{maxWidth: 500}} dense disablePadding component="nav" aria-label="datasets">
-                        {datasetChoices.map(choice => {
+
+                    <TextField style={{padding: 6}} type="text" placeholder={"Search"} value={searchText}
+                               onChange={this.onSearchChange}
+                               fullWidth={true}
+                               InputProps={searchText.trim() !== '' ? {
+                                   endAdornment:
+                                       <InputAdornment position="end">
+                                           <IconButton
+                                               aria-label="clear"
+                                               onClick={this.handleClearSearchText}
+                                           >
+                                               <ClearIcon/>
+                                           </IconButton>
+                                       </InputAdornment>
+                               } : null}
+                    />
+                    <List style={{width: 500}} dense disablePadding component="nav" aria-label="datasets">
+                        {filteredChoices.map(choice => {
                             return <ListItem alignItems="flex-start" selected={choice.id === selectedId} key={choice.id}
                                              button onClick={(e) => this.handleListItemClick(choice.id)}>
                                 <ListItemText
