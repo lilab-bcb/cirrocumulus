@@ -217,7 +217,12 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
                 basis_keys.add(basis_obj['full_name'])
 
     if grouped_stats is not None:
-        dimensions.update(grouped_stats.get('dimensions', []))
+        grouped_stats_dimensions = grouped_stats.get('dimensions', [])
+        for d in grouped_stats_dimensions:
+            if isinstance(d, list):
+                dimensions.update(d)
+            else:
+                dimensions.add(d)
         measures.update(grouped_stats.get('measures', []))
     if stats is not None:
         dimensions.update(stats.get('dimensions', []))
@@ -290,7 +295,7 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
         results['selection']['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
         if len(dimensions) > 0 and len(var_measures) > 0:
             results['selection']['dotplot'] = DotPlotAggregator(var_measures=var_measures,
-                dimensions=dimensions).execute(df)
+                dimensions=[dimensions]).execute(df)
         results['selection']['count'] = df.shape[0]
 
     return results

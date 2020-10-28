@@ -1,7 +1,7 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {isEqual, isPlainObject, uniqBy} from 'lodash';
+import {isEqual, uniqBy} from 'lodash';
 import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
 import CustomError from '../CustomError';
@@ -1441,7 +1441,8 @@ function _updateCharts(onError) {
         });
 
         let dotplotMeasures = new Set();
-        let dotplotDimensions = [];
+        let dotPlotCategories = searchTokens.obsCat.slice();
+        let dotPlotCategoryKeys = [dotPlotCategories.join('-')];
         let dotPlotKeys = {}; // category-feature
         if (dotplot) {
             let cachedDotPlotKeys = {};
@@ -1450,7 +1451,7 @@ function _updateCharts(onError) {
                     cachedDotPlotKeys[dotPlotDataItem.name + '-' + datum.name] = true;
                 });
             });
-            searchTokens.obsCat.forEach(category => {
+            dotPlotCategoryKeys.forEach(category => {
                 let added = false;
                 searchTokens.X.forEach(feature => {
                     if (feature !== '__count') {
@@ -1462,9 +1463,9 @@ function _updateCharts(onError) {
                         }
                     }
                 });
-                if (added) {
-                    dotplotDimensions.push(category);
-                }
+                // if (added) {
+                //     dotplotDimensions.push(category);
+                // }
             });
         }
 
@@ -1546,7 +1547,9 @@ function _updateCharts(onError) {
                 });
             }
 
-            dotPlotData = dotPlotData.filter(categoryItem => searchTokens.obsCat.indexOf(categoryItem.name) !== -1);
+            // keep active categories only
+            let categoryKeys = [searchTokens.obsCat.join('-')];
+            dotPlotData = dotPlotData.filter(categoryItem => categoryKeys.indexOf(categoryItem.name) !== -1);
             dotPlotData.forEach((categoryItem, categoryIndex) => {
                 const nfeatures = categoryItem.values.length;
                 categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
@@ -1593,10 +1596,10 @@ function _updateCharts(onError) {
         }
 
 
-        if (dotplotDimensions.length > 0 && dotplotMeasures.size > 0) {
+        if (dotPlotCategories.length > 0 && dotplotMeasures.size > 0) {
             q.groupedStats = {
                 measures: Array.from(dotplotMeasures),
-                dimensions: dotplotDimensions
+                dimensions: [dotPlotCategories]
             };
         }
 
@@ -1715,7 +1718,7 @@ function handleEmbeddingResult(embedding, embeddingDef) {
 
             let values = embeddingValues[name];
             let purity = null;
-            if (isPlainObject(values)) {
+            if (values.value !== undefined) {
                 purity = values.purity;
                 values = values.value;
             }
