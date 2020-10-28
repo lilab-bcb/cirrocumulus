@@ -331,7 +331,7 @@ class AppHeader extends React.PureComponent {
 
                     {dataset != null &&
                     <Typography component={"h3"}>
-                        <b>{dataset.name}</b>
+                        <Tooltip title={dataset.description||''}><b>{dataset.name}</b></Tooltip>
                         <small>&nbsp;
                             {hasSelection && shape != null && intFormat(selection.count) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}
@@ -339,7 +339,6 @@ class AppHeader extends React.PureComponent {
 
                     </Typography>
                     }
-
 
                     {dataset != null && <Tabs
                         value={tab}
