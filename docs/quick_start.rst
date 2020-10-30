@@ -15,7 +15,7 @@ Launch cirrocumulus via the command line::
 - Predefined marker lists can be provided in JSON format to quickly browse features of interest.
 
 Example Data
--------------
+^^^^^^^^^^^^^
 - Download `3k PBMCs from a healthy donor data`_ and launch::
 
     cirro launch pbmc3k.h5ad --markers markers.json

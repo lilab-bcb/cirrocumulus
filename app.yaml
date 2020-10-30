@@ -35,4 +35,4 @@ handlers:
     redirect_http_response_code: 301
 
 env_variables:
-  CIRRO_AUTH_CLIENT_ID: ""
+  CIRRO_AUTH_CLIENT_ID: "964448350275-ghjb3k21badpdc25l2imn0a9qdbe44vb.apps.googleusercontent.com"

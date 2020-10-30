@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.10.post2 `October 30, 2020`
+    * Fixed display of set names
+    * Fixed bug updating selected dot plot when selection changes
+
 - 1.1.10.post1 `October 28, 2020`
     * Create dotplots by grouping by more than one category
     * Search dataset names and descriptions when using `cirro serve`

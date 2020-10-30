@@ -5,7 +5,7 @@
    :maxdepth: 1
    :hidden:
 
-
+   quick_start
    installation
    documentation
    command_line
