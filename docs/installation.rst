@@ -99,30 +99,15 @@ Server
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
 
-- Clone the cirrocumulus repository::
+- Clone the cirrocumulus app engine repository::
 
-    git clone https://github.com/klarman-cell-observatory/cirrocumulus
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus-app-engine.git
 
-- Change your current working directory to cirrocumulus::
+- Change your current working directory to cirrocumulus-app-engine::
 
-    cd cirrocumulus
+    cd cirrocumulus-app-engine
 
-- Install `Node.js`_.
-
-- Install TypeScript::
-
-    npm install -g typescript
-
-- Install JavaScript dependencies::
-
-    npm i
-
-
-- Build the client::
-
-    npm run-script build
-
-- Create or use an existing GCP project
+- Create or use an existing GCP project in your Google Console.
 
 - Create App Engine by navigating to App Engine > Dashboard. You may choose the region where your application is hosted.
   Select the Python 3 Standard Environment.
