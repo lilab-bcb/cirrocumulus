@@ -13,11 +13,12 @@ pip
     cirro launch <path_to_dataset>
 
 
-Terra_ notebook
-^^^^^^^^^^^^^^^^
+Terra_ Cloud Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - Click ``Open Terminal`` to connect to your running VM
 - Install cirrocumulus via pip if it was not installed in your docker image
-- Download your dataset to your running VM using gsutil::
+- Download your dataset to your running VM using gsutil as in the example below.
+  Alternatively, you can use gcsfuse_ to mount your Google cloud bucket.
 
     gsutil -m cp gs://fc-000/test.h5ad .
 
@@ -76,17 +77,27 @@ Cirrocumulus can also be run in `server` mode in order to serve multiple users a
 The server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
 
 
-Prepare Data
-^^^^^^^^^^^^^^
-The command `cirro prepare_data` can be used to prepare a cirrocumulus formatted dataset from a h5ad, loom, or Seurat file.
-The cirrocumulus format allows efficient fetching of portions of a dataset over a network (e.g. Google or S3 bucket). Example::
+Server
+^^^^^^^^
 
-    cirro prepare_data pbmc3k_final.rds
+- Install cirrocumulus using pip or docker
 
+- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials.
+
+    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
+    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
+      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+
+- Install MongoDB_ and start the MongoDB server
+
+- Start the server via the command line::
+
+    cirro serve
+
+- Import a dataset and optionally share with dataset with collaborators
 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
-
 
 - Clone the cirrocumulus repository::
 
@@ -139,41 +150,6 @@ Google App Engine
 - Read more about App Engine in the `App Engine`_ documentation.
 
 
-Server
-^^^^^^^^
-
-- Install cirrocumulus using pip or docker
-
-- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials.
-
-    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
-    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
-      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
-
-- Install MongoDB_ and start the MongoDB server
-
-- Start the server via the command line::
-
-    cirro serve
-
-- Import a dataset
-
-
-Build From Source
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-- Clone the cirrocumulus repository::
-
-    git clone https://github.com/klarman-cell-observatory/cirrocumulus
-
-
-- Install JavaScript dependencies, build the client, and install cirrocumulus Python module in editable mode::
-
-    ./build.sh
-
-- Launch cirrocumulus via the command line::
-
-    cirro launch test.h5ad
 
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
@@ -182,3 +158,4 @@ Build From Source
 .. _Terra: https://app.terra.bio/
 .. _MongoDB: https://www.mongodb.com/
 .. _Google API Console: https://console.developers.google.com/
+.. _gcsfuse: _https://github.com/GoogleCloudPlatform/gcsfuse/:

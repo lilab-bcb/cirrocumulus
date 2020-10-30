@@ -10,7 +10,7 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Scale to > 6 million cells on commodity hardware
 * Share datasets securely with collaborators
 * Create dotplots to explore relationships between categorical variables and expression
-* Interactively create and share “and” or “or” filters
+* Interactively create and share “AND” or “OR” filters
 * Collaboratively annotate cell types in real time
 * Quickly load multiple features from predefined lists
 * Explore multiple features and embeddings simultaneously

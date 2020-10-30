@@ -5,149 +5,123 @@ Documentation
 Overview
 ^^^^^^^^^
 
-The Cirrocumulus interface is described below:
-
-.. image:: images/overview.png
-
-The left panel specifies the embedding and attributes of cells to visualize, as well as marker configurations.
-All the plots are shown in the main window on its right-hand side, while the top panel is mainly to set the current user and dataset.
+The cirrocumulus interface consists of an app bar, side bar, primary embedding, embedding toolbar, embedding gallery, and dot plot.
 
 
-Open Dataset - Shared Environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-First, if you're running in a shared environment, sign in to your Google account by clicking the ``SIGN IN`` button on the right-top corner:
-
-.. image:: images/sign-in.png
-  :align: center
-
-After that, select the dataset you want to visualize from the drop-down menu on the top panel:
-
-.. image:: images/choose-dataset.png
-  :scale: 50%
-  :align: center
-
-Open Dataset - Command Line
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
- cirro launch <path_to_dataset>
-
-- Datasets can be provided in h5ad, loom, or STAR-Fusion formats.
-- Launch accepts more than one dataset to support cases in which modalities are stored in separate files.
-- Marker lists can be provided in JSON format to quickly load features from predefined lists.
-
-
-
-View Embedding and Attributes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-After opening the dataset, you need to specify which embedding and cell attributes you want to see on the left panel:
-
-.. image:: images/embed-attr.png
-  :scale: 50%
-  :align: center
-
-Here is the detailed explanation on each field:
-
-* **Embedding**: You can choose cell embeddings here for visualization. The embedding name indicates its algorithm:
-e.g. ``X_umap`` is for UMAP coordinates, ``X_fitsne`` for FIt-SNE, ``X_fle`` for force-directed layout, etc.
-Select multiple embeddings two view more than one embedding simultaneously.
-
-* **Features**: You can view feature plots by selecting genes from this field. Either choose from the drop-down menu,
-or type in this field, with candidate genes provided while you are typing, and select the gene you want. You can also
-paste a list of genes from your clipboard or drop a file with one gene per line.
-
-* **Observations**: Cell attributes can be chosen from this field to view.
-
-Main plot view
+Primary embedding
 ^^^^^^^^^^^^^^^^^^^
 
-The default view is a main interactive embedding plot, as the example below:
+The primary view is an interactive embedding plot:
 
-.. image:: images/interactive-plot.png
-  :align: center
-
-You can scroll your mouse to zoom in/out the main plot. Use the toolbox on the left-top side to change the active tool:
-
-.. image:: images/toolbox.png
-  :align: center
-
-From left to right are: *Lasso selection*, *Box selection*, *Append to selection*, *Move viewpoint*, *Save to image*, and *View Gallery*.
-
-By default, *Move viewpoint* is activated, and you can move the viewpoint by dragging your cursor on the main plot.
-You can select a specific area to view by switching to one of the three selections provided in the toolbox.
-By clicking *Save to image* button, you can save the current plot as a png or svg file. The last *View Gallery* button
-scrolls to the Gallery view.
-
-As the main plot is interactive, you can see the attribute of each data point (i.e. cell) by moving your cursor to its location on the plot.
-
-You can also select cells with the same status by clicking the corresponding name from legend:
-
-.. image:: images/legend-select.png
-  :align: center
-
-As a result, this specific group of cells is highlighted. You can click the same name once more to go back to the normal plot.
-
-You can adjust the main plot using the view options on the left panel:
-
-.. image:: images/view-options.png
-  :scale: 50%
-  :align: center
-
-Mouse behavior for the main plot is:
-
-- 3-d plot:
-
-  - Rotate: Mouse left click
-  - Pan: Mouse right click
-  - Zoom: Mouse wheel
+.. image:: images/embedding.png
 
 
-- 2-d plot
 
-  - Pan: Mouse left click.
-  - Zoom: Mouse wheel.
+For spatial data, you can overlay genes or cell metadata on top of an image:
+
+.. image:: images/spatial.png
+
+
+Embeddings can also be 3-dimensional:
+
+.. image:: images/embedding_3d.png
+
+
+Use the mouse wheel to zoom. Pan with left mouse-click (2-d) or right-click (3-d). Rotate 3-d plots using left-mouse click.
+
+
+The right-hand side of the plot allows you to filter cells using the selected attribute.
+
+Filters operate on continuous values:
+
+.. image:: images/numerical_filter.png
+
+
+or categorical values:
+
+.. image:: images/categorical_filter.png
+
+
+Filters can be combined using "AND" or "OR" logic and can be saved for reuse.
+
+Toolbar
+^^^^^^^^^^^
+
+Use the toolbar to change the active tool. The lasso and brush tools allow you to visually select cells of interest:
+
+.. image:: images/lasso.gif
+
+
+Click the label button to toggle showing categorical labels on the embedding:
+
+.. image:: images/labels.png
+
+
+In a 3-d plot, use the play button to rotate the plot in a loop.
+
+.. image:: images/play3d.gif
+
+The "Append to selection" button controls whether the lasso and brush tools append to the selection.
+
+Additional buttons save the embedding to svg or png and toggle whether to show fog for 3-d embeddings to fade distant points.
 
 Gallery view
 ^^^^^^^^^^^^^^^^^^^
 
-The gallery view, which is displayed below the main plot, shows all selected features and embeddings:
+The gallery view, which is displayed below the main plot, shows all selected features and embeddings and thus provides a way for comparing attributes and embeddings.
+The following example shows the IL7R gene and leiden clusters in a UMAP and TSNE embedding:
 
 .. image:: images/gallery.png
-  :align: center
 
-As you can see from the example above, gallery view provides a way for comparing plots. The legend can be viewed in the left-side panel.
 
-Additionally, when you select a specific class of cells, you'll see that all the plots have these cells highlighted:
+
+Additionally, when you select cells, all plots have these cells highlighted:
 
 .. image:: images/gallery-select.png
-  :align: center
-
-You can also change the gallery plots' size using the following option on the left panel:
-
-.. image:: images/gallery-chart-size.png
-  :scale: 50%
-  :align: center
 
 
-Dot plot view
+The gallery plot size can be changed in the side bar.
+
+Drag and drop gallery charts to reorder them or click on a chart to make it the primary view.
+
+
+Side Bar
+^^^^^^^^^^^
+
+Embeddings: Select which cell embeddings to view. Select multiple embeddings two view more than one embedding simultaneously.
+
+Genes/Features: Select genes/features to visualize. You can also paste a list of genes from your clipboard or drop a file with one gene per line.
+
+Cell Metadata: Cell metadata, such as cluster labels, can be chosen from this field to view.
+
+Sets: Sets allow you to save predefined lists of genes (e.g. cluster markers) for easy
+
+Filters: Shows the current datasets cell filters. Filters can be saved for later reuse and can be combined with "AND" or "OR" logic.
+In server mode, filters are shared among dataset users, thus enabling real-time collaborative cell annotations.
+Importantly, in addition to the cell ids selected by a filter, the provenance of the filter is saved for reproducibility.
+
+The side bar contains additional controls, such as the embedding point size and opacity.
+
+Dot plot
 ^^^^^^^^^^^^^^^
 
 In addition to embeddings, you can also view gene distributions across cell categories using dot plots:
 
-.. image:: images/dot-plot.png
-  :align: center
-
-You can switch to this view by selecting ``Dot Plot`` from the top tab.
+.. image:: images/dotplot.png
 
 
-Share Results
-^^^^^^^^^^^^^^
+When selecting more than one category, the dot plot first groups by the primary category, then by the secondary category, etc.
+For example, when you select "leiden" and "sample", the dot plot first groups by leiden cluster and then by sample.
 
-Finally, you can share plots with your collaborators by clicking the left-most button on the right-top corner, and choosing ``Copy Link`` from the drop-down menu:
+You can switch to this view by selecting "Dot Plot" from the app bar.
 
-.. image:: images/more.png
-  :scale: 50%
-  :align: center
+App Bar
+^^^^^^^^^^
 
-Now you can send the URL you just copied to others.
+The app bar shows the number of cells in your dataset and the number of selected cells. Additionally, it
+lets you switch between the embedding view and the dot plot view.
+
+Share your visualization state with your collaborators by selecting "Copy Link" from the "More" menu.
+
+
+
