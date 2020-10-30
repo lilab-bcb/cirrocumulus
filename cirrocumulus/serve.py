@@ -14,7 +14,7 @@ def cached_app():
 
     if app is None:
         app = create_app()
-
+        #
         # from flask_cors import CORS
         # CORS(app)
         configure()
@@ -48,15 +48,16 @@ def main(argsv):
     import argparse
     import os
     parser = argparse.ArgumentParser(description='Run cirrocumulus server')
-    parser.add_argument('--database', help='Database')
-    parser.add_argument('--db_uri', help='Database connection URI')
+    parser.add_argument('--database', help='MongoDB database', default=DEFAULT_DATABASE)
+    parser.add_argument('--db_uri', help='MongoDB database connection URI', default=DEFAULT_DB_URI)
     parser.add_argument('--email', help='Email address that server runs as')
     parser.add_argument('--auth_client_id', help='OAuth client id')
     parser.add_argument('-w', '--workers', dest='workers', help='The number of worker processes', type=int)
     parser.add_argument('-t', '--timeout', dest='timeout',
         help='Workers silent for more than this many seconds are killed and restarted', type=int, default=30)
     parser.add_argument('-b', '--bind', dest='bind',
-        help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).')
+        help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).',
+        default='127.0.0.1:5000')
 
     args = parser.parse_args(argsv)
 

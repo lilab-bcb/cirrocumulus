@@ -22,6 +22,7 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
             to_concat = []
             all_ids = None
             for path in dataset_paths:
+                print(path)
                 d = anndata_dataset.get_data(path)
                 all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
                 to_concat.append(d)
@@ -106,16 +107,19 @@ def create_app():
 def main(argsv):
     import argparse
     parser = argparse.ArgumentParser(description='Run cirrocumulus')
-    parser.add_argument('dataset', help='Path to dataset', nargs='+')
-    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    parser.add_argument('--host',
-        help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
+    parser.add_argument('dataset',
+        help='Path to dataset in h5ad, loom, or STAR-Fusion format. Separate multiple datasets with '
+             'a comma instead of a space in order to join datasets by cell id', nargs='+')
+    parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
     parser.add_argument('--markers',
         help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
         nargs='*')
+    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
+    parser.add_argument('--host',
+        help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
+
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-    parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
 
     args = parser.parse_args(argsv)
     app = create_app()
