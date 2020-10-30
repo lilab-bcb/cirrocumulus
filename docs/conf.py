@@ -171,7 +171,7 @@ latex_documents = [
     (
         master_doc,
         "cirrocumulus.tex",
-        "Pegasus Documentation",
+        "Cirrocumulus Documentation",
         "Bo Li, Joshua Gould, Yiming Yang",
         "manual",
     )
@@ -197,7 +197,7 @@ texinfo_documents = [
         "Cirrocumulus Documentation",
         author,
         "cirrocumulus",
-        "One line description of project.",
+        "An interactive visualization tool for large-scale single-cell genomics data",
         "Miscellaneous",
     )
 ]
