@@ -25,12 +25,12 @@ import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DotPlots from './DotPlots';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
-import EmbedForm from './EmbedForm';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 import SaveSetDialog from './SaveSetDialog';
+import SideBar from './SideBar';
 
 const lightTheme = createMuiTheme(
     {
@@ -120,7 +120,7 @@ class App extends PureComponent {
                         }}
                         anchor="left"
                     >
-                        {dataset != null && <EmbedForm key={dataset.id}/>}
+                        {dataset != null && <SideBar key={dataset.id}/>}
                     </Drawer>
 
                     <main style={{backgroundColor: bgcolor, color: color}} className={classes.content}>

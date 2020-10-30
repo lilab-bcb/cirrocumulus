@@ -232,7 +232,7 @@ function markers(state = [], action) {
                         newResults.push({
                             category: categoryName,
                             name: name,
-                            id: name,
+                            id: categoryName + '-' + name,
                             readonly: true,
                             features: category[name]
                         });
@@ -250,7 +250,7 @@ function markers(state = [], action) {
                             result.push({
                                 category: categoryName,
                                 name: name,
-                                id: name,
+                                id: categoryName + '-' + name,
                                 readonly: true,
                                 features: category[name]
                             });
@@ -263,6 +263,12 @@ function markers(state = [], action) {
                     });
                 }
             }
+            result.forEach(item => {
+                if (item.id == null) {
+                    item.id = item.category + '-' + item.name;
+                }
+            });
+
             return result;
         default:
             return state;

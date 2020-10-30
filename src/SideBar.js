@@ -63,7 +63,7 @@ import {
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
-import {splitSearchTokens} from './util';
+import {getFeatureSets, splitSearchTokens} from './util';
 
 const sorter = natsort();
 const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
@@ -126,11 +126,7 @@ const getAnnotationOptions = memoize(
     }
 );
 const getFeatureSetOptions = memoize((markers) => {
-        const options = [];
-        markers.forEach(item => {
-            options.push({group: item.category, text: item.name, id: item.id});
-        });
-
+        const options = markers.map(item => ({group: item.category, text: item.name, id: item.id}));
         options.sort((item1, item2) => {
             const c = sorter(item1.group, item2.group);
             if (c !== 0) {
@@ -183,7 +179,7 @@ const AccordionPanelDetails = withStyles(theme => ({
 }))(MuiAccordionPanelDetails);
 
 
-class EmbedForm extends React.PureComponent {
+class SideBar extends React.PureComponent {
 
 
     constructor(props) {
@@ -228,7 +224,15 @@ class EmbedForm extends React.PureComponent {
     };
 
     onFeatureSetsChange = (event, value) => {
-        this.props.handleSearchTokens(value, 'featureSet');
+        let values = [];
+        value.forEach(val => {
+            if (val.id !== undefined) {
+                values.push(val.id);
+            } else {
+                values.push(val);
+            }
+        });
+        this.props.handleSearchTokens(values, 'featureSet');
     };
 
     onFeatureClick = (event, option) => {
@@ -452,6 +456,7 @@ class EmbedForm extends React.PureComponent {
             savedDatasetFilter = {};
         }
         const splitTokens = splitSearchTokens(searchTokens);
+        const featureSets = getFeatureSets(markers, splitTokens.featureSets);
         const featureOptions = dataset.features;
         const availableEmbeddings = dataset.embeddings;
 
@@ -461,6 +466,7 @@ class EmbedForm extends React.PureComponent {
         const embeddingKeys = getEmbeddingKeys(embeddings);
         const annotationOptions = getAnnotationOptions(obs, obsCat);
         const featureSetOptions = getFeatureSetOptions(markers);
+
         const fancy = serverInfo.fancy;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
         return (
@@ -526,12 +532,14 @@ class EmbedForm extends React.PureComponent {
 
                 {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
-                    <AutocompleteVirtualized label={"Sets"} options={featureSetOptions}
-                                             value={splitTokens.featureSets}
+                    <AutocompleteVirtualized label={"Sets"}
+                                             options={featureSetOptions}
+                                             value={featureSets}
                                              onChipClick={this.onFeatureSetClick}
                                              groupBy={true}
                                              onChange={this.onFeatureSetsChange}
-                                             getChipText={option => option.text}/>
+                                             getOptionSelected={(option, value) => option.id === value.id}
+                                             getChipText={option => option.name}/>
                     {fancy && splitTokens.X.length > 0 && <FormHelperText>
                         <Tooltip title={"Save Current Feature List"}>
                             <IconButton size={'small'} onClick={this.onSaveFeatureList}>
@@ -851,6 +859,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 
 export default withStyles(styles)(connect(
     mapStateToProps, mapDispatchToProps,
-)(EmbedForm));
+)(SideBar));
 
 

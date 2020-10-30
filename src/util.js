@@ -303,6 +303,35 @@ export function convertBinsToPoints(bins, selectedBins) {
     return points;
 }
 
+// add to X, maintaining insertion order
+export function addFeatureSetsToX(featureSets, X) {
+    const uniqueX = new Set(X);
+    featureSets.forEach(featureSet => {
+        let features = featureSet.features;
+        if (features) {
+            features.forEach(feature => {
+                if (!uniqueX.has(feature)) {
+                    X.push(feature);
+                    uniqueX.add(feature);
+                }
+            });
+        }
+
+    });
+}
+
+export function getFeatureSets(markers, featureSetIds) {
+    let featureSets = [];
+    featureSetIds.forEach(featureSetId => {
+        for (let i = 0; i < markers.length; i++) {
+            if (markers[i].id === featureSetId) {
+                featureSets.push(markers[i]);
+                break;
+            }
+        }
+    });
+    return featureSets;
+}
 
 export function splitSearchTokens(tokens) {
     let X = [];

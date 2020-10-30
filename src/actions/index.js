@@ -13,9 +13,10 @@ import {RestServerApi} from '../RestServerApi';
 import {getPositions} from '../ThreeUtil';
 
 import {
+    addFeatureSetsToX,
     CATEGORY_20B,
     CATEGORY_20C,
-    convertBinsToPoints,
+    convertBinsToPoints, getFeatureSets,
     getInterpolator,
     indexSort,
     randomSeq,
@@ -562,7 +563,7 @@ function handleFilterUpdated() {
 
         const searchTokens = splitSearchTokens(state.searchTokens);
         let filter = getFilterJson(state);
-
+        addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
         let q = {
             selection: {
                 measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
@@ -1383,30 +1384,7 @@ function _updateCharts(onError) {
 
         const searchTokens = splitSearchTokens(state.searchTokens);
         if (searchTokens.featureSets.length > 0) {
-            // add to X, maintaining insertion order
-            const uniqueX = new Set(searchTokens.X);
-            const markers = state.markers;
-            searchTokens.featureSets.forEach(featureSet => {
-                let features = null;
-                for (let i = 0; i < markers.length; i++) {
-                    if (markers[i].id === featureSet.id) {
-                        features = markers[i].features;
-                        break;
-                    }
-                }
-                if (features) {
-                    features.forEach(feature => {
-                        if (!uniqueX.has(feature)) {
-                            searchTokens.X.push(feature);
-                            uniqueX.add(feature);
-                        }
-                    });
-                } else {
-                    console.log(featureSet.id + ' not found in ' + markers.map(s => s.id));
-                }
-
-            });
-
+            addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
         }
         let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0
