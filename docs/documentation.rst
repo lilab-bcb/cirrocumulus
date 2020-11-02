@@ -88,13 +88,13 @@ Drag and drop gallery charts to reorder them or click on a chart to make it the 
 Side Bar
 ^^^^^^^^^^^
 
-Embeddings: Select which cell embeddings to view. Select multiple embeddings two view more than one embedding simultaneously.
+Embeddings: Select which cell embeddings to view. Select multiple embeddings to view more than one embedding simultaneously.
 
 Genes/Features: Select genes/features to visualize. You can also paste a list of genes from your clipboard or drop a file with one gene per line.
 
 Cell Metadata: Cell metadata, such as cluster labels, can be chosen from this field to view.
 
-Sets: Sets allow you to save predefined lists of genes (e.g. cluster markers) for easy
+Sets: Sets allow you to save and view predefined lists of genes (e.g. cluster markers).
 
 Filters: Shows the current datasets cell filters. Filters can be saved for later reuse and can be combined with "AND" or "OR" logic.
 In server mode, filters are shared among dataset users, thus enabling real-time collaborative cell annotations.
