@@ -11,7 +11,7 @@ The cirrocumulus interface consists of an app bar, side bar, primary embedding, 
 Primary embedding
 ^^^^^^^^^^^^^^^^^^^
 
-The primary view is an interactive embedding plot:
+The primary view is an interactive 2 or 3-dimensional embedding:
 
 .. image:: images/embedding.png
 
@@ -22,27 +22,10 @@ For spatial data, you can overlay genes or cell metadata on top of an image:
 .. image:: images/spatial.png
 
 
-Embeddings can also be 3-dimensional:
-
-.. image:: images/embedding_3d.png
-
 
 Use the mouse wheel to zoom. Pan with left mouse-click (2-d) or right-click (3-d). Rotate 3-d plots using left-mouse click.
 
-
-The right-hand side of the plot allows you to filter cells using the selected attribute.
-
-Filters operate on continuous values:
-
-.. image:: images/numerical_filter.png
-
-
-or categorical values:
-
-.. image:: images/categorical_filter.png
-
-
-Filters can be combined using "AND" or "OR" logic and can be saved for reuse.
+.. image:: images/embedding.gif
 
 Toolbar
 ^^^^^^^^^^^
@@ -52,7 +35,10 @@ Use the toolbar to change the active tool. The lasso and brush tools allow you t
 .. image:: images/lasso.gif
 
 
-Click the label button to toggle showing categorical labels on the embedding:
+The "Append to selection" button controls whether the lasso and brush tools append to the selection.
+
+
+Click the label button to toggle the visibility of categorical labels directly on the embedding:
 
 .. image:: images/labels.png
 
@@ -61,9 +47,13 @@ In a 3-d plot, use the play button to rotate the plot in a loop.
 
 .. image:: images/play3d.gif
 
-The "Append to selection" button controls whether the lasso and brush tools append to the selection.
 
-Additional buttons save the embedding to svg or png and toggle whether to show fog for 3-d embeddings to fade distant points.
+and toggle whether to fade distant points or to show a 3-d axis:
+
+.. image:: images/fog.gif
+
+Additional buttons include saving the embedding image to svg or png.
+
 
 Gallery view
 ^^^^^^^^^^^^^^^^^^^
@@ -72,7 +62,6 @@ The gallery view, which is displayed below the main plot, shows all selected fea
 The following example shows the IL7R gene and leiden clusters in a UMAP and TSNE embedding:
 
 .. image:: images/gallery.png
-
 
 
 Additionally, when you select cells, all plots have these cells highlighted:
@@ -84,13 +73,14 @@ The gallery plot size can be changed in the side bar.
 
 Drag and drop gallery charts to reorder them or click on a chart to make it the primary view.
 
+.. image:: images/gallery-interact.gif
 
 Side Bar
 ^^^^^^^^^^^
 
 Embeddings: Select which cell embeddings to view. Select multiple embeddings to view more than one embedding simultaneously.
 
-Genes/Features: Select genes/features to visualize. You can also paste a list of genes from your clipboard or drop a file with one gene per line.
+Genes/Features: Select genes/features to visualize. You can also paste a list of genes from your clipboard or drop a file with one gene per line. You can click on a chip to make it the primrary view.
 
 Cell Metadata: Cell metadata, such as cluster labels, can be chosen from this field to view.
 
@@ -99,6 +89,18 @@ Sets: Sets allow you to save and view predefined lists of genes (e.g. cluster ma
 Filters: Shows the current datasets cell filters. Filters can be saved for later reuse and can be combined with "AND" or "OR" logic.
 In server mode, filters are shared among dataset users, thus enabling real-time collaborative cell annotations.
 Importantly, in addition to the cell ids selected by a filter, the provenance of the filter is saved for reproducibility.
+
+The right-hand side of the embedding plot allows you to filter cells using the selected attribute.
+
+Filters operate on continuous values:
+
+.. image:: images/numerical_filter.png
+
+
+or categorical values:
+
+.. image:: images/categorical_filter.png
+
 
 The side bar contains additional controls, such as the embedding point size and opacity.
 
