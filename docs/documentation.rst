@@ -24,6 +24,7 @@ For spatial data, you can overlay genes or cell metadata on top of an image:
 
 
 Use the mouse wheel to zoom. Pan with left mouse-click (2-d) or right-click (3-d). Rotate 3-d plots using left-mouse click.
+Hover hover a data point to see the underlying value.
 
 .. image:: images/embedding.gif
 
