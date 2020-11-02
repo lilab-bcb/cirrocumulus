@@ -4,34 +4,37 @@ import {numberFormat0} from './formatters';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
-    let value = domain[0];
 
-    let stepSize = (domain[1] - domain[0]) / nsteps;
+    let stepSize = (domain[1] - domain[0]) / (nsteps + 1);
+    let steps = [];
+    steps.push(domain[0]);
+    let value = domain[0];
+    for (let i = 0; i < nsteps; i++) {
+        value += stepSize;
+        steps.push(value);
+    }
+    steps.push(domain[1]);
+
     let legendHeight = 20;
 
-    let valueToX = scaleLinear().range([margin, width - margin]).domain([0, nsteps - 1]).clamp(true);
-    let valueToRadius = scaleLinear().range([2, 10]).domain(domain).clamp(true);
-
+    let valueToX = scaleLinear().range([margin, width - margin]).domain([0, steps.length - 1]).clamp(true);
+    let valueToRadius = scaleLinear().range([1, 9]).domain(domain).clamp(true);
 
     context.textBaseline = 'top';
     context.fillStyle = textColor;
     context.strokeStyle = textColor;
     context.textAlign = 'center';
 
-    for (let i = 0; i < nsteps; i++) {
-        if (i === (nsteps - 1)) {
-            value = domain[1];
-        }
+    for (let i = 0; i < steps.length; i++) {
         let pix = valueToX(i);
 
-        let radius = valueToRadius(value);
+        let radius = valueToRadius(steps[i]);
         context.beginPath();
         context.arc(pix, 10, radius, 0, Math.PI * 2);
         context.stroke();
 
-        context.fillText(numberFormat0(100 * value), pix, legendHeight + 2);
+        context.fillText(numberFormat0(100 * steps[i]), pix, legendHeight + 2);
 
-        value += stepSize;
     }
 }
 
