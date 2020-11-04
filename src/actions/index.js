@@ -2,7 +2,6 @@ import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, uniqBy} from 'lodash';
-import natsort from 'natsort';
 import OpenSeadragon from 'openseadragon';
 import CustomError from '../CustomError';
 import {JsonDataset} from '../JsonDataset';
@@ -16,7 +15,8 @@ import {
     addFeatureSetsToX,
     CATEGORY_20B,
     CATEGORY_20C,
-    convertBinsToPoints, getFeatureSets,
+    convertBinsToPoints,
+    getFeatureSets,
     getInterpolator,
     indexSort,
     randomSeq,
@@ -1349,29 +1349,75 @@ function handleSelectionResult(selectionResult, clear) {
                 if (clear) {
                     selectedDotPlotData = [];
                 }
-                const dotPlotNames = selectedDotPlotData.map(item => item.name);
-
-
-                selectionResult.dotplot.forEach(categoryData => {
-                    let index = dotPlotNames.indexOf(categoryData.name);
-                    if (index !== -1) {
-                        if (clear) {
-                            selectedDotPlotData[index] = categoryData;
-                        } else {
-                            selectedDotPlotData[index].values = categoryData.values.concat(selectedDotPlotData[index].values);
-                            selectedDotPlotData[index].values = uniqBy(selectedDotPlotData[index].values, (value => value.name));
-                        }
-                        selectedDotPlotData[index] = Object.assign({}, selectedDotPlotData[index]);
-                    } else {
-                        selectedDotPlotData.push(categoryData);
-                    }
-                });
-                dispatch(_setSelectedDotPlotData(selectedDotPlotData.slice()));
+                selectedDotPlotData = updateDotPlotData(selectionResult.dotplot, selectedDotPlotData, splitSearchTokens(state.searchTokens));
+                dispatch(_setSelectedDotPlotData(selectedDotPlotData));
             }
 
         }
     };
 
+}
+
+function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
+    let categoryKeys = [searchTokens.obsCat.join('-')];
+    let dotPlotKeys = {}; // category-feature
+
+    categoryKeys.forEach(category => {
+        searchTokens.X.forEach(feature => {
+            if (feature !== '__count') {
+                let key = category + '-' + feature;
+                dotPlotKeys[key] = true;
+
+            }
+        });
+    });
+
+
+    // merge with existing data
+    if (newDotplotData) {
+        newDotplotData.forEach(categoryItem => {
+            let index = -1;
+            for (let i = 0; i < dotPlotData.length; i++) {
+                if (dotPlotData[i].name === categoryItem.name) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index === -1) {
+                dotPlotData.push(categoryItem);
+            } else {
+                dotPlotData[index].values = categoryItem.values.concat(dotPlotData[index].values);
+                dotPlotData[index].values = uniqBy(dotPlotData[index].values, (value => value.name));
+                dotPlotData[index] = Object.assign({}, dotPlotData[index]);
+            }
+        });
+    }
+
+    // keep active categories only
+
+    dotPlotData = dotPlotData.filter(categoryItem => categoryKeys.indexOf(categoryItem.name) !== -1);
+    dotPlotData.forEach((categoryItem, categoryIndex) => {
+        const nfeatures = categoryItem.values.length;
+        categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
+        if (nfeatures !== categoryItem.values.length) {
+            dotPlotData[categoryIndex] = Object.assign({}, categoryItem);
+        }
+    });
+    dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length > 0);
+    // sort features
+    let featureSortOrder = {};
+    searchTokens.X.forEach((name, index) => {
+        featureSortOrder[name] = index;
+    });
+    dotPlotData.forEach((categoryItem) => {
+        categoryItem.values.sort((a, b) => {
+            a = featureSortOrder[a.name];
+            b = featureSortOrder[b.name];
+            return a - b;
+        });
+
+    });
+    return dotPlotData;
 }
 
 function _updateCharts(onError) {
@@ -1391,8 +1437,10 @@ function _updateCharts(onError) {
             && searchTokens.featureSets.length === 0) {
             searchTokens.X = ['__count'];
         }
+        const selectionStats = state.featureSummary;
         const embeddings = state.embeddings;
         let dotPlotData = state.dotPlotData;
+        let selectedDotPlotData = state.selectedDotPlotData;
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
         let embeddingToVisibleFeatures = {};
@@ -1418,16 +1466,34 @@ function _updateCharts(onError) {
             traceInfo.active = active;
         });
 
-        let dotplotMeasures = new Set();
+        let dotplotMeasuresCacheMiss = new Set();
         let dotPlotCategories = searchTokens.obsCat.slice();
         let dotPlotCategoryKeys = [dotPlotCategories.join('-')];
         let dotPlotKeys = {}; // category-feature
+        let selectedMeasuresCacheMiss = [];
         if (dotplot) {
             let cachedDotPlotKeys = {};
             dotPlotData.forEach(dotPlotDataItem => {
                 dotPlotDataItem.values.forEach(datum => {
                     cachedDotPlotKeys[dotPlotDataItem.name + '-' + datum.name] = true;
                 });
+            });
+            let cachedSelectedDotPlotMeasures = {};
+            selectedDotPlotData.forEach(dotPlotDataItem => {
+                dotPlotDataItem.values.forEach(datum => {
+                    cachedSelectedDotPlotMeasures[datum.name] = true;
+                });
+            });
+
+            searchTokens.X.forEach(feature => {
+                if (feature !== '__count' && cachedSelectedDotPlotMeasures[feature] == null) {
+                    selectedMeasuresCacheMiss.push(feature);
+                }
+            });
+            searchTokens.obs.forEach(feature => {
+                if (selectionStats[feature] == null) {
+                    selectedMeasuresCacheMiss.push('obs/' + feature);
+                }
             });
             dotPlotCategoryKeys.forEach(category => {
                 let added = false;
@@ -1436,14 +1502,11 @@ function _updateCharts(onError) {
                         let key = category + '-' + feature;
                         dotPlotKeys[key] = true;
                         if (cachedDotPlotKeys[key] == null) {
-                            dotplotMeasures.add(feature);
+                            dotplotMeasuresCacheMiss.add(feature);
                             added = true;
                         }
                     }
                 });
-                // if (added) {
-                //     dotplotDimensions.push(category);
-                // }
             });
         }
 
@@ -1475,138 +1538,54 @@ function _updateCharts(onError) {
             }
         }
 
-        let globalFeatureSummaryX = [];
-        let globalFeatureSummaryObsContinuous = [];
-        let globalFeatureSummaryDimensions = [];
+        let globalFeatureSummaryXCacheMiss = [];
+        let globalFeatureSummaryObsContinuousCacheMiss = [];
+        let globalFeatureSummaryDimensionsCacheMiss = [];
         searchTokens.X.forEach(feature => {
             if (feature !== '__count') {
                 if (globalFeatureSummary[feature] == null) {
-                    globalFeatureSummaryX.push(feature);
+                    globalFeatureSummaryXCacheMiss.push(feature);
                 }
             }
         });
         searchTokens.obs.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryObsContinuous.push('obs/' + feature);
+                globalFeatureSummaryObsContinuousCacheMiss.push('obs/' + feature);
             }
         });
         searchTokens.obsCat.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryDimensions.push(feature);
+                globalFeatureSummaryDimensionsCacheMiss.push(feature);
             }
         });
 
 
-        if (globalFeatureSummaryX.length > 0 || globalFeatureSummaryObsContinuous.length > 0 || globalFeatureSummaryDimensions.length > 0) {
+        if (globalFeatureSummaryXCacheMiss.length > 0 || globalFeatureSummaryObsContinuousCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0) {
             q.stats = {
-                measures: globalFeatureSummaryX.concat(globalFeatureSummaryObsContinuous),
-                dimensions: globalFeatureSummaryDimensions
+                measures: globalFeatureSummaryXCacheMiss.concat(globalFeatureSummaryObsContinuousCacheMiss),
+                dimensions: globalFeatureSummaryDimensionsCacheMiss
             };
         }
 
-        function updateDotPlotData(newDotplotData) {
-            // merge with existing data
-            if (newDotplotData) {
-                newDotplotData.forEach(categoryItem => {
-                    let index = -1;
-                    for (let i = 0; i < dotPlotData.length; i++) {
-                        if (dotPlotData[i].name === categoryItem.name) {
-                            index = i;
-                            break;
-                        }
-                    }
-                    if (index === -1) {
-                        dotPlotData.push(categoryItem);
-                    } else {
-                        dotPlotData[index].values = categoryItem.values.concat(dotPlotData[index].values);
-                        dotPlotData[index].values = uniqBy(dotPlotData[index].values, (value => value.name));
-                        dotPlotData[index] = Object.assign({}, dotPlotData[index]);
-                    }
-                });
-            }
-
-            // keep active categories only
-            let categoryKeys = [searchTokens.obsCat.join('-')];
-            dotPlotData = dotPlotData.filter(categoryItem => categoryKeys.indexOf(categoryItem.name) !== -1);
-            dotPlotData.forEach((categoryItem, categoryIndex) => {
-                const nfeatures = categoryItem.values.length;
-                categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
-                if (nfeatures !== categoryItem.values.length) {
-                    dotPlotData[categoryIndex] = Object.assign({}, categoryItem);
-                }
-                // sort features
-                categoryItem.values.sort((a, b) => {
-                    a = a.name;
-                    b = b.name;
-                    return natsort(a, b);
-                });
-                if (categoryItem.selection) {
-                    categoryItem.selection.values = categoryItem.selection.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
-                    categoryItem.selection.values.sort((a, b) => {
-                        a = a.name;
-                        b = b.name;
-                        return natsort(a, b);
-                    });
-                }
-            });
-            dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length > 0);
-            // sort categories
-            dotPlotData.sort((a, b) => {
-                a = a.name;
-                b = b.name;
-                return natsort(a, b);
-            });
-
-            // sort features
-            let featureSortOrder = {};
-            searchTokens.X.forEach((name, index) => {
-                featureSortOrder[name] = index;
-            });
-            dotPlotData.forEach((categoryItem) => {
-                categoryItem.values.sort((a, b) => {
-                    a = featureSortOrder[a.name];
-                    b = featureSortOrder[b.name];
-                    return a - b;
-                });
-
-            });
-            dispatch(_setDotPlotData(dotPlotData));
-        }
-
-
-        if (dotPlotCategories.length > 0 && dotplotMeasures.size > 0) {
+        if (dotPlotCategories.length > 0 && dotplotMeasuresCacheMiss.size > 0) {
             q.groupedStats = {
-                measures: Array.from(dotplotMeasures),
+                measures: Array.from(dotplotMeasuresCacheMiss),
                 dimensions: [dotPlotCategories]
             };
         }
 
         const filterJson = getFilterJson(state);
         // TODO update selection in new embedding space
-        if (filterJson != null && (globalFeatureSummaryX.length > 0 || globalFeatureSummaryDimensions.length > 0)) {
-
-
-            // let selectedEmbeddings = state.embeddings;
-            // json.embeddings = selectedEmbeddings.map(e => {
-            //     let value = {
-            //         basis: e.name,
-            //     };
-            //     if (e.bin) {
-            //         value.nbins = e.nbins;
-            //         value.agg = e.agg;
-            //     }
-            //     return value;
-            // });
-            let selectionQuery = {
+        if (filterJson != null && (globalFeatureSummaryXCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0 || selectedMeasuresCacheMiss.length > 0)) {
+            q.selection = {
                 filter: filterJson,
-                measures: globalFeatureSummaryDimensions.length > 0 ? searchTokens.X : globalFeatureSummaryX,
+                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? searchTokens.X : selectedMeasuresCacheMiss,
                 dimensions: searchTokens.obsCat
             };
-            q.selection = selectionQuery;
         }
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
         return dataPromise.then(result => {
-            updateDotPlotData(result.dotplot);
+            dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
             const newSummary = result.summary || {};
             for (let key in newSummary) {
                 globalFeatureSummary[key] = newSummary[key];
@@ -1642,6 +1621,8 @@ function _updateCharts(onError) {
             dispatch(setEmbeddingData(embeddingData.slice()));
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection));
+            } else {
+                dispatch(_setSelectedDotPlotData(updateDotPlotData(null, selectedDotPlotData, searchTokens)));
             }
         }).finally(() => {
             dispatch(_setLoading(false));
