@@ -95,7 +95,7 @@ Server
     cirro serve
 
 
-- Add a dataset and optionally share with dataset with collaborators. If you enabled authentication, then no users are allowed to add datasets to cirrocumulus. Set the property "importer" to true on entry in the users collection to enable a user to import datasets.
+- Add a dataset and optionally share with dataset with collaborators. If you enabled authentication, then no users are allowed to add datasets to cirrocumulus. Set the property "importer" to true on an entry in the users collection to enable a user to import datasets.
 
 - You can programmatically add a dataset by posting to the /api/dataset endpoint::
 
