@@ -94,7 +94,13 @@ Server
 
     cirro serve
 
-- Import a dataset and optionally share with dataset with collaborators
+
+- Add a dataset and optionally share with dataset with collaborators. If you enabled authentication, then no users are allowed to add datasets to cirrocumulus. Set the property "importer" to true on entry in the users collection to enable a user to import datasets.
+
+- You can programmatically add a dataset by posting to the /api/dataset endpoint::
+
+    curl 'http://localhost:5000/api/dataset' --data-binary '{"name":"my_name","readers":[],"description":"my_desc","url":"/data/my_dataset_path"}'
+
 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
