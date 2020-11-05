@@ -6,7 +6,7 @@ Release Notes
     * Fixed bug updating selected dot plot when selection changes
 
 - 1.1.10.post1 `October 28, 2020`
-    * Create dotplots by grouping by more than one category
+    * Create dot plots by grouping by more than one category
     * Search dataset names and descriptions when using `cirro serve`
 
 - 1.1.10 `October 25, 2020`
@@ -47,16 +47,16 @@ Release Notes
     * Added option to set min and max of color scale
     * Updated gallery chart size
     * Updated `prepare_data` command
-    * Changed dotplot default min to zero
-    * Added option to dotplot mean and percent expressed scales
+    * Changed dot plot default min to zero
+    * Added option to dot plot mean and percent expressed scales
 
 - 1.1.7.post3 `September 18, 2020`
     * Plot higher values on top of lower values in embedding plot
 
 - 1.1.7.post2 `September 17, 2020`
     * Save state when toggling between datasets
-    * Fixed bug in dotplot tooltips
-    * Changed dotplot color scheme
+    * Fixed bug in dot plot tooltips
+    * Changed dot plot color scheme
 
 - 1.1.7.post1 `September 2, 2020`
     * Fixed bug passing `markers` to `launch` command
@@ -80,7 +80,7 @@ Release Notes
     * Support multiple differential expression results produced by `Scanpy`_
 
 - 1.1.5.post1 `August 24, 2020`
-    * Fixed dotplot background color in dark mode
+    * Fixed dot plot background color in dark mode
 
 - 1.1.5 `August 24, 2020`
     * Allow dataset sharing within an email domain
@@ -103,7 +103,7 @@ Release Notes
     * Added pyarrow to requirements
 
 - 1.1.2 `August 11, 2020`
-    * Show separate dotplots for all cells and selected cells
+    * Show separate dot plots for all cells and selected cells
     * Added support for renaming clusters
     * Added `prepare_data` command for generating cirrocumulus formatted files for viewing on the cloud
     * Added 'serve' command to serve multiple users and datasets
@@ -119,7 +119,7 @@ Release Notes
     * Improved performance loading local h5ad files
 
 - 1.1.0.post1 `June 15, 2020`
-    * Fixed bug that sometimes prevented dotplot from showing
+    * Fixed bug that sometimes prevented dot plot from showing
 
 - 1.1.0 `June 1, 2020`
     * Added support for STARFusion output
