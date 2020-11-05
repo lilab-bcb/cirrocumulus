@@ -34,6 +34,7 @@ const authScopes = [
     // 'https://www.googleapis.com/auth/contacts.readonly',
     // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
+export const SET_DOT_PLOT_INTERPOLATOR = 'SET_DOT_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
@@ -1007,9 +1008,10 @@ export function deleteDataset(payload) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
         getState().serverInfo.api.deleteDatasetPromise(payload.dataset.id).then(() => {
+            dispatch(_setDataset(null));
             dispatch(_deleteDataset({id: payload.dataset.id}));
             dispatch(setDialog(null));
-            dispatch(_setDataset(null));
+
             dispatch(setMessage('Dataset deleted'));
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -1038,6 +1040,9 @@ export function setMessage(payload) {
 
 export function setInterpolator(payload) {
     return {type: SET_INTERPOLATOR, payload: payload};
+}
+export function setDotPlotInterpolator(payload) {
+    return {type: SET_DOT_PLOT_INTERPOLATOR, payload: payload};
 }
 
 export function setEmbeddingData(payload) {

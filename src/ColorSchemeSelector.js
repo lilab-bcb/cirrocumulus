@@ -6,8 +6,6 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 import React from 'react';
-import {connect} from 'react-redux';
-import {setInterpolator} from './actions';
 import ColorSchemeLegend from './ColorSchemeLegend';
 import {fixInterpolatorName, getInterpolator, interpolators} from "./util";
 
@@ -21,7 +19,7 @@ const styles = theme => ({
         display: 'block',
         margin: theme.spacing(1)
     },
-   
+
 });
 
 
@@ -91,19 +89,5 @@ class ColorSchemeSelector extends React.PureComponent {
 
 }
 
-const mapStateToProps = state => {
-    return {
-        interpolator: state.interpolator,
-    };
-};
-const mapDispatchToProps = dispatch => {
-    return {
-        handleInterpolator: value => {
-            dispatch(setInterpolator(value));
-        },
-    };
-};
 
-export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
-)(ColorSchemeSelector));
+export default withStyles(styles)(ColorSchemeSelector);

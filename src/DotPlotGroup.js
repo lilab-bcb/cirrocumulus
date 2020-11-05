@@ -1,14 +1,14 @@
 import {InputLabel} from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
-import {interpolateReds} from 'd3-scale-chromatic';
 import React from 'react';
-import ColorSchemeLegend from './ColorSchemeLegend';
+import ColorSchemeSelector from './ColorSchemeSelector';
 import DotPlotCanvas from './DotPlotCanvas';
+import {numberFormat} from './formatters';
 import SizeLegend from './SizeLegend';
 
 export class DotPlotGroup extends React.PureComponent {
-
 
     constructor(props) {
         super(props);
@@ -67,7 +67,7 @@ export class DotPlotGroup extends React.PureComponent {
 
     render() {
 
-        const {textColor, categoryItem, renamedCategories, selectedData} = this.props;
+        const {textColor, categoryItem, renamedCategories, selectedData, interpolator} = this.props;
         let meanRange = categoryItem.meanRange;
         let fractionRange = categoryItem.fractionRange;
 
@@ -116,7 +116,8 @@ export class DotPlotGroup extends React.PureComponent {
 
         const maxRadius = 9;
         const minRadius = 1;
-        const colorScale = scaleSequential(interpolateReds).domain(meanRange).clamp(true);
+        const colorScale = scaleSequential(interpolator.value).domain(meanRange).clamp(true);
+        console.log(colorScale.domain());
         const sizeScale = scaleLinear().domain(fractionRange).range([minRadius, maxRadius]).clamp(true);
         return (
             <React.Fragment key={categoryItem.name}>
@@ -139,16 +140,17 @@ export class DotPlotGroup extends React.PureComponent {
                                    meanRange={meanRange}
                                    fractionRange={fractionRange}
                                    data={selectedData}/> : null}
-                <ColorSchemeLegend style={{display: 'block', marginLeft: 10}}
-                                   width={186}
-                                   textColor={textColor}
-                                   label={true} height={40}
-                                   scale={colorScale}/>
-                <SizeLegend style={{display: 'block'}}
-                            width={150}
-                            textColor={textColor}
-                            label={true} height={40}
-                            scale={sizeScale}/>
+                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator} interpolator={interpolator}/>
+                <div style={{color: textColor, width: 174}}><Typography
+                    variant={"caption"}>{numberFormat(colorScale.domain()[0])}</Typography><Typography
+                    variant={"caption"}
+                    style={{float: 'right'}}>{numberFormat(colorScale.domain()[1])}</Typography></div>
+                {/*<ColorSchemeLegend style={{display: 'block', marginLeft: 10}}*/}
+                {/*                   width={186}*/}
+                {/*                   textColor={textColor}*/}
+                {/*                   label={true} height={40}*/}
+                {/*                   scale={colorScale}/>*/}
+
                 <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
                 <TextField
                     InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
@@ -161,7 +163,13 @@ export class DotPlotGroup extends React.PureComponent {
                            onKeyPress={this.onMaxKeyPress}
                            onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
+                <div style={{height: 16}}></div>
 
+                <SizeLegend style={{display: 'block'}}
+                            width={150}
+                            textColor={textColor}
+                            label={true} height={40}
+                            scale={sizeScale}/>
                 <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Percent
                     Expressed</InputLabel>
                 <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}

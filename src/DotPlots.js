@@ -1,12 +1,12 @@
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {setDotPlotSortOrder} from './actions';
+import {setDotPlotInterpolator, setDotPlotSortOrder} from './actions';
 import {DotPlotGroup} from './DotPlotGroup';
 
 class DotPlots extends React.PureComponent {
     render() {
-        const {chartOptions, dotPlotData, categoricalNames, onSortOrderChanged, selectedDotPlotData} = this.props;
+        const {chartOptions, dotPlotData, dotPlotInterpolator, categoricalNames, handleInterpolator, onSortOrderChanged, selectedDotPlotData} = this.props;
 
         if (dotPlotData.length === 0) {
             return <h4>Please enter one or more categorical observations and one or more features.</h4>;
@@ -23,6 +23,8 @@ class DotPlots extends React.PureComponent {
                 return <DotPlotGroup key={categoryItem.name}
                                      categoryItem={categoryItem}
                                      selectedData={selectedData}
+                                     interpolator={dotPlotInterpolator}
+                                     handleInterpolator={handleInterpolator}
                                      onSortOrderChanged={onSortOrderChanged}
                                      renamedCategories={renamedCategories}
                                      textColor={textColor}/>;
@@ -34,7 +36,7 @@ class DotPlots extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         chartOptions: state.chartOptions,
-
+        dotPlotInterpolator: state.dotPlotInterpolator,
         dotPlotData: state.dotPlotData,
         selectedDotPlotData: state.selectedDotPlotData,
         categoricalNames: state.categoricalNames
@@ -44,6 +46,9 @@ const mapDispatchToProps = dispatch => {
     return {
         onSortOrderChanged: (payload) => {
             dispatch(setDotPlotSortOrder(payload));
+        },
+        handleInterpolator: value => {
+            dispatch(setDotPlotInterpolator(value));
         },
     };
 };

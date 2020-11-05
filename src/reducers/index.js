@@ -19,7 +19,7 @@ import {
     SET_DATASET_FILTERS,
     SET_DIALOG,
     SET_DOMAIN,
-    SET_DOT_PLOT_DATA,
+    SET_DOT_PLOT_DATA, SET_DOT_PLOT_INTERPOLATOR,
     SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
@@ -57,6 +57,7 @@ export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
+export const DEFAULT_DOT_PLOT_INTERPOLATOR = 'Reds';
 export const DEFAULT_DRAG_MODE = 'pan';
 export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
@@ -68,6 +69,11 @@ export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
     value: getInterpolator(DEFAULT_INTERPOLATOR)
+};
+
+const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
+    name: DEFAULT_DOT_PLOT_INTERPOLATOR,
+    value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR)
 };
 
 const DEFAULT_PRIMARY_CHART_SIZE = {
@@ -530,6 +536,19 @@ function updateDotPlotDataRange(data) {
     });
 }
 
+
+function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) {
+
+    switch (action.type) {
+        case SET_DOT_PLOT_INTERPOLATOR:
+            return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.dotPlotInterpolator != null ? action.payload.dotPlotInterpolator : state;
+        default:
+            return state;
+    }
+}
+
 function dotPlotData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
@@ -773,14 +792,14 @@ export default combineReducers({
     chartOptions,
     chartSize,
     combineDatasetFilters,
-    datasetFilter,
-    datasetFilters,
     dataset,
     datasetChoices,
+    datasetFilter,
+    datasetFilters,
     dialog,
     dotPlotData,
+    dotPlotInterpolator,
     email,
-    markers,
     embeddingData,
     embeddings,
     featureSummary,
@@ -790,19 +809,21 @@ export default combineReducers({
     loadingApp,
     markerOpacity,
     markerOpacityUI,
+    markers,
+    message,
     numberOfBins,
     numberOfBinsUI,
-    primaryChartSize,
-    message,
     pointSize,
+    primaryChartSize,
     primaryTraceKey,
     savedDatasetState,
     searchTokens,
-    selection,
     selectedDotPlotData,
+    selection,
     serverInfo,
     tab,
     unselectedMarkerOpacity,
     unselectedMarkerOpacityUI,
     user
+
 });

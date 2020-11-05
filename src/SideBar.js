@@ -400,7 +400,7 @@ class SideBar extends React.PureComponent {
     render() {
         const {
             chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
-            searchTokens, markerOpacity, datasetFilter, datasetFilters, markers,
+            searchTokens, markerOpacity, datasetFilter, datasetFilters,interpolator, markers,
             unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection, serverInfo
         } = this.props;
 
@@ -540,12 +540,13 @@ class SideBar extends React.PureComponent {
                                              onChange={this.onFeatureSetsChange}
                                              getOptionSelected={(option, value) => option.id === value.id}
                                              getChipText={option => option.name}/>
-                    {fancy && splitTokens.X.length > 0 && <FormHelperText>
+                    {fancy && splitTokens.X.length > 0 &&
                         <Tooltip title={"Save Current Feature List"}>
                             <IconButton size={'small'} onClick={this.onSaveFeatureList}>
                                 <SaveIcon/>
                             </IconButton>
-                        </Tooltip></FormHelperText>}
+                        </Tooltip>
+                    }
                 </FormControl>}
 
                 <Accordion defaultExpanded>
@@ -670,7 +671,7 @@ class SideBar extends React.PureComponent {
 
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
-                                <ColorSchemeSelector/>
+                                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator} interpolator={interpolator}/>
                             </FormControl>
 
                             {!isSummarized && fancy && <div><FormControlLabel
@@ -792,7 +793,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handlePrimaryTraceKey: (value) => {
             dispatch(setPrimaryTraceKey(value));
         },
-
+        handleInterpolator: value => {
+            dispatch(setInterpolator(value));
+        },
         handleChartSize: (value) => {
             dispatch(setChartSize(value));
         },
@@ -808,9 +811,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleEmbeddings: value => {
             dispatch(setSelectedEmbedding(value));
         },
-        handleInterpolator: value => {
-            dispatch(setInterpolator(value));
-        },
+
         handleNumberOfBins: value => {
             dispatch(setNumberOfBins(value));
         },
