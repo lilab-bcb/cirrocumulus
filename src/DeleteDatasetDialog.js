@@ -4,7 +4,6 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 
 import DialogTitle from '@material-ui/core/DialogTitle';
-import DeleteIcon from '@material-ui/icons/Delete';
 import React from 'react';
 import {connect} from 'react-redux';
 import {deleteDataset, setDialog} from './actions';
@@ -45,7 +44,7 @@ class DeleteDatasetDialog extends React.PureComponent {
                         Cancel
                     </Button>
                     <Button disabled={this.state.loading} onClick={this.handleDelete} color="primary">
-                        Delete <DeleteIcon/>
+                        Delete
                     </Button>
                 </DialogActions>
             </Dialog>
