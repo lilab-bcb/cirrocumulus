@@ -22,6 +22,13 @@ const styles = theme => ({
 
 });
 
+function stripInterpolate(name) {
+    if (name.startsWith("interpolate")) {
+        name = name.substring("interpolate".length);
+    }
+    return name;
+}
+
 
 class ColorSchemeSelector extends React.PureComponent {
     handleInterpolatorChange = (event) => {
@@ -48,39 +55,45 @@ class ColorSchemeSelector extends React.PureComponent {
                 <MenuItem key="Diverging" value="Diverging" divider disabled>
                     Diverging
                 </MenuItem>
-                {interpolators['Diverging'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={width}
-                                       label={false} height={height}
-                                       scale={this.getScale(item)}/>
+                {interpolators['Diverging'].map(item => (
+                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                        <ColorSchemeLegend width={width}
+                                           label={false} height={height}
+                                           scale={this.getScale(item)}/>
 
-                </MenuItem>))}
+                    </MenuItem>))}
 
                 <MenuItem key="Sequential (Single Hue)" value="Sequential (Single Hue)" divider disabled>
                     Sequential (Single Hue)
                 </MenuItem>
-                {interpolators['Sequential (Single Hue)'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={width}
-                                       label={false} height={height}
-                                       scale={this.getScale(item)}/>
-                </MenuItem>))}
+                {interpolators['Sequential (Single Hue)'].map(item => (
+                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                        <ColorSchemeLegend width={width}
+                                           label={false} height={height}
+                                           scale={this.getScale(item)}/>
+                    </MenuItem>))}
 
                 <MenuItem key="Sequential (Multi-Hue)" value="Sequential (Multi-Hue)" divider disabled>
                     Sequential (Multi-Hue)
                 </MenuItem>
-                {interpolators['Sequential (Multi-Hue)'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={width}
-                                       label={false} height={height}
-                                       scale={this.getScale(item)}/>
-                </MenuItem>))}
+                {interpolators['Sequential (Multi-Hue)'].map(item => (
+                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+
+                        <ColorSchemeLegend width={width}
+                                           label={false} height={height}
+                                           scale={this.getScale(item)}/>
+
+                    </MenuItem>))}
 
                 <MenuItem key="Cyclical" value="Cyclical" divider disabled>
                     Cyclical
                 </MenuItem>
-                {interpolators['Cyclical'].map(item => (<MenuItem value={item} key={item}>
-                    <ColorSchemeLegend width={width}
-                                       label={false} height={height}
-                                       scale={this.getScale(item)}/>
-                </MenuItem>))}
+                {interpolators['Cyclical'].map(item => (
+                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                        <ColorSchemeLegend width={width}
+                                           label={false} height={height}
+                                           scale={this.getScale(item)}/>
+                    </MenuItem>))}
 
 
             </Select>
