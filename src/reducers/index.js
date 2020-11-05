@@ -241,7 +241,7 @@ function markers(state = [], action) {
                 result = newResults;
             }
 
-            if (action.payload.markers_read_only != null) {
+            if (action.payload != null && action.payload.markers_read_only != null) {
                 if (isPlainObject(action.payload.markers_read_only)) { // old style, name => features
                     let markers = action.payload.markers_read_only;
                     for (let categoryName in markers) {
