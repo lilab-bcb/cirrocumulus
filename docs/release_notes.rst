@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.10.post3 `November 6, 2020`
+    * Added option to change dot plot color scheme
+
 - 1.1.10.post2 `October 30, 2020`
     * Fixed display of set names
     * Fixed bug updating selected dot plot when selection changes
