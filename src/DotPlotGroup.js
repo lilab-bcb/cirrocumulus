@@ -117,7 +117,6 @@ export class DotPlotGroup extends React.PureComponent {
         const maxRadius = 9;
         const minRadius = 1;
         const colorScale = scaleSequential(interpolator.value).domain(meanRange).clamp(true);
-        console.log(colorScale.domain());
         const sizeScale = scaleLinear().domain(fractionRange).range([minRadius, maxRadius]).clamp(true);
         return (
             <React.Fragment key={categoryItem.name}>
