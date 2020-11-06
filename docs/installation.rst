@@ -105,6 +105,8 @@ Server
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
 
+- Install the `Google Cloud SDK`_ if necessary. Type ``gcloud init`` in your terminal if this is your first time using the Google Cloud SDK.
+
 - Clone the cirrocumulus app engine repository::
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus-app-engine.git
@@ -115,8 +117,12 @@ Google App Engine
 
 - Create or use an existing GCP project in your Google Console.
 
-- Create App Engine by navigating to App Engine > Dashboard. You may choose the region where your application is hosted.
-  Select the Python 3 Standard Environment.
+- Please remember to replace <PROJECT> with your GCP project id in the following instructions.
+
+- Create an App Engine application by navigating to App Engine > Dashboard. Select the Python Standard Environment and choose the region where your application is hosted.
+  You can also create an application from the command line::
+
+    gcloud app create --project=<PROJECT>
 
 - Obtain OAuth 2.0 credentials.
 
@@ -124,11 +130,9 @@ Google App Engine
     - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
       and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
 
-- Replace CIRRO_AUTH_CLIENT_ID in app.yaml with your OAuth client id.
+- Replace CIRRO_AUTH_CLIENT_ID in app.yaml with your OAuth client id. You can optionally edit `app.yaml`_ to further customize your application settings.
 
-- Install the `Google Cloud SDK`_. Type ``gcloud init`` in your terminal if this is your first time using the Google Cloud SDK.
-
-- Deploy the application using the command below. Remember to replace <PROJECT> with your project ID. Your project is available at \https://<PROJECT>.appspot.com.::
+- Deploy the application using the command below. Your project is available at \https://<PROJECT>.appspot.com.::
 
     gcloud app deploy app.yaml --project=<PROJECT>
 
@@ -141,7 +145,7 @@ Google App Engine
 - Read more about App Engine in the `App Engine`_ documentation.
 
 
-
+.. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
 .. _Node.js: https://nodejs.org/
