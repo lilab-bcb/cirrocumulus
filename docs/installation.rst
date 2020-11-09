@@ -141,6 +141,7 @@ Google App Engine
     - By default, no one is allowed to add datasets to your application.
     - In Google Console, navigate to Data Store > Entities and click on your email address. Add the property ``importer`` of type ``boolean`` and set it to ``true``.
     - Go back to \https://<PROJECT>.appspot.com and start adding datasets.
+    - Use the `prepare_data` command to freeze an h5ad, loom, or Seurat file in cirrocumulus format. The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
 
 - Read more about App Engine in the `App Engine`_ documentation.
 
