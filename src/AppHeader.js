@@ -302,12 +302,11 @@ class AppHeader extends React.PureComponent {
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && !isNaN(selection.count);
 
-        const showNewDataset = user != null && user.importer;
-        const showEditDeleteDataset = dataset !== null && dataset.owner;
-        const showMoreMenu = showNewDataset || dataset != null;
+        const showNewDataset = user != null && user.importer && !loadingApp.loading;
+        const showEditDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading;
+        const showMoreMenu = (showNewDataset || dataset != null) && !loadingApp.loading;
         const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
         return (
-
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
 
@@ -331,7 +330,7 @@ class AppHeader extends React.PureComponent {
 
                     {dataset != null &&
                     <Typography component={"h3"}>
-                        <Tooltip title={dataset.description||''}><b>{dataset.name}</b></Tooltip>
+                        <Tooltip title={dataset.description || ''}><b>{dataset.name}</b></Tooltip>
                         <small>&nbsp;
                             {hasSelection && shape != null && intFormat(selection.count) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}
@@ -360,7 +359,7 @@ class AppHeader extends React.PureComponent {
 
                     </div>
                     <div style={{marginLeft: 'auto'}}>
-                        {!isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
+                        {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
                                         onClick={this.handleMoreMenuOpen}>
