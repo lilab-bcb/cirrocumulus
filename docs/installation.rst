@@ -95,6 +95,8 @@ Server
     cirro serve
 
 
+- Use the `prepare_data` command to freeze an h5ad, loom, or Seurat file in cirrocumulus format. The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
+
 - Add a dataset and optionally share with dataset with collaborators. If you enabled authentication, then no users are allowed to add datasets to cirrocumulus. Set the property "importer" to true on an entry in the users collection to enable a user to import datasets.
 
 - You can programmatically add a dataset by posting to the /api/dataset endpoint::
