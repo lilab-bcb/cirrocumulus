@@ -1,4 +1,6 @@
 import {InputLabel} from '@material-ui/core';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
@@ -12,7 +14,7 @@ export class DotPlotGroup extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {min: '', max: '', minSize: '', sizeMax: '', forceUpdate: false};
+        this.state = {min: '', max: '', minSize: '', sizeMax: '', forceUpdate: false, drawCircles: true};
     }
 
     onMinChange = (event) => {
@@ -29,6 +31,11 @@ export class DotPlotGroup extends React.PureComponent {
     onMinSizeChange = (event) => {
         this.setState({minSize: event.target.value});
     };
+
+    onHeatmapChange = (event) => {
+        this.setState({drawCircles: !event.target.checked});
+    };
+
 
     onMinSizeKeyPress = (event) => {
         if (event.key === 'Enter') {
@@ -127,6 +134,7 @@ export class DotPlotGroup extends React.PureComponent {
                                meanRange={meanRange}
                                fractionRange={fractionRange}
                                textColor={textColor}
+                               drawCircles={this.state.drawCircles}
                                onSortOrderChanged={this.props.onSortOrderChanged}
                                data={categoryItem}/>
                 {selectedData != null ?
@@ -136,6 +144,7 @@ export class DotPlotGroup extends React.PureComponent {
                                    subtitle="selection"
                                    legend={true}
                                    textColor={textColor}
+                                   drawCircles={this.state.drawCircles}
                                    meanRange={meanRange}
                                    fractionRange={fractionRange}
                                    data={selectedData}/> : null}
@@ -164,22 +173,32 @@ export class DotPlotGroup extends React.PureComponent {
                            value={this.state.max}/>
                 <div style={{height: 16}}></div>
 
-                <SizeLegend style={{display: 'block'}}
-                            width={150}
-                            textColor={textColor}
-                            label={true} height={40}
-                            scale={sizeScale}/>
-                <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Percent
-                    Expressed</InputLabel>
-                <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                           size="small" type="text"
-                           onKeyPress={this.onMinSizeKeyPress}
-                           onChange={this.onMinSizeChange} label={"Min"}
-                           value={this.state.minSize}/>
-                <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
-                           onKeyPress={this.onMaxSizeKeyPress}
-                           onChange={this.onMaxSizeChange} label={"Max"}
-                           value={this.state.maxSize}/>
+                {this.state.drawCircles && <React.Fragment>
+                    <SizeLegend style={{display: 'block'}}
+                                width={150}
+                                textColor={textColor}
+                                label={true} height={40}
+                                scale={sizeScale}/>
+                    <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Percent
+                        Expressed</InputLabel>
+                    <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                               size="small" type="text"
+                               onKeyPress={this.onMinSizeKeyPress}
+                               onChange={this.onMinSizeChange} label={"Min"}
+                               value={this.state.minSize}/>
+                    <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
+                               onKeyPress={this.onMaxSizeKeyPress}
+                               onChange={this.onMaxSizeChange} label={"Max"}
+                               value={this.state.maxSize}/>
+                </React.Fragment>}
+
+                <div>
+                    <FormControlLabel
+                        control={<Switch checked={!this.state.drawCircles} onChange={this.onHeatmapChange}
+                                         name="heatmap"/>}
+                        label="Heatmap"
+                    />
+                </div>
             </React.Fragment>
         );
     }

@@ -68,6 +68,13 @@ class DotPlotCanvas extends React.PureComponent {
                     let featureDatum = this.dotplot.values[col];
                     const mean = featureDatum.mean[this.categoryOrder[row]];
                     const fractionExpressed = featureDatum.fractionExpressed[this.categoryOrder[row]];
+                    // const renamedCategories = this.props.renamedCategories || {};
+                    // const categories = this.categories;
+                    // let category = categories[this.categoryOrder[row]];
+                    // let newName = renamedCategories[category];
+                    // if (newName != null) {
+                    //     category = newName;
+                    // }
                     this.tooltipElementRef.current.innerHTML = 'mean: ' + numberFormat(mean) + ', % expressed: ' + numberFormat(100 * fractionExpressed);
                 } else {
                     this.tooltipElementRef.current.innerHTML = '';
@@ -107,6 +114,7 @@ class DotPlotCanvas extends React.PureComponent {
         const features = this.features;
         const sizeScale = this.props.sizeScale;
         const categories = this.categories;
+        const drawCircles = this.props.drawCircles;
         const categoryOrder = this.categoryOrder;
         const textColor = this.props.textColor;
         const maxRadius = sizeScale.range()[1];
@@ -116,13 +124,22 @@ class DotPlotCanvas extends React.PureComponent {
         dotplot.values.forEach((datum, featureIndex) => { // each feature
             for (let i = 0; i < datum.mean.length; i++) { // each category
                 const mean = datum.mean[categoryOrder[i]];
-                const frac = datum.fractionExpressed[categoryOrder[i]];
                 const color = colorScale(mean);
-                const xpix = featureIndex * diameter + maxRadius + this.size.x;
-                const ypix = i * diameter + maxRadius;
                 context.fillStyle = color;
+
+
                 context.beginPath();
-                context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
+
+                if (drawCircles) {
+                    const xpix = featureIndex * diameter + maxRadius + this.size.x;
+                    const ypix = i * diameter + maxRadius;
+                    const frac = datum.fractionExpressed[categoryOrder[i]];
+                    context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
+                } else {
+                    const xpix = featureIndex * diameter + this.size.x;
+                    const ypix = i * diameter;
+                    context.rect(xpix, ypix, diameter, diameter);
+                }
                 context.fill();
                 // context.stroke();
             }
