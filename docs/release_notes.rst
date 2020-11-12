@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.10.post4 `November 12, 2020`
+    * Toggle between dot plot and heatmap
+
 - 1.1.10.post3 `November 6, 2020`
     * Added option to change dot plot color scheme
 
