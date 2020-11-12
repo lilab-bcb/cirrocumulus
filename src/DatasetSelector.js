@@ -59,7 +59,7 @@ export class DatasetSelector extends React.PureComponent {
         return (
             <React.Fragment>
                 <Button variant="contained" onClick={this.handleClick}
-                        color={selectedId == null ? "primary" : "inherit"}
+                        color={selectedId == null ? "primary" : "default"}
                         startIcon={<FolderOpenIcon/>}>Open</Button>
                 <Popover open={open}
                          anchorEl={anchorEl}
