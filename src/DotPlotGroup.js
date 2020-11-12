@@ -1,5 +1,5 @@
 import {InputLabel} from '@material-ui/core';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Grid from '@material-ui/core/Grid';
 import Switch from '@material-ui/core/Switch';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
@@ -171,9 +171,9 @@ export class DotPlotGroup extends React.PureComponent {
                            onKeyPress={this.onMaxKeyPress}
                            onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
-                <div style={{height: 16}}></div>
 
-                {this.state.drawCircles && <React.Fragment>
+
+                {this.state.drawCircles && <div style={{paddingTop: 16}}>
                     <SizeLegend style={{display: 'block'}}
                                 width={150}
                                 textColor={textColor}
@@ -190,14 +190,20 @@ export class DotPlotGroup extends React.PureComponent {
                                onKeyPress={this.onMaxSizeKeyPress}
                                onChange={this.onMaxSizeChange} label={"Max"}
                                value={this.state.maxSize}/>
-                </React.Fragment>}
+                </div>}
 
-                <div>
-                    <FormControlLabel
-                        control={<Switch checked={!this.state.drawCircles} onChange={this.onHeatmapChange}
-                                         name="heatmap"/>}
-                        label="Heatmap"
-                    />
+                <div style={{paddingTop: 16}}>
+                    <Grid component="label" alignContent={"flex-start"} container alignItems="center"
+                          spacing={0}>
+
+                        <Grid item>
+                            <Switch style={{display: 'inline'}} size="small" checked={!this.state.drawCircles}
+                                    onChange={this.onHeatmapChange}
+                                    name="heatmap"/>
+                        </Grid>
+                        <Grid item><InputLabel shrink={false} variant={"standard"}>Heat Map</InputLabel></Grid>
+                    </Grid>
+
                 </div>
             </React.Fragment>
         );
