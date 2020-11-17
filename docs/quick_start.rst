@@ -12,7 +12,7 @@ Launch cirrocumulus via the command line::
 - Datasets can be provided in h5ad_, loom_  or `STAR-Fusion`_ format. Seurat objects
   can be loaded after converting to h5ad_ or loom_ format (see vignette_).
 - Launch accepts more than one dataset to enable quick dataset switching or to combine modalities (e.g gene fusions and expression) stored in separate files.
-- Predefined marker lists can be provided in JSON format to quickly browse features of interest.
+- Predefined marker lists can be provided in JSON format (`see example`_) to quickly browse features of interest.
 
 Example Data
 ^^^^^^^^^^^^^
@@ -32,3 +32,4 @@ Example Data
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _vignette: https://satijalab.org/seurat/v3.2/conversion_vignette.html
+.. _see example:: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
