@@ -25,9 +25,6 @@ Example Data
 
     cirro launch V1_Human_Lymph_Node/V1_Human_Lymph_Node.h5ad --spatial V1_Human_Lymph_Node/spatial
 
-- Download `1.3 million neurons`_ (variable genes only) and launch::
-
-    cirro launch 1.3M_neurons_variable_genes.h5ad
 
 .. _3k PBMCs from a healthy donor data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/example_data.zip
 .. _human lymph node spatial data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/V1_Human_Lymph_Node.zip
@@ -36,5 +33,4 @@ Example Data
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _vignette: https://satijalab.org/seurat/v3.2/conversion_vignette.html
 .. _see example: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
-.. _1.3 million neurons: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/1.3M_neurons_variable_genes.h5ad
 
