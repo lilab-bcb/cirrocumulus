@@ -32,4 +32,4 @@ Example Data
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _vignette: https://satijalab.org/seurat/v3.2/conversion_vignette.html
-.. _see example:: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
+.. _see example: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
