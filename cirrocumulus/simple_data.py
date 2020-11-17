@@ -77,7 +77,7 @@ class SimpleData:
 
             order = np.argsort(pvals)
             features = ds1.var_names[order][:n_genes]
-            marker_results.append(dict(category=category, name=str(cat), features=features, id=xxx))
+            marker_results.append(dict(category=category, name=str(cat), features=features))
         return marker_results
 
     @staticmethod
