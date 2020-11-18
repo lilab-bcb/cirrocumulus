@@ -1,6 +1,6 @@
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
-import {numberFormat0} from './formatters';
+import {numberFormat} from './formatters';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
@@ -16,7 +16,6 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
     steps.push(domain[1]);
 
     let legendHeight = 20;
-
     let valueToX = scaleLinear().range([margin, width - margin]).domain([0, steps.length - 1]).clamp(true);
     let valueToRadius = scaleLinear().range([1, 9]).domain(domain).clamp(true);
 
@@ -32,8 +31,11 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
         context.beginPath();
         context.arc(pix, 10, radius, 0, Math.PI * 2);
         context.stroke();
-
-        context.fillText(numberFormat0(100 * steps[i]), pix, legendHeight + 2);
+        let text = numberFormat(100 * steps[i]);
+        if (text.endsWith(".0")) {
+            text = text.substring(0, text.length - 2);
+        }
+        context.fillText(text, pix, legendHeight + 2);
 
     }
 }
