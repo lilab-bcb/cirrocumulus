@@ -310,6 +310,7 @@ class AppHeader extends React.PureComponent {
 
 
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
+        const hasDatasetDetails = dataset != null && (dataset.title || dataset.description);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && !isNaN(selection.count);
 
@@ -352,19 +353,23 @@ class AppHeader extends React.PureComponent {
                             horizontal: 'center',
                         }}
                     >
-                        {dataset.title && <Typography className={classes.typography}>
-                            {dataset.title}
-                        </Typography>}
-                        {dataset.description  &&
-                        <ReactMarkdown linkTarget="_blank" children={dataset.description}/>}
-                    </Popover>}
+                        <div style={{width: 500}}>
+                            {dataset.title && <Typography className={classes.typography}>
+                                {dataset.title}
+                            </Typography>}
+                            {dataset.description &&
+                            <ReactMarkdown linkTarget="_blank" children={dataset.description}/>}
+                        </div>
+                    </Popover>
+                    }
                     {dataset != null &&
                     <Typography
-                        onClick={dataset.title || dataset.description ? this.handleShowDatasetDetails : null}
                         aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
                         aria-haspopup="true"
                         component={"h3"}>
-                        <b>{dataset.name}</b>
+                        {hasDatasetDetails &&
+                        <Button onClick={this.handleShowDatasetDetails}><b>{dataset.name}</b></Button>}
+                        {!hasDatasetDetails && <b>{dataset.name}</b>}
                         <small>&nbsp;
                             {hasSelection && shape != null && intFormat(selection.count) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}
