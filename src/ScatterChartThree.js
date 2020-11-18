@@ -92,8 +92,6 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
         this.state = {forceUpdate: false};
-
-
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -114,6 +112,7 @@ class ScatterChartThree extends React.PureComponent {
             this.draw();
         }
     }
+
 
     componentWillUnmount() {
         // if (this.scatterGL != null) {
@@ -259,6 +258,10 @@ class ScatterChartThree extends React.PureComponent {
         this.props.setChartOptions(this.props.chartOptions);
     };
 
+
+    resetCamera = () => {
+        this.scatterPlot.resetZoom();
+    };
 
     onShowLabels = () => {
         this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
@@ -499,6 +502,7 @@ class ScatterChartThree extends React.PureComponent {
                     onCopyImage={this.onCopyImage}
                     onEditSelection={this.onEditSelection}
                     onShowAxis={this.onShowAxis}
+                    onHome={this.resetCamera}
                     showAxis={this.props.chartOptions.showAxis}
                 >
                 </ChartToolbar>
