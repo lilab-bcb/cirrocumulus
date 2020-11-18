@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.10.post5 `November 18, 2020`
+    * Fixed error when computing markers using `cirro prepare_data` with --group flag
+    * Added ability to enter dataset description in Markdown when using `cirro serve`
+
 - 1.1.10.post4 `November 12, 2020`
     * Toggle between dot plot and heatmap
 
