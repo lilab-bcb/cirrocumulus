@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
-from cirrocumulus.database_api import get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -67,6 +67,8 @@ class MongoDb:
                 'id': str(doc['_id']),
                 'name': doc['name'],
                 'readers': doc['readers'],
+                'description': doc['description'],
+                'title': doc.get('title'),
                 'url': doc['url'],
                 'owner': 'owners' in doc and email in doc['owners']}
 
@@ -79,7 +81,7 @@ class MongoDb:
         else:
             query = dict(readers={'$in': [email, domain]})
         for doc in collection.find(query):
-            results.append({'id': str(doc['_id']), 'name': doc['name'], 'description': doc.get('description'),
+            results.append({'id': str(doc['_id']), 'name': doc['name'], 'title': doc.get('title'),
                             'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url']})
         return results
 
@@ -134,7 +136,7 @@ class MongoDb:
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title):
         collection = self.db.datasets
         readers = set(readers)
         if email in readers:
@@ -142,6 +144,7 @@ class MongoDb:
         readers.add(email)
         update_dict = {'name': dataset_name,
                        'description': description,
+                       'title': title,
                        'readers': list(readers),
                        'url': url}
         if dataset_id is None:  # new dataset

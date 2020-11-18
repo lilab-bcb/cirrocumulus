@@ -5,20 +5,16 @@ def mean_agg(x):
     return x.mean()
 
 
-def sum_agg(x):
-    if hasattr(x, 'sparse'):
-        if x.sparse.npoints == 0:
-            return x.sparse.fill_value
-        return x.sum()
+def sparse_sum_agg(x):
+    if x.sparse.npoints == 0:
+        return x.sparse.fill_value
     return x.sum()
 
 
-def max_agg(x):
-    if hasattr(x, 'sparse'):
-        if x.sparse.npoints == 0:
-            return x.sparse.fill_value
-        return np.max(x.values)
-    return x.max()
+def sparse_max_agg(x):
+    if x.sparse.npoints == 0:
+        return x.sparse.fill_value
+    return np.max(x.values)
 
 
 def purity_agg(x):
@@ -31,7 +27,7 @@ def mode_agg(x):
     return x.mode()[0]
 
 
-def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False):
+def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False, coords=True):
     if isinstance(dimensions, str):
         dimensions = int(dimensions)
     coordinate_columns = []
@@ -41,30 +37,21 @@ def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False):
     if nbins is not None:
         full_name = full_name + '_' + str(nbins) + '_' + str(agg)
     return {'name': basis, 'dimensions': dimensions, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
-            'agg': agg, 'full_name': full_name, 'precomputed': precomputed}
+            'agg': agg, 'full_name': full_name, 'precomputed': precomputed, 'coords': coords}
 
 
 class EmbeddingAggregator:
 
-    def __init__(self, obs_measures, var_measures, dimensions, count, nbins, basis, agg_function='max', quick=False):
+    def __init__(self, measures, dimensions, nbins, basis, agg_function='max', quick=True,
+                 coords=True):
         self.nbins = nbins
-
-        if agg_function is not None:
-            if agg_function == 'max':
-                agg_function = max_agg
-            elif agg_function == 'mean':
-                agg_function = mean_agg
-            elif agg_function == 'sum':
-                agg_function = sum_agg
-            else:
-                raise ValueError('Unknown agg')
         self.agg_function = agg_function
-        self.obs_measures = obs_measures
-        self.var_measures = var_measures
+        self.measures = measures
         self.dimensions = dimensions
-        self.add_count = count
+        self.add_count = nbins is not None and len(measures) == 0 and len(dimensions) == 0
         self.basis = basis
         self.quick = quick  # do not compute purity.
+        self.coords = coords  # return coordinates
 
     @staticmethod
     def convert_coords_to_bin(df, nbins, coordinate_columns, bin_name, coordinate_column_to_range=None):
@@ -87,20 +74,19 @@ class EmbeddingAggregator:
 
     def execute(self, df):
         result = {'coordinates': {}, 'values': {}}
-        var_measures = self.var_measures
-        obs_measures = self.obs_measures
+        measures = self.measures
         dimensions = self.dimensions
         add_count = self.add_count
         basis = self.basis
+        if basis is not None:
+            result['name'] = basis['full_name']
         nbins = self.nbins
         agg_function = self.agg_function
         compute_purity = not self.quick and nbins is not None
         if nbins is not None:
-
-            EmbeddingAggregator.convert_coords_to_bin(df=df,
-                nbins=nbins,
-                coordinate_columns=basis['coordinate_columns'],
-                bin_name=basis['full_name'])
+            if basis['full_name'] not in df:
+                EmbeddingAggregator.convert_coords_to_bin(df=df, nbins=nbins,
+                    coordinate_columns=basis['coordinate_columns'], bin_name=basis['full_name'])
 
             if add_count:
                 df['__count'] = 1.0
@@ -110,8 +96,17 @@ class EmbeddingAggregator:
             full_basis_name = basis['full_name']
             for column in basis['coordinate_columns']:
                 agg_dict[column] = 'min'
-            for column in obs_measures + var_measures:
-                agg_dict[column] = agg_function
+            for column in measures:
+                if hasattr(df[column], 'sparse'):
+                    if agg_function == 'max':
+                        sparse_agg = sparse_max_agg
+                    elif agg_function == 'mean':
+                        sparse_agg = mean_agg
+                    elif agg_function == 'sum':
+                        sparse_agg = sparse_sum_agg
+                    agg_dict[column] = sparse_agg
+                else:
+                    agg_dict[column] = agg_function
 
             for column in dimensions:
                 agg_dict[column] = (mode_agg, purity_agg) if compute_purity else mode_agg
@@ -125,7 +120,8 @@ class EmbeddingAggregator:
                 if compute_purity:
                     series = series[series.columns[0]]
                 result['values']['__count'] = series
-            result['bins'] = agg_df.index
+            if self.coords:
+                result['coordinates']['bins'] = agg_df.index
 
         else:  # no binning
             if add_count:
@@ -140,17 +136,21 @@ class EmbeddingAggregator:
                     result['values'][column] = dict(value=series)
             else:
                 result['values'][column] = series
-        for column in var_measures + obs_measures:
+        for column in measures:
             series = agg_df[column]
             if compute_purity:
                 series = series[series.columns[0]]
             is_sparse = hasattr(series, 'sparse')
             if is_sparse:
                 series = series.sparse.to_dense()
+                # result['values'][column] = dict(index=series.values.sp_index, values=series.values.sp_values)
+            # else:
             result['values'][column] = series
-        for column in basis['coordinate_columns']:
-            series = agg_df[column]
-            if compute_purity:
-                series = series[series.columns[0]]
-            result['coordinates'][column] = series
+
+        if self.coords:
+            for column in basis['coordinate_columns']:
+                series = agg_df[column]
+                if compute_purity:
+                    series = series[series.columns[0]]
+                result['coordinates'][column] = series
         return result

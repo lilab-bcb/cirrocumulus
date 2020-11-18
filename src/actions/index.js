@@ -3,6 +3,7 @@ import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {isEqual, uniqBy} from 'lodash';
 import OpenSeadragon from 'openseadragon';
+import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
 import {JsonDataset} from '../JsonDataset';
 import {RestDataset} from '../RestDataset';
@@ -15,7 +16,8 @@ import {
     addFeatureSetsToX,
     CATEGORY_20B,
     CATEGORY_20C,
-    convertBinsToPoints,
+    convertBinsToIndices,
+    convertIndicesToBins,
     getFeatureSets,
     getInterpolator,
     indexSort,
@@ -104,11 +106,17 @@ export const SET_LOADING = 'SET_LOADING';
 export const SET_TAB = 'SET_TAB';
 
 export const SET_LOADING_APP = 'LOADING_APP';
+export const SET_CACHED_DATA = 'SET_CACHED_DATA';
 
 export const SET_NUMBER_OF_BINS_UI = 'SET_NUMBER_OF_BINS_UI';
 export const SET_MARKER_SIZE_UI = 'SET_MARKER_SIZE_UI';
 export const SET_MARKER_OPACITY_UI = 'SET_MARKER_OPACITY_UI';
 export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_UI';
+
+
+function isEmbeddingBinned(embedding) {
+    return embedding.bin || embedding.precomputed;
+}
 
 export function getEmbeddingKey(embedding) {
     let fullName = embedding.name + '_' + embedding.dimensions;
@@ -171,6 +179,8 @@ export function initGapi() {
             }
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '') { // no login required
+
+
                 dispatch(_setLoadingApp({loading: false}));
                 dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
                 if (serverInfo.mode === 'server') {
@@ -179,6 +189,8 @@ export function initGapi() {
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
                 });
+
+
             } else {
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
                 let script = document.createElement('script');
@@ -610,7 +622,10 @@ export function handleBrushFilterUpdated(payload) {
         const value = payload.value;  // value has basis and points
         const clear = payload.clear;
         let datasetFilter = getState().datasetFilter;
-
+        if (value && isEmbeddingBinned(value.basis)) {
+            const bins = getState().cachedData[getEmbeddingKey(value.basis)].bins;
+            value.points = convertIndicesToBins(value.points, bins);
+        }
         let update = true;
         if (value == null) { // remove
             update = datasetFilter[name] != null;
@@ -946,6 +961,7 @@ export function saveDataset(payload) {
         }
         const readers = payload.readers;
         const description = payload.description;
+        const title = payload.title;
         // let bucket = url.substring('gs://'.length);
         // let slash = bucket.indexOf('/');
         // let object = encodeURIComponent(bucket.substring(slash + 1));
@@ -972,6 +988,7 @@ export function saveDataset(payload) {
 
         // } else {
         let updateDatasetPermissionPromise = Promise.resolve({ok: true});
+
         // }
         updateDatasetPermissionPromise.then(permissionsResponse => {
 
@@ -979,17 +996,27 @@ export function saveDataset(payload) {
             //     dispatch(setMessage('Unable to set dataset read permissions. Please ensure that you are the dataset owner or manually add ' + serverEmail + ' as a reader.'));
             // }
         }).then(() => getState().serverInfo.api.upsertDatasetPromise(payload.dataset ? payload.dataset.id : null,
-            {name: name, readers: readers, description: description, url: url})).then(importDatasetResult => {
+            {
+                name: name,
+                readers: readers,
+                description: description,
+                title: title,
+                url: url
+            })).then(importDatasetResult => {
+            const dsUpdate = {
+                name: name,
+                id: importDatasetResult.id,
+                title: title,
+                url: url,
+                readers: readers,
+                description: description,
+                owner: true
+            };
             if (isEdit) {
-                dispatch(updateDataset({
-                    name: name,
-                    id: importDatasetResult.id,
-                    description: description,
-                    owner: true
-                }));
+                dispatch(updateDataset(dsUpdate));
                 dispatch(setMessage('Dataset updated'));
             } else {
-                dispatch(_addDataset({name: name, id: importDatasetResult.id, description: description, owner: true}));
+                dispatch(_addDataset(dsUpdate));
                 if (serverInfo.email) {
                     dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverInfo.email + ' is a "Storage Object Viewer"' : 'Dataset created'));
                 }
@@ -1041,6 +1068,7 @@ export function setMessage(payload) {
 export function setInterpolator(payload) {
     return {type: SET_INTERPOLATOR, payload: payload};
 }
+
 export function setDotPlotInterpolator(payload) {
     return {type: SET_DOT_PLOT_INTERPOLATOR, payload: payload};
 }
@@ -1250,7 +1278,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
             dispatch(setDatasetFilters(datasetFilters));
             if (savedDatasetState) {
-
                 dispatch(restoreSavedView(savedDatasetState));
             } else if (loadDefaultView) {
                 dispatch(loadDefaultDatasetEmbedding());
@@ -1311,20 +1338,10 @@ function handleSelectionResult(selectionResult, clear) {
                         continue;
                     }
                     let selectedPoints = selectedIndicesOrBins;
-                    if (embedding.bin) {
-                        // find embedding data with matching layout
-                        for (let i = 0; i < state.embeddingData.length; i++) {
-                            const embedding = state.embeddingData[i].embedding;
-                            let fullName = getEmbeddingKey(embedding);
-                            if (fullName === key) {
-                                const traceBins = state.embeddingData[i].bins;
-                                if (traceBins != null) {
-                                    selectedPoints = convertBinsToPoints(traceBins, selectedIndicesOrBins);
-                                    break;
-                                }
-                            }
-                        }
-
+                    if (isEmbeddingBinned(embedding)) {
+                        const coords = state.cachedData[getEmbeddingKey(embedding)];
+                        const bins = coords.bins;
+                        selectedPoints = convertBinsToIndices(bins, selectedIndicesOrBins);
                     }
 
                     chartSelection[key] = {
@@ -1438,36 +1455,55 @@ function _updateCharts(onError) {
             addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
         }
         let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
-        if (searchTokens.X.length === 0 && searchTokens.obsCat.length === 0 && searchTokens.obs.length === 0
-            && searchTokens.featureSets.length === 0) {
-            searchTokens.X = ['__count'];
-        }
         const selectionStats = state.featureSummary;
         const embeddings = state.embeddings;
         let dotPlotData = state.dotPlotData;
         let selectedDotPlotData = state.selectedDotPlotData;
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
-        let embeddingToVisibleFeatures = {};
-        embeddings.forEach(selectedEmbedding => {
-            let embeddingKey = getEmbeddingKey(selectedEmbedding);
-            let features = {};
-            searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).forEach(feature => {
-                features[feature] = true;
-            });
-            embeddingToVisibleFeatures[embeddingKey] = features;
+        const cachedData = state.cachedData;
+        const embeddingCoordinatesToFetch = [];
+        const valuesToFetch = new Set();
+        const binnedEmbeddingValuesToFetch = [];
+        const embeddingKeys = new Set();
+        const features = new Set();
+        searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).forEach(feature => {
+            features.add(feature);
         });
 
-        // set active flag on cached data
+        embeddings.forEach(selectedEmbedding => {
+            const embeddingKey = getEmbeddingKey(selectedEmbedding);
+            embeddingKeys.add(embeddingKey);
+            if (cachedData[embeddingKey] == null) {
+                embeddingCoordinatesToFetch.push(selectedEmbedding);
+            }
+            if (isEmbeddingBinned(selectedEmbedding)) {
+                const data = {values: [], embedding: selectedEmbedding};
+                features.forEach(feature => {
+                    let key = feature + '_' + embeddingKey;
+                    if (cachedData[key] == null) {
+                        data.values.push(feature);
+                    }
+                });
+                if (data.values.length > 0) {
+                    binnedEmbeddingValuesToFetch.push(data);
+                }
+            } else {
+                features.forEach(feature => {
+                    if (cachedData[feature] == null) {
+                        valuesToFetch.add(feature);
+                    }
+                });
+            }
+        });
+
+        // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
             const embeddingKey = getEmbeddingKey(traceInfo.embedding);
-            let visibleFeatures = embeddingToVisibleFeatures[embeddingKey] || {};
-            let active = visibleFeatures[traceInfo.name];
+            const active = embeddingKeys.has(embeddingKey) && (features.has(traceInfo.name) || (features.size === 0 && traceInfo.name === '__count'));
             if (active) {
                 traceInfo.date = new Date();
             }
-            // data is cached so delete from visibleFeatures
-            delete visibleFeatures[traceInfo.name];
             traceInfo.active = active;
         });
 
@@ -1491,7 +1527,7 @@ function _updateCharts(onError) {
             });
 
             searchTokens.X.forEach(feature => {
-                if (feature !== '__count' && cachedSelectedDotPlotMeasures[feature] == null) {
+                if (cachedSelectedDotPlotMeasures[feature] == null) {
                     selectedMeasuresCacheMiss.push(feature);
                 }
             });
@@ -1503,54 +1539,65 @@ function _updateCharts(onError) {
             dotPlotCategoryKeys.forEach(category => {
                 let added = false;
                 searchTokens.X.forEach(feature => {
-                    if (feature !== '__count') {
-                        let key = category + '-' + feature;
-                        dotPlotKeys[key] = true;
-                        if (cachedDotPlotKeys[key] == null) {
-                            dotplotMeasuresCacheMiss.add(feature);
-                            added = true;
-                        }
+
+                    let key = category + '-' + feature;
+                    dotPlotKeys[key] = true;
+                    if (cachedDotPlotKeys[key] == null) {
+                        dotplotMeasuresCacheMiss.add(feature);
+                        added = true;
                     }
+
                 });
             });
         }
-
         let q = {};
-        let embeddingsUsed = [];
-        for (let embeddingName in embeddingToVisibleFeatures) {
-            let visibleFeatures = embeddingToVisibleFeatures[embeddingName];
-            let embedding = embeddings[embeddings.map(e => getEmbeddingKey(e)).indexOf(embeddingName)];
-            let measures = [];
-            let dimensions = [];
-            for (let feature in visibleFeatures) {
-                if (searchTokens.obs.indexOf(feature) !== -1) { // continuous obs
-                    measures.push('obs/' + feature);
-                } else if (searchTokens.obsCat.indexOf(feature) !== -1) { // categorical obs
-                    dimensions.push(feature);
+        if (embeddingCoordinatesToFetch.length > 0 || binnedEmbeddingValuesToFetch.length > 0) {
+            q.embedding = [];
+            const embeddingCoordinatesToFetchKeys = embeddingCoordinatesToFetch.map(e => getEmbeddingKey(e));
+            binnedEmbeddingValuesToFetch.forEach(datum => {
+                const embeddingJson = getEmbeddingJson(datum.embedding);
+                embeddingJson.dimensions = [];
+                embeddingJson.measures = [];
+                embeddingJson.coords = embeddingCoordinatesToFetchKeys.indexOf(getEmbeddingKey(datum.embedding)) !== -1;
+                q.embedding.push(embeddingJson);
+                datum.values.forEach(value => {
+                    if (searchTokens.obsCat.indexOf(value) !== -1) {
+                        embeddingJson.dimensions.push(value);
+                    } else if (searchTokens.obs.indexOf(value) !== -1) {
+                        embeddingJson.measures.push('obs/' + value);
+                    } else {
+                        embeddingJson.measures.push(value);
+                    }
+                });
+            });
+            const binnedEmbeddingValuesToFetchKeys = binnedEmbeddingValuesToFetch.map(e => getEmbeddingKey(e.embedding));
+            embeddingCoordinatesToFetch.forEach(embedding => {
+                if (binnedEmbeddingValuesToFetchKeys.indexOf(getEmbeddingKey(embedding)) === -1) {
+                    const embeddingJson = getEmbeddingJson(embedding);
+                    embeddingJson.coords = true;
+                    q.embedding.push(embeddingJson);
+                }
+            });
+        }
+        if (valuesToFetch.size > 0) {
+            q.values = {measures: [], dimensions: []};
+            valuesToFetch.forEach(value => {
+                if (searchTokens.obsCat.indexOf(value) !== -1) {
+                    q.values.dimensions.push(value);
+                } else if (searchTokens.obs.indexOf(value) !== -1) {
+                    q.values.measures.push('obs/' + value);
                 } else {
-                    measures.push(feature); // X
+                    q.values.measures.push(value);
                 }
-            }
-            if (measures.length > 0 || dimensions.length > 0) {
-                embeddingsUsed.push(embedding);
-                if (!q.embedding) {
-                    q.embedding = [];
-                }
-                q.embedding.push(Object.assign({
-                    measures: measures,
-                    dimensions: dimensions
-                }, getEmbeddingJson(embedding)));
-            }
+            });
         }
 
         let globalFeatureSummaryXCacheMiss = [];
         let globalFeatureSummaryObsContinuousCacheMiss = [];
         let globalFeatureSummaryDimensionsCacheMiss = [];
         searchTokens.X.forEach(feature => {
-            if (feature !== '__count') {
-                if (globalFeatureSummary[feature] == null) {
-                    globalFeatureSummaryXCacheMiss.push(feature);
-                }
+            if (globalFeatureSummary[feature] == null) {
+                globalFeatureSummaryXCacheMiss.push(feature);
             }
         });
         searchTokens.obs.forEach(feature => {
@@ -1590,6 +1637,24 @@ function _updateCharts(onError) {
         }
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
         return dataPromise.then(result => {
+            if (result.embeddings != null) {
+                result.embeddings.forEach(embedding => {
+                    if (embedding.coordinates && Object.keys(embedding.coordinates).length>0) {
+                        cachedData[embedding.name] = embedding.coordinates;
+                    }
+                    if (embedding.values) { // binned values
+                        for (let feature in embedding.values) {
+                            cachedData[feature + '_' + embedding.name] = embedding.values[feature];
+                        }
+                    }
+                });
+            }
+            if (result.values) { // binned values
+                for (let feature in result.values) {
+                    cachedData[feature] = result.values[feature];
+                }
+            }
+
             dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
             const newSummary = result.summary || {};
             for (let key in newSummary) {
@@ -1597,11 +1662,13 @@ function _updateCharts(onError) {
             }
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
 
-            if (result.embedding) {
-                for (let i = 0; i < result.embedding.length; i++) {
-                    dispatch(handleEmbeddingResult(result.embedding[i], embeddingsUsed[i]));
-                }
-            }
+
+            updateEmbedingData(state, features);
+            // if (result.embedding) {
+            //     for (let i = 0; i < result.embedding.length; i++) {
+            //         dispatch(handleEmbeddingResult(result.embedding[i], embeddingsUsed[i]));
+            //     }
+            // }
             // embeddingData.sort((a, b) => {
             //     a = a.name.toLowerCase();
             //     b = b.name.toLowerCase();
@@ -1643,140 +1710,150 @@ function _updateCharts(onError) {
 }
 
 // depends on global feature summary
-function handleEmbeddingResult(embedding, embeddingDef) {
-    return function (dispatch, getState) {
-        const state = getState();
-
-        // let embeddingResult = result.embeddingResult;
-
-        let isSpatial = embeddingDef.spatial != null;
-        let interpolator = state.interpolator;
-
-
-        let embeddingData = state.embeddingData;
-        const globalFeatureSummary = state.globalFeatureSummary;
-        const obsCat = state.dataset.obsCat;
-        const embeddingBins = embedding.bins;
-        const embeddingValues = embedding.values;
-        const coordinates = embedding.coordinates;
-
-
-        let coordinateNames = [null, null, null]; // x, y, z
-        for (let name in coordinates) {
-            if (name.endsWith('_1')) {
-                coordinateNames[0] = name;
-            } else if (name.endsWith('_2')) {
-                coordinateNames[1] = name;
-            } else if (name.endsWith('_3')) {
-                coordinateNames[2] = name;
-            }
-        }
-        let x = coordinates[coordinateNames[0]];
-        let y = coordinates[coordinateNames[1]];
-        let z = coordinateNames[2] ? coordinates[coordinateNames[2]] : null;
-        const is3d = z != null;
-
-        // add new embedding values
-        for (let name in embeddingValues) {
-            let traceSummary = globalFeatureSummary[name];
-
-            let values = embeddingValues[name];
-            let purity = null;
-            if (values.value !== undefined) {
-                purity = values.purity;
-                values = values.value;
-            }
-
-            let isCategorical = name !== '__count' && obsCat.indexOf(name) !== -1;
-            let colorScale = null;
-
-            if (!isCategorical) {
-                // __count range is per embedding so we always recompute for now
-                if (traceSummary == null || name === '__count') {
-
-                    let min = Number.MAX_VALUE;
-                    let max = -Number.MAX_VALUE;
+function updateEmbedingData(state, features) {
+    const embeddings = state.embeddings;
+    let embeddingData = state.embeddingData;
+    const obsCat = state.dataset.obsCat;
+    const globalFeatureSummary = state.globalFeatureSummary;
+    const interpolator = state.interpolator;
+    const dataset = state.dataset;
+    const cachedData = state.cachedData;
+    const existingKeys = new Set();
+    embeddingData.forEach(embeddingDatum => {
+        const embeddingKey = getEmbeddingKey(embeddingDatum.embedding);
+        const key = embeddingDatum.name + '_' + embeddingKey;
+        existingKeys.add(key);
+    });
+    if (features.size === 0) {
+        features.add('__count');
+    }
+    embeddings.forEach(embedding => {
+        const embeddingKey = getEmbeddingKey(embedding);
+        const isBinned = isEmbeddingBinned(embedding);
+        const coordinates = cachedData[embeddingKey];
+        const x = coordinates[embedding.name + '_1'];
+        const y = coordinates[embedding.name + '_2'];
+        const z = coordinates[embedding.name + '_3'];
+        const bins = isBinned ? coordinates.bins : null;
+        features.forEach(feature => {
+            let key = feature + '_' + embeddingKey;
+            let featureKey = feature;
+            if (!existingKeys.has(key)) {
+                const isSpatial = embedding.spatial != null;
+                if (isBinned) {
+                    featureKey = key;
+                }
+                let traceSummary = globalFeatureSummary[feature];
+                let values = cachedData[featureKey];
+                if (values == null && feature === '__count' && !isBinned) {
+                    values = new Float32Array(x.length);
                     for (let i = 0, n = values.length; i < n; i++) {
-                        let value = values[i];
-                        min = value < min ? value : min;
-                        max = value > max ? value : max;
+                        values[i] = 1;
                     }
-                    traceSummary = {min: min, max: max};
-                    globalFeatureSummary[name] = traceSummary;
                 }
-                let domain = [traceSummary.min, traceSummary.max];
-                if (traceSummary.customMin != null && !isNaN(traceSummary.customMin)) {
-                    domain[0] = traceSummary.customMin;
-                }
-                if (traceSummary.customMax != null && !isNaN(traceSummary.customMax)) {
-                    domain[1] = traceSummary.customMax;
-                }
-                colorScale = scaleSequential(interpolator.value).domain(domain);
+                let purity = null;
 
-            } else {
-                let traceUniqueValues = traceSummary.categories;
-                // if (traceUniqueValues.length === 1 && traceUniqueValues[0] === true) {
-                //     traceUniqueValues = traceUniqueValues.concat([null]);
-                //     traceSummary.categories = traceUniqueValues;
-                //     traceSummary.counts = traceSummary.counts.concat([state.dataset.shape[0] - traceSummary.counts[0]]);
-                // }
+                if (values.value !== undefined) {
+                    purity = values.purity;
+                    values = values.value;
+                }
 
-                let colors;
-                if (traceUniqueValues.length <= 10) {
-                    colors = schemeCategory10;
-                } else if (traceUniqueValues.length <= 12) {
-                    colors = schemePaired;
-                } else if (traceUniqueValues.length <= 20) {
-                    colors = CATEGORY_20B;
+                let isCategorical = feature !== '__count' && obsCat.indexOf(feature) !== -1;
+                let colorScale = null;
+
+                if (!isCategorical) {
+                    // __count range is per embedding so we always recompute for now
+                    if (isPlainObject(values)) {
+                        let newValues = new Float32Array(dataset.shape[0]);
+                        for (let i = 0, n = values.index.length; i < n; i++) {
+                            newValues[values.index[i]] = values.values[i];
+                        }
+                        values = newValues;
+                    }
+                    if (traceSummary == null || feature === '__count') {
+
+                        let min = Number.MAX_VALUE;
+                        let max = -Number.MAX_VALUE;
+                        for (let i = 0, n = values.length; i < n; i++) {
+                            let value = values[i];
+                            min = value < min ? value : min;
+                            max = value > max ? value : max;
+                        }
+                        traceSummary = {min: min, max: max};
+                        globalFeatureSummary[feature] = traceSummary;
+                    }
+                    let domain = [traceSummary.min, traceSummary.max];
+                    if (traceSummary.customMin != null && !isNaN(traceSummary.customMin)) {
+                        domain[0] = traceSummary.customMin;
+                    }
+                    if (traceSummary.customMax != null && !isNaN(traceSummary.customMax)) {
+                        domain[1] = traceSummary.customMax;
+                    }
+                    colorScale = scaleSequential(interpolator.value).domain(domain);
+
                 } else {
-                    colors = CATEGORY_20B.concat(CATEGORY_20C);
+                    let traceUniqueValues = traceSummary.categories;
+                    // if (traceUniqueValues.length === 1 && traceUniqueValues[0] === true) {
+                    //     traceUniqueValues = traceUniqueValues.concat([null]);
+                    //     traceSummary.categories = traceUniqueValues;
+                    //     traceSummary.counts = traceSummary.counts.concat([state.dataset.shape[0] - traceSummary.counts[0]]);
+                    // }
+
+                    let colors;
+                    if (traceUniqueValues.length <= 10) {
+                        colors = schemeCategory10;
+                    } else if (traceUniqueValues.length <= 12) {
+                        colors = schemePaired;
+                    } else if (traceUniqueValues.length <= 20) {
+                        colors = CATEGORY_20B;
+                    } else {
+                        colors = CATEGORY_20B.concat(CATEGORY_20C);
+                    }
+
+                    colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
+                    colorScale.summary = traceSummary;
                 }
 
-                colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
-                colorScale.summary = traceSummary;
+
+                let chartData = {
+                    embedding: Object.assign({}, embedding),
+                    name: feature,
+                    x: x,
+                    y: y,
+                    z: z != null ? z : undefined,
+                    bins: bins,
+                    dimensions: z != null ? 3 : 2,
+                    npoints: values.length,
+                    date: new Date(),
+                    active: true,
+                    colorScale: colorScale,
+                    continuous: !isCategorical,
+                    isCategorical: isCategorical,
+                    values: values, // for color
+                    isImage: isSpatial
+                    // purity: purity,
+                    // text: values,
+                };
+                if (!isSpatial) {
+                    chartData.positions = getPositions(chartData);
+                }
+                updateTraceColors(chartData);
+
+                if (isSpatial) {
+                    chartData.indices = !isCategorical ? indexSort(chartData.values, true) : randomSeq(chartData.values.length);
+                    chartData.isImage = true;
+                    const url = dataset.api.getFileUrl(embedding.spatial.image);
+                    let tileSource = new OpenSeadragon.ImageTileSource({
+                        url: url,
+                        buildPyramid: true,
+                        crossOriginPolicy: "Anonymous"
+                    });
+                    chartData.tileSource = tileSource;
+                }
+                embeddingData.push(chartData);
             }
-
-
-            let chartData = {
-                embedding: Object.assign({}, embeddingDef),
-                name: name,
-                x: x,
-                y: y,
-                z: is3d ? z : undefined,
-                bins: embeddingBins,
-                dimensions: is3d ? 3 : 2,
-                npoints: x.length,
-                date: new Date(),
-                active: true,
-                colorScale: colorScale,
-                continuous: !isCategorical,
-                isCategorical: isCategorical,
-                values: values, // for color
-                isImage: isSpatial
-                // purity: purity,
-                // text: values,
-            };
-            if (!isSpatial) {
-                chartData.positions = getPositions(chartData);
-            }
-            updateTraceColors(chartData);
-
-            if (isSpatial) {
-                chartData.indices = !isCategorical ? indexSort(chartData.values, true) : randomSeq(chartData.values.length);
-                chartData.isImage = true;
-                const url = getState().dataset.api.getFileUrl(embeddingDef.spatial.image);
-                let tileSource = new OpenSeadragon.ImageTileSource({
-                    url: url,
-                    buildPyramid: true,
-                    crossOriginPolicy: "Anonymous"
-                });
-                chartData.tileSource = tileSource;
-            }
-            embeddingData.push(chartData);
-
-        }
-
-    };
+        });
+    });
 
 }
 

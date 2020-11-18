@@ -274,31 +274,22 @@ export function getInterpolator(name) {
     return scaleChromatic[fixInterpolatorName(name)];
 }
 
-export function convertPointsToBins(points, allBins) {
-    let bins = [];
+export function convertIndicesToBins(points, bins) {
+    let selectedBins = [];
     for (let i = 0, n = points.length; i < n; i++) {
-        bins.push(allBins[points[i]]);
+        selectedBins.push(bins[points[i]]);
     }
-    return bins;
+    return selectedBins;
 }
 
-export function convertBinsToPoints(bins, selectedBins) {
+export function convertBinsToIndices(bins, selectedBins) {
     let points = [];
-    let binIndex = 0;
-
+    selectedBins = new Set(selectedBins);
     for (let i = 0, n = bins.length; i < n; i++) {
-        if (bins[i] === selectedBins[binIndex]) {
+        if (selectedBins.has(bins[i])) {
             points.push(i);
-            binIndex++;
         }
     }
-
-    // selectedBins = new Set(selectedBins);
-    // for (let i = 0, n = bins.length; i < n; i++) {
-    //     if (selectedBins.has(bins[i])) {
-    //         points.push(i);
-    //     }
-    // }
 
     return points;
 }

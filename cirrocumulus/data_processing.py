@@ -172,29 +172,34 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
     return result_df.to_csv()
 
 
-# embedding - list of basis, measures, dimensions
-def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, stats=None, selection=None):
+# embedding - list of basis and coords (whether to return coordinates). For binned embeddings, also measures and dimensions.
+def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_stats=None, stats=None, selection=None):
     dimensions = set()
     measures = set()
     basis_list = []
     basis_keys = set()
     if embedding_list is not None:
         for embedding in embedding_list:
-            dimensions.update(embedding.get('dimensions', []))
-            embedding['count'] = '__count' in embedding.get('measures', [])
-            measures.update(embedding.get('measures', []))
+            precomputed = embedding.get('precomputed', False)
             nbins = check_bin_input(embedding.get('nbins', None))
             agg_function = embedding.get('agg', 'max')
             ndim = embedding.get('ndim', '2')
-            precomputed = embedding.get('precomputed', False)
+            coords = embedding.get('coords', True)
             basis = get_basis(embedding.get('basis'), nbins=nbins, agg=agg_function, dimensions=ndim,
-                precomputed=precomputed)
+                precomputed=precomputed, coords=coords)
+            if nbins is not None:
+                dimensions.update(embedding.get('dimensions', []))
+                measures.update(embedding.get('measures', []))
 
             if basis['full_name'] not in basis_keys:
                 basis_list.append(basis)
                 basis_keys.add(basis['full_name'])
 
             embedding['basis'] = basis
+    if values is not None:
+        dimensions.update(values.get('dimensions', []))
+        measures.update(values.get('measures', []))
+
     if selection is not None:
         data_filter = selection.get('filter')
         var_keys_filter, obs_keys_filter, selected_points_filter_basis_list = data_filter_keys(data_filter)
@@ -203,9 +208,9 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
         dimensions.update(obs_keys_filter)
         dimensions.update(selection.get('dimensions', []))
         measures.update(selection.get('measures', []))
-        embeddings = selection.get('embeddings', [])
+        selection_embeddings = selection.get('embeddings', [])
         embeddings_mapped = []
-        for embedding in embeddings:
+        for embedding in selection_embeddings:
             basis = get_basis(embedding.get('basis'), nbins=embedding.get('nbins'), agg=embedding.get('agg', 'max'),
                 dimensions=embedding.get('ndim', '2'),
                 precomputed=embedding.get('precomputed', False))
@@ -228,17 +233,32 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
         dimensions.update(stats.get('dimensions', []))
         measures.update(stats.get('measures', []))
 
-    has_count = '__count' in measures
-    if has_count:
-        measures.remove('__count')
     obs_measures, var_measures = split_measures(measures)
     df = dataset_api.read(dataset=dataset, obs_keys=list(dimensions) + obs_measures,
         var_keys=var_measures, basis=basis_list)
-    if has_count:
-        df['__count'] = 1
+    for basis_obj in basis_list:
+        if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
+            EmbeddingAggregator.convert_coords_to_bin(df=df,
+                nbins=basis_obj['nbins'],
+                bin_name=basis_obj['full_name'],
+                coordinate_columns=basis_obj['coordinate_columns'])
     results = {}
+    if values is not None:
+        dimensions = values.get('dimensions', [])
+        measures = values.get('measures', [])
+        obs_measures, var_measures = split_measures(measures)
+        result = EmbeddingAggregator(
+            measures=obs_measures + var_measures,
+            dimensions=dimensions,
+            nbins=None,
+            basis=None,
+            coords=False,
+            agg_function=None,
+            quick=True).execute(df)
+        results['values'] = result['values']
+
     if embedding_list is not None:
-        results['embedding'] = []
+        results['embeddings'] = []
         for embedding in embedding_list:
             dimensions = embedding.get('dimensions', [])
             measures = embedding.get('measures', [])
@@ -247,15 +267,15 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
             if basis['precomputed']:
                 result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
             else:
-                result = EmbeddingAggregator(obs_measures=obs_measures,
-                    var_measures=var_measures,
+                result = EmbeddingAggregator(
+                    measures=obs_measures + var_measures,
                     dimensions=dimensions,
-                    count=embedding['count'],
                     nbins=basis['nbins'],
                     basis=basis,
+                    coords=basis['coords'],
                     agg_function=basis['agg'],
                     quick=True).execute(df)
-            results['embedding'].append(result)
+            results['embeddings'].append(result)
     if grouped_stats is not None:
         if dataset_api.has_precomputed_stats(dataset):
             results['dotplot'] = precomputed_grouped_stats(dataset_api, dataset, grouped_stats.get('measures', []),
@@ -276,19 +296,12 @@ def handle_data(dataset_api, dataset, embedding_list=None, grouped_stats=None, s
         dimensions = selection.get('dimensions', [])
         measures = selection.get('measures', [])
         obs_measures, var_measures = split_measures(measures)
-        basis_list = selection.get('basis', [])
-        embeddings = selection.get('embeddings', [])
-        for basis_obj in basis_list + embeddings:
-            if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
-                EmbeddingAggregator.convert_coords_to_bin(df=df,
-                    nbins=basis_obj['nbins'],
-                    bin_name=basis_obj['full_name'],
-                    coordinate_columns=basis_obj['coordinate_columns'])
-
+        # basis_list = selection.get('basis', [])
+        selection_embeddings = selection.get('embeddings', [])
         df = apply_filter(df, data_filter)
-        if len(embeddings) > 0:
+        if len(selection_embeddings) > 0:
             results['selection']['coordinates'] = {}
-            for embedding in embeddings:
+            for embedding in selection_embeddings:
                 results['selection']['coordinates'][embedding['full_name']] = UniqueAggregator(
                     embedding['full_name'] if embedding['nbins'] is not None else 'index').execute(df)
 

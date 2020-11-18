@@ -91,10 +91,16 @@ export class DatasetSelector extends React.PureComponent {
                     />
                     <List style={{width: 500}} dense disablePadding component="nav" aria-label="datasets">
                         {filteredChoices.map(choice => {
+                            let text = choice.name;
+                            if (choice.title) {
+                                text += ' - ' + choice.title;
+                            }
                             return <ListItem alignItems="flex-start" selected={choice.id === selectedId} key={choice.id}
                                              button onClick={(e) => this.handleListItemClick(choice.id)}>
+
                                 <ListItemText
-                                    primary={choice.name} secondary={choice.description}/>
+                                    primary={text}
+                                    style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'}}/>
                             </ListItem>;
                         })}
                     </List>

@@ -2,6 +2,7 @@ import {Divider, IconButton, Menu, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
+import Popover from '@material-ui/core/Popover';
 import {withStyles} from '@material-ui/core/styles';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
@@ -12,6 +13,7 @@ import Brightness2Icon from '@material-ui/icons/Brightness3';
 import HelpIcon from '@material-ui/icons/Help';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
@@ -84,7 +86,6 @@ class AppHeader extends React.PureComponent {
             userMenuAnchorEl: null,
             moreMenuOpen: false,
             moreMenuAnchorEl: null,
-
         };
 
     }
@@ -295,10 +296,20 @@ class AppHeader extends React.PureComponent {
         this.setState({moreMenuOpen: false});
     };
 
+    handleShowDatasetDetails = (event) => {
+        this.setState({datasetDetailsEl: event.currentTarget});
+    };
+    handleCloseDatasetDetails = (event) => {
+        this.setState({datasetDetailsEl: null});
+    };
+
     render() {
         const {
             dataset, loadingApp, email, selection, classes, serverInfo, tab, user
         } = this.props;
+
+
+        const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && !isNaN(selection.count);
 
@@ -327,10 +338,33 @@ class AppHeader extends React.PureComponent {
                     {/*    {datasetChoices.map(dataset => <MenuItem*/}
                     {/*        key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}*/}
                     {/*</Select>}*/}
-
+                    {dataset != null && <Popover
+                        id={"dataset-details"}
+                        open={datasetDetailsOpen}
+                        anchorEl={this.state.datasetDetailsEl}
+                        onClose={this.handleCloseDatasetDetails}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'center',
+                        }}
+                    >
+                        {dataset.title && <Typography className={classes.typography}>
+                            {dataset.title}
+                        </Typography>}
+                        {dataset.description  &&
+                        <ReactMarkdown linkTarget="_blank" children={dataset.description}/>}
+                    </Popover>}
                     {dataset != null &&
-                    <Typography component={"h3"}>
-                        <Tooltip title={dataset.description || ''}><b>{dataset.name}</b></Tooltip>
+                    <Typography
+                        onClick={dataset.title || dataset.description ? this.handleShowDatasetDetails : null}
+                        aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
+                        aria-haspopup="true"
+                        component={"h3"}>
+                        <b>{dataset.name}</b>
                         <small>&nbsp;
                             {hasSelection && shape != null && intFormat(selection.count) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}

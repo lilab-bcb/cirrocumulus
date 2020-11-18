@@ -65,7 +65,7 @@ import {intFormat} from './formatters';
 import {getFeatureSets, splitSearchTokens} from './util';
 
 const sorter = natsort();
-const pointSizeOptions = [{value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
+const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
 }, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
@@ -399,7 +399,7 @@ class SideBar extends React.PureComponent {
     render() {
         const {
             chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
-            searchTokens, markerOpacity, datasetFilter, datasetFilters,interpolator, markers,
+            searchTokens, markerOpacity, datasetFilter, datasetFilters, interpolator, markers,
             unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection, serverInfo
         } = this.props;
 
@@ -467,6 +467,7 @@ class SideBar extends React.PureComponent {
         const featureSetOptions = getFeatureSetOptions(markers);
 
         const fancy = serverInfo.fancy;
+        const showBinPlot = false;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
         return (
             <div className={classes.root}>
@@ -540,11 +541,11 @@ class SideBar extends React.PureComponent {
                                              getOptionSelected={(option, value) => option.id === value.id}
                                              getChipText={option => option.name}/>
                     {fancy && splitTokens.X.length > 0 &&
-                        <Tooltip title={"Save Current Feature List"}>
-                            <IconButton size={'small'} onClick={this.onSaveFeatureList}>
-                                <SaveIcon/>
-                            </IconButton>
-                        </Tooltip>
+                    <Tooltip title={"Save Current Feature List"}>
+                        <IconButton size={'small'} onClick={this.onSaveFeatureList}>
+                            <SaveIcon/>
+                        </IconButton>
+                    </Tooltip>
                     }
                 </FormControl>}
 
@@ -670,10 +671,11 @@ class SideBar extends React.PureComponent {
 
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
-                                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator} interpolator={interpolator}/>
+                                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
+                                                     interpolator={interpolator}/>
                             </FormControl>
 
-                            {!isSummarized && fancy && <div><FormControlLabel
+                            {!isSummarized && showBinPlot && <div><FormControlLabel
                                 control={
                                     <Switch
                                         checked={binValues}
@@ -733,7 +735,7 @@ class SideBar extends React.PureComponent {
                     <AccordionPanelDetails>
                         <div>
                             {datasetFilters.length === 0 &&
-                            <Box color="text.secondary">No saved filters</Box>}
+                            <Box color="text.secondary" style={{paddingLeft:10}}>No saved filters</Box>}
                             {datasetFilters.length > 0 && <div><List dense={true}>
                                 {datasetFilters.map(item => (
                                     <ListItem key={item.id} data-key={item.id} button

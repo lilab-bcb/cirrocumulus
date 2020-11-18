@@ -1,9 +1,9 @@
 import datetime
 import json
 
-from cirrocumulus.database_api import get_email_domain
 from google.cloud import datastore
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -64,7 +64,7 @@ class FirestoreDatastore:
         results = []
         for result in query.fetch():
             results.append(
-                {'id': result.id, 'name': result['name'], 'description': result.get('description'),
+                {'id': result.id, 'name': result['name'], 'title': result.get('title'),
                  'owner': email in result['owners'], 'url': result['url']})
         domain = get_email_domain(email)
         if domain is not None:
@@ -75,7 +75,7 @@ class FirestoreDatastore:
                 unique_ids.add(result['id'])
             for result in query.fetch():
                 if result.id not in unique_ids:
-                    results.append({'id': result.id, 'name': result['name'], 'description': result.get('description'),
+                    results.append({'id': result.id, 'name': result['name'], 'title': result.get('title'),
                                     'owner': email in result['owners'],
                                     'url': result['url']})
         return results
@@ -155,7 +155,7 @@ class FirestoreDatastore:
         dataset['id'] = dataset.id
         return dataset
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title):
         client = self.datastore_client
         if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
@@ -171,6 +171,7 @@ class FirestoreDatastore:
         update_dict = {'name': dataset_name,
                        'readers': list(readers),
                        'description': description,
+                       'title': title,
                        'url': url}
 
         if dataset_id is None:  # new dataset

@@ -1,9 +1,9 @@
 from urllib.parse import urlparse
 
-import cirrocumulus.data_processing as data_processing
-from cirrocumulus.envir import CIRRO_SERVE
 from flask import Blueprint, Response, request, stream_with_context
 
+import cirrocumulus.data_processing as data_processing
+from cirrocumulus.envir import CIRRO_SERVE
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -171,6 +171,7 @@ def handle_schema():
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset)
+    schema.update(dataset)  # add title, etc from database to schema
     schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
     return to_json(schema)
 
@@ -245,6 +246,7 @@ def handle_data():
     return to_json(
         data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
             embedding_list=json_request.get('embedding'),
+            values=json_request.get('values'),
             stats=json_request.get('stats'),
             grouped_stats=json_request.get('groupedStats'),
             selection=json_request.get('selection')))
@@ -289,12 +291,13 @@ def handle_dataset():
         readers = set(content.get('readers', []))
         dataset_name = content.get('name', '')
         description = content.get('description', '')
+        title = content.get('title', '')
         url = content.get('url', '')  # e.g. gs://foo/a/b/
         if dataset_name == '' or url == '':
             return 'Must supply dataset name and URL', 400
         dataset_id = database_api.upsert_dataset(email=email,
             dataset_id=dataset_id if request.method == 'PUT' else None,
-            dataset_name=dataset_name, url=url, readers=readers, description=description)
+            dataset_name=dataset_name, url=url, readers=readers, description=description, title=title)
         return to_json({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)

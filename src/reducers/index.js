@@ -19,7 +19,8 @@ import {
     SET_DATASET_FILTERS,
     SET_DIALOG,
     SET_DOMAIN,
-    SET_DOT_PLOT_DATA, SET_DOT_PLOT_INTERPOLATOR,
+    SET_DOT_PLOT_DATA,
+    SET_DOT_PLOT_INTERPOLATOR,
     SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
@@ -78,7 +79,7 @@ const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
 
 const DEFAULT_PRIMARY_CHART_SIZE = {
     width: window.innerWidth - 280,
-    height: Math.max(300, window.innerHeight - 220)
+    height: Math.max(300, window.innerHeight - 410)
 };
 
 const DEFAULT_CHART_OPTIONS = {
@@ -93,7 +94,7 @@ const DEFAULT_CHART_OPTIONS = {
     labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
 };
 
-function chartSize(state = 500, action) {
+function chartSize(state = 300, action) {
     switch (action.type) {
         case SET_CHART_SIZE:
             return action.payload;
@@ -671,6 +672,15 @@ function categoricalNames(state = {}, action) {
     }
 }
 
+// maps keys to values, features=>array, embedding key=>x,y,z, feature_embedding_key=>array for binned embeddings
+function cachedData(state = {}, action) {
+    switch (action.type) {
+        case SET_DATASET :
+            return {};
+    }
+    return state;
+
+}
 
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
@@ -788,6 +798,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 export default combineReducers({
     binSummary,
     binValues,
+    cachedData,
     categoricalNames,
     chartOptions,
     chartSize,

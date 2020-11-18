@@ -208,15 +208,25 @@ class CategoricalLegend extends React.PureComponent {
                     {categories.map((category, i) => {
 
                         const opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(category) !== -1 ? 1 : 0.4;
-                        // const fractionUnselected = unselectedCounts != null ? unselectedCounts[i] / unselectedTotal : null;
-                        // const unselectedSize = unselectedCounts == null ? 0 : fractionScale(fractionUnselected);
-                        // const unselectedTitle = unselectedCounts == null ? null : intFormat(unselectedCounts[i]) + ' / ' + intFormat(unselectedTotal) + (unselectedCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionUnselected) + '%)') : '');
-                        const count = globalDimensionSummary.counts[i];
-                        const selectedCount = selectedDimensionToCount[category] || 0;
-                        const fractionSelected = selectionSummary == null ? 0 : selectedCount / nObsSelected;
+                        // const fractionUnselected = unselectedCategoryCounts != null ? unselectedCategoryCounts[i] / unselectedTotal : null;
+                        // const unselectedSize = unselectedCategoryCounts == null ? 0 : fractionScale(fractionUnselected);
+                        // const unselectedTitle = unselectedCategoryCounts == null ? null : intFormat(unselectedCategoryCounts[i]) + ' / ' + intFormat(unselectedTotal) + (unselectedCategoryCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionUnselected) + '%)') : '');
+                        const categoryCount = globalDimensionSummary.counts[i];
+                        const selectedCategoryCount = selectedDimensionToCount[category] || 0;
+
+                        //            not-selected, selected
+                        // in category      a       b
+                        // not in category  c       d
+                        const a = categoryCount - selectedCategoryCount;
+                        const b = selectedCategoryCount;
+                        const c = nObs - nObsSelected - selectedCategoryCount;
+                        const d = nObsSelected - selectedCategoryCount;
+                        // const pValue = fisherTest(a, b, c, d);
+
+                        const fractionSelected = selectionSummary == null ? 0 : selectedCategoryCount / nObsSelected;
                         // const selectedSize = fractionScale(fractionSelected);
                         // const globalSize = fractionScale(count / nObs);
-                        const globalTitle = numberFormat(100 * count / nObs) + '%';
+                        const globalTitle = numberFormat(100 * categoryCount / nObs) + '%';
                         let categoryText = category;
                         let renamed = renamedCategories[category];
                         if (renamed !== undefined) {
@@ -253,7 +263,7 @@ class CategoricalLegend extends React.PureComponent {
 
                             <td>
                                 <Tooltip title={globalTitle}>
-                                    <span>{intFormat(count)}</span>
+                                    <span>{intFormat(categoryCount)}</span>
                                 </Tooltip>
 
                                 {/*<div*/}
@@ -278,7 +288,7 @@ class CategoricalLegend extends React.PureComponent {
                             </td>
                             {selectionSummary && <td>
                                 <Tooltip title={selectionTitle}>
-                                    <div>{intFormat(selectedCount)}</div>
+                                    <div>{intFormat(selectedCategoryCount)}</div>
                                 </Tooltip>
                                 {/*<div*/}
                                 {/*    title={selectionTitle}*/}

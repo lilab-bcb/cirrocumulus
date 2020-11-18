@@ -13,8 +13,9 @@ class EmbeddingCharts extends React.PureComponent {
         super(props);
         this.resizeListener = () => {
             let width = window.innerWidth - 280;
+
             // let height = Math.max(1, this.containerElementRef.offsetHeight);
-            let height = Math.max(300, window.innerHeight - 220);
+            let height = Math.max(300, window.innerHeight - 410);
             this.props.handlePrimaryChartSize({width: width, height: height});
         };
         window.addEventListener('resize', this.resizeListener);
