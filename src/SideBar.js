@@ -271,16 +271,7 @@ class SideBar extends React.PureComponent {
         this.props.handleSearchTokens(values, 'featureSet');
     };
 
-    onFeatureClick = (event, option) => {
-        const value = option.text !== undefined ? option.text : option;
-        let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
-        for (let i = 0; i < galleryTraces.length; i++) {
-            if (galleryTraces[i].name == value) {
-                this.props.handlePrimaryTraceKey(getTraceKey(galleryTraces[i]));
-                break;
-            }
-        }
-    };
+
     onFeatureSetClick = (event, option) => {
         const id = option.id;
         const target = event.target;
@@ -315,9 +306,19 @@ class SideBar extends React.PureComponent {
     };
 
     onFilterChipClicked = (event) => {
-        this.onFeatureClick(event.target.innerText);
+        this.onFeatureClick(event, event.target.innerText);
     };
 
+    onFeatureClick = (event, option) => {
+        const value = option.text !== undefined ? option.text : option;
+        let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
+        for (let i = 0; i < galleryTraces.length; i++) {
+            if (galleryTraces[i].name == value) {
+                this.props.handlePrimaryTraceKey(getTraceKey(galleryTraces[i]));
+                break;
+            }
+        }
+    };
 
     // onNumberOfBinsChange = (event) => {
     //     this.props.handleNumberOfBinsUI(event.target.value);
