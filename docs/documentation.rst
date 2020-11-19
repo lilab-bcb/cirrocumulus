@@ -7,6 +7,8 @@ Overview
 
 The cirrocumulus interface consists of an app bar, side bar, primary embedding, embedding toolbar, embedding gallery, and dot plot.
 
+.. image:: images/overview.png
+
 
 Primary embedding
 ^^^^^^^^^^^^^^^^^^^
