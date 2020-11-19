@@ -4,6 +4,7 @@ import Switch from '@material-ui/core/Switch';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
+import {debounce} from 'lodash';
 import React from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import DotPlotCanvas from './DotPlotCanvas';
@@ -15,62 +16,65 @@ export class DotPlotGroup extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {min: '', max: '', minSize: '', sizeMax: '', forceUpdate: false, drawCircles: true};
+        this.updateMinSize = debounce(this.updateMinSize, 500);
+        this.updateMaxSize = debounce(this.updateMaxSize, 500);
+        this.updateMin = debounce(this.updateMin, 500);
+        this.updateMax = debounce(this.updateMax, 500);
     }
 
     onMinChange = (event) => {
         this.setState({min: event.target.value});
+        this.updateMin(event.target.value);
     };
 
-    onMinKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            this.props.categoryItem.minCustom = parseFloat(event.target.value);
-            this.setState({forceUpdate: !this.state.forceUpdate});
-        }
+    updateMin = (value) => {
+        this.props.categoryItem.minCustom = parseFloat(value);
+        this.setState({forceUpdate: !this.state.forceUpdate});
     };
+
+    onMaxChange = (event) => {
+        this.setState({max: event.target.value});
+        this.updateMax(event.target.value);
+    };
+
+    updateMax = (value) => {
+        this.props.categoryItem.maxCustom = parseFloat(value);
+        this.setState({forceUpdate: !this.state.forceUpdate});
+    };
+
 
     onMinSizeChange = (event) => {
         this.setState({minSize: event.target.value});
+        this.updateMinSize(event.target.value);
     };
+
+    updateMinSize = (value) => {
+        this.props.categoryItem.minSizeCustom = parseFloat(value);
+        if (this.props.categoryItem.minSizeCustom > 1) {
+            this.props.categoryItem.minSizeCustom /= 100; // fraction
+        }
+        this.setState({forceUpdate: !this.state.forceUpdate});
+
+    };
+
+    onMaxSizeChange = (event) => {
+        this.setState({sizeMax: event.target.value});
+        this.updateMaxSize(event.target.value);
+    };
+
+    updateMaxSize = (value) => {
+        this.props.categoryItem.maxSizeCustom = parseFloat(value);
+        if (this.props.categoryItem.maxSizeCustom > 1) {
+            this.props.categoryItem.maxSizeCustom /= 100; // fraction
+        }
+        this.setState({forceUpdate: !this.state.forceUpdate});
+    };
+
 
     onHeatmapChange = (event) => {
         this.setState({drawCircles: !event.target.checked});
     };
 
-
-    onMinSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            this.props.categoryItem.minSizeCustom = parseFloat(event.target.value);
-            if (this.props.categoryItem.minSizeCustom > 1) {
-                this.props.categoryItem.minSizeCustom /= 100; // fraction
-            }
-            this.setState({forceUpdate: !this.state.forceUpdate});
-        }
-    };
-
-    onMaxSizeChange = (event) => {
-        this.setState({sizeMax: event.target.value});
-    };
-
-    onMaxSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            this.props.categoryItem.maxSizeCustom = parseFloat(event.target.value);
-            if (this.props.categoryItem.maxSizeCustom > 1) {
-                this.props.categoryItem.maxSizeCustom /= 100; // fraction
-            }
-            this.setState({forceUpdate: !this.state.forceUpdate});
-        }
-    };
-
-    onMaxChange = (event) => {
-        this.setState({max: event.target.value});
-    };
-
-    onMaxKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            this.props.categoryItem.maxCustom = parseFloat(event.target.value);
-            this.setState({forceUpdate: !this.state.forceUpdate});
-        }
-    };
 
     render() {
 
@@ -163,12 +167,10 @@ export class DotPlotGroup extends React.PureComponent {
                 <TextField
                     InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
                     size="small" type="text"
-                    onKeyPress={this.onMinKeyPress}
                     onChange={this.onMinChange} label={"Min"}
                     value={this.state.min}/>
                 <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
                            type="text"
-                           onKeyPress={this.onMaxKeyPress}
                            onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
 
@@ -183,11 +185,9 @@ export class DotPlotGroup extends React.PureComponent {
                         Expressed</InputLabel>
                     <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
                                size="small" type="text"
-                               onKeyPress={this.onMinSizeKeyPress}
                                onChange={this.onMinSizeChange} label={"Min"}
                                value={this.state.minSize}/>
                     <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
-                               onKeyPress={this.onMaxSizeKeyPress}
                                onChange={this.onMaxSizeChange} label={"Max"}
                                value={this.state.maxSize}/>
                 </div>}

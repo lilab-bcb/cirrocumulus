@@ -41,7 +41,7 @@ export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
-export const SET_UNSELECTED_MARKER_SIZE_UI = 'SET_UNSELECTED_MARKER_SIZE_UI';
+
 export const SET_PRIMARY_TRACE_KEY = 'SET_PRIMARY_TRACE_KEY';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
 export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
@@ -107,11 +107,6 @@ export const SET_TAB = 'SET_TAB';
 
 export const SET_LOADING_APP = 'LOADING_APP';
 export const SET_CACHED_DATA = 'SET_CACHED_DATA';
-
-export const SET_NUMBER_OF_BINS_UI = 'SET_NUMBER_OF_BINS_UI';
-export const SET_MARKER_SIZE_UI = 'SET_MARKER_SIZE_UI';
-export const SET_MARKER_OPACITY_UI = 'SET_MARKER_OPACITY_UI';
-export const SET_UNSELECTED_MARKER_OPACITY_UI = 'SET_UNSELECTED_MARKER_OPACITY_UI';
 
 
 function isEmbeddingBinned(embedding) {
@@ -780,9 +775,6 @@ export function restoreView(payload) {
     return {type: RESTORE_VIEW, payload: payload};
 }
 
-export function setNumberOfBinsUI(payload) {
-    return {type: SET_NUMBER_OF_BINS_UI, payload: payload};
-}
 
 export function setPointSize(payload) {
     return {type: SET_POINT_SIZE, payload: payload};
@@ -797,13 +789,6 @@ export function setUser(payload) {
     return {type: SET_USER, payload: payload};
 }
 
-export function setMarkerOpacityUI(payload) {
-    return {type: SET_MARKER_OPACITY_UI, payload: payload};
-}
-
-export function setUnselectedMarkerOpacityUI(payload) {
-    return {type: SET_UNSELECTED_MARKER_OPACITY_UI, payload: payload};
-}
 
 export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};

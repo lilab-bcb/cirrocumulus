@@ -1,5 +1,6 @@
 import {InputLabel} from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
+import {debounce} from 'lodash';
 import React from 'react';
 import ContinuousLegend from './ContinuousLegend';
 import MeasureFilter from './MeasureFilter';
@@ -9,6 +10,9 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {min: '', max: ''};
+        this.onMinUpdate = debounce(this.onMinUpdate, 500);
+        this.onMaxUpdate = debounce(this.onMaxUpdate, 500);
+
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -22,39 +26,35 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
 
     onMinChange = (event) => {
         this.setState({min: event.target.value});
+        this.onMinUpdate(event.target.value);
     };
 
-    onMinKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let value = parseFloat(event.target.value);
-            if (isNaN(value)) {
-                delete this.props.globalFeatureSummary[this.props.name].customMin;
-            } else {
-                this.props.globalFeatureSummary[this.props.name].customMin = value;
-            }
-            this.setState({min: event.target.value});
-            this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
-
+    onMinUpdate = (value) => {
+        if (isNaN(value)) {
+            delete this.props.globalFeatureSummary[this.props.name].customMin;
+        } else {
+            this.props.globalFeatureSummary[this.props.name].customMin = value;
         }
+        this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
     };
 
     onMaxChange = (event) => {
         this.setState({max: event.target.value});
+        this.onMaxUpdate(event.target.value);
     };
 
-    onMaxKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let value = parseFloat(event.target.value);
-            if (isNaN(value)) {
-                delete this.props.globalFeatureSummary[this.props.name].customMax;
-            } else {
-                this.props.globalFeatureSummary[this.props.name].customMax = value;
-            }
+    onMaxUpdate = (value) => {
 
-            this.setState({max: event.target.value});
-            this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
-
+        if (isNaN(value)) {
+            delete this.props.globalFeatureSummary[this.props.name].customMax;
+        } else {
+            this.props.globalFeatureSummary[this.props.name].customMax = value;
         }
+
+
+        this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
+
+
     };
 
     render() {
@@ -81,14 +81,14 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
                 <TextField InputLabelProps={{shrink: true}} margin="none"
                            style={{maxWidth: 60, marginRight: 4, marginTop: 0}}
                            size="small" type="text"
-                           onKeyPress={this.onMinKeyPress}
+
                            onChange={this.onMinChange} label="Min"
                            value={this.state.min}/>}
                 {name !== '__count' && this.props.handleDomain &&
                 <TextField InputLabelProps={{shrink: true}} margin="none" style={{maxWidth: 60, marginTop: 0}}
                            size="small"
                            type="text"
-                           onKeyPress={this.onMaxKeyPress}
+
                            onChange={this.onMaxChange} label="Max"
                            value={this.state.max}/>}
                 {name !== '__count' &&

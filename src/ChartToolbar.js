@@ -211,9 +211,9 @@ class ChartToolbar extends React.PureComponent {
             </Tooltip>
 
 
-            <Tooltip title={"View Gallery"}>
+            <Tooltip title={"Scroll To Gallery"}>
                 <IconButton edge={false} size={'small'}
-                            aria-label="View Gallery" onClick={this.onGallery}>
+                            aria-label="Scroll To Gallery" onClick={this.onGallery}>
                     <PhotoLibraryIcon/>
                 </IconButton>
             </Tooltip>

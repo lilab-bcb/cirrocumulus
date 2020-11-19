@@ -30,11 +30,9 @@ import {
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
-    SET_MARKER_OPACITY_UI,
     SET_MARKERS,
     SET_MESSAGE,
     SET_NUMBER_OF_BINS,
-    SET_NUMBER_OF_BINS_UI,
     SET_POINT_SIZE,
     SET_PRIMARY_CHART_SIZE,
     SET_PRIMARY_TRACE_KEY,
@@ -46,7 +44,6 @@ import {
     SET_SERVER_INFO,
     SET_TAB,
     SET_UNSELECTED_MARKER_OPACITY,
-    SET_UNSELECTED_MARKER_OPACITY_UI,
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
@@ -324,20 +321,6 @@ function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
     }
 }
 
-function numberOfBinsUI(state = DEFAULT_NUMBER_BINS, action) {
-    switch (action.type) {
-        case SET_NUMBER_OF_BINS:
-        case SET_NUMBER_OF_BINS_UI:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_NUMBER_BINS;
-        case RESTORE_VIEW:
-            return action.payload.numberOfBins != null ? action.payload.numberOfBins : state;
-        default:
-            return state;
-    }
-}
-
 
 function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
     switch (action.type) {
@@ -356,34 +339,6 @@ function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
 function unselectedMarkerOpacity(state = DEFAULT_UNSELECTED_MARKER_OPACITY, action) {
     switch (action.type) {
         case SET_UNSELECTED_MARKER_OPACITY:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_UNSELECTED_MARKER_OPACITY;
-        case RESTORE_VIEW:
-            return action.payload.unselectedMarkerOpacity != null ? action.payload.unselectedMarkerOpacity : state;
-        default:
-            return state;
-    }
-}
-
-function markerOpacityUI(state = 1, action) {
-    switch (action.type) {
-        case SET_MARKER_OPACITY:
-        case SET_MARKER_OPACITY_UI:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_MARKER_OPACITY;
-        case RESTORE_VIEW:
-            return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
-        default:
-            return state;
-    }
-}
-
-function unselectedMarkerOpacityUI(state = DEFAULT_UNSELECTED_MARKER_OPACITY, action) {
-    switch (action.type) {
-        case SET_UNSELECTED_MARKER_OPACITY:
-        case SET_UNSELECTED_MARKER_OPACITY_UI:
             return action.payload;
         case SET_DATASET:
             return DEFAULT_UNSELECTED_MARKER_OPACITY;
@@ -819,11 +774,9 @@ export default combineReducers({
     loading,
     loadingApp,
     markerOpacity,
-    markerOpacityUI,
     markers,
     message,
     numberOfBins,
-    numberOfBinsUI,
     pointSize,
     primaryChartSize,
     primaryTraceKey,
@@ -834,7 +787,6 @@ export default combineReducers({
     serverInfo,
     tab,
     unselectedMarkerOpacity,
-    unselectedMarkerOpacityUI,
     user
 
 });

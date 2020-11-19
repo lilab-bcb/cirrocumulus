@@ -2,10 +2,16 @@ import {InputLabel} from '@material-ui/core';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import TextField from '@material-ui/core/TextField';
+import {debounce} from 'lodash';
 import React from 'react';
 
 
 class MeasureFilter extends React.PureComponent {
+
+    constructor(props) {
+        super(props);
+        this.handleValueUpdate = debounce(this.handleValueUpdate, 500);
+    }
 
     getFilter() {
         let filter = this.props.datasetFilter[this.props.name];
@@ -21,13 +27,11 @@ class MeasureFilter extends React.PureComponent {
         this.props.handleUpdate({name: this.props.name, operation: operation, update: true});
     };
 
+    handleValueUpdate = () => {
+        const filter = this.getFilter();
+        let value = parseFloat(filter.uiValue);
+        this.props.handleUpdate({name: this.props.name, value: value, update: true});
 
-    handleValueKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            const filter = this.getFilter();
-            let value = parseFloat(filter.uiValue);
-            this.props.handleUpdate({name: this.props.name, value: value, update: true});
-        }
     };
 
     handleValueChange = (event) => {
@@ -39,6 +43,7 @@ class MeasureFilter extends React.PureComponent {
             value: filter.value,
             update: false
         });
+        this.handleValueUpdate();
     };
 
     render() {
@@ -67,8 +72,8 @@ class MeasureFilter extends React.PureComponent {
                     <MenuItem value={"!="}>{"!="}</MenuItem>
                 </Select>
 
-                <TextField onKeyPress={this.handleValueKeyPress}
-                           onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 60}}/>
+                <TextField
+                    onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 60}}/>
 
             </div>
         );

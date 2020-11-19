@@ -19,6 +19,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
+import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -26,6 +27,7 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
+import {debounce} from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
@@ -49,15 +51,12 @@ import {
     setDialog,
     setInterpolator,
     setMarkerOpacity,
-    setMarkerOpacityUI,
     setNumberOfBins,
-    setNumberOfBinsUI,
     setPointSize,
     setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
-    setUnselectedMarkerOpacity,
-    setUnselectedMarkerOpacityUI
+    setUnselectedMarkerOpacity
 } from './actions';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
@@ -183,8 +182,49 @@ class SideBar extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {featureSetAnchorEl: null, readonly: false};
+        this.state = {
+            featureSetAnchorEl: null,
+            readonly: false,
+            opacity: props.markerOpacity,
+            unselectedOpacity: props.unselectedMarkerOpacity
+        };
+        this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
+        this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
+        // this.updateNumberOfBins = debounce(this.updateNumberOfBins, 200);
     }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.dataset !== this.props.dataset) {
+            this.setState({opacity: this.props.markerOpacity});
+        }
+    }
+
+    onMarkerOpacityChange = (event, value) => {
+
+        this.setState({opacity: value});
+        this.updateMarkerOpacity(value);
+    };
+
+    updateMarkerOpacity = (value) => {
+        let opacity = parseFloat(value);
+        if (opacity >= 0 && opacity <= 1) {
+            this.props.handleMarkerOpacity(opacity);
+        }
+    };
+
+    onUnselectedMarkerOpacityChange = (event, value) => {
+        this.setState({unselectedOpacity: value});
+        this.updateUnselectedMarkerOpacity(value);
+    };
+
+    updateUnselectedMarkerOpacity = (value) => {
+        let opacity = parseFloat(value);
+        if (opacity >= 0 && opacity <= 1) {
+            this.props.handleUnselectedMarkerOpacity(opacity);
+        }
+
+    };
+
 
     openDatasetFilter = (filterId) => {
         this.props.handleOpenDatasetFilter(filterId);
@@ -194,9 +234,6 @@ class SideBar extends React.PureComponent {
         this.props.handleDeleteDatasetFilter(filterId);
     };
 
-    onMarkerOpacityChange = (event) => {
-        this.props.handleMarkerOpacityUI(event.target.value);
-    };
 
     onPointSizeChange = (event) => {
         this.props.handlePointSize(event.target.value);
@@ -281,47 +318,27 @@ class SideBar extends React.PureComponent {
         this.onFeatureClick(event.target.innerText);
     };
 
-    onMarkerOpacityKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let opacity = parseFloat(event.target.value);
-            if (opacity >= 0 && opacity <= 1) {
-                this.props.handleMarkerOpacity(opacity);
-            }
-        }
-    };
 
-    onUnselectedMarkerOpacityChange = (event) => {
-        this.props.handleUnselectedMarkerOpacityUI(event.target.value);
-    };
-
-    onUnselectedMarkerOpacityKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let opacity = parseFloat(event.target.value);
-            if (opacity >= 0 && opacity <= 1) {
-                this.props.handleUnselectedMarkerOpacity(opacity);
-            }
-        }
-    };
-
-    onNumberOfBinsChange = (event) => {
-        this.props.handleNumberOfBinsUI(event.target.value);
-    };
-
-    onNumberOfBinsKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let value = parseInt(event.target.value);
-            if (value >= 0) {
-                this.props.handleNumberOfBins(event.target.value);
-                let embeddings = this.props.embeddings;
-                for (let i = 0; i < embeddings.length; i++) {
-                    if (!embeddings[i].precomputed) {
-                        embeddings[i] = Object.assign(embeddings[i], {nbins: value, _nbins: value});
-                    }
-                }
-                this.props.handleEmbeddings(embeddings.slice(0));
-            }
-        }
-    };
+    // onNumberOfBinsChange = (event) => {
+    //     this.props.handleNumberOfBinsUI(event.target.value);
+    //     this.updateNumberOfBins(event.target.value);
+    // };
+    //
+    // updateNumberOfBins = (value) => {
+    //
+    //     value = parseInt(value);
+    //     if (value >= 0) {
+    //         this.props.handleNumberOfBins(value);
+    //         let embeddings = this.props.embeddings;
+    //         for (let i = 0; i < embeddings.length; i++) {
+    //             if (!embeddings[i].precomputed) {
+    //                 embeddings[i] = Object.assign(embeddings[i], {nbins: value, _nbins: value});
+    //             }
+    //         }
+    //         this.props.handleEmbeddings(embeddings.slice(0));
+    //
+    //     }
+    // };
 
     onChartSizeChange = (event) => {
         const value = event.target.value;
@@ -362,7 +379,6 @@ class SideBar extends React.PureComponent {
                 embedding = Object.assign(embedding, {
                     bin: this.props.binValues,
                     nbins: this.props.numberOfBins,
-                    _nbins: this.props.numberOfBinsUI,
                     agg: this.props.binSummary
                 });
             }
@@ -398,9 +414,8 @@ class SideBar extends React.PureComponent {
 
     render() {
         const {
-            chartSize, numberOfBinsUI, binValues, binSummary, embeddings, classes,
-            searchTokens, markerOpacity, datasetFilter, datasetFilters, interpolator, markers,
-            unselectedMarkerOpacity, dataset, pointSize, combineDatasetFilters, selection, serverInfo
+            chartSize, binValues, binSummary, embeddings, classes,
+            searchTokens, datasetFilter, datasetFilters, interpolator, markers, dataset, pointSize, combineDatasetFilters, selection, serverInfo
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
@@ -629,13 +644,31 @@ class SideBar extends React.PureComponent {
                             {/*<TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}*/}
                             {/*           onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"*/}
                             {/*           className={classes.formControl} value={unselectedMarkerSize}/>*/}
-                            <TextField type="text" onKeyPress={this.onMarkerOpacityKeyPress}
-                                       onChange={this.onMarkerOpacityChange} label="Marker Opacity"
-                                       className={classes.formControl} value={markerOpacity}/>
-                            <TextField type="text"
-                                       onKeyPress={this.onUnselectedMarkerOpacityKeyPress}
-                                       onChange={this.onUnselectedMarkerOpacityChange} label="Filtered Marker Opacity"
-                                       className={classes.formControl} value={unselectedMarkerOpacity}/>
+                            {/*<TextField type="text"*/}
+                            {/*           onChange={this.onMarkerOpacityChange} label="Marker Opacity"*/}
+                            {/*           className={classes.formControl} value={this.state.opacity}/>*/}
+
+                            <InputLabel style={{marginLeft:8,marginTop:8}} shrink={true}>Marker Opacity</InputLabel>
+                            <Slider
+                                min={0.0}
+                                max={1}
+                                step={0.01}
+                                style={{marginLeft:10, width:'90%'}}
+                                valueLabelDisplay="auto"
+                                value={this.state.opacity}
+                                onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
+
+
+                            <InputLabel style={{marginLeft:8, marginTop:8}} shrink={true}>Filtered Marker Opacity</InputLabel>
+                            <Slider
+                                min={0.0}
+                                max={1}
+                                step={0.01}
+                                style={{marginLeft:10, width:'90%'}}
+                                valueLabelDisplay="auto"
+                                value={this.state.unselectedOpacity}
+                                onChange={this.onUnselectedMarkerOpacityChange} aria-labelledby="continuous-slider"/>
+
 
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="point_size">Marker Size</InputLabel>
@@ -686,11 +719,11 @@ class SideBar extends React.PureComponent {
                                 label="Bin Plot"
                             /></div>}
 
-                            {!isSummarized && binValues &&
-                            <TextField max="1000" min="20" step="100" onKeyPress={this.onNumberOfBinsKeyPress}
-                                       value={numberOfBinsUI}
-                                       onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"
-                                       className={classes.formControl}/>}
+                            {/*{!isSummarized && binValues &&*/}
+                            {/*<TextField max="1000" min="20" step="100"*/}
+                            {/*           value={numberOfBins}*/}
+                            {/*           onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"*/}
+                            {/*           className={classes.formControl}/>}*/}
 
 
                             {!isSummarized && binValues && <FormControl className={classes.formControl}>
@@ -735,7 +768,7 @@ class SideBar extends React.PureComponent {
                     <AccordionPanelDetails>
                         <div>
                             {datasetFilters.length === 0 &&
-                            <Box color="text.secondary" style={{paddingLeft:10}}>No saved filters</Box>}
+                            <Box color="text.secondary" style={{paddingLeft: 10}}>No saved filters</Box>}
                             {datasetFilters.length > 0 && <div><List dense={true}>
                                 {datasetFilters.map(item => (
                                     <ListItem key={item.id} data-key={item.id} button
@@ -767,18 +800,17 @@ const mapStateToProps = state => {
         binValues: state.binValues,
         binSummary: state.binSummary,
         numberOfBins: state.numberOfBins,
-        numberOfBinsUI: state.numberOfBinsUI,
         embeddingData: state.embeddingData,
         embeddingChartSize: state.embeddingChartSize,
         interpolator: state.interpolator,
-        markerOpacity: state.markerOpacityUI,
+        markerOpacity: state.markerOpacity,
         pointSize: state.pointSize,
         primaryTraceKey: state.primaryTraceKey,
         savedDatasetFilter: state.savedDatasetFilter,
         serverInfo: state.serverInfo,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacityUI,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
         datasetFilters: state.datasetFilters,
@@ -819,21 +851,15 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handlePointSize: value => {
             dispatch(setPointSize(value));
         },
-        handleNumberOfBinsUI: value => {
-            dispatch(setNumberOfBinsUI(value));
-        },
+
         handleMarkerOpacity: value => {
             dispatch(setMarkerOpacity(value));
         },
-        handleMarkerOpacityUI: value => {
-            dispatch(setMarkerOpacityUI(value));
-        },
+
         handleUnselectedMarkerOpacity: value => {
             dispatch(setUnselectedMarkerOpacity(value));
         },
-        handleUnselectedMarkerOpacityUI: value => {
-            dispatch(setUnselectedMarkerOpacityUI(value));
-        },
+
         handleBinSummary: value => {
             dispatch(setBinSummary(value));
         },

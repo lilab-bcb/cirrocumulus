@@ -3,6 +3,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 
 import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
+import {debounce} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setChartOptions, setDialog} from './actions';
@@ -13,6 +14,8 @@ class MoreOptionsDialog extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {labelFontSize: '', labelStrokeWidth: ''};
+        this.onLabelFontSizeUpdate = debounce(this.onLabelFontSizeUpdate, 500);
+        this.onLabelStrokeWidthUpdate = debounce(this.onLabelStrokeWidthUpdate, 500);
     }
 
     componentDidMount() {
@@ -26,34 +29,30 @@ class MoreOptionsDialog extends React.PureComponent {
         this.props.handleClose();
     };
 
-    onLabelFontSizeKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let value = parseFloat(event.target.value);
-            if (!isNaN(value) && value > 0) {
-                this.props.chartOptions.labelFontSize = value;
-                this.props.handleChartOptions(this.props.chartOptions);
-                this.setState({labelFontSize: value});
-            }
+    onLabelFontSizeUpdate = (value) => {
+        if (!isNaN(value) && value > 0) {
+            this.props.chartOptions.labelFontSize = value;
+            this.props.handleChartOptions(this.props.chartOptions);
+            this.setState({labelFontSize: value});
         }
     };
 
     onLabelFontSize = (event) => {
         this.setState({labelFontSize: event.target.value});
+        this.onLabelFontSizeUpdate(event.target.value);
     };
 
     onLabelStrokeWidth = (event) => {
         this.setState({labelStrokeWidth: event.target.value});
     };
 
-    onLabelStrokeWidthKeyPress = (event) => {
-        if (event.key === 'Enter') {
-            let value = parseFloat(event.target.value);
-            if (!isNaN(value) && value >= 0) {
-                this.props.chartOptions.labelStrokeWidth = value;
-                this.props.handleChartOptions(this.props.chartOptions);
-                this.setState({labelStrokeWidth: value});
-            }
+    onLabelStrokeWidthUpdate = (value) => {
+        if (!isNaN(value) && value >= 0) {
+            this.props.chartOptions.labelStrokeWidth = value;
+            this.props.handleChartOptions(this.props.chartOptions);
+            this.setState({labelStrokeWidth: value});
         }
+
     };
 
     render() {
@@ -71,7 +70,6 @@ class MoreOptionsDialog extends React.PureComponent {
                     <TextField
                         value={this.state.labelFontSize}
                         onChange={this.onLabelFontSize}
-                        onKeyPress={this.onLabelFontSizeKeyPress}
                         margin="dense"
                         label="Label Font Size"
                         fullWidth
@@ -80,7 +78,6 @@ class MoreOptionsDialog extends React.PureComponent {
                     <TextField
                         value={this.state.labelStrokeWidth}
                         onChange={this.onLabelStrokeWidth}
-                        onKeyPress={this.onLabelStrokeWidthKeyPress}
                         margin="dense"
                         label="Label Shadow Size"
                         fullWidth
