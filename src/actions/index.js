@@ -572,6 +572,7 @@ function handleFilterUpdated() {
         const searchTokens = splitSearchTokens(state.searchTokens);
         let filter = getFilterJson(state);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
+
         let q = {
             selection: {
                 measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
@@ -1356,13 +1357,14 @@ function handleSelectionResult(selectionResult, clear) {
                 if (clear) {
                     selectedDotPlotData = [];
                 }
-                selectedDotPlotData = updateDotPlotData(selectionResult.dotplot, selectedDotPlotData, splitSearchTokens(state.searchTokens));
+                const searchTokens = splitSearchTokens(state.searchTokens);
+                addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
+                selectedDotPlotData = updateDotPlotData(selectionResult.dotplot, selectedDotPlotData, searchTokens);
                 dispatch(_setSelectedDotPlotData(selectedDotPlotData));
             }
 
         }
     };
-
 }
 
 function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
@@ -1374,11 +1376,9 @@ function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
             if (feature !== '__count') {
                 let key = category + '-' + feature;
                 dotPlotKeys[key] = true;
-
             }
         });
     });
-
 
     // merge with existing data
     if (newDotplotData) {
@@ -1436,9 +1436,8 @@ function _updateCharts(onError) {
         dispatch(_setLoading(true));
 
         const searchTokens = splitSearchTokens(state.searchTokens);
-        if (searchTokens.featureSets.length > 0) {
-            addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-        }
+        addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
+
         let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         const selectionStats = state.featureSummary;
         const embeddings = state.embeddings;
@@ -1622,7 +1621,7 @@ function _updateCharts(onError) {
         }
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
         return dataPromise.then(result => {
-            if (result.embeddings != null) {
+               if (result.embeddings != null) {
                 result.embeddings.forEach(embedding => {
                     if (embedding.coordinates && Object.keys(embedding.coordinates).length>0) {
                         cachedData[embedding.name] = embedding.coordinates;
@@ -1640,7 +1639,9 @@ function _updateCharts(onError) {
                 }
             }
 
+
             dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
+
             const newSummary = result.summary || {};
             for (let key in newSummary) {
                 globalFeatureSummary[key] = newSummary[key];
@@ -1649,16 +1650,6 @@ function _updateCharts(onError) {
 
 
             updateEmbedingData(state, features);
-            // if (result.embedding) {
-            //     for (let i = 0; i < result.embedding.length; i++) {
-            //         dispatch(handleEmbeddingResult(result.embedding[i], embeddingsUsed[i]));
-            //     }
-            // }
-            // embeddingData.sort((a, b) => {
-            //     a = a.name.toLowerCase();
-            //     b = b.name.toLowerCase();
-            //     return a < b ? -1 : 1;
-            // });
 
             if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
                 let index = -1;
