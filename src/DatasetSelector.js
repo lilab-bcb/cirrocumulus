@@ -45,9 +45,13 @@ export class DatasetSelector extends React.PureComponent {
 
     render() {
         const {dataset, datasetChoices} = this.props;
+        const selectedId = dataset != null ? dataset.id : null;
+
+        if (datasetChoices.length <= 1 && selectedId != null) {
+            return null;
+        }
         const {anchorEl, searchText} = this.state;
 
-        const selectedId = dataset != null ? dataset.id : null;
         const open = Boolean(this.state.anchorEl);
         let filteredChoices = datasetChoices;
         const searchTextLower = this.state.searchText.toLowerCase().trim();
