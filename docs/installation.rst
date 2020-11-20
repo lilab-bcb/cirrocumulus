@@ -73,7 +73,7 @@ Launch, specifying the host IP address::
 Server Mode
 ^^^^^^^^^^^^^^
 
-Cirrocumulus can also be run in `server` mode in order to serve multiple users and datasets.
+Cirrocumulus can also be run in `server` mode in order to serve multiple users and datasets securely.
 The server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
 
 
