@@ -30,6 +30,11 @@ Hover hover a data point to see the underlying value.
 
 .. image:: images/embedding.gif
 
+
+The embedding view enables fast, interactive exploration 1.3 million cells:
+
+.. image:: images/1.3.million.gif
+
 Toolbar
 ^^^^^^^^^^^
 
