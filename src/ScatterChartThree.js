@@ -136,7 +136,7 @@ class ScatterChartThree extends React.PureComponent {
         const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
 
         const pointSize = this.calculatePointSize(traceInfo);
-        let scaleFactor = this.props.pointSize;
+        const scaleFactor = this.props.pointSize;
         const PI2 = 2 * Math.PI;
         const colors = traceInfo.colors;
         const positions = traceInfo.positions;
@@ -180,7 +180,7 @@ class ScatterChartThree extends React.PureComponent {
         let object = spriteVisualizer.points;
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
-        let gl_PointSize = (outputPointSize * scaleFactor) / 4;
+        let gl_PointSize = (outputPointSize * scaleFactor)/2;
         const showFog = chartOptions.showFog;
         const isSelectionEmpty = selection.size === 0;
         for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
