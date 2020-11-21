@@ -31,7 +31,7 @@ Hover hover a data point to see the underlying value.
 .. image:: images/embedding.gif
 
 
-The embedding view enables fast, interactive exploration 1.3 million cells:
+The primary embedding view enables fast, interactive exploration of 1.3 million cells. Note that higher values are plotted on top of lower values for genes, whereas categorical values are plotted in random order:
 
 .. image:: images/1.3.million.gif
 
