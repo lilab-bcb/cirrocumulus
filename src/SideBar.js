@@ -21,7 +21,6 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
-import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -194,8 +193,11 @@ class SideBar extends React.PureComponent {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.dataset !== this.props.dataset) {
+        if (prevProps.markerOpacity !== this.props.markerOpacity) {
             this.setState({opacity: this.props.markerOpacity});
+        }
+        if (prevProps.unselectedMarkerOpacity !== this.props.unselectedMarkerOpacity) {
+            this.setState({unselectedOpacity: this.props.unselectedMarkerOpacity});
         }
     }
 
@@ -649,23 +651,24 @@ class SideBar extends React.PureComponent {
                             {/*           onChange={this.onMarkerOpacityChange} label="Marker Opacity"*/}
                             {/*           className={classes.formControl} value={this.state.opacity}/>*/}
 
-                            <InputLabel style={{marginLeft:8,marginTop:8}} shrink={true}>Marker Opacity</InputLabel>
+                            <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Marker Opacity</InputLabel>
                             <Slider
                                 min={0.0}
                                 max={1}
                                 step={0.01}
-                                style={{marginLeft:10, width:'90%'}}
+                                style={{marginLeft: 10, width: '90%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.opacity}
                                 onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
 
 
-                            <InputLabel style={{marginLeft:8, marginTop:8}} shrink={true}>Filtered Marker Opacity</InputLabel>
+                            <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Filtered Marker
+                                Opacity</InputLabel>
                             <Slider
                                 min={0.0}
                                 max={1}
                                 step={0.01}
-                                style={{marginLeft:10, width:'90%'}}
+                                style={{marginLeft: 10, width: '90%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.unselectedOpacity}
                                 onChange={this.onUnselectedMarkerOpacityChange} aria-labelledby="continuous-slider"/>

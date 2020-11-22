@@ -138,7 +138,7 @@ class AppHeader extends React.PureComponent {
     };
 
     getLinkJson = () => {
-        const {chartOptions, combineDatasetFilters, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {chartOptions, combineDatasetFilters, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, pointSize, unselectedMarkerOpacity, dotPlotData} = this.props;
 
         let json = {
             dataset: dataset.id,
@@ -176,6 +176,9 @@ class AppHeader extends React.PureComponent {
             if (value !== defaultChartOptions[key]) {
                 jsonChartOptions[key] = value;
             }
+        }
+        if (pointSize !== 1) {
+            json.pointSize = pointSize;
         }
         if (Object.keys(jsonChartOptions).length > 0) {
             json.chartOptions = jsonChartOptions;
@@ -486,6 +489,7 @@ const mapStateToProps = state => {
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
         markerOpacity: state.markerOpacity,
+        pointSize: state.pointSize,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         savedDatasetState: state.savedDatasetState,
         datasetChoices: state.datasetChoices,

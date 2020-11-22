@@ -330,7 +330,6 @@ function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
             return DEFAULT_MARKER_OPACITY;
         case RESTORE_VIEW:
             return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
-
         default:
             return state;
     }
@@ -694,6 +693,8 @@ export function pointSize(state = DEFAULT_POINT_SIZE, action) {
     switch (action.type) {
         case SET_POINT_SIZE:
             return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.pointSize != null ? action.payload.pointSize : state;
         default:
             return state;
     }
@@ -739,7 +740,6 @@ function loading(state = false, action) {
 
 
 function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
-
     switch (action.type) {
         case SET_INTERPOLATOR:
             return action.payload;
