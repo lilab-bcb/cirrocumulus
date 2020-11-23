@@ -9,7 +9,7 @@ import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
 import {createScatterPlot, getCategoryLabelsPositions, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
-import {isPointInside} from './util';
+import {indexSort, isPointInside} from './util';
 
 function clamp(x, min_v, max_v) {
     return Math.min(Math.max(x, min_v), max_v);
@@ -134,7 +134,6 @@ class ScatterChartThree extends React.PureComponent {
     drawContext(context, chartSize, format) {
         const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames, chartOptions} = this.props;
         const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
-
         const pointSize = this.calculatePointSize(traceInfo);
         const scaleFactor = this.props.pointSize;
         const PI2 = 2 * Math.PI;
@@ -151,11 +150,11 @@ class ScatterChartThree extends React.PureComponent {
         const heightHalf = height / 2;
         const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
         const npoints = traceInfo.npoints;
-
         const is3d = traceInfo.dimensions === 3;
-        let outputPointSize = 0;
+        let outputPointSize;
         let fog = this.scatterPlot.scene.fog;
         let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
+
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;
             const minScale = 0.1;  // minimum scaling factor
@@ -169,35 +168,45 @@ class ScatterChartThree extends React.PureComponent {
                 1. + 2. / PI * (maxScale - 1.) * Math.atan(inSpeed * (zoom - 1.));
             outputPointSize = pointSize * scale;
         }
+        let gl_PointSize = (outputPointSize * scaleFactor) / 4;
         const pos = new Vector3();
         let cameraSpacePos = new Vector4();
-        // vec4 cameraSpacePos = modelViewMatrix * vec4(position, 1.0);
-        // Project vertex in camera-space to screen coordinates using the camera's
-        // projection matrix.
-        // gl_Position = projectionMatrix * cameraSpacePos;
-
-
         let object = spriteVisualizer.points;
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
-        let gl_PointSize = (outputPointSize * scaleFactor)/2;
         const showFog = chartOptions.showFog;
         const isSelectionEmpty = selection.size === 0;
-        for (let i = 0, j = 0, k = 0; i < npoints; i++, j += 4, k += 3) {
-            const isSelected = isSelectionEmpty || selection.has(i);
-            pos.x = positions[k];
-            pos.y = positions[k + 1];
-            pos.z = positions[k + 2];
+        let pointOrder;
+        if (is3d) {
+            pointOrder = new Uint32Array(npoints);
+            for (let i = 0; i < npoints; i++) {
+                pointOrder[i] = i;
+            }
+        } else {
+            const z = new Float32Array(npoints);
+            for (let i = 0; i < npoints; i++) {
+                z[i] = positions[i * 3 + 2];
+            }
+            pointOrder = indexSort(z, true);
+        }
+        for (let j = 0; j < npoints; j++) {
+            const index = pointOrder[j];
+            const positionIndex = index * 3;
+            const colorIndex = index * 4;
+            const isSelected = isSelectionEmpty || selection.has(index);
+            pos.x = positions[positionIndex];
+            pos.y = positions[positionIndex + 1];
+            pos.z = positions[positionIndex + 2];
             pos.project(camera);
 
-            let r = colors[j];
-            let g = colors[j + 1];
-            let b = colors[j + 2];
+            let r = colors[colorIndex];
+            let g = colors[colorIndex + 1];
+            let b = colors[colorIndex + 2];
             let a = isSelected ? markerOpacity : unselectedMarkerOpacity;
             if (is3d) {
-                cameraSpacePos.x = positions[k];
-                cameraSpacePos.y = positions[k + 1];
-                cameraSpacePos.z = positions[k + 2];
+                cameraSpacePos.x = positions[positionIndex];
+                cameraSpacePos.y = positions[positionIndex + 1];
+                cameraSpacePos.z = positions[positionIndex + 2];
                 cameraSpacePos.w = 1;
                 cameraSpacePos.applyMatrix4(modelViewMatrix);
                 outputPointSize = -pointSize / cameraSpacePos.z;
@@ -219,7 +228,6 @@ class ScatterChartThree extends React.PureComponent {
 
             context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
             context.beginPath();
-
             context.arc(pos.x, pos.y, gl_PointSize, 0, PI2);
             context.closePath();
             context.fill();
