@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.10.post7 `November 23, 2020`
+    * Plot higher values on top of lower values for continuous values in saved embedding image.
+    * Improved performance computing markers using `cirro prepare_data` with --group flag
+
 - 1.1.10.post6 `November 20, 2020`
     * Fixed bug that prevented genes in sets from being displayed in selection dot plot.
 
