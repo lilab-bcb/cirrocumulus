@@ -59,18 +59,23 @@ class SimpleData:
         category = key + ' markers'
 
         for cat in adata.obs[key].cat.categories:
-
+            print('Computing markers for {}, {}'.format(key, cat))
             mask = adata.obs[key] == cat
             ds1 = adata[mask]
             ds_rest = adata[~mask]
             gene_names_keep = ds1.X.mean(axis=0) > ds_rest.X.mean(axis=0)
-            ds1 = ds1[:, gene_names_keep.A1]
-            ds_rest = ds_rest[:, gene_names_keep.A1]
+            if isinstance(gene_names_keep, np.matrix):
+                gene_names_keep = gene_names_keep.A1
+            ds1 = ds1[:, gene_names_keep]
+            ds_rest = ds_rest[:, gene_names_keep]
             stats = np.zeros(ds1.shape[1], dtype=np.float32)
             pvals = np.full(ds1.shape[1], 1.0)
+            ds1_X = ds1.X
+            ds_rest_X = ds_rest.X
+
             for i in range(ds1.shape[1]):
-                v1 = ds1.X[:, i]
-                v2 = ds_rest.X[:, i]
+                v1 = ds1_X[:, i]
+                v2 = ds_rest_X[:, i]
                 if v1.data.size > 0 and v2.data.size > 0:
                     stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
                         alternative="two-sided")
