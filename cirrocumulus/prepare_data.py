@@ -4,17 +4,17 @@ import json
 import logging
 import os
 
+import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
+import scipy.sparse
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -27,10 +27,14 @@ def read_adata(path, backed=False, spatial_directory=None):
         if not add_spatial(adata, spatial_directory):
             print('No spatial data found in {}'.format(spatial_directory))
     if not backed:
+        if scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
+            adata.X = adata.X.tocsc()
         sums = adata.X.sum(axis=0)
         if isinstance(sums, np.matrix):
             sums = sums.A1
+
         adata = adata[:, sums > 0]
+
     return adata
 
 
@@ -176,6 +180,7 @@ class PrepareData:
         self.nbins = None
         self.bin_agg_function = None
         self.output_format = output_format
+
         # if basis_list is None or len(basis_list) == 0:
         #     basis_list = list(self.adata.obsm_keys())
         self.basis_list_to_precompute = None
@@ -226,7 +231,6 @@ class PrepareData:
         return os.path.join(self.base_output_dir, path)
 
     def execute(self):
-
         basis_list = self.basis_list_to_precompute
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
@@ -239,7 +243,6 @@ class PrepareData:
             n_genes = 10
             for field in self.groups:
                 if len(self.adata.obs[field].cat.categories) > 1:
-                    logger.info('Computing markers for {}'.format(field))
                     markers += SimpleData.find_markers(self.adata, field, n_genes)
             self.adata.uns['markers'] = markers
         images = self.adata.uns.get('images')
