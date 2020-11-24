@@ -4,17 +4,18 @@ import json
 import logging
 import os
 
-import cirrocumulus.data_processing as data_processing
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
+from natsort import natsorted
+from pandas import CategoricalDtype
+
+import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -35,6 +36,20 @@ def read_adata(path, backed=False, spatial_directory=None):
 
         adata = adata[:, sums > 0]
 
+    def fix_column_names(df):
+        rename = {}
+        for c in df.columns:
+            if c.find(' ') != -1:
+                rename[c] = c.replace(' ', '_')
+        return df.rename(rename, axis=1) if len(rename) > 0 else df
+
+    adata.obs = fix_column_names(adata.obs)
+    adata.var = fix_column_names(adata.var)
+    for key in adata.obsm:
+        if key.find(' ') != -1:
+            new_key = key.replace(' ', '_')
+            adata.obsm[new_key] = adata.obsm[key]
+            del adata.obsm[key]
     return adata
 
 
