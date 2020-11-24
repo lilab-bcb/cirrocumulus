@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.10.post8 `November 24, 2020`
+    * Fixed error in `cirro prepare_data` saving cell metadata names containing spaces
+
 - 1.1.10.post7 `November 23, 2020`
     * Plot higher values on top of lower values for continuous values in saved embedding image.
     * Improved performance computing markers using `cirro prepare_data` with --group flag
