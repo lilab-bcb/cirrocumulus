@@ -47,7 +47,9 @@ def save_adata_X(adata, X_dir):
             X = X.toarray().flatten()
         indices = np.where(X != 0)[0]
         values = X[indices]
-        write_pq(dict(index=indices, value=values), X_dir, names[j])
+        name = names[j]
+        name = name.replace(' ', '_')
+        write_pq(dict(index=indices, value=values), X_dir, name)
         if j > 0 and (j + 1) % 1000 == 0:
             logger.info('Wrote adata X {}/{}'.format(j + 1, adata_X.shape[1]))
 
@@ -57,6 +59,7 @@ def save_data_obsm(adata, obsm_dir):
 
     for name in adata.obsm.keys():
         m = adata.obsm[name]
+        name = name.replace(' ', '_')
         dimensions = 3 if m.shape[1] > 2 else 2
         d = {}
         for i in range(dimensions):
@@ -69,5 +72,6 @@ def save_data_obs(adata, obs_dir):
     for name in adata.obs:
         # TODO sort?
         value = adata.obs[name]
+        name = name.replace(' ', '_')
         write_pq(dict(value=value), obs_dir, name)
     write_pq(dict(value=adata.obs.index.values), obs_dir, 'index')
