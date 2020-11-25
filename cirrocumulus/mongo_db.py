@@ -66,8 +66,8 @@ class MongoDb:
         return {
                 'id': str(doc['_id']),
                 'name': doc['name'],
-                'readers': doc['readers'],
-                'description': doc['description'],
+                'readers': doc.get('readers'),
+                'description': doc.get('description'),
                 'title': doc.get('title'),
                 'url': doc['url'],
                 'owner': 'owners' in doc and email in doc['owners']}
