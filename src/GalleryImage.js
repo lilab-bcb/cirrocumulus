@@ -4,9 +4,15 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
-import {drawImage, getSpotRadius} from './ImageChart';
+import {drawEmbeddingImage, drawImage, getSpotRadius} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
-import {getCategoryLabelsPositions, getScaleFactor, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
+import {
+    getCategoryLabelsPositions,
+    getLabels,
+    getScaleFactor,
+    POINT_VISUALIZER_ID,
+    updateScatterChart
+} from './ThreeUtil';
 
 
 class GalleryImage extends React.PureComponent {
@@ -18,7 +24,7 @@ class GalleryImage extends React.PureComponent {
 
 
     draw() {
-        const {scatterPlot, chartSize, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
+        const {obsCat, cachedData, scatterPlot, chartSize, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
@@ -27,20 +33,20 @@ class GalleryImage extends React.PureComponent {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
-                categoricalNames, chartOptions);
+                categoricalNames, chartOptions, obsCat, cachedData);
             const canvas = containerElement.querySelector('canvas');
-            const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
+            const showLabels = chartOptions.showLabels && obsCat.length > 0;
             let overlayUrl = null;
 
             if (showLabels) {
-                const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+                const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
                 const labelCanvas = document.createElement('canvas');
                 labelCanvas.width = chartSize * window.devicePixelRatio;
                 labelCanvas.height = chartSize * window.devicePixelRatio;
                 const context = labelCanvas.getContext('2d');
                 context.scale(window.devicePixelRatio, window.devicePixelRatio);
                 context.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
-                drawLabels(context, labelsPositions, chartOptions, {
+                drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, {
                     width: chartSize,
                     height: chartSize
                 }, scatterPlot.camera);
@@ -60,10 +66,10 @@ class GalleryImage extends React.PureComponent {
                 canvas.height = chartSize * window.devicePixelRatio;
                 const context = canvas.getContext('2d');
                 context.scale(window.devicePixelRatio, window.devicePixelRatio);
-                drawImage(context, {
+                drawEmbeddingImage(context, {
                     width: chartSize,
                     height: chartSize
-                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, getSpotRadius(traceInfo, pointSize));
+                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
                 this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false});
                 canvas = null;
             }
@@ -113,7 +119,12 @@ class GalleryImage extends React.PureComponent {
         return (
             <Box borderColor="text.primary" border={1}
                  style={{display: 'inline-block', margin: 2}}>
-                <div style={{position: 'relative', width: this.props.chartSize, height: this.props.chartSize, cursor:'pointer'}}>
+                <div style={{
+                    position: 'relative',
+                    width: this.props.chartSize,
+                    height: this.props.chartSize,
+                    cursor: 'pointer'
+                }}>
 
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
                         <Typography color="textPrimary" component={"h4"}

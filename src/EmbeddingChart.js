@@ -21,6 +21,7 @@ import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import ScatterChartThree from './ScatterChartThree';
+import {splitSearchTokens} from './util';
 
 class EmbeddingChart extends React.PureComponent {
 
@@ -47,14 +48,16 @@ class EmbeddingChart extends React.PureComponent {
 
     render() {
         const {
-            onChartOptions, onMoreOptions, onDomain, onDimensionFilterUpdated,
-            onColorChange, onNameChange, onMeasureFilterUpdated, onSelect, onDeselect, onGallery,
-            traceInfo, selection, datasetFilter, chartOptions, featureSummary, markerOpacity, unselectedMarkerOpacity, pointSize, globalFeatureSummary, shape, nObsSelected, categoricalNames, primaryChartSize
+            cachedData, categoricalNames, chartOptions, datasetFilter, featureSummary, globalFeatureSummary,
+            markerOpacity, nObsSelected, onChartOptions, onColorChange, onDeselect, onDimensionFilterUpdated, onDomain,
+            onGallery, onMeasureFilterUpdated, onMoreOptions, onNameChange, onSelect, pointSize, primaryChartSize,
+            searchTokens, selection, shape, traceInfo, unselectedMarkerOpacity
         } = this.props;
+        const obsCat = splitSearchTokens(searchTokens).obsCat;
         const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
         return (
-            <div  style={{position: 'relative'}}>
+            <div style={{position: 'relative'}}>
                 <Box color="text.primary" style={{
                     marginTop: '3.2px',
                     position: 'absolute',
@@ -114,6 +117,8 @@ class EmbeddingChart extends React.PureComponent {
 
                 {!traceInfo.isImage &&
                 <ScatterChartThree traceInfo={traceInfo}
+                                   cachedData={cachedData}
+                                   obsCat={obsCat}
                                    chartSize={primaryChartSize}
                                    setChartOptions={onChartOptions}
                                    chartOptions={chartOptions}
@@ -133,6 +138,8 @@ class EmbeddingChart extends React.PureComponent {
 
 
                 {traceInfo.isImage && <ImageChart
+                    cachedData={cachedData}
+                    obsCat={obsCat}
                     setChartOptions={onChartOptions}
                     chartOptions={chartOptions}
                     style={{display: 'inline-block'}}
@@ -159,21 +166,23 @@ class EmbeddingChart extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        chartOptions: state.chartOptions,
-        embeddingChartSize: state.embeddingChartSize,
-        pointSize: state.pointSize,
-        embeddingData: state.embeddingData,
-        primaryChartSize: state.primaryChartSize,
-        markerOpacity: state.markerOpacity,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-        primaryTraceKey: state.primaryTraceKey,
+        cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
-        globalFeatureSummary: state.globalFeatureSummary,
-        featureSummary: state.featureSummary,
-        shape: state.dataset.shape,
-        nObsSelected: state.selection.count,
+        chartOptions: state.chartOptions,
         dataset: state.dataset,
-        datasetFilter: state.datasetFilter
+        datasetFilter: state.datasetFilter,
+        embeddingChartSize: state.embeddingChartSize,
+        embeddingData: state.embeddingData,
+        featureSummary: state.featureSummary,
+        globalFeatureSummary: state.globalFeatureSummary,
+        markerOpacity: state.markerOpacity,
+        nObsSelected: state.selection.count,
+        pointSize: state.pointSize,
+        primaryChartSize: state.primaryChartSize,
+        primaryTraceKey: state.primaryTraceKey,
+        shape: state.dataset.shape,
+        searchTokens: state.searchTokens,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
     };
 };
 const mapDispatchToProps = dispatch => {

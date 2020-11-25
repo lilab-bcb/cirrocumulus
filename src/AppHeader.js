@@ -324,24 +324,6 @@ class AppHeader extends React.PureComponent {
         return (
             <AppBar position="fixed" color="default" className={classes.appBar}>
                 <Toolbar variant="dense">
-
-                    {/*{datasetChoices.length > 0 && <Select*/}
-                    {/*    style={{marginRight: 6}}*/}
-                    {/*    disableUnderline={true}*/}
-                    {/*    displayEmpty={true}*/}
-                    {/*    value={dataset == null ? '' : dataset.id}*/}
-                    {/*    onChange={this.handleDataset}*/}
-                    {/*    inputProps={{*/}
-                    {/*        name: 'dataset',*/}
-                    {/*        id: 'dataset-id',*/}
-                    {/*    }}*/}
-                    {/*>*/}
-                    {/*    <MenuItem key="" value="" disabled>*/}
-                    {/*        Choose a dataset*/}
-                    {/*    </MenuItem>*/}
-                    {/*    {datasetChoices.map(dataset => <MenuItem*/}
-                    {/*        key={dataset.id} value={dataset.id}>{dataset.name}</MenuItem>)}*/}
-                    {/*</Select>}*/}
                     {dataset != null && <Popover
                         id={"dataset-details"}
                         open={datasetDetailsOpen}

@@ -799,11 +799,20 @@ function loadDefaultDatasetEmbedding() {
     return function (dispatch, getState) {
         const dataset = getState().dataset;
         const embeddingNames = dataset.embeddings.map(e => e.name);
-        let priority = {'tissue_hires': 1, 'X_fle': 2, 'X_umap': 3, 'X_tsne': 4, 'X_fitsne': 5};
-
+        let names = ['tissue_hires','fle','umap', 'tsne'];
+        let embeddingNames2Priority = {};
+        embeddingNames.forEach(name=>{
+            const nameLower = name.toLowerCase();
+            for(let i = 0; i < names.length; i++) {
+                if(names[i].indexOf(nameLower)!==-1) {
+                    embeddingNames2Priority[name] = i;
+                    break;
+                }
+            }
+        });
         embeddingNames.sort((a, b) => {
-            a = priority[a] || Number.MAX_VALUE;
-            b = priority[b] || Number.MAX_VALUE;
+            a = embeddingNames2Priority[a] || Number.MAX_VALUE;
+            b = embeddingNames2Priority[b] || Number.MAX_VALUE;
             return a - b;
         });
 
@@ -1706,6 +1715,7 @@ function updateEmbedingData(state, features) {
     embeddings.forEach(embedding => {
         const embeddingKey = getEmbeddingKey(embedding);
         const isBinned = isEmbeddingBinned(embedding);
+        const isSpatial = embedding.spatial != null;
         const coordinates = cachedData[embeddingKey];
         const x = coordinates[embedding.name + '_1'];
         const y = coordinates[embedding.name + '_2'];
@@ -1715,7 +1725,7 @@ function updateEmbedingData(state, features) {
             let key = feature + '_' + embeddingKey;
             let featureKey = feature;
             if (!existingKeys.has(key)) {
-                const isSpatial = embedding.spatial != null;
+
                 if (isBinned) {
                     featureKey = key;
                 }

@@ -69,11 +69,13 @@ class EditDatasetDialog extends React.PureComponent {
     componentDidMount() {
 
         if (this.props.dataset != null) {
-
-            let readers = this.props.dataset.readers.slice();
-            let myIndex = readers.indexOf(this.props.email);
-            if (myIndex !== -1) {
-                readers.splice(myIndex, 1);
+            let readers = this.props.dataset.readers;
+            if (readers) {
+                let myIndex = readers.indexOf(this.props.email);
+                if (myIndex !== -1) {
+                    readers.splice(myIndex, 1);
+                }
+                readers = readers.join(', ');
             }
             this.setState({
                 name: this.props.dataset.name,
@@ -81,7 +83,7 @@ class EditDatasetDialog extends React.PureComponent {
                 title: this.props.dataset.title != null ? this.props.dataset.title : '',
                 loading: false,
                 url: this.props.dataset.url,
-                readers: readers.join(', '),
+                readers: readers,
             });
 
         }
@@ -100,7 +102,11 @@ class EditDatasetDialog extends React.PureComponent {
         let description = this.state.description.trim();
         let title = this.state.title.trim();
         this.setState({loading: true});
-        let readers = getUniqueArray(this.state.readers);
+
+        let readers = null;
+        if (this.state.readers != null) {
+            readers = getUniqueArray(this.state.readers);
+        }
         this.props.handleSave({
             dataset: this.props.dataset,
             name: name,

@@ -1,11 +1,12 @@
 import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color, OrthographicCamera, Vector3} from 'three';
+import {getEmbeddingKey} from './actions';
 import {getVisualizer} from './ScatterChartThree';
 import {getRgbScale, indexSort, randomSeq, rankIndexArray} from './util';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
-
+const SCATTER_PLOT_CUBE_LENGTH = 2;
 export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
 
 function scaleLinear(value, domain, range) {
@@ -86,7 +87,7 @@ export function getColors(trace) {
 }
 
 export function getPositions(trace) {
-    const SCATTER_PLOT_CUBE_LENGTH = 2;
+
     let xExtent = [Infinity, -Infinity];
     let yExtent = [Infinity, -Infinity];
     let zExtent = [Infinity, -Infinity];
@@ -154,57 +155,121 @@ export function getPositions(trace) {
 
 }
 
-export function getCategoryLabelsPositions(traceInfo, categoricalNames) {
-    const categoryToPosition = {};
+export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
+    let arrayOfArrays = [];
+    obsKeys.forEach(key => {
+        const value = cachedData[key];
+        arrayOfArrays.push(value);
+    });
+    const embeddingKey = getEmbeddingKey(embedding);
+    const coordinates = cachedData[embeddingKey];
+    const x = coordinates[embedding.name + '_1'];
+    const y = coordinates[embedding.name + '_2'];
+    const z = coordinates[embedding.name + '_3'];
+    const is3d = z != null;
+    const valueToCoords = {};
     let ncategories = 0;
-    const isImage = traceInfo.isImage;
-    for (let i = 0, j = 0; i < traceInfo.npoints; i++, j += 3) {
-        let value = traceInfo.values[i];
-        let p = categoryToPosition[value];
+    const isSpatial = embedding.spatial != null;
+    const npoints = x.length;
+    const nobs = obsKeys.length;
+    for (let i = 0; i < npoints; i++) {
+        let values = [];
+        for (let j = 0; j < nobs; j++) {
+            values.push(arrayOfArrays[j][i]);
+        }
+
+        const key = values.join(',');
+        let p = valueToCoords[key];
         if (p === undefined) {
-            p = {x: [], y: [], z: []};
-            categoryToPosition[value] = p;
+            p = {x: [], y: [], z: [], array: values};
+            valueToCoords[key] = p;
             ncategories++;
         }
         p.count++;
-        if (isImage) {
-            p.x.push(traceInfo.x[i]);
-            p.y.push(traceInfo.y[i]);
-        } else {
-            p.x.push(traceInfo.positions[j]);
-            p.y.push(traceInfo.positions[j + 1]);
-            p.z.push(traceInfo.positions[j + 2]);
+        p.x.push(x[i]);
+        p.y.push(y[i]);
+        if (is3d) {
+            p.z.push(z[i]);
         }
     }
-    let labelStrings = [];
+
+    let xScale, yScale, zScale, xExtent, yExtent, zExtent;
+    if (!isSpatial) {
+        const getRange = (extent) => Math.abs(extent[1] - extent[0]);
+        xExtent = [Infinity, -Infinity];
+        yExtent = [Infinity, -Infinity];
+        zExtent = is3d ? [Infinity, -Infinity] : [0, 1];
+        // Determine max and min of each axis of our data.
+        for (let i = 0; i < npoints; i++) {
+            let value = x[i];
+            if (value < xExtent[0]) {
+                xExtent[0] = value;
+            }
+            if (value > xExtent[1]) {
+                xExtent[1] = value;
+            }
+
+            value = y[i];
+            if (value < yExtent[0]) {
+                yExtent[0] = value;
+            }
+            if (value > yExtent[1]) {
+                yExtent[1] = value;
+            }
+            if (is3d) {
+                value = z[i];
+                if (value < zExtent[0]) {
+                    zExtent[0] = value;
+                }
+                if (value > zExtent[1]) {
+                    zExtent[1] = value;
+                }
+            }
+        }
+        const xRange = getRange(xExtent);
+        const yRange = getRange(yExtent);
+        const zRange = getRange(zExtent);
+        const maxRange = Math.max(xRange, yRange, zRange);
+        const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
+        const makeScaleRange = (range, base) => [
+            -base * (range / maxRange),
+            base * (range / maxRange),
+        ];
+        xScale = makeScaleRange(xRange, halfCube);
+        yScale = makeScaleRange(yRange, halfCube);
+        zScale = makeScaleRange(zRange, halfCube);
+    }
+
+    let labelValues = [];
     let labelPositions = new Float32Array(ncategories * 3);
     let positionIndex = 0;
-    let categoryObject = categoricalNames[traceInfo.name];
-    if (categoryObject === undefined) {
-        categoryObject = {};
-    }
-    for (let category in categoryToPosition) {
-        let renamedCategory = categoryObject[category];
-        if (renamedCategory !== undefined) {
-            labelStrings.push(renamedCategory);
-        } else {
-            labelStrings.push(category);
-        }
-        let p = categoryToPosition[category];
+    for (let key in valueToCoords) {
+        let p = valueToCoords[key];
+        labelValues.push(p.array);
         p.x.sort((a, b) => a - b);
         p.y.sort((a, b) => a - b);
         p.z.sort((a, b) => a - b);
         const mid = p.x.length / 2;
-        labelPositions[positionIndex] = mid % 1 ? p.x[mid - 0.5] : (p.x[mid - 1] + p.x[mid]) / 2;
-        labelPositions[positionIndex + 1] = mid % 1 ? p.y[mid - 0.5] : (p.y[mid - 1] + p.y[mid]) / 2;
-        labelPositions[positionIndex + 2] = mid % 1 ? p.z[mid - 0.5] : (p.z[mid - 1] + p.z[mid]) / 2;
+
+        let xmedian = mid % 1 ? p.x[mid - 0.5] : (p.x[mid - 1] + p.x[mid]) / 2;
+        let ymedian = mid % 1 ? p.y[mid - 0.5] : (p.y[mid - 1] + p.y[mid]) / 2;
+        let zmedian = mid % 1 ? p.z[mid - 0.5] : (p.z[mid - 1] + p.z[mid]) / 2;
+
+        if (!isSpatial) {
+            xmedian = scaleLinear(xmedian, xExtent, xScale);
+            ymedian = scaleLinear(ymedian, yExtent, yScale);
+            zmedian = scaleLinear(zmedian, zExtent, zScale);
+        }
+        labelPositions[positionIndex] = xmedian;
+        labelPositions[positionIndex + 1] = ymedian;
+        labelPositions[positionIndex + 2] = is3d ? zmedian : 0;
         positionIndex += 3;
     }
 
-    return {labels: labelStrings, positions: labelPositions};
+    return {labels: labelValues, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions) {
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData) {
     const colors = traceInfo.colors;
     let positions = traceInfo.positions;
 
@@ -232,19 +297,41 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     scale.fill(pointSize);
     scatterPlot.setPointScaleFactors(scale);
 
-    const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
+    const showLabels = chartOptions.showLabels && obsCatKeys.length > 0;
     const labelsVisualizer = getVisualizer(scatterPlot, LABELS_VISUALIZER_ID);
     if (labelsVisualizer) {
         labelsVisualizer.labelsActive = showLabels;
         if (showLabels) {
-            const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+            const labelKey = getEmbeddingKey(traceInfo.embedding) + '_' + obsCatKeys.join(',');
+            let labelsPositions = cachedData[labelKey];
+            if (labelsPositions == null) {
+                labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCatKeys, cachedData);
+                cachedData[labelKey] = labelsPositions;
+            }
             labelsVisualizer.fillStyle = chartOptions.darkMode ? 'white' : 'black';
             labelsVisualizer.shadowColor = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
             labelsVisualizer.shadowStroke = chartOptions.labelStrokeWidth;
-            labelsVisualizer.setLabels(labelsPositions.labels, labelsPositions.positions);
             labelsVisualizer.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
+            const labels = getLabels(obsCatKeys, labelsPositions.labels, categoricalNames);
+            labelsVisualizer.setLabels(labels, labelsPositions.positions);
         }
     }
 
     scatterPlot.render();
+}
+
+export function getLabels(obsCat, labels, categoricalNames) {
+    let labelStrings = [];
+    let renamedCategories = [];
+    obsCat.forEach(key => renamedCategories.push(categoricalNames[key] || {}));
+    for (let i = 0; i < labels.length; i++) {
+        let array = labels[i];
+        let value = [];
+        for (let j = 0; j < array.length; j++) {
+            let renamedValue = renamedCategories[j][array[j]];
+            value.push(renamedValue != null ? renamedValue : array[j]);
+        }
+        labelStrings.push(value.join(','));
+    }
+    return labelStrings;
 }

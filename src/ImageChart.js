@@ -11,7 +11,7 @@ import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
-import {getCategoryLabelsPositions} from './ThreeUtil';
+import {getCategoryLabelsPositions, getLabels} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
 
 
@@ -19,7 +19,7 @@ export function getSpotRadius(trace, pointSize) {
     return pointSize * (trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
 }
 
-export function drawImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, spotRadius) {
+export function drawEmbeddingImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, spotRadius) {
     if (traceInfo.tileSource.ready) {
         const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
         if (chartSize == null) {
@@ -29,13 +29,13 @@ export function drawImage(context, chartSize, traceInfo, selection, markerOpacit
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         context.scale(zoom, zoom);
         drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames);
+        drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, obsCat, cachedData);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 }
 
-function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames) {
-    const showLabels = chartOptions.showLabels && traceInfo.isCategorical;
+function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, obsCat, cachedData) {
+    const showLabels = chartOptions.showLabels && obsCat.length > 0;
     if (showLabels) {
         context.textAlign = 'center';
         context.textBaseline = "middle";
@@ -44,13 +44,16 @@ function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames) {
         context.fillStyle = darkMode ? 'white' : 'black';
         context.strokeStyle = darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
         context.lineWidth = chartOptions.labelStrokeWidth;
+
         context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
-        const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
-        for (let i = 0, index = 0, n = labelsPositions.labels.length; i < n; i++, index += 3) {
+
+        const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
+        const labels = getLabels(obsCat, labelsPositions.labels, categoricalNames);
+        for (let i = 0, index = 0, n = labels.length; i < n; i++, index += 3) {
             let x = labelsPositions.positions[index];
             let y = labelsPositions.positions[index + 1];
-            context.strokeText('' + labelsPositions.labels[i], x, y);
-            context.fillText('' + labelsPositions.labels[i], x, y);
+            context.strokeText('' + labels[i], x, y);
+            context.fillText('' + labels[i], x, y);
         }
     }
 }
@@ -205,6 +208,7 @@ class ImageChart extends React.PureComponent {
         if (chartSize == null) {
             chartSize = {width: img.width, height: img.height};
         }
+
         const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         this._drawOverlay({context: context, zoom: zoom});
@@ -218,7 +222,7 @@ class ImageChart extends React.PureComponent {
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);
         drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions, this.props.categoricalNames);
+        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions, this.props.categoricalNames, this.props.obsCat, this.props.cachedData);
     }
 
     createViewer() {
@@ -508,7 +512,11 @@ class ImageChart extends React.PureComponent {
             }}
                  id={this.id}>
             </div>
-            {this.state.loading && <CircularProgress style={{position:'absolute', left:this.props.chartSize.width/2, top:this.props.chartSize.height/2}} size={20}/>}
+            {this.state.loading && <CircularProgress style={{
+                position: 'absolute',
+                left: this.props.chartSize.width / 2,
+                top: this.props.chartSize.height / 2
+            }} size={20}/>}
         </React.Fragment>;
     }
 }

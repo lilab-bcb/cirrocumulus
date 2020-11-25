@@ -8,7 +8,13 @@ import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
 import {numberFormat} from './formatters';
-import {createScatterPlot, getCategoryLabelsPositions, POINT_VISUALIZER_ID, updateScatterChart} from './ThreeUtil';
+import {
+    createScatterPlot,
+    getCategoryLabelsPositions,
+    getLabels,
+    POINT_VISUALIZER_ID,
+    updateScatterChart
+} from './ThreeUtil';
 import {indexSort, isPointInside} from './util';
 
 function clamp(x, min_v, max_v) {
@@ -24,7 +30,7 @@ function mix(x, y, a) {
     return x * (1.0 - a) + y * a;
 }
 
-export function drawLabels(context, labelsPositions, chartOptions, chartSize, camera) {
+export function drawLabels(context, labels, positions, chartOptions, chartSize, camera) {
     const pos = new Vector3();
     context.fillStyle = chartOptions.darkMode ? 'white' : 'black';
     context.strokeStyle = chartOptions.darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
@@ -35,16 +41,16 @@ export function drawLabels(context, labelsPositions, chartOptions, chartSize, ca
     const height = chartSize.height;
     const widthHalf = width / 2;
     const heightHalf = height / 2;
-    for (let i = 0, k = 0; i < labelsPositions.labels.length; i++, k += 3) {
-        pos.x = labelsPositions.positions[k];
-        pos.y = labelsPositions.positions[k + 1];
-        pos.z = labelsPositions.positions[k + 2];
+    for (let i = 0, k = 0; i < labels.length; i++, k += 3) {
+        pos.x = positions[k];
+        pos.y = positions[k + 1];
+        pos.z = positions[k + 2];
         pos.project(camera);
         pos.x = (pos.x * widthHalf) + widthHalf;
         pos.y = -(pos.y * heightHalf) + heightHalf;
 
-        context.strokeText(labelsPositions.labels[i], pos.x, pos.y);
-        context.fillText(labelsPositions.labels[i], pos.x, pos.y);
+        context.strokeText(labels[i], pos.x, pos.y);
+        context.fillText(labels[i], pos.x, pos.y);
     }
 }
 
@@ -132,7 +138,7 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     drawContext(context, chartSize, format) {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames, chartOptions} = this.props;
+        const {obsCat, cachedData, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames, chartOptions} = this.props;
         const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
         const pointSize = this.calculatePointSize(traceInfo);
         const scaleFactor = this.props.pointSize;
@@ -233,10 +239,10 @@ class ScatterChartThree extends React.PureComponent {
             context.fill();
         }
         if (showLabels) {
-            const labelsPositions = getCategoryLabelsPositions(traceInfo, categoricalNames);
+            const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
             context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
-            drawLabels(context, labelsPositions, chartOptions, chartSize, camera);
+            drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, chartSize, camera);
         }
     }
 
@@ -484,9 +490,9 @@ class ScatterChartThree extends React.PureComponent {
 
 
     draw() {
-        const {traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
+        const {obsCat, cachedData, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
         updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
-            categoricalNames, chartOptions);
+            categoricalNames, chartOptions, obsCat, cachedData);
     }
 
 

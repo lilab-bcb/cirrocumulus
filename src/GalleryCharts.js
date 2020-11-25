@@ -8,6 +8,7 @@ import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {getTraceKey, setEmbeddingData, setPrimaryTraceKey} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
+import {splitSearchTokens} from './util';
 
 function createContainer(chartSize) {
     const containerElement = document.createElement('div');
@@ -41,7 +42,7 @@ class GalleryCharts extends React.PureComponent {
 
 
     render() {
-        let {categoricalNames, chartSize, embeddingData, primaryChartSize, markerOpacity, unselectedMarkerOpacity, pointSize, chartOptions, selection} = this.props;
+        let {cachedData, categoricalNames, chartSize, chartOptions, embeddingData, markerOpacity, pointSize, primaryChartSize, searchTokens, selection, unselectedMarkerOpacity} = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
@@ -56,12 +57,14 @@ class GalleryCharts extends React.PureComponent {
             }
         }
         galleryTraces.sort((a, b) => a.sortIndex - b.sortIndex);
-
+        const obsCat = splitSearchTokens(searchTokens).obsCat;
         // const DragHandle = sortableHandle(() => <span>::</span>);
 
         const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
             traceInfo={traceInfo}
             color={traceInfo.colors}
+            obsCat={obsCat}
+            cachedData={cachedData}
             scatterPlot={this.scatterPlot}
             markerOpacity={markerOpacity}
             chartOptions={chartOptions}
@@ -98,6 +101,7 @@ class GalleryCharts extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
         embeddingData: state.embeddingData,
         markerOpacity: state.markerOpacity,
@@ -107,7 +111,8 @@ const mapStateToProps = state => {
         pointSize: state.pointSize,
         chartSize: state.chartSize,
         primaryChartSize: state.primaryChartSize,
-        chartOptions: state.chartOptions
+        chartOptions: state.chartOptions,
+        searchTokens: state.searchTokens
     };
 };
 const mapDispatchToProps = dispatch => {
