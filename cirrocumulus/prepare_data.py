@@ -8,14 +8,12 @@ import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
-from natsort import natsorted
-from pandas import CategoricalDtype
-
-import cirrocumulus.data_processing as data_processing
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -187,9 +185,11 @@ def write_basis_obs(basis, coords_group, obs_group, result):
 
 class PrepareData:
 
-    def __init__(self, adata, output, X_range=None, dimensions=None, groups=[], markers=[], output_format='parquet'):
+    def __init__(self, adata, output, dimensions=None, groups=[], group_nfeatures=10, markers=[],
+                 output_format='parquet'):
         self.adata = adata
         self.groups = groups
+        self.group_nfeatures = group_nfeatures
         self.markers = markers
         self.stats = False
         self.nbins = None
@@ -207,7 +207,6 @@ class PrepareData:
         self.adata.var.index = index[0:len(self.adata.var.index)]
         self.adata.obs.columns = index[len(self.adata.var.index):]
 
-        self.X_range = (0, self.adata.shape[1]) if X_range is None else X_range
         self.base_output_dir = output
 
         self.dataset_api = DatasetAPI()
@@ -248,17 +247,28 @@ class PrepareData:
     def execute(self):
         basis_list = self.basis_list_to_precompute
         nbins = self.nbins
+        group_nfeatures = self.group_nfeatures
         bin_agg_function = self.bin_agg_function
-        X_range = self.X_range
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
+        schema = self.get_schema()
         markers = self.adata.uns.get('markers', [])
         self.adata.uns['markers'] = markers
+        if len(markers) == 0 and self.groups is None:
+            cluster_fields = ['seurat_clusters', 'leiden', 'louvain']
+            groups = []
+            for field in self.adata.obs.columns:
+                if pd.api.types.is_categorical_dtype(self.adata.obs[field]):
+                    field_lc = field.lower()
+                    for cluster_field in cluster_fields:
+                        if field_lc.find(cluster_field) != -1:
+                            groups.append(field)
+                            break
+            self.groups = groups
         if self.groups is not None:
-            n_genes = 10
             for field in self.groups:
                 if len(self.adata.obs[field].cat.categories) > 1:
-                    markers += SimpleData.find_markers(self.adata, field, n_genes)
+                    markers += SimpleData.find_markers(self.adata, field, group_nfeatures)
             self.adata.uns['markers'] = markers
         images = self.adata.uns.get('images')
         if images is not None:
@@ -271,16 +281,14 @@ class PrepareData:
                 shutil.copy(path, os.path.join(image_dir, os.path.basename(path)))
                 image['image'] = 'images/' + os.path.basename(path)
 
-        if X_range[0] == 0:
-            schema = self.get_schema()
-            if self.output_format == 'parquet':
-                from cirrocumulus.parquet_io import save_adata_pq
-                save_adata_pq(self.adata, schema, self.base_output_dir)
-            elif self.output_format == 'json':
-                from cirrocumulus.json_io import save_adata_json
-                save_adata_json(self.adata, schema, self.base_output_dir)
-            else:
-                raise ValueError("Unknown format")
+        if self.output_format == 'parquet':
+            from cirrocumulus.parquet_io import save_adata_pq
+            save_adata_pq(self.adata, schema, self.base_output_dir)
+        elif self.output_format == 'json':
+            from cirrocumulus.json_io import save_adata_json
+            save_adata_json(self.adata, schema, self.base_output_dir)
+        else:
+            raise ValueError("Unknown format")
 
         # if self.stats:
         #     self.summary_stats()
@@ -291,40 +299,40 @@ class PrepareData:
                 self.grid_embedding(basis_name, bin_agg_function, nbins)
 
 
-    def summary_stats(self):
-        dimensions = self.dimensions
-        measures = self.measures
-        dataset_api = self.dataset_api
-        input_dataset = self.input_dataset
-        X_range = self.X_range
-        adata = self.adata
-        base_dir = self.base_output_dir
-
-        if X_range[0] == 0:
-            process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
-                stats=dict(measures=measures, dimensions=dimensions))
-            write_obs_stats(base_dir, process_results['summary'])
-
-        logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
-        process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
-            stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[]))
-        write_X_stats(base_dir, process_results['summary'])
-        write_X_bins(base_dir)
-
-    # stats, grouped by categories in adata.obs for dot plot
-    def grouped_stats(self):
-        dimensions = self.dimensions
-        dataset_api = self.dataset_api
-        input_dataset = self.input_dataset
-        adata = self.adata
-        X_range = self.X_range
-        base_dir = self.base_output_dir
-        logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
-        process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
-            grouped_stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions))
-        dotplot_results = process_results['dotplot']
-
-        write_grouped_stats(base_dir, dotplot_results)
+    # def summary_stats(self):
+    #     dimensions = self.dimensions
+    #     measures = self.measures
+    #     dataset_api = self.dataset_api
+    #     input_dataset = self.input_dataset
+    #     X_range = self.X_range
+    #     adata = self.adata
+    #     base_dir = self.base_output_dir
+    #
+    #     if X_range[0] == 0:
+    #         process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+    #             stats=dict(measures=measures, dimensions=dimensions))
+    #         write_obs_stats(base_dir, process_results['summary'])
+    #
+    #     logger.info('Summary stats X {}-{}'.format(X_range[0], X_range[1]))
+    #     process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+    #         stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=[]))
+    #     write_X_stats(base_dir, process_results['summary'])
+    #     write_X_bins(base_dir)
+    #
+    # # stats, grouped by categories in adata.obs for dot plot
+    # def grouped_stats(self):
+    #     dimensions = self.dimensions
+    #     dataset_api = self.dataset_api
+    #     input_dataset = self.input_dataset
+    #     adata = self.adata
+    #     X_range = self.X_range
+    #     base_dir = self.base_output_dir
+    #     logger.info('Grouped stats X {}-{}'.format(X_range[0], X_range[1]))
+    #     process_results = data_processing.handle_data(dataset_api=dataset_api, dataset=input_dataset,
+    #         grouped_stats=dict(measures=adata.var_names[X_range[0]:X_range[1]], dimensions=dimensions))
+    #     dotplot_results = process_results['dotplot']
+    #
+    #     write_grouped_stats(base_dir, dotplot_results)
 
 
     # def grid_embedding(self, basis_name, summary, nbins):
@@ -402,9 +410,12 @@ def main(argsv):
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     #  parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
     parser.add_argument('--markers',
-        help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
+        help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
         action='append')
-    parser.add_argument('--groups', help='List of groups to compute markers for (e.g. louvain)', action='append')
+    parser.add_argument('--groups',
+        help='List of groups to compute markers for (e.g. louvain). Note that markers created with scanpy or cumulus are automatically included.',
+        action='append')
+    parser.add_argument('--group_nfeatures', help='Number of marker genes/features to include', type=int, default=10)
     parser.add_argument('--spatial', help=SPATIAL_HELP)
     # parser.add_argument('--output_format', help='Output file format', choices=['json', 'parquet'], default='parquet')
     # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
@@ -449,6 +460,7 @@ def main(argsv):
 
     adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial)
     prepare_data = PrepareData(adata=adata, output=out, dimensions=args.groups, groups=args.groups,
+        group_nfeatures=args.group_nfeatures,
         markers=args.markers, output_format=output_format)
     prepare_data.execute()
     if loom_file is not None:
