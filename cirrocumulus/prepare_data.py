@@ -18,10 +18,15 @@ from pandas import CategoricalDtype
 logger = logging.getLogger("cirro")
 
 
-def read_adata(path, backed=False, spatial_directory=None):
+def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
     import anndata
     adata = anndata.read_loom(path) if path.lower().endswith('.loom') else anndata.read(path,
         backed=backed)
+    if use_raw and adata.raw is not None and adata.shape[1] < adata.raw.shape[1] \
+            and adata.shape[0] == adata.raw.shape[0]:
+        logger.info('Using adata.raw')
+        adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
+
     if spatial_directory is not None:
         if not add_spatial(adata, spatial_directory):
             print('No spatial data found in {}'.format(spatial_directory))
@@ -434,17 +439,20 @@ def main(argsv):
     if out is None:
         out = os.path.basename(input_dataset)
         out = out[0:out.rindex('.')]
-    loom_file = None
+    tmp_file = None
+    use_raw = False
     if input_dataset.lower().endswith('.rds'):
         import subprocess
         import tempfile
         import pkg_resources
 
-        _, loom_file = tempfile.mkstemp(suffix='.loom')
-        os.remove(loom_file)
+        _, h5_file = tempfile.mkstemp(suffix='.h5ad')
+        os.remove(h5_file)
         subprocess.check_call(
-            ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat2loom.R'), input_dataset, loom_file])
-        input_dataset = loom_file
+            ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat.R'), input_dataset, h5_file])
+        input_dataset = h5_file
+        tmp_file = h5_file
+        use_raw = True
     summary = 'max'
     nbins = -1
     # summary = args.summary
@@ -458,13 +466,13 @@ def main(argsv):
     #     input_X_range[0] = int(input_X_range[0])
     #     input_X_range[1] = int(input_X_range[1])
 
-    adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial)
+    adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
     prepare_data = PrepareData(adata=adata, output=out, dimensions=args.groups, groups=args.groups,
         group_nfeatures=args.group_nfeatures,
         markers=args.markers, output_format=output_format)
     prepare_data.execute()
-    if loom_file is not None:
-        os.remove(loom_file)
+    if tmp_file is not None:
+        os.remove(tmp_file)
 
 
 if __name__ == '__main__':
