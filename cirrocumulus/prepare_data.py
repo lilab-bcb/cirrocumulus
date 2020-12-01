@@ -272,6 +272,9 @@ class PrepareData:
             self.groups = groups
         if self.groups is not None:
             for field in self.groups:
+                if not pd.api.types.is_categorical_dtype(self.adata.obs[field]):
+                    self.adata.obs[field] = self.adata.obs[field].astype('category')
+                    self.adata.obs[field] = self.adata.obs[field].astype(CategoricalDtype(natsorted(self.adata.obs[field].dtype.categories), ordered=True))
                 if len(self.adata.obs[field].cat.categories) > 1:
                     markers += SimpleData.find_markers(self.adata, field, group_nfeatures)
             self.adata.uns['markers'] = markers
@@ -453,8 +456,8 @@ def main(argsv):
         input_dataset = h5_file
         tmp_file = h5_file
         use_raw = True
-    summary = 'max'
-    nbins = -1
+    # summary = 'max'
+    # nbins = -1
     # summary = args.summary
     # if args.basis is not None:
     #     for b in args.basis:
