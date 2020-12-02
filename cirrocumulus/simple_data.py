@@ -114,26 +114,26 @@ class SimpleData:
             else:  # pegasus
                 de_res = adata.varm['de_res']
                 names = de_res.dtype.names
-                base_names = [name[:name.rindex(':')] for name in names]
-                fields = ['auroc', 'log_fold_change']
+                field_names = set()  # e.g. 1:auroc
+                cluster_names = set()
+                for name in names:
+                    index = name.index(':')
+                    field_name = name[index + 1:]
+                    cluster_name = name[:index]
+                    field_names.add(field_name)
+                    cluster_names.add(cluster_name)
+                fields = ['auroc', 'mwu_qval', 't_qval', 'log_fold_change']
                 field_use = None
                 for field in fields:
-                    if field in base_names:
+                    if field in field_names:
                         field_use = field
                         break
-                if field_use is None:
-                    print('Pegasus differential expression results not found')
-                else:
-
-                    for name in names:
-                        index = name.rindex(':')
-                        base_name = name[:index]
-
-                        if base_name == field_use:
-                            cluster_name = name[index + 1:]
-                            indices = np.argsort(de_res[name])
-                            features = adata.var.index[indices[len(indices) - n_genes:]]
-                            marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
+                if field_use is not None:
+                    for cluster_name in cluster_names:
+                        name = '{}:{}'.format(cluster_name, field_name)
+                        indices = np.argsort(de_res[name])
+                        features = adata.var.index[indices[len(indices) - n_genes:]]
+                        marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
 
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
