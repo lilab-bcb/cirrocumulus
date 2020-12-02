@@ -257,8 +257,8 @@ class PrepareData:
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
         schema = self.get_schema()
-        markers = self.adata.uns.get('markers', [])
-        self.adata.uns['markers'] = markers
+        markers = schema.get('markers', [])
+
         if len(markers) == 0 and self.groups is None:
             cluster_fields = ['seurat_clusters', 'leiden', 'louvain']
             groups = []
@@ -277,7 +277,8 @@ class PrepareData:
                     self.adata.obs[field] = self.adata.obs[field].astype(CategoricalDtype(natsorted(self.adata.obs[field].dtype.categories), ordered=True))
                 if len(self.adata.obs[field].cat.categories) > 1:
                     markers += SimpleData.find_markers(self.adata, field, group_nfeatures)
-            self.adata.uns['markers'] = markers
+            schema['markers'] = markers
+
         images = self.adata.uns.get('images')
         if images is not None:
             image_dir = os.path.join(self.base_output_dir, 'images')
@@ -387,10 +388,13 @@ class PrepareData:
         nbins = self.nbins
         bin_agg_function = self.bin_agg_function
         result = SimpleData.schema(self.adata)
-        markers = self.adata.uns.get('markers', [])
-        if self.markers is not None:
+        markers = result.get('markers', [])
+
+        if self.markers is not None: # add from file
             markers += get_markers(self.markers)
+
         markers = filter_markers(self.adata, markers)
+
         for marker in markers:
             if marker.get('id') is None:
                 marker['id'] = unique_id()
