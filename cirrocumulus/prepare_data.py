@@ -34,11 +34,6 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
     if not backed:
         if scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
             adata.X = adata.X.tocsc()
-        sums = (adata.X != 0).sum(axis=0)
-        if isinstance(sums, np.matrix):
-            sums = sums.A1
-
-        adata = adata[:, sums > 0]
 
     def fix_column_names(df):
         rename = {}
