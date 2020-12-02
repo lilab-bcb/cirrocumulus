@@ -14,7 +14,7 @@ export class RestDataset {
                 body: JSON.stringify(data),
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).result(result => result.json());
+            }).then(result => result.json());
     }
 
     getFileUrl(file) {
