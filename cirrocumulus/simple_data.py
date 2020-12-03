@@ -77,8 +77,12 @@ class SimpleData:
                 v1 = ds1_X[:, i]
                 v2 = ds_rest_X[:, i]
                 if v1.data.size > 0 and v2.data.size > 0:
-                    stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
-                        alternative="two-sided")
+                    try:
+                        stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
+                            alternative="two-sided")
+                    except ValueError:
+                        # All numbers are identical
+                        pass
 
             order = np.argsort(pvals)
             features = ds1.var_names[order][:n_genes]
@@ -122,17 +126,22 @@ class SimpleData:
                     cluster_name = name[:index]
                     field_names.add(field_name)
                     cluster_names.add(cluster_name)
-                fields = ['auroc', 'mwu_qval', 't_qval', 'log_fold_change']
-                field_use = None
-                for field in fields:
+                sort_field_names = ['mwu_qval', 'auroc', 't_qval']
+                field_name_use = None
+                de_res = pd.DataFrame(data=de_res, index=adata.var.index)
+
+                for field in sort_field_names:
                     if field in field_names:
                         field_use = field
                         break
                 if field_use is not None:
+                    field_ascending = field_use != 'auroc'
                     for cluster_name in cluster_names:
+                        fc_column = '{}:log2FC'.format(cluster_name)
                         name = '{}:{}'.format(cluster_name, field_name)
-                        indices = np.argsort(de_res[name])
-                        features = adata.var.index[indices[len(indices) - n_genes:]]
+                        idx_up = de_res[fc_column].values > 0
+                        df_up = de_res.loc[idx_up].sort_values(by=name, ascending=field_ascending)
+                        features = df_up[:n_genes].index.values
                         marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
 
         for key in adata.obs_keys():
