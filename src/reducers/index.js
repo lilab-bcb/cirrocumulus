@@ -24,6 +24,7 @@ import {
     SET_DOT_PLOT_SORT_ORDER,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
+    SET_EMBEDDING_LABELS,
     SET_FEATURE_SUMMARY,
     SET_GLOBAL_FEATURE_SUMMARY,
     SET_INTERPOLATOR,
@@ -83,7 +84,6 @@ const DEFAULT_CHART_OPTIONS = {
     animating: false,
     dragmode: DEFAULT_DRAG_MODE,
     editSelection: false,
-    showLabels: DEFAULT_SHOW_LABELS,
     showAxis: DEFAULT_SHOW_AXIS,
     showFog: DEFAULT_SHOW_FOG,
     darkMode: DEFAULT_DARK_MODE,
@@ -129,6 +129,18 @@ function searchTokens(state = [], action) {
     }
 }
 
+function embeddingLabels(state = [], action) {
+    switch (action.type) {
+        case SET_EMBEDDING_LABELS:
+            return action.payload;
+        case SET_DATASET:
+            return [];
+        case RESTORE_VIEW:
+            return action.payload.embeddingLabels || [];
+        default:
+            return state;
+    }
+}
 
 function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
     switch (action.type) {
@@ -768,6 +780,7 @@ export default combineReducers({
     email,
     embeddingData,
     embeddings,
+    embeddingLabels,
     featureSummary,
     globalFeatureSummary,
     interpolator,

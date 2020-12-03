@@ -42,7 +42,20 @@ class GalleryCharts extends React.PureComponent {
 
 
     render() {
-        let {cachedData, categoricalNames, chartSize, chartOptions, embeddingData, markerOpacity, pointSize, primaryChartSize, searchTokens, selection, unselectedMarkerOpacity} = this.props;
+        let {
+            cachedData,
+            categoricalNames,
+            chartSize,
+            chartOptions,
+            embeddingData,
+            embeddingLabels,
+            markerOpacity,
+            pointSize,
+            primaryChartSize,
+            searchTokens,
+            selection,
+            unselectedMarkerOpacity
+        } = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
@@ -57,7 +70,7 @@ class GalleryCharts extends React.PureComponent {
             }
         }
         galleryTraces.sort((a, b) => a.sortIndex - b.sortIndex);
-        const obsCat = splitSearchTokens(searchTokens).obsCat;
+        const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         // const DragHandle = sortableHandle(() => <span>::</span>);
 
         const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
@@ -104,6 +117,7 @@ const mapStateToProps = state => {
         cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
         embeddingData: state.embeddingData,
+        embeddingLabels: state.embeddingLabels,
         markerOpacity: state.markerOpacity,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         selection: state.selection,

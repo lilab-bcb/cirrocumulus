@@ -48,12 +48,34 @@ class EmbeddingChart extends React.PureComponent {
 
     render() {
         const {
-            cachedData, categoricalNames, chartOptions, datasetFilter, featureSummary, globalFeatureSummary,
-            markerOpacity, nObsSelected, onChartOptions, onColorChange, onDeselect, onDimensionFilterUpdated, onDomain,
-            onGallery, onMeasureFilterUpdated, onMoreOptions, onNameChange, onSelect, pointSize, primaryChartSize,
-            searchTokens, selection, shape, traceInfo, unselectedMarkerOpacity
+            cachedData,
+            categoricalNames,
+            chartOptions,
+            datasetFilter,
+            embeddingLabels,
+            featureSummary,
+            globalFeatureSummary,
+            markerOpacity,
+            nObsSelected,
+            onChartOptions,
+            onColorChange,
+            onDeselect,
+            onDimensionFilterUpdated,
+            onDomain,
+            onGallery,
+            onMeasureFilterUpdated,
+            onMoreOptions,
+            onNameChange,
+            onSelect,
+            pointSize,
+            primaryChartSize,
+            searchTokens,
+            selection,
+            shape,
+            traceInfo,
+            unselectedMarkerOpacity
         } = this.props;
-        const obsCat = splitSearchTokens(searchTokens).obsCat;
+        const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
         return (
@@ -173,6 +195,7 @@ const mapStateToProps = state => {
         datasetFilter: state.datasetFilter,
         embeddingChartSize: state.embeddingChartSize,
         embeddingData: state.embeddingData,
+        embeddingLabels: state.embeddingLabels,
         featureSummary: state.featureSummary,
         globalFeatureSummary: state.globalFeatureSummary,
         markerOpacity: state.markerOpacity,

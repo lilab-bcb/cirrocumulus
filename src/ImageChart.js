@@ -35,7 +35,7 @@ export function drawEmbeddingImage(context, chartSize, traceInfo, selection, mar
 }
 
 function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, obsCat, cachedData) {
-    const showLabels = chartOptions.showLabels && obsCat.length > 0;
+    const showLabels = obsCat.length > 0;
     if (showLabels) {
         context.textAlign = 'center';
         context.textBaseline = "middle";
@@ -452,11 +452,6 @@ class ImageChart extends React.PureComponent {
     };
 
 
-    onShowLabels = () => {
-        this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
-        this.props.setChartOptions(this.props.chartOptions);
-    };
-
     onZoomIn = () => {
         this.viewer.viewport.zoomBy(this.viewer.zoomPerClick / 1.0);
         this.viewer.viewport.applyConstraints();
@@ -484,7 +479,6 @@ class ImageChart extends React.PureComponent {
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
                     editSelection={this.props.chartOptions.editSelection}
-                    showLabels={this.props.chartOptions.showLabels}
                     onMoreOptions={this.props.onMoreOptions}
                     onGallery={this.props.onGallery}
                     animating={false}
@@ -493,7 +487,6 @@ class ImageChart extends React.PureComponent {
                     is3d={false}
                     onHome={this.onHome}
                     onSaveImage={this.onSaveImage}
-                    onShowLabels={this.onShowLabels}
                     onDragMode={this.onDragMode}
                     onEditSelection={this.onEditSelection}
                 >

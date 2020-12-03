@@ -138,8 +138,16 @@ class ScatterChartThree extends React.PureComponent {
     }
 
     drawContext(context, chartSize, format) {
-        const {obsCat, cachedData, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, categoricalNames, chartOptions} = this.props;
-        const showLabels = this.props.chartOptions.showLabels && traceInfo.isCategorical;
+        const {
+            obsCat,
+            cachedData,
+            traceInfo,
+            markerOpacity,
+            unselectedMarkerOpacity,
+            selection,
+            categoricalNames,
+            chartOptions
+        } = this.props;
         const pointSize = this.calculatePointSize(traceInfo);
         const scaleFactor = this.props.pointSize;
         const PI2 = 2 * Math.PI;
@@ -238,7 +246,7 @@ class ScatterChartThree extends React.PureComponent {
             context.closePath();
             context.fill();
         }
-        if (showLabels) {
+        if (obsCat.length > 0) {
             const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
             context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
@@ -275,11 +283,6 @@ class ScatterChartThree extends React.PureComponent {
 
     resetCamera = () => {
         this.scatterPlot.resetZoom();
-    };
-
-    onShowLabels = () => {
-        this.props.chartOptions.showLabels = !this.props.chartOptions.showLabels;
-        this.props.setChartOptions(this.props.chartOptions);
     };
 
 
@@ -490,7 +493,17 @@ class ScatterChartThree extends React.PureComponent {
 
 
     draw() {
-        const {obsCat, cachedData, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, pointSize, chartOptions, categoricalNames} = this.props;
+        const {
+            obsCat,
+            cachedData,
+            traceInfo,
+            markerOpacity,
+            unselectedMarkerOpacity,
+            selection,
+            pointSize,
+            chartOptions,
+            categoricalNames
+        } = this.props;
         updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }
@@ -502,7 +515,6 @@ class ScatterChartThree extends React.PureComponent {
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
                     editSelection={this.props.chartOptions.editSelection}
-                    showLabels={this.props.chartOptions.showLabels}
                     onMoreOptions={this.props.onMoreOptions}
                     onGallery={this.props.onGallery}
                     animating={this.props.chartOptions.animating}
@@ -511,7 +523,6 @@ class ScatterChartThree extends React.PureComponent {
                     is3d={this.props.traceInfo && this.props.traceInfo.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}
-                    onShowLabels={this.onShowLabels}
                     onDragMode={this.onDragMode}
                     onCopyImage={this.onCopyImage}
                     onEditSelection={this.onEditSelection}

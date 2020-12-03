@@ -163,6 +163,9 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     });
     const embeddingKey = getEmbeddingKey(embedding);
     const coordinates = cachedData[embeddingKey];
+    if (coordinates == null) {
+        throw 'Coordinates not found for ' + embedding.name;
+    }
     const x = coordinates[embedding.name + '_1'];
     const y = coordinates[embedding.name + '_2'];
     const z = coordinates[embedding.name + '_3'];
@@ -297,7 +300,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     scale.fill(pointSize);
     scatterPlot.setPointScaleFactors(scale);
 
-    const showLabels = chartOptions.showLabels && obsCatKeys.length > 0;
+    const showLabels = obsCatKeys.length > 0;
     const labelsVisualizer = getVisualizer(scatterPlot, LABELS_VISUALIZER_ID);
     if (labelsVisualizer) {
         labelsVisualizer.labelsActive = showLabels;

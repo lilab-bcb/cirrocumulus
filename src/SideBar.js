@@ -24,6 +24,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import Tooltip from '@material-ui/core/Tooltip';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
+import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
 import {debounce} from 'lodash';
@@ -55,7 +56,8 @@ import {
     setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
-    setUnselectedMarkerOpacity
+    setUnselectedMarkerOpacity,
+    toggleEmbeddingLabel
 } from './actions';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
@@ -245,6 +247,11 @@ class SideBar extends React.PureComponent {
         this.props.handleSearchTokens(value, 'X');
     };
 
+    onObservationsIconClick = (event, option) => {
+        this.props.handleEmbeddingLabel(option);
+        event.stopPropagation();
+    };
+
     onObservationsChange = (event, value) => {
         let values = [];
         value.forEach(val => {
@@ -312,6 +319,7 @@ class SideBar extends React.PureComponent {
     };
 
     onFeatureClick = (event, option) => {
+        event.stopPropagation();
         const value = option.text !== undefined ? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
@@ -417,12 +425,25 @@ class SideBar extends React.PureComponent {
 
     render() {
         const {
-            chartSize, binValues, binSummary, embeddings, classes,
-            searchTokens, datasetFilter, datasetFilters, interpolator, markers, dataset, pointSize, combineDatasetFilters, selection, serverInfo
+            chartSize,
+            binValues,
+            binSummary,
+            embeddings,
+            embeddingLabels,
+            classes,
+            searchTokens,
+            datasetFilter,
+            datasetFilters,
+            interpolator,
+            markers,
+            dataset,
+            pointSize,
+            combineDatasetFilters,
+            selection,
+            serverInfo
         } = this.props;
 
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
-
         const datasetFilterKeys = [];
         let isBrushing = false;
         currentDatasetFilters.forEach(f => {
@@ -541,12 +562,28 @@ class SideBar extends React.PureComponent {
                     {/*                    isMulti={true}/>*/}
                     <AutocompleteVirtualized label={"Cell Metadata"}
                                              options={annotationOptions}
-                                             value={splitTokens.obs.concat(splitTokens.obsCat)}
+                                             value={splitTokens.obsCat.concat(splitTokens.obs)}
                                              onChipClick={this.onFeatureClick}
                                              groupBy={true}
+                                             getChipIcon={(option) => {
+                                                 return splitTokens.obsCat.indexOf(option) !== -1 ?
+                                                     <FontDownloadRoundedIcon
+                                                         onClick={(event) => {
+                                                             this.onObservationsIconClick(event, option);
+                                                         }}
+                                                         title={"Toggle Show/Hide Labels"}
+                                                         style={{
+                                                             marginLeft: 4,
+                                                             marginTop: 0,
+                                                             marginRight: 0,
+                                                             marginBottom: 0
+                                                         }}
+                                                         className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
+                                             }}
                                              getOptionSelected={(option, value) => option.id === value}
                                              onChange={this.onObservationsChange}/>
                 </FormControl>
+
 
                 {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
@@ -805,7 +842,7 @@ const mapStateToProps = state => {
         binSummary: state.binSummary,
         numberOfBins: state.numberOfBins,
         embeddingData: state.embeddingData,
-        embeddingChartSize: state.embeddingChartSize,
+        embeddingLabels: state.embeddingLabels,
         interpolator: state.interpolator,
         markerOpacity: state.markerOpacity,
         pointSize: state.pointSize,
@@ -860,6 +897,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             dispatch(setMarkerOpacity(value));
         },
 
+        handleEmbeddingLabel: value => {
+            dispatch(toggleEmbeddingLabel(value));
+        },
         handleUnselectedMarkerOpacity: value => {
             dispatch(setUnselectedMarkerOpacity(value));
         },

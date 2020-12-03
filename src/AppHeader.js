@@ -165,7 +165,6 @@ class AppHeader extends React.PureComponent {
             jsonChartOptions.activeEmbedding = primaryTraceKey;
         }
         const defaultChartOptions = {
-            showLabels: DEFAULT_SHOW_LABELS, showAxis: DEFAULT_SHOW_AXIS,
             showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
             labelFontSize: DEFAULT_LABEL_FONT_SIZE,
             labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH

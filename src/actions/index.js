@@ -36,6 +36,7 @@ const authScopes = [
     // 'https://www.googleapis.com/auth/contacts.readonly',
     // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
+export const SET_EMBEDDING_LABELS = 'SET_EMBEDDING_LABELS';
 export const SET_DOT_PLOT_INTERPOLATOR = 'SET_DOT_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
@@ -1110,6 +1111,19 @@ export function setUnselectedMarkerOpacity(payload) {
     return {type: SET_UNSELECTED_MARKER_OPACITY, payload: payload};
 }
 
+export function toggleEmbeddingLabel(payload) {
+    return function (dispatch, getState) {
+        let embeddingLabels = getState().embeddingLabels;
+        const index = embeddingLabels.indexOf(payload);
+        if (index === -1) {
+            embeddingLabels.push(payload);
+        } else {
+            embeddingLabels.splice(index, 1);
+        }
+        return dispatch({type: SET_EMBEDDING_LABELS, payload: embeddingLabels.slice()});
+    };
+
+}
 
 function _setDotPlotData(payload) {
     return {type: SET_DOT_PLOT_DATA, payload: payload};
