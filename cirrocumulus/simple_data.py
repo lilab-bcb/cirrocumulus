@@ -127,9 +127,8 @@ class SimpleData:
                     field_names.add(field_name)
                     cluster_names.add(cluster_name)
                 sort_field_names = ['mwu_qval', 'auroc', 't_qval']
-                field_name_use = None
                 de_res = pd.DataFrame(data=de_res, index=adata.var.index)
-
+                field_use = None
                 for field in sort_field_names:
                     if field in field_names:
                         field_use = field
@@ -140,7 +139,7 @@ class SimpleData:
                         fc_column = '{}:log2FC'.format(cluster_name)
                         name = '{}:{}'.format(cluster_name, field_name)
                         idx_up = de_res[fc_column].values > 0
-                        df_up = de_res.loc[idx_up].sort_values(by=name, ascending=field_ascending)
+                        df_up = de_res.loc[idx_up].sort_values(by=[name, fc_column], ascending=[field_ascending, False])
                         features = df_up[:n_genes].index.values
                         marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
 
