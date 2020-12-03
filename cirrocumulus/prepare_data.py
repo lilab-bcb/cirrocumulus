@@ -8,13 +8,12 @@ import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
-from natsort import natsorted
-from pandas import CategoricalDtype
-
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
+from natsort import natsorted
+from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -201,9 +200,6 @@ class PrepareData:
         #     basis_list = list(self.adata.obsm_keys())
         self.basis_list_to_precompute = None
 
-        # if 'seurat_clusters' in self.adata.obs:
-        #     self.adata.obs['seurat_clusters'] = self.adata.obs['seurat_clusters'].astype('category')
-
         index = make_unique(self.adata.var.index.append(pd.Index(self.adata.obs.columns)))
         self.adata.var.index = index[0:len(self.adata.var.index)]
         self.adata.obs.columns = index[len(self.adata.var.index):]
@@ -259,12 +255,11 @@ class PrepareData:
             cluster_fields = ['seurat_clusters', 'leiden', 'louvain']
             groups = []
             for field in self.adata.obs.columns:
-                if pd.api.types.is_categorical_dtype(self.adata.obs[field]):
-                    field_lc = field.lower()
-                    for cluster_field in cluster_fields:
-                        if field_lc.find(cluster_field) != -1:
-                            groups.append(field)
-                            break
+                field_lc = field.lower()
+                for cluster_field in cluster_fields:
+                    if field_lc.find(cluster_field) != -1:
+                        groups.append(field)
+                        break
             self.groups = groups
         if self.groups is not None:
             for field in self.groups:
