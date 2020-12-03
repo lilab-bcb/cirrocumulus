@@ -799,12 +799,12 @@ function loadDefaultDatasetEmbedding() {
     return function (dispatch, getState) {
         const dataset = getState().dataset;
         const embeddingNames = dataset.embeddings.map(e => e.name);
-        let names = ['tissue_hires','fle','umap', 'tsne'];
+        let names = ['tissue_hires', 'fle', 'umap', 'tsne'];
         let embeddingNames2Priority = {};
-        embeddingNames.forEach(name=>{
+        embeddingNames.forEach(name => {
             const nameLower = name.toLowerCase();
-            for(let i = 0; i < names.length; i++) {
-                if(names[i].indexOf(nameLower)!==-1) {
+            for (let i = 0; i < names.length; i++) {
+                if (nameLower.indexOf(names[i]) !== -1) {
                     embeddingNames2Priority[name] = i;
                     break;
                 }
@@ -1630,9 +1630,9 @@ function _updateCharts(onError) {
         }
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
         return dataPromise.then(result => {
-               if (result.embeddings != null) {
+            if (result.embeddings != null) {
                 result.embeddings.forEach(embedding => {
-                    if (embedding.coordinates && Object.keys(embedding.coordinates).length>0) {
+                    if (embedding.coordinates && Object.keys(embedding.coordinates).length > 0) {
                         cachedData[embedding.name] = embedding.coordinates;
                     }
                     if (embedding.values) { // binned values
