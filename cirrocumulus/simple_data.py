@@ -68,7 +68,6 @@ class SimpleData:
                 gene_names_keep = gene_names_keep.A1
             ds1 = ds1[:, gene_names_keep]
             ds_rest = ds_rest[:, gene_names_keep]
-            stats = np.zeros(ds1.shape[1], dtype=np.float32)
             pvals = np.full(ds1.shape[1], 1.0)
             ds1_X = ds1.X
             ds_rest_X = ds_rest.X
@@ -78,14 +77,17 @@ class SimpleData:
                 v2 = ds_rest_X[:, i]
                 if v1.data.size > 0 and v2.data.size > 0:
                     try:
-                        stats[i], pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
+                        _, pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
                             alternative="two-sided")
                     except ValueError:
                         # All numbers are identical
                         pass
-
-            order = np.argsort(pvals)
-            features = ds1.var_names[order][:n_genes]
+            fc = ds1_X.mean(axis=0) - ds_rest_X.mean(axis=0)
+            if isinstance(fc, np.matrix):
+                fc = fc.A1
+            df = pd.DataFrame(data=dict(pvals=pvals, fc=fc), index=ds1.var_names)
+            df = df.sort_values(by=['pvals', 'fc'], ascending=[True, False])
+            features = df[:n_genes].index.values
             marker_results.append(dict(category=category, name=str(cat), features=features))
         return marker_results
 
