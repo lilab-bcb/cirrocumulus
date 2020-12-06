@@ -17,13 +17,15 @@ from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
+cluster_fields = ['seurat_clusters', 'leiden', 'louvain']
+categorical_fields_convert = ['seurat_clusters']
+
 
 def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
     import anndata
     adata = anndata.read_loom(path) if path.lower().endswith('.loom') else anndata.read(path,
         backed=backed)
-    if use_raw and adata.raw is not None and adata.shape[1] < adata.raw.shape[1] \
-            and adata.shape[0] == adata.raw.shape[0]:
+    if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
         logger.info('Using adata.raw')
         adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
 
@@ -43,6 +45,12 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
 
     adata.obs = fix_column_names(adata.obs)
     adata.var = fix_column_names(adata.var)
+    for field in categorical_fields_convert:
+        if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
+            logger.info('Converting {} to categorical'.format(field))
+            adata.obs[field] = adata.obs[field].astype('category')
+            adata.obs[field] = adata.obs[field].astype(
+                CategoricalDtype(natsorted(adata.obs[field].dtype.categories), ordered=True))
     for key in adata.obsm:
         if key.find(' ') != -1:
             new_key = key.replace(' ', '_')
@@ -252,7 +260,7 @@ class PrepareData:
         markers = schema.get('markers', [])
 
         if len(markers) == 0 and self.groups is None:
-            cluster_fields = ['seurat_clusters', 'leiden', 'louvain']
+
             groups = []
             for field in self.adata.obs.columns:
                 field_lc = field.lower()
