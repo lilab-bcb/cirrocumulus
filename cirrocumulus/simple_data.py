@@ -185,6 +185,15 @@ class SimpleData:
             else:
                 embeddings.append(embedding)
         result['embeddings'] = embeddings
+        colors = {}
+        result['colors'] = colors
+
+        for key in adata.uns.keys():
+            if key.endswith('_colors'):
+                field = key[0:len(key) - len('_colors')]
+                if field in adata.obs:
+                    colors[field] = adata.uns[key]
+
         return result
 
     @staticmethod
