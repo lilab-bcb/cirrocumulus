@@ -456,7 +456,7 @@ def main(argsv):
         _, h5_file = tempfile.mkstemp(suffix='.h5ad')
         os.remove(h5_file)
         subprocess.check_call(
-            ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat.R'), input_dataset, h5_file])
+            ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat2h5ad.R'), input_dataset, h5_file])
         input_dataset = h5_file
         tmp_file = h5_file
         use_raw = True
