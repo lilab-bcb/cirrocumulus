@@ -1672,7 +1672,7 @@ function _updateCharts(onError) {
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
 
 
-            updateEmbedingData(state, features);
+            updateEmbeddingData(state, features);
 
             if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
                 let index = -1;
@@ -1709,7 +1709,7 @@ function _updateCharts(onError) {
 }
 
 // depends on global feature summary
-function updateEmbedingData(state, features) {
+function updateEmbeddingData(state, features) {
     const embeddings = state.embeddings;
     let embeddingData = state.embeddingData;
     const obsCat = state.dataset.obsCat;
@@ -1800,7 +1800,9 @@ function updateEmbedingData(state, features) {
                     // }
 
                     let colors;
-                    if (traceUniqueValues.length <= 10) {
+                    if (dataset.colors[feature] != null) {
+                        colors = dataset.colors[feature];
+                    } else if (traceUniqueValues.length <= 10) {
                         colors = schemeCategory10;
                     } else if (traceUniqueValues.length <= 12) {
                         colors = schemePaired;
