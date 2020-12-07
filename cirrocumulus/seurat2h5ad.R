@@ -5,10 +5,10 @@ if (method == '') {
   method <- 'reticulate'
 }
 
-if (method == 'reticulate' && !requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-if (method == 'reticulate' && !require('SingleCellExperiment', quietly = TRUE))
-  BiocManager::install("SingleCellExperiment")
+# if (method == 'reticulate' && !requireNamespace("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# if (method == 'reticulate' && !require('SingleCellExperiment', quietly = TRUE))
+#   BiocManager::install("SingleCellExperiment")
 if (!require('Seurat', quietly = TRUE))
   install.packages('Seurat', repos = 'https://cloud.r-project.org/')
 
@@ -29,17 +29,26 @@ if (file.exists(h5ad_path)) {
 }
 
 if (method == 'reticulate') {
-  library(SingleCellExperiment)
+  #library(SingleCellExperiment)
   library(reticulate)
-  sce <- as.SingleCellExperiment(rds)
-  exprs <- assay(sce, "logcounts")
-  col_data <- as.data.frame(colData(sce))
-  row_data <- as.data.frame(rowData(sce))
+  library(Matrix)
   anndata <- import("anndata")
+  # sce <- as.SingleCellExperiment(rds)
+  # exprs <- assay(sce, "logcounts")
+  # col_data <- as.data.frame(colData(sce))
+  # row_data <- as.data.frame(rowData(sce))
+  assay <- DefaultAssay(object = rds)
+  exprs <- GetAssayData(object = rds, slot = "data", assay = assay)
+  col_data <- rds[[]]
+  col_data$ident <- Idents(object = rds)
+  row_data <- rds[[assay]][[]]
   adata = anndata$AnnData(X = t(exprs), obs = col_data, var = row_data)
-  dim_names = reducedDimNames(sce)
-  for (dim_name in dim_names) {
-    adata$obsm$setdefault(dim_name, reducedDim(sce, dim_name))
+  # dim_names = reducedDimNames(sce)
+  # for (dim_name in dim_names) {
+  #   adata$obsm$setdefault(dim_name, reducedDim(sce, dim_name))
+  # }
+  for (dr in Seurat:::FilterObjects(object = rds, classes.keep = "DimReduc")) {
+    adata$obsm$setdefault(dr, Embeddings(object = rds[[dr]]))
   }
   adata$write(h5ad_path)
 
