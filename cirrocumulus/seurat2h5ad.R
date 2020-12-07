@@ -32,6 +32,7 @@ if (method == 'reticulate') {
   #library(SingleCellExperiment)
   library(reticulate)
   library(Matrix)
+  library(ps)
   anndata <- import("anndata")
   # sce <- as.SingleCellExperiment(rds)
   # exprs <- assay(sce, "logcounts")
@@ -52,9 +53,11 @@ if (method == 'reticulate') {
   }
   adata$write(h5ad_path)
 
-  # Fix: There appear to be 1 leaked semaphore objects to clean up at shutdown. Hangs R.
-  library(ps)
-  ps_kill(ps_children()[[1]])
+  # Fix this issue which hangs R: There appear to be 1 leaked semaphore objects to clean up at shutdown.
+  child_processes <- ps_children()
+  if (length(child_processes) == 1) {
+    ps_kill(child_processes[[1]])
+  }
 } else {
   #if (!require('loomR', quietly = TRUE))
   #  remotes::install_github(repo = 'mojaveazure/loomR', ref = 'develop')
