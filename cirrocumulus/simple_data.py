@@ -92,10 +92,6 @@ class SimpleData:
         return marker_results
 
     @staticmethod
-    def has_markers(adata):
-        return hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns or 'de_res' in adata.varm
-
-    @staticmethod
     def schema(adata):
         obs_cat = []
         obs = []
@@ -104,20 +100,25 @@ class SimpleData:
         marker_results += adata.uns.get('markers', [])
         result['markers'] = marker_results
         n_genes = 10
-        if SimpleData.has_markers(adata):
-            if hasattr(adata, 'uns') and 'rank_genes_groups' in adata.uns:  # scanpy
-                for key in adata.uns.keys():
-                    rank_genes_groups = adata.uns[key]
-                    if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
-                        groupby = str(rank_genes_groups['params']['groupby'])
-                        group_names = rank_genes_groups['names'].dtype.names
-                        category = groupby + ' markers'
-                        for group_name in group_names:
-                            gene_names = rank_genes_groups['names'][group_name]
-                            # scores = rank_genes_groups['scores'][group_name]
-                            features = gene_names[:n_genes]
-                            marker_results.append(dict(category=category, name=str(group_name), features=features))
-            else:  # pegasus
+        scanpy_marker_keys = []
+        if hasattr(adata, 'uns'):
+            for key in adata.uns.keys():
+                rank_genes_groups = adata.uns[key]
+                if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
+                    scanpy_marker_keys.append(key)
+        has_pegasus_markers = 'de_res' in adata.varm
+        if len(scanpy_marker_keys) > 0 or has_pegasus_markers:
+            for key in scanpy_marker_keys:
+                rank_genes_groups = adata.uns[key]
+                groupby = str(rank_genes_groups['params']['groupby'])
+                group_names = rank_genes_groups['names'].dtype.names
+                category = groupby + ' markers'
+                for group_name in group_names:
+                    gene_names = rank_genes_groups['names'][group_name]
+                    # scores = rank_genes_groups['scores'][group_name]
+                    features = gene_names[:n_genes]
+                    marker_results.append(dict(category=category, name=str(group_name), features=features))
+            if has_pegasus_markers:  # pegasus
                 de_res = adata.varm['de_res']
                 names = de_res.dtype.names
                 field_names = set()  # e.g. 1:auroc
