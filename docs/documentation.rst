@@ -97,7 +97,7 @@ Sets: Sets allow you to save and view predefined lists of genes (e.g. cluster ma
 Filters: Shows the current datasets cell filters. Filters can be saved for later reuse and can be combined with "AND" or "OR" logic.
 In server mode, filters are shared among dataset users, thus enabling real-time collaborative cell annotations.
 Importantly, in addition to the cell ids selected by a filter, the provenance of the filter is saved for reproducibility.
-You can download the selected cell ids as a new-line delimited text file by clicking the download button. To read the file in python, use the code::
+You can download the selected cell ids as a new-line delimited text file by clicking the download button. To read the file in Python, use the code::
 
     import pandas as pd
     df = pd.read_csv(path, header=None, index_col=0)
