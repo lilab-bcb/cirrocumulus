@@ -166,9 +166,9 @@ export default function AutocompleteVirtualized(props) {
     };
 
     const filterOptions = createFilterOptions({matchFrom: 'start'});
-    const onClick = (event, option) => {
+    const onChipClick = props.onChipClick ? (event, option) => {
         props.onChipClick(event, option);
-    };
+    } : null;
 
     let getOptionSelected = props.getOptionSelected;
     if (getOptionSelected == null) {
@@ -202,12 +202,12 @@ export default function AutocompleteVirtualized(props) {
             options={props.options}
             autoHighlight={true}
             onChange={props.onChange}
-            renderTags={props.onChipClick == null ? null : (value, getTagProps) =>
+            renderTags={(value, getTagProps) =>
                 value.map((option, index) => {
                     return (
                         <Chip
                             variant="default"
-                            onClick={event => onClick(event, option)}
+                            onClick={onChipClick ? event => onChipClick(event, option) : null}
                             label={getChipText(option)}
                             size="small"
                             icon={getChipIcon(option)}

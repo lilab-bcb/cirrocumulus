@@ -6,6 +6,9 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Checkbox from '@material-ui/core/Checkbox';
 import Chip from '@material-ui/core/Chip';
+import Dialog from '@material-ui/core/Dialog';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
@@ -21,7 +24,9 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
+import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
@@ -185,7 +190,8 @@ class SideBar extends React.PureComponent {
         super(props);
         this.state = {
             featureSetAnchorEl: null,
-            readonly: false,
+            featureSet: null,
+            featureSetView: false,
             opacity: props.markerOpacity,
             unselectedOpacity: props.unselectedMarkerOpacity
         };
@@ -285,33 +291,44 @@ class SideBar extends React.PureComponent {
         const id = option.id;
         const target = event.target;
         let markers = this.props.markers;
-        let isReadOnly = false;
-        let found = false;
+
+        let featureSet = null;
         for (let i = 0; i < markers.length; i++) {
             if (markers[i].id === id) {
-                isReadOnly = markers[i].readonly;
-                found = true;
+                featureSet = markers[i];
                 break;
             }
         }
-        if (!found) {
+        if (featureSet == null) {
             console.log(id + ' not found');
         }
-        this.setState({featureSetAnchorEl: target, featureSetId: id, readonly: isReadOnly || !found});
+        event.stopPropagation();
+        console.log(featureSet);
+        this.setState({featureSetAnchorEl: target, featureSet: featureSet});
 
     };
 
     onFeatureSetMenuClose = (event) => {
-        this.setState({featureSetAnchorEl: null, readonly: false});
+        this.setState({featureSetAnchorEl: null, featureSet: null});
+    };
+
+    onViewFeatureSet = (event) => {
+        event.stopPropagation();
+        this.setState({featureSetAnchorEl: null, featureSetView: true});
+    };
+    onCloseViewFeatureSetDialog = (event) => {
+        event.stopPropagation();
+        this.setState({featureSet: null, featureSetView: false});
     };
 
     onDeleteFeatureSet = (event) => {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
-        let value = searchTokens.filter(token => token.type === 'featureSet' && token.value.id !== this.state.featureSetId);
+        const featureSetId = this.state.featureSet.id;
+        let value = searchTokens.filter(token => token.type === 'featureSet' && token.value.id !== featureSetId);
         this.props.handleSearchTokens(value, 'featureSet');
-        this.props.handleDeleteFeatureSet(this.state.featureSetId);
-        this.setState({featureSetAnchorEl: null, featureSetId: null, readonly: false});
+        this.props.handleDeleteFeatureSet(featureSetId);
+        this.setState({featureSetAnchorEl: null, featureSet: null});
     };
 
     onFilterChipClicked = (event) => {
@@ -508,16 +525,38 @@ class SideBar extends React.PureComponent {
         const fancy = serverInfo.fancy;
         const showBinPlot = false;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
+        const featureSet = this.state.featureSet;
         return (
             <div className={classes.root}>
+                <Dialog
+                    open={this.state.featureSetView}
+                    onClose={this.onCloseViewFeatureSetDialog}
+                    aria-labelledby="view-set-dialog-title"
+                    fullWidth={true}
+                    maxWidth={'lg'}
+                >
+                    <DialogTitle id="view-set-dialog-title">{featureSet ? featureSet.name : ''}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            value={featureSet ? featureSet.features.join('\n') : ''}
+                            margin="dense"
+                            fullWidth
+                            readonly={true}
+                            variant="outlined"
+                            multiline={true}
+                        />
+                    </DialogContent>
+                </Dialog>
                 <Menu
-                    id="delete-set-menu"
+                    id="feature-set-menu"
                     anchorEl={featureSetAnchorEl}
                     open={Boolean(featureSetAnchorEl)}
                     onClose={this.onFeatureSetMenuClose}
                 >
-                    <MenuItem disabled={this.state.readonly} onClick={this.onDeleteFeatureSet}>Delete</MenuItem>
+                    <MenuItem disabled={featureSet && featureSet.readonly}
+                              onClick={this.onDeleteFeatureSet}>Delete</MenuItem>
 
+                    <MenuItem onClick={this.onViewFeatureSet}>View</MenuItem>
                 </Menu>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="embedding-label">Embeddings</InputLabel>
@@ -591,6 +630,11 @@ class SideBar extends React.PureComponent {
                                              options={featureSetOptions}
                                              value={featureSets}
                                              onChipClick={this.onFeatureSetClick}
+                                             getChipIcon={(option) => {
+                                                 return <ArrowDropDownIcon onClick={(event) => {
+                                                     this.onFeatureSetClick(event, option);
+                                                 }}/>;
+                                             }}
                                              groupBy={true}
                                              onChange={this.onFeatureSetsChange}
                                              getOptionSelected={(option, value) => option.id === value.id}
