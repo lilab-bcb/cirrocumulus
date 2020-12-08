@@ -24,7 +24,7 @@ class GalleryCharts extends React.PureComponent {
         super(props);
         this.containerElement = createContainer(this.props.chartSize);
         document.body.appendChild(this.containerElement);
-        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
+        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession != null, false, false);
         this.emptySet = new Set();
 
     }
