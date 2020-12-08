@@ -303,7 +303,6 @@ class SideBar extends React.PureComponent {
             console.log(id + ' not found');
         }
         event.stopPropagation();
-        console.log(featureSet);
         this.setState({featureSetAnchorEl: target, featureSet: featureSet});
 
     };
@@ -630,6 +629,9 @@ class SideBar extends React.PureComponent {
                                              options={featureSetOptions}
                                              value={featureSets}
                                              onChipClick={this.onFeatureSetClick}
+                                             getChipTitle={(option) => {
+                                                 return option.category;
+                                             }}
                                              getChipIcon={(option) => {
                                                  return <ArrowDropDownIcon onClick={(event) => {
                                                      this.onFeatureSetClick(event, option);
