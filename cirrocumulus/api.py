@@ -288,7 +288,10 @@ def handle_dataset():
         dataset_id = content.get('id', '')
         if request.method == 'PUT' and dataset_id == '':
             return 'Please supply an id', 400
-        readers = set(content.get('readers', []))
+        readers = content.get('readers', [])
+        if readers is None:
+            readers = []
+        readers = set(readers)
         dataset_name = content.get('name', '')
         description = content.get('description', '')
         title = content.get('title', '')
