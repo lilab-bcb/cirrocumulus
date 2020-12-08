@@ -8,12 +8,13 @@ import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
+from natsort import natsorted
+from pandas import CategoricalDtype
+
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 logger = logging.getLogger("cirro")
 
@@ -254,6 +255,7 @@ class PrepareData:
         nbins = self.nbins
         group_nfeatures = self.group_nfeatures
         bin_agg_function = self.bin_agg_function
+        output_format = self.output_format
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
         schema = self.get_schema()
@@ -290,12 +292,15 @@ class PrepareData:
                 shutil.copy(path, os.path.join(image_dir, os.path.basename(path)))
                 image['image'] = 'images/' + os.path.basename(path)
 
-        if self.output_format == 'parquet':
+        if output_format == 'parquet':
             from cirrocumulus.parquet_io import save_adata_pq
             save_adata_pq(self.adata, schema, self.base_output_dir)
-        elif self.output_format == 'json':
+        elif output_format == 'json':
             from cirrocumulus.json_io import save_adata_json
             save_adata_json(self.adata, schema, self.base_output_dir)
+        elif output_format == 'jsonl':
+            from cirrocumulus.jsonl_io import save_adata_jsonl
+            save_adata_jsonl(self.adata, schema, self.base_output_dir)
         else:
             raise ValueError("Unknown format")
 
