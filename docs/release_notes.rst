@@ -1,8 +1,13 @@
 Release Notes
 -------------
 
+- 1.1.11.post2 `December 8, 2020`
+    * Use `anndata.uns[field_colors]` if present for cell metadata default colors
+    * Added ability to view features in saved sets
+    * Use `reticulate` to convert Seurat objects to h5ad in `cirro prepare_data`
+
 - 1.1.11.post1 `December 6, 2020`
-    *  Convert seurat_clusters cell metadata field in Seurat objects to categorical in `cirro prepare_data`
+    * Convert seurat_clusters cell metadata field in Seurat objects to categorical in `cirro prepare_data`
 
 - 1.1.11 `December 4, 2020`
     * Automatically compute cluster markers when using `cirro prepare_data` without --group flag
