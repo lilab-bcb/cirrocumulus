@@ -101,18 +101,20 @@ class SimpleData:
         result['markers'] = marker_results
         n_genes = 10
         scanpy_marker_keys = []
-        if hasattr(adata, 'uns'):
-            for key in adata.uns.keys():
-                rank_genes_groups = adata.uns[key]
-                if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
-                    scanpy_marker_keys.append(key)
+
+        for key in adata.uns.keys():
+            rank_genes_groups = adata.uns[key]
+            if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
+                scanpy_marker_keys.append(key)
         has_pegasus_markers = 'de_res' in adata.varm
         if len(scanpy_marker_keys) > 0 or has_pegasus_markers:
             for key in scanpy_marker_keys:
                 rank_genes_groups = adata.uns[key]
-                groupby = str(rank_genes_groups['params']['groupby'])
+                params = rank_genes_groups['params']
+                reference = params['reference']
+                category = '{} {}'.format(params['groupby'], params.get('method', ''))
                 group_names = rank_genes_groups['names'].dtype.names
-                category = groupby + ' markers'
+
                 for group_name in group_names:
                     gene_names = rank_genes_groups['names'][group_name]
                     # scores = rank_genes_groups['scores'][group_name]
