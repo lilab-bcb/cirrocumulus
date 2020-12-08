@@ -552,10 +552,12 @@ class SideBar extends React.PureComponent {
                     open={Boolean(featureSetAnchorEl)}
                     onClose={this.onFeatureSetMenuClose}
                 >
+                    <MenuItem onClick={this.onViewFeatureSet}>View</MenuItem>
+                    <MenuItem divider={true} />
                     <MenuItem disabled={featureSet && featureSet.readonly}
                               onClick={this.onDeleteFeatureSet}>Delete</MenuItem>
 
-                    <MenuItem onClick={this.onViewFeatureSet}>View</MenuItem>
+
                 </Menu>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="embedding-label">Embeddings</InputLabel>

@@ -182,6 +182,10 @@ export default function AutocompleteVirtualized(props) {
     if (getChipIcon == null) {
         getChipIcon = (option) => null;
     }
+    let getChipTitle = props.getChipTitle;
+    if (getChipTitle == null) {
+        getChipTitle = (option) => null;
+    }
     return (
         <Autocomplete
             multiple
@@ -209,6 +213,7 @@ export default function AutocompleteVirtualized(props) {
                             variant="default"
                             onClick={onChipClick ? event => onChipClick(event, option) : null}
                             label={getChipText(option)}
+                            title={getChipTitle(option)}
                             size="small"
                             icon={getChipIcon(option)}
                             {...getTagProps({index})}
