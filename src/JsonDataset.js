@@ -194,7 +194,7 @@ export class JsonDataset {
     getDataPromise(q) {
         let dimensions = [];
         let measures = [];
-        let queryKeys = ['stats', 'groupedStats', 'embedding', 'selection'];
+        let queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
         const results = {};
         queryKeys.forEach(key => {
             if (key in q) {
@@ -253,29 +253,33 @@ export class JsonDataset {
             this.fetchData(dimensions.concat(obsMeasures).concat(varMeasures).concat(Array.from(basisKeys))).then(() => {
 
                 if (q.embedding) {
-                    results.embedding = [];
+                    results.embeddings = [];
                     q.embedding.forEach(embedding => {
-                        let dimensions = embedding.dimensions || [];
-                        let measures = embedding.measures || [];
-                        const {obsMeasures, varMeasures} = splitMeasures(measures);
-                        let values = {};
                         let coordinates = this.getVector(embedding.basis.name).asArray();
-                        dimensions.concat(obsMeasures).concat(varMeasures).forEach(key => {
-                            if (key === '__count') {
-                                values[key] = new Int8Array(coordinates[Object.keys(coordinates)[0]].length);
-                                values[key].fill(1);
-                            } else {
-                                values[key] = this.getVector(key).asArray();
-                            }
-                        });
-                        results.embedding.push({coordinates: coordinates, values: values});
+                        results.embeddings.push({name: embedding.basis.full_name, coordinates: coordinates});
                     });
                 }
                 if (q.stats) {
                     let dimensions = q.stats.dimensions || [];
                     let measures = q.stats.measures || [];
                     const {obsMeasures, varMeasures} = splitMeasures(measures);
+
                     results.summary = getStats(this.getVectors(dimensions), this.getVectors(obsMeasures), this.getVectors(varMeasures));
+                }
+                if (q.values) {
+                    let dimensions = q.values.dimensions || [];
+                    let measures = q.values.measures || [];
+                    const {obsMeasures, varMeasures} = splitMeasures(measures);
+                    let values = {};
+                    dimensions.concat(obsMeasures).concat(varMeasures).forEach(key => {
+                        if (key === '__count') {
+                            values[key] = new Int8Array(this.schema.shape[0]);
+                            values[key].fill(1);
+                        } else {
+                            values[key] = this.getVector(key).asArray();
+                        }
+                    });
+                    results.values = values;
                 }
 
                 if (q.groupedStats) {
@@ -284,7 +288,6 @@ export class JsonDataset {
                     if (dimensions.length > 0 && measures.length > 0) {
                         results.dotplot = groupedStats(this.getVectors(dimensions), this.getVectors(measures));
                     }
-
                 }
 
                 if (q.selection) {
