@@ -55,11 +55,14 @@ class SimpleData:
     @staticmethod
     def find_markers(adata, key, n_genes):
         import scipy.stats as ss
+        import logging
+        logger = logging.getLogger("cirro")
+
         marker_results = []  # array of category, name, id, features
         category = key + ' markers'
 
         for cat in adata.obs[key].cat.categories:
-            print('Computing markers for {}, {}'.format(key, cat))
+            logger.info('Computing markers for {}, {}'.format(key, cat))
             mask = adata.obs[key] == cat
             ds1 = adata[mask]
             ds_rest = adata[~mask]
@@ -71,14 +74,20 @@ class SimpleData:
             pvals = np.full(ds1.shape[1], 1.0)
             ds1_X = ds1.X
             ds_rest_X = ds_rest.X
-
+            is_sparse = scipy.sparse.isspmatrix(ds1_X)
             for i in range(ds1.shape[1]):
                 v1 = ds1_X[:, i]
                 v2 = ds_rest_X[:, i]
-                if v1.data.size > 0 and v2.data.size > 0:
+                if is_sparse:
                     try:
                         _, pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
                             alternative="two-sided")
+                    except ValueError:
+                        # All numbers are identical
+                        pass
+                else:
+                    try:
+                        _, pvals[i] = ss.mannwhitneyu(v1, v2, alternative="two-sided")
                     except ValueError:
                         # All numbers are identical
                         pass
