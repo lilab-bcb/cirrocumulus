@@ -1,103 +1,15 @@
-import {isArray, isObject} from 'lodash';
+import {isArray} from 'lodash';
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
 import {Vector} from './Vector';
-import {groupedStats, stats, valueCounts} from './VectorUtil';
+import {getBasis, splitDataFilter, splitMeasures} from './VectorUtil';
 
-
-function getVarNameType(key) {
-    let index = key.indexOf('/');
-    if (index === -1) {
-        return {name: key, type: 'X'};
-    } else {
-        let key_type = key.substring(0, index);
-        let name = key.substring(index + 1);
-        return {name: name, type: key_type};
-    }
-}
-
-export function getBasis(basis, nbins = null, agg = null, dimensions = 2, precomputed = false) {
-    dimensions = parseInt(dimensions);
-    let coordinate_columns = [];
-    for (let i = 0; i < dimensions; i++) {
-        coordinate_columns.push(basis + '_' + i + 1);
-    }
-    let full_name = basis + '_' + dimensions;
-    if (nbins != null) {
-        full_name = full_name + '_' + nbins + '_' + agg;
-    }
-    return {
-        'name': basis, 'dimensions': dimensions, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
-        'agg': agg, 'full_name': full_name, 'precomputed': precomputed
-    };
-}
-
-function splitDataFilter(data_filter) {
-    let var_keys = new Set();
-    let obs_keys = new Set();
-    let basis_list = [];
-    if (data_filter) {
-        let user_filters = data_filter.filters || [];
-        for (let i = 0; i < user_filters.length; i++) {
-            let user_filter = user_filters[i];
-            let key = user_filter[0];
-            if (isObject(key)) {
-                let basis = getBasis(key.basis, key.nbins, key.agg,
-                    key.ndim || 2, key.precomputed);
-                basis_list.push(basis);
-            } else {
-
-                const {name, type} = getVarNameType(key);
-
-                user_filter[0] = name;
-                if (type === 'X') {
-                    var_keys.add(name);
-                } else {
-                    obs_keys.add(name);
-                }
-            }
-        }
-    }
-    return {basis: basis_list, X: Array.from(var_keys), obs: Array.from(obs_keys)};
-//    return list(var_keys), list(obs_keys), basis_list
-}
-
-function splitMeasures(measures) {
-    let obsMeasures = [];
-    let varMeasures = [];
-    for (let i = 0; i < measures.length; i++) {
-        const {name, type} = getVarNameType(measures[i]);
-        if (type === 'X') {
-            varMeasures.push(name);
-        } else if (type === 'obs') {
-            obsMeasures.push(name);
-        } else {
-            throw('Unknown key type ' + type);
-        }
-    }
-    return {obsMeasures: obsMeasures, varMeasures: varMeasures};
-}
-
-
-function getStats(dimensions, obsMeasures, varMeasures) {
-    const results = {};
-    dimensions.forEach(v => {
-        results[v.getName()] = valueCounts(v);
-    });
-    obsMeasures.forEach(v => {
-        results[v.getName()] = stats(v);
-    });
-    varMeasures.forEach(v => {
-        results[v.getName()] = stats(v);
-    });
-    return results;
-}
 
 export class JsonDataset {
 
     init(id, url) {
         this.id = id;
-        this.key2vector = {}; // maps key to vector
+        this.key2data = {}; // maps key to array
 
         this.schema = null;
         if (!url.endsWith('.json')) {
@@ -140,20 +52,19 @@ export class JsonDataset {
     fetchData(keys) {
         let promises = [];
         keys.forEach(key => {
-            if (this.key2vector[key] == null && key !== '__count') {
+            if (this.key2data[key] == null && key !== '__count') {
                 let p = this._fetch(key).then(data => {
-                    if (isArray(data)) {
-                        this.key2vector[key] = new Vector(key, data);
+                    if (isArray(data)) { // continuous value
+                        this.key2data[key] = data;
                     } else {
-                        // sparse
-                        if (data.index) {
+                        if (data.index) {  // sparse
                             let values = new Float32Array(this.schema.shape[0]);
                             for (let i = 0, n = data.index.length; i < n; i++) {
                                 values[data.index[i]] = data.value[i];
                             }
-                            this.key2vector[key] = new Vector(key, values);
+                            this.key2data[key] = values;
                         } else {
-                            this.key2vector[key] = new Vector(key, data);
+                            this.key2data[key] = data; // object for coordinates
                         }
                     }
 
@@ -179,7 +90,7 @@ export class JsonDataset {
         keys = keys.concat(X).concat(obs);
         return new Promise(resolve => {
             this.fetchData(keys).then(() => {
-                let indices = getPassingFilterIndices(this.key2vector, dataFilter);
+                let indices = getPassingFilterIndices(this.key2data, dataFilter);
                 let idVector = this.getVector('index', indices);
                 let ids = [];
                 for (let i = 0, n = idVector.size(); i < n; i++) {
@@ -187,7 +98,6 @@ export class JsonDataset {
                 }
                 resolve({ids: ids});
             });
-
         });
     }
 
@@ -210,7 +120,6 @@ export class JsonDataset {
                         measures = measures.concat(value.measures);
                     }
                 });
-
             }
         });
 
@@ -244,9 +153,7 @@ export class JsonDataset {
                 basisKeys.add(basis.name);
                 embedding.basis = basis;
             });
-
         }
-
 
         return new Promise(resolve => {
 
@@ -258,13 +165,6 @@ export class JsonDataset {
                         let coordinates = this.getVector(embedding.basis.name).asArray();
                         results.embeddings.push({name: embedding.basis.full_name, coordinates: coordinates});
                     });
-                }
-                if (q.stats) {
-                    let dimensions = q.stats.dimensions || [];
-                    let measures = q.stats.measures || [];
-                    const {obsMeasures, varMeasures} = splitMeasures(measures);
-
-                    results.summary = getStats(this.getVectors(dimensions), this.getVectors(obsMeasures), this.getVectors(varMeasures));
                 }
                 if (q.values) {
                     let dimensions = q.values.dimensions || [];
@@ -281,38 +181,6 @@ export class JsonDataset {
                     });
                     results.values = values;
                 }
-
-                if (q.groupedStats) {
-                    let dimensions = q.groupedStats.dimensions || [];
-                    let measures = q.groupedStats.measures || [];
-                    if (dimensions.length > 0 && measures.length > 0) {
-                        results.dotplot = groupedStats(this.getVectors(dimensions), this.getVectors(measures));
-                    }
-                }
-
-                if (q.selection) {
-                    let dimensions = q.selection.dimensions || [];
-                    let measures = q.selection.measures || [];
-                    const embeddings = q.selection.embeddings || [];
-                    const {obsMeasures, varMeasures} = splitMeasures(measures);
-                    results.selection = {};
-
-                    let indices = getPassingFilterIndices(this.key2vector, q.selection.filter);
-
-                    if (embeddings.length > 0) {
-                        results.selection.coordinates = {};
-                        embeddings.forEach(embedding => {
-                            results.selection.coordinates[embedding.full_name] = {'indices_or_bins': indices};
-                        });
-                    }
-
-                    if (dimensions.length > 0 && varMeasures.length > 0) {
-                        results.selection.dotplot = groupedStats(this.getVectors(dimensions, indices), this.getVectors(measures, indices));
-                    }
-
-                    results.selection.count = indices.length;
-                    results.selection.summary = getStats(this.getVectors(dimensions, indices), this.getVectors(obsMeasures, indices), this.getVectors(varMeasures, indices));
-                }
                 resolve(results);
             });
         });
@@ -323,8 +191,12 @@ export class JsonDataset {
     }
 
     getVector(key, indices = null) {
-        let v = this.key2vector[key];
-        return indices == null ? v : new SlicedVector(v, indices);
+        let array = this.key2data[key];
+        let v = new Vector(key, array);
+        if (indices != null) {
+            v = new SlicedVector(v, indices);
+        }
+        return v;
     }
 
     getFileUrl(file) {
@@ -334,10 +206,7 @@ export class JsonDataset {
     getVectors(keys, indices = null) {
         let result = [];
         keys.forEach(key => {
-            let v = this.key2vector[key];
-            if (indices != null) {
-                v = new SlicedVector(v, indices);
-            }
+            let v = this.getVector(key, indices);
             result.push(v);
         });
         return result;

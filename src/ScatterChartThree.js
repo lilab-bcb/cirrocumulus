@@ -479,10 +479,13 @@ class ScatterChartThree extends React.PureComponent {
             const canvas = this.containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
             const webglcontextlost = (e) => {
+                console.log('lost webgl context');
                 e.preventDefault();
                 this.scatterPlot = null;
             };
             const webglcontextrestored = (e) => {
+                console.log('restored webgl context');
+                e.preventDefault();
                 this.setState({forceUpdate: !this.state.forceUpdate});
             };
             canvas.addEventListener('webglcontextlost', webglcontextlost);

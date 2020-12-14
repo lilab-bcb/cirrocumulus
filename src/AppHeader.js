@@ -38,9 +38,7 @@ import {
     DEFAULT_LABEL_FONT_SIZE,
     DEFAULT_LABEL_STROKE_WIDTH,
     DEFAULT_MARKER_OPACITY,
-    DEFAULT_SHOW_AXIS,
     DEFAULT_SHOW_FOG,
-    DEFAULT_SHOW_LABELS,
     DEFAULT_UNSELECTED_MARKER_OPACITY
 } from "./reducers";
 
@@ -138,7 +136,22 @@ class AppHeader extends React.PureComponent {
     };
 
     getLinkJson = () => {
-        const {chartOptions, combineDatasetFilters, primaryTraceKey, dataset, embeddings, searchTokens, datasetFilter, interpolator, markerOpacity, pointSize, unselectedMarkerOpacity, dotPlotData} = this.props;
+        const {
+            chartOptions,
+            combineDatasetFilters,
+            primaryTraceKey,
+            dataset,
+            embeddingLabels,
+            dotPlotOptions,
+            embeddings,
+            searchTokens,
+            datasetFilter,
+            interpolator,
+            markerOpacity,
+            pointSize,
+            unselectedMarkerOpacity,
+            dotPlotData
+        } = this.props;
 
         let json = {
             dataset: dataset.id,
@@ -159,11 +172,11 @@ class AppHeader extends React.PureComponent {
             json.camera = chartRef.scatterPlot.getCameraDef();
 
         }
-
-        let jsonChartOptions = {};
-        if (json.embeddings.length > 0) {
-            jsonChartOptions.activeEmbedding = primaryTraceKey;
+        if (primaryTraceKey != null) {
+            json.primaryTraceKey = primaryTraceKey;
         }
+        let jsonChartOptions = {};
+
         const defaultChartOptions = {
             showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
             labelFontSize: DEFAULT_LABEL_FONT_SIZE,
@@ -179,9 +192,9 @@ class AppHeader extends React.PureComponent {
         if (pointSize !== 1) {
             json.pointSize = pointSize;
         }
-        if (Object.keys(jsonChartOptions).length > 0) {
-            json.chartOptions = jsonChartOptions;
-        }
+
+        json.chartOptions = jsonChartOptions;
+
 
         if (searchTokens.length > 0) {
             json.q = searchTokens;
@@ -211,14 +224,14 @@ class AppHeader extends React.PureComponent {
         }
 
         if (dotPlotData && dotPlotData.length > 0) {
-            let sortOrder = {};
-            dotPlotData.forEach(data => {
-                sortOrder[data.name] = data.sortBy;
-            });
-            json.sort = sortOrder;
+            json.dotPlotOptions = dotPlotOptions;
         }
         if (interpolator.name !== DEFAULT_INTERPOLATOR) {
             json.colorScheme = interpolator.name;
+        }
+
+        if (embeddingLabels.length > 0) {
+            json.embeddingLabels = embeddingLabels;
         }
         return json;
     };
@@ -231,6 +244,7 @@ class AppHeader extends React.PureComponent {
             savedDatasetState[this.props.dataset.id] = link;
             this.props.handleSavedDatasetState(savedDatasetState);
         }
+        this.props.handleTab('embedding'); // embedding won't render unless visible
         this.props.handleDataset(id);
     };
 
@@ -463,6 +477,7 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         chartOptions: state.chartOptions,
         embeddings: state.embeddings,
+        embeddingLabels: state.embeddingLabels,
         searchTokens: state.searchTokens,
         primaryTraceKey: state.primaryTraceKey,
         binSummary: state.binSummary,

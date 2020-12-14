@@ -8,7 +8,6 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
-import natsort from 'natsort';
 import React from 'react';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat} from './formatters';
@@ -38,9 +37,8 @@ class DotPlotCanvas extends React.PureComponent {
     }
 
     onSortOrderChanged = (event) => {
-        this.props.onSortOrderChanged({name: this.props.data.name, value: event.target.value});
+        this.props.onSortOrderChanged(event.target.value);
     };
-
 
     redraw() {
 
@@ -63,11 +61,11 @@ class DotPlotCanvas extends React.PureComponent {
                 const col = Math.floor((xy[0] - this.size.x) / (maxRadius * 2));
                 const row = Math.floor((xy[1]) / (maxRadius * 2));
 
-                if (col >= 0 && col < this.dotplot.values.length && row >= 0 && row < this.categories.length) {
+                if (col >= 0 && col < this.props.data[0].length && row >= 0 && row < this.props.data.length) {
                     this.tooltipElementRef.current.innerHTML = '';
-                    let featureDatum = this.dotplot.values[col];
-                    const mean = featureDatum.mean[this.categoryOrder[row]];
-                    const fractionExpressed = featureDatum.fractionExpressed[this.categoryOrder[row]];
+                    const array = this.props.data[row];
+                    const mean = array[col].mean;
+                    const fractionExpressed = array[col].fractionExpressed;
                     // const renamedCategories = this.props.renamedCategories || {};
                     // const categories = this.categories;
                     // let category = categories[this.categoryOrder[row]];
@@ -109,35 +107,29 @@ class DotPlotCanvas extends React.PureComponent {
 
     drawContext(context) {
         const renamedCategories = this.props.renamedCategories || {};
-        const dotplot = this.dotplot;
+        const data2d = this.props.data;
         const colorScale = this.props.colorScale;
-        const features = this.features;
         const sizeScale = this.props.sizeScale;
-        const categories = this.categories;
         const drawCircles = this.props.drawCircles;
-        const categoryOrder = this.categoryOrder;
         const textColor = this.props.textColor;
         const maxRadius = sizeScale.range()[1];
         let diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
-        dotplot.values.forEach((datum, featureIndex) => { // each feature
-            for (let i = 0; i < datum.mean.length; i++) { // each category
-                const mean = datum.mean[categoryOrder[i]];
+
+        data2d.forEach((array, j) => { // each category
+            const ypix = j * diameter + (drawCircles ? maxRadius : 0);
+            for (let i = 0; i < array.length; i++) { // each feature
+                const mean = array[i].mean;
                 const color = colorScale(mean);
                 context.fillStyle = color;
-
-
                 context.beginPath();
-
                 if (drawCircles) {
-                    const xpix = featureIndex * diameter + maxRadius + this.size.x;
-                    const ypix = i * diameter + maxRadius;
-                    const frac = datum.fractionExpressed[categoryOrder[i]];
+                    const xpix = i * diameter + maxRadius + this.size.x;
+                    const frac = array[i].fractionExpressed;
                     context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 } else {
-                    const xpix = featureIndex * diameter + this.size.x;
-                    const ypix = i * diameter;
+                    const xpix = i * diameter + this.size.x;
                     context.rect(xpix, ypix, diameter, diameter);
                 }
                 context.fill();
@@ -149,27 +141,28 @@ class DotPlotCanvas extends React.PureComponent {
         context.fillStyle = textColor;
         context.textBaseline = 'middle';
 
-        for (let i = 0; i < categories.length; i++) {
-            let category = categories[categoryOrder[i]];
+        data2d.forEach((array, i) => {
+            let category = array[0].name;
             let newName = renamedCategories[category];
             if (newName != null) {
                 category = newName;
             }
             const pix = i * diameter + maxRadius;
             context.fillText(category, this.size.x - 4, pix);
-        }
+        });
         context.textAlign = 'right';
         context.textBaseline = 'top';
-        for (let i = 0; i < features.length; i++) {
-            const text = features[i];
+
+        data2d[0].forEach((item, i) => {
+            const text = item.feature;
             const pix = i * diameter;
             context.save();
             context.translate(this.size.x + pix + 4, this.size.height);
             context.rotate(-Math.PI / 2);
             context.fillText(text, 0, 0);
             context.restore();
+        });
 
-        }
 
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
@@ -206,12 +199,15 @@ class DotPlotCanvas extends React.PureComponent {
     getSize(context) {
         let maxFeatureWidth = 0;
         const renamedCategories = this.props.renamedCategories || {};
-        this.dotplot.values.forEach(datum => {
-            maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(datum.name).width);
+        const array2d = this.props.data;
+        array2d[0].forEach(item => {
+            maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(item.feature).width);
         });
         maxFeatureWidth += 4;
         let xoffset = 0;
-        this.categories.forEach(category => {
+
+        array2d.forEach(array => {
+            let category = array[0].name;
             let renamed = renamedCategories[category];
             if (renamed != null) {
                 category = renamed;
@@ -221,80 +217,16 @@ class DotPlotCanvas extends React.PureComponent {
         xoffset += 4;
         const maxRadius = this.props.sizeScale.range()[1];
         const diameter = maxRadius * 2;
-        const height = this.categories.length * diameter + 4;
-        const width = this.features.length * diameter + 4;
+        const height = array2d.length * diameter + 4;
+        const width = array2d[0].length * diameter + 4;
         return {x: xoffset, y: maxFeatureWidth, width: width, height: height};
     }
 
     update() {
-
-        let dotplot = Object.assign({}, this.props.data);
-        const renamedCategories = this.props.renamedCategories || {};
-        if (dotplot != null && dotplot.selection) {
-            dotplot = dotplot.selection;
-        }
-        this.dotplot = dotplot;
-        const categories = dotplot.categories || [''];
-
-        this.categories = categories;
-        const features = dotplot.values.map(feature => feature.name);
-
-        if (dotplot.sortBy == null) {
-            dotplot.sortBy = dotplot.name;
-        }
-        let categoryOrder = [];
-        for (let i = 0; i < categories.length; i++) {
-            categoryOrder.push(i);
-        }
-        if (dotplot.sortBy !== dotplot.name) { // sort by feature
-            let sortByDatum;
-            for (let i = 0; i < dotplot.values.length; i++) {
-                if (dotplot.values[i].name === dotplot.sortBy) {
-                    sortByDatum = dotplot.values[i];
-                    break;
-                }
-            }
-            if (sortByDatum) {
-                categoryOrder.sort((a, b) => {
-                    let val1 = sortByDatum.mean[a];
-                    let val2 = sortByDatum.mean[b];
-                    let c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
-                    if (c === 0) {
-                        val1 = sortByDatum.fractionExpressed[a];
-                        val2 = sortByDatum.fractionExpressed[b];
-                        c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
-                    }
-                    return c;
-                });
-
-            }
-        } else { // sort by category
-            if (Object.keys(renamedCategories).length > 0) {
-                const sorter = natsort();
-                categoryOrder.sort((a, b) => {
-                    let val1 = categories[a];
-                    let renamed1 = renamedCategories[val1];
-                    if (renamed1 != null) {
-                        val1 = renamed1;
-                    }
-                    let val2 = categories[b];
-                    let renamed2 = renamedCategories[val2];
-                    if (renamed2 != null) {
-                        val2 = renamed2;
-                    }
-                    return sorter(val1, val2);
-                });
-            }
-
-        }
-
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         context.font = canvasFont;
-        this.features = features;
         this.size = this.getSize(context);
-        this.categoryOrder = categoryOrder;
-
     }
 
     handleSaveImageMenu = (event) => {
@@ -376,13 +308,15 @@ class DotPlotCanvas extends React.PureComponent {
     render() {
         this.update();
         const {saveImageEl} = this.state;
-        const dotplot = this.dotplot;
-        const features = this.features;
-        const sortChoices = [dotplot.name].concat(features);
+        const array2d = this.props.data;
+        const sortBy = this.props.sortBy;
+        const dimension = array2d[0][0].dimension;
+        const features = array2d[0].map(item => item.feature);
+        const sortChoices = [array2d[0][0].dimension].concat(features);
         return (<div style={{position: 'relative'}}>
             <div>
                 <Typography style={{display: 'inline-block'}} component={"h4"}
-                            color="textPrimary">{dotplot.name}{this.props.subtitle &&
+                            color="textPrimary">{dimension}{this.props.subtitle &&
                 <small>({this.props.subtitle})</small>}</Typography>
                 <Tooltip title={"Save Image"}>
                     <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
@@ -420,7 +354,7 @@ class DotPlotCanvas extends React.PureComponent {
 
                         input={<Input size={"small"}/>}
                         onChange={this.onSortOrderChanged}
-                        value={dotplot.sortBy}
+                        value={sortBy}
                     >
                         {sortChoices.map(item => (
                             <MenuItem key={item} value={item}>{item}</MenuItem>

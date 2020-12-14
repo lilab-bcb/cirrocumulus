@@ -1,7 +1,7 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {isEqual, uniqBy} from 'lodash';
+import {isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -100,7 +100,7 @@ export const RESTORE_VIEW = 'RESTORE_VIEW';
 export const SET_DOT_PLOT_DATA = 'SET_DOT_PLOT_DATA';
 export const SET_SELECTED_DOT_PLOT_DATA = 'SET_SELECTED_DOT_PLOT_DATA';
 
-export const SET_DOT_PLOT_SORT_ORDER = 'SET_DOT_PLOT_SORT_ORDER';
+export const SET_DOT_PLOT_OPTIONS = 'SET_DOT_PLOT_OPTIONS';
 export const SET_EMBEDDING_DATA = 'SET_EMBEDDING_DATA';
 
 export const SET_LOADING = 'SET_LOADING';
@@ -514,8 +514,8 @@ export function exportDatasetFilters() {
 }
 
 
-export function setDotPlotSortOrder(payload) {
-    return {type: SET_DOT_PLOT_SORT_ORDER, payload: payload};
+export function setDotPlotOptions(payload) {
+    return {type: SET_DOT_PLOT_OPTIONS, payload: payload};
 }
 
 export function setChartOptions(payload) {
@@ -603,8 +603,8 @@ function handleFilterUpdated() {
         q.selection.embeddings = selectedEmbeddings.map(e => {
             return getEmbeddingJson(e);
         });
-
-        getState().dataset.api.getDataPromise(q).then(result => {
+        const cachedData = state.cachedData;
+        getState().dataset.api.getDataPromise(q, cachedData).then(result => {
             dispatch(handleSelectionResult(result.selection, true));
         }).catch(err => {
             handleError(dispatch, err);
@@ -884,12 +884,16 @@ function restoreSavedView(savedView) {
             .then(() => dispatch(_updateCharts()))
             .then(() => dispatch(handleFilterUpdated()))
             .then(() => {
-                if (savedView.sort != null) {
-                    for (let name in savedView.sort) {
-                        dispatch(setDotPlotSortOrder({name: name, value: savedView.sort[name]}));
-                    }
+                if (savedView.dotPlotOptions != null) {
+                    dispatch(setDotPlotOptions(savedView.dotPlotOptions));
                 }
-
+                let primaryTraceKey = savedView.primaryTraceKey;
+                if (primaryTraceKey == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q != null && savedView.q.length > 0) {
+                    primaryTraceKey = savedView.q[0] + '_' + getEmbeddingKey(savedView.embeddings[0]);
+                }
+                if (primaryTraceKey != null) {
+                    dispatch(setPrimaryTraceKey(primaryTraceKey));
+                }
             })
             .finally(() => dispatch(_setLoading(false)))
             .catch(err => {
@@ -1293,9 +1297,8 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
         }
 
-        let url = dataset.url || '';
-        const isByteRangeDataset = url.startsWith("http") || url.startsWith('//');
-        if (isByteRangeDataset) {
+        const isDirectAccess = dataset.access === 'direct';
+        if (isDirectAccess) {
             dataset.api = new JsonDataset();
         } else {
             dataset.api = new RestDataset();
@@ -1304,7 +1307,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         return initPromise.then(() => {
             let promises = [];
-            if (!isByteRangeDataset) {
+            if (!isDirectAccess) {
                 const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
                     categoryNameResults = results;
                 });
@@ -1385,67 +1388,37 @@ function handleSelectionResult(selectionResult, clear) {
                 selectedDotPlotData = updateDotPlotData(selectionResult.dotplot, selectedDotPlotData, searchTokens);
                 dispatch(_setSelectedDotPlotData(selectedDotPlotData));
             }
-
         }
     };
 }
 
 function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
-    let categoryKeys = [searchTokens.obsCat.join('-')];
-    let dotPlotKeys = {}; // category-feature
+    let dimensionKeys = [searchTokens.obsCat.join('-')];
+    // keep active dimensions and features only
+    dotPlotData = dotPlotData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 && searchTokens.X.indexOf(entry.feature) !== -1);
 
-    categoryKeys.forEach(category => {
-        searchTokens.X.forEach(feature => {
-            if (feature !== '__count') {
-                let key = category + '-' + feature;
-                dotPlotKeys[key] = true;
-            }
-        });
-    });
-
-    // merge with existing data
     if (newDotplotData) {
-        newDotplotData.forEach(categoryItem => {
-            let index = -1;
+        // remove old data that is also in new data
+        newDotplotData.forEach(entry => {
             for (let i = 0; i < dotPlotData.length; i++) {
-                if (dotPlotData[i].name === categoryItem.name) {
-                    index = i;
+                if (dotPlotData[i].dimension === entry.dimension && dotPlotData[i].feature === entry.feature) {
+                    dotPlotData.splice(i, 1);
                     break;
                 }
             }
-            if (index === -1) {
-                dotPlotData.push(categoryItem);
-            } else {
-                dotPlotData[index].values = categoryItem.values.concat(dotPlotData[index].values);
-                dotPlotData[index].values = uniqBy(dotPlotData[index].values, (value => value.name));
-                dotPlotData[index] = Object.assign({}, dotPlotData[index]);
-            }
         });
+        dotPlotData = dotPlotData.concat(newDotplotData);
     }
 
-    // keep active categories only
-
-    dotPlotData = dotPlotData.filter(categoryItem => categoryKeys.indexOf(categoryItem.name) !== -1);
-    dotPlotData.forEach((categoryItem, categoryIndex) => {
-        const nfeatures = categoryItem.values.length;
-        categoryItem.values = categoryItem.values.filter(feature => dotPlotKeys[categoryItem.name + '-' + feature.name]);
-        if (nfeatures !== categoryItem.values.length) {
-            dotPlotData[categoryIndex] = Object.assign({}, categoryItem);
-        }
-    });
-    dotPlotData = dotPlotData.filter(categoryItem => categoryItem.values.length > 0);
-    // sort features
+    // sort features matching X entry order
     let featureSortOrder = {};
     searchTokens.X.forEach((name, index) => {
         featureSortOrder[name] = index;
     });
-    dotPlotData.forEach((categoryItem) => {
-        categoryItem.values.sort((a, b) => {
-            a = featureSortOrder[a.name];
-            b = featureSortOrder[b.name];
-            return a - b;
-        });
-
+    dotPlotData.sort((a, b) => {
+        a = featureSortOrder[a.feature];
+        b = featureSortOrder[b.feature];
+        return a - b;
     });
     return dotPlotData;
 }
@@ -1522,15 +1495,11 @@ function _updateCharts(onError) {
         if (dotplot) {
             let cachedDotPlotKeys = {};
             dotPlotData.forEach(dotPlotDataItem => {
-                dotPlotDataItem.values.forEach(datum => {
-                    cachedDotPlotKeys[dotPlotDataItem.name + '-' + datum.name] = true;
-                });
+                cachedDotPlotKeys[dotPlotDataItem.name + '-' + dotPlotDataItem.feature] = true;
             });
             let cachedSelectedDotPlotMeasures = {};
             selectedDotPlotData.forEach(dotPlotDataItem => {
-                dotPlotDataItem.values.forEach(datum => {
-                    cachedSelectedDotPlotMeasures[datum.name] = true;
-                });
+                cachedSelectedDotPlotMeasures[dotPlotDataItem.name + '-' + dotPlotDataItem.feature] = true;
             });
 
             searchTokens.X.forEach(feature => {
@@ -1642,27 +1611,9 @@ function _updateCharts(onError) {
                 dimensions: searchTokens.obsCat
             };
         }
-        let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q) : Promise.resolve({});
+
+        let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
         return dataPromise.then(result => {
-            if (result.embeddings != null) {
-                result.embeddings.forEach(embedding => {
-                    if (embedding.coordinates && Object.keys(embedding.coordinates).length > 0) {
-                        cachedData[embedding.name] = embedding.coordinates;
-                    }
-                    if (embedding.values) { // binned values
-                        for (let feature in embedding.values) {
-                            cachedData[feature + '_' + embedding.name] = embedding.values[feature];
-                        }
-                    }
-                });
-            }
-            if (result.values) { // binned values
-                for (let feature in result.values) {
-                    cachedData[feature] = result.values[feature];
-                }
-            }
-
-
             dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
 
             const newSummary = result.summary || {};
@@ -1670,29 +1621,27 @@ function _updateCharts(onError) {
                 globalFeatureSummary[key] = newSummary[key];
             }
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
-
-
             updateEmbeddingData(state, features);
 
-            if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
-                let index = -1;
-                for (let i = 0; i < embeddingData.length; i++) {
-                    if (state.chartOptions.activeEmbedding === getTraceKey(embeddingData[i])) {
-                        index = i;
-                        break;
-                    }
-                }
-                if (index !== -1) {
-                    let activeTrace = embeddingData[index];
-                    embeddingData.splice(index, 1);
-                    embeddingData.push(activeTrace);
-                }
-                state.chartOptions.activeEmbedding = null;
-            }
+            // if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
+            //     let index = -1;
+            //     for (let i = 0; i < embeddingData.length; i++) {
+            //         if (state.chartOptions.activeEmbedding === getTraceKey(embeddingData[i])) {
+            //             index = i;
+            //             break;
+            //         }
+            //     }
+            //     if (index !== -1) {
+            //         let activeTrace = embeddingData[index];
+            //         embeddingData.splice(index, 1);
+            //         embeddingData.push(activeTrace);
+            //     }
+            //     state.chartOptions.activeEmbedding = null;
+            // }
             dispatch(setEmbeddingData(embeddingData.slice()));
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection));
-            } else {
+            } else { // clear selection
                 dispatch(_setSelectedDotPlotData(updateDotPlotData(null, selectedDotPlotData, searchTokens)));
             }
         }).finally(() => {
@@ -1731,6 +1680,7 @@ function updateEmbeddingData(state, features) {
         const isBinned = isEmbeddingBinned(embedding);
         const isSpatial = embedding.spatial != null;
         const coordinates = cachedData[embeddingKey];
+
         const x = coordinates[embedding.name + '_1'];
         const y = coordinates[embedding.name + '_2'];
         const z = coordinates[embedding.name + '_3'];

@@ -21,7 +21,7 @@ import {
     SET_DOMAIN,
     SET_DOT_PLOT_DATA,
     SET_DOT_PLOT_INTERPOLATOR,
-    SET_DOT_PLOT_SORT_ORDER,
+    SET_DOT_PLOT_OPTIONS,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
     SET_EMBEDDING_LABELS,
@@ -473,39 +473,8 @@ function dialog(state = null, action) {
     }
 }
 
-// [{
-//     "categories": array,
-//     "name": str,
-//     "fractionRange":[number],
-//     "meanRange":[number]
-//     "values": [{
-//         "name": str,
-//         "fractionExpressed": array
-//         "mean": array,
-//         "active": bool
-//     }]
-// }]
-
-function updateDotPlotDataRange(data) {
-    data.forEach(categoryItem => {
-        let fractionRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
-        let meanRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
-        categoryItem.values.forEach(feature => {
-            for (let i = 0, n = feature.mean.length; i < n; i++) {
-                fractionRange[0] = Math.min(feature.fractionExpressed[i], fractionRange[0]);
-                fractionRange[1] = Math.max(feature.fractionExpressed[i], fractionRange[1]);
-                meanRange[0] = Math.min(feature.mean[i], meanRange[0]);
-                meanRange[1] = Math.max(feature.mean[i], meanRange[1]);
-            }
-        });
-        categoryItem.meanRange = meanRange;
-        categoryItem.fractionRange = fractionRange;
-    });
-}
-
 
 function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) {
-
     switch (action.type) {
         case SET_DOT_PLOT_INTERPOLATOR:
             return action.payload;
@@ -516,28 +485,27 @@ function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) 
     }
 }
 
+/*
+sortBy, minSize, maxSize, min, max, drawCircles
+ */
+function dotPlotOptions(state = {drawCircles: true}, action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return {drawCircles: true};
+        case SET_DOT_PLOT_OPTIONS:
+            return Object.assign({}, state, action.payload);
+        case RESTORE_VIEW:
+            return action.payload.dotPlotOptions != null ? action.payload.dotPlotOptions : state;
+        default:
+            return state;
+    }
+}
+
 function dotPlotData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
-            for (let i = 0; i < state.length; i++) {
-                let item = state[i];
-                state[i] = Object.assign({}, item);
-            }
-            return state.slice();
-        case SET_DOT_PLOT_SORT_ORDER:
-            const name = action.payload.name;
-            const sortBy = action.payload.value;
-            for (let i = 0; i < state.length; i++) {
-                let item = state[i];
-                if (item.name === name) {
-                    item.sortBy = sortBy;
-                    state[i] = Object.assign({}, item);
-                    break;
-                }
-            }
             return state.slice();
         case SET_DOT_PLOT_DATA:
-            updateDotPlotDataRange(action.payload);
             return action.payload;
         case SET_DATASET:
             return [];
@@ -549,25 +517,8 @@ function dotPlotData(state = [], action) {
 function selectedDotPlotData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
-            for (let i = 0; i < state.length; i++) {
-                let item = state[i];
-                state[i] = Object.assign({}, item);
-            }
-            return state.slice();
-        case SET_DOT_PLOT_SORT_ORDER:
-            const name = action.payload.name;
-            const sortBy = action.payload.value;
-            for (let i = 0; i < state.length; i++) {
-                let item = state[i];
-                if (item.name === name) {
-                    item.sortBy = sortBy;
-                    state[i] = Object.assign({}, item);
-                    break;
-                }
-            }
             return state.slice();
         case SET_SELECTED_DOT_PLOT_DATA:
-            updateDotPlotDataRange(action.payload);
             return action.payload;
         case SET_DATASET:
             return [];
@@ -734,8 +685,7 @@ export function primaryTraceKey(state = null, action) {
             if (traces.length === 0) {
                 return null;
             }
-            const activeTrace = traces[traces.length - 1];
-            return getTraceKey(activeTrace); // last feature becomes primary
+            return getTraceKey(traces[traces.length - 1]); // last feature becomes primary
         default:
             return state;
     }
@@ -777,6 +727,7 @@ export default combineReducers({
     dialog,
     dotPlotData,
     dotPlotInterpolator,
+    dotPlotOptions,
     email,
     embeddingData,
     embeddings,
