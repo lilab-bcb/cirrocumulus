@@ -61,7 +61,7 @@ function reshapeDotPlotData(data, renamedCategories, dotPlotOptions) {
                 if (renamed2 != null) {
                     b = renamed2;
                 }
-                return sorter(a, b);
+                return sorter(a.toLowerCase(), b.toLowerCase());
             });
         }
     }
@@ -228,7 +228,7 @@ export class DotPlotGroup extends React.PureComponent {
             colorMin = numberFormat2f(colorScale.domain()[0]);
             colorMax = numberFormat2f(colorScale.domain()[1]);
         }
-     
+
         return (
             <React.Fragment>
                 {dotPlotData != null && dotPlotData.length > 0 ?

@@ -232,28 +232,34 @@ export function groupedStats(dimensions, varMeasures) {
             // results.values[index].restFractionExpressed.push(restStats.numExpressed / restVector.size());
             const categoryVector = new SlicedVector(v, indices);
             const categoryStats = stats(categoryVector);
-            // const y = new Float32Array(categoryVector.size());
-            // for (let i = 0, size = categoryVector.size(); i < size; i++) {
-            //     y[i] = categoryVector.get(i);
-            // }
+            let y = null;
+            let storeValues = false;
+            if (storeValues) {
+                y = new Float32Array(categoryVector.size());
+                for (let i = 0, size = categoryVector.size(); i < size; i++) {
+                    y[i] = categoryVector.get(i);
+                }
+            }
             // results.values[index].mean.push(categoryStats.mean);
             // results.values[index].fractionExpressed.push(categoryStats.numExpressed / categoryVector.size());
-            result.push({
+            const entry = {
                 dimension: dimensionName,
                 name: category,
                 feature: v.getName(),
                 mean: categoryStats.mean,
                 fractionExpressed: categoryStats.numExpressed / categoryVector.size(),
-                // // plotly stuff
+                y: y
+                //  plotly stuff
                 // type: 'violin',
                 // points: 'none',
-                // spanmode: 'zhard',
+                // spanmode: 'hard',
                 // box: {
                 //     line: {color: 'black'},
                 //     visible: true
                 // }
+            };
 
-            });
+            result.push(entry);
         });
     });
     return result;

@@ -5,7 +5,7 @@ import {isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
-import {JsonDataset} from '../JsonDataset';
+import {DirectAccessDataset} from '../DirectAccessDataset';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
@@ -1299,7 +1299,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         const isDirectAccess = dataset.access === 'direct';
         if (isDirectAccess) {
-            dataset.api = new JsonDataset();
+            dataset.api = new DirectAccessDataset();
         } else {
             dataset.api = new RestDataset();
         }

@@ -9,6 +9,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import natsort from 'natsort';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 
@@ -97,7 +98,17 @@ class CategoricalLegend extends React.PureComponent {
 
 
     render() {
-        const {scale, datasetFilter, name, featureSummary, maxHeight, globalFeatureSummary, nObs, nObsSelected, categoricalNames} = this.props;
+        const {
+            scale,
+            datasetFilter,
+            name,
+            featureSummary,
+            maxHeight,
+            globalFeatureSummary,
+            nObs,
+            nObsSelected,
+            categoricalNames
+        } = this.props;
         let clickEnabled = this.props.clickEnabled;
         const categoricalFilterValues = datasetFilter[name];
         const selectionSummary = featureSummary[name];
@@ -120,6 +131,19 @@ class CategoricalLegend extends React.PureComponent {
         // }
         const categories = globalDimensionSummary.categories;
         const renamedCategories = categoricalNames[name] || {};
+        const sorter = natsort();
+        categories.sort((a, b) => {
+            let renamed1 = renamedCategories[a];
+            if (renamed1 != null) {
+                a = renamed1;
+            }
+            let renamed2 = renamedCategories[b];
+            if (renamed2 != null) {
+                b = renamed2;
+            }
+            return sorter(a.toLowerCase(), b.toLowerCase());
+        });
+
         clickEnabled = clickEnabled && categories.length > 1;
         let style = {maxHeight: maxHeight, display: 'inline-block'};
         if (this.props.style) {

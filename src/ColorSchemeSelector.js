@@ -47,7 +47,7 @@ class ColorSchemeSelector extends React.PureComponent {
         const height = 20;
         return (
             <Select
-                input={<Input id="color-scheme"/>}
+                input={<Input/>}
                 className={classes.select}
                 onChange={this.handleInterpolatorChange}
                 value={interpolator}

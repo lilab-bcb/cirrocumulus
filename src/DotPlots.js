@@ -1,9 +1,9 @@
+import {groupBy} from 'lodash';
 import React from 'react';
 
 import {connect} from 'react-redux';
 import {setDotPlotInterpolator, setDotPlotOptions} from './actions';
 import {DotPlotGroup} from './DotPlotGroup';
-import {splitSearchTokens} from './util';
 
 class DotPlots extends React.PureComponent {
     render() {
@@ -23,20 +23,21 @@ class DotPlots extends React.PureComponent {
             return <h4>Please enter one or more categorical observations and one or more features.</h4>;
         }
         const textColor = chartOptions.darkMode ? 'white' : 'black';
-        const splitTokens = splitSearchTokens(searchTokens);
-        const dimension = splitTokens.obsCat.join('-');
-        let renamedCategories = categoricalNames[dimension] || {}; // TODO rename multiple
-        return <DotPlotGroup
-            dotPlotData={dotPlotData}
-            selectedData={selectedDotPlotData}
-            interpolator={dotPlotInterpolator}
-            handleInterpolator={handleInterpolator}
-            onDotPlotOptions={onDotPlotOptions}
-            dotPlotOptions={dotPlotOptions}
-            renamedCategories={renamedCategories}
-            textColor={textColor}/>;
+        let dimension2data = groupBy(dotPlotData, 'dimension');
+        let dimension2selecteddata = groupBy(selectedDotPlotData, 'dimension');
 
+        return <React.Fragment>{Object.keys(dimension2data).map(dimension => <DotPlotGroup key={dimension}
+                                                                                           dotPlotData={dimension2data[dimension]}
+                                                                                           selectedData={dimension2selecteddata[dimension]}
+                                                                                           interpolator={dotPlotInterpolator}
+                                                                                           handleInterpolator={handleInterpolator}
+                                                                                           onDotPlotOptions={onDotPlotOptions}
+                                                                                           dotPlotOptions={dotPlotOptions}
+                                                                                           renamedCategories={categoricalNames[dimension] || {}} // TODO rename multiple
+                                                                                           textColor={textColor}/>)}</React.Fragment>;
     }
+
+
 }
 
 const mapStateToProps = state => {

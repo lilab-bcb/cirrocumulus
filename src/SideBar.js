@@ -553,7 +553,7 @@ class SideBar extends React.PureComponent {
                     onClose={this.onFeatureSetMenuClose}
                 >
                     <MenuItem onClick={this.onViewFeatureSet}>View</MenuItem>
-                    <MenuItem divider={true} />
+                    <MenuItem divider={true}/>
                     <MenuItem disabled={featureSet && featureSet.readonly}
                               onClick={this.onDeleteFeatureSet}>Delete</MenuItem>
 
@@ -579,7 +579,7 @@ class SideBar extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
-                <FormControl className={classes.formControl}>
+                {featureOptions.length > 0 && <FormControl className={classes.formControl}>
 
                     {/*<AutocompleteSelect label="Features" options={allOptions}*/}
                     {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
@@ -591,9 +591,9 @@ class SideBar extends React.PureComponent {
                                              onChange={this.onFeaturesChange}
                                              helperText={"Enter or paste list"}
                     />
-                </FormControl>
+                </FormControl>}
 
-                <FormControl className={classes.formControl}>
+                {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
 
                     {/*<AutocompleteSelect label="Features" options={allOptions}*/}
                     {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
@@ -622,7 +622,7 @@ class SideBar extends React.PureComponent {
                                              }}
                                              getOptionSelected={(option, value) => option.id === value}
                                              onChange={this.onObservationsChange}/>
-                </FormControl>
+                </FormControl>}
 
 
                 {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
@@ -741,7 +741,7 @@ class SideBar extends React.PureComponent {
                                 min={0.0}
                                 max={1}
                                 step={0.01}
-                                style={{marginLeft: 10, width: '90%'}}
+                                style={{marginLeft: 10, width:'86%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.opacity}
                                 onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
@@ -753,7 +753,7 @@ class SideBar extends React.PureComponent {
                                 min={0.0}
                                 max={1}
                                 step={0.01}
-                                style={{marginLeft: 10, width: '90%'}}
+                                style={{marginLeft: 10, width: '86%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.unselectedOpacity}
                                 onChange={this.onUnselectedMarkerOpacityChange} aria-labelledby="continuous-slider"/>

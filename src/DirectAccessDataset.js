@@ -5,48 +5,54 @@ import {Vector} from './Vector';
 import {getBasis, splitDataFilter, splitMeasures} from './VectorUtil';
 
 
-export class JsonDataset {
+export class DirectAccessDataset {
 
     init(id, url) {
         this.id = id;
-        this.key2data = {}; // maps key to array
-
+        this.key2data = {};
+        this.format = "json";
         this.schema = null;
-        if (!url.endsWith('.json')) {
+        if (this.url.endsWith(".jsonl") || this.url.endsWith(".jsonl.gz")) {
+            this.format = "jsonl";
+        }
+        if (this.format === 'json' && !url.endsWith('.json') && !url.endsWith('.json.gz')) {
             url = url + 'schema.json';
         }
         this.url = url;
         this.baseUrl = this.url.substring(0, this.url.lastIndexOf('/') + 1);
-        // return new Promise((resolve, reject) => {
-        //     fetch(url + '.idx.json').then(r => r.json()).then(result => {
-        //         this.key2bytes = result.index;
-        //     }).then(() => {
-        //         fetch(url, this.getByteRange('schema')).then(response => {
-        //             return response.json();
-        //         }).then(result => {
-        //             this.schema = result["schema"];
-        //             resolve();
-        //         });
-        //     });
-        // });
-        return new Promise((resolve, reject) => {
-            fetch(url).then(r => r.json()).then(result => {
-                this.schema = result;
-                resolve();
+        if (this.format === 'jsonl') {
+            return new Promise((resolve, reject) => {
+                fetch(url + '.idx.json').then(r => r.json()).then(result => {
+                    this.key2bytes = result.index;
+                }).then(() => {
+                    fetch(url, this.getByteRange('schema')).then(response => {
+                        return response.json();
+                    }).then(result => {
+                        this.schema = result["schema"];
+                        resolve();
+                    });
+                });
             });
-        });
+        } else {
+            return new Promise((resolve, reject) => {
+                fetch(url).then(r => r.json()).then(result => {
+                    this.schema = result;
+                    resolve();
+                });
+            });
+        }
     }
 
-    // getByteRange(key) {
-    //     let range = this.key2bytes[key];
-    //     if (!range) {
-    //         throw key + ' not found';
-    //     }
-    //     return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
-    // }
+    getByteRange(key) {
+        let range = this.key2bytes[key];
+        if (!range) {
+            throw key + ' not found';
+        }
+        return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
+    }
 
     _fetch(key) {
-        return fetch(this.baseUrl + key + '.json').then(r => r.json());
+        return this.format === 'json' ? fetch(this.baseUrl + key + '.json').then(r => r.json()) : fetch(this.url, this.getByteRange(key)).then(r => r.json());
     }
 
     fetchData(keys) {
@@ -75,6 +81,7 @@ export class JsonDataset {
         return new Promise(resolve => {
             Promise.all(promises).then(() => resolve());
         });
+
 
     }
 
