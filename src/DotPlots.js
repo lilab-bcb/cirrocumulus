@@ -1,9 +1,9 @@
 import {groupBy} from 'lodash';
 import React from 'react';
-
 import {connect} from 'react-redux';
 import {setDotPlotInterpolator, setDotPlotOptions} from './actions';
 import {DotPlotGroup} from './DotPlotGroup';
+
 
 class DotPlots extends React.PureComponent {
     render() {
@@ -16,7 +16,6 @@ class DotPlots extends React.PureComponent {
             handleInterpolator,
             onDotPlotOptions,
             selectedDotPlotData,
-            searchTokens
         } = this.props;
 
         if (dotPlotData.length === 0) {
@@ -26,15 +25,20 @@ class DotPlots extends React.PureComponent {
         let dimension2data = groupBy(dotPlotData, 'dimension');
         let dimension2selecteddata = groupBy(selectedDotPlotData, 'dimension');
 
-        return <React.Fragment>{Object.keys(dimension2data).map(dimension => <DotPlotGroup key={dimension}
-                                                                                           dotPlotData={dimension2data[dimension]}
-                                                                                           selectedData={dimension2selecteddata[dimension]}
-                                                                                           interpolator={dotPlotInterpolator}
-                                                                                           handleInterpolator={handleInterpolator}
-                                                                                           onDotPlotOptions={onDotPlotOptions}
-                                                                                           dotPlotOptions={dotPlotOptions}
-                                                                                           renamedCategories={categoricalNames[dimension] || {}} // TODO rename multiple
-                                                                                           textColor={textColor}/>)}</React.Fragment>;
+        return <React.Fragment>{Object.keys(dimension2data).map(dimension => {
+            const data = dimension2data[dimension];
+            let renamedCategories = categoricalNames[dimension] || {};
+            // TODO handle multiple dimensions
+            return <DotPlotGroup key={dimension}
+                                 dotPlotData={data}
+                                 selectedData={dimension2selecteddata[dimension]}
+                                 interpolator={dotPlotInterpolator}
+                                 handleInterpolator={handleInterpolator}
+                                 onDotPlotOptions={onDotPlotOptions}
+                                 dotPlotOptions={dotPlotOptions}
+                                 renamedCategories={renamedCategories}
+                                 textColor={textColor}/>;
+        })}</React.Fragment>;
     }
 
 
@@ -47,8 +51,7 @@ const mapStateToProps = state => {
         dotPlotData: state.dotPlotData,
         dotPlotOptions: state.dotPlotOptions,
         selectedDotPlotData: state.selectedDotPlotData,
-        categoricalNames: state.categoricalNames,
-        searchTokens: state.searchTokens
+        categoricalNames: state.categoricalNames
     };
 };
 const mapDispatchToProps = dispatch => {

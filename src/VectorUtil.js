@@ -209,11 +209,11 @@ export function groupedStats(dimensions, varMeasures) {
     }
     let categories = Object.keys(categoryToIndices);
     categories.sort(natsort());
-    let dimensionName = [];
+    const dimensionNames = [];
     for (let j = 0; j < ndim; j++) {
-        dimensionName[j] = dimensions[j].getName();
+        dimensionNames[j] = dimensions[j].getName();
     }
-    dimensionName = dimensionName.join('-');
+    const dimensionName = dimensionNames.join('-');
     // each entry {dimension:dimensionName, name:category, feature:'', mean:0, fractionExpressed:xx}
     let result = [];
     categories.forEach(category => {

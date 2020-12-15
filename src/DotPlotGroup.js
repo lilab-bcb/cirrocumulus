@@ -50,20 +50,18 @@ function reshapeDotPlotData(data, renamedCategories, dotPlotOptions) {
         });
 
     } else { // sort by category
-        if (Object.keys(renamedCategories).length > 0) {
-            const sorter = natsort();
-            categories.sort((a, b) => {
-                let renamed1 = renamedCategories[a];
-                if (renamed1 != null) {
-                    a = renamed1;
-                }
-                let renamed2 = renamedCategories[b];
-                if (renamed2 != null) {
-                    b = renamed2;
-                }
-                return sorter(a.toLowerCase(), b.toLowerCase());
-            });
-        }
+        const sorter = natsort();
+        categories.sort((a, b) => {
+            let renamed1 = renamedCategories[a];
+            if (renamed1 != null) {
+                a = renamed1;
+            }
+            let renamed2 = renamedCategories[b];
+            if (renamed2 != null) {
+                b = renamed2;
+            }
+            return sorter(a.toLowerCase(), b.toLowerCase());
+        });
     }
     let data2d = [];
     for (let i = 0; i < categories.length; i++) {
