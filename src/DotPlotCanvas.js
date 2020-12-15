@@ -10,7 +10,7 @@ import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
 import {drawColorScheme} from './ColorSchemeLegend';
-import {numberFormat} from './formatters';
+import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 
 const styles = theme => ({
@@ -73,7 +73,15 @@ class DotPlotCanvas extends React.PureComponent {
                     // if (newName != null) {
                     //     category = newName;
                     // }
-                    this.tooltipElementRef.current.innerHTML = 'mean: ' + numberFormat(mean) + ', % expressed: ' + numberFormat(100 * fractionExpressed);
+                    let meanFormatted = numberFormat2f(mean);
+                    if (meanFormatted.endsWith('.00')) {
+                        meanFormatted = meanFormatted.substring(0, meanFormatted.lastIndexOf('.'));
+                    }
+                    let percentExpressed = numberFormat(100 * fractionExpressed);
+                    if (percentExpressed.endsWith('.0')) {
+                        percentExpressed = percentExpressed.substring(0, percentExpressed.lastIndexOf('.'));
+                    }
+                    this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed;
                 } else {
                     this.tooltipElementRef.current.innerHTML = '';
                 }
