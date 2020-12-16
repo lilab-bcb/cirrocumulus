@@ -110,10 +110,10 @@ class DotPlotCanvas extends React.PureComponent {
         context
             .clearRect(0, 0, width * devicePixelRatio, height * devicePixelRatio);
         context.scale(devicePixelRatio, devicePixelRatio);
-        this.drawContext(context);
+        this.drawContext(context, this.size);
     }
 
-    drawContext(context) {
+    drawContext(context, size) {
         const renamedCategories = this.props.renamedCategories || {};
         const data2d = this.props.data;
         const colorScale = this.props.colorScale;
@@ -133,11 +133,11 @@ class DotPlotCanvas extends React.PureComponent {
                 context.fillStyle = color;
                 context.beginPath();
                 if (drawCircles) {
-                    const xpix = i * diameter + maxRadius + this.size.x;
+                    const xpix = i * diameter + maxRadius + size.x;
                     const frac = array[i].fractionExpressed;
                     context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 } else {
-                    const xpix = i * diameter + this.size.x;
+                    const xpix = i * diameter + size.x;
                     context.rect(xpix, ypix, diameter, diameter);
                 }
                 context.fill();
@@ -149,23 +149,23 @@ class DotPlotCanvas extends React.PureComponent {
         context.fillStyle = textColor;
         context.textBaseline = 'middle';
 
-        data2d.forEach((array, i) => {
+        data2d.forEach((array, i) => { // categories
             let category = array[0].name;
             let newName = renamedCategories[category];
             if (newName != null) {
                 category = newName;
             }
             const pix = i * diameter + maxRadius;
-            context.fillText(category, this.size.x - 4, pix);
+            context.fillText(category, size.x - 4, pix);
         });
         context.textAlign = 'right';
         context.textBaseline = 'top';
 
-        data2d[0].forEach((item, i) => {
+        data2d[0].forEach((item, i) => { // features
             const text = item.feature;
             const pix = i * diameter;
             context.save();
-            context.translate(this.size.x + pix + 4, this.size.height);
+            context.translate(size.x + pix + 4, size.height);
             context.rotate(-Math.PI / 2);
             context.fillText(text, 0, 0);
             context.restore();
@@ -266,6 +266,7 @@ class DotPlotCanvas extends React.PureComponent {
         const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
         const width = Math.max(200, size.width + size.x);
         let scale = 1;
+
         if (format === 'svg') {
             context = new window.C2S(width, height);
             context.font = svgFont;
@@ -282,7 +283,7 @@ class DotPlotCanvas extends React.PureComponent {
             context.fillStyle = 'black';
             context.fillRect(0, 0, width, height);
         }
-        this.drawContext(context);
+        this.drawContext(context, size);
 
         // if (format !== 'svg') {
         //     context.scale(window.devicePixelRatio, window.devicePixelRatio);
@@ -305,10 +306,10 @@ class DotPlotCanvas extends React.PureComponent {
             let blob = new Blob([svg], {
                 type: 'text/plain;charset=utf-8'
             });
-            window.saveAs(blob, this.dotplot.name + '.svg');
+            window.saveAs(blob, this.props.data[0][0].dimension + '.svg');
         } else {
             canvas.toBlob(blob => {
-                window.saveAs(blob, this.dotplot.name + '.png', true);
+                window.saveAs(blob, this.props.data[0][0].dimension + '.png', true);
             });
         }
     };
