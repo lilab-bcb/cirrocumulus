@@ -9,7 +9,7 @@ import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
-import {numberFormat} from './formatters';
+import {numberFormat2f} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
 import {getCategoryLabelsPositions, getLabels} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
@@ -194,7 +194,10 @@ class ImageChart extends React.PureComponent {
                 }
             }
             if (typeof value === 'number') {
-                value = numberFormat(value);
+                value = numberFormat2f(value);
+                if (value.endsWith('.00')) {
+                    value = value.substring(0, value.lastIndexOf('.'));
+                }
             }
             this.tooltipElementRef.current.innerHTML = '' + value;
         } else {
