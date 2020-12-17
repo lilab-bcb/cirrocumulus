@@ -26,7 +26,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
 
     onMinChange = (event) => {
         this.setState({min: event.target.value});
-        this.onMinUpdate(event.target.value);
+        this.onMinUpdate(parseFloat(event.target.value));
     };
 
     onMinUpdate = (value) => {
@@ -40,7 +40,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
 
     onMaxChange = (event) => {
         this.setState({max: event.target.value});
-        this.onMaxUpdate(event.target.value);
+        this.onMaxUpdate(parseFloat(event.target.value));
     };
 
     onMaxUpdate = (value) => {
@@ -51,14 +51,23 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
             this.props.globalFeatureSummary[this.props.name].customMax = value;
         }
 
-
         this.props.handleDomain({name: this.props.name, summary: this.props.globalFeatureSummary[this.props.name]});
-
 
     };
 
     render() {
-        const {scale, name, nObs, nObsSelected, featureSummary, globalFeatureSummary, maxHeight, datasetFilter, handleUpdate, selected} = this.props;
+        const {
+            scale,
+            name,
+            nObs,
+            nObsSelected,
+            featureSummary,
+            globalFeatureSummary,
+            maxHeight,
+            datasetFilter,
+            handleUpdate,
+            selected
+        } = this.props;
         let style = {display: 'inline-block', verticalAlign: 'top'};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
