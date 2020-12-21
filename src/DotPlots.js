@@ -27,8 +27,7 @@ class DotPlots extends React.PureComponent {
 
         return <React.Fragment>{Object.keys(dimension2data).map(dimension => {
             const data = dimension2data[dimension];
-            let renamedCategories = categoricalNames[dimension] || {};
-            // TODO handle multiple dimensions
+
             return <DotPlotGroup key={dimension}
                                  dotPlotData={data}
                                  selectedData={dimension2selecteddata[dimension]}
@@ -36,7 +35,7 @@ class DotPlots extends React.PureComponent {
                                  handleInterpolator={handleInterpolator}
                                  onDotPlotOptions={onDotPlotOptions}
                                  dotPlotOptions={dotPlotOptions}
-                                 renamedCategories={renamedCategories}
+                                 categoricalNames={categoricalNames}
                                  textColor={textColor}/>;
         })}</React.Fragment>;
     }

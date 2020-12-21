@@ -4,7 +4,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {getEmbeddingKey} from './actions';
-import {drawEmbeddingImage, drawImage, getSpotRadius} from './ImageChart';
+import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
 import {
     getCategoryLabelsPositions,
@@ -18,18 +18,31 @@ import {
 class GalleryImage extends React.PureComponent {
     constructor(props) {
         super(props);
-        this.state = {url: null, overlayUrl: null, loading: false};
-        this.canvasRef = React.createRef();
+        this.state = {url: null, overlayUrl: null, loading: false, forceUpdate: false};
+        this.elementRef = React.createRef();
     }
 
 
     draw() {
-        const {obsCat, cachedData, scatterPlot, chartSize, categoricalNames, containerElement, traceInfo, markerOpacity, unselectedMarkerOpacity, selection, chartOptions, pointSize} = this.props;
+        const {
+            obsCat,
+            cachedData,
+            scatterPlot,
+            chartSize,
+            categoricalNames,
+            containerElement,
+            traceInfo,
+            markerOpacity,
+            unselectedMarkerOpacity,
+            selection,
+            chartOptions,
+            pointSize
+        } = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
         const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
         const userPoints = chartSelection ? chartSelection.userPoints : new Set();
-        if (!traceInfo.isImage) {
+        if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
@@ -37,7 +50,6 @@ class GalleryImage extends React.PureComponent {
             const canvas = containerElement.querySelector('canvas');
             const showLabels = obsCat.length > 0;
             let overlayUrl = null;
-
             if (showLabels) {
                 const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
                 const labelCanvas = document.createElement('canvas');
@@ -53,10 +65,10 @@ class GalleryImage extends React.PureComponent {
                 overlayUrl = labelCanvas.toDataURL();
             }
 
-            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl, loading: false});
-        } else {
+            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl, loading: false, element: null});
+        } else if (traceInfo.type === 'image') {
             if (!traceInfo.tileSource.ready) {
-                this.setState({url: null, overlayUrl: null, loading: true});
+                this.setState({url: null, overlayUrl: null, loading: true, element: null});
                 traceInfo.tileSource.addOnceHandler('ready', () => {
                     this.setState({loading: false});
                 });
@@ -70,9 +82,17 @@ class GalleryImage extends React.PureComponent {
                     width: chartSize,
                     height: chartSize
                 }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
-                this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false});
+                this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false, element: null});
                 canvas = null;
             }
+        } else {
+            const containerElement = this.elementRef.current;
+            containerElement.innerHTML = '';
+            const svg = traceInfo.gallerySource;
+            svg.setAttribute('width', chartSize);
+            svg.setAttribute('height', chartSize);
+            containerElement.append(svg);
+            this.setState({url: null, overlayUrl: null, loading: false});
         }
 
         // canvas.toBlob(function (blob) {
@@ -137,21 +157,14 @@ class GalleryImage extends React.PureComponent {
                                     }}>{name}</Typography>
                     </Tooltip>
 
-                    {this.state.url &&
-                    <div style={{position: 'absolute', left: 0, top: 0}}>
-                        <img alt="" src={this.state.url}
-                             width={this.props.chartSize * window.devicePixelRatio}
-                             height={this.props.chartSize * window.devicePixelRatio}
-                             onClick={this.onSelect}
-                             style={{
-                                 width: this.props.chartSize,
-                                 height: this.props.chartSize
-                             }}/>
-                    </div>}
 
                     {this.state.loading && <CircularProgress
                         style={{position: 'absolute', left: this.props.chartSize / 2, top: this.props.chartSize / 2}}
                         size={20}/>}
+
+                    <div onClick={this.onSelect} ref={this.elementRef}
+                         style={{position: 'absolute', left: 0, top: 0}}></div>
+
                     {this.state.url &&
                     <div style={{position: 'absolute', left: 0, top: 0}}>
                         <img alt="" src={this.state.url}

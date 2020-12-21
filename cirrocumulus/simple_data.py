@@ -170,7 +170,8 @@ class SimpleData:
         #     if len(spatial_node_keys) == 1:
         #         spatial_node = spatial_node[spatial_node_keys[0]]
 
-        images_node = adata.uns.get('images', [])
+        images_node = adata.uns.get('images',
+            [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
         image_names = list(map(lambda x: x['name'], images_node))
         result['var'] = adata.var_names.values
         result['obs'] = obs
@@ -196,6 +197,9 @@ class SimpleData:
                 embeddings.append(embedding)
             else:
                 embeddings.append(embedding)
+        meta_images = adata.uns.get('meta_images', [])
+        for meta_image in meta_images:
+            embeddings.append(meta_image)
         result['embeddings'] = embeddings
         colors = {}
         result['colors'] = colors

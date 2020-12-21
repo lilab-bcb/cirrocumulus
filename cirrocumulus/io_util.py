@@ -36,7 +36,7 @@ def __add_visium(adata, spatial_directory):
         positions = positions.reindex(adata.obs.index)
         spatial_coords = positions[['pxl_row_in_fullres', 'pxl_col_in_fullres']].values
         adata.obsm['tissue_hires'] = spatial_coords * scalefactors['tissue_hires_scalef']
-        adata.uns['images'] = [dict(name='tissue_hires', image=tissue_hires_image_path,
+        adata.uns['images'] = [dict(type='image', name='tissue_hires', image=tissue_hires_image_path,
             spot_diameter=scalefactors['spot_diameter_fullres'] * scalefactors['tissue_hires_scalef'])]
         return True
     else:
@@ -53,13 +53,13 @@ def __add_generic_spatial(adata, spatial_directory):
     # image.png
     # diameter.image.txt (optional)
     image_extensions = set(['.png', '.jpeg', '.jpg'])
+    meta_image_extensions = set(['.svg'])
     found = False
     for f in os.listdir(spatial_directory):
         name, ext = os.path.splitext(f)
         ext = ext.lower()
         if ext in image_extensions:
             positions_path = os.path.join(spatial_directory, 'positions.' + name + '.csv')
-
             if os.path.exists(positions_path):
                 diameter_path = os.path.join(spatial_directory, 'diameter.' + name + '.txt')
                 spot_diameter = None
@@ -72,9 +72,25 @@ def __add_generic_spatial(adata, spatial_directory):
                     positions.index = positions.index.astype(str)
                 positions = positions.reindex(adata.obs.index)
                 adata.obsm[name] = positions[['x', 'y']].values
-                adata.uns['images'] = [dict(name=name, image=os.path.join(spatial_directory, f),
-                    spot_diameter=spot_diameter)]
+                images = adata.uns.get('images', [])
+                images.append(dict(type='image', name=name, image=os.path.join(spatial_directory, f),
+                    spot_diameter=spot_diameter))
+                adata.uns['images'] = images
                 found = True
+        elif ext in meta_image_extensions:
+            svg_path = os.path.join(spatial_directory, f)
+            import xml.etree.ElementTree as ET
+            import json
+
+            tree = ET.parse(svg_path)
+            attrs = tree.getroot().attrib
+            if 'data-group' in attrs and 'data-selection' in attrs:
+                images = adata.uns.get('meta_images', [])
+                selection = attrs['data-selection'].replace("'", "\"")
+                images.append(
+                    dict(type='meta_image', name=name, image=svg_path,
+                        attrs=dict(group=attrs['data-group'], selection=json.loads(selection))))
+                adata.uns['meta_images'] = images
     return found
 
 

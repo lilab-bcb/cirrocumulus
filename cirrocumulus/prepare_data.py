@@ -8,9 +8,6 @@ import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 import scipy.sparse
-from natsort import natsorted
-from pandas import CategoricalDtype
-
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
@@ -50,8 +47,6 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
         if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
             logger.info('Converting {} to categorical'.format(field))
             adata.obs[field] = adata.obs[field].astype('category')
-            adata.obs[field] = adata.obs[field].astype(
-                CategoricalDtype(natsorted(adata.obs[field].dtype.categories), ordered=True))
     for key in adata.obsm:
         if key.find(' ') != -1:
             new_key = key.replace(' ', '_')
@@ -82,16 +77,6 @@ def make_unique(index, join='-1'):
     values[indices_dup] = values_dup
     index = pd.Index(values)
     return index
-
-
-def make_ordered(df, columns):
-    if columns is None:
-        columns = df.columns
-    for i in range(len(columns)):
-        name = columns[i]
-        c = df[name]
-        if pd.api.types.is_categorical_dtype(c) and not c.dtype.ordered:
-            df[name] = df[name].astype(CategoricalDtype(natsorted(df[name].dtype.categories), ordered=True))
 
 
 def write_obs_stats(directory, results):
@@ -245,7 +230,6 @@ class PrepareData:
                 self.measures.append('obs/' + name)
             else:
                 self.others.append(name)
-        make_ordered(self.adata.obs, self.dimensions)
 
     def get_path(self, path):
         return os.path.join(self.base_output_dir, path)
@@ -275,8 +259,6 @@ class PrepareData:
             for field in self.groups:
                 if not pd.api.types.is_categorical_dtype(self.adata.obs[field]):
                     self.adata.obs[field] = self.adata.obs[field].astype('category')
-                    self.adata.obs[field] = self.adata.obs[field].astype(
-                        CategoricalDtype(natsorted(self.adata.obs[field].dtype.categories), ordered=True))
                 if len(self.adata.obs[field].cat.categories) > 1:
                     markers += SimpleData.find_markers(self.adata, field, group_nfeatures)
             schema['markers'] = markers

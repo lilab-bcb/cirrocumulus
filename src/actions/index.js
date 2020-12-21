@@ -5,6 +5,7 @@ import {isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
+import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
@@ -115,9 +116,12 @@ function isEmbeddingBinned(embedding) {
 }
 
 export function getEmbeddingKey(embedding) {
-    let fullName = embedding.name + '_' + embedding.dimensions;
+    let fullName = embedding.name;
+    if (embedding.dimensions) {
+        fullName += '_' + embedding.dimensions;
+    }
     if (embedding.bin || embedding.precomputed) {
-        fullName = fullName + '_' + embedding.nbins + '_' + embedding.agg;
+        fullName += '_' + embedding.nbins + '_' + embedding.agg;
     }
     return fullName;
 }
@@ -1433,7 +1437,6 @@ function _updateCharts(onError) {
 
         const searchTokens = splitSearchTokens(state.searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-
         let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         const selectionStats = state.featureSummary;
         const embeddings = state.embeddings;
@@ -1447,16 +1450,33 @@ function _updateCharts(onError) {
         const binnedEmbeddingValuesToFetch = [];
         const embeddingKeys = new Set();
         const features = new Set();
+
         searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).forEach(feature => {
             features.add(feature);
         });
 
+        const embeddingImagesToFetch = [];
         embeddings.forEach(selectedEmbedding => {
             const embeddingKey = getEmbeddingKey(selectedEmbedding);
             embeddingKeys.add(embeddingKey);
+
             if (cachedData[embeddingKey] == null) {
-                embeddingCoordinatesToFetch.push(selectedEmbedding);
+                if (selectedEmbedding.dimensions > 0) {
+                    embeddingCoordinatesToFetch.push(selectedEmbedding);
+                } else {
+                    if (cachedData[selectedEmbedding.attrs.group] == null) {
+                        valuesToFetch.add(selectedEmbedding.attrs.group);
+                    }
+
+                    selectedEmbedding.attrs.selection.forEach(selection => {
+                        if (cachedData[selection[0]] == null) {
+                            valuesToFetch.add(selection[0]);
+                        }
+                    });
+                    embeddingImagesToFetch.push(selectedEmbedding);
+                }
             }
+
             if (isEmbeddingBinned(selectedEmbedding)) {
                 const data = {values: [], embedding: selectedEmbedding};
                 features.forEach(feature => {
@@ -1468,15 +1488,28 @@ function _updateCharts(onError) {
                 if (data.values.length > 0) {
                     binnedEmbeddingValuesToFetch.push(data);
                 }
-            } else {
-                features.forEach(feature => {
-                    if (cachedData[feature] == null) {
-                        valuesToFetch.add(feature);
-                    }
-                });
             }
         });
+        const promises = [];
+        embeddingImagesToFetch.forEach(embedding => {
+            const embeddingKey = getEmbeddingKey(embedding);
+            if (cachedData[embeddingKey] == null) {
+                const url = state.dataset.api.getFileUrl(embedding.image);
+                const imagePromise = new Promise((resolve, reject) => {
+                    fetch(url).then(result => result.text()).then(text => document.createRange().createContextualFragment(text).firstElementChild).then(node => {
+                        cachedData[embeddingKey] = node;
+                        resolve();
+                    });
+                });
+                promises.push(imagePromise);
+            }
 
+        });
+        features.forEach(feature => {
+            if (cachedData[feature] == null) {
+                valuesToFetch.add(feature);
+            }
+        });
         // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
             const embeddingKey = getEmbeddingKey(traceInfo.embedding);
@@ -1529,6 +1562,7 @@ function _updateCharts(onError) {
         let q = {};
         if (embeddingCoordinatesToFetch.length > 0 || binnedEmbeddingValuesToFetch.length > 0) {
             q.embedding = [];
+
             const embeddingCoordinatesToFetchKeys = embeddingCoordinatesToFetch.map(e => getEmbeddingKey(e));
             binnedEmbeddingValuesToFetch.forEach(datum => {
                 const embeddingJson = getEmbeddingJson(datum.embedding);
@@ -1556,11 +1590,12 @@ function _updateCharts(onError) {
             });
         }
         if (valuesToFetch.size > 0) {
+            const dataset = state.dataset;
             q.values = {measures: [], dimensions: []};
             valuesToFetch.forEach(value => {
-                if (searchTokens.obsCat.indexOf(value) !== -1) {
+                if (dataset.obsCat.indexOf(value) !== -1) {
                     q.values.dimensions.push(value);
-                } else if (searchTokens.obs.indexOf(value) !== -1) {
+                } else if (dataset.obs.indexOf(value) !== -1) {
                     q.values.measures.push('obs/' + value);
                 } else {
                     q.values.measures.push(value);
@@ -1613,7 +1648,9 @@ function _updateCharts(onError) {
         }
 
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
-        return dataPromise.then(result => {
+        const allPromises = [dataPromise].concat(promises);
+        return Promise.all(allPromises).then(values => {
+            const result = values[0];
             dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
 
             const newSummary = result.summary || {};
@@ -1652,7 +1689,6 @@ function _updateCharts(onError) {
                 onError(err);
             }
         });
-
     };
 
 }
@@ -1666,11 +1702,11 @@ function updateEmbeddingData(state, features) {
     const interpolator = state.interpolator;
     const dataset = state.dataset;
     const cachedData = state.cachedData;
-    const existingKeys = new Set();
+    const existingFeaturePlusEmbeddingKeys = new Set();
     embeddingData.forEach(embeddingDatum => {
         const embeddingKey = getEmbeddingKey(embeddingDatum.embedding);
         const key = embeddingDatum.name + '_' + embeddingKey;
-        existingKeys.add(key);
+        existingFeaturePlusEmbeddingKeys.add(key);
     });
     if (features.size === 0) {
         features.add('__count');
@@ -1678,28 +1714,26 @@ function updateEmbeddingData(state, features) {
     embeddings.forEach(embedding => {
         const embeddingKey = getEmbeddingKey(embedding);
         const isBinned = isEmbeddingBinned(embedding);
-        const isSpatial = embedding.spatial != null;
-        const coordinates = cachedData[embeddingKey];
-
-        const x = coordinates[embedding.name + '_1'];
-        const y = coordinates[embedding.name + '_2'];
-        const z = coordinates[embedding.name + '_3'];
+        // type can be image, scatter, or meta_image
+        const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : 'scatter');
+        const coordinates = traceType !== 'meta_image' ? cachedData[embeddingKey] : null;
+        const x = traceType !== 'meta_image' ? coordinates[embedding.name + '_1'] : null;
+        const y = traceType !== 'meta_image' ? coordinates[embedding.name + '_2'] : null;
+        const z = traceType !== 'meta_image' ? coordinates[embedding.name + '_3'] : null;
         const bins = isBinned ? coordinates.bins : null;
         features.forEach(feature => {
-            let key = feature + '_' + embeddingKey;
+            const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
             let featureKey = feature;
-            if (!existingKeys.has(key)) {
+            if (!existingFeaturePlusEmbeddingKeys.has(featurePlusEmbeddingKey)) {
 
                 if (isBinned) {
-                    featureKey = key;
+                    featureKey = featurePlusEmbeddingKey;
                 }
                 let traceSummary = globalFeatureSummary[feature];
                 let values = cachedData[featureKey];
                 if (values == null && feature === '__count' && !isBinned) {
-                    values = new Float32Array(x.length);
-                    for (let i = 0, n = values.length; i < n; i++) {
-                        values[i] = 1;
-                    }
+                    values = new Int8Array(dataset.shape[0]);
+                    values.fill(1);
                 }
                 let purity = null;
 
@@ -1785,26 +1819,57 @@ function updateEmbeddingData(state, features) {
                     continuous: !isCategorical,
                     isCategorical: isCategorical,
                     values: values, // for color
-                    isImage: isSpatial
+                    type: traceType
                     // purity: purity,
                     // text: values,
                 };
-                if (!isSpatial) {
+                if (traceType === 'scatter') {
                     chartData.positions = getPositions(chartData);
+                }
+                if (traceType === 'meta_image') {
+                    const svg = cachedData[getEmbeddingKey(embedding)];
+                    chartData.source = svg.cloneNode(true);
+                    chartData.gallerySource = svg.cloneNode(true);
+                    const groupBy = cachedData[chartData.embedding.attrs.group];
+                    const selection = chartData.embedding.attrs.selection;
+                    let groupToValues = {};
+                    const passingIndices = getPassingFilterIndices(cachedData, {filters: selection});
+                    for (let i = 0, n = passingIndices.length; i < n; i++) {
+                        const index = passingIndices[i];
+                        const category = groupBy[index];
+                        let values = groupToValues[category];
+                        if (values == null) {
+                            values = [];
+                            groupToValues[category] = values;
+                        }
+                        values.push(chartData.values[index]);
+
+                    }
+                    const categoryToStats = {};
+                    for (const category in groupToValues) {
+                        const values = groupToValues[category];
+                        let sum = 0;
+                        for (let i = 0, n = values.length; i < n; i++) {
+                            sum += values[i];
+                        }
+                        const mean = sum / values.length;
+                        categoryToStats[category] = {mean: mean, n: values.length};
+                    }
+                    chartData.categoryToStats = categoryToStats;
                 }
                 updateTraceColors(chartData);
 
-                if (isSpatial) {
+                if (traceType === 'image') {
+                    // TODO cache image
                     chartData.indices = !isCategorical ? indexSort(chartData.values, true) : randomSeq(chartData.values.length);
-                    chartData.isImage = true;
                     const url = dataset.api.getFileUrl(embedding.spatial.image);
-                    let tileSource = new OpenSeadragon.ImageTileSource({
+                    chartData.tileSource = new OpenSeadragon.ImageTileSource({
                         url: url,
                         buildPyramid: true,
                         crossOriginPolicy: "Anonymous"
                     });
-                    chartData.tileSource = tileSource;
                 }
+
                 embeddingData.push(chartData);
             }
         });

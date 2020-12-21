@@ -1,6 +1,4 @@
 import pandas as pd
-from natsort import natsorted
-from pandas import CategoricalDtype
 
 
 class DotPlotAggregator:
@@ -31,12 +29,8 @@ class DotPlotAggregator:
                     df[dimension_name] = df[d[0]].astype(str).str.cat(df[d[1:]].astype(str), sep="-").astype('category')
                 else:
                     dimension_name = d[0]
-            if pd.api.types.is_categorical_dtype(df[dimension_name]):
-                if not df[dimension_name].dtype.ordered:
-                    df[dimension_name] = df[dimension_name].astype(
-                        CategoricalDtype(natsorted(df[dimension_name].dtype.categories), ordered=True))
-                if len(df[dimension_name].dtype.categories) <= 1:
-                    continue
+            if pd.api.types.is_categorical_dtype(df[dimension_name]) and len(df[dimension_name].dtype.categories) <= 1:
+                continue
             agg_result = df.groupby(dimension_name, observed=True).agg([mean, fraction_expressed])
 
             values = []

@@ -191,7 +191,7 @@ export function valueCounts(v) {
 
 
 export function groupedStats(dimensions, varMeasures) {
-    const categoryToIndices = {};
+    const categoryMap = {};
     const ndim = dimensions.length;
     const size = dimensions[0].size();
     const tmp = [];
@@ -200,15 +200,14 @@ export function groupedStats(dimensions, varMeasures) {
             tmp[j] = dimensions[j].get(i);
         }
         const key = tmp.join(', ');
-        let indices = categoryToIndices[key];
-        if (indices === undefined) {
-            indices = [];
-            categoryToIndices[key] = indices;
+        let value = categoryMap[key];
+        if (value === undefined) {
+            value = {key: tmp.slice(), indices: []};
+            categoryMap[key] = value;
         }
-        indices.push(i);
+        value.indices.push(i);
     }
-    let categories = Object.keys(categoryToIndices);
-    categories.sort(natsort());
+    let categories = Object.keys(categoryMap);
     const dimensionNames = [];
     for (let j = 0; j < ndim; j++) {
         dimensionNames[j] = dimensions[j].getName();
@@ -217,7 +216,7 @@ export function groupedStats(dimensions, varMeasures) {
     // each entry {dimension:dimensionName, name:category, feature:'', mean:0, fractionExpressed:xx}
     let result = [];
     categories.forEach(category => {
-        const indices = categoryToIndices[category];
+        const value = categoryMap[category];
         varMeasures.forEach((v) => {
 
             // let otherIndices = [];
@@ -230,25 +229,24 @@ export function groupedStats(dimensions, varMeasures) {
             // const restStats = stats(restVector);
             // results.values[index].restMean.push(restStats.mean);
             // results.values[index].restFractionExpressed.push(restStats.numExpressed / restVector.size());
-            const categoryVector = new SlicedVector(v, indices);
+            const categoryVector = new SlicedVector(v, value.indices);
             const categoryStats = stats(categoryVector);
-            let y = null;
-            let storeValues = false;
-            if (storeValues) {
-                y = new Float32Array(categoryVector.size());
-                for (let i = 0, size = categoryVector.size(); i < size; i++) {
-                    y[i] = categoryVector.get(i);
-                }
-            }
+            // const y = new Float32Array(categoryVector.size());
+            // for (let i = 0, size = categoryVector.size(); i < size; i++) {
+            //     y[i] = categoryVector.get(i);
+            // }
+
             // results.values[index].mean.push(categoryStats.mean);
             // results.values[index].fractionExpressed.push(categoryStats.numExpressed / categoryVector.size());
             const entry = {
                 dimension: dimensionName,
+                dimensions: dimensionNames,
+                categories: value.key,
                 name: category,
                 feature: v.getName(),
                 mean: categoryStats.mean,
                 fractionExpressed: categoryStats.numExpressed / categoryVector.size(),
-                y: y
+                // vector: categoryVector
                 //  plotly stuff
                 // type: 'violin',
                 // points: 'none',
@@ -266,7 +264,7 @@ export function groupedStats(dimensions, varMeasures) {
 
 }
 
-function variance(v, mean) {
+export function variance(v, mean) {
     const size = v.size();
     if (size <= 1) {
         return NaN;

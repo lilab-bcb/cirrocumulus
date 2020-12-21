@@ -71,6 +71,19 @@ export class RestDataset {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(r => r.json()).then(result => {
+            // convert sparse to dense
+            // if (result.values) {
+            //     for (let key in result.values) {
+            //         let data = result.values[key];
+            //         if (data.index) {  // sparse
+            //             let values = new Float32Array(xxx);
+            //             for (let i = 0, n = data.index.length; i < n; i++) {
+            //                 values[data.index[i]] = data.value[i];
+            //             }
+            //             result.values[key] = values;
+            //         }
+            //     }
+            // }
             cacheValues(result, cachedData);
             return result;
         }) : Promise.resolve({});

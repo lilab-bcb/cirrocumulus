@@ -75,7 +75,6 @@ class GalleryCharts extends React.PureComponent {
 
         const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
             traceInfo={traceInfo}
-            color={traceInfo.colors}
             obsCat={obsCat}
             cachedData={cachedData}
             scatterPlot={this.scatterPlot}

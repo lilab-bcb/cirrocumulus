@@ -20,6 +20,7 @@ import {
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
+import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
 import {splitSearchTokens} from './util';
 
@@ -29,11 +30,6 @@ class EmbeddingChart extends React.PureComponent {
         super(props);
         this.state = {showDetails: true};
     }
-
-    setChartRef = (element) => {
-        this.props.chartOptions.ref = element;
-
-    };
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.traceInfo.name !== this.props.traceInfo.name) {
@@ -75,7 +71,8 @@ class EmbeddingChart extends React.PureComponent {
             traceInfo,
             unselectedMarkerOpacity
         } = this.props;
-        const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+
+        const activeEmbeddingLabels = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
         return (
@@ -137,10 +134,10 @@ class EmbeddingChart extends React.PureComponent {
                 </Box>
 
 
-                {!traceInfo.isImage &&
+                {traceInfo.type === 'scatter' &&
                 <ScatterChartThree traceInfo={traceInfo}
                                    cachedData={cachedData}
-                                   obsCat={obsCat}
+                                   obsCat={activeEmbeddingLabels}
                                    chartSize={primaryChartSize}
                                    setChartOptions={onChartOptions}
                                    chartOptions={chartOptions}
@@ -154,14 +151,24 @@ class EmbeddingChart extends React.PureComponent {
                                    color={traceInfo.colors}
                                    onGallery={onGallery}
                                    onMoreOptions={onMoreOptions}
-                                   ref={this.setChartRef}
 
                 />}
 
+                {traceInfo.type === 'meta_image' &&
+                <MetaEmbedding traceInfo={traceInfo}
+                               cachedData={cachedData}
+                               chartSize={primaryChartSize}
+                               setChartOptions={onChartOptions}
+                               chartOptions={chartOptions}
+                               categoricalNames={categoricalNames}
+                               markerOpacity={markerOpacity}
+                               onGallery={onGallery}
+                               onMoreOptions={onMoreOptions}
 
-                {traceInfo.isImage && <ImageChart
+                />}
+                {traceInfo.type === 'image' && <ImageChart
                     cachedData={cachedData}
-                    obsCat={obsCat}
+                    obsCat={activeEmbeddingLabels}
                     setChartOptions={onChartOptions}
                     chartOptions={chartOptions}
                     style={{display: 'inline-block'}}
@@ -177,7 +184,6 @@ class EmbeddingChart extends React.PureComponent {
                     onSelected={onSelect}
                     onGallery={onGallery}
                     onMoreOptions={onMoreOptions}
-                    ref={this.setChartRef}
                 />}
 
 

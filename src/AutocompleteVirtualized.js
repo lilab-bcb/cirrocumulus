@@ -186,6 +186,18 @@ export default function AutocompleteVirtualized(props) {
     if (getChipTitle == null) {
         getChipTitle = (option) => null;
     }
+    let getOptionLabel = props.getOptionLabel;
+    if (getOptionLabel == null) {
+        getOptionLabel = props.groupBy ? (option) => option.text : (option) => option;
+    }
+    let renderOption = props.renderOption;
+    if (renderOption == null) {
+
+        renderOption = props.groupBy ? (option) => <Typography title={option.text}
+                                                               noWrap>{option.text}</Typography> : (option) =>
+            <Typography
+                noWrap>{option}</Typography>;
+    }
     return (
         <Autocomplete
             multiple
@@ -197,7 +209,7 @@ export default function AutocompleteVirtualized(props) {
             value={props.value}
             openOnFocus={true}
             filterSelectedOptions={true}
-            getOptionLabel={props.groupBy ? (option) => option.text : (option) => option}
+            getOptionLabel={getOptionLabel}
             groupBy={props.groupBy ? (option) => option.group : null}
             blurOnSelect={true}
             ChipProps={{size: 'small'}}
@@ -222,10 +234,7 @@ export default function AutocompleteVirtualized(props) {
             }
             renderInput={(params) => <TextField margin="dense" {...params} label={props.label}
                                                 helperText={props.helperText}/>}
-            renderOption={props.groupBy ? (option) => <Typography title={option.text}
-                                                                  noWrap>{option.text}</Typography> : (option) =>
-                <Typography
-                    noWrap>{option}</Typography>}
+            renderOption={renderOption}
             onPaste={onPaste}
             onDrop={onDrop}
             onDragOver={onDragOver}

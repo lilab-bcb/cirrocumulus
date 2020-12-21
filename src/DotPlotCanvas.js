@@ -114,7 +114,6 @@ class DotPlotCanvas extends React.PureComponent {
     }
 
     drawContext(context, size) {
-        const renamedCategories = this.props.renamedCategories || {};
         const data2d = this.props.data;
         const colorScale = this.props.colorScale;
         const sizeScale = this.props.sizeScale;
@@ -151,10 +150,6 @@ class DotPlotCanvas extends React.PureComponent {
 
         data2d.forEach((array, i) => { // categories
             let category = array[0].name;
-            let newName = renamedCategories[category];
-            if (newName != null) {
-                category = newName;
-            }
             const pix = i * diameter + maxRadius;
             context.fillText(category, size.x - 4, pix);
         });

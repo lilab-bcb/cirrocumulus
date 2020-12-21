@@ -12,10 +12,27 @@ import DotPlotCanvas from './DotPlotCanvas';
 import {numberFormat, numberFormat2f} from './formatters';
 import SizeLegend from './SizeLegend';
 
-function reshapeDotPlotData(data, renamedCategories, dotPlotOptions) {
+
+function reshapeDotPlotData(data, categoricalNames, dotPlotOptions) {
     // create 2-d array with categories along rows and features along columns
     let categoryToFeatures = {};
+    const renamedDimensions = [];
+    data[0].dimensions.forEach(dimension => {
+        renamedDimensions.push(categoricalNames[dimension] || {});
+    });
+
     data.forEach(item => {
+        const tmp = [];
+        renamedDimensions.forEach((dimension, index) => {
+            const nameMap = renamedDimensions[index];
+            let name = item.categories[index];
+            let newName = nameMap[name];
+            if (newName !== undefined) {
+                name = newName;
+            }
+            tmp[index] = name;
+            item.name = tmp.join(', ');
+        });
         let features = categoryToFeatures[item.name];
         if (features == null) {
             features = [];
@@ -52,14 +69,6 @@ function reshapeDotPlotData(data, renamedCategories, dotPlotOptions) {
     } else { // sort by category
         const sorter = natsort();
         categories.sort((a, b) => {
-            let renamed1 = renamedCategories[a];
-            if (renamed1 != null) {
-                a = renamed1;
-            }
-            let renamed2 = renamedCategories[b];
-            if (renamed2 != null) {
-                b = renamed2;
-            }
             return sorter(a.toLowerCase(), b.toLowerCase());
         });
     }
@@ -156,7 +165,7 @@ export class DotPlotGroup extends React.PureComponent {
 
     render() {
 
-        const {textColor, dotPlotData, dotPlotOptions, renamedCategories, selectedData, interpolator} = this.props;
+        const {textColor, dotPlotData, dotPlotOptions, categoricalNames, selectedData, interpolator} = this.props;
         const dotPlotRange = getDotPlotRange(dotPlotData);
 
         const meanRange = dotPlotRange.mean;
@@ -230,29 +239,29 @@ export class DotPlotGroup extends React.PureComponent {
         return (
             <React.Fragment>
                 {dotPlotData != null && dotPlotData.length > 0 ?
-                    <DotPlotCanvas renamedCategories={renamedCategories}
-                                   colorScale={colorScale}
-                                   sizeScale={sizeScale}
-                                   legend={selectedData == null || selectedData.length === 0}
-                                   meanRange={meanRange}
-                                   fractionRange={fractionRange}
-                                   textColor={textColor}
-                                   sortBy={dotPlotOptions.sortBy}
-                                   drawCircles={dotPlotOptions.drawCircles}
-                                   onSortOrderChanged={this.onSortOrderChanged}
-                                   data={reshapeDotPlotData(dotPlotData, renamedCategories, dotPlotOptions)}/> : null}
+                    <DotPlotCanvas
+                        colorScale={colorScale}
+                        sizeScale={sizeScale}
+                        legend={selectedData == null || selectedData.length === 0}
+                        meanRange={meanRange}
+                        fractionRange={fractionRange}
+                        textColor={textColor}
+                        sortBy={dotPlotOptions.sortBy}
+                        drawCircles={dotPlotOptions.drawCircles}
+                        onSortOrderChanged={this.onSortOrderChanged}
+                        data={reshapeDotPlotData(dotPlotData, categoricalNames, dotPlotOptions)}/> : null}
                 {selectedData != null && selectedData.length > 0 ?
-                    <DotPlotCanvas renamedCategories={renamedCategories}
-                                   colorScale={colorScale}
-                                   sizeScale={sizeScale}
-                                   subtitle="selection"
-                                   legend={true}
-                                   textColor={textColor}
-                                   sortBy={dotPlotOptions.sortBy}
-                                   drawCircles={dotPlotOptions.drawCircles}
-                                   meanRange={meanRange}
-                                   fractionRange={fractionRange}
-                                   data={reshapeDotPlotData(selectedData, renamedCategories, dotPlotOptions)}/> : null}
+                    <DotPlotCanvas
+                        colorScale={colorScale}
+                        sizeScale={sizeScale}
+                        subtitle="selection"
+                        legend={true}
+                        textColor={textColor}
+                        sortBy={dotPlotOptions.sortBy}
+                        drawCircles={dotPlotOptions.drawCircles}
+                        meanRange={meanRange}
+                        fractionRange={fractionRange}
+                        data={reshapeDotPlotData(selectedData, categoricalNames, dotPlotOptions)}/> : null}
                 <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator} interpolator={interpolator}/>
                 <div style={{color: textColor, width: 174}}><Typography
                     variant={"caption"}>{colorMin}</Typography><Typography

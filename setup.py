@@ -35,7 +35,6 @@ requires = [
         "fsspec",
         "gunicorn",
         "loompy",
-        "natsort",
         "numpy",
         "pandas>=1.0",
         "pyarrow",
@@ -72,7 +71,6 @@ setup(
             "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
-        serve=[''],
         test=['pytest']
     ),
     keywords="single cell/nucleus genomics visualization",

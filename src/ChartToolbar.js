@@ -96,8 +96,7 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>}
 
-
-            <Tooltip title={"Lasso Select"}>
+            {this.props.onDragMode && <Tooltip title={"Lasso Select"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'lasso' ? active : ''}
                             aria-label="Lasso Select" onClick={() => this.setDragMode('lasso')}>
                     <svg className={"MuiSvgIcon-root"} width="24" height="21" viewBox="0 0 1031 1000">
@@ -107,20 +106,22 @@ class ChartToolbar extends React.PureComponent {
 
                     </svg>
                 </IconButton>
-            </Tooltip>
-            <Tooltip title={"Box Select"}>
+            </Tooltip>}
+
+            {this.props.onDragMode && <Tooltip title={"Box Select"}>
                 <IconButton edge={false} size={'small'}
                             aria-label="Box Select" onClick={() => this.setDragMode('select')}>
                     <PhotoSizeSelectSmallIcon className={dragmode === 'select' ? active : ''}/>
                 </IconButton>
-            </Tooltip>
+            </Tooltip>}
 
-            <Tooltip title={"Append to selection"}>
+            {this.props.onEditSelection && <Tooltip title={"Append to selection"}>
                 <IconButton edge={false} size={'small'} aria-label="Append to selection"
                             onClick={this.setEditSelection}>
                     <ExposureIcon className={editSelection ? active : ''}/>
                 </IconButton>
-            </Tooltip>
+            </Tooltip>}
+
             {this.props.is3d && <Tooltip title={this.props.animating ? 'Pause' : 'Animate'}>
                 <IconButton edge={false} size={'small'}
                             aria-label={this.props.animating ? 'Pause' : 'Animate'}
@@ -130,7 +131,7 @@ class ChartToolbar extends React.PureComponent {
                 </IconButton>
             </Tooltip>}
 
-            <Tooltip title={"Pan"}>
+            {this.props.onDragMode && <Tooltip title={"Pan"}>
                 <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : ''}
                             aria-label="Pan" onClick={() => this.setDragMode('pan')}>
                     <svg className={"MuiSvgIcon-root"} viewBox="0 0 1000 1000" height="16" width="16">
@@ -139,7 +140,7 @@ class ChartToolbar extends React.PureComponent {
                             transform="matrix(1 0 0 -1 0 850)"></path>
                     </svg>
                 </IconButton>
-            </Tooltip>
+            </Tooltip>}
 
             {this.props.onShowLabels && <Tooltip title={"Show Categorical Labels"}>
                 <IconButton edge={false} size={'small'} className={showLabels ? active : ''}
@@ -203,12 +204,12 @@ class ChartToolbar extends React.PureComponent {
             </Menu>
 
 
-            <Tooltip title={"More Options"}>
+            {this.props.onMoreOptions && <Tooltip title={"More Options"}>
                 <IconButton edge={false} size={'small'}
                             aria-label="More Options" onClick={this.handleMoreOptions}>
                     <SettingsIcon/>
                 </IconButton>
-            </Tooltip>
+            </Tooltip>}
 
 
             <Tooltip title={"Scroll To Gallery"}>

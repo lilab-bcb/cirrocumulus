@@ -119,7 +119,7 @@ export function setClipboardData(clipboardData) {
 };
 
 export function updateTraceColors(traceInfo) {
-    if (traceInfo.isImage) {
+    if (traceInfo.type === 'image') {
         let colors = [];
         let colorScale = traceInfo.colorScale;
         const colorMapper = rgb => rgb.formatHex();
@@ -128,8 +128,25 @@ export function updateTraceColors(traceInfo) {
             colors.push(colorMapper(rgb));
         }
         traceInfo.colors = colors;
-    } else {
+    } else if (traceInfo.type === 'scatter') {
         traceInfo.colors = getColors(traceInfo);
+    } else if (traceInfo.type === 'meta_image') {
+        let colorScale = traceInfo.colorScale;
+        const svgNode = traceInfo.source;
+        const galleryNode = traceInfo.gallerySource;
+        const categoryToStats = traceInfo.categoryToStats;
+        for (const category in categoryToStats) {
+            const stats = categoryToStats[category];
+            const query = category.replaceAll(' ', '_'); // FIXME
+
+            svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                node.style.fill = colorScale(stats.mean);
+            });
+
+            galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                node.style.fill = colorScale(stats.mean);
+            });
+        }
     }
 }
 

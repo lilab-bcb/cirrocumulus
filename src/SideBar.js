@@ -1,10 +1,9 @@
-import {InputLabel, Switch} from '@material-ui/core';
+import {InputLabel, Switch, Typography} from '@material-ui/core';
 import MuiAccordionPanel from '@material-ui/core/Accordion';
 import MuiAccordionPanelDetails from '@material-ui/core/AccordionDetails';
 import MuiAccordionPanelSummary from '@material-ui/core/AccordionSummary';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Checkbox from '@material-ui/core/Checkbox';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -32,7 +31,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
-import {debounce} from 'lodash';
+import {debounce, findIndex} from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
@@ -102,13 +101,6 @@ const styles = theme => ({
     },
 });
 
-const getEmbeddingKeys = memoize(
-    (embeddings) => {
-        const embeddingKeys = embeddings.map(e => getEmbeddingKey(e));
-        embeddingKeys.sort(sorter);
-        return embeddingKeys;
-    }
-);
 
 const getAnnotationOptions = memoize(
     (obs, obsCat) => {
@@ -120,11 +112,24 @@ const getAnnotationOptions = memoize(
             options.push({group: 'Categorical', text: item, id: item});
         });
         options.sort((item1, item2) => {
-            const c = sorter(item1.group, item2.group);
+            const c = sorter(item1.group.toLowerCase(), item2.group.toLowerCase());
             if (c !== 0) {
                 return c;
             }
-            return sorter(item1.text, item2.text);
+            return sorter(item1.text.toLowerCase(), item2.text.toLowerCase());
+        });
+        return options;
+    }
+);
+const getEmbeddingOptions = memoize(
+    (embeddings) => {
+        const options = [];
+        embeddings.forEach(item => {
+            options.push({text: item.name + (item.dimensions === 3 ? ' 3d' : ''), id: getEmbeddingKey(item)});
+        });
+
+        options.sort((item1, item2) => {
+            return sorter(item1.text.toLowerCase(), item2.text.toLowerCase());
         });
         return options;
     }
@@ -274,6 +279,26 @@ class SideBar extends React.PureComponent {
         this.props.handleDialog(SAVE_FEATURE_SET_DIALOG);
     };
 
+    onEmbeddingsChange = (event, value) => {
+        const selection = [];
+        const embeddingKeys = this.props.dataset.embeddings.map(item => getEmbeddingKey(item));
+        value.forEach(val => {
+            const id = val.id !== undefined ? val.id : val;
+            const index = embeddingKeys.indexOf(id);
+            let embedding = this.props.dataset.embeddings[index];
+            if (!embedding.precomputed) {
+                embedding = Object.assign(embedding, {
+                    bin: this.props.binValues,
+                    nbins: this.props.numberOfBins,
+                    agg: this.props.binSummary
+                });
+            }
+            selection.push(embedding);
+        });
+
+
+        this.props.handleEmbeddings(selection);
+    };
     onFeatureSetsChange = (event, value) => {
         let values = [];
         value.forEach(val => {
@@ -397,24 +422,6 @@ class SideBar extends React.PureComponent {
         this.props.handleEmbeddings(embeddings.slice(0));
     };
 
-    handleEmbeddingsChange = (event) => {
-        const embeddings = event.target.value;
-        const selection = [];
-
-        embeddings.forEach(embedding => {
-            if (!embedding.precomputed) {
-                embedding = Object.assign(embedding, {
-                    bin: this.props.binValues,
-                    nbins: this.props.numberOfBins,
-                    agg: this.props.binSummary
-                });
-            }
-            selection.push(embedding);
-        });
-
-
-        this.props.handleEmbeddings(selection);
-    };
 
     handleSelectedCellsClick = (event) => {
         event.preventDefault();
@@ -512,15 +519,13 @@ class SideBar extends React.PureComponent {
         const splitTokens = splitSearchTokens(searchTokens);
         const featureSets = getFeatureSets(markers, splitTokens.featureSets);
         const featureOptions = dataset.features;
-        const availableEmbeddings = dataset.embeddings;
-
         const isSummarized = dataset.precomputed != null;
         const obsCat = dataset.obsCat;
         const obs = dataset.obs;
-        const embeddingKeys = getEmbeddingKeys(embeddings);
         const annotationOptions = getAnnotationOptions(obs, obsCat);
         const featureSetOptions = getFeatureSetOptions(markers);
-
+        const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
+        const selectedEmbeddings = getEmbeddingOptions(embeddings);
         const fancy = serverInfo.fancy;
         const showBinPlot = false;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
@@ -559,35 +564,27 @@ class SideBar extends React.PureComponent {
 
 
                 </Menu>
-                <FormControl className={classes.formControl}>
-                    <InputLabel id="embedding-label">Embeddings</InputLabel>
-                    <Select
-                        className={classes.select}
-                        labelId="embedding-label"
-                        multiple
-                        value={embeddings}
-                        onChange={this.handleEmbeddingsChange}
-                        input={<Input/>}
-                        renderValue={selected => selected.map(e => e.name + (e.dimensions === 3 ? ' 3d' : '')).join(', ')}
-                    >
-                        {availableEmbeddings.map(embedding => (
-                            <MenuItem key={getEmbeddingKey(embedding)}
-                                      value={embedding}>
-                                <Checkbox checked={embeddingKeys.indexOf(getEmbeddingKey(embedding)) !== -1}/>
-                                <ListItemText primary={embedding.name + (embedding.dimensions === 3 ? ' 3d' : '')}/>
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                {featureOptions.length > 0 && <FormControl className={classes.formControl}>
 
-                    {/*<AutocompleteSelect label="Features" options={allOptions}*/}
-                    {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
-                    {/*                    onChange={this.props.handleFeatures}*/}
-                    {/*                    helperText={'Enter or paste list'}*/}
-                    {/*                    isMulti={true}/>*/}
-                    <AutocompleteVirtualized onChipClick={this.onFeatureClick} label={"Features/Genes"}
-                                             options={featureOptions} value={splitTokens.X}
+                {embeddingOptions.length > 0 && <FormControl className={classes.formControl}>
+
+                    <AutocompleteVirtualized label={"Embeddings"}
+                                             options={embeddingOptions}
+                                             getChipTitle={(option) => {
+                                                 return option.text;
+                                             }}
+                                             value={selectedEmbeddings}
+                                             getChipText={(option) => option.text}
+                                             renderOption={(option) => <Typography noWrap>{option.text}</Typography>}
+                                             getOptionLabel={(option) => option.text}
+                                             getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
+                                             onChange={this.onEmbeddingsChange}
+                    />
+                </FormControl>}
+                {featureOptions.length > 0 && <FormControl className={classes.formControl}>
+                    <AutocompleteVirtualized onChipClick={this.onFeatureClick}
+                                             label={"Features/Genes"}
+                                             options={featureOptions}
+                                             value={splitTokens.X}
                                              onChange={this.onFeaturesChange}
                                              helperText={"Enter or paste list"}
                     />
@@ -595,11 +592,6 @@ class SideBar extends React.PureComponent {
 
                 {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
 
-                    {/*<AutocompleteSelect label="Features" options={allOptions}*/}
-                    {/*                    defaultOptions={defaultOptions} value={featureValue}*/}
-                    {/*                    onChange={this.props.handleFeatures}*/}
-                    {/*                    helperText={'Enter or paste list'}*/}
-                    {/*                    isMulti={true}/>*/}
                     <AutocompleteVirtualized label={"Cell Metadata"}
                                              options={annotationOptions}
                                              value={splitTokens.obsCat.concat(splitTokens.obs)}
@@ -741,7 +733,7 @@ class SideBar extends React.PureComponent {
                                 min={0.0}
                                 max={1}
                                 step={0.01}
-                                style={{marginLeft: 10, width:'86%'}}
+                                style={{marginLeft: 10, width: '86%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.opacity}
                                 onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
