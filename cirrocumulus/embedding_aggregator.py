@@ -6,15 +6,11 @@ def mean_agg(x):
 
 
 def sparse_sum_agg(x):
-    if x.sparse.npoints == 0:
-        return x.sparse.fill_value
-    return x.sum()
+    return x.sparse.fill_value if x.sparse.npoints == 0 else x.sum()
 
 
 def sparse_max_agg(x):
-    if x.sparse.npoints == 0:
-        return x.sparse.fill_value
-    return np.max(x.values)
+    return x.sparse.fill_value if x.sparse.npoints == 0 else np.max(x.values.sp_values)
 
 
 def purity_agg(x):
@@ -142,10 +138,10 @@ class EmbeddingAggregator:
                 series = series[series.columns[0]]
             is_sparse = hasattr(series, 'sparse')
             if is_sparse:
-                series = series.sparse.to_dense()
+                result['values'][column] = series.sparse.to_dense()
                 # result['values'][column] = dict(index=series.values.sp_index, values=series.values.sp_values)
-            # else:
-            result['values'][column] = series
+            else:
+                result['values'][column] = series
 
         if self.coords:
             for column in basis['coordinate_columns']:
