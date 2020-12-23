@@ -278,10 +278,10 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
             results['embeddings'].append(result)
     if grouped_stats is not None:
         if dataset_api.has_precomputed_stats(dataset):
-            results['dotplot'] = precomputed_grouped_stats(dataset_api, dataset, grouped_stats.get('measures', []),
+            results['distribution'] = precomputed_grouped_stats(dataset_api, dataset, grouped_stats.get('measures', []),
                 grouped_stats.get('dimensions', []))
         else:
-            results['dotplot'] = DotPlotAggregator(var_measures=grouped_stats.get('measures', []),
+            results['distribution'] = DotPlotAggregator(var_measures=grouped_stats.get('measures', []),
                 dimensions=grouped_stats.get('dimensions', [])).execute(df)
     if stats is not None:
         dimensions = stats.get('dimensions', [])
@@ -307,7 +307,7 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
 
         results['selection']['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
         if len(dimensions) > 0 and len(var_measures) > 0:
-            results['selection']['dotplot'] = DotPlotAggregator(var_measures=var_measures,
+            results['selection']['distribution'] = DotPlotAggregator(var_measures=var_measures,
                 dimensions=[dimensions]).execute(df)
         results['selection']['count'] = df.shape[0]
 
