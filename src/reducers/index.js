@@ -18,10 +18,10 @@ import {
     SET_DATASET_FILTER,
     SET_DATASET_FILTERS,
     SET_DIALOG,
+    SET_DISTRIBUTION_DATA,
+    SET_DISTRIBUTION_PLOT_INTERPOLATOR,
+    SET_DISTRIBUTION_PLOT_OPTIONS,
     SET_DOMAIN,
-    SET_DOT_PLOT_DATA,
-    SET_DOT_PLOT_INTERPOLATOR,
-    SET_DOT_PLOT_OPTIONS,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
     SET_EMBEDDING_LABELS,
@@ -39,7 +39,7 @@ import {
     SET_PRIMARY_TRACE_KEY,
     SET_SAVED_DATASET_STATE,
     SET_SEARCH_TOKENS,
-    SET_SELECTED_DOT_PLOT_DATA,
+    SET_SELECTED_DISTRIBUTION_DATA,
     SET_SELECTED_EMBEDDING,
     SET_SELECTION,
     SET_SERVER_INFO,
@@ -64,6 +64,13 @@ export const DEFAULT_SHOW_FOG = false;
 export const DEFAULT_DARK_MODE = false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
+
+const DEFAULT_DIST_PLOT_OPTIONS = {
+    chartType: 'dotplot',
+    violinScale: 'width',
+    violinHeight: 100,
+    violinWidth: 80
+};
 
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
@@ -476,7 +483,7 @@ function dialog(state = null, action) {
 
 function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) {
     switch (action.type) {
-        case SET_DOT_PLOT_INTERPOLATOR:
+        case SET_DISTRIBUTION_PLOT_INTERPOLATOR:
             return action.payload;
         case RESTORE_VIEW:
             return action.payload.dotPlotInterpolator != null ? action.payload.dotPlotInterpolator : state;
@@ -485,27 +492,28 @@ function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) 
     }
 }
 
+
 /*
-sortBy, minSize, maxSize, min, max, drawCircles
+sortBy, minSize, maxSize, min, max, chartType
  */
-function dotPlotOptions(state = {drawCircles: true}, action) {
+function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
     switch (action.type) {
         case SET_DATASET:
-            return {drawCircles: true};
-        case SET_DOT_PLOT_OPTIONS:
+            return DEFAULT_DIST_PLOT_OPTIONS;
+        case SET_DISTRIBUTION_PLOT_OPTIONS:
             return Object.assign({}, state, action.payload);
         case RESTORE_VIEW:
-            return action.payload.dotPlotOptions != null ? action.payload.dotPlotOptions : state;
+            return action.payload.distributionPlotOptions != null ? action.payload.distributionPlotOptions : state;
         default:
             return state;
     }
 }
 
-function dotPlotData(state = [], action) {
+function distributionData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
             return state.slice();
-        case SET_DOT_PLOT_DATA:
+        case SET_DISTRIBUTION_DATA:
             return action.payload;
         case SET_DATASET:
             return [];
@@ -514,11 +522,11 @@ function dotPlotData(state = [], action) {
     }
 }
 
-function selectedDotPlotData(state = [], action) {
+function selectedDistributionData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
             return state.slice();
-        case SET_SELECTED_DOT_PLOT_DATA:
+        case SET_SELECTED_DISTRIBUTION_DATA:
             return action.payload;
         case SET_DATASET:
             return [];
@@ -725,9 +733,9 @@ export default combineReducers({
     datasetFilter,
     datasetFilters,
     dialog,
-    dotPlotData,
+    distributionData,
     dotPlotInterpolator,
-    dotPlotOptions,
+    distributionPlotOptions,
     email,
     embeddingData,
     embeddings,
@@ -746,7 +754,7 @@ export default combineReducers({
     primaryTraceKey,
     savedDatasetState,
     searchTokens,
-    selectedDotPlotData,
+    selectedDistributionData,
     selection,
     serverInfo,
     tab,

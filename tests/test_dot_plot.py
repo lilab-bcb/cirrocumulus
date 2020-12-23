@@ -3,7 +3,6 @@ import pandas as pd
 import scipy.sparse
 
 from cirrocumulus.data_processing import handle_data
-from cirrocumulus.prepare_data import make_ordered
 
 
 def diff_results(summarized_df, measures, results):
@@ -29,7 +28,6 @@ def get_df(test_data, measures, by):
         X = X.toarray()
     df = pd.DataFrame(data=X, columns=measures)
     df[by] = test_data.obs[by].values
-    make_ordered(df, None)
 
     def fraction_expressed(g):
         return (g != 0).sum() / len(g)
@@ -41,7 +39,7 @@ def get_df(test_data, measures, by):
 def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
     process_results = handle_data(dataset_api=dataset_api, dataset=input_dataset, grouped_stats=dict(measures=measures,
         dimensions=[by]))
-    dotplot_result = process_results['dotplot']
+    dotplot_result = process_results['distribution']
     diff_results(get_df(test_data, measures, by), measures, dotplot_result)
 
 

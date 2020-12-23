@@ -131,7 +131,6 @@ export function splitDataFilter(data_filter) {
 
 
 export function computeDerivedStats(result, q, cachedData) {
-
     if (q.stats) {
         const dimensions = q.stats.dimensions || [];
         const measures = q.stats.measures || [];
@@ -145,7 +144,7 @@ export function computeDerivedStats(result, q, cachedData) {
         const measures = q.groupedStats.measures || [];
 
         if (dimensions.length > 0 && measures.length > 0) {
-            result.dotplot = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, measures));
+            result.distribution = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, measures));
         }
     }
 
@@ -155,7 +154,6 @@ export function computeDerivedStats(result, q, cachedData) {
         const embeddings = q.selection.embeddings || [];
         const {obsMeasures, varMeasures} = splitMeasures(measures);
         result.selection = {};
-
         let selectedIndices = getPassingFilterIndices(cachedData, q.selection.filter);
         if (embeddings.length > 0) {
             result.selection.coordinates = {};
@@ -167,7 +165,7 @@ export function computeDerivedStats(result, q, cachedData) {
         }
 
         if (dimensions.length > 0 && varMeasures.length > 0) {
-            result.selection.dotplot = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, measures, selectedIndices));
+            result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, measures, selectedIndices));
         }
         result.selection.count = selectedIndices.length;
         result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, obsMeasures, selectedIndices),
@@ -177,15 +175,15 @@ export function computeDerivedStats(result, q, cachedData) {
 
 
 export function valueCounts(v) {
-    let valueToCount = {};
+    let valueToCount = new Map();
     for (let i = 0, size = v.size(); i < size; i++) {
-        let value = v.get(i);
-        let count = valueToCount[value] || 0;
-        valueToCount[value] = count + 1;
+        const key = v.get(i);
+        let count = valueToCount.get(key) || 0;
+        valueToCount.set(key, count + 1);
     }
-    let keys = Object.keys(valueToCount);
+    let keys = Array.from(valueToCount.keys());
     keys.sort(natsort());
-    let counts = keys.map(key => valueToCount[key]);
+    let counts = keys.map(key => valueToCount.get(key));
     return {categories: keys, counts: counts};
 }
 
@@ -231,30 +229,16 @@ export function groupedStats(dimensions, varMeasures) {
             // results.values[index].restFractionExpressed.push(restStats.numExpressed / restVector.size());
             const categoryVector = new SlicedVector(v, value.indices);
             const categoryStats = stats(categoryVector);
-            // const y = new Float32Array(categoryVector.size());
-            // for (let i = 0, size = categoryVector.size(); i < size; i++) {
-            //     y[i] = categoryVector.get(i);
-            // }
-
             // results.values[index].mean.push(categoryStats.mean);
             // results.values[index].fractionExpressed.push(categoryStats.numExpressed / categoryVector.size());
             const entry = {
                 dimension: dimensionName,
                 dimensions: dimensionNames,
                 categories: value.key,
-                name: category,
                 feature: v.getName(),
                 mean: categoryStats.mean,
                 fractionExpressed: categoryStats.numExpressed / categoryVector.size(),
-                // vector: categoryVector
-                //  plotly stuff
-                // type: 'violin',
-                // points: 'none',
-                // spanmode: 'hard',
-                // box: {
-                //     line: {color: 'black'},
-                //     visible: true
-                // }
+                vector: categoryVector
             };
 
             result.push(entry);

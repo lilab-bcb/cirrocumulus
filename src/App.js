@@ -22,7 +22,7 @@ import {
 } from './actions';
 import AppHeader from './AppHeader';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
-import DotPlots from './DotPlots';
+import DistributionPlots from './DistributionPlots';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
@@ -142,9 +142,9 @@ class App extends PureComponent {
                             </div>
                             <div
                                 role="tabpanel"
-                                hidden={tab !== 'dot_plot'}
+                                hidden={tab !== 'dist_plot'}
                             >
-                                <DotPlots/>
+                                <DistributionPlots/>
                             </div>
                         </React.Fragment>}
 

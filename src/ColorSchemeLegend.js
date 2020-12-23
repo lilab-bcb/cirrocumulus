@@ -2,32 +2,22 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {numberFormat} from './formatters';
 
-export function drawColorScheme(context, width, height, colorScale, label, nsteps = 10, textColor = 'black') {
+export function drawColorScheme(context, colorScale, textColor = 'black', label = true, width = 150, height = 12) {
     let domain = colorScale.domain();
     if (domain[0] === domain[1]) {
         return;
     }
-    let value = domain[0];
-    let stepSize = (domain[1] - domain[0]) / nsteps;
-    let legendHeight = 18;
+
+    let legendHeight = height;
     let gradient = context.createLinearGradient(0, 0, width, legendHeight);
     let valueToFraction = scaleLinear().range([0, 1]).domain(domain).clamp(true);
-    for (let i = 0; i < nsteps; i++) {
-        if (i === (nsteps - 1)) {
-            value = domain[1];
-        }
-        let f = valueToFraction(value);
-        if (!isNaN(f)) {
-            let color = colorScale(value);
-            gradient.addColorStop(f, color);
-        }
-        value += stepSize;
-    }
+    gradient.addColorStop(valueToFraction(domain[0]), colorScale(domain[0]));
+    gradient.addColorStop(valueToFraction(domain[1]), colorScale(domain[1]));
     context.fillStyle = gradient;
     context.fillRect(0, 0, width, legendHeight);
     context.strokeStyle = 'LightGrey';
     context.strokeRect(0, 0, width, legendHeight);
-    if (label > 0) {
+    if (label) {
 
         context.textBaseline = 'top';
         context.fillStyle = textColor;
@@ -64,7 +54,7 @@ class ColorSchemeLegend extends React.PureComponent {
         }
 
         context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
-        drawColorScheme(context, width, height, colorScale, this.props.label, 10, textColor);
+        drawColorScheme(context, colorScale, textColor, this.props.label, width, height);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 

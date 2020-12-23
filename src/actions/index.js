@@ -38,7 +38,7 @@ const authScopes = [
     // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 export const SET_EMBEDDING_LABELS = 'SET_EMBEDDING_LABELS';
-export const SET_DOT_PLOT_INTERPOLATOR = 'SET_DOT_PLOT_INTERPOLATOR';
+export const SET_DISTRIBUTION_PLOT_INTERPOLATOR = 'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
@@ -98,10 +98,10 @@ export const DELETE_DATASET_DIALOG = 'DELETE_DATASET_DIALOG';
 export const SET_DATASET_CHOICES = 'SET_DATASET_CHOICES';
 export const RESTORE_VIEW = 'RESTORE_VIEW';
 
-export const SET_DOT_PLOT_DATA = 'SET_DOT_PLOT_DATA';
-export const SET_SELECTED_DOT_PLOT_DATA = 'SET_SELECTED_DOT_PLOT_DATA';
+export const SET_DISTRIBUTION_DATA = 'SET_DISTRIBUTION_DATA';
+export const SET_SELECTED_DISTRIBUTION_DATA = 'SET_SELECTED_DISTRIBUTION_DATA';
 
-export const SET_DOT_PLOT_OPTIONS = 'SET_DOT_PLOT_OPTIONS';
+export const SET_DISTRIBUTION_PLOT_OPTIONS = 'SET_DISTRIBUTION_PLOT_OPTIONS';
 export const SET_EMBEDDING_DATA = 'SET_EMBEDDING_DATA';
 
 export const SET_LOADING = 'SET_LOADING';
@@ -518,8 +518,8 @@ export function exportDatasetFilters() {
 }
 
 
-export function setDotPlotOptions(payload) {
-    return {type: SET_DOT_PLOT_OPTIONS, payload: payload};
+export function setDistributionPlotOptions(payload) {
+    return {type: SET_DISTRIBUTION_PLOT_OPTIONS, payload: payload};
 }
 
 export function setChartOptions(payload) {
@@ -591,14 +591,14 @@ function handleFilterUpdated() {
         const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
         if (filter == null) {
-            state.dotPlotData.forEach(data => {
+            state.distributionData.forEach(data => {
                 data.selection = null;
             });
-            dispatch(_setDotPlotData(state.dotPlotData.slice()));
+            dispatch(setDistributionData(state.distributionData.slice()));
             if (!isCurrentSelectionEmpty) {
                 dispatch(setSelection({chart: {}}));
             }
-            dispatch(_setSelectedDotPlotData([]));
+            dispatch(setSelectedDistributionData([]));
             dispatch(setFeatureSummary({}));
             dispatch(_setLoading(false));
             return;
@@ -888,8 +888,8 @@ function restoreSavedView(savedView) {
             .then(() => dispatch(_updateCharts()))
             .then(() => dispatch(handleFilterUpdated()))
             .then(() => {
-                if (savedView.dotPlotOptions != null) {
-                    dispatch(setDotPlotOptions(savedView.dotPlotOptions));
+                if (savedView.distributionPlotOptions != null) {
+                    dispatch(setDistributionPlotOptions(savedView.distributionPlotOptions));
                 }
                 let primaryTraceKey = savedView.primaryTraceKey;
                 if (primaryTraceKey == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q != null && savedView.q.length > 0) {
@@ -1073,8 +1073,8 @@ export function setInterpolator(payload) {
     return {type: SET_INTERPOLATOR, payload: payload};
 }
 
-export function setDotPlotInterpolator(payload) {
-    return {type: SET_DOT_PLOT_INTERPOLATOR, payload: payload};
+export function setDistributionPlotInterpolator(payload) {
+    return {type: SET_DISTRIBUTION_PLOT_INTERPOLATOR, payload: payload};
 }
 
 export function setEmbeddingData(payload) {
@@ -1092,7 +1092,6 @@ export function setMarkers(payload) {
 function _setDatasetChoices(payload) {
     return {type: SET_DATASET_CHOICES, payload: payload};
 }
-
 
 function _setLoading(payload) {
     return {type: SET_LOADING, payload: payload};
@@ -1133,12 +1132,12 @@ export function toggleEmbeddingLabel(payload) {
 
 }
 
-function _setDotPlotData(payload) {
-    return {type: SET_DOT_PLOT_DATA, payload: payload};
+function setDistributionData(payload) {
+    return {type: SET_DISTRIBUTION_DATA, payload: payload};
 }
 
-function _setSelectedDotPlotData(payload) {
-    return {type: SET_SELECTED_DOT_PLOT_DATA, payload: payload};
+function setSelectedDistributionData(payload) {
+    return {type: SET_SELECTED_DISTRIBUTION_DATA, payload: payload};
 }
 
 
@@ -1382,36 +1381,36 @@ function handleSelectionResult(selectionResult, clear) {
                 let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
                 dispatch(setFeatureSummary(Object.assign({}, selectionSummary)));
             }
-            if (selectionResult.dotplot) {
-                let selectedDotPlotData = state.selectedDotPlotData;
+            if (selectionResult.distribution) {
+                let selectedDistributionData = state.selectedDistributionData;
                 if (clear) {
-                    selectedDotPlotData = [];
+                    selectedDistributionData = [];
                 }
                 const searchTokens = splitSearchTokens(state.searchTokens);
                 addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-                selectedDotPlotData = updateDotPlotData(selectionResult.dotplot, selectedDotPlotData, searchTokens);
-                dispatch(_setSelectedDotPlotData(selectedDotPlotData));
+                selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, searchTokens);
+                dispatch(setSelectedDistributionData(selectedDistributionData));
             }
         }
     };
 }
 
-function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
+function updateDistributionData(newDistributionData, distributionData, searchTokens) {
     let dimensionKeys = [searchTokens.obsCat.join('-')];
     // keep active dimensions and features only
-    dotPlotData = dotPlotData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 && searchTokens.X.indexOf(entry.feature) !== -1);
+    distributionData = distributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 && searchTokens.X.indexOf(entry.feature) !== -1);
 
-    if (newDotplotData) {
+    if (newDistributionData) {
         // remove old data that is also in new data
-        newDotplotData.forEach(entry => {
-            for (let i = 0; i < dotPlotData.length; i++) {
-                if (dotPlotData[i].dimension === entry.dimension && dotPlotData[i].feature === entry.feature) {
-                    dotPlotData.splice(i, 1);
+        newDistributionData.forEach(entry => {
+            for (let i = 0; i < distributionData.length; i++) {
+                if (distributionData[i].dimension === entry.dimension && distributionData[i].feature === entry.feature) {
+                    distributionData.splice(i, 1);
                     break;
                 }
             }
         });
-        dotPlotData = dotPlotData.concat(newDotplotData);
+        distributionData = distributionData.concat(newDistributionData);
     }
 
     // sort features matching X entry order
@@ -1419,12 +1418,12 @@ function updateDotPlotData(newDotplotData, dotPlotData, searchTokens) {
     searchTokens.X.forEach((name, index) => {
         featureSortOrder[name] = index;
     });
-    dotPlotData.sort((a, b) => {
+    distributionData.sort((a, b) => {
         a = featureSortOrder[a.feature];
         b = featureSortOrder[b.feature];
         return a - b;
     });
-    return dotPlotData;
+    return distributionData;
 }
 
 function _updateCharts(onError) {
@@ -1437,11 +1436,11 @@ function _updateCharts(onError) {
 
         const searchTokens = splitSearchTokens(state.searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-        let dotplot = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
+        let distribution = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         const selectionStats = state.featureSummary;
         const embeddings = state.embeddings;
-        let dotPlotData = state.dotPlotData;
-        let selectedDotPlotData = state.selectedDotPlotData;
+        let distributionData = state.distributionData;
+        let selectedDistributionData = state.selectedDistributionData;
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
         const cachedData = state.cachedData;
@@ -1520,23 +1519,23 @@ function _updateCharts(onError) {
             traceInfo.active = active;
         });
 
-        let dotplotMeasuresCacheMiss = new Set();
-        let dotPlotCategories = searchTokens.obsCat.slice();
-        let dotPlotCategoryKeys = [dotPlotCategories.join('-')];
-        let dotPlotKeys = {}; // category-feature
+        let distributionMeasuresCacheMiss = new Set();
+        let distributionCategories = searchTokens.obsCat.slice();
+        let distributionCategoryKeys = [distributionCategories.join('-')];
+        let distributionKeys = {}; // category-feature
         let selectedMeasuresCacheMiss = [];
-        if (dotplot) {
-            let cachedDotPlotKeys = {};
-            dotPlotData.forEach(dotPlotDataItem => {
-                cachedDotPlotKeys[dotPlotDataItem.name + '-' + dotPlotDataItem.feature] = true;
+        if (distribution) {
+            let cachedDistributionKeys = {};
+            distributionData.forEach(distributionDataItem => {
+                cachedDistributionKeys[distributionDataItem.name + '-' + distributionDataItem.feature] = true;
             });
-            let cachedSelectedDotPlotMeasures = {};
-            selectedDotPlotData.forEach(dotPlotDataItem => {
-                cachedSelectedDotPlotMeasures[dotPlotDataItem.name + '-' + dotPlotDataItem.feature] = true;
+            let cachedSelectedDistributionMeasures = {};
+            selectedDistributionData.forEach(distributionDataItem => {
+                cachedSelectedDistributionMeasures[distributionDataItem.name + '-' + distributionDataItem.feature] = true;
             });
 
             searchTokens.X.forEach(feature => {
-                if (cachedSelectedDotPlotMeasures[feature] == null) {
+                if (cachedSelectedDistributionMeasures[feature] == null) {
                     selectedMeasuresCacheMiss.push(feature);
                 }
             });
@@ -1545,14 +1544,14 @@ function _updateCharts(onError) {
                     selectedMeasuresCacheMiss.push('obs/' + feature);
                 }
             });
-            dotPlotCategoryKeys.forEach(category => {
+            distributionCategoryKeys.forEach(category => {
                 let added = false;
                 searchTokens.X.forEach(feature => {
 
                     let key = category + '-' + feature;
-                    dotPlotKeys[key] = true;
-                    if (cachedDotPlotKeys[key] == null) {
-                        dotplotMeasuresCacheMiss.add(feature);
+                    distributionKeys[key] = true;
+                    if (cachedDistributionKeys[key] == null) {
+                        distributionMeasuresCacheMiss.add(feature);
                         added = true;
                     }
 
@@ -1630,10 +1629,10 @@ function _updateCharts(onError) {
             };
         }
 
-        if (dotPlotCategories.length > 0 && dotplotMeasuresCacheMiss.size > 0) {
+        if (distributionCategories.length > 0 && distributionMeasuresCacheMiss.size > 0) {
             q.groupedStats = {
-                measures: Array.from(dotplotMeasuresCacheMiss),
-                dimensions: [dotPlotCategories]
+                measures: Array.from(distributionMeasuresCacheMiss),
+                dimensions: [distributionCategories]
             };
         }
 
@@ -1651,15 +1650,13 @@ function _updateCharts(onError) {
         const allPromises = [dataPromise].concat(promises);
         return Promise.all(allPromises).then(values => {
             const result = values[0];
-            dispatch(_setDotPlotData(updateDotPlotData(result.dotplot, dotPlotData, searchTokens)));
-
             const newSummary = result.summary || {};
             for (let key in newSummary) {
                 globalFeatureSummary[key] = newSummary[key];
             }
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
             updateEmbeddingData(state, features);
-
+            dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
             // if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
             //     let index = -1;
             //     for (let i = 0; i < embeddingData.length; i++) {
@@ -1679,7 +1676,7 @@ function _updateCharts(onError) {
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection));
             } else { // clear selection
-                dispatch(_setSelectedDotPlotData(updateDotPlotData(null, selectedDotPlotData, searchTokens)));
+                dispatch(setSelectedDistributionData(updateDistributionData(null, selectedDistributionData, searchTokens)));
             }
         }).finally(() => {
             dispatch(_setLoading(false));

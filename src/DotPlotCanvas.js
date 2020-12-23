@@ -1,11 +1,7 @@
-import {Tooltip, withStyles} from '@material-ui/core';
-import FormControl from '@material-ui/core/FormControl';
+import {Tooltip} from '@material-ui/core';
 import IconButton from '@material-ui/core/IconButton';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
@@ -13,20 +9,12 @@ import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 
-const styles = theme => ({
-    root: {},
-    formControl: {
-        display: 'block',
-        margin: theme.spacing(1),
-    }
 
-});
-
-let svgFont = '12px Helvetica,Arial,sans-serif';
-let canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
+const svgFont = '12px Helvetica,Arial,sans-serif';
+const canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
 
 
-class DotPlotCanvas extends React.PureComponent {
+export default class DotPlotCanvas extends React.PureComponent {
 
     constructor(props) {
         super(props);
@@ -36,9 +24,6 @@ class DotPlotCanvas extends React.PureComponent {
         this.state = {saveImageEl: null};
     }
 
-    onSortOrderChanged = (event) => {
-        this.props.onSortOrderChanged(event.target.value);
-    };
 
     redraw() {
 
@@ -165,29 +150,7 @@ class DotPlotCanvas extends React.PureComponent {
             context.fillText(text, 0, 0);
             context.restore();
         });
-
-
-        // context.strokeStyle = gridColor;
-        // context.lineWidth = gridThickness;
-        //
-        //
-        // for (let i = 0; i < categories.length; i++) {
-        //     const ypix = i * diameter;
-        //     context.beginPath();
-        //     context.moveTo(this.size.x + 2, ypix);
-        //     context.lineTo(width, ypix);
-        //     context.stroke();
-        // }
-        // for (let i = 0; i < features.length; i++) {
-        //     const xpix = i * diameter + this.size.x + 2;
-        //     context.beginPath();
-        //     context.moveTo(xpix, 0);
-        //     context.lineTo(xpix, dotplotHeight);
-        //     context.stroke();
-        // }
-
         context.setTransform(1, 0, 0, 1, 0, 0);
-
     }
 
 
@@ -201,7 +164,6 @@ class DotPlotCanvas extends React.PureComponent {
 
     getSize(context) {
         let maxFeatureWidth = 0;
-        const renamedCategories = this.props.renamedCategories || {};
         const array2d = this.props.data;
         array2d[0].forEach(item => {
             maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(item.feature).width);
@@ -211,10 +173,6 @@ class DotPlotCanvas extends React.PureComponent {
 
         array2d.forEach(array => {
             let category = array[0].name;
-            let renamed = renamedCategories[category];
-            if (renamed != null) {
-                category = renamed;
-            }
             xoffset = Math.max(xoffset, context.measureText(category).width);
         });
         xoffset += 4;
@@ -255,13 +213,10 @@ class DotPlotCanvas extends React.PureComponent {
         }
 
         const size = this.getSize(context);
-
-        const colorScaleHeight = 40;
+        const colorScaleHeight = 15 + 20;
         const sizeScaleHeight = 40;
         const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
         const width = Math.max(200, size.width + size.x);
-        let scale = 1;
-
         if (format === 'svg') {
             context = new window.C2S(width, height);
             context.font = svgFont;
@@ -269,23 +224,20 @@ class DotPlotCanvas extends React.PureComponent {
             canvas.width = width * window.devicePixelRatio;
             canvas.height = height * window.devicePixelRatio;
             context = canvas.getContext('2d');
-            scale = window.devicePixelRatio;
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
             context.font = canvasFont;
         }
         const textColor = this.props.textColor;
-        if (textColor === 'white') {
-            context.fillStyle = 'black';
-            context.fillRect(0, 0, width, height);
-        }
+        context.fillStyle = textColor === 'white' ? 'black' : 'white';
+        context.fillRect(0, 0, width, height);
         this.drawContext(context, size);
 
         // if (format !== 'svg') {
         //     context.scale(window.devicePixelRatio, window.devicePixelRatio);
         // }
 
-        context.translate(scale * 10, scale * (size.height + size.y + 4));
-        drawColorScheme(context, 150, colorScaleHeight, this.props.colorScale, true, 10, textColor);
+        context.translate(4, (size.height + size.y + 4));
+        drawColorScheme(context, this.props.colorScale, textColor);
 
         context.translate(-10, (colorScaleHeight + 4));
 
@@ -313,10 +265,8 @@ class DotPlotCanvas extends React.PureComponent {
         this.update();
         const {saveImageEl} = this.state;
         const array2d = this.props.data;
-        const sortBy = this.props.sortBy;
         const dimension = array2d[0][0].dimension;
-        const features = array2d[0].map(item => item.feature);
-        const sortChoices = [array2d[0][0].dimension].concat(features);
+
         return (<div style={{position: 'relative'}}>
             <div>
                 <Typography style={{display: 'inline-block'}} component={"h4"}
@@ -352,19 +302,6 @@ class DotPlotCanvas extends React.PureComponent {
                     textOverflow: 'ellipsis'
                 }}></Typography>
 
-                {this.props.onSortOrderChanged ? <FormControl className={this.props.classes.formControl}>
-                    <InputLabel shrink={true}>Sort By</InputLabel>
-                    <Select
-
-                        input={<Input size={"small"}/>}
-                        onChange={this.onSortOrderChanged}
-                        value={sortBy}
-                    >
-                        {sortChoices.map(item => (
-                            <MenuItem key={item} value={item}>{item}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl> : null}
             </div>
             <div ref={this.divRef}></div>
 
@@ -373,6 +310,5 @@ class DotPlotCanvas extends React.PureComponent {
     }
 }
 
-export default withStyles(styles)(DotPlotCanvas);
 
 

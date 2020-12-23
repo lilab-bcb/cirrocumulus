@@ -68,7 +68,7 @@ import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
 import {getFeatureSets, splitSearchTokens} from './util';
 
-const sorter = natsort();
+const sorter = natsort({ insensitive: true });
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
@@ -112,11 +112,11 @@ const getAnnotationOptions = memoize(
             options.push({group: 'Categorical', text: item, id: item});
         });
         options.sort((item1, item2) => {
-            const c = sorter(item1.group.toLowerCase(), item2.group.toLowerCase());
+            const c = sorter(item1.group, item2.group);
             if (c !== 0) {
                 return c;
             }
-            return sorter(item1.text.toLowerCase(), item2.text.toLowerCase());
+            return sorter(item1.text, item2.text);
         });
         return options;
     }

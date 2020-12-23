@@ -28,6 +28,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             let op = filter_obj[1];
             let value = filter_obj[2];
             let keep = null;
+
             if (isObject(field)) { // selection box or lasso
                 let selected_points_basis = getBasis(field['basis'], field.nbins,
                     field.agg, field.ndim || 2, field.precomputed);
@@ -59,7 +60,6 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             } else {
                 const nameType = getVarNameType(field);
                 let series = cachedData[nameType.name];
-
                 let applyFunction;
                 if (op === 'in') {
                     value = new Set(value);

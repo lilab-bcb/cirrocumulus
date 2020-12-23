@@ -131,7 +131,7 @@ class CategoricalLegend extends React.PureComponent {
         // }
         const categories = globalDimensionSummary.categories;
         const renamedCategories = categoricalNames[name] || {};
-        const sorter = natsort();
+        const sorter = natsort({insensitive: true});
         categories.sort((a, b) => {
             let renamed1 = renamedCategories[a];
             if (renamed1 != null) {
@@ -141,7 +141,7 @@ class CategoricalLegend extends React.PureComponent {
             if (renamed2 != null) {
                 b = renamed2;
             }
-            return sorter(a.toLowerCase(), b.toLowerCase());
+            return sorter(a, b);
         });
 
         clickEnabled = clickEnabled && categories.length > 1;

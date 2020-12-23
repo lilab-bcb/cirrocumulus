@@ -142,7 +142,7 @@ class AppHeader extends React.PureComponent {
             primaryTraceKey,
             dataset,
             embeddingLabels,
-            dotPlotOptions,
+            distributionPlotOptions,
             embeddings,
             searchTokens,
             datasetFilter,
@@ -150,7 +150,7 @@ class AppHeader extends React.PureComponent {
             markerOpacity,
             pointSize,
             unselectedMarkerOpacity,
-            dotPlotData
+            distributionData
         } = this.props;
 
         let json = {
@@ -223,8 +223,8 @@ class AppHeader extends React.PureComponent {
             json.unselectedMarkerOpacity = unselectedMarkerOpacity;
         }
 
-        if (dotPlotData && dotPlotData.length > 0) {
-            json.dotPlotOptions = dotPlotOptions;
+        if (distributionData && distributionData.length > 0) {
+            json.distributionPlotOptions = distributionPlotOptions;
         }
         if (interpolator.name !== DEFAULT_INTERPOLATOR) {
             json.colorScheme = interpolator.name;
@@ -385,7 +385,7 @@ class AppHeader extends React.PureComponent {
 
                     >
                         <AntTab value="embedding" label="Embeddings"/>
-                        <AntTab value="dot_plot" label="Dot Plot"/>
+                        <AntTab value="dist_plot" label="Distributions"/>
                     </Tabs>}
 
                     <div className={"cirro-condensed"}>
@@ -490,7 +490,7 @@ const mapStateToProps = state => {
         savedDatasetState: state.savedDatasetState,
         datasetChoices: state.datasetChoices,
         dialog: state.dialog,
-        dotPlotData: state.dotPlotData,
+        distributionData: state.distributionData,
         email: state.email,
 
         interpolator: state.interpolator,

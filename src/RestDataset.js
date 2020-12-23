@@ -1,18 +1,18 @@
 import {API, getIdToken} from './actions';
 import {cacheValues, computeDerivedStats} from './VectorUtil';
 
-function reshapeDotPlotResult(dotplot) {
+function reshapeDistributionResult(distribution) {
     const results = [];
-    dotplot.forEach(dotPlotResult => {
-        const categories = dotPlotResult.categories;
-        const dimension = dotPlotResult.name;
-        for (let i = 0; i < dotPlotResult.values.length; i++) {
+    distribution.forEach(distributionResult => {
+        const categories = distributionResult.categories;
+        const dimension = distributionResult.name;
+        for (let i = 0; i < distributionResult.values.length; i++) {
             results.push({
                 dimension: dimension,
                 name: categories[i],
-                feature: dotPlotResult.values[i].name,
-                mean: dotPlotResult.values[i].mean,
-                fractionExpressed: dotPlotResult.values[i].fractionExpressed
+                feature: distributionResult.values[i].name,
+                mean: distributionResult.values[i].mean,
+                fractionExpressed: distributionResult.values[i].fractionExpressed
             });
         }
     });
@@ -72,6 +72,7 @@ export class RestDataset {
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(r => r.json()).then(result => {
             // convert sparse to dense
+
             // if (result.values) {
             //     for (let key in result.values) {
             //         let data = result.values[key];
@@ -88,15 +89,14 @@ export class RestDataset {
             return result;
         }) : Promise.resolve({});
         return p.then(result => {
-
             if (local) {
                 computeDerivedStats(result, data, cachedData);
             } else {
-                if (result.dotplot) {
-                    result.dotplot = reshapeDotPlotResult(result.dotplot);
+                if (result.distribution) {
+                    result.distribution = reshapeDistributionResult(result.distribution);
                 }
-                if (result.selection && result.selection.dotplot) {
-                    result.selection.dotplot = reshapeDotPlotResult(result.selection.dotplot);
+                if (result.selection && result.selection.distribution) {
+                    result.selection.distribution = reshapeDistributionResult(result.selection.distribution);
                 }
             }
             return result;

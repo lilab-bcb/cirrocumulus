@@ -44,7 +44,7 @@ class ColorSchemeSelector extends React.PureComponent {
         const {classes} = this.props;
         let interpolator = fixInterpolatorName(this.props.interpolator.name);
         const width = 174;
-        const height = 20;
+        const height = 14;
         return (
             <Select
                 input={<Input/>}

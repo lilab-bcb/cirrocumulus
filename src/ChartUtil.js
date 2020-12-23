@@ -45,7 +45,7 @@ export function saveImage(traceInfo, chartSize, draw, format) {
         drawCategoricalLegend(context, traceInfo.colorScale, name, traceInfo.colorScale.domain());
     } else {
         context.translate(chartSize.width / 2 - 75, chartSize.height + 2);
-        drawColorScheme(context, 150, 20, traceInfo.colorScale, true);
+        drawColorScheme(context, traceInfo.colorScale);
     }
 
     if (format === 'svg') {
