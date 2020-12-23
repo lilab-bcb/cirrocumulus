@@ -26,10 +26,9 @@ class FeatureAggregator:
         result = {}
         for column in self.dimensions:
             df_counts = df.agg({column: lambda x: x.value_counts(sort=False)})
-            dimension_summary = {'categories': df_counts.index.to_list(),
-                                 'counts': df_counts[column].to_list()}
+            dimension_summary = {'categories': df_counts.index,
+                                 'counts': df_counts[column]}
             result[column] = dimension_summary
-
         if len(self.var_measures) > 0:
             FeatureAggregator.add_to_result(SimpleData.X_stats(df, self.var_measures), result)
         if len(self.obs_measures) > 0:
