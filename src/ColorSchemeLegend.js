@@ -1,5 +1,6 @@
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
+import {CANVAS_FONT} from './ChartUtil';
 import {numberFormat} from './formatters';
 
 export function drawColorScheme(context, colorScale, textColor = 'black', label = true, width = 150, height = 12) {
@@ -53,7 +54,7 @@ class ColorSchemeLegend extends React.PureComponent {
             return;
         }
 
-        context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
+        context.font = CANVAS_FONT;
         drawColorScheme(context, colorScale, textColor, this.props.label, width, height);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }

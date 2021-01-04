@@ -1,5 +1,6 @@
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
+import {CANVAS_FONT} from './ChartUtil';
 import {numberFormat} from './formatters';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
@@ -55,7 +56,7 @@ class SizeLegend extends React.PureComponent {
         const height = this.props.height;
         const width = this.props.width;
         const textColor = this.props.textColor || 'black';
-        context.font = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
+        context.font = CANVAS_FONT;
         context
             .clearRect(0, 0, width * backingScale, height * backingScale);
         context.scale(backingScale, backingScale);

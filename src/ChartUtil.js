@@ -2,6 +2,9 @@ import C2S from 'canvas2svg';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
 
+export const CANVAS_FONT = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
+export const SVG_FONT = '12px Helvetica,Arial,sans-serif';
+
 export function saveImage(traceInfo, chartSize, draw, format) {
 
     let context;

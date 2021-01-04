@@ -5,13 +5,10 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
+import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
-
-
-const svgFont = '12px Helvetica,Arial,sans-serif';
-const canvasFont = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
 
 
 export default class DotPlotCanvas extends React.PureComponent {
@@ -75,7 +72,6 @@ export default class DotPlotCanvas extends React.PureComponent {
                 this.tooltipElementRef.current.innerHTML = '';
 
             };
-            // onMouseMove = throttle(onMouseMove);
             this.canvas = document.createElement('canvas');
             this.canvas.addEventListener("mousemove", onMouseMove);
             this.canvas.addEventListener("mouseout", onMouseOut);
@@ -90,7 +86,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         canvas.height = height * devicePixelRatio;
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
-        context.font = canvasFont;
+        context.font = CANVAS_FONT;
 
         context
             .clearRect(0, 0, width * devicePixelRatio, height * devicePixelRatio);
@@ -186,7 +182,7 @@ export default class DotPlotCanvas extends React.PureComponent {
     update() {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        context.font = canvasFont;
+        context.font = CANVAS_FONT;
         this.size = this.getSize(context);
     }
 
@@ -205,11 +201,11 @@ export default class DotPlotCanvas extends React.PureComponent {
         let canvas;
         if (format === 'svg') {
             context = new window.C2S(10, 10);
-            context.font = svgFont;
+            context.font = SVG_FONT;
         } else {
             canvas = document.createElement('canvas');
             context = canvas.getContext('2d');
-            context.font = canvasFont;
+            context.font = CANVAS_FONT;
         }
 
         const size = this.getSize(context);
@@ -219,13 +215,13 @@ export default class DotPlotCanvas extends React.PureComponent {
         const width = Math.max(200, size.width + size.x);
         if (format === 'svg') {
             context = new window.C2S(width, height);
-            context.font = svgFont;
+            context.font = SVG_FONT;
         } else {
             canvas.width = width * window.devicePixelRatio;
             canvas.height = height * window.devicePixelRatio;
             context = canvas.getContext('2d');
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
-            context.font = canvasFont;
+            context.font = CANVAS_FONT;
         }
         const textColor = this.props.textColor;
         context.fillStyle = textColor === 'white' ? 'black' : 'white';
