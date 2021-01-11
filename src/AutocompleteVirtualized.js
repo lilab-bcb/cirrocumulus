@@ -165,7 +165,7 @@ export default function AutocompleteVirtualized(props) {
         showDragIndicator(false);
     };
 
-    const filterOptions = createFilterOptions({matchFrom: 'start'});
+    const filterOptions = createFilterOptions({matchFrom: 'any'});
     const onChipClick = props.onChipClick ? (event, option) => {
         props.onChipClick(event, option);
     } : null;
