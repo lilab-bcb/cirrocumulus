@@ -1,4 +1,5 @@
 import {API, getIdToken} from './actions';
+import {getPassingFilterIndices} from './dataset_filter';
 import {cacheValues, computeDerivedStats} from './VectorUtil';
 
 function reshapeDistributionResult(distribution) {
@@ -34,14 +35,28 @@ export class RestDataset {
         return Promise.resolve();
     }
 
-    getSelectedIdsPromise(data) {
-        data.id = this.id;
-        return fetch(API + '/selected_ids',
-            {
-                body: JSON.stringify(data),
-                method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json());
+    getSelectedIdsPromise(q, cachedData) {
+        q.id = this.id;
+        if (this.local) {
+            if (cachedData['index'] == null) {
+                return this.getDataPromise({values: {dimensions: ['index']}}, cachedData).then(() => {
+                    const selectedIndices = getPassingFilterIndices(cachedData, q.filter);
+                    const ids = [];
+                    const index = cachedData['index'];
+                    for (let i = 0, n = selectedIndices.length; i < n; i++) {
+                        ids.push(index[selectedIndices[i]]);
+                    }
+                    return {ids: ids};
+                });
+            }
+        } else {
+            return fetch(API + '/selected_ids',
+                {
+                    body: JSON.stringify(q),
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                }).then(result => result.json());
+        }
     }
 
     getFileUrl(file) {
@@ -52,7 +67,6 @@ export class RestDataset {
         data.id = this.id;
         let dataSend = data;
         const local = this.local;
-        let send = true;
 
         if (this.local) {
             dataSend = {};
@@ -61,7 +75,6 @@ export class RestDataset {
                 dataSend.id = this.id;
                 dataSend.embedding = data.embedding;
                 dataSend.values = data.values;
-                send = true;
             }
         }
         let body = JSON.stringify(dataSend);
