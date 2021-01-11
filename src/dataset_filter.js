@@ -33,11 +33,11 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                 let selected_points_basis = getBasis(field['basis'], field.nbins,
                     field.agg, field.ndim || 2, field.precomputed);
                 let coordinate_columns = selected_points_basis.coordinate_columns;
-                if (value.points) {
+                if (value.points) { // list of points
                     // let p = new Set(value.points);
                     let field = selected_points_basis['nbins'] ? selected_points_basis['full_name'] : 'index';
                     if (field == 'index') {
-                        keep = value.points;
+                        keep = new Set(value.points);
                     } else { // binning
                         throw 'Not implemented';
                     }

@@ -66,6 +66,12 @@ export const CATEGORY_20C = [
     '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
+export const OBS_SEARCH_TOKEN = 'obs';
+export const OBS_CAT_SEARCH_TOKEN = 'obsCat';
+export const X_SEARCH_TOKEN = 'X';
+export const FEATURE_SET_SEARCH_TOKEN = 'featureSet';
+export const METAFEATURE_SEARCH_TOKEN = 'metafeature';
+
 /**
  *
  * @param array. Array of format,data
@@ -140,11 +146,11 @@ export function updateTraceColors(traceInfo) {
             const query = category.replaceAll(' ', '_'); // FIXME
 
             svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                node.style.fill = colorScale(stats.mean);
+                node.style.fill = colorScale(stats.value);
             });
 
             galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                node.style.fill = colorScale(stats.mean);
+                node.style.fill = colorScale(stats.value);
             });
         }
     }
@@ -346,18 +352,21 @@ export function splitSearchTokens(tokens) {
     let obs = [];
     let obsCat = [];
     let featureSets = [];
+    let metafeatures = [];
     tokens.forEach(token => {
-        if (token.type === 'X') {
+        if (token.type === X_SEARCH_TOKEN) {
             X.push(token.value);
-        } else if (token.type === 'obs') {
+        } else if (token.type === OBS_SEARCH_TOKEN) {
             obs.push(token.value);
-        } else if (token.type === 'obsCat') {
+        } else if (token.type === OBS_CAT_SEARCH_TOKEN) {
             obsCat.push(token.value);
-        } else if (token.type === 'featureSet') {
+        } else if (token.type === FEATURE_SET_SEARCH_TOKEN) {
             featureSets.push(token.value);
+        } else if (token.type === METAFEATURE_SEARCH_TOKEN) {
+            metafeatures.push(token.value);
         } else {
             console.log('Unknown type: ' + token);
         }
     });
-    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets};
+    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, metafeatures: metafeatures};
 }

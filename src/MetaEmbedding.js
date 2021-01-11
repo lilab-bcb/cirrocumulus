@@ -109,7 +109,11 @@ class MetaEmbedding extends React.PureComponent {
                 const stats = categoryToStats[text];
                 if (stats) {
                     if (this.props.traceInfo.name !== '__count') {
-                        text += ', mean: ' + numberFormat2f(stats.mean) + ', # spots: ' + intFormat(stats.n);
+                        if (this.props.traceInfo.isCategorical) {
+                            text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
+                        } else {
+                            text += ', mean: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
+                        }
                     } else {
                         text += ', # spots: ' + intFormat(stats.n);
                     }

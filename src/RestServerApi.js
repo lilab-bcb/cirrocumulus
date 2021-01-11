@@ -133,4 +133,21 @@ export class RestServerApi {
             }).then(result => result.json());
     }
 
+    submitJob(datasetId) {
+        const data = {id: datasetId};
+        return fetch(API + '/submit_job',
+            {
+                body: JSON.stringify(data),
+                method: 'POST',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(response => response.json());
+    }
+
+    getJob(jobId) {
+        return fetch(API + '/job?id=' + jobId,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json());
+    }
+
 }

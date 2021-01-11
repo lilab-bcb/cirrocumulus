@@ -3,7 +3,6 @@ import MuiAccordionPanel from '@material-ui/core/Accordion';
 import MuiAccordionPanelDetails from '@material-ui/core/AccordionDetails';
 import MuiAccordionPanelSummary from '@material-ui/core/AccordionSummary';
 import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -27,6 +26,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
+import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
@@ -61,14 +61,22 @@ import {
     setSearchTokens,
     setSelectedEmbedding,
     setUnselectedMarkerOpacity,
+    submitJob,
     toggleEmbeddingLabel
 } from './actions';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
-import {getFeatureSets, splitSearchTokens} from './util';
+import {
+    FEATURE_SET_SEARCH_TOKEN,
+    getFeatureSets,
+    METAFEATURE_SEARCH_TOKEN,
+    OBS_SEARCH_TOKEN,
+    splitSearchTokens,
+    X_SEARCH_TOKEN
+} from './util';
 
-const sorter = natsort({ insensitive: true });
+const sorter = natsort({insensitive: true});
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
@@ -99,6 +107,11 @@ const styles = theme => ({
     select: {
         minWidth: 200,
     },
+    toolbar: {
+        '& hr': {
+            margin: theme.spacing(0, 0.5),
+        }
+    }
 });
 
 
@@ -134,8 +147,29 @@ const getEmbeddingOptions = memoize(
         return options;
     }
 );
-const getFeatureSetOptions = memoize((markers) => {
-        const options = markers.map(item => ({group: item.category, text: item.name, id: item.id}));
+const getMetafeaturesOptions = memoize((items) => {
+        if (items) {
+            const options = items.slice();
+            options.sort(sorter);
+            return options;
+        }
+    }
+);
+const getFeatureSetOptions = memoize((items, categoricalNames) => {
+        const options = items.map(item => ({group: item.category, text: item.name, id: item.id}));
+
+        options.forEach(item => {
+            let group = item.group;
+            let index = group.lastIndexOf(' (');
+            if (index !== -1) {
+                group = group.substring(0, index);
+            }
+            let map = categoricalNames[group] || {};
+            let newName = map[item.text];
+            if (newName != null) {
+                item.text = newName;
+            }
+        });
         options.sort((item1, item2) => {
             const c = sorter(item1.group, item2.group);
             if (c !== 0) {
@@ -255,7 +289,11 @@ class SideBar extends React.PureComponent {
     };
 
     onFeaturesChange = (event, value) => {
-        this.props.handleSearchTokens(value, 'X');
+        this.props.handleSearchTokens(value, X_SEARCH_TOKEN);
+    };
+
+    onMetafeaturesChange = (event, value) => {
+        this.props.handleSearchTokens(value, METAFEATURE_SEARCH_TOKEN);
     };
 
     onObservationsIconClick = (event, option) => {
@@ -272,7 +310,7 @@ class SideBar extends React.PureComponent {
                 values.push(val);
             }
         });
-        this.props.handleSearchTokens(values, 'obs');
+        this.props.handleSearchTokens(values, OBS_SEARCH_TOKEN);
     };
 
     onSaveFeatureList = () => {
@@ -308,7 +346,7 @@ class SideBar extends React.PureComponent {
                 values.push(val);
             }
         });
-        this.props.handleSearchTokens(values, 'featureSet');
+        this.props.handleSearchTokens(values, FEATURE_SET_SEARCH_TOKEN);
     };
 
 
@@ -349,8 +387,8 @@ class SideBar extends React.PureComponent {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
         const featureSetId = this.state.featureSet.id;
-        let value = searchTokens.filter(token => token.type === 'featureSet' && token.value.id !== featureSetId);
-        this.props.handleSearchTokens(value, 'featureSet');
+        let value = searchTokens.filter(token => token.type === FEATURE_SET_SEARCH_TOKEN && token.value.id !== featureSetId);
+        this.props.handleSearchTokens(value, FEATURE_SET_SEARCH_TOKEN);
         this.props.handleDeleteFeatureSet(featureSetId);
         this.setState({featureSetAnchorEl: null, featureSet: null});
     };
@@ -428,6 +466,11 @@ class SideBar extends React.PureComponent {
         this.props.downloadSelectedIds();
     };
 
+    handleDifferentialExpression = (event) => {
+        event.preventDefault();
+        this.props.handleDifferentialExpression();
+    };
+
 
     onDatasetFilterChipDeleted = (name) => {
         this.props.removeDatasetFilter(name);
@@ -451,6 +494,7 @@ class SideBar extends React.PureComponent {
             chartSize,
             binValues,
             binSummary,
+            categoricalNames,
             embeddings,
             embeddingLabels,
             classes,
@@ -519,11 +563,12 @@ class SideBar extends React.PureComponent {
         const splitTokens = splitSearchTokens(searchTokens);
         const featureSets = getFeatureSets(markers, splitTokens.featureSets);
         const featureOptions = dataset.features;
+        const metafeatureOptions = getMetafeaturesOptions(dataset.metafeatures);
         const isSummarized = dataset.precomputed != null;
         const obsCat = dataset.obsCat;
         const obs = dataset.obs;
         const annotationOptions = getAnnotationOptions(obs, obsCat);
-        const featureSetOptions = getFeatureSetOptions(markers);
+        const featureSetOptions = getFeatureSetOptions(markers, categoricalNames);
         const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
         const selectedEmbeddings = getEmbeddingOptions(embeddings);
         const fancy = serverInfo.fancy;
@@ -545,7 +590,7 @@ class SideBar extends React.PureComponent {
                             value={featureSet ? featureSet.features.join('\n') : ''}
                             margin="dense"
                             fullWidth
-                            readonly={true}
+                            readOnly={true}
                             variant="outlined"
                             multiline={true}
                         />
@@ -582,7 +627,7 @@ class SideBar extends React.PureComponent {
                 </FormControl>}
                 {featureOptions.length > 0 && <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized onChipClick={this.onFeatureClick}
-                                             label={"Features/Genes"}
+                                             label={"Genes/Features"}
                                              options={featureOptions}
                                              value={splitTokens.X}
                                              onChange={this.onFeaturesChange}
@@ -616,7 +661,14 @@ class SideBar extends React.PureComponent {
                                              onChange={this.onObservationsChange}/>
                 </FormControl>}
 
-
+                {metafeatureOptions && metafeatureOptions.length > 0 && <FormControl className={classes.formControl}>
+                    <AutocompleteVirtualized onChipClick={this.onMetaFeatureClick}
+                                             label={"Metagenes/Features"}
+                                             options={metafeatureOptions}
+                                             value={splitTokens.metafeatures}
+                                             onChange={this.onMetafeaturesChange}
+                    />
+                </FormControl>}
                 {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
                     <AutocompleteVirtualized label={"Sets"}
@@ -624,7 +676,7 @@ class SideBar extends React.PureComponent {
                                              value={featureSets}
                                              onChipClick={this.onFeatureSetClick}
                                              getChipTitle={(option) => {
-                                                 return option.category;
+                                                 return option.category + ', ' + option.name;
                                              }}
                                              getChipIcon={(option) => {
                                                  return <ArrowDropDownIcon onClick={(event) => {
@@ -686,19 +738,25 @@ class SideBar extends React.PureComponent {
                                         />;
                                     })}
                                     <Divider/>
-                                    <Tooltip title={"Clear All"}>
-                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
-                                                    onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
-                                    </Tooltip>
-                                    {fancy && <Tooltip title={"Save Filter"}>
-                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
-                                                    onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
-                                    </Tooltip>}
-                                    <Tooltip title={"Download Selected IDs"}>
-                                        <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
-                                                    onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
-                                    </Tooltip>
-                                    <Divider/>
+                                    <Grid container alignItems="center" className={classes.toolbar}>
+                                        <Tooltip title={"Clear All"}>
+                                            <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
+                                                        onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
+                                        </Tooltip>
+                                        {fancy && <Tooltip title={"Save Filter"}>
+                                            <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
+                                                        onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
+                                        </Tooltip>}
+                                        <Tooltip title={"Download Selected IDs"}>
+                                            <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
+                                                        onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
+                                        </Tooltip>
+                                        {false && fancy && <Divider orientation="vertical" flexItem/>}
+                                        {false && fancy && <Tooltip title={"Differential Expression"}>
+                                            <IconButton size={'small'}
+                                                        onClick={this.handleDifferentialExpression}><CompareIcon/></IconButton>
+                                        </Tooltip>}
+                                    </Grid>
                                 </div>
                             </React.Fragment>
                             }
@@ -847,25 +905,36 @@ class SideBar extends React.PureComponent {
                         <div>Saved Filters</div>
                     </AccordionPanelSummary>
                     <AccordionPanelDetails>
-                        <div>
+                        <div style={{width: '100%'}}>
                             {datasetFilters.length === 0 &&
                             <Box color="text.secondary" style={{paddingLeft: 10}}>No saved filters</Box>}
-                            {datasetFilters.length > 0 && <div><List dense={true}>
-                                {datasetFilters.map(item => (
-                                    <ListItem key={item.id} data-key={item.id} button
-                                              selected={item.id === savedDatasetFilter.id}
-                                              onClick={e => this.openDatasetFilter(item.id)}>
-                                        <ListItemText primary={item.name}/>
-                                        <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
-                                            <IconButton edge="end" aria-label="delete">
-                                                <DeleteIcon/>
-                                            </IconButton>
-                                        </ListItemSecondaryAction>
-                                    </ListItem>
-                                ))}
-                            </List>
-                                <Button onClick={this.props.handleExportDatasetFilters}>Export Filters</Button>
-                            </div>}
+                            {datasetFilters.length > 0 &&
+                            <React.Fragment>
+                                <List dense={true}>
+                                    {datasetFilters.map(item => (
+                                        <ListItem key={item.id} data-key={item.id} button
+                                                  selected={item.id === savedDatasetFilter.id}
+                                                  onClick={e => this.openDatasetFilter(item.id)}>
+                                            <ListItemText primary={item.name}/>
+                                            <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
+                                                <IconButton edge="end" aria-label="delete">
+                                                    <DeleteIcon/>
+                                                </IconButton>
+                                            </ListItemSecondaryAction>
+                                        </ListItem>
+                                    ))}
+                                </List>
+
+
+                                <div style={{marginLeft: 10}}>
+                                    <Divider/>
+                                    <Tooltip title={"Export Filters"}>
+                                        <IconButton size={'small'}
+                                                    onClick={this.props.handleExportDatasetFilters}><CloudDownloadIcon/></IconButton>
+                                    </Tooltip>
+
+                                </div>
+                            </React.Fragment>}
                         </div>
                     </AccordionPanelDetails>
                 </Accordion>}
@@ -891,6 +960,7 @@ const mapStateToProps = state => {
         serverInfo: state.serverInfo,
         embeddings: state.embeddings,
         searchTokens: state.searchTokens,
+        categoricalNames: state.categoricalNames,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         combineDatasetFilters: state.combineDatasetFilters,
         datasetFilter: state.datasetFilter,
@@ -965,6 +1035,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         handleDeleteFeatureSet: value => {
             dispatch(deleteFeatureSet(value));
         },
+        handleDifferentialExpression: value => {
+            dispatch(submitJob(value));
+        }
 
     };
 };
