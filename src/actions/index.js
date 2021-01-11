@@ -5,6 +5,7 @@ import {isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
+import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
@@ -540,10 +541,12 @@ function getFilterJson(state) {
 export function downloadSelectedIds() {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        let filter = getFilterJson(getState(), true);
-        getState().dataset.api.getSelectedIdsPromise({
+        const state = getState();
+        let filter = getFilterJson(state, true);
+
+        state.dataset.api.getSelectedIdsPromise({
             filter: filter
-        }).then(result => {
+        }, state.cachedData).then(result => {
             const blob = new Blob([result.ids.join('\n')], {type: "text/plain;charset=utf-8"});
             saveAs(blob, "selection.txt");
         }).finally(() => {
@@ -1488,7 +1491,6 @@ function _updateCharts(onError) {
         const searchTokens = splitSearchTokens(state.searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
         let distribution = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
-        console.log(searchTokens);
         const embeddings = state.embeddings;
         let distributionData = state.distributionData;
         let selectedDistributionData = state.selectedDistributionData;
@@ -1517,11 +1519,11 @@ function _updateCharts(onError) {
                         valuesToFetch.add(selectedEmbedding.attrs.group);
                     }
 
-                    // selectedEmbedding.attrs.selection.forEach(selection => {
-                    //     if (cachedData[selection[0]] == null) {
-                    //         valuesToFetch.add(selection[0]);
-                    //     }
-                    // });
+                    selectedEmbedding.attrs.selection.forEach(selection => {
+                        if (cachedData[selection[0]] == null) {
+                            valuesToFetch.add(selection[0]);
+                        }
+                    });
                     embeddingImagesToFetch.push(selectedEmbedding);
                 }
             }
@@ -1868,12 +1870,13 @@ function updateEmbeddingData(state, features) {
                     chartData.source = svg.cloneNode(true);
                     chartData.gallerySource = svg.cloneNode(true);
                     const groupBy = cachedData[chartData.embedding.attrs.group];
-                    // const selection = chartData.embedding.attrs.selection;
-                    // const passingIndices = getPassingFilterIndices(cachedData, {filters: selection});
+                    const selection = chartData.embedding.attrs.selection;
+
+                    const passingIndices = getPassingFilterIndices(cachedData, {filters: selection});
                     let groupToValues = {};
 
-                    for (let i = 0, n = groupBy.length; i < n; i++) {
-                        const index = i;
+                    for (let i = 0, n = passingIndices.length; i < n; i++) {
+                        const index = passingIndices[i];
                         const category = groupBy[index];
                         let values = groupToValues[category];
                         if (values == null) {

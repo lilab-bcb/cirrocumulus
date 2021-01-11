@@ -86,14 +86,15 @@ def __add_generic_spatial(adata, spatial_directory):
 
             tree = ET.parse(svg_path)
             attrs = tree.getroot().attrib
-            if 'data-group' in attrs:
+            if 'data-group' in attrs and  'data-selection' in attrs:
                 found = True
                 images = adata.uns.get('meta_images', [])
-                # selection = attrs['data-selection'].replace("'", "\"")
+                selection = attrs['data-selection'].replace("'", "\"")
+                selection = json.loads(selection)
 
                 images.append(
                     dict(type='meta_image', name=name, image=svg_path,
-                        attrs=dict(group=attrs['data-group'])))
+                        attrs=dict(group=attrs['data-group'], selection=selection)))
                 adata.uns['meta_images'] = images
     return found
 

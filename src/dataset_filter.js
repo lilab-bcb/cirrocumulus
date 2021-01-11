@@ -77,7 +77,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                 } else if (op === '<=') {
                     applyFunction = (d) => d <= value;
                 } else {
-                    throw('Unknown filter');
+                    throw('Unknown filter: ' + op);
                 }
                 keep = getIndices(series, applyFunction);
             }
