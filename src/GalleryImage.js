@@ -134,7 +134,7 @@ class GalleryImage extends React.PureComponent {
 
         let name = this.props.traceInfo.name;
         if (name === '__count') {
-            name = 'count';
+            name = '';
         }
         return (
             <Box borderColor="text.primary" border={1}
