@@ -79,17 +79,21 @@ def __add_generic_spatial(adata, spatial_directory):
                 found = True
         elif ext in meta_image_extensions:
             svg_path = os.path.join(spatial_directory, f)
+            if os.path.exists(svg_path):
+                svg_path = os.path.abspath(svg_path)
             import xml.etree.ElementTree as ET
             import json
 
             tree = ET.parse(svg_path)
             attrs = tree.getroot().attrib
-            if 'data-group' in attrs and 'data-selection' in attrs:
+            if 'data-group' in attrs:
+                found = True
                 images = adata.uns.get('meta_images', [])
-                selection = attrs['data-selection'].replace("'", "\"")
+                # selection = attrs['data-selection'].replace("'", "\"")
+
                 images.append(
                     dict(type='meta_image', name=name, image=svg_path,
-                        attrs=dict(group=attrs['data-group'], selection=json.loads(selection))))
+                        attrs=dict(group=attrs['data-group'])))
                 adata.uns['meta_images'] = images
     return found
 

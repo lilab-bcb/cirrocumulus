@@ -11,6 +11,7 @@ CAT_NAME = 'Cat_Name'
 DATASET_FILTER = 'Dataset_Filter'
 FEATURE_SET = 'F_Set'
 USER = 'User'
+JOB = 'Job'
 
 
 class FirestoreDatastore:
@@ -226,3 +227,26 @@ class FirestoreDatastore:
         entity.update(entity_update)
         client.put(entity)
         return entity.id
+
+    def create_job(self, email, dataset_id, params):
+        dataset_id = int(dataset_id)
+        client = self.datastore_client
+        self.__get_key_and_dataset(email, dataset_id)
+        entity = datastore.Entity(client.key(JOB))
+        entity.update(dict(dataset_id=dataset_id, params=params))
+        client.put(entity)
+        return entity.id
+
+    def get_job(self, email, job_id):
+        client = self.datastore_client
+        entity = client.get(client.key(JOB, job_id))
+        self.__get_key_and_dataset(email, entity['dataset_id'])
+        entity['id'] = JOB
+        return entity
+
+    def update_job(self, email, job_id, status, result):
+        client = self.datastore_client
+        entity = client.get(client.key(JOB, job_id))
+        self.__get_key_and_dataset(email, entity['dataset_id'])
+        entity.update(dict(status=status, result=result))
+        client.put(entity)

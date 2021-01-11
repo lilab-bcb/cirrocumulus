@@ -1,19 +1,19 @@
 from urllib.parse import urlparse
 
-from flask import Blueprint, Response, request, stream_with_context
-
 import cirrocumulus.data_processing as data_processing
 from cirrocumulus.envir import CIRRO_SERVE
+from flask import Blueprint, Response, request, stream_with_context
+
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
+from .job_api import submit_job
 from .util import *
 
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
-
 auth_api = AuthAPI()
 database_api = DatabaseAPI()
 
@@ -326,3 +326,19 @@ def handle_dataset():
     # head_request.close()
     # if head_request.status_code != 200:
     #     return 'Not authorized to read {}'.format(url), 403
+
+
+@blueprint.route('/submit_job', methods=['POST'])
+def handle_submit_job():
+    content = request.get_json(force=True, cache=False)
+    email, dataset = get_email_and_dataset(content)
+    params = content.get('params')
+    return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+        params=params))
+
+
+@blueprint.route('/job', methods=['GET'])
+def handle_job():
+    email = auth_api.auth()['email']
+    job_id = request.args.get('id', '')
+    return database_api.get_job(email=email, job_id=job_id)

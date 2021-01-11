@@ -126,18 +126,16 @@ def get_var_name_type(key):
         return name, key_type
 
 
-def split_measures(measures):
-    obs_measures = []
-    var_measures = []
+def get_type_to_measures(measures):
+    type2measures = dict(X=[], obs=[])
     for measure in measures:
         name, key_type = get_var_name_type(measure)
-        if key_type == 'X':
-            var_measures.append(name)
-        elif key_type == 'obs':
-            obs_measures.append(name)
-        else:
-            raise ValueError('Unknown key type: ' + key_type)
-    return obs_measures, var_measures
+        type_measures = type2measures.get(key_type)
+        if type_measures is None:
+            type_measures = []
+            type2measures[key_type] = type_measures
+        type_measures.append(name)
+    return type2measures
 
 
 def check_bin_input(nbins):
@@ -159,12 +157,12 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         filter_names.append(data_filter_obj['name'])
         reformatted_filters.append(filter_value)
 
-    df_info = get_data(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
-    result_df = pd.DataFrame(index=df_info['df']['index'])
+    df = get_df(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
+    result_df = pd.DataFrame(index=df['index'])
     for i in range(len(reformatted_filters)):
         data_filter = reformatted_filters[i]
         filter_name = filter_names[i]
-        df_filtered = apply_filter(df_info['df'], data_filter)
+        df_filtered = apply_filter(df, data_filter)
         df = pd.DataFrame(index=df_filtered['index'])
         df[filter_name] = True
         result_df = result_df.join(df, rsuffix='r')
@@ -233,9 +231,10 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
         dimensions.update(stats.get('dimensions', []))
         measures.update(stats.get('measures', []))
 
-    obs_measures, var_measures = split_measures(measures)
-    df = dataset_api.read(dataset=dataset, obs_keys=list(dimensions) + obs_measures,
-        var_keys=var_measures, basis=basis_list)
+    keys = get_type_to_measures(measures)
+    keys['obs'] += list(dimensions)
+    keys['basis'] = basis_list
+    df = dataset_api.read_dataset(dataset=dataset, keys=keys)
     for basis_obj in basis_list:
         if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
             EmbeddingAggregator.convert_coords_to_bin(df=df,
@@ -246,9 +245,13 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
     if values is not None:
         dimensions = values.get('dimensions', [])
         measures = values.get('measures', [])
-        obs_measures, var_measures = split_measures(measures)
+        type2measures = get_type_to_measures(measures)
+        measures = []
+        for v in type2measures.values():
+            measures += v
+
         result = EmbeddingAggregator(
-            measures=obs_measures + var_measures,
+            measures=measures,
             dimensions=dimensions,
             nbins=None,
             basis=None,
@@ -262,13 +265,14 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
         for embedding in embedding_list:
             dimensions = embedding.get('dimensions', [])
             measures = embedding.get('measures', [])
-            obs_measures, var_measures = split_measures(measures)
+            type2measures = get_type_to_measures(measures)
             basis = embedding['basis']
             if basis['precomputed']:
-                result = precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions)
+                result = precomputed_embedding(dataset_api, dataset, basis, type2measures['obs'],
+                    type2measures['X'], dimensions)
             else:
                 result = EmbeddingAggregator(
-                    measures=obs_measures + var_measures,
+                    measures=type2measures['obs'] + type2measures['X'],
                     dimensions=dimensions,
                     nbins=basis['nbins'],
                     basis=basis,
@@ -286,16 +290,18 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
     if stats is not None:
         dimensions = stats.get('dimensions', [])
         measures = stats.get('measures', [])
-        obs_measures, var_measures = split_measures(measures)
+        type2measures = get_type_to_measures(measures)
         if dataset_api.has_precomputed_stats(dataset):
-            result['summary'] = precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimensions)
+            result['summary'] = precomputed_summary(dataset_api, dataset, type2measures['obs'],
+                type2measures['X'], dimensions)
         else:
-            results['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
+            results['summary'] = FeatureAggregator(type2measures['obs'], type2measures['X'],
+                dimensions).execute(df)
     if selection is not None:
         results['selection'] = {}
         dimensions = selection.get('dimensions', [])
         measures = selection.get('measures', [])
-        obs_measures, var_measures = split_measures(measures)
+        type2measures = get_type_to_measures(measures)
         # basis_list = selection.get('basis', [])
         selection_embeddings = selection.get('embeddings', [])
         df = apply_filter(df, data_filter)
@@ -304,8 +310,9 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
             for embedding in selection_embeddings:
                 results['selection']['coordinates'][embedding['full_name']] = UniqueAggregator(
                     embedding['full_name'] if embedding['nbins'] is not None else 'index').execute(df)
-
-        results['selection']['summary'] = FeatureAggregator(obs_measures, var_measures, dimensions).execute(df)
+        var_measures = type2measures['X']
+        results['selection']['summary'] = FeatureAggregator(type2measures['obs'], type2measures['X'],
+            dimensions).execute(df)
         if len(dimensions) > 0 and len(var_measures) > 0:
             results['selection']['distribution'] = DotPlotAggregator(var_measures=var_measures,
                 dimensions=[dimensions]).execute(df)
@@ -315,12 +322,12 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
 
 
 def handle_selection_ids(dataset_api, dataset, data_filter):
-    selection_info = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
-    return {'ids': IdsAggregator().execute(selection_info['df'])}
+    df = get_selected_data(dataset_api, dataset, measures=['obs/index'], data_filter=data_filter)
+    return {'ids': IdsAggregator().execute(df)}
 
 
-def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
-    obs_measures, var_measures = split_measures(measures)
+def get_df(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
+    type2measures = get_type_to_measures(measures)
     var_keys_filter = []
     obs_keys_filter = []
     selected_points_filter_basis_list = []
@@ -329,8 +336,8 @@ def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], da
         selected_points_filter_basis_list += selected_points_filter_basis_list
         var_keys_filter += _var_keys_filter
         obs_keys_filter += _obs_keys_filter
-    obs_keys = list(set(obs_measures + obs_keys_filter + dimensions))
-    var_keys = list(set(var_measures + var_keys_filter))
+    obs_keys = list(set(type2measures['obs'] + obs_keys_filter + dimensions))
+    var_keys = list(set(type2measures['X'] + var_keys_filter))
     basis_objs = []
     basis_keys = set()
     for embedding in embeddings:
@@ -343,23 +350,21 @@ def get_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], da
         if basis_obj['full_name'] not in basis_keys:
             basis_objs.append(basis_obj)
             basis_keys.add(basis_obj['full_name'])
-    df = dataset_api.read(dataset=dataset, obs_keys=obs_keys, var_keys=var_keys, basis=basis_objs)
+    df = dataset_api.read_dataset(dataset=dataset, keys=dict(obs=obs_keys, X=var_keys, basis=basis_objs))
     for basis_obj in basis_objs:
         if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
             EmbeddingAggregator.convert_coords_to_bin(df=df,
                 nbins=basis_obj['nbins'],
                 bin_name=basis_obj['full_name'],
                 coordinate_columns=basis_obj['coordinate_columns'])
-    return {'df': df, 'basis': basis_objs, 'obs_measures': obs_measures, 'var_measures': var_measures,
-            'dimensions': dimensions}
+    return df
 
 
 def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
-    df_info = get_data(dataset_api, dataset, embeddings, measures, dimensions,
+    df = get_df(dataset_api, dataset, embeddings, measures, dimensions,
         [data_filter] if data_filter is not None else [])
-    df = apply_filter(df_info['df'], data_filter)
-    df_info['df'] = df
-    return df_info
+    df = apply_filter(df, data_filter)
+    return df
 
 
 def data_filter_keys(data_filter):

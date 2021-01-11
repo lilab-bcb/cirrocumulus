@@ -59,7 +59,7 @@ class SimpleData:
         logger = logging.getLogger("cirro")
 
         marker_results = []  # array of category, name, id, features
-        category = key + ' markers'
+        category = key
 
         for cat in adata.obs[key].cat.categories:
             logger.info('Computing markers for {}, {}'.format(key, cat))
@@ -69,6 +69,8 @@ class SimpleData:
             gene_names_keep = ds1.X.mean(axis=0) > ds_rest.X.mean(axis=0)
             if isinstance(gene_names_keep, np.matrix):
                 gene_names_keep = gene_names_keep.A1
+            if len(gene_names_keep) == 0:
+                continue
             ds1 = ds1[:, gene_names_keep]
             ds_rest = ds_rest[:, gene_names_keep]
             pvals = np.full(ds1.shape[1], 1.0)
@@ -79,18 +81,13 @@ class SimpleData:
                 v1 = ds1_X[:, i]
                 v2 = ds_rest_X[:, i]
                 if is_sparse:
-                    try:
-                        _, pvals[i] = ss.mannwhitneyu(v1.toarray()[:, 0], v2.toarray()[:, 0],
-                            alternative="two-sided")
-                    except ValueError:
-                        # All numbers are identical
-                        pass
-                else:
-                    try:
-                        _, pvals[i] = ss.mannwhitneyu(v1, v2, alternative="two-sided")
-                    except ValueError:
-                        # All numbers are identical
-                        pass
+                    v1 = v1.toarray()[:, 0]
+                    v2 = v2.toarray()[:, 0]
+                try:
+                    _, pvals[i] = ss.mannwhitneyu(v1, v2, alternative="two-sided")
+                except ValueError:
+                    # All numbers are identical
+                    pass
             fc = ds1_X.mean(axis=0) - ds_rest_X.mean(axis=0)
             if isinstance(fc, np.matrix):
                 fc = fc.A1
@@ -106,7 +103,11 @@ class SimpleData:
         obs = []
         result = {'version': '1.0.0'}
         marker_results = []
-        marker_results += adata.uns.get('markers', [])
+        prior_marker_results = adata.uns.get('markers', [])
+        if isinstance(prior_marker_results, str):
+            import json
+            prior_marker_results = json.loads(prior_marker_results)
+        marker_results += prior_marker_results
         result['markers'] = marker_results
         n_genes = 10
         scanpy_marker_keys = []
@@ -163,6 +164,9 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
+        if 'metagenes' in adata.uns:
+            metagenes = adata.uns['metagenes']
+            result['metafeatures'] = metagenes['var'].index
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
         #
         # if spatial_node is not None:

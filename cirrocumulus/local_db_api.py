@@ -22,6 +22,7 @@ class LocalDbAPI:
 
     def __init__(self, paths):
         self.dataset_to_info = {}  # json_data, meta, json_path
+        self.job_id_to_job = {}
 
         for path in paths:
             json_data = {}
@@ -154,3 +155,16 @@ class LocalDbAPI:
             entity['notes'] = filter_notes
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
         return filter_id
+
+    def create_job(self, email, dataset_id, params):
+        job_id = unique_id()
+        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, params=params, status=None, result=None)
+        return job_id
+
+    def get_job(self, email, job_id):
+        return self.job_id_to_job[job_id]
+
+    def update_job(self, email, job_id, status, result):
+        job = self.job_id_to_job[job_id]
+        job['status'] = status
+        job['result'] = result

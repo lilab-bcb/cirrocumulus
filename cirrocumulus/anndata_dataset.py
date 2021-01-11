@@ -4,9 +4,9 @@ import pandas as pd
 import scipy.sparse
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.simple_data import SimpleData
 # only works with local files
 from cirrocumulus.io_util import read_star_fusion_file
+from cirrocumulus.simple_data import SimpleData
 
 
 class AnndataDataset(AbstractDataset):
@@ -55,10 +55,16 @@ class AnndataDataset(AbstractDataset):
     def schema(self, file_system, path):
         return SimpleData.schema(self.get_data(path))
 
-    def read(self, file_system, path, obs_keys=[], var_keys=[], basis=None, dataset=None, schema=None):
+    def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
         adata = self.get_data(path)
         force_sparse = self.force_sparse
         df = None
+        if keys is None:
+            keys = {}
+        keys = keys.copy()
+        var_keys = keys.pop('X', [])
+        obs_keys = keys.pop('obs', [])
+        basis = keys.pop('basis', [])
 
         if len(var_keys) > 0:
             X = adata[:, var_keys].X
@@ -70,7 +76,14 @@ class AnndataDataset(AbstractDataset):
                 df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
             else:
                 df = pd.DataFrame(data=X, columns=var_keys)
-
+        for key in keys.keys():
+            if df is None:
+                df = pd.DataFrame()
+            d = adata.uns[key]
+            features = keys[key]
+            X = d['X'][:, d['var'].index.get_indexer_for(features)]
+            for i in range(len(features)):
+                df[features[i]] = X[:, i]
         if len(obs_keys) > 0:
             if df is None:
                 df = pd.DataFrame()

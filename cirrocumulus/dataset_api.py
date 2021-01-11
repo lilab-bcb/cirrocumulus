@@ -74,8 +74,8 @@ class DatasetAPI:
         return provider.read_precomputed_basis(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys,
             basis=basis)
 
-    def read(self, dataset, obs_keys=[], var_keys=[], basis=None):
+    def read_dataset(self, dataset, keys=[]):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.read(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys, basis=basis,
-            dataset=dataset, schema=self.schema(dataset))
+        return provider.read_dataset(self.fs_adapter.get_fs(path), path, keys=keys, dataset=dataset,
+            schema=self.schema(dataset))

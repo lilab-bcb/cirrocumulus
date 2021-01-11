@@ -193,3 +193,20 @@ class MongoDb:
         else:
             collection.update_one(dict(_id=ObjectId(set_id)), {'$set': entity_update})
             return set_id
+
+    def create_job(self, email, dataset_id, params):
+        self.get_dataset(email, dataset_id)
+        collection = self.db.jobs
+        return str(collection.insert_one(dict(dataset_id=dataset_id, params=params)).inserted_id)
+
+    def get_job(self, email, job_id):
+        collection = self.db.jobs
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        return dict(id=str(doc['_id']), dataset_id=doc['dataset_id'], status=doc['status'], result=doc['result'])
+
+    def update_job(self, email, job_id, status, result):
+        collection = self.db.jobs
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
