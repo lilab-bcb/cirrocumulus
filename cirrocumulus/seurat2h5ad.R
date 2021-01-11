@@ -29,21 +29,20 @@ if (file.exists(h5ad_path)) {
 }
 
 if (method == 'reticulate') {
-  #library(SingleCellExperiment)
   library(reticulate)
   library(Matrix)
   library(ps)
+
   anndata <- import("anndata")
-  # sce <- as.SingleCellExperiment(rds)
-  # exprs <- assay(sce, "logcounts")
-  # col_data <- as.data.frame(colData(sce))
-  # row_data <- as.data.frame(rowData(sce))
   assay <- DefaultAssay(object = rds)
   exprs <- GetAssayData(object = rds, slot = "data", assay = assay)
   col_data <- rds[[]]
   col_data$ident <- Idents(object = rds)
   row_data <- rds[[assay]][[]]
-  adata = anndata$AnnData(X = t(exprs), obs = col_data, var = row_data)
+  if (length(row_data) == 0) {
+    row_data['tmp'] = 'tmp'
+  }
+  adata <- anndata$AnnData(X = t(exprs), obs = col_data, var = row_data)
   # dim_names = reducedDimNames(sce)
   # for (dim_name in dim_names) {
   #   adata$obsm$setdefault(dim_name, reducedDim(sce, dim_name))
@@ -53,7 +52,7 @@ if (method == 'reticulate') {
   }
   adata$write(h5ad_path)
 
-  # Fix this issue which hangs R: There appear to be 1 leaked semaphore objects to clean up at shutdown.
+  # Fix hanging R process: There appear to be 1 leaked semaphore objects to clean up at shutdown.
   child_processes <- ps_children()
   if (length(child_processes) == 1) {
     ps_kill(child_processes[[1]])
