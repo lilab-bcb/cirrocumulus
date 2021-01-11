@@ -196,7 +196,7 @@ export default function AutocompleteVirtualized(props) {
         renderOption = props.groupBy ? (option) => <Typography title={option.text}
                                                                noWrap>{option.text}</Typography> : (option) =>
             <Typography
-                noWrap>{option}</Typography>;
+                title={option} noWrap>{option}</Typography>;
     }
     return (
         <Autocomplete
