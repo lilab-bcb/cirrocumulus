@@ -9,24 +9,36 @@ export function drawColorScheme(context, colorScale, textColor = 'black', label 
         return;
     }
 
-    let legendHeight = height;
-    let gradient = context.createLinearGradient(0, 0, width, legendHeight);
+    const nsteps = 10;
+    let gradient = context.createLinearGradient(0, 0, width, height);
     let valueToFraction = scaleLinear().range([0, 1]).domain(domain).clamp(true);
-    gradient.addColorStop(valueToFraction(domain[0]), colorScale(domain[0]));
-    gradient.addColorStop(valueToFraction(domain[1]), colorScale(domain[1]));
+
+    let value = domain[0];
+    let stepSize = (domain[1] - domain[0]) / nsteps;
+    for (let i = 0; i < nsteps; i++) {
+        if (i === (nsteps - 1)) {
+            value = domain[1];
+        }
+        let f = valueToFraction(value);
+        if (!isNaN(f)) {
+            let color = colorScale(value);
+            gradient.addColorStop(f, color);
+        }
+        value += stepSize;
+    }
     context.fillStyle = gradient;
-    context.fillRect(0, 0, width, legendHeight);
+    context.fillRect(0, 0, width, height);
     context.strokeStyle = 'LightGrey';
-    context.strokeRect(0, 0, width, legendHeight);
+    context.strokeRect(0, 0, width, height);
     if (label) {
 
         context.textBaseline = 'top';
         context.fillStyle = textColor;
 
         context.textAlign = 'left';
-        context.fillText(numberFormat(domain[0]), 0, legendHeight + 2);
+        context.fillText(numberFormat(domain[0]), 0, height + 2);
         context.textAlign = 'right';
-        context.fillText(numberFormat(domain[1]), width, legendHeight + 2);
+        context.fillText(numberFormat(domain[1]), width, height + 2);
     }
 }
 
