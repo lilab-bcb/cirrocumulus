@@ -128,19 +128,23 @@ class MetaEmbedding extends React.PureComponent {
                 const categoryToStats = this.props.traceInfo.categoryToStats;
                 let text = e.target.id;
                 text = text.replaceAll('_', ' '); // FIXME
-                const stats = categoryToStats[text];
-                if (stats) {
-                    if (this.props.traceInfo.name !== '__count') {
-                        if (this.props.traceInfo.isCategorical) {
-                            text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
+                if (categoryToStats) {
+                    const stats = categoryToStats[text];
+                    if (stats) {
+                        if (this.props.traceInfo.name !== '__count') {
+                            if (this.props.traceInfo.isCategorical) {
+                                text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
+                            } else {
+                                text += ', mean: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
+                            }
                         } else {
-                            text += ', mean: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
+                            text += ', # spots: ' + intFormat(stats.n);
                         }
-                    } else {
-                        text += ', # spots: ' + intFormat(stats.n);
+
                     }
                 }
                 this.tooltipElementRef.current.innerHTML = text;
+
             } else {
                 this.tooltipElementRef.current.innerHTML = '';
             }

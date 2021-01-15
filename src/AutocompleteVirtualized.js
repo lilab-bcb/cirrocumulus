@@ -127,8 +127,10 @@ export default function AutocompleteVirtualized(props) {
             token = token.toLowerCase().trim().replace(/"/g, '');
             if (token !== '') {
                 for (let i = 0; i < props.options.length; i++) {
-                    if (props.options[i].toLowerCase() === token) {
-                        results.push(props.options[i]);
+                    const option = props.options[i];
+                    const text = option.text != null ? option.text : option;
+                    if (text.toLowerCase() === token) {
+                        results.push(option);
                         break;
                     }
 

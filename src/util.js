@@ -142,17 +142,19 @@ export function updateTraceColors(traceInfo) {
         const svgNode = traceInfo.source;
         const galleryNode = traceInfo.gallerySource;
         const categoryToStats = traceInfo.categoryToStats;
-        for (const category in categoryToStats) {
-            const stats = categoryToStats[category];
-            const query = category.replaceAll(' ', '_'); // FIXME
+        if (categoryToStats) {
+            for (const category in categoryToStats) {
+                const stats = categoryToStats[category];
+                const query = category.replaceAll(' ', '_'); // FIXME
 
-            svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                node.style.fill = colorScale(stats.value);
-            });
+                svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                    node.style.fill = colorScale(stats.value);
+                });
 
-            galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                node.style.fill = colorScale(stats.value);
-            });
+                galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                    node.style.fill = colorScale(stats.value);
+                });
+            }
         }
     }
 }

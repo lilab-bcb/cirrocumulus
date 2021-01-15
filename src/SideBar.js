@@ -696,7 +696,7 @@ class SideBar extends React.PureComponent {
                                                          onChange={this.onMetafeaturesChange}
                                 />
                             </FormControl>}
-                            {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
+                            {(fancy && featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
                                 <AutocompleteVirtualized label={"Sets"}
                                                          options={featureSetOptions}
