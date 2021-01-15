@@ -115,17 +115,17 @@ const mapStateToProps = state => {
     return {
         cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
+        chartOptions: state.chartOptions,
+        chartSize: state.chartSize,
         embeddingData: state.embeddingData,
         embeddingLabels: state.embeddingLabels,
         markerOpacity: state.markerOpacity,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-        selection: state.selection,
-        primaryTraceKey: state.primaryTraceKey,
         pointSize: state.pointSize,
-        chartSize: state.chartSize,
         primaryChartSize: state.primaryChartSize,
-        chartOptions: state.chartOptions,
-        searchTokens: state.searchTokens
+        primaryTraceKey: state.primaryTraceKey,
+        searchTokens: state.searchTokens,
+        selection: state.selection,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
     };
 };
 const mapDispatchToProps = dispatch => {

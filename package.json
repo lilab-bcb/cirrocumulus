@@ -15,6 +15,7 @@
     "d3-scale": "^3.2.3",
     "d3-scale-chromatic": "^2.0.0",
     "d3-selection": "^2.0.0",
+    "d3-zoom": "^2.0.0",
     "file-saver": "^2.0.2",
     "lodash": "^4.17.20",
     "memoize-one": "^5.1.1",
@@ -32,7 +33,6 @@
     "redux-thunk": "^2.3.0",
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git",
     "simplify-js": "^1.2.4",
-    "svg-pan-zoom": "github:ariutta/svg-pan-zoom",
     "three": "^0.118.3",
     "web-vitals": "^0.2.4"
   },

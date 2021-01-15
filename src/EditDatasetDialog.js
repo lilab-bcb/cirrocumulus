@@ -254,8 +254,8 @@ class EditDatasetDialog extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dialog === EDIT_DATASET_DIALOG ? state.dataset : null,
+        email: state.email,
         serverInfo: state.serverInfo,
-        email: state.email
     };
 };
 const mapDispatchToProps = dispatch => {

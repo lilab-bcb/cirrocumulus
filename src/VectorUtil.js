@@ -67,20 +67,19 @@ export function cacheValues(result, cachedData) {
 }
 
 
-export function splitMeasures(measures) {
-    let obsMeasures = [];
-    let varMeasures = [];
+export function getTypeToMeasures(measures) {
+    let typeToMeasures = {X: [], obs: []};
     for (let i = 0; i < measures.length; i++) {
         const {name, type} = getVarNameType(measures[i]);
-        if (type === 'X') {
-            varMeasures.push(name);
-        } else if (type === 'obs') {
-            obsMeasures.push(name);
-        } else {
-            throw('Unknown key type ' + type);
+        let typeMeasures = typeToMeasures[type];
+        if (typeMeasures === undefined) {
+            typeMeasures = [];
+            typeToMeasures[type] = typeMeasures;
         }
+        typeMeasures.push(name);
+
     }
-    return {obsMeasures: obsMeasures, varMeasures: varMeasures};
+    return typeToMeasures;
 }
 
 export function getBasis(basis, nbins = null, agg = null, dimensions = 2, precomputed = false) {
@@ -134,9 +133,8 @@ export function computeDerivedStats(result, q, cachedData) {
     if (q.stats) {
         const dimensions = q.stats.dimensions || [];
         const measures = q.stats.measures || [];
-        const {obsMeasures, varMeasures} = splitMeasures(measures);
-
-        result.summary = getStats(getVectors(cachedData, dimensions), getVectors(cachedData, obsMeasures), getVectors(cachedData, varMeasures));
+        const typeToMeasures = getTypeToMeasures(measures);
+        result.summary = getStats(getVectors(cachedData, dimensions), getVectors(cachedData, typeToMeasures.obs), getVectors(cachedData, typeToMeasures.X));
     }
 
     if (q.groupedStats) {
@@ -152,7 +150,7 @@ export function computeDerivedStats(result, q, cachedData) {
         const dimensions = q.selection.dimensions || [];
         const measures = q.selection.measures || [];
         const embeddings = q.selection.embeddings || [];
-        const {obsMeasures, varMeasures} = splitMeasures(measures);
+        const typeToMeasures = getTypeToMeasures(measures);
         result.selection = {};
         let selectedIndices = getPassingFilterIndices(cachedData, q.selection.filter);
         if (embeddings.length > 0) {
@@ -164,12 +162,12 @@ export function computeDerivedStats(result, q, cachedData) {
             });
         }
 
-        if (dimensions.length > 0 && varMeasures.length > 0) {
+        if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
             result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, measures, selectedIndices));
         }
         result.selection.count = selectedIndices.length;
-        result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, obsMeasures, selectedIndices),
-            getVectors(cachedData, varMeasures, selectedIndices));
+        result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, selectedIndices),
+            getVectors(cachedData, typeToMeasures.X, selectedIndices));
     }
 }
 

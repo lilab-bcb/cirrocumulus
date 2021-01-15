@@ -381,18 +381,16 @@ class AppHeader extends React.PureComponent {
                         indicatorColor="primary"
                         textColor="primary"
                         onChange={this.handleTabChange}
-                        aria-label="view"
-
                     >
                         <AntTab value="embedding" label="Embeddings"/>
-                        <AntTab value="dist_plot" label="Distributions"/>
+                        <AntTab value="distribution" label="Distributions"/>
+                        {dataset.results != null && <AntTab value="precomputed_results" label="Results"/>}
                     </Tabs>}
 
                     <div className={"cirro-condensed"}>
                         {/*<CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>*/}
                         {/*<h3*/}
                         {/*    style={{display: 'inline', marginRight: 20}}>Cirro</h3>*/}
-
 
                     </div>
                     <div style={{marginLeft: 'auto'}}>
@@ -424,7 +422,6 @@ class AppHeader extends React.PureComponent {
                             {(showNewDataset || showEditDeleteDataset) && dataset != null && <Divider/>}
                             {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
                         </Menu>}
-
 
                         {<Tooltip title={"Toggle Light/Dark Theme"}>
                             <IconButton edge={false} className={this.props.chartOptions.darkMode ? 'cirro-active' : ''}
@@ -460,7 +457,6 @@ class AppHeader extends React.PureComponent {
                               onClose={this.handleUserMenuClose}>
                             <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
                         </Menu>}
-
 
                         {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
                                                 onClick={this.props.handleLogin}>Sign In</Button>}

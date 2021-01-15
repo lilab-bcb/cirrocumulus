@@ -47,6 +47,7 @@ class EmbeddingChart extends React.PureComponent {
             cachedData,
             categoricalNames,
             chartOptions,
+            dataset,
             datasetFilter,
             embeddingLabels,
             featureSummary,
@@ -60,7 +61,6 @@ class EmbeddingChart extends React.PureComponent {
             onDomain,
             onGallery,
             onMeasureFilterUpdated,
-            onMoreOptions,
             onNameChange,
             onSelect,
             pointSize,
@@ -150,7 +150,6 @@ class EmbeddingChart extends React.PureComponent {
                                    unselectedMarkerOpacity={unselectedMarkerOpacity}
                                    color={traceInfo.colors}
                                    onGallery={onGallery}
-                                   onMoreOptions={onMoreOptions}
 
                 />}
 
@@ -160,10 +159,10 @@ class EmbeddingChart extends React.PureComponent {
                                chartSize={primaryChartSize}
                                setChartOptions={onChartOptions}
                                chartOptions={chartOptions}
+                               dataset={dataset}
                                categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
                                onGallery={onGallery}
-                               onMoreOptions={onMoreOptions}
 
                 />}
                 {traceInfo.type === 'image' && <ImageChart
@@ -183,7 +182,6 @@ class EmbeddingChart extends React.PureComponent {
                     onDeselect={onDeselect}
                     onSelected={onSelect}
                     onGallery={onGallery}
-                    onMoreOptions={onMoreOptions}
                 />}
 
 
@@ -218,12 +216,6 @@ const mapDispatchToProps = dispatch => {
     return {
         onChartOptions: (options) => {
             dispatch(setChartOptions(options));
-        },
-        onMoreOptions: () => {
-            dispatch(setDialog(MORE_OPTIONS_DIALOG));
-        },
-        onPrimaryChartSize: value => {
-            dispatch(setPrimaryChartSize(value));
         },
         onDomain: (value) => {
             dispatch(handleDomainChange(value));

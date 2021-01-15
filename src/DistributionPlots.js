@@ -9,15 +9,15 @@ class DistributionPlots extends React.PureComponent {
     render() {
         const {
             cachedData,
+            categoricalNames,
             chartOptions,
             distributionData,
+            distributionPlotOptions,
             dotPlotInterpolator,
             globalFeatureSummary,
-            categoricalNames,
-            distributionPlotOptions,
             handleInterpolator,
             onDistributionPlotOptions,
-            selectedDistributionData,
+            selectedDistributionData
         } = this.props;
 
         if (distributionData.length === 0) {
@@ -49,14 +49,14 @@ class DistributionPlots extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        chartOptions: state.chartOptions,
         cachedData: state.cachedData,
-        dotPlotInterpolator: state.dotPlotInterpolator,
+        categoricalNames: state.categoricalNames,
+        chartOptions: state.chartOptions,
         distributionData: state.distributionData,
-        globalFeatureSummary: state.globalFeatureSummary,
         distributionPlotOptions: state.distributionPlotOptions,
-        selectedDistributionData: state.selectedDistributionData,
-        categoricalNames: state.categoricalNames
+        dotPlotInterpolator: state.dotPlotInterpolator,
+        globalFeatureSummary: state.globalFeatureSummary,
+        selectedDistributionData: state.selectedDistributionData
     };
 };
 const mapDispatchToProps = dispatch => {

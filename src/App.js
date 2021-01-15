@@ -28,6 +28,7 @@ import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import MoreOptionsDialog from './MoreOptionsDialog';
+import PrecomputedResultsPanel from './PrecomputedResultsPanel';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
@@ -142,9 +143,15 @@ class App extends PureComponent {
                             </div>
                             <div
                                 role="tabpanel"
-                                hidden={tab !== 'dist_plot'}
+                                hidden={tab !== 'distribution'}
                             >
                                 <DistributionPlots/>
+                            </div>
+                            <div
+                                role="tabpanel"
+                                hidden={tab !== 'precomputed_results'}
+                            >
+                                <PrecomputedResultsPanel/>
                             </div>
                         </React.Fragment>}
 

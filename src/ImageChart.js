@@ -482,7 +482,6 @@ class ImageChart extends React.PureComponent {
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
                     editSelection={this.props.chartOptions.editSelection}
-                    onMoreOptions={this.props.onMoreOptions}
                     onGallery={this.props.onGallery}
                     animating={false}
                     onZoomIn={this.onZoomIn}

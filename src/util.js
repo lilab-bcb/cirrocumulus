@@ -71,6 +71,7 @@ export const OBS_CAT_SEARCH_TOKEN = 'obsCat';
 export const X_SEARCH_TOKEN = 'X';
 export const FEATURE_SET_SEARCH_TOKEN = 'featureSet';
 export const METAFEATURE_SEARCH_TOKEN = 'metafeature';
+export const FEATURE_SET_SEARCH_TOKEN_ADD = 'featureSetAdd';
 
 /**
  *
@@ -352,6 +353,7 @@ export function splitSearchTokens(tokens) {
     let obs = [];
     let obsCat = [];
     let featureSets = [];
+    let featureSetsAdd = [];
     let metafeatures = [];
     tokens.forEach(token => {
         if (token.type === X_SEARCH_TOKEN) {
@@ -364,9 +366,11 @@ export function splitSearchTokens(tokens) {
             featureSets.push(token.value);
         } else if (token.type === METAFEATURE_SEARCH_TOKEN) {
             metafeatures.push(token.value);
+        } else if (token.type === FEATURE_SET_SEARCH_TOKEN_ADD) {
+            featureSetsAdd.push(token.value);
         } else {
             console.log('Unknown type: ' + token);
         }
     });
-    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, metafeatures: metafeatures};
+    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, metafeatures: metafeatures, featureSetsAdd: []};
 }

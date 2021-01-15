@@ -10,6 +10,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Divider from '@material-ui/core/Divider';
 import FormControl from '@material-ui/core/FormControl';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@material-ui/core/FormHelperText';
 import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
@@ -31,6 +32,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
+import SettingsIcon from '@material-ui/icons/Settings';
 import {debounce, findIndex} from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
@@ -44,6 +46,7 @@ import {
     getDatasetFilterArray,
     getEmbeddingKey,
     getTraceKey,
+    MORE_OPTIONS_DIALOG,
     openDatasetFilter,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
@@ -53,6 +56,7 @@ import {
     setChartSize,
     setCombineDatasetFilters,
     setDialog,
+    setDistributionPlotOptions,
     setInterpolator,
     setMarkerOpacity,
     setNumberOfBins,
@@ -60,6 +64,7 @@ import {
     setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
+    setTab,
     setUnselectedMarkerOpacity,
     submitJob,
     toggleEmbeddingLabel
@@ -67,6 +72,7 @@ import {
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
+import PrecomputedResultsSelector from './PrecomputedResultsSelector';
 import {
     FEATURE_SET_SEARCH_TOKEN,
     getFeatureSets,
@@ -95,18 +101,18 @@ const summaryOptions = [
 const styles = theme => ({
     root: {
         display: 'flex',
-        flexWrap: 'nowrap',
         width: '100%',
         flexDirection: 'column'
     },
     formControl: {
         display: 'block',
         minWidth: 200,
-        margin: theme.spacing(1),
+        margin: theme.spacing(0, 1)
     },
     select: {
         minWidth: 200,
     },
+
     toolbar: {
         '& hr': {
             margin: theme.spacing(0, 0.5),
@@ -283,7 +289,6 @@ class SideBar extends React.PureComponent {
         this.props.handleDeleteDatasetFilter(filterId);
     };
 
-
     onPointSizeChange = (event) => {
         this.props.handlePointSize(event.target.value);
     };
@@ -337,6 +342,7 @@ class SideBar extends React.PureComponent {
 
         this.props.handleEmbeddings(selection);
     };
+
     onFeatureSetsChange = (event, value) => {
         let values = [];
         value.forEach(val => {
@@ -348,7 +354,6 @@ class SideBar extends React.PureComponent {
         });
         this.props.handleSearchTokens(values, FEATURE_SET_SEARCH_TOKEN);
     };
-
 
     onFeatureSetClick = (event, option) => {
         const id = option.id;
@@ -378,6 +383,7 @@ class SideBar extends React.PureComponent {
         event.stopPropagation();
         this.setState({featureSetAnchorEl: null, featureSetView: true});
     };
+
     onCloseViewFeatureSetDialog = (event) => {
         event.stopPropagation();
         this.setState({featureSet: null, featureSetView: false});
@@ -399,10 +405,14 @@ class SideBar extends React.PureComponent {
 
     onFeatureClick = (event, option) => {
         event.stopPropagation();
+
         const value = option.text !== undefined ? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name == value) {
+                if (this.props.tab !== 'embedding') {
+                    this.props.handleTab('embedding');
+                }
                 this.props.handlePrimaryTraceKey(getTraceKey(galleryTraces[i]));
                 break;
             }
@@ -460,7 +470,6 @@ class SideBar extends React.PureComponent {
         this.props.handleEmbeddings(embeddings.slice(0));
     };
 
-
     handleSelectedCellsClick = (event) => {
         event.preventDefault();
         this.props.downloadSelectedIds();
@@ -488,28 +497,37 @@ class SideBar extends React.PureComponent {
         this.props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
     };
 
+    onChartTypeChange = (event) => {
+        this.props.onDistributionPlotOptions({chartType: event.target.value});
+    };
+
+    onViolinScaleChange = (event) => {
+        this.props.onDistributionPlotOptions({violinScale: event.target.value});
+    };
 
     render() {
         const {
-            chartSize,
-            binValues,
             binSummary,
+            binValues,
             categoricalNames,
-            embeddings,
-            embeddingLabels,
+            chartSize,
             classes,
-            searchTokens,
+            combineDatasetFilters,
+            dataset,
             datasetFilter,
             datasetFilters,
+            distributionPlotOptions,
+            embeddingLabels,
+            embeddings,
             interpolator,
             markers,
-            dataset,
             pointSize,
-            combineDatasetFilters,
+            searchTokens,
             selection,
-            serverInfo
+            serverInfo,
+            tab,
         } = this.props;
-
+        const chartType = distributionPlotOptions.chartType;
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
         const datasetFilterKeys = [];
         let isBrushing = false;
@@ -609,98 +627,108 @@ class SideBar extends React.PureComponent {
 
 
                 </Menu>
+                <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                           defaultExpanded>
+                    <AccordionPanelSummary>
+                        <div>View</div>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails style={{flexDirection: 'column'}}>
+                        <div>
+                            {tab === 'embedding' && embeddingOptions.length > 0 &&
+                            <FormControl className={classes.formControl}>
 
-                {embeddingOptions.length > 0 && <FormControl className={classes.formControl}>
-
-                    <AutocompleteVirtualized label={"Embeddings"}
-                                             options={embeddingOptions}
-                                             getChipTitle={(option) => {
-                                                 return option.text;
-                                             }}
-                                             value={selectedEmbeddings}
-                                             getChipText={(option) => option.text}
-                                             renderOption={(option) => <Typography noWrap>{option.text}</Typography>}
-                                             getOptionLabel={(option) => option.text}
-                                             getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
-                                             onChange={this.onEmbeddingsChange}
-                    />
-                </FormControl>}
-                {featureOptions.length > 0 && <FormControl className={classes.formControl}>
-                    <AutocompleteVirtualized onChipClick={this.onFeatureClick}
-                                             label={"Genes/Features"}
-                                             options={featureOptions}
-                                             value={splitTokens.X}
-                                             onChange={this.onFeaturesChange}
-                                             helperText={"Enter or paste list"}
-                    />
-                </FormControl>}
-
-                {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
-
-                    <AutocompleteVirtualized label={"Cell Metadata"}
-                                             options={annotationOptions}
-                                             value={splitTokens.obsCat.concat(splitTokens.obs)}
-                                             onChipClick={this.onFeatureClick}
-                                             groupBy={true}
-                                             getChipIcon={(option) => {
-                                                 return splitTokens.obsCat.indexOf(option) !== -1 ?
-                                                     <FontDownloadRoundedIcon
-                                                         onClick={(event) => {
-                                                             this.onObservationsIconClick(event, option);
+                                <AutocompleteVirtualized label={"Embeddings"}
+                                                         options={embeddingOptions}
+                                                         getChipTitle={(option) => {
+                                                             return option.text;
                                                          }}
-                                                         title={"Toggle Show/Hide Labels"}
-                                                         style={{
-                                                             marginLeft: 4,
-                                                             marginTop: 0,
-                                                             marginRight: 0,
-                                                             marginBottom: 0
+                                                         value={selectedEmbeddings}
+                                                         getChipText={(option) => option.text}
+                                                         renderOption={(option) => <Typography
+                                                             noWrap>{option.text}</Typography>}
+                                                         getOptionLabel={(option) => option.text}
+                                                         getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
+                                                         onChange={this.onEmbeddingsChange}
+                                />
+                            </FormControl>}
+                            {featureOptions.length > 0 && <FormControl className={classes.formControl}>
+                                <AutocompleteVirtualized onChipClick={this.onFeatureClick}
+                                                         label={"Genes/Features"}
+                                                         options={featureOptions}
+                                                         value={splitTokens.X}
+                                                         onChange={this.onFeaturesChange}
+                                                         helperText={"Enter or paste list"}
+                                />
+                            </FormControl>}
+
+                            {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
+
+                                <AutocompleteVirtualized label={"Cell Metadata"}
+                                                         options={annotationOptions}
+                                                         value={splitTokens.obsCat.concat(splitTokens.obs)}
+                                                         onChipClick={this.onFeatureClick}
+                                                         groupBy={true}
+                                                         getChipIcon={(option) => {
+                                                             return splitTokens.obsCat.indexOf(option) !== -1 ?
+                                                                 <FontDownloadRoundedIcon
+                                                                     onClick={(event) => {
+                                                                         this.onObservationsIconClick(event, option);
+                                                                     }}
+                                                                     title={"Toggle Show/Hide Labels"}
+                                                                     style={{
+                                                                         marginLeft: 4,
+                                                                         marginTop: 0,
+                                                                         marginRight: 0,
+                                                                         marginBottom: 0
+                                                                     }}
+                                                                     className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
                                                          }}
-                                                         className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
-                                             }}
-                                             getOptionSelected={(option, value) => option.id === value}
-                                             onChange={this.onObservationsChange}/>
-                </FormControl>}
+                                                         getOptionSelected={(option, value) => option.id === value}
+                                                         onChange={this.onObservationsChange}/>
+                            </FormControl>}
 
-                {metafeatureOptions && metafeatureOptions.length > 0 && <FormControl className={classes.formControl}>
-                    <AutocompleteVirtualized onChipClick={this.onMetaFeatureClick}
-                                             label={"Metagenes/Features"}
-                                             options={metafeatureOptions}
-                                             value={splitTokens.metafeatures}
-                                             onChange={this.onMetafeaturesChange}
-                    />
-                </FormControl>}
-                {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
+                            {metafeatureOptions && metafeatureOptions.length > 0 &&
+                            <FormControl className={classes.formControl}>
+                                <AutocompleteVirtualized onChipClick={this.onMetaFeatureClick}
+                                                         label={"Metagenes/Features"}
+                                                         options={metafeatureOptions}
+                                                         value={splitTokens.metafeatures}
+                                                         onChange={this.onMetafeaturesChange}
+                                />
+                            </FormControl>}
+                            {(fancy || featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
-                    <AutocompleteVirtualized label={"Sets"}
-                                             options={featureSetOptions}
-                                             value={featureSets}
-                                             onChipClick={this.onFeatureSetClick}
-                                             getChipTitle={(option) => {
-                                                 return option.category + ', ' + option.name;
-                                             }}
-                                             getChipIcon={(option) => {
-                                                 return <ArrowDropDownIcon onClick={(event) => {
-                                                     this.onFeatureSetClick(event, option);
-                                                 }}/>;
-                                             }}
-                                             groupBy={true}
-                                             onChange={this.onFeatureSetsChange}
-                                             getOptionSelected={(option, value) => option.id === value.id}
-                                             getChipText={option => option.name}/>
-                    {fancy && splitTokens.X.length > 0 &&
-                    <Tooltip title={"Save Current Feature List"}>
-                        <IconButton size={'small'} onClick={this.onSaveFeatureList}>
-                            <SaveIcon/>
-                        </IconButton>
-                    </Tooltip>
-                    }
-                </FormControl>}
+                                <AutocompleteVirtualized label={"Sets"}
+                                                         options={featureSetOptions}
+                                                         value={featureSets}
+                                                         onChipClick={this.onFeatureSetClick}
+                                                         getChipTitle={(option) => {
+                                                             return option.category + ', ' + option.name;
+                                                         }}
+                                                         getChipIcon={(option) => {
+                                                             return <ArrowDropDownIcon onClick={(event) => {
+                                                                 this.onFeatureSetClick(event, option);
+                                                             }}/>;
+                                                         }}
+                                                         groupBy={true}
+                                                         onChange={this.onFeatureSetsChange}
+                                                         getOptionSelected={(option, value) => option.id === value.id}
+                                                         getChipText={option => option.name}/>
+                                {fancy && splitTokens.X.length > 0 &&
+                                <Tooltip title={"Save Current Feature List"}>
+                                    <IconButton size={'small'} onClick={this.onSaveFeatureList}>
+                                        <SaveIcon/>
+                                    </IconButton>
+                                </Tooltip>
+                                }
+                            </FormControl>}
+                        </div>
+                    </AccordionPanelDetails>
+                </Accordion>
 
-                <Accordion defaultExpanded>
-                    <AccordionPanelSummary
-                        aria-controls="filter-content"
-                        id="filter-header"
-                    >
+                <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                           defaultExpanded>
+                    <AccordionPanelSummary>
                         <div>Filters</div>
                     </AccordionPanelSummary>
                     <AccordionPanelDetails>
@@ -765,28 +793,54 @@ class SideBar extends React.PureComponent {
                         </div>
                     </AccordionPanelDetails>
                 </Accordion>
-                <Accordion defaultExpanded>
-                    <AccordionPanelSummary
-                        aria-controls="view-options-content"
-                        id="view-options-header"
-                    >
-                        <div>View Options</div>
+                <Accordion style={tab === 'distribution' ? null : {display: 'none'}} defaultExpanded>
+                    <AccordionPanelSummary>
+                        <div>Distribution Options</div>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails>
+                        <div style={{marginTop: 8}}>
+                            {chartType === 'violin' && <FormControl className={classes.formControl}>
+                                <InputLabel id="violin-scale-label">Scale</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    labelId="violin-scale-label"
+                                    value={distributionPlotOptions.violinScale}
+                                    onChange={this.onViolinScaleChange}
+                                >
+                                    <MenuItem value={'area'}>Area</MenuItem>
+                                    <MenuItem value={'width'}>Width</MenuItem>
+                                </Select>
+                                <FormHelperText>If "area", violins have the same area. If "width", violins have the
+                                    same
+                                    maximum
+                                    width.</FormHelperText>
+                            </FormControl>}
+
+                            <FormControl className={classes.formControl}>
+                                <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>
+                                <Select
+                                    className={classes.select}
+                                    labelId="dist-chart-type-label"
+                                    value={chartType}
+                                    onChange={this.onChartTypeChange}
+                                >
+                                    <MenuItem value={'dotplot'}>Dot Plot</MenuItem>
+                                    <MenuItem value={'heatmap'}>Heatmap</MenuItem>
+                                    <MenuItem value={'violin'}>Violin</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </div>
+                    </AccordionPanelDetails>
+                </Accordion>
+
+                <Accordion style={tab === 'embedding' ? null : {display: 'none'}} defaultExpanded>
+                    <AccordionPanelSummary>
+                        <div>Embedding Options</div>
                     </AccordionPanelSummary>
                     <AccordionPanelDetails>
                         <div>
-
-
-                            {/*<TextField type="text" onKeyPress={this.onMarkerSizeKeyPress}*/}
-                            {/*           onChange={this.onMarkerSizeChange} label="Marker Size"*/}
-                            {/*           className={classes.formControl} value={markerSize}/>*/}
-                            {/*<TextField type="text" onKeyPress={this.onUnselectedMarkerSizeKeyPress}*/}
-                            {/*           onChange={this.onUnselectedMarkerSizeChange} label="Unselected Marker Size"*/}
-                            {/*           className={classes.formControl} value={unselectedMarkerSize}/>*/}
-                            {/*<TextField type="text"*/}
-                            {/*           onChange={this.onMarkerOpacityChange} label="Marker Opacity"*/}
-                            {/*           className={classes.formControl} value={this.state.opacity}/>*/}
-
-                            <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Marker Opacity</InputLabel>
+                            <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Marker
+                                Opacity</InputLabel>
                             <Slider
                                 min={0.0}
                                 max={1}
@@ -806,7 +860,8 @@ class SideBar extends React.PureComponent {
                                 style={{marginLeft: 10, width: '86%'}}
                                 valueLabelDisplay="auto"
                                 value={this.state.unselectedOpacity}
-                                onChange={this.onUnselectedMarkerOpacityChange} aria-labelledby="continuous-slider"/>
+                                onChange={this.onUnselectedMarkerOpacityChange}
+                                aria-labelledby="continuous-slider"/>
 
 
                             <FormControl className={classes.formControl}>
@@ -841,12 +896,18 @@ class SideBar extends React.PureComponent {
                                 </Select>
                             </FormControl>
 
+
                             <FormControl className={classes.formControl}>
                                 <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
                                 <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
                                                      interpolator={interpolator}/>
                             </FormControl>
-
+                            <Tooltip title={"More Options"}>
+                                <IconButton edge={false} size={'small'}
+                                            aria-label="More Options" onClick={this.props.onMoreOptions}>
+                                    <SettingsIcon/>
+                                </IconButton>
+                            </Tooltip>
                             {!isSummarized && showBinPlot && <div><FormControlLabel
                                 control={
                                     <Switch
@@ -882,8 +943,6 @@ class SideBar extends React.PureComponent {
                             </FormControl>}
 
 
-                            <Divider/>
-
                             {/*<Typography*/}
                             {/*    color="textSecondary"*/}
                             {/*    display="block"*/}
@@ -897,11 +956,9 @@ class SideBar extends React.PureComponent {
 
                     </AccordionPanelDetails>
                 </Accordion>
-                {fancy && <Accordion defaultExpanded>
-                    <AccordionPanelSummary
-                        aria-controls="filter-options-content"
-                        id="filter-options-header"
-                    >
+                {fancy && <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                                     defaultExpanded>
+                    <AccordionPanelSummary>
                         <div>Saved Filters</div>
                     </AccordionPanelSummary>
                     <AccordionPanelDetails>
@@ -916,7 +973,8 @@ class SideBar extends React.PureComponent {
                                                   selected={item.id === savedDatasetFilter.id}
                                                   onClick={e => this.openDatasetFilter(item.id)}>
                                             <ListItemText primary={item.name}/>
-                                            <ListItemSecondaryAction onClick={e => this.deleteDatasetFilter(item.id)}>
+                                            <ListItemSecondaryAction
+                                                onClick={e => this.deleteDatasetFilter(item.id)}>
                                                 <IconButton edge="end" aria-label="delete">
                                                     <DeleteIcon/>
                                                 </IconButton>
@@ -938,109 +996,131 @@ class SideBar extends React.PureComponent {
                         </div>
                     </AccordionPanelDetails>
                 </Accordion>}
+                <Accordion style={tab === 'precomputed_results' ? null : {display: 'none'}}
+                           defaultExpanded>
+                    <AccordionPanelSummary>
+                        <div>Filter</div>
+                    </AccordionPanelSummary>
+                    <AccordionPanelDetails style={{flexDirection: 'column'}}>
+                        <PrecomputedResultsSelector/>
+                    </AccordionPanelDetails>
+                </Accordion>
             </div>
         );
     }
 }
 
 const mapStateToProps = state => {
-    return {
-        dataset: state.dataset,
-        markers: state.markers,
-        binValues: state.binValues,
-        binSummary: state.binSummary,
-        numberOfBins: state.numberOfBins,
-        embeddingData: state.embeddingData,
-        embeddingLabels: state.embeddingLabels,
-        interpolator: state.interpolator,
-        markerOpacity: state.markerOpacity,
-        pointSize: state.pointSize,
-        primaryTraceKey: state.primaryTraceKey,
-        savedDatasetFilter: state.savedDatasetFilter,
-        serverInfo: state.serverInfo,
-        embeddings: state.embeddings,
-        searchTokens: state.searchTokens,
-        categoricalNames: state.categoricalNames,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-        combineDatasetFilters: state.combineDatasetFilters,
-        datasetFilter: state.datasetFilter,
-        datasetFilters: state.datasetFilters,
-        selection: state.selection,
-        chartSize: state.chartSize
-    };
-};
+        return {
+            binSummary: state.binSummary,
+            binValues: state.binValues,
+            categoricalNames: state.categoricalNames,
+            chartSize: state.chartSize,
+            combineDatasetFilters: state.combineDatasetFilters,
+            dataset: state.dataset,
+            datasetFilter: state.datasetFilter,
+            datasetFilters: state.datasetFilters,
+            distributionPlotOptions: state.distributionPlotOptions,
+            embeddingData: state.embeddingData,
+            embeddingLabels: state.embeddingLabels,
+            embeddings: state.embeddings,
+            interpolator: state.interpolator,
+            markerOpacity: state.markerOpacity,
+            markers: state.markers,
+            numberOfBins: state.numberOfBins,
+            pointSize: state.pointSize,
+            primaryTraceKey: state.primaryTraceKey,
+            savedDatasetFilter: state.savedDatasetFilter,
+            searchTokens: state.searchTokens,
+            selection: state.selection,
+            serverInfo: state.serverInfo,
+            tab: state.tab,
+            unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        };
+    }
+;
 const mapDispatchToProps = (dispatch, ownProps) => {
-    return {
-        handleDialog: (value) => {
-            dispatch(setDialog(value));
-        },
-        handlePrimaryTraceKey: (value) => {
-            dispatch(setPrimaryTraceKey(value));
-        },
-        handleInterpolator: value => {
-            dispatch(setInterpolator(value));
-        },
-        handleChartSize: (value) => {
-            dispatch(setChartSize(value));
-        },
-        handleCombineDatasetFilters: (value) => {
-            dispatch(setCombineDatasetFilters(value));
-        },
-        downloadSelectedIds: () => {
-            dispatch(downloadSelectedIds());
-        },
-        removeDatasetFilter: (filter) => {
-            dispatch(removeDatasetFilter(filter));
-        },
-        handleEmbeddings: value => {
-            dispatch(setSelectedEmbedding(value));
-        },
+        return {
+            handleDialog: (value) => {
+                dispatch(setDialog(value));
+            },
+            handleTab: (value) => {
+                dispatch(setTab(value));
+            },
+            handlePrimaryTraceKey: (value) => {
+                dispatch(setPrimaryTraceKey(value));
+            },
+            handleInterpolator: value => {
+                dispatch(setInterpolator(value));
+            },
+            handleChartSize: (value) => {
+                dispatch(setChartSize(value));
+            },
+            handleCombineDatasetFilters: (value) => {
+                dispatch(setCombineDatasetFilters(value));
+            },
+            downloadSelectedIds: () => {
+                dispatch(downloadSelectedIds());
+            },
+            removeDatasetFilter: (filter) => {
+                dispatch(removeDatasetFilter(filter));
+            },
+            handleEmbeddings: value => {
+                dispatch(setSelectedEmbedding(value));
+            },
 
-        handleNumberOfBins: value => {
-            dispatch(setNumberOfBins(value));
-        },
-        handlePointSize: value => {
-            dispatch(setPointSize(value));
-        },
+            handleNumberOfBins: value => {
+                dispatch(setNumberOfBins(value));
+            },
+            handlePointSize: value => {
+                dispatch(setPointSize(value));
+            },
 
-        handleMarkerOpacity: value => {
-            dispatch(setMarkerOpacity(value));
-        },
+            handleMarkerOpacity: value => {
+                dispatch(setMarkerOpacity(value));
+            },
 
-        handleEmbeddingLabel: value => {
-            dispatch(toggleEmbeddingLabel(value));
-        },
-        handleUnselectedMarkerOpacity: value => {
-            dispatch(setUnselectedMarkerOpacity(value));
-        },
+            handleEmbeddingLabel: value => {
+                dispatch(toggleEmbeddingLabel(value));
+            },
+            handleUnselectedMarkerOpacity: value => {
+                dispatch(setUnselectedMarkerOpacity(value));
+            },
 
-        handleBinSummary: value => {
-            dispatch(setBinSummary(value));
-        },
-        handleBinValues: value => {
-            dispatch(setBinValues(value));
-        },
-        handleSearchTokens: (value, type) => {
-            dispatch(setSearchTokens(value == null ? [] : value, type));
-        },
-        handleOpenDatasetFilter: value => {
-            dispatch(openDatasetFilter(value));
-        },
-        handleDeleteDatasetFilter: value => {
-            dispatch(deleteDatasetFilter(value));
-        },
-        handleExportDatasetFilters: () => {
-            dispatch(exportDatasetFilters());
-        },
-        handleDeleteFeatureSet: value => {
-            dispatch(deleteFeatureSet(value));
-        },
-        handleDifferentialExpression: value => {
-            dispatch(submitJob(value));
-        }
+            onMoreOptions: () => {
+                dispatch(setDialog(MORE_OPTIONS_DIALOG));
+            },
+            handleBinSummary: value => {
+                dispatch(setBinSummary(value));
+            },
+            handleBinValues: value => {
+                dispatch(setBinValues(value));
+            },
+            handleSearchTokens: (value, type) => {
+                dispatch(setSearchTokens(value == null ? [] : value, type));
+            },
+            handleOpenDatasetFilter: value => {
+                dispatch(openDatasetFilter(value));
+            },
+            handleDeleteDatasetFilter: value => {
+                dispatch(deleteDatasetFilter(value));
+            },
+            handleExportDatasetFilters: () => {
+                dispatch(exportDatasetFilters());
+            },
+            handleDeleteFeatureSet: value => {
+                dispatch(deleteFeatureSet(value));
+            },
+            handleDifferentialExpression: value => {
+                dispatch(submitJob(value));
+            },
+            onDistributionPlotOptions: (payload) => {
+                dispatch(setDistributionPlotOptions(payload));
+            },
 
-    };
-};
+        };
+    }
+;
 
 export default withStyles(styles)(connect(
     mapStateToProps, mapDispatchToProps,

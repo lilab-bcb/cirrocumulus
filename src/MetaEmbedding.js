@@ -1,7 +1,8 @@
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
+import {select} from 'd3-selection';
+import {zoom, zoomIdentity} from 'd3-zoom';
 import React from 'react';
-import svgPanZoom from 'svg-pan-zoom';
 import ChartToolbar from './ChartToolbar';
 import {intFormat, numberFormat2f} from './formatters';
 
@@ -30,20 +31,8 @@ class MetaEmbedding extends React.PureComponent {
     constructor(props) {
         super(props);
         this.containerElementRef = React.createRef();
-
         this.tooltipElementRef = React.createRef();
-        this.state = {loading: false};
     }
-
-
-    onZoomIn = () => {
-        this.zoom.zoomIn();
-    };
-
-    onZoomOut = () => {
-        this.zoom.zoomOut();
-    };
-
 
     onSaveImage = (format) => {
         let context;
@@ -83,10 +72,6 @@ class MetaEmbedding extends React.PureComponent {
         }
     };
 
-    onHome = () => {
-        this.zoom.fit();
-        this.zoom.center();
-    };
     updateSvg = () => {
         const containerElement = this.containerElementRef.current;
         containerElement.innerHTML = '';
@@ -94,8 +79,45 @@ class MetaEmbedding extends React.PureComponent {
         svg.setAttribute('width', this.props.chartSize.width);
         svg.setAttribute('height', this.props.chartSize.height);
         containerElement.append(svg);
-        this.zoom = svgPanZoom(svg, {dblClickZoomEnabled: false, contain: true});
-        this.zoom.fit();
+        let g;
+        let childNodes = svg.childNodes || svg.children;
+        if (childNodes.length > 0 && childNodes[0].nodeName === "g" && childNodes[0].getAttribute("cirro-zoom") === 'true') {
+            g = childNodes[0];
+        }
+        if (!g) {
+            const nodeNamesKeep = new Set(['defs', 'metadata', 'style']);
+            g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute('cirro-zoom', 'true');
+            const svgChildren = svg.childNodes || svg.children;
+            if (!!svgChildren && svgChildren.length > 0) {
+                for (let i = svgChildren.length; i > 0; i--) {
+                    if (!nodeNamesKeep.has(svgChildren[svgChildren.length - i].nodeName)) {
+                        g.appendChild(svgChildren[svgChildren.length - i]);
+                    }
+                }
+            }
+            svg.appendChild(g);
+        }
+
+        function zoomed({transform}) {
+            g.setAttribute("transform", transform);
+        }
+
+        const d3Zoom = zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
+        this.d3Zoom = d3Zoom;
+        select(svg).call(d3Zoom);
+    };
+
+    onHome = () => {
+        select(this.props.traceInfo.source).call(this.d3Zoom.transform, zoomIdentity.scale(1));
+    };
+
+    onZoomIn = () => {
+        select(this.props.traceInfo.source).call(this.d3Zoom.scaleBy, 1.5);
+    };
+
+    onZoomOut = () => {
+        select(this.props.traceInfo.source).call(this.d3Zoom.scaleBy, .5);
     };
 
     componentDidMount() {
@@ -130,17 +152,17 @@ class MetaEmbedding extends React.PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.props.traceInfo.source !== prevProps.traceInfo.source) {
+            select(prevProps.traceInfo.source).on(".zoom", null);
             this.updateSvg();
         } else if (this.props.chartSize.width !== prevProps.chartSize.width || this.props.chartSize.height !== prevProps.chartSize.height) {
             const svg = this.props.traceInfo.source;
             svg.setAttribute('width', this.props.chartSize.width);
             svg.setAttribute('height', this.props.chartSize.height);
-            this.zoom.fit();
+            select(svg).call(this.d3Zoom.transform, zoomIdentity.scale(1));
         }
     }
 
     render() {
-
         return <React.Fragment>
             <div className={this.props.classes.root}>
                 <ChartToolbar

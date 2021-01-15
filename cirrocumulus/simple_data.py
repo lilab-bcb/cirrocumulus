@@ -104,6 +104,7 @@ class SimpleData:
         result = {'version': '1.0.0'}
         marker_results = []
         prior_marker_results = adata.uns.get('markers', [])
+
         if isinstance(prior_marker_results, str):
             import json
             prior_marker_results = json.loads(prior_marker_results)
@@ -164,6 +165,9 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
+        if 'cirro_results' in adata.uns:
+            import json  # precomputed results
+            result['results'] = json.loads(adata.uns['cirro_results'])
         if 'metagenes' in adata.uns:
             metagenes = adata.uns['metagenes']
             result['metafeatures'] = metagenes['var'].index

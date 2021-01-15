@@ -1,6 +1,5 @@
 import {InputLabel, MenuItem, Select, withStyles} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
-import FormHelperText from '@material-ui/core/FormHelperText';
 import Input from '@material-ui/core/Input';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
@@ -166,23 +165,12 @@ class DistributionGroup extends React.PureComponent {
     };
 
 
-    onChartTypeChange = (event) => {
-        this.props.onDistributionPlotOptions({chartType: event.target.value});
-    };
-
-    onViolinScaleChange = (event) => {
-        this.props.onDistributionPlotOptions({violinScale: event.target.value});
-    };
-
-
     render() {
 
         const {
-            cachedData,
             textColor,
             distributionData,
             distributionPlotOptions,
-            globalFeatureSummary,
             categoricalNames,
             selectedData,
             interpolator
@@ -335,7 +323,6 @@ class DistributionGroup extends React.PureComponent {
                            onChange={this.onMaxChange} label={"Max"}
                            value={this.state.max}/>
 
-
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
                     <SizeLegend style={{display: 'block'}}
                                 width={150}
@@ -353,33 +340,6 @@ class DistributionGroup extends React.PureComponent {
                                value={this.state.maxSize}/>
                 </div>}
 
-
-                {chartType === 'violin' && <FormControl className={this.props.classes.formControl}>
-                    <InputLabel id="violin-scale-label">Scale</InputLabel>
-                    <Select
-                        labelId="violin-scale-label"
-                        value={distributionPlotOptions.violinScale}
-                        onChange={this.onViolinScaleChange}
-                    >
-                        <MenuItem value={'area'}>Area</MenuItem>
-                        <MenuItem value={'width'}>Width</MenuItem>
-                    </Select>
-                    <FormHelperText>If "area", violins have the same area. If "width", violins have the same maximum
-                        width.</FormHelperText>
-                </FormControl>}
-
-                <FormControl className={this.props.classes.formControl}>
-                    <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>
-                    <Select
-                        labelId="dist-chart-type-label"
-                        value={chartType}
-                        onChange={this.onChartTypeChange}
-                    >
-                        <MenuItem value={'dotplot'}>Dot Plot</MenuItem>
-                        <MenuItem value={'heatmap'}>Heatmap</MenuItem>
-                        <MenuItem value={'violin'}>Violin</MenuItem>
-                    </Select>
-                </FormControl>
 
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Sort By</InputLabel>

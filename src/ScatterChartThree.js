@@ -521,7 +521,6 @@ class ScatterChartThree extends React.PureComponent {
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
                     editSelection={this.props.chartOptions.editSelection}
-                    onMoreOptions={this.props.onMoreOptions}
                     onGallery={this.props.onGallery}
                     animating={this.props.chartOptions.animating}
                     showFog={this.props.chartOptions.showFog}

@@ -1304,7 +1304,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         let newDataset;
 
         function onPromisesComplete() {
-            newDataset = Object.assign(dataset, newDataset);
+            newDataset = Object.assign({}, dataset, newDataset);
             if (newDataset.embeddings) {
                 for (let i = 0; i < newDataset.embeddings.length; i++) {
                     if (newDataset.embeddings[i].nbins != null) {
@@ -1871,53 +1871,56 @@ function updateEmbeddingData(state, features) {
                     chartData.gallerySource = svg.cloneNode(true);
                     const groupBy = cachedData[chartData.embedding.attrs.group];
                     const selection = chartData.embedding.attrs.selection;
-
                     const passingIndices = getPassingFilterIndices(cachedData, {filters: selection});
-                    let groupToValues = {};
-
+                    let passingGroupToValues = {};
                     for (let i = 0, n = passingIndices.length; i < n; i++) {
                         const index = passingIndices[i];
                         const category = groupBy[index];
-                        let values = groupToValues[category];
+                        let values = passingGroupToValues[category];
                         if (values == null) {
                             values = [];
-                            groupToValues[category] = values;
+                            passingGroupToValues[category] = values;
                         }
                         values.push(chartData.values[index]);
 
                     }
-                    const categoryToStats = {};
-                    if (isCategorical) {
-                        for (const category in groupToValues) {
-                            const values = groupToValues[category];
-                            const valueToCount = {};
-                            for (let i = 0, n = values.length; i < n; i++) {
-                                const val = values[i];
-                                valueToCount[val] = (valueToCount[val] || 0) + 1;
-                            }
-                            let max = 0;
-                            let maxValue;
-                            for (let value in valueToCount) {
-                                let count = valueToCount[value];
-                                if (count > max) {
-                                    max = count;
-                                    maxValue = value;
+
+                    function getCategoryToStats(groupToValues) {
+                        const categoryToStats = {};
+                        if (isCategorical) {
+                            for (const category in groupToValues) {
+                                const values = groupToValues[category];
+                                const valueToCount = {};
+                                for (let i = 0, n = values.length; i < n; i++) {
+                                    const val = values[i];
+                                    valueToCount[val] = (valueToCount[val] || 0) + 1;
                                 }
+                                let max = 0;
+                                let maxValue;
+                                for (let value in valueToCount) {
+                                    let count = valueToCount[value];
+                                    if (count > max) {
+                                        max = count;
+                                        maxValue = value;
+                                    }
+                                }
+                                categoryToStats[category] = {value: maxValue, n: values.length};
                             }
-                            categoryToStats[category] = {value: maxValue, n: values.length};
-                        }
-                    } else {
-                        for (const category in groupToValues) {
-                            const values = groupToValues[category];
-                            let sum = 0;
-                            for (let i = 0, n = values.length; i < n; i++) {
-                                sum += values[i];
+                        } else {
+                            for (const category in groupToValues) {
+                                const values = groupToValues[category];
+                                let sum = 0;
+                                for (let i = 0, n = values.length; i < n; i++) {
+                                    sum += values[i];
+                                }
+                                const mean = sum / values.length;
+                                categoryToStats[category] = {value: mean, n: values.length};
                             }
-                            const mean = sum / values.length;
-                            categoryToStats[category] = {value: mean, n: values.length};
                         }
+                        return categoryToStats;
                     }
-                    chartData.categoryToStats = categoryToStats;
+
+                    chartData.categoryToStats = getCategoryToStats(passingGroupToValues);
                 }
                 updateTraceColors(chartData);
 

@@ -2,7 +2,7 @@ import {isArray} from 'lodash';
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
 import {Vector} from './Vector';
-import {getBasis, splitDataFilter, splitMeasures} from './VectorUtil';
+import {cacheValues, computeDerivedStats, getBasis, getTypeToMeasures, splitDataFilter} from './VectorUtil';
 
 
 export class DirectAccessDataset {
@@ -108,7 +108,7 @@ export class DirectAccessDataset {
         });
     }
 
-    getDataPromise(q) {
+    getDataPromise(q, cachedData) {
         let dimensions = [];
         let measures = [];
         let queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
@@ -130,7 +130,7 @@ export class DirectAccessDataset {
             }
         });
 
-        const {obsMeasures, varMeasures} = splitMeasures(measures);
+        const typeToMeasures = getTypeToMeasures(measures);
         let basisKeys = new Set();
 
         if (q.selection) { // get any embeddings
@@ -164,7 +164,7 @@ export class DirectAccessDataset {
 
         return new Promise(resolve => {
 
-            this.fetchData(dimensions.concat(obsMeasures).concat(varMeasures).concat(Array.from(basisKeys))).then(() => {
+            this.fetchData(dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).concat(Array.from(basisKeys))).then(() => {
 
                 if (q.embedding) {
                     results.embeddings = [];
@@ -176,9 +176,9 @@ export class DirectAccessDataset {
                 if (q.values) {
                     let dimensions = q.values.dimensions || [];
                     let measures = q.values.measures || [];
-                    const {obsMeasures, varMeasures} = splitMeasures(measures);
+                    const typeToMeasures = getTypeToMeasures(measures);
                     let values = {};
-                    dimensions.concat(obsMeasures).concat(varMeasures).forEach(key => {
+                    dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).forEach(key => {
                         if (key === '__count') {
                             values[key] = new Int8Array(this.schema.shape[0]);
                             values[key].fill(1);
@@ -188,6 +188,8 @@ export class DirectAccessDataset {
                     });
                     results.values = values;
                 }
+                cacheValues(results, cachedData);
+                computeDerivedStats(results, q, cachedData);
                 resolve(results);
             });
         });
