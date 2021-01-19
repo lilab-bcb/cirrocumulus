@@ -10,7 +10,7 @@ import React from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import DotPlotCanvas from './DotPlotCanvas';
 import {numberFormat, numberFormat2f} from './formatters';
-import {density, nrd0} from './kde';
+import {boxplotStats, density, nrd0} from './kde';
 import SizeLegend from './SizeLegend';
 import ViolinPlot from './ViolinPlot';
 
@@ -28,7 +28,7 @@ function updateNames(data, categoricalNames) {
         renamedDimensions.push(categoricalNames[dimension] || {});
     });
     data.forEach(item => {
-        const tmp = [];
+        const names = [];
         renamedDimensions.forEach((dimension, index) => {
             const nameMap = renamedDimensions[index];
             let name = item.categories[index];
@@ -36,8 +36,8 @@ function updateNames(data, categoricalNames) {
             if (newName !== undefined) {
                 name = newName;
             }
-            tmp[index] = name;
-            item.name = tmp.join(', ');
+            names[index] = name;
+            item.name = names;
         });
     });
 }
@@ -169,6 +169,7 @@ class DistributionGroup extends React.PureComponent {
 
         const {
             textColor,
+            categoryColorScales,
             distributionData,
             distributionPlotOptions,
             categoricalNames,
@@ -268,7 +269,8 @@ class DistributionGroup extends React.PureComponent {
                         for (let k = 0, n = values.length; k < n; k++) {
                             values[k] = vector.get(k);
                         }
-                        const bandwidth = nrd0(values);
+                        item.boxplotStats = boxplotStats(values);
+                        const bandwidth = nrd0(item.boxplotStats);
                         item.bandwidth = bandwidth;
                         item.density = density(values, bandwidth);
                     }
@@ -281,19 +283,23 @@ class DistributionGroup extends React.PureComponent {
         return (
             <React.Fragment>
                 {chartType !== 'violin' && <DotPlotCanvas
+                    categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
                     sizeScale={sizeScale}
                     textColor={textColor}
                     drawCircles={chartType === 'dotplot'}
                     data={data}/>}
                 {chartType === 'violin' && <ViolinPlot
+                    categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
                     textColor={textColor}
                     options={distributionPlotOptions}
+                    textColor={textColor}
                     data={data}/>}
 
                 {chartType !== 'violin' && selectedData != null && selectedData.length > 0 ?
                     <DotPlotCanvas
+                        categoryColorScales={categoryColorScales}
                         colorScale={colorScale}
                         sizeScale={sizeScale}
                         subtitle="selection"
@@ -302,6 +308,7 @@ class DistributionGroup extends React.PureComponent {
                         data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
                 {chartType === 'violin' && selectedData != null && selectedData.length > 0 ?
                     <ViolinPlot
+                        categoryColorScales={categoryColorScales}
                         colorScale={colorScale}
                         subtitle="selection"
                         options={distributionPlotOptions}

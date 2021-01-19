@@ -4,32 +4,31 @@ import {scaleLinear} from 'd3-scale';
 import {throttle} from 'lodash';
 import React from 'react';
 import {CANVAS_FONT} from './ChartUtil';
+import {CHIP_SIZE} from './DotPlotCanvas';
 
-
-export function drawFeature(context, size, feature, data, colorScale, options, drawCategories = true) {
+export function drawFeature(context, size, feature, data, colorScale, options, drawCategories, categoryColorScales, textColor) {
     const {violinScale, violinHeight, violinWidth} = options;
-    const categories = data.map(array => array[0].name);
+    const names = data.map(array => array[0].name); // array of arrays
     const features = data[0].map(item => item.feature);
     const featureIndex = features.indexOf(feature);
     let xmin = Number.MAX_VALUE;
     let xmax = -Number.MAX_VALUE;
     let ymax = -Number.MAX_VALUE;
-    for (let i = 0; i < categories.length; i++) {
+    for (let i = 0; i < names.length; i++) {
         const item = data[i][featureIndex];
         xmin = Math.min(xmin, item.density.x[0]);
         xmax = Math.max(xmax, item.density.x[item.density.x.length - 1]);
         ymax = Math.max(ymax, item.density.max);
     }
 
-
     let yscale;
     if (violinScale === 'area') {
         yscale = scaleLinear().domain([-ymax, ymax]).range([4, violinWidth - 4]); // horizontal position
     }
     const xscale = scaleLinear().domain([xmin, xmax]).range([violinHeight - 10, 10]).nice(); // vertical position
-    context.strokeStyle = 'black';
+    context.strokeStyle = textColor;
 
-    for (let categoryIndex = 0; categoryIndex < categories.length; categoryIndex++) {
+    for (let categoryIndex = 0; categoryIndex < names.length; categoryIndex++) {
         context.save();
         const item = data[categoryIndex][featureIndex];
         if (violinScale === 'width') {
@@ -37,7 +36,7 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
         }
 
         const density = item.density;
-        context.fillStyle = colorScale(item.mean);
+        // context.fillStyle = colorScale(item.mean);
         context.translate(size.x + categoryIndex * violinWidth, 0);
         context.beginPath();
         context.moveTo(yscale(density.y[0]), xscale(density.x[0]));
@@ -51,15 +50,15 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
 
         // context.closePath();
 
-        context.fill();
+        // context.fill();
         context.stroke();
         context.restore();
     }
 
     context.textAlign = "right";
     context.textBaseline = "middle";
-    context.fillStyle = 'black';
-    context.strokeStyle = 'black';
+    context.fillStyle = textColor;
+    context.strokeStyle = textColor;
 
     const tickWidth = 4;
     let textWidth = size.x - tickWidth;
@@ -77,17 +76,48 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
 
     if (drawCategories) {
         context.textBaseline = 'middle';
-        context.textAlign = "right";
-        categories.forEach((text, i) => { // features
+
+        // names.forEach((text, i) => { // features
+        //     const pix = i * violinWidth + violinWidth / 2;
+        //     context.save();
+        //     // context.translate(size.x + pix, size.height);
+        //     context.translate(size.x + pix, violinHeight - 2);
+        //     context.rotate(-Math.PI / 2);
+        //     context.fillText(text, 0, 0);
+        //     context.restore();
+        // });
+
+
+        context.textAlign = "left";
+        const height = violinHeight + size.y;
+        for (let i = 0; i < names.length; i++) {
+            const item = data[i][featureIndex];
             const pix = i * violinWidth + violinWidth / 2;
-            context.save();
-            // context.translate(size.x + pix, size.height);
-            context.translate(size.x + pix, violinHeight - 2);
-            context.rotate(-Math.PI / 2);
-            context.fillText(text, 0, 0);
-            context.restore();
-        });
+            const name = names[i];
+            for (let j = 0; j < name.length; j++) {
+                // 4px, chip, 2px, text
+                let offset = size.offsets[j - 1] || 0;
+                if (offset > 0) {
+                    offset += 4;
+                }
+                const categoryColorScale = categoryColorScales[j];
+                const category = item.categories[j];
+                context.fillStyle = categoryColorScale(category);
+                context.beginPath();
+                context.rect(size.x + pix - CHIP_SIZE + 4, height - CHIP_SIZE - offset, CHIP_SIZE, CHIP_SIZE);
+                context.fill();
+                context.stroke();
+
+                context.save();
+                context.fillStyle = textColor;
+                context.translate(size.x + pix, height - offset - CHIP_SIZE - 2);
+                context.rotate(-Math.PI / 2);
+                context.fillText(name[j], 0, 0);
+                context.restore();
+            }
+        }
     }
+
 }
 
 export default class ViolinPlotOneFeature extends React.PureComponent {
@@ -101,7 +131,7 @@ export default class ViolinPlotOneFeature extends React.PureComponent {
 
     mousemove = (event) => {
         const node = event.target;
-        var rect = node.getBoundingClientRect();
+        const rect = node.getBoundingClientRect();
         const {data, feature, size, options} = this.props;
         const {violinHeight, violinWidth} = options;
         let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
@@ -126,7 +156,7 @@ export default class ViolinPlotOneFeature extends React.PureComponent {
     };
 
     redraw() {
-        const {colorScale, data, options, feature, size} = this.props;
+        const {categoryColorScales, colorScale, data, options, feature, size, textColor} = this.props;
         if (data == null) {
             return;
         }
@@ -154,7 +184,7 @@ export default class ViolinPlotOneFeature extends React.PureComponent {
         context
             .clearRect(0, 0, width * devicePixelRatio, height * devicePixelRatio);
         context.scale(devicePixelRatio, devicePixelRatio);
-        drawFeature(context, size, feature, data, colorScale, options);
+        drawFeature(context, size, feature, data, colorScale, options, true, categoryColorScales, textColor);
 
     }
 
@@ -179,6 +209,7 @@ export default class ViolinPlotOneFeature extends React.PureComponent {
             </Box>);
 
     }
+
 }
 
 

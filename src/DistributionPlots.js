@@ -1,3 +1,4 @@
+import {schemeCategory10} from 'd3-scale-chromatic';
 import {groupBy} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -14,6 +15,7 @@ class DistributionPlots extends React.PureComponent {
             distributionData,
             distributionPlotOptions,
             dotPlotInterpolator,
+            embeddingData,
             globalFeatureSummary,
             handleInterpolator,
             onDistributionPlotOptions,
@@ -27,11 +29,27 @@ class DistributionPlots extends React.PureComponent {
         let dimension2data = groupBy(distributionData, 'dimension');
         let dimension2selecteddata = groupBy(selectedDistributionData, 'dimension');
 
+
         return <React.Fragment>{Object.keys(dimension2data).map(dimension => {
             const data = dimension2data[dimension];
+            const categoryColorScales = [];
+            data[0].dimensions.forEach(dimension => {
+                let found = false;
+                for (let i = 0; i < embeddingData.length; i++) {
+                    if (dimension === embeddingData[i].name) {
+                        categoryColorScales.push(embeddingData[i].colorScale); // TODO make color scale independent of embedding
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    categoryColorScales.push(schemeCategory10);
+                }
 
+            });
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
+                                      categoryColorScales={categoryColorScales}
                                       distributionData={data}
                                       globalFeatureSummary={globalFeatureSummary}
                                       selectedData={dimension2selecteddata[dimension]}
@@ -55,6 +73,7 @@ const mapStateToProps = state => {
         distributionData: state.distributionData,
         distributionPlotOptions: state.distributionPlotOptions,
         dotPlotInterpolator: state.dotPlotInterpolator,
+        embeddingData: state.embeddingData,
         globalFeatureSummary: state.globalFeatureSummary,
         selectedDistributionData: state.selectedDistributionData
     };

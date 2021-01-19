@@ -10,6 +10,34 @@ import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 
+export const CHIP_SIZE = 12;
+
+export function getNameWidth(array2d, context) {
+    let offsets = [];
+    let ncategories = 0;
+    if (array2d[0].length > 0) {
+        ncategories = array2d[0][0].name.length;
+        for (let i = 0; i < array2d[0][0].name.length; i++) {
+            offsets.push(0);
+        }
+    }
+    array2d.forEach(array => {
+        let name = array[0].name;
+        for (let i = 0; i < ncategories; i++) {
+            const width = context.measureText(name[i]).width;
+            offsets[i] = Math.max(offsets[i], width);
+        }
+    });
+    for (let i = 0; i < offsets.length; i++) {
+        offsets[i] += 6;
+        offsets[i] += CHIP_SIZE;
+    }
+    offsets[offsets.length - 1] += 4;
+    let xTotal = 0;
+    offsets.forEach(val => xTotal += val);
+    return {offsets: offsets, sum: xTotal};
+}
+
 
 export default class DotPlotCanvas extends React.PureComponent {
 
@@ -36,7 +64,7 @@ export default class DotPlotCanvas extends React.PureComponent {
             let onMouseMove = (event) => {
                 const node = event.target;
                 const maxRadius = this.props.sizeScale.range()[1];
-                var rect = node.getBoundingClientRect();
+                const rect = node.getBoundingClientRect();
                 let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
                 // xy[0] /= devicePixelRatio;
                 // xy[1] /= devicePixelRatio;
@@ -48,13 +76,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                     const array = this.props.data[row];
                     const mean = array[col].mean;
                     const fractionExpressed = array[col].fractionExpressed;
-                    // const renamedCategories = this.props.renamedCategories || {};
-                    // const categories = this.categories;
-                    // let category = categories[this.categoryOrder[row]];
-                    // let newName = renamedCategories[category];
-                    // if (newName != null) {
-                    //     category = newName;
-                    // }
+
                     let meanFormatted = numberFormat2f(mean);
                     if (meanFormatted.endsWith('.00')) {
                         meanFormatted = meanFormatted.substring(0, meanFormatted.lastIndexOf('.'));
@@ -63,7 +85,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                     if (percentExpressed.endsWith('.0')) {
                         percentExpressed = percentExpressed.substring(0, percentExpressed.lastIndexOf('.'));
                     }
-                    this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed;
+                    this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', ');
                 } else {
                     this.tooltipElementRef.current.innerHTML = '';
                 }
@@ -97,6 +119,7 @@ export default class DotPlotCanvas extends React.PureComponent {
     drawContext(context, size) {
         const data2d = this.props.data;
         const colorScale = this.props.colorScale;
+        const categoryColorScales = this.props.categoryColorScales;
         const sizeScale = this.props.sizeScale;
         const drawCircles = this.props.drawCircles;
         const textColor = this.props.textColor;
@@ -124,15 +147,27 @@ export default class DotPlotCanvas extends React.PureComponent {
                 // context.stroke();
             }
         });
-        // context.lineWidth = 1;
-        context.textAlign = 'right';
-        context.fillStyle = textColor;
+
+        context.textAlign = 'left';
         context.textBaseline = 'middle';
 
         data2d.forEach((array, i) => { // categories
-            let category = array[0].name;
+            let name = array[0].name;
             const pix = i * diameter + maxRadius;
-            context.fillText(category, size.x - 4, pix);
+            for (let j = 0; j < name.length; j++) {
+                // 4px, chip, 2px, text
+                let xpixstart = size.xoffsets[j - 1] || 0;
+                if (xpixstart > 0) {
+                    xpixstart += 4;
+                }
+                context.fillStyle = categoryColorScales[j](array[0].categories[j]);
+                context.beginPath();
+                context.rect(xpixstart, pix - maxRadius / 2 - 3, CHIP_SIZE, CHIP_SIZE);
+                context.fill();
+                context.stroke();
+                context.fillStyle = textColor;
+                context.fillText(name[j], xpixstart + 2 + CHIP_SIZE, pix);
+            }
         });
         context.textAlign = 'right';
         context.textBaseline = 'top';
@@ -165,18 +200,13 @@ export default class DotPlotCanvas extends React.PureComponent {
             maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(item.feature).width);
         });
         maxFeatureWidth += 4;
-        let xoffset = 0;
 
-        array2d.forEach(array => {
-            let category = array[0].name;
-            xoffset = Math.max(xoffset, context.measureText(category).width);
-        });
-        xoffset += 4;
+        const nameWidth = getNameWidth(array2d, context);
         const maxRadius = this.props.sizeScale.range()[1];
         const diameter = maxRadius * 2;
         const height = array2d.length * diameter + 4;
         const width = array2d[0].length * diameter + 4;
-        return {x: xoffset, y: maxFeatureWidth, width: width, height: height};
+        return {xoffsets: nameWidth.offsets, x: nameWidth.sum, y: maxFeatureWidth, width: width, height: height};
     }
 
     update() {

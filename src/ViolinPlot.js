@@ -7,6 +7,7 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
+import {getNameWidth} from './DotPlotCanvas';
 import {numberFormat, numberFormat2f} from './formatters';
 import ViolinPlotOneFeature, {drawFeature} from './ViolinPlotOneFeature';
 
@@ -80,16 +81,17 @@ export default class ViolinPlot extends React.PureComponent {
     };
 
     drawContext(context, size) {
-        const {colorScale, data, options} = this.props;
+        const {categoryColorScales, colorScale, data, options, textColor} = this.props;
         const {violinHeight, violinWidth} = options;
         const features = data[0].map(item => item.feature);
         const categories = data.map(array => array[0].name);
         for (let i = 0; i < features.length; i++) {
             context.save();
             context.translate(0, violinHeight * i);
-            drawFeature(context, size, features[i], data, colorScale, options, i === features.length - 1);
+            drawFeature(context, size, features[i], data, colorScale, options, i === features.length - 1, categoryColorScales, textColor);
             context.textBaseline = 'top';
             context.textAlign = "middle";
+            context.fillStyle = textColor;
             context.fillText(features[i], (violinWidth * categories.length) / 2, 0);
             context.restore();
         }
@@ -120,21 +122,17 @@ export default class ViolinPlot extends React.PureComponent {
         const categories = data.map(array => array[0].name);
         const features = data[0].map(item => item.feature);
 
-        let maxCategoryWidth = 0;
-        categories.forEach(category => {
-            maxCategoryWidth = Math.max(maxCategoryWidth, context.measureText(category).width);
-        });
-        maxCategoryWidth += 4;
+        const nameWidth = getNameWidth(data, context);
 
         const height = features.length * violinHeight + 4;
         const width = categories.length * violinWidth + 4;
-        return {x: yaxisWidth, y: maxCategoryWidth, width: width, height: height};
+        return {x: yaxisWidth, offsets: nameWidth.offsets, y: nameWidth.sum, width: width, height: height};
     }
 
     render() {
 
         const {saveImageEl} = this.state;
-        const {colorScale, data, options} = this.props;
+        const {categoryColorScales, colorScale, data, options, textColor} = this.props;
         const features = data[0].map(item => item.feature);
         const dimension = data[0][0].dimension;
         const dummyCanvas = document.createElement('canvas');
@@ -179,7 +177,8 @@ export default class ViolinPlot extends React.PureComponent {
             </div>
             {features.map(feature => {
                 return <ViolinPlotOneFeature onTooltip={this.onTooltip} key={feature} feature={feature} data={data}
-                                             options={options} size={size}
+                                             categoryColorScales={categoryColorScales}
+                                             options={options} size={size} textColor={textColor}
                                              colorScale={colorScale}/>;
             })}
 
