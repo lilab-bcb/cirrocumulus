@@ -505,6 +505,11 @@ class SideBar extends React.PureComponent {
         this.props.onDistributionPlotOptions({violinScale: event.target.value});
     };
 
+    onViolinShowBoxplot = (event) => {
+        this.props.onDistributionPlotOptions({violinShowBoxplot: event.target.checked});
+    };
+
+
     render() {
         const {
             binSummary,
@@ -815,6 +820,17 @@ class SideBar extends React.PureComponent {
                                     maximum
                                     width.</FormHelperText>
                             </FormControl>}
+
+                            {chartType === 'violin' && <div><FormControlLabel
+                                control={
+                                    <Switch
+                                        value={"violinShowBoxplot"}
+                                        checked={distributionPlotOptions.violinShowBoxplot}
+                                        onChange={this.onViolinShowBoxplot}
+                                    />
+                                }
+                                label="Show Box Plot"
+                            /></div>}
 
                             <FormControl className={classes.formControl}>
                                 <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>

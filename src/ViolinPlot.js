@@ -9,9 +9,11 @@ import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {getNameWidth} from './DotPlotCanvas';
 import {numberFormat, numberFormat2f} from './formatters';
+import {stripTrailingZeros} from './util';
 import ViolinPlotOneFeature, {drawFeature} from './ViolinPlotOneFeature';
 
 const yaxisWidth = 30;
+
 
 export default class ViolinPlot extends React.PureComponent {
 
@@ -101,16 +103,12 @@ export default class ViolinPlot extends React.PureComponent {
     onTooltip = (item) => {
         if (item) {
             const mean = item.mean;
+            const median = item.boxplotStats.median;
             const fractionExpressed = item.fractionExpressed;
-            let meanFormatted = numberFormat2f(mean);
-            if (meanFormatted.endsWith('.00')) {
-                meanFormatted = meanFormatted.substring(0, meanFormatted.lastIndexOf('.'));
-            }
-            let percentExpressed = numberFormat(100 * fractionExpressed);
-            if (percentExpressed.endsWith('.0')) {
-                percentExpressed = percentExpressed.substring(0, percentExpressed.lastIndexOf('.'));
-            }
-            this.tooltipElementRef.current.innerHTML = 'category: ' + item.name + ', mean: ' + meanFormatted + ', % expressed: ' + percentExpressed;
+            let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
+            let medianFormatted = stripTrailingZeros(numberFormat2f(median));
+            let percentExpressed = stripTrailingZeros(numberFormat(100 * fractionExpressed));
+            this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', median: ' + medianFormatted + ', % expressed: ' + percentExpressed + ', ' + item.name.join(', ');
         } else {
             this.tooltipElementRef.current.innerHTML = '';
         }

@@ -7,7 +7,7 @@ import {CANVAS_FONT} from './ChartUtil';
 import {CHIP_SIZE} from './DotPlotCanvas';
 
 export function drawFeature(context, size, feature, data, colorScale, options, drawCategories, categoryColorScales, textColor) {
-    const {violinScale, violinHeight, violinWidth} = options;
+    const {violinScale, violinHeight, violinWidth, violinShowBoxplot} = options;
     const names = data.map(array => array[0].name); // array of arrays
     const features = data[0].map(item => item.feature);
     const featureIndex = features.indexOf(feature);
@@ -27,7 +27,7 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
     }
     const xscale = scaleLinear().domain([xmin, xmax]).range([violinHeight - 10, 10]).nice(); // vertical position
     context.strokeStyle = textColor;
-
+    const boxplotWidth = 6;
     for (let categoryIndex = 0; categoryIndex < names.length; categoryIndex++) {
         context.save();
         const item = data[categoryIndex][featureIndex];
@@ -47,11 +47,34 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
         for (let i = density.x.length - 2; i > 0; i--) {
             context.lineTo(yscale(density.y[i]), xscale(density.x[i]));
         }
-
         // context.closePath();
 
         // context.fill();
         context.stroke();
+
+        if (violinShowBoxplot) {
+            // iqr box
+            context.strokeRect(violinWidth / 2 - boxplotWidth / 2, xscale(item.boxplotStats.q3), boxplotWidth, xscale(item.boxplotStats.q1) - xscale(item.boxplotStats.q3));
+
+            // median
+            context.beginPath();
+            context.moveTo(violinWidth / 2 - boxplotWidth / 2, xscale(item.boxplotStats.median));
+            context.lineTo(violinWidth / 2 - boxplotWidth / 2 + boxplotWidth, xscale(item.boxplotStats.median));
+            context.stroke();
+
+            // mean
+            // context.setLineDash([2, 5]);
+            // context.beginPath();
+            // context.moveTo(violinWidth / 2 - boxplotWidth / 2, xscale(item.boxplotStats.mean));
+            // context.lineTo(violinWidth / 2 - boxplotWidth / 2 + boxplotWidth, xscale(item.boxplotStats.mean));
+            // context.stroke();
+            // context.setLineDash([]);
+
+            // line from q3 to upperAdjacentValue
+            context.fillRect(violinWidth / 2 - 0.5, xscale(item.boxplotStats.upperAdjacentValue), 1, xscale(item.boxplotStats.q3) - xscale(item.boxplotStats.upperAdjacentValue));
+            // line from q1 to lowerAdjacentValue
+            context.fillRect(violinWidth / 2 - 0.5, xscale(item.boxplotStats.q1), 1, xscale(item.boxplotStats.lowerAdjacentValue) - xscale(item.boxplotStats.q1));
+        }
         context.restore();
     }
 

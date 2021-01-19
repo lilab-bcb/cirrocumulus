@@ -73,6 +73,21 @@ export const FEATURE_SET_SEARCH_TOKEN = 'featureSet';
 export const METAFEATURE_SEARCH_TOKEN = 'metafeature';
 export const FEATURE_SET_SEARCH_TOKEN_ADD = 'featureSetAdd';
 
+export function stripTrailingZeros(s) {
+    let index = s.lastIndexOf('.');
+    let ending = s.substring(index + 1);
+    let allZeros = true;
+    for (let i = 0, n = ending.length; i < n; i++) {
+        if (ending[i] !== '0') {
+            allZeros = false;
+            break;
+        }
+    }
+    if (allZeros) {
+        s = s.substring(0, s.lastIndexOf('.'));
+    }
+    return s;
+}
 /**
  *
  * @param array. Array of format,data

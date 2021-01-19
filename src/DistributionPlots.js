@@ -1,3 +1,4 @@
+import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
 import {groupBy} from 'lodash';
 import React from 'react';
@@ -43,7 +44,7 @@ class DistributionPlots extends React.PureComponent {
                     }
                 }
                 if (!found) {
-                    categoryColorScales.push(schemeCategory10);
+                    categoryColorScales.push(scaleOrdinal(schemeCategory10)); // TODO make color scale independent of embedding
                 }
 
             });

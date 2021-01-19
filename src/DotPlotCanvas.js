@@ -9,6 +9,7 @@ import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
+import {stripTrailingZeros} from './util';
 
 export const CHIP_SIZE = 12;
 
@@ -76,15 +77,9 @@ export default class DotPlotCanvas extends React.PureComponent {
                     const array = this.props.data[row];
                     const mean = array[col].mean;
                     const fractionExpressed = array[col].fractionExpressed;
+                    let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
+                    let percentExpressed = stripTrailingZeros(numberFormat(100 * fractionExpressed));
 
-                    let meanFormatted = numberFormat2f(mean);
-                    if (meanFormatted.endsWith('.00')) {
-                        meanFormatted = meanFormatted.substring(0, meanFormatted.lastIndexOf('.'));
-                    }
-                    let percentExpressed = numberFormat(100 * fractionExpressed);
-                    if (percentExpressed.endsWith('.0')) {
-                        percentExpressed = percentExpressed.substring(0, percentExpressed.lastIndexOf('.'));
-                    }
                     this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', ');
                 } else {
                     this.tooltipElementRef.current.innerHTML = '';
@@ -160,7 +155,8 @@ export default class DotPlotCanvas extends React.PureComponent {
                 if (xpixstart > 0) {
                     xpixstart += 4;
                 }
-                context.fillStyle = categoryColorScales[j](array[0].categories[j]);
+                const categoryColorScale = categoryColorScales[j];
+                context.fillStyle = categoryColorScale(array[0].categories[j]);
                 context.beginPath();
                 context.rect(xpixstart, pix - maxRadius / 2 - 3, CHIP_SIZE, CHIP_SIZE);
                 context.fill();

@@ -69,7 +69,8 @@ const DEFAULT_DIST_PLOT_OPTIONS = {
     chartType: 'dotplot',
     violinScale: 'width',
     violinHeight: 100,
-    violinWidth: 80
+    violinWidth: 80,
+    violinShowBoxplot:true
 };
 
 const DEFAULT_INTERPOLATOR_OBJ = {
