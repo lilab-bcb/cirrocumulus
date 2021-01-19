@@ -48,7 +48,7 @@ class GalleryImage extends React.PureComponent {
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
                 categoricalNames, chartOptions, obsCat, cachedData);
             const canvas = containerElement.querySelector('canvas');
-            const showLabels = obsCat.length > 0;
+            const showLabels = obsCat.length > 0 && chartSize >= 600;
             let overlayUrl = null;
             if (showLabels) {
                 const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
