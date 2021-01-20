@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.12 `January 20, 2021`
+    * Added violin plots
+
 - 1.1.11.post3 `December 14, 2020`
     * Include categorical labels and dot plot options in `Copy Link` URL
 
