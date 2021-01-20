@@ -48,7 +48,7 @@ export default class ViolinPlot extends React.PureComponent {
         const size = this.getSize(context);
 
         const colorScaleHeight = 15;
-        const height = size.height + size.y + colorScaleHeight + 20;
+        const height = size.totalHeight + size.y + colorScaleHeight + 20;
         const width = Math.max(200, size.width + size.x);
 
         if (format === 'svg') {
@@ -66,7 +66,7 @@ export default class ViolinPlot extends React.PureComponent {
         context.fillStyle = textColor === 'white' ? 'black' : 'white';
         context.fillRect(0, 0, width, height);
         this.drawContext(context, size);
-        context.translate(4, (size.height + size.y + 4));
+        context.translate(4, (size.totalHeight + size.y + 4));
         drawColorScheme(context, this.props.colorScale, textColor);
 
         if (format === 'svg') {
@@ -119,12 +119,10 @@ export default class ViolinPlot extends React.PureComponent {
         const {violinHeight, violinWidth} = options;
         const categories = data.map(array => array[0].name);
         const features = data[0].map(item => item.feature);
-
         const nameWidth = getNameWidth(data, context);
-
-        const height = features.length * violinHeight + 4;
+        const totalHeight = features.length * violinHeight + 4;
         const width = categories.length * violinWidth + 4;
-        return {x: yaxisWidth, offsets: nameWidth.offsets, y: nameWidth.sum, width: width, height: height};
+        return {x: yaxisWidth, offsets: nameWidth.offsets, y: nameWidth.sum, width: width, totalHeight: totalHeight};
     }
 
     render() {
@@ -174,9 +172,13 @@ export default class ViolinPlot extends React.PureComponent {
 
             </div>
             {features.map(feature => {
-                return <ViolinPlotOneFeature onTooltip={this.onTooltip} key={feature} feature={feature} data={data}
+                return <ViolinPlotOneFeature onTooltip={this.onTooltip}
+                                             key={feature}
+                                             feature={feature} data={data}
                                              categoryColorScales={categoryColorScales}
-                                             options={options} size={size} textColor={textColor}
+                                             options={options}
+                                             size={size}
+                                             textColor={textColor}
                                              colorScale={colorScale}/>;
             })}
 

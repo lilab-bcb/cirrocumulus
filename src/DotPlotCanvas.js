@@ -25,11 +25,11 @@ export function getNameWidth(array2d, context) {
     array2d.forEach(array => {
         let name = array[0].name;
         for (let i = 0; i < ncategories; i++) {
-            const width = context.measureText(name[i]).width;
-            offsets[i] = Math.max(offsets[i], width);
+            offsets[i] = Math.max(offsets[i], context.measureText(name[i]).width);
         }
     });
     for (let i = 0; i < offsets.length; i++) {
+        // 4px, chip, 2px, text
         offsets[i] += 6;
         offsets[i] += CHIP_SIZE;
     }

@@ -1,6 +1,7 @@
-import {InputLabel, MenuItem, Select, withStyles} from '@material-ui/core';
+import {InputLabel, MenuItem, Select} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
+import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
@@ -314,22 +315,24 @@ class DistributionGroup extends React.PureComponent {
                         options={distributionPlotOptions}
                         textColor={textColor}
                         data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
-                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator} interpolator={interpolator}/>
-                <div style={{color: textColor, width: 174}}><Typography
-                    variant={"caption"}>{colorMin}</Typography><Typography
-                    variant={"caption"}
-                    style={{float: 'right'}}>{colorMax}</Typography></div>
-                <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
-                <TextField
-                    InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                    size="small" type="text"
-                    onChange={this.onMinChange} label={"Min"}
-                    value={this.state.min}/>
-                <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
-                           type="text"
-                           onChange={this.onMaxChange} label={"Max"}
-                           value={this.state.max}/>
-
+                {chartType !== 'violin' && <React.Fragment>
+                    <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
+                                         interpolator={interpolator}/>
+                    <div style={{color: textColor, width: 174}}><Typography
+                        variant={"caption"}>{colorMin}</Typography><Typography
+                        variant={"caption"}
+                        style={{float: 'right'}}>{colorMax}</Typography></div>
+                    <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
+                    <TextField
+                        InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                        size="small" type="text"
+                        onChange={this.onMinChange} label={"Min"}
+                        value={this.state.min}/>
+                    <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
+                               type="text"
+                               onChange={this.onMaxChange} label={"Max"}
+                               value={this.state.max}/>
+                </React.Fragment>}
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
                     <SizeLegend style={{display: 'block'}}
                                 width={150}
@@ -364,6 +367,7 @@ class DistributionGroup extends React.PureComponent {
             </React.Fragment>
         );
     }
+
 }
 
 export default withStyles(styles)(DistributionGroup);

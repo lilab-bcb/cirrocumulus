@@ -25,16 +25,19 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
     if (violinScale === 'area') {
         yscale = scaleLinear().domain([-ymax, ymax]).range([4, violinWidth - 4]); // horizontal position
     }
-    const xscale = scaleLinear().domain([xmin, xmax]).range([violinHeight - 10, 10]).nice(); // vertical position
+    const xscale = scaleLinear().domain([xmin, xmax]).range([violinHeight - 1, 1]).nice(); // vertical position
     context.strokeStyle = textColor;
     const boxplotWidth = 6;
+    const lineCap = context.lineCap;
+    const lineJoin = context.lineJoin;
     for (let categoryIndex = 0; categoryIndex < names.length; categoryIndex++) {
         context.save();
         const item = data[categoryIndex][featureIndex];
         if (violinScale === 'width') {
             yscale = scaleLinear().domain([-item.density.max, item.density.max]).range([4, violinWidth - 4]); // horizontal position
         }
-
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
         const density = item.density;
         // context.fillStyle = colorScale(item.mean);
         context.translate(size.x + categoryIndex * violinWidth, 0);
@@ -51,7 +54,8 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
 
         // context.fill();
         context.stroke();
-
+        context.lineCap = lineCap;
+        context.lineJoin = lineJoin;
         if (violinShowBoxplot) {
             // iqr box
             context.strokeRect(violinWidth / 2 - boxplotWidth / 2, xscale(item.boxplotStats.q3), boxplotWidth, xscale(item.boxplotStats.q1) - xscale(item.boxplotStats.q3));
@@ -71,12 +75,19 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
             // context.setLineDash([]);
 
             // line from q3 to upperAdjacentValue
-            context.fillRect(violinWidth / 2 - 0.5, xscale(item.boxplotStats.upperAdjacentValue), 1, xscale(item.boxplotStats.q3) - xscale(item.boxplotStats.upperAdjacentValue));
+            context.beginPath();
+            context.moveTo(violinWidth / 2, xscale(item.boxplotStats.upperAdjacentValue));
+            context.lineTo(violinWidth / 2, xscale(item.boxplotStats.q3));
+            context.stroke();
             // line from q1 to lowerAdjacentValue
-            context.fillRect(violinWidth / 2 - 0.5, xscale(item.boxplotStats.q1), 1, xscale(item.boxplotStats.lowerAdjacentValue) - xscale(item.boxplotStats.q1));
+            context.beginPath();
+            context.moveTo(violinWidth / 2, xscale(item.boxplotStats.q1));
+            context.lineTo(violinWidth / 2, xscale(item.boxplotStats.lowerAdjacentValue));
+            context.stroke();
         }
         context.restore();
     }
+
 
     context.textAlign = "right";
     context.textBaseline = "middle";
@@ -85,7 +96,19 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
 
     const tickWidth = 4;
     let textWidth = size.x - tickWidth;
+    // y axis
+    context.lineWidth = 0.5;
+    context.beginPath();
+    context.moveTo(textWidth + tickWidth, xscale(xscale.domain()[0]));
+    context.lineTo(textWidth + tickWidth, xscale(xscale.domain()[1]));
+    context.stroke();
+    // x axis
+    context.beginPath();
+    context.moveTo(textWidth + tickWidth, xscale(xscale.domain()[0]));
+    context.lineTo(size.width + size.x - 4, xscale(xscale.domain()[0]));
+    context.stroke();
 
+    context.lineWidth = 1;
     const format = xscale.tickFormat(4);
     const ticks = xscale.ticks(4);
     ticks.forEach(tick => {
@@ -100,19 +123,9 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
     if (drawCategories) {
         context.textBaseline = 'middle';
 
-        // names.forEach((text, i) => { // features
-        //     const pix = i * violinWidth + violinWidth / 2;
-        //     context.save();
-        //     // context.translate(size.x + pix, size.height);
-        //     context.translate(size.x + pix, violinHeight - 2);
-        //     context.rotate(-Math.PI / 2);
-        //     context.fillText(text, 0, 0);
-        //     context.restore();
-        // });
-
 
         context.textAlign = "left";
-        const height = violinHeight + size.y;
+        const height = violinHeight + size.y - 1;
         for (let i = 0; i < names.length; i++) {
             const item = data[i][featureIndex];
             const pix = i * violinWidth + violinWidth / 2;
