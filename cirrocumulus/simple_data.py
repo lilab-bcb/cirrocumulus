@@ -101,7 +101,7 @@ class SimpleData:
     def schema(adata):
         obs_cat = []
         obs = []
-        result = {'version': '1.0.0'}
+        schema_dict = {'version': '1.0.0'}
         marker_results = []
         prior_marker_results = adata.uns.get('markers', [])
 
@@ -109,55 +109,86 @@ class SimpleData:
             import json
             prior_marker_results = json.loads(prior_marker_results)
         marker_results += prior_marker_results
-        result['markers'] = marker_results
+        schema_dict['markers'] = marker_results
         n_genes = 10
         scanpy_marker_keys = []
 
         for key in adata.uns.keys():
             rank_genes_groups = adata.uns[key]
-            if isinstance(rank_genes_groups, dict) and 'logfoldchanges' in rank_genes_groups:
+            if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and 'scores' in rank_genes_groups:
                 scanpy_marker_keys.append(key)
-        has_pegasus_markers = 'de_res' in adata.varm
-        if len(scanpy_marker_keys) > 0 or has_pegasus_markers:
-            for key in scanpy_marker_keys:
-                rank_genes_groups = adata.uns[key]
-                params = rank_genes_groups['params']
-                # reference = params['reference']
-                # category = '{} {}'.format(params['groupby'], params.get('method', ''))
-                group_names = rank_genes_groups['names'].dtype.names
-                category = '{} ({})'.format(params['groupby'], key)
-                for group_name in group_names:
-                    gene_names = rank_genes_groups['names'][group_name]
-                    # scores = rank_genes_groups['scores'][group_name]
-                    features = gene_names[:n_genes]
-                    marker_results.append(dict(category=category, name=str(group_name), features=features))
-            if has_pegasus_markers:  # pegasus
-                de_res = adata.varm['de_res']
-                names = de_res.dtype.names
-                field_names = set()  # e.g. 1:auroc
-                cluster_names = set()
-                for name in names:
-                    index = name.index(':')
-                    field_name = name[index + 1:]
-                    cluster_name = name[:index]
-                    field_names.add(field_name)
-                    cluster_names.add(cluster_name)
-                sort_field_names = ['mwu_qval', 'auroc', 't_qval']
-                de_res = pd.DataFrame(data=de_res, index=adata.var.index)
-                field_use = None
-                for field in sort_field_names:
-                    if field in field_names:
-                        field_use = field
-                        break
-                if field_use is not None:
-                    field_ascending = field_use != 'auroc'
-                    for cluster_name in cluster_names:
-                        fc_column = '{}:log2FC'.format(cluster_name)
-                        name = '{}:{}'.format(cluster_name, field_name)
-                        idx_up = de_res[fc_column].values > 0
-                        df_up = de_res.loc[idx_up].sort_values(by=[name, fc_column], ascending=[field_ascending, False])
-                        features = df_up[:n_genes].index.values
-                        marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
+        de_results = []  # array of dicts containing params logfoldchanges, pvals_adj, scores, names
+        id_counter = 1
+        for scanpy_marker_key in scanpy_marker_keys:
+            rank_genes_groups = adata.uns[scanpy_marker_key]
+            params = rank_genes_groups['params']
+            # pts and pts_rest in later scanpy versions
+
+            rank_genes_groups_keys = list(rank_genes_groups.keys())
+            for k in ['params', 'names']:
+                if k in rank_genes_groups_keys:
+                    rank_genes_groups_keys.remove(k)
+            if 'pvals' in rank_genes_groups_keys and 'pvals_adj' in rank_genes_groups_keys:
+                rank_genes_groups_keys.remove('pvals')
+            category = '{} ({})'.format(params['groupby'], scanpy_marker_key)
+            de_result_df = None
+            columns = [dict(name='Feature', field=0)]
+            include = True
+            group_names = rank_genes_groups['names'].dtype.names
+            for group_name in group_names:
+                gene_names = rank_genes_groups['names'][group_name]
+                group_df = pd.DataFrame(index=gene_names)
+                for rank_genes_groups_key in rank_genes_groups_keys:
+                    values = rank_genes_groups[rank_genes_groups_key][group_name]
+                    column_name = '{}:{}'.format(group_name, rank_genes_groups_key)
+                    columns.append(dict(name=column_name, field=len(columns)))
+                    group_df[column_name] = values
+                if de_result_df is None:
+                    de_result_df = pd.DataFrame(index=gene_names)
+                de_result_df = de_result_df.join(group_df)
+                marker_results.append(
+                    dict(category=category, name=str(group_name), features=gene_names[:n_genes]))
+
+            # de_result_data = {}
+            # for column in de_result_df.columns:
+            #     de_result_data[column] = de_result_df[column]
+            # de_result['index'] = de_result_df.index
+            if include:
+                de_result_data = de_result_df.reset_index().to_dict(orient='records')
+                de_result = dict(id='cirro-{}'.format(id_counter), readonly=True, color='logfoldchanges',
+                    size='pvals_adj', params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
+                    name=category)
+                id_counter += 1
+                de_result['data'] = de_result_data
+                de_results.append(de_result)
+
+        if 'de_res' in adata.varm:  # pegasus
+            de_res = adata.varm['de_res']
+            names = de_res.dtype.names
+            field_names = set()  # e.g. 1:auroc
+            cluster_names = set()
+            for name in names:
+                index = name.index(':')
+                field_name = name[index + 1:]
+                cluster_name = name[:index]
+                field_names.add(field_name)
+                cluster_names.add(cluster_name)
+            sort_field_names = ['mwu_qval', 'auroc', 't_qval']
+            de_res = pd.DataFrame(data=de_res, index=adata.var.index)
+            field_use = None
+            for field in sort_field_names:
+                if field in field_names:
+                    field_use = field
+                    break
+            if field_use is not None:
+                field_ascending = field_use != 'auroc'
+                for cluster_name in cluster_names:
+                    fc_column = '{}:log2FC'.format(cluster_name)
+                    name = '{}:{}'.format(cluster_name, field_name)
+                    idx_up = de_res[fc_column].values > 0
+                    df_up = de_res.loc[idx_up].sort_values(by=[name, fc_column], ascending=[field_ascending, False])
+                    features = df_up[:n_genes].index.values
+                    marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
 
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(
@@ -165,12 +196,10 @@ class SimpleData:
                 obs_cat.append(key)
             else:
                 obs.append(key)
-        if 'cirro_results' in adata.uns:
-            import json  # precomputed results
-            result['results'] = json.loads(adata.uns['cirro_results'])
+        schema_dict['results'] = de_results
         if 'metagenes' in adata.uns:
             metagenes = adata.uns['metagenes']
-            result['metafeatures'] = metagenes['var'].index
+            schema_dict['metafeatures'] = metagenes['var'].index
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
         #
         # if spatial_node is not None:
@@ -181,10 +210,10 @@ class SimpleData:
         images_node = adata.uns.get('images',
             [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
         image_names = list(map(lambda x: x['name'], images_node))
-        result['var'] = adata.var_names.values
-        result['obs'] = obs
-        result['obsCat'] = obs_cat
-        result['shape'] = adata.shape
+        schema_dict['var'] = adata.var_names.values
+        schema_dict['obs'] = obs
+        schema_dict['obsCat'] = obs_cat
+        schema_dict['shape'] = adata.shape
 
         embeddings = []
         for key in adata.obsm_keys():
@@ -208,9 +237,9 @@ class SimpleData:
         meta_images = adata.uns.get('meta_images', [])
         for meta_image in meta_images:
             embeddings.append(meta_image)
-        result['embeddings'] = embeddings
+        schema_dict['embeddings'] = embeddings
         colors = {}
-        result['colors'] = colors
+        schema_dict['colors'] = colors
 
         for key in adata.uns.keys():
             if key.endswith('_colors'):
@@ -218,7 +247,7 @@ class SimpleData:
                 if field in adata.obs:
                     colors[field] = adata.uns[key]
 
-        return result
+        return schema_dict
 
     @staticmethod
     def to_df(adata, obs_measures, var_measures, dimensions, basis=None):
