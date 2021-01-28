@@ -28,6 +28,8 @@ import {
     SET_FEATURE_SUMMARY,
     SET_GLOBAL_FEATURE_SUMMARY,
     SET_INTERPOLATOR,
+    SET_JOB_RESULT,
+    SET_JOB_RESULTS,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -70,7 +72,7 @@ const DEFAULT_DIST_PLOT_OPTIONS = {
     violinScale: 'width',
     violinHeight: 100,
     violinWidth: 80,
-    violinShowBoxplot:true
+    violinShowBoxplot: true
 };
 
 const DEFAULT_INTERPOLATOR_OBJ = {
@@ -82,6 +84,7 @@ const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
     name: DEFAULT_DOT_PLOT_INTERPOLATOR,
     value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR)
 };
+
 
 const DEFAULT_PRIMARY_CHART_SIZE = {
     width: window.innerWidth - 280,
@@ -510,6 +513,29 @@ function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
     }
 }
 
+function jobResult(state = null, action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return null;
+        case SET_JOB_RESULT:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
+
+function jobResults(state = [], action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return [];
+        case SET_JOB_RESULTS:
+            return action.payload;
+        default:
+            return state;
+    }
+}
+
 function distributionData(state = [], action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
@@ -744,6 +770,8 @@ export default combineReducers({
     featureSummary,
     globalFeatureSummary,
     interpolator,
+    jobResult,
+    jobResults,
     loading,
     loadingApp,
     markerOpacity,
