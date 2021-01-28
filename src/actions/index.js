@@ -7,6 +7,7 @@ import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
+import {updateJob} from '../JobResultsPanel';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
@@ -82,7 +83,6 @@ export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
 export const SET_POINT_SIZE = 'SET_POINT_SIZE';
 
-// update ui
 export const SET_EMAIL = 'SET_EMAIL';
 export const SET_USER = 'SET_USER';
 export const SET_DATASET = 'SET_DATASET';
@@ -112,6 +112,8 @@ export const SET_TAB = 'SET_TAB';
 export const SET_LOADING_APP = 'LOADING_APP';
 export const SET_CACHED_DATA = 'SET_CACHED_DATA';
 
+export const SET_JOB_RESULTS = 'SET_JOB_RESULTS';
+export const SET_JOB_RESULT = 'SET_JOB_RESULT';
 
 function isEmbeddingBinned(embedding) {
     return embedding.bin || embedding.precomputed;
@@ -1163,6 +1165,13 @@ function _setDataset(payload) {
     return {type: SET_DATASET, payload: payload};
 }
 
+export function setJobResults(payload) {
+    return {type: SET_JOB_RESULTS, payload: payload};
+}
+
+export function setJobResult(payload) {
+    return {type: SET_JOB_RESULT, payload: payload};
+}
 
 export function setMarkerOpacity(payload) {
     return {type: SET_MARKER_OPACITY, payload: payload};
@@ -1205,7 +1214,7 @@ function _setEmail(payload) {
  * @param value
  * @param type one of X, obs, featureSet
  */
-export function setSearchTokens(value, type) {
+export function setSearchTokens(values, type) {
     return function (dispatch, getState) {
         const state = getState();
         let searchTokens = state.searchTokens;
@@ -1217,16 +1226,23 @@ export function setSearchTokens(value, type) {
         searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
         if (type === OBS_SEARCH_TOKEN) {
             const obsCat = state.dataset.obsCat;
-            value.forEach(val => {
+            values.forEach(val => {
                 const type = obsCat.indexOf(val) !== -1 ? OBS_CAT_SEARCH_TOKEN : OBS_SEARCH_TOKEN;
                 searchTokens.push({value: val, type: type});
             });
         } else {
-            searchTokens = searchTokens.concat(value.map(item => {
+            searchTokens = searchTokens.concat(values.map(item => {
                 return {value: item, type: type};
             }));
         }
         dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
+        dispatch(_updateCharts());
+    };
+}
+
+export function setSearchTokensDirectly(tokens) {
+    return function (dispatch, getState) {
+        dispatch({type: SET_SEARCH_TOKENS, payload: tokens});
         dispatch(_updateCharts());
     };
 }
@@ -1336,6 +1352,14 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             });
             newDataset.id = id;
             dispatch(_setDataset(newDataset));
+
+            if (newDataset.results && newDataset.results.length > 0) {
+                dispatch(setJobResults(newDataset.results));
+                if (newDataset.results.length === 1) {
+                    updateJob(newDataset.results[0]);
+                    dispatch(setJobResult(newDataset.results[0].id));
+                }
+            }
 
             if (categoryNameResults != null) {
                 categoryNameResults.forEach(result => {
