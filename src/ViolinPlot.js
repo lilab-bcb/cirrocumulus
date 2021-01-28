@@ -104,10 +104,10 @@ export default class ViolinPlot extends React.PureComponent {
         if (item) {
             const mean = item.mean;
             const median = item.boxplotStats.median;
-            const fractionExpressed = item.fractionExpressed;
-            let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
-            let medianFormatted = stripTrailingZeros(numberFormat2f(median));
-            let percentExpressed = stripTrailingZeros(numberFormat(100 * fractionExpressed));
+
+            const meanFormatted = stripTrailingZeros(numberFormat2f(mean));
+            const medianFormatted = stripTrailingZeros(numberFormat2f(median));
+            const percentExpressed = stripTrailingZeros(numberFormat(item.percentExpressed));
             this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', median: ' + medianFormatted + ', % expressed: ' + percentExpressed + ', ' + item.name.join(', ');
         } else {
             this.tooltipElementRef.current.innerHTML = '';
