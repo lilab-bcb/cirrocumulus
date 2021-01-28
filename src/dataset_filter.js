@@ -17,6 +17,31 @@ function getIndices(array, f) {
     return result;
 }
 
+export function createFilterFunction(filter) {
+    const op = filter[1];
+    let value = filter[2];
+    let applyFunction;
+    if (op === 'in') {
+        value = new Set(value);
+        applyFunction = (d) => value.has(d);
+    } else if (op === '>') {
+        applyFunction = (d) => d > value;
+    } else if (op === '=') {
+        applyFunction = (d) => d === value;
+    } else if (op === '<') {
+        applyFunction = (d) => d < value;
+    } else if (op === '!=') {
+        applyFunction = (d) => d !== value;
+    } else if (op === '>=') {
+        applyFunction = (d) => d >= value;
+    } else if (op === '<=') {
+        applyFunction = (d) => d <= value;
+    } else {
+        throw('Unknown filter: ' + op);
+    }
+    return applyFunction;
+}
+
 export function getPassingFilterIndices(cachedData, data_filter) {
     let passingIndices = null;
     if (data_filter) {
@@ -25,7 +50,6 @@ export function getPassingFilterIndices(cachedData, data_filter) {
         for (let i = 0; i < user_filters.length; i++) {
             let filter_obj = user_filters[i];
             let field = filter_obj[0];
-            let op = filter_obj[1];
             let value = filter_obj[2];
             let keep = null;
 
@@ -60,26 +84,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             } else {
                 const nameType = getVarNameType(field);
                 let series = cachedData[nameType.name];
-                let applyFunction;
-                if (op === 'in') {
-                    value = new Set(value);
-                    applyFunction = (d) => value.has(d);
-                } else if (op === '>') {
-                    applyFunction = (d) => d > value;
-                } else if (op === '=') {
-                    applyFunction = (d) => d === value;
-                } else if (op === '<') {
-                    applyFunction = (d) => d < value;
-                } else if (op === '!=') {
-                    applyFunction = (d) => d !== value;
-                } else if (op === '>=') {
-                    applyFunction = (d) => d >= value;
-                } else if (op === '<=') {
-                    applyFunction = (d) => d <= value;
-                } else {
-                    throw('Unknown filter: ' + op);
-                }
-                keep = getIndices(series, applyFunction);
+                keep = getIndices(series, createFilterFunction(filter_obj));
             }
 
 
