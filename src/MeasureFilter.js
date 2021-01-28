@@ -22,16 +22,16 @@ class MeasureFilter extends React.PureComponent {
         return filter;
     }
 
-    handleOperationChanged = (event) => {
-        const operation = event.target.value;
-        this.props.handleUpdate({name: this.props.name, operation: operation, update: true});
-    };
-
     handleValueUpdate = () => {
         const filter = this.getFilter();
         let value = parseFloat(filter.uiValue);
         this.props.handleUpdate({name: this.props.name, value: value, update: true});
 
+    };
+
+    handleOperationChanged = (event) => {
+        const operation = event.target.value;
+        this.props.handleUpdate({name: this.props.name, operation: operation, update: true});
     };
 
     handleValueChange = (event) => {
@@ -55,7 +55,6 @@ class MeasureFilter extends React.PureComponent {
 
             <div style={{display: 'flex'}}>
                 <InputLabel shrink={true} id={id + '_label'}>Filter</InputLabel>
-
                 <Select
                     labelId={id + '_label'}
                     id={id}
