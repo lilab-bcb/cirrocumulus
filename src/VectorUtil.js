@@ -209,7 +209,7 @@ export function groupedStats(dimensions, varMeasures) {
         dimensionNames[j] = dimensions[j].getName();
     }
     const dimensionName = dimensionNames.join('-');
-    // each entry {dimension:dimensionName, name:category, feature:'', mean:0, fractionExpressed:xx}
+    // each entry {dimension:dimensionName, name:category, feature:'', mean:0, percentExpressed:xx}
     let result = [];
     categories.forEach(category => {
         const value = categoryMap[category];
@@ -228,14 +228,14 @@ export function groupedStats(dimensions, varMeasures) {
             const categoryVector = new SlicedVector(v, value.indices);
             const categoryStats = stats(categoryVector);
             // results.values[index].mean.push(categoryStats.mean);
-            // results.values[index].fractionExpressed.push(categoryStats.numExpressed / categoryVector.size());
+            // results.values[index].percentExpressed.push(categoryStats.numExpressed / categoryVector.size());
             const entry = {
                 dimension: dimensionName,
                 dimensions: dimensionNames,
                 categories: value.key,
                 feature: v.getName(),
                 mean: categoryStats.mean,
-                fractionExpressed: categoryStats.numExpressed / categoryVector.size(),
+                percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
                 vector: categoryVector
             };
 
