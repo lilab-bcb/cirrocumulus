@@ -363,7 +363,7 @@ class JobResultsPanel extends React.PureComponent {
 
     render() {
 
-        const {jobResultId, jobResults, classes, searchTokens} = this.props;
+        const {jobResultId, jobResults, classes, searchTokens, tab} = this.props;
         const jobResult = this.getJobResult();
         const selectedFeatures = new Set();
         searchTokens.forEach(token => {
@@ -491,12 +491,11 @@ class JobResultsPanel extends React.PureComponent {
                 }
             </Box>
             <Dialog onClose={this.onCloseJobs} aria-labelledby="job-results-title"
-                    open={this.state.showDialog}>
+                    open={this.state.showDialog || (tab==='results' && jobResults.length > 1 && jobResult == null)}>
                 <DialogTitle id="job-results-title" onClose={this.onCloseJobs}>
                     Results
                 </DialogTitle>
                 <DialogContent dividers>
-
                     <List style={{width: 500}} dense disablePadding component="nav"
                           aria-label="results">
                         {jobResults.map(choice => {
@@ -530,7 +529,8 @@ const mapStateToProps = state => {
         return {
             jobResultId: state.jobResult,
             jobResults: state.jobResults,
-            searchTokens: state.searchTokens
+            searchTokens: state.searchTokens,
+            tab:state.tab
         };
     }
 ;
