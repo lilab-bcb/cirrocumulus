@@ -41,7 +41,7 @@ class DotPlotAggregator:
                 if is_sparse:
                     series = series.sparse.to_dense()
                 values.append({'name': var_measure,
-                               'fractionExpressed': series['fraction_expressed'],
+                               'percentExpressed': 100 * series['fraction_expressed'],
                                'mean': series['mean']})
             results.append(dotplot_result)
         return results
