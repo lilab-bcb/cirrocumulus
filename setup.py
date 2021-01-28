@@ -30,6 +30,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.rst"), encodin
 
 requires = [
         "anndata",
+        "CacheControl",
         "flask",
         "flask-compress",
         "fsspec",
