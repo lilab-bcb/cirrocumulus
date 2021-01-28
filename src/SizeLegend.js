@@ -18,7 +18,11 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
 
     let legendHeight = 20;
     let valueToX = scaleLinear().range([margin, width - margin]).domain([0, steps.length - 1]).clamp(true);
-    let valueToRadius = scaleLinear().range([1, 9]).domain(domain).clamp(true);
+    let radiusDomain = [1, 9];
+    if (scale.range()[0] > scale.range()[1]) {
+        radiusDomain = [9, 1];
+    }
+    let valueToRadius = scaleLinear().range(radiusDomain).domain(domain).clamp(true);
 
     context.textBaseline = 'top';
     context.fillStyle = textColor;
@@ -27,12 +31,11 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
 
     for (let i = 0; i < steps.length; i++) {
         let pix = valueToX(i);
-
         let radius = valueToRadius(steps[i]);
         context.beginPath();
         context.arc(pix, 10, radius, 0, Math.PI * 2);
         context.stroke();
-        let text = numberFormat(100 * steps[i]);
+        let text = numberFormat(steps[i]);
         if (text.endsWith(".0")) {
             text = text.substring(0, text.length - 2);
         }
