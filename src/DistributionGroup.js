@@ -2,21 +2,16 @@ import {InputLabel, MenuItem, Select} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
 import withStyles from '@material-ui/core/styles/withStyles';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
-import {debounce} from 'lodash';
 import natsort from 'natsort';
 import React from 'react';
-import ColorSchemeSelector from './ColorSchemeSelector';
 import DotPlotCanvas from './DotPlotCanvas';
-import {numberFormat, numberFormat2f} from './formatters';
+import {EditableColorScheme} from './EditableColorScheme';
+import {EditableSizeLegend} from './EditableSizeLegend';
 import {boxplotStats, density, nrd0} from './kde';
-import SizeLegend from './SizeLegend';
 import ViolinPlot from './ViolinPlot';
 
 const styles = theme => ({
-    root: {},
     formControl: {
         display: 'block',
         margin: theme.spacing(1),
@@ -59,11 +54,11 @@ function reshapeData(data, distributionPlotOptions) {
 
     if (distributionPlotOptions.sortBy !== dimension) { // sort categories by feature
         const category2mean = {};
-        const category2fractionExpressed = {};
+        const category2percentExpressed = {};
         data.forEach(item => {
             if (item.feature === distributionPlotOptions.sortBy) {
                 category2mean[item.name] = item.mean;
-                category2fractionExpressed[item.name] = item.fractionExpressed;
+                category2percentExpressed[item.name] = item.percentExpressed;
             }
         });
         categories.sort((a, b) => {
@@ -71,8 +66,8 @@ function reshapeData(data, distributionPlotOptions) {
             let val2 = category2mean[b];
             let c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
             if (c === 0) {
-                val1 = category2fractionExpressed[a];
-                val2 = category2fractionExpressed[b];
+                val1 = category2percentExpressed[a];
+                val2 = category2percentExpressed[b];
                 c = val1 === val2 ? 0 : (val1 > val2 ? -1 : 1);
             }
             return c;
@@ -92,82 +87,26 @@ function reshapeData(data, distributionPlotOptions) {
     return data2d;
 }
 
-function getMeanAndFractionRange(result) {
-    let fractionRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
+function getMeanAndPercentRange(result) {
+    let percentRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
     let meanRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
     result.forEach(feature => {
-        fractionRange[0] = Math.min(feature.fractionExpressed, fractionRange[0]);
-        fractionRange[1] = Math.max(feature.fractionExpressed, fractionRange[1]);
+        percentRange[0] = Math.min(feature.percentExpressed, percentRange[0]);
+        percentRange[1] = Math.max(feature.percentExpressed, percentRange[1]);
         meanRange[0] = Math.min(feature.mean, meanRange[0]);
         meanRange[1] = Math.max(feature.mean, meanRange[1]);
     });
-    return {mean: meanRange, fraction: fractionRange};
+    return {mean: meanRange, percent: percentRange};
 }
 
 class DistributionGroup extends React.PureComponent {
-
-    constructor(props) {
-        super(props);
-        this.state = {min: '', max: '', minSize: '', sizeMax: ''};
-        this.updateMinSize = debounce(this.updateMinSize, 500);
-        this.updateMaxSize = debounce(this.updateMaxSize, 500);
-        this.updateMin = debounce(this.updateMin, 500);
-        this.updateMax = debounce(this.updateMax, 500);
-    }
-
-    onMinChange = (event) => {
-        this.setState({min: event.target.value});
-        this.updateMin(event.target.value);
-    };
-
-    updateMin = (value) => {
-        this.props.onDistributionPlotOptions({min: parseFloat(value)});
-    };
-
-    onMaxChange = (event) => {
-        this.setState({max: event.target.value});
-        this.updateMax(event.target.value);
-    };
-
-    updateMax = (value) => {
-        this.props.onDistributionPlotOptions({max: parseFloat(value)});
-    };
-
-
-    onMinSizeChange = (event) => {
-        this.setState({minSize: event.target.value});
-        this.updateMinSize(event.target.value);
-    };
-
-    updateMinSize = (value) => {
-        value = parseFloat(value);
-        if (value > 1) {
-            value /= 100; // fraction
-        }
-        this.props.onDistributionPlotOptions({minSize: value});
-    };
 
 
     onSortOrderChanged = (event) => {
         this.props.onDistributionPlotOptions({sortBy: event.target.value});
     };
 
-    onMaxSizeChange = (event) => {
-        this.setState({sizeMax: event.target.value});
-        this.updateMaxSize(event.target.value);
-    };
-
-    updateMaxSize = (value) => {
-        value = parseFloat(value);
-        if (value > 1) {
-            value /= 100; // fraction
-        }
-        this.props.onDistributionPlotOptions({maxSize: value});
-    };
-
-
     render() {
-
         const {
             textColor,
             categoryColorScales,
@@ -180,31 +119,31 @@ class DistributionGroup extends React.PureComponent {
         if (distributionData == null || distributionData.length === 0) {
             return null;
         }
-        const meanAndFractionRange = getMeanAndFractionRange(distributionData);
-        const meanRange = meanAndFractionRange.mean;
-        const fractionRange = meanAndFractionRange.fraction;
+        const meanAndPercentRange = getMeanAndPercentRange(distributionData);
+        const meanRange = meanAndPercentRange.mean;
+        const percentRange = meanAndPercentRange.percent;
         if (selectedData != null && selectedData.length > 0) {
-            const selectedMeanAndFractionRange = getMeanAndFractionRange(selectedData);
-            meanRange[0] = Math.min(meanRange[0], selectedMeanAndFractionRange.mean[0]);
-            meanRange[1] = Math.max(meanRange[1], selectedMeanAndFractionRange.mean[1]);
-            fractionRange[0] = Math.min(fractionRange[0], selectedMeanAndFractionRange.fraction[0]);
-            fractionRange[1] = Math.max(fractionRange[1], selectedMeanAndFractionRange.fraction[1]);
+            const selectedMeanAndPercentRange = getMeanAndPercentRange(selectedData);
+            meanRange[0] = Math.min(meanRange[0], selectedMeanAndPercentRange.mean[0]);
+            meanRange[1] = Math.max(meanRange[1], selectedMeanAndPercentRange.mean[1]);
+            percentRange[0] = Math.min(percentRange[0], selectedMeanAndPercentRange.percent[0]);
+            percentRange[1] = Math.max(percentRange[1], selectedMeanAndPercentRange.percent[1]);
         }
         if (meanRange[0] === meanRange[1]) {
             meanRange[1]++;
         }
-        if (fractionRange[0] === fractionRange[1]) {
-            fractionRange[0] = 0;
-            fractionRange[1] = 1;
+        if (percentRange[0] === percentRange[1]) {
+            percentRange[0] = 0;
+            percentRange[1] = 100;
         }
         if (meanRange[0] > 0) {
             meanRange[0] = 0;
         }
-        if (fractionRange[0] > 0) {
-            fractionRange[0] = 0;
+        if (percentRange[0] > 0) {
+            percentRange[0] = 0;
         }
-        if (fractionRange[1] < 1) {
-            fractionRange[1] = 1;
+        if (percentRange[1] > 100) {
+            percentRange[1] = 100;
         }
 
         if (distributionPlotOptions.min != null && !isNaN(distributionPlotOptions.min)) {
@@ -215,11 +154,11 @@ class DistributionGroup extends React.PureComponent {
         }
 
         if (distributionPlotOptions.minSize != null && !isNaN(distributionPlotOptions.minSize)) {
-            fractionRange[0] = distributionPlotOptions.minSize;
+            percentRange[0] = distributionPlotOptions.minSize;
         }
 
         if (distributionPlotOptions.maxSize != null && !isNaN(distributionPlotOptions.maxSize)) {
-            fractionRange[1] = distributionPlotOptions.maxSize;
+            percentRange[1] = distributionPlotOptions.maxSize;
         }
         if (distributionPlotOptions.sortBy == null) {
             distributionPlotOptions.sortBy = distributionData[0].dimension;
@@ -241,13 +180,9 @@ class DistributionGroup extends React.PureComponent {
         const maxRadius = 9;
         const minRadius = 1;
         const colorScale = scaleSequential(interpolator.value).domain(meanRange).clamp(true);
-        const sizeScale = scaleLinear().domain(fractionRange).range([minRadius, maxRadius]).clamp(true);
-        let colorMin = numberFormat(colorScale.domain()[0]);
-        let colorMax = numberFormat(colorScale.domain()[1]);
-        if (colorMin === colorMax) {
-            colorMin = numberFormat2f(colorScale.domain()[0]);
-            colorMax = numberFormat2f(colorScale.domain()[1]);
-        }
+        const sizeScale = scaleLinear().domain(percentRange).range([minRadius, maxRadius]).clamp(true);
+
+
         updateNames(distributionData, categoricalNames);
         if (selectedData) {
             updateNames(selectedData, categoricalNames);
@@ -315,39 +250,15 @@ class DistributionGroup extends React.PureComponent {
                         options={distributionPlotOptions}
                         textColor={textColor}
                         data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
-                {chartType !== 'violin' && <React.Fragment>
-                    <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
-                                         interpolator={interpolator}/>
-                    <div style={{color: textColor, width: 174}}><Typography
-                        variant={"caption"}>{colorMin}</Typography><Typography
-                        variant={"caption"}
-                        style={{float: 'right'}}>{colorMax}</Typography></div>
-                    <InputLabel shrink={true} variant={"standard"}>Custom Mean</InputLabel>
-                    <TextField
-                        InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                        size="small" type="text"
-                        onChange={this.onMinChange} label={"Min"}
-                        value={this.state.min}/>
-                    <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
-                               type="text"
-                               onChange={this.onMaxChange} label={"Max"}
-                               value={this.state.max}/>
-                </React.Fragment>}
+                {chartType !== 'violin' &&
+                <EditableColorScheme colorScale={colorScale}
+                                     textColor={textColor}
+                                     interpolator={interpolator}
+                                     onOptions={this.props.onDistributionPlotOptions}
+                                     onInterpolator={this.props.handleInterpolator}/>}
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
-                    <SizeLegend style={{display: 'block'}}
-                                width={150}
-                                textColor={textColor}
-                                label={true} height={40}
-                                scale={sizeScale}/>
-                    <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Percent
-                        Expressed</InputLabel>
-                    <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                               size="small" type="text"
-                               onChange={this.onMinSizeChange} label={"Min"}
-                               value={this.state.minSize}/>
-                    <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
-                               onChange={this.onMaxSizeChange} label={"Max"}
-                               value={this.state.maxSize}/>
+                    <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
+                                        onOptions={this.props.onDistributionPlotOptions}/>
                 </div>}
 
 
