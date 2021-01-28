@@ -76,9 +76,9 @@ export default class DotPlotCanvas extends React.PureComponent {
                     this.tooltipElementRef.current.innerHTML = '';
                     const array = this.props.data[row];
                     const mean = array[col].mean;
-                    const fractionExpressed = array[col].fractionExpressed;
+
                     let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
-                    let percentExpressed = stripTrailingZeros(numberFormat(100 * fractionExpressed));
+                    let percentExpressed = stripTrailingZeros(numberFormat(array[col].percentExpressed));
 
                     this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', ');
                 } else {
@@ -87,7 +87,6 @@ export default class DotPlotCanvas extends React.PureComponent {
             };
             let onMouseOut = (event) => {
                 this.tooltipElementRef.current.innerHTML = '';
-
             };
             this.canvas = document.createElement('canvas');
             this.canvas.addEventListener("mousemove", onMouseMove);
@@ -132,7 +131,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                 context.beginPath();
                 if (drawCircles) {
                     const xpix = i * diameter + maxRadius + size.x;
-                    const frac = array[i].fractionExpressed;
+                    const frac = array[i].percentExpressed;
                     context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 } else {
                     const xpix = i * diameter + size.x;
@@ -218,7 +217,6 @@ export default class DotPlotCanvas extends React.PureComponent {
     handleSaveImageMenuClose = (event) => {
         this.setState({saveImageEl: null});
     };
-
 
     handleSaveImage = (format) => {
         this.setState({saveImageEl: null});
