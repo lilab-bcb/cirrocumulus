@@ -1,7 +1,5 @@
 import {InputLabel, Switch, Typography} from '@material-ui/core';
-import MuiAccordionPanel from '@material-ui/core/Accordion';
-import MuiAccordionPanelDetails from '@material-ui/core/AccordionDetails';
-import MuiAccordionPanelSummary from '@material-ui/core/AccordionSummary';
+
 import Box from '@material-ui/core/Box';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
@@ -29,6 +27,7 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
@@ -38,6 +37,7 @@ import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
+import {AccordionDetailsStyled, AccordionStyled, AccordionSummaryStyled} from './accordion';
 import {
     deleteDatasetFilter,
     deleteFeatureSet,
@@ -72,7 +72,7 @@ import {
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
-import PrecomputedResultsSelector from './PrecomputedResultsSelector';
+import JobResultOptions from './JobResultOptions';
 import {
     FEATURE_SET_SEARCH_TOKEN,
     getFeatureSets,
@@ -117,7 +117,8 @@ const styles = theme => ({
         '& hr': {
             margin: theme.spacing(0, 0.5),
         }
-    }
+    },
+
 });
 
 
@@ -186,46 +187,6 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
         return options;
     }
 );
-const Accordion = withStyles({
-    root: {
-        border: '1px solid rgba(0, 0, 0, .125)',
-        boxShadow: 'none',
-        '&:not(:last-child)': {
-            borderBottom: 0,
-        },
-        '&:before': {
-            display: 'none',
-        },
-        '&$expanded': {
-            margin: 0,
-        },
-    },
-    expanded: {},
-})(MuiAccordionPanel);
-
-const AccordionPanelSummary = withStyles({
-    root: {
-        backgroundColor: 'rgba(0, 0, 0, .03)',
-        borderBottom: '1px solid rgba(0, 0, 0, .125)',
-        marginBottom: -1,
-        minHeight: 43,
-        '&$expanded': {
-            minHeight: 43,
-        },
-    },
-    content: {
-        '&$expanded': {
-            margin: 0,
-        },
-    },
-    expanded: {},
-})(MuiAccordionPanelSummary);
-
-const AccordionPanelDetails = withStyles(theme => ({
-    root: {
-        padding: 0,
-    },
-}))(MuiAccordionPanelDetails);
 
 
 class SideBar extends React.PureComponent {
@@ -255,7 +216,6 @@ class SideBar extends React.PureComponent {
     }
 
     onMarkerOpacityChange = (event, value) => {
-
         this.setState({opacity: value});
         this.updateMarkerOpacity(value);
     };
@@ -632,12 +592,13 @@ class SideBar extends React.PureComponent {
 
 
                 </Menu>
-                <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
-                           defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>View</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails style={{flexDirection: 'column'}}>
+                <AccordionStyled
+                    style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                    defaultExpanded>
+                    <AccordionSummaryStyled>
+                        <Typography>View</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
                         <div>
                             {tab === 'embedding' && embeddingOptions.length > 0 &&
                             <FormControl className={classes.formControl}>
@@ -728,15 +689,15 @@ class SideBar extends React.PureComponent {
                                 }
                             </FormControl>}
                         </div>
-                    </AccordionPanelDetails>
-                </Accordion>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>
 
-                <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
-                           defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>Filters</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails>
+                <AccordionStyled style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                                 defaultExpanded>
+                    <AccordionSummaryStyled>
+                        <Typography>Filters</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
                         <div style={{marginLeft: 10, maxHeight: 500}}>
 
                             <Grid component="label" alignContent={"flex-start"} container alignItems="center"
@@ -796,13 +757,13 @@ class SideBar extends React.PureComponent {
 
 
                         </div>
-                    </AccordionPanelDetails>
-                </Accordion>
-                <Accordion style={tab === 'distribution' ? null : {display: 'none'}} defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>Distribution Options</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>
+                <AccordionStyled style={tab === 'distribution' ? null : {display: 'none'}} defaultExpanded>
+                    <AccordionSummaryStyled>
+                        <Typography>Distribution Options</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
                         <div style={{marginTop: 8}}>
                             {chartType === 'violin' && <FormControl className={classes.formControl}>
                                 <InputLabel id="violin-scale-label">Scale</InputLabel>
@@ -846,14 +807,14 @@ class SideBar extends React.PureComponent {
                                 </Select>
                             </FormControl>
                         </div>
-                    </AccordionPanelDetails>
-                </Accordion>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>
 
-                <Accordion style={tab === 'embedding' ? null : {display: 'none'}} defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>Embedding Options</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails>
+                <AccordionStyled style={tab === 'embedding' ? null : {display: 'none'}} defaultExpanded>
+                    <AccordionSummaryStyled>
+                        <Typography>Embedding Options</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
                         <div>
                             <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Marker
                                 Opacity</InputLabel>
@@ -970,14 +931,15 @@ class SideBar extends React.PureComponent {
 
                         </div>
 
-                    </AccordionPanelDetails>
-                </Accordion>
-                {fancy && <Accordion style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
-                                     defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>Saved Filters</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>
+                {fancy &&
+                <AccordionStyled style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                                 defaultExpanded>
+                    <AccordionSummaryStyled expandIcon={<ExpandMoreIcon/>}>
+                        <Typography>Saved Filters</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
                         <div style={{width: '100%'}}>
                             {datasetFilters.length === 0 &&
                             <Box color="text.secondary" style={{paddingLeft: 10}}>No saved filters</Box>}
@@ -1010,17 +972,16 @@ class SideBar extends React.PureComponent {
                                 </div>
                             </React.Fragment>}
                         </div>
-                    </AccordionPanelDetails>
-                </Accordion>}
-                <Accordion style={tab === 'precomputed_results' ? null : {display: 'none'}}
-                           defaultExpanded>
-                    <AccordionPanelSummary>
-                        <div>Filter</div>
-                    </AccordionPanelSummary>
-                    <AccordionPanelDetails style={{flexDirection: 'column'}}>
-                        <PrecomputedResultsSelector/>
-                    </AccordionPanelDetails>
-                </Accordion>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>}
+                <AccordionStyled style={tab === 'results' ? null : {display: 'none'}}
+                                 defaultExpanded>
+                    <AccordionDetailsStyled>
+                        <div style={{marginLeft: 8}}>
+                            <JobResultOptions/>
+                        </div>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>
             </div>
         );
     }

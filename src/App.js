@@ -27,8 +27,8 @@ import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
+import JobResultsPanel from './JobResultsPanel';
 import MoreOptionsDialog from './MoreOptionsDialog';
-import PrecomputedResultsPanel from './PrecomputedResultsPanel';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
@@ -149,9 +149,9 @@ class App extends PureComponent {
                             </div>
                             <div
                                 role="tabpanel"
-                                hidden={tab !== 'precomputed_results'}
+                                hidden={tab !== 'results'}
                             >
-                                <PrecomputedResultsPanel/>
+                                <JobResultsPanel/>
                             </div>
                         </React.Fragment>}
 
