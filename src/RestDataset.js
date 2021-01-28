@@ -13,7 +13,7 @@ function reshapeDistributionResult(distribution) {
                 name: categories[i],
                 feature: distributionResult.values[i].name,
                 mean: distributionResult.values[i].mean,
-                fractionExpressed: distributionResult.values[i].fractionExpressed
+                percentExpressed: distributionResult.values[i].percentExpressed
             });
         }
     });
