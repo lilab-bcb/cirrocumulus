@@ -384,7 +384,7 @@ class AppHeader extends React.PureComponent {
                     >
                         <AntTab value="embedding" label="Embeddings"/>
                         <AntTab value="distribution" label="Distributions"/>
-                        {dataset.results != null && <AntTab value="precomputed_results" label="Results"/>}
+                        {dataset.results != null && <AntTab value="results" label="Results"/>}
                     </Tabs>}
 
                     <div className={"cirro-condensed"}>
