@@ -46,7 +46,7 @@ export class EditableSizeLegend extends React.PureComponent {
 
         return <React.Fragment>
             <SizeLegend style={{display: 'block'}}
-                        width={150}
+                        width={174}
                         textColor={textColor}
                         label={true} height={40}
                         scale={sizeScale}/>

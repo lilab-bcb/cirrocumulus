@@ -2,6 +2,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT} from './ChartUtil';
 import {numberFormat2f} from './formatters';
+import {stripTrailingZeros} from './util';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
@@ -15,7 +16,6 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
         steps.push(value);
     }
     steps.push(domain[1]);
-
     let legendHeight = 20;
     let valueToX = scaleLinear().range([margin, width - margin]).domain([0, steps.length - 1]).clamp(true);
     let radiusDomain = [1, 9];
@@ -35,10 +35,7 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
         context.beginPath();
         context.arc(pix, 10, radius, 0, Math.PI * 2);
         context.stroke();
-        let text = numberFormat2f(steps[i]);
-        if (text.endsWith(".0")) {
-            text = text.substring(0, text.length - 2);
-        }
+        let text = stripTrailingZeros(numberFormat2f(steps[i]));
         context.fillText(text, pix, legendHeight + 2);
 
     }
