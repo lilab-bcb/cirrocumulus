@@ -130,7 +130,6 @@ class JobResultOptions extends React.PureComponent {
             return null;
         }
         const jobResult = this.getJobResult();
-        console.log(jobResultId, jobResult);
         if (jobResult == null) {
             return null;
         }
