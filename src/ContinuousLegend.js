@@ -1,5 +1,6 @@
 import React from 'react';
 import {numberFormat, numberFormat0} from './formatters';
+import {stripTrailingZeros} from './util';
 
 
 class ContinuousLegend extends React.PureComponent {
@@ -19,8 +20,8 @@ class ContinuousLegend extends React.PureComponent {
                 <tbody>
                 <tr>
                     <td style={{textAlign: 'right'}}>{'Mean'}:</td>
-                    <td>{numberFormat(globalSummary.mean)}</td>
-                    {selectionSummary && <td>{numberFormat(selectionSummary.mean)}</td>}
+                    <td>{stripTrailingZeros(numberFormat(globalSummary.mean))}</td>
+                    {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.mean))}</td>}
                 </tr>
 
                 {globalSummary.numExpressed != null && <tr>
@@ -31,17 +32,15 @@ class ContinuousLegend extends React.PureComponent {
                 </tr>}
                 {(globalSummary.numExpressed == null || globalSummary.min !== 0) && <tr>
                     <td style={{textAlign: 'right'}}>{'Min'}:</td>
-                    <td>{numberFormat(globalSummary.min)}</td>
-                    {selectionSummary && <td>{numberFormat(selectionSummary.min)}</td>}
+                    <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
+                    {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.min))}</td>}
                 </tr>}
                 <tr>
                     <td style={{textAlign: 'right'}}>{'Max'}:</td>
-                    <td>{numberFormat(globalSummary.max)}</td>
-                    {selectionSummary && <td>{numberFormat(selectionSummary.max)}</td>}
+                    <td>{stripTrailingZeros(numberFormat(globalSummary.max))}</td>
+                    {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.max))}</td>}
                 </tr>
-
                 </tbody>
-
             </table>
         );
     }
