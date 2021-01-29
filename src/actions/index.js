@@ -1,7 +1,7 @@
 import {scaleOrdinal, scaleSequential} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {isEqual} from 'lodash';
+import {find, findIndex, isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -310,7 +310,6 @@ export function submitJob() {
             getState().serverInfo.api.getJob(jobId)
                 .then(result => {
                     if (result.status === 'complete') {
-                        console.log(result);
                         //dispatch(_setJobResult(result));
                     } else if (result.status === 'error') {
                         handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
@@ -1169,8 +1168,36 @@ export function setJobResults(payload) {
     return {type: SET_JOB_RESULTS, payload: payload};
 }
 
-export function setJobResult(payload) {
+function _setJobResult(payload) {
     return {type: SET_JOB_RESULT, payload: payload};
+}
+
+export function setJobResult(payload) {
+    return function (dispatch, getState) {
+        let jobResults = getState().jobResults;
+        let jobResult = find(jobResults, item => item.id === payload);
+        if (jobResult.data != null) {
+            updateJob(jobResult);
+            return dispatch(_setJobResult(payload));
+        }
+        dispatch(_setLoading(true));
+        getState().dataset.api.getJob(payload).then((result) => {
+            jobResult = Object.assign(jobResult, result);
+            updateJob(jobResult);
+            let jobResults = getState().jobResults;
+            const index = findIndex(jobResults, item => item.id === payload);
+            if (index === -1) {
+                throw new Error('Job not found');
+            }
+            jobResults[index] = jobResult;
+            dispatch(_setJobResult(payload));
+        }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to retrieve result. Please try again.');
+        });
+    };
+
 }
 
 export function setMarkerOpacity(payload) {
@@ -1356,7 +1383,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             if (newDataset.results && newDataset.results.length > 0) {
                 dispatch(setJobResults(newDataset.results));
                 if (newDataset.results.length === 1) {
-                    updateJob(newDataset.results[0]);
                     dispatch(setJobResult(newDataset.results[0].id));
                 }
             }

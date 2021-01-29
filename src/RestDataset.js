@@ -63,6 +63,12 @@ export class RestDataset {
         return API + '/file?id=' + this.id + '&file=' + file + '&access_token=' + getIdToken();
     }
 
+    getJob(id) {
+        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            return response.json();
+        });
+    }
+
     getDataPromise(data, cachedData) {
         data.id = this.id;
         let dataSend = data;

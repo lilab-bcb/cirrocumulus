@@ -242,11 +242,24 @@ class PrepareData:
         output_format = self.output_format
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
+
         schema = self.get_schema()
+        results = schema.get('results', [])
+        if len(results) > 0:
+            uns_dir = os.path.join(self.base_output_dir, 'uns')
+            os.makedirs(uns_dir, exist_ok=True)
+            for i in range(len(results)):  # keep id, name, type in schema, store rest in file
+                result = results[i]
+                print(result['name'])
+                result_id = result.pop('id')
+                results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
+                    content_type='application/json', content_encoding='gzip')
+                with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
+                    f.write(to_json(result))
+
         markers = schema.get('markers', [])
 
         if len(markers) == 0 and self.groups is None:
-
             groups = []
             for field in self.adata.obs.columns:
                 field_lc = field.lower()

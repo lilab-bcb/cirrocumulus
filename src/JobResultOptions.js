@@ -6,7 +6,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {scaleSequential} from 'd3-scale';
-import {debounce} from 'lodash';
+import {debounce, find} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setJobResults} from './actions';
@@ -35,19 +35,11 @@ class JobResultOptions extends React.PureComponent {
     }
 
     getJobResult = (id = null) => {
-        let jobResult = null;
-
         const {jobResults, jobResultId} = this.props;
         if (id == null) {
             id = jobResultId;
         }
-        for (let i = 0; i < jobResults.length; i++) {
-            if (jobResults[i].id === id) {
-                jobResult = jobResults[i];
-                break;
-            }
-        }
-        return jobResult;
+        return find(jobResults, item => item.id === id);
     };
 
     updateTopNJobResultDebounced = () => {
@@ -138,6 +130,7 @@ class JobResultOptions extends React.PureComponent {
             return null;
         }
         const jobResult = this.getJobResult();
+        console.log(jobResultId, jobResult);
         if (jobResult == null) {
             return null;
         }

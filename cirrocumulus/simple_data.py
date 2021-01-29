@@ -132,8 +132,6 @@ class SimpleData:
                 rank_genes_groups_keys.remove('pvals')
             category = '{} ({})'.format(params['groupby'], scanpy_marker_key)
             de_result_df = None
-            columns = [dict(name='Feature', field=0)]
-
             group_names = rank_genes_groups['names'].dtype.names
             for group_name in group_names:
                 gene_names = rank_genes_groups['names'][group_name]
@@ -141,7 +139,6 @@ class SimpleData:
                 for rank_genes_groups_key in rank_genes_groups_keys:
                     values = rank_genes_groups[rank_genes_groups_key][group_name]
                     column_name = '{}:{}'.format(group_name, rank_genes_groups_key)
-                    columns.append(dict(name=column_name, field=len(columns)))
                     group_df[column_name] = values
                 if de_result_df is None:
                     de_result_df = pd.DataFrame(index=gene_names)
@@ -150,8 +147,10 @@ class SimpleData:
                     dict(category=category, name=str(group_name), features=gene_names[:n_genes]))
 
             de_result_data = de_result_df.reset_index().to_dict(orient='records')
-            de_result = dict(id=cirro_id(), readonly=True, color='logfoldchanges',
-                size='pvals_adj', params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
+            de_result = dict(id=cirro_id(),
+                color='logfoldchanges' if 'logfoldchanges' in rank_genes_groups_keys else rank_genes_groups_keys[0],
+                size='pvals_adj' if 'pvals_adj' in rank_genes_groups_keys else rank_genes_groups_keys[0],
+                params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
                 name=category)
             de_result['data'] = de_result_data
             de_results.append(de_result)
@@ -173,10 +172,10 @@ class SimpleData:
             de_res = pd.DataFrame(data=de_res, index=adata.var.index)
             de_res.index.name = 'index'
             de_result_data = de_res.reset_index().to_dict(orient='records')
-            de_result = dict(id=cirro_id(), readonly=True,
+            de_result = dict(id=cirro_id(), type='de', name='pegasus_de',
                 color='log2FC' if 'log2FC' in field_names else field_names[0],
                 size='mwu_qval' if 'mwu_qval' in field_names else field_names[0], groups=group_names,
-                fields=field_names, type='de', name='pegasus_de')
+                fields=field_names)
             de_result['data'] = de_result_data
             de_results.append(de_result)
 

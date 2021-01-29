@@ -17,6 +17,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
+import {find} from 'lodash';
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -283,24 +284,16 @@ class JobResultsPanel extends React.PureComponent {
     };
 
     onSelectJob = (id) => {
-        updateJob(this.getJobResult(id));
         this.props.setJobResult(id);
         this.setState({showDialog: false});
     };
 
     getJobResult = (id) => {
-        let jobResult = null;
         const {jobResults, jobResultId} = this.props;
         if (id == null) {
             id = jobResultId;
         }
-        for (let i = 0; i < jobResults.length; i++) {
-            if (jobResults[i].id === id) {
-                jobResult = jobResults[i];
-                break;
-            }
-        }
-        return jobResult;
+        return find(jobResults, item => item.id === id);
     };
 
     handleClick = (event, row) => {

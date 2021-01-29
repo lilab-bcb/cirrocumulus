@@ -8,7 +8,6 @@ from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
-from .job_api import submit_job
 from .util import *
 
 blueprint = Blueprint('blueprint', __name__)
@@ -176,34 +175,30 @@ def handle_schema():
     return to_json(schema)
 
 
-@blueprint.route('/file', methods=['GET'])
-def handle_file():
-    email = auth_api.auth()['email']
-    dataset_id = request.args.get('id', '')
-    dataset = database_api.get_dataset(email, dataset_id)
-    file = request.args.get('file')
-    url = dataset['url']
-
+def get_file_path(file, dataset_url):
     import os
-    import mimetypes
     # when serving dataset, image must be relative to dataset directory
     if os.environ.get(CIRRO_SERVE) == 'true':
-        _, ext = os.path.splitext(url)
+        _, ext = os.path.splitext(dataset_url)
         if ext != '':
-            url = os.path.dirname(url)
+            url = os.path.dirname(dataset_url)
         if file[0] == '/' or file.find('..') != -1:
             raise ValueError('Incorrect path')
-        file_path = os.path.join(url, file)
+        file_path = os.path.join(dataset_url, file)
     else:
         file_path = file
         pr = urlparse(file_path)
         if (pr.scheme == '' or pr.scheme == 'file') and not os.path.exists(file_path):
-            _, ext = os.path.splitext(url)
+            _, ext = os.path.splitext(dataset_url)
             if ext != '':
-                url = os.path.dirname(url)
-            file_path = os.path.join(url, file)
+                url = os.path.dirname(dataset_url)
+            file_path = os.path.join(dataset_url, file)
+    return file_path
 
-    mimetype = mimetypes.guess_type(file_path)
+
+def send_file(file_path):
+    import mimetypes
+    mimetype, encoding = mimetypes.guess_type(file_path)
     # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
     #     bytes = f.read()
     # return Response(bytes, mimetype=mimetype[0])
@@ -218,8 +213,18 @@ def handle_file():
                 break
             yield chunk
 
-    response = Response(stream_with_context(generate()), mimetype=mimetype[0])
-    return response
+    r = Response(stream_with_context(generate()), mimetype=mimetype)
+    r.headers["Content-Encoding"] = encoding
+    return r
+
+
+@blueprint.route('/file', methods=['GET'])
+def handle_file():
+    email = auth_api.auth()['email']
+    dataset_id = request.args.get('id', '')
+    dataset = database_api.get_dataset(email, dataset_id)
+    file_path = get_file_path(request.args.get('file'), dataset['url'])
+    return send_file(file_path)
 
 
 @blueprint.route('/user', methods=['GET'])
@@ -328,17 +333,24 @@ def handle_dataset():
     #     return 'Not authorized to read {}'.format(url), 403
 
 
-@blueprint.route('/submit_job', methods=['POST'])
-def handle_submit_job():
-    content = request.get_json(force=True, cache=False)
-    email, dataset = get_email_and_dataset(content)
-    params = content.get('params')
-    return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-        params=params))
+# @blueprint.route('/submit_job', methods=['POST'])
+# def handle_submit_job():
+#     content = request.get_json(force=True, cache=False)
+#     email, dataset = get_email_and_dataset(content)
+#     params = content.get('params')
+#     return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+#         params=params))
 
 
 @blueprint.route('/job', methods=['GET'])
 def handle_job():
     email = auth_api.auth()['email']
     job_id = request.args.get('id', '')
+    if job_id.startswith('cirro-'):  # precomputed result
+        import os
+        dataset_id = request.args.get('ds_id', '')
+        email = auth_api.auth()['email']
+        dataset = database_api.get_dataset(email, dataset_id)
+        file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
+        return send_file(file_path)
     return database_api.get_job(email=email, job_id=job_id)
