@@ -6,7 +6,6 @@ import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
-import {drawColorScheme} from './ColorSchemeLegend';
 import {getNameWidth} from './DotPlotCanvas';
 import {numberFormat, numberFormat2f} from './formatters';
 import {stripTrailingZeros} from './util';
@@ -66,8 +65,6 @@ export default class ViolinPlot extends React.PureComponent {
         context.fillStyle = textColor === 'white' ? 'black' : 'white';
         context.fillRect(0, 0, width, height);
         this.drawContext(context, size);
-        context.translate(4, (size.totalHeight + size.y + 4));
-        drawColorScheme(context, this.props.colorScale, textColor);
 
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
