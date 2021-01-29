@@ -49,12 +49,10 @@ const styles = theme => ({
         width: 'unset'
     },
     rotateHeader: {
-        maxWidth: 30,
-        whiteSpace: 'nowrap',
-        position: 'sticky',
-        backgroundColor: 'unset',
         top: 0,
-        padding: 1
+        padding: 1,
+        background:'transparent',
+        whiteSpace:'nowrap'
     },
     checkbox: {
         padding: 0
@@ -73,7 +71,6 @@ const styles = theme => ({
         width: '100%',
     },
     rotateHeaderSpan: {
-        /* make sure the bottom of the span is matched up with the bottom of the parent div */
         position: 'absolute',
         bottom: 0,
         left: 0,
@@ -81,9 +78,15 @@ const styles = theme => ({
         textOverflow: 'ellipsis'
     },
     td: {
-        /* make sure this is at least as wide as sqrt(2) * height of the tallest letter in your font or the headers will overlap each other*/
         padding: 1,
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        width: 27,
+        minWidth: 27,
+        maxWidth: 27
+    },
+    rowHeader: {
+        padding: 1,
+        whiteSpace: 'nowrap',
     }
 });
 
@@ -190,11 +193,7 @@ export function updateJob(jobResult) {
         jobResult.colorScale = createColorScale(jobResult.interpolator).domain(domain);
     }
     if (jobResult.sizeScaleReversed == null) {
-        if (jobResult.size != null) {
-            jobResult.sizeScaleReversed = jobResult.size.toLowerCase().indexOf('pval') !== -1 || jobResult.size.toLowerCase().indexOf('qval') !== -1;
-        } else {
-            jobResult.sizeScaleReversed = false;
-        }
+        jobResult.sizeScaleReversed = false;
     }
     if (jobResult.sizeScale == null) {
         let domain = getRange(jobResult.size);
@@ -204,7 +203,7 @@ export function updateJob(jobResult) {
         if (!isNaN(jobResult.options.maxSize)) {
             domain[1] = jobResult.options.maxSize;
         }
-        jobResult.sizeScale = scaleLinear().domain(domain).range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18]).clamp(true); // e.g. -log p
+        jobResult.sizeScale = scaleLinear().domain(domain).range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18]).clamp(true);
     }
 }
 
@@ -488,7 +487,7 @@ class JobResultsPanel extends React.PureComponent {
                                         role="checkbox"
                                         tabIndex={-1}
                                         key={row}
-                                    ><TableCell className={classes.td} component="th"
+                                    ><TableCell className={classes.rowHeader} component="th"
                                                 key={'id'}><Checkbox className={classes.checkbox}
                                                                      checked={selected}/>{id}</TableCell>
                                         {jobResult.columns.map(column => {
