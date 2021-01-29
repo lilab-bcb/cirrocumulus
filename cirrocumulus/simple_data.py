@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.sparse
+from cirrocumulus.io_util import cirro_id
 
 
 class SimpleData:
@@ -118,7 +119,6 @@ class SimpleData:
             if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and 'scores' in rank_genes_groups:
                 scanpy_marker_keys.append(key)
         de_results = []  # array of dicts containing params logfoldchanges, pvals_adj, scores, names
-        id_counter = 1
         for scanpy_marker_key in scanpy_marker_keys:
             rank_genes_groups = adata.uns[scanpy_marker_key]
             params = rank_genes_groups['params']
@@ -133,7 +133,7 @@ class SimpleData:
             category = '{} ({})'.format(params['groupby'], scanpy_marker_key)
             de_result_df = None
             columns = [dict(name='Feature', field=0)]
-            include = True
+
             group_names = rank_genes_groups['names'].dtype.names
             for group_name in group_names:
                 gene_names = rank_genes_groups['names'][group_name]
@@ -149,46 +149,51 @@ class SimpleData:
                 marker_results.append(
                     dict(category=category, name=str(group_name), features=gene_names[:n_genes]))
 
-            # de_result_data = {}
-            # for column in de_result_df.columns:
-            #     de_result_data[column] = de_result_df[column]
-            # de_result['index'] = de_result_df.index
-            if include:
-                de_result_data = de_result_df.reset_index().to_dict(orient='records')
-                de_result = dict(id='cirro-{}'.format(id_counter), readonly=True, color='logfoldchanges',
-                    size='pvals_adj', params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
-                    name=category)
-                id_counter += 1
-                de_result['data'] = de_result_data
-                de_results.append(de_result)
+            de_result_data = de_result_df.reset_index().to_dict(orient='records')
+            de_result = dict(id=cirro_id(), readonly=True, color='logfoldchanges',
+                size='pvals_adj', params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
+                name=category)
+            de_result['data'] = de_result_data
+            de_results.append(de_result)
 
         if 'de_res' in adata.varm:  # pegasus
             de_res = adata.varm['de_res']
             names = de_res.dtype.names
             field_names = set()  # e.g. 1:auroc
-            cluster_names = set()
+            group_names = set()
             for name in names:
                 index = name.index(':')
                 field_name = name[index + 1:]
-                cluster_name = name[:index]
+                group_name = name[:index]
                 field_names.add(field_name)
-                cluster_names.add(cluster_name)
-            sort_field_names = ['mwu_qval', 'auroc', 't_qval']
+                group_names.add(group_name)
+            group_names = list(group_names)
+            field_names = list(field_names)
+
             de_res = pd.DataFrame(data=de_res, index=adata.var.index)
+            de_res.index.name = 'index'
+            de_result_data = de_res.reset_index().to_dict(orient='records')
+            de_result = dict(id=cirro_id(), readonly=True,
+                color='log2FC' if 'log2FC' in field_names else field_names[0],
+                size='mwu_qval' if 'mwu_qval' in field_names else field_names[0], groups=group_names,
+                fields=field_names, type='de', name='pegasus_de')
+            de_result['data'] = de_result_data
+            de_results.append(de_result)
+
             field_use = None
-            for field in sort_field_names:
+            for field in ['mwu_qval', 'auroc', 't_qval']:
                 if field in field_names:
                     field_use = field
                     break
             if field_use is not None:
                 field_ascending = field_use != 'auroc'
-                for cluster_name in cluster_names:
-                    fc_column = '{}:log2FC'.format(cluster_name)
-                    name = '{}:{}'.format(cluster_name, field_name)
+                for group_name in group_names:
+                    fc_column = '{}:log2FC'.format(group_name)
+                    name = '{}:{}'.format(group_name, field_name)
                     idx_up = de_res[fc_column].values > 0
                     df_up = de_res.loc[idx_up].sort_values(by=[name, fc_column], ascending=[field_ascending, False])
                     features = df_up[:n_genes].index.values
-                    marker_results.append(dict(category='markers', name=str(cluster_name), features=features))
+                    marker_results.append(dict(category='markers', name=str(group_name), features=features))
 
         for key in adata.obs_keys():
             if pd.api.types.is_categorical_dtype(adata.obs[key]) or pd.api.types.is_bool_dtype(

@@ -43,6 +43,15 @@ def __add_visium(adata, spatial_directory):
         return False
 
 
+cirro_id_counter = 0
+
+
+def cirro_id():
+    global cirro_id_counter
+    cirro_id_counter += 1
+    return 'cirro-{}'.format(cirro_id_counter)
+
+
 def unique_id():
     import uuid
     return str(uuid.uuid4())
@@ -86,7 +95,7 @@ def __add_generic_spatial(adata, spatial_directory):
 
             tree = ET.parse(svg_path)
             attrs = tree.getroot().attrib
-            if 'data-group' in attrs and  'data-selection' in attrs:
+            if 'data-group' in attrs and 'data-selection' in attrs:
                 found = True
                 images = adata.uns.get('meta_images', [])
                 selection = attrs['data-selection'].replace("'", "\"")
