@@ -17,6 +17,7 @@ import ListItemText from '@material-ui/core/ListItemText';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
 import {scaleLinear, scaleSequential} from 'd3-scale';
+import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setJobResult, setSearchTokensDirectly} from './actions';
@@ -103,11 +104,15 @@ export function updateJob(jobResult) {
     const data = jobResult.data;
 
     if (jobResult.columns == null) {
+        const sorter = natsort({insensitive: true});
         const indices = new Array(groups.length);
         for (let i = 0, n = jobResult.groups.length; i < n; i++) {
             indices[i] = i;
         }
         jobResult.columns = indices;
+        jobResult.columns.sort((a, b) => {
+            return sorter(jobResult.groups[a], jobResult.groups[b]);
+        });
     }
 
     if (jobResult.rowFilters == null) {
@@ -491,7 +496,7 @@ class JobResultsPanel extends React.PureComponent {
                 }
             </Box>
             <Dialog onClose={this.onCloseJobs} aria-labelledby="job-results-title"
-                    open={this.state.showDialog || (tab==='results' && jobResults.length > 1 && jobResult == null)}>
+                    open={this.state.showDialog || (tab === 'results' && jobResults.length > 1 && jobResult == null)}>
                 <DialogTitle id="job-results-title" onClose={this.onCloseJobs}>
                     Results
                 </DialogTitle>
@@ -530,7 +535,7 @@ const mapStateToProps = state => {
             jobResultId: state.jobResult,
             jobResults: state.jobResults,
             searchTokens: state.searchTokens,
-            tab:state.tab
+            tab: state.tab
         };
     }
 ;
