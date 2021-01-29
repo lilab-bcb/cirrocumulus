@@ -5,7 +5,6 @@ import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
-import {scaleSequential} from 'd3-scale';
 import {debounce, find} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -13,6 +12,7 @@ import {setJobResults} from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {sortAndFilterJobResult, updateJob, updateTopNJobResult} from './JobResultsPanel';
+import {createColorScale} from './util';
 
 
 const styles = theme => ({
@@ -57,6 +57,14 @@ class JobResultOptions extends React.PureComponent {
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
+    onSizeReversedChange = (value) => {
+        const jobResult = this.getJobResult();
+        jobResult.sizeScaleReversed = value;
+        jobResult.sizeScale = null;
+        updateJob(this.getJobResult());
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
+
     onOptions = (options) => {
         const jobResult = this.getJobResult();
         jobResult.options = Object.assign(jobResult.options, options);
@@ -68,7 +76,7 @@ class JobResultOptions extends React.PureComponent {
     onInterpolator = (value) => {
         const jobResult = this.getJobResult();
         jobResult.interpolator = value;
-        jobResult.colorScale = scaleSequential(jobResult.interpolator.value).domain(jobResult.colorScale.domain()).clamp(true);
+        jobResult.colorScale = createColorScale(jobResult.interpolator).domain(jobResult.colorScale.domain()).clamp(true);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
@@ -239,7 +247,8 @@ class JobResultOptions extends React.PureComponent {
                 </Select>
             </FormControl>
             <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
-                                onOptions={this.onOptions}/>
+                                onOptions={this.onOptions} showReversed={true}
+                                onReversedChange={this.onSizeReversedChange}/>
         </React.Fragment>;
         // const {dataset, classes} = this.props;
         // const results = dataset ? dataset.results : null;

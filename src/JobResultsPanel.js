@@ -16,15 +16,15 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
-import {scaleLinear, scaleSequential} from 'd3-scale';
+import {scaleLinear} from 'd3-scale';
 import {find} from 'lodash';
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setJobResult, setSearchTokensDirectly} from './actions';
 import {createFilterFunction} from './dataset_filter';
-import {intFormat} from './formatters';
-import {getInterpolator, X_SEARCH_TOKEN} from './util';
+import {intFormat, numberFormat2f} from './formatters';
+import {createColorScale, getInterpolator, X_SEARCH_TOKEN} from './util';
 
 const styles = theme => ({
     dot: {
@@ -98,7 +98,8 @@ export function updateJob(jobResult) {
     if (jobResult.interpolator == null) {
         jobResult.interpolator = {
             name: DEFAULT_DE_INTERPOLATOR,
-            value: getInterpolator(DEFAULT_DE_INTERPOLATOR)
+            value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
+            reversed: true
         };
     }
     const groups = jobResult.groups;
@@ -163,8 +164,10 @@ export function updateJob(jobResult) {
                 const group = groups[j];
                 const fullField = group + ':' + field;
                 const value = data[i][fullField];
-                min = Math.min(min, value);
-                max = Math.max(max, value);
+                if (value != null && !isNaN(value)) {
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                }
             }
         }
         return [min, max];
@@ -173,13 +176,25 @@ export function updateJob(jobResult) {
     // color='logfoldchanges', size='pvals_adj',
     if (jobResult.colorScale == null) {
         let domain = getRange(jobResult.color);
+        // if (isNaN(jobResult.options.min) && isNaN(jobResult.options.max) && domain[0] < 0 && domain[1] > 0) {
+        //     const max = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
+        //     domain[0] = -max;
+        //     domain[1] = max;
+        // }
         if (!isNaN(jobResult.options.min)) {
             domain[0] = jobResult.options.min;
         }
         if (!isNaN(jobResult.options.max)) {
             domain[1] = jobResult.options.max;
         }
-        jobResult.colorScale = scaleSequential(jobResult.interpolator.value).domain(domain).clamp(true);
+        jobResult.colorScale = createColorScale(jobResult.interpolator).domain(domain);
+    }
+    if (jobResult.sizeScaleReversed == null) {
+        if (jobResult.size != null) {
+            jobResult.sizeScaleReversed = jobResult.size.toLowerCase().indexOf('pval') !== -1 || jobResult.size.toLowerCase().indexOf('qval') !== -1;
+        } else {
+            jobResult.sizeScaleReversed = false;
+        }
     }
     if (jobResult.sizeScale == null) {
         let domain = getRange(jobResult.size);
@@ -189,7 +204,7 @@ export function updateJob(jobResult) {
         if (!isNaN(jobResult.options.maxSize)) {
             domain[1] = jobResult.options.maxSize;
         }
-        jobResult.sizeScale = scaleLinear().domain(domain).range([18, 2]).clamp(true); // e.g. -log p
+        jobResult.sizeScale = scaleLinear().domain(domain).range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18]).clamp(true); // e.g. -log p
     }
 }
 
@@ -211,8 +226,18 @@ export function sortAndFilterJobResult(jobResult) {
         indices.sort((a, b) => {
             const val1 = jobResult.data[a][byField];
             const val2 = jobResult.data[b][byField];
-            const val = val2 - val1;
-            return val === 0 ? a - b : val;
+            const aNaN = (val1 == null || isNaN(val1));
+            const bNaN = (val2 == null || isNaN(val2));
+            if (aNaN && bNaN) {
+                return 0;
+            }
+            if (aNaN) {
+                return 1;
+            }
+            if (bNaN) {
+                return -1;
+            }
+            return val2 - val1;
         });
         jobResult.sortedRows.push(indices);
     }
@@ -240,7 +265,7 @@ export function sortAndFilterJobResult(jobResult) {
                 const filter = rowFilterFunctions[filterIndex];
                 const field = group + ':' + filter.field;
                 const value = jobResult.data[rowIndex][field];
-                if (!filter.f(value)) {
+                if (!filter.f(value) || value == null || isNaN(value)) {
                     passesFilter = false;
                     break;
                 }
@@ -373,6 +398,7 @@ class JobResultsPanel extends React.PureComponent {
         // const params = jobResult.params;
         let data;
         let color;
+        let by;
         let size;
         let groups;
         let rotateHeaders = false;
@@ -385,6 +411,7 @@ class JobResultsPanel extends React.PureComponent {
             // const params = jobResult.params;
             data = jobResult.data;
             color = jobResult.color;
+            by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
             for (let i = 0; i < groups.length; i++) {
@@ -411,6 +438,9 @@ class JobResultsPanel extends React.PureComponent {
             maxSize = Math.max(jobResult.sizeScale.range()[0], jobResult.sizeScale.range()[1]);
         }
 
+        function formatNumber(val) {
+            return (val == null || isNaN(val)) ? "NaN" : numberFormat2f(val);
+        }
 
         return <React.Fragment>
             <Box color="text.primary">
@@ -465,10 +495,15 @@ class JobResultsPanel extends React.PureComponent {
                                             const group = groups[column];
                                             const colorField = group + ':' + color;
                                             const sizeField = group + ':' + size;
+                                            const byField = group + ':' + by;
                                             const colorValue = data[row][colorField];
                                             const sizeValue = data[row][sizeField];
-                                            const title = color + ':' + colorValue + ', ' + size + ':' + sizeValue;
+                                            const byValue = data[row][byField];
                                             const diameter = jobResult.sizeScale(sizeValue);
+                                            const title = by + ':' + formatNumber(byValue) + ', '
+                                                + color + ':' + formatNumber(colorValue) +
+                                                ', ' + size + ':' + formatNumber(sizeValue);
+
                                             return <TableCell className={classes.td} title={title}
                                                               key={group}>
                                                 <div className={classes.dot}

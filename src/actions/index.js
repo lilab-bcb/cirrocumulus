@@ -1,4 +1,4 @@
-import {scaleOrdinal, scaleSequential} from 'd3-scale';
+import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
 import {find, findIndex, isEqual} from 'lodash';
@@ -20,6 +20,7 @@ import {
     CATEGORY_20C,
     convertBinsToIndices,
     convertIndicesToBins,
+    createColorScale,
     getFeatureSets,
     getInterpolator,
     indexSort,
@@ -1341,7 +1342,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         dataset.features = [];
         dataset.obs = [];
         dataset.obsCat = [];
-        dispatch(_setDataset(dataset));
+
         let categoryNameResults;
         let datasetFilters = [];
         let newDataset;
@@ -1885,7 +1886,7 @@ function updateEmbeddingData(state, features) {
                     if (traceSummary.customMax != null && !isNaN(traceSummary.customMax)) {
                         domain[1] = traceSummary.customMax;
                     }
-                    colorScale = scaleSequential(interpolator.value).domain(domain);
+                    colorScale = createColorScale(interpolator).domain(domain);
 
                 } else {
                     let traceUniqueValues = traceSummary.categories;

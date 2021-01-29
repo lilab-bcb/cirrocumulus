@@ -212,6 +212,10 @@ export class DirectAccessDataset {
         return this.baseUrl + file;
     }
 
+    getJob(id) {
+        return fetch(this.baseUrl + 'uns/' + id + '.json').then(r => r.json());
+    }
+
     getVectors(keys, indices = null) {
         let result = [];
         keys.forEach(key => {

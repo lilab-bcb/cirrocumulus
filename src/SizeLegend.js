@@ -1,7 +1,7 @@
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT} from './ChartUtil';
-import {numberFormat} from './formatters';
+import {numberFormat2f} from './formatters';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
@@ -35,7 +35,7 @@ export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textC
         context.beginPath();
         context.arc(pix, 10, radius, 0, Math.PI * 2);
         context.stroke();
-        let text = numberFormat(steps[i]);
+        let text = numberFormat2f(steps[i]);
         if (text.endsWith(".0")) {
             text = text.substring(0, text.length - 2);
         }

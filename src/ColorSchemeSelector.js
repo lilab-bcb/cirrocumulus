@@ -1,13 +1,14 @@
+import {Switch, Tooltip} from '@material-ui/core';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Input from '@material-ui/core/Input';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 
 import withStyles from '@material-ui/core/styles/withStyles';
-import {scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 import React from 'react';
 import ColorSchemeLegend from './ColorSchemeLegend';
-import {fixInterpolatorName, getInterpolator, interpolators} from "./util";
+import {createColorScale, fixInterpolatorName, getInterpolator, interpolators} from "./util";
 
 const styles = theme => ({
     root: {
@@ -31,26 +32,46 @@ function stripInterpolate(name) {
 
 
 class ColorSchemeSelector extends React.PureComponent {
-    handleInterpolatorChange = (event) => {
+    constructor(props) {
+        super(props);
+        this.state = {forceUpdate: false};
+    }
+
+    onInterpolatorChange = (event) => {
         let name = event.target.value;
-        this.props.handleInterpolator({name: name, value: getInterpolator(name)});
+        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {
+            name: name,
+            value: getInterpolator(name)
+        }));
+    };
+
+    onReversedChange = (event) => {
+        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
     };
 
     getScale(name) {
-        return scaleSequential(scaleChromatic[name]).domain([0, 1]);
+        return createColorScale({
+            name: name,
+            value: scaleChromatic[name],
+            reversed: this.props.interpolator.reversed
+        }).domain([0, 1]);
     }
 
     render() {
-        const {classes} = this.props;
-        let interpolator = fixInterpolatorName(this.props.interpolator.name);
+
+        const {classes, interpolator} = this.props;
+        if (interpolator.reversed == null) {
+            interpolator.reversed = false;
+        }
+        const interpolatorName = fixInterpolatorName(interpolator.name);
         const width = 174;
         const height = 14;
-        return (
+        return <React.Fragment>
             <Select
                 input={<Input/>}
                 className={classes.select}
-                onChange={this.handleInterpolatorChange}
-                value={interpolator}
+                onChange={this.onInterpolatorChange}
+                value={interpolatorName}
                 multiple={false}>
                 <MenuItem key="Diverging" value="Diverging" divider disabled>
                     Diverging
@@ -94,12 +115,20 @@ class ColorSchemeSelector extends React.PureComponent {
                                            label={false} height={height}
                                            scale={this.getScale(item)}/>
                     </MenuItem>))}
-
-
             </Select>
-        );
+            <Tooltip title={"Select to invert the color order"}>
+                <div><FormControlLabel
+                    control={
+                        <Switch
+                            checked={interpolator.reversed}
+                            onChange={this.onReversedChange}
+                        />
+                    }
+                    label="Reversed"
+                /></div>
+            </Tooltip>
+        </React.Fragment>;
     }
-
 }
 
 

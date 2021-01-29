@@ -2,13 +2,14 @@ import {InputLabel, MenuItem, Select} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
 import withStyles from '@material-ui/core/styles/withStyles';
-import {scaleLinear, scaleSequential} from 'd3-scale';
+import {scaleLinear} from 'd3-scale';
 import natsort from 'natsort';
 import React from 'react';
 import DotPlotCanvas from './DotPlotCanvas';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {boxplotStats, density, nrd0} from './kde';
+import {createColorScale} from './util';
 import ViolinPlot from './ViolinPlot';
 
 const styles = theme => ({
@@ -179,7 +180,7 @@ class DistributionGroup extends React.PureComponent {
         const chartType = distributionPlotOptions.chartType;
         const maxRadius = 9;
         const minRadius = 1;
-        const colorScale = scaleSequential(interpolator.value).domain(meanRange).clamp(true);
+        const colorScale = createColorScale(interpolator).domain(meanRange);
         const sizeScale = scaleLinear().domain(percentRange).range([minRadius, maxRadius]).clamp(true);
 
 
@@ -258,7 +259,7 @@ class DistributionGroup extends React.PureComponent {
                                      onInterpolator={this.props.handleInterpolator}/>}
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
                     <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
-                                        onOptions={this.props.onDistributionPlotOptions}/>
+                                        onOptions={this.props.onDistributionPlotOptions} showReversed={false}/>
                 </div>}
 
 

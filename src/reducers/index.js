@@ -1,4 +1,3 @@
-import {scaleSequential} from 'd3-scale';
 import {isPlainObject} from 'lodash';
 import {combineReducers} from 'redux';
 import {
@@ -50,7 +49,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {getInterpolator, updateTraceColors} from '../util';
+import {createColorScale, getInterpolator, updateTraceColors} from '../util';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -77,12 +76,14 @@ const DEFAULT_DIST_PLOT_OPTIONS = {
 
 const DEFAULT_INTERPOLATOR_OBJ = {
     name: DEFAULT_INTERPOLATOR,
-    value: getInterpolator(DEFAULT_INTERPOLATOR)
+    value: getInterpolator(DEFAULT_INTERPOLATOR),
+    reversed: false
 };
 
 const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
     name: DEFAULT_DOT_PLOT_INTERPOLATOR,
-    value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR)
+    value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR),
+    reversed: false
 };
 
 
@@ -675,7 +676,7 @@ function embeddingData(state = [], action) {
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous) {
                     let domain = traceInfo.colorScale.domain();
-                    traceInfo.colorScale = scaleSequential(action.payload.value).domain(domain);
+                    traceInfo.colorScale = createColorScale(action.payload).domain(domain);
                     updateTraceColors(traceInfo);
                 }
             });

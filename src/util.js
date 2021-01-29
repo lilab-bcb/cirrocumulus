@@ -1,6 +1,6 @@
 import {shuffle} from 'd3-array';
 import {color} from 'd3-color';
-import {scaleLinear} from 'd3-scale';
+import {scaleLinear, scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
 import simplify from 'simplify-js';
 import {getColors} from './ThreeUtil';
@@ -88,6 +88,7 @@ export function stripTrailingZeros(s) {
     }
     return s;
 }
+
 /**
  *
  * @param array. Array of format,data
@@ -313,6 +314,16 @@ export function fixInterpolatorName(name) {
 
 export function getInterpolator(name) {
     return scaleChromatic[fixInterpolatorName(name)];
+}
+
+export function createColorScale(colorScaleDef) {
+    const scale = scaleSequential(colorScaleDef.value).clamp(true);
+    if (colorScaleDef.reversed) {
+        const interpolator = scale.interpolator();
+        const mirror = t => interpolator(1 - t);
+        scale.interpolator(mirror);
+    }
+    return scale;
 }
 
 export function convertIndicesToBins(points, bins) {
