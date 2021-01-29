@@ -21,7 +21,7 @@ import {find} from 'lodash';
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
-import {setJobResult, setSearchTokensDirectly} from './actions';
+import {setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
 import {createColorScale, getInterpolator, X_SEARCH_TOKEN} from './util';
@@ -51,8 +51,8 @@ const styles = theme => ({
     rotateHeader: {
         top: 0,
         padding: 1,
-        background:'transparent',
-        whiteSpace:'nowrap'
+        background: 'transparent',
+        whiteSpace: 'nowrap'
     },
     checkbox: {
         padding: 0
@@ -337,6 +337,7 @@ class JobResultsPanel extends React.PureComponent {
         } else {
             searchTokens.splice(index, 1);
         }
+        this.props.setTab('embedding');
         this.props.onSearchTokens(searchTokens.slice());
 
     };
@@ -570,6 +571,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         return {
             onSearchTokens: (payload) => {
                 dispatch(setSearchTokensDirectly(payload));
+            },
+            setTab: (payload) => {
+                dispatch(setTab(payload));
             },
             setJobResult: (payload) => {
                 dispatch(setJobResult(payload));
