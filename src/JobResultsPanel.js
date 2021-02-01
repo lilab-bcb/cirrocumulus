@@ -334,10 +334,11 @@ class JobResultsPanel extends React.PureComponent {
         }
         if (index === -1) {
             searchTokens.push({value: feature, type: X_SEARCH_TOKEN});
+            this.props.setTab('embedding');
         } else {
             searchTokens.splice(index, 1);
         }
-        this.props.setTab('embedding');
+
         this.props.onSearchTokens(searchTokens.slice());
 
     };
