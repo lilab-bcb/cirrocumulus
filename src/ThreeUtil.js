@@ -164,7 +164,7 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     const embeddingKey = getEmbeddingKey(embedding);
     const coordinates = cachedData[embeddingKey];
     if (coordinates == null) {
-        throw 'Coordinates not found for ' + embedding.name;
+        throw new Error('Coordinates not found for ' + embedding.name);
     }
     const x = coordinates[embedding.name + '_1'];
     const y = coordinates[embedding.name + '_2'];

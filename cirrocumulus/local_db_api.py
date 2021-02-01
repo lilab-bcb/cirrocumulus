@@ -156,9 +156,10 @@ class LocalDbAPI:
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
         return filter_id
 
-    def create_job(self, email, dataset_id, params):
+    def create_job(self, email, dataset_id, job_type, params):
         job_id = unique_id()
-        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, params=params, status=None, result=None)
+        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, job_type=job_type, params=params,
+            status=None, result=None)
         return job_id
 
     def get_job(self, email, job_id):

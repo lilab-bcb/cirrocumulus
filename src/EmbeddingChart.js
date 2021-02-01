@@ -12,10 +12,7 @@ import {
     handleDimensionFilterUpdated,
     handleDomainChange,
     handleMeasureFilterUpdated,
-    MORE_OPTIONS_DIALOG,
-    setChartOptions,
-    setDialog,
-    setPrimaryChartSize
+    setChartOptions
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';

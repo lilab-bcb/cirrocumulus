@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
+from cirrocumulus.database_api import get_email_domain
 from pymongo import MongoClient
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -194,10 +194,10 @@ class MongoDb:
             collection.update_one(dict(_id=ObjectId(set_id)), {'$set': entity_update})
             return set_id
 
-    def create_job(self, email, dataset_id, params):
+    def create_job(self, email, dataset_id, job_type, params):
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
-        return str(collection.insert_one(dict(dataset_id=dataset_id, params=params)).inserted_id)
+        return str(collection.insert_one(dict(dataset_id=dataset_id, job_type=job_type, params=params)).inserted_id)
 
     def get_job(self, email, job_id):
         collection = self.db.jobs

@@ -35,7 +35,7 @@ function getVectors(cachedData, names, indices = null) {
     names.forEach(name => {
         let array = cachedData[name];
         if (array == null) {
-            throw name + " not found";
+            throw new Error(name + " not found");
         }
         let v = new Vector(name, array);
         if (indices != null) {

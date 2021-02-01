@@ -231,7 +231,6 @@ class DistributionGroup extends React.PureComponent {
                     colorScale={colorScale}
                     textColor={textColor}
                     options={distributionPlotOptions}
-                    textColor={textColor}
                     data={data}/>}
 
                 {chartType !== 'violin' && selectedData != null && selectedData.length > 0 ?

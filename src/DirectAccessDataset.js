@@ -46,7 +46,7 @@ export class DirectAccessDataset {
     getByteRange(key) {
         let range = this.key2bytes[key];
         if (!range) {
-            throw key + ' not found';
+            throw new Error(key + ' not found');
         }
         return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
     }

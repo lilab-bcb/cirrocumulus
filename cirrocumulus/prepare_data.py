@@ -250,7 +250,6 @@ class PrepareData:
             os.makedirs(uns_dir, exist_ok=True)
             for i in range(len(results)):  # keep id, name, type in schema, store rest in file
                 result = results[i]
-                print(result['name'])
                 result_id = result.pop('id')
                 results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
                     content_type='application/json', content_encoding='gzip')
