@@ -237,6 +237,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         const sizeScaleHeight = 40;
         const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
         const width = Math.max(200, size.width + size.x);
+        let scale = 1;
         if (format === 'svg') {
             context = new window.C2S(width, height);
             context.font = SVG_FONT;
@@ -244,7 +245,8 @@ export default class DotPlotCanvas extends React.PureComponent {
             canvas.width = width * window.devicePixelRatio;
             canvas.height = height * window.devicePixelRatio;
             context = canvas.getContext('2d');
-            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            scale = window.devicePixelRatio;
+            context.scale(scale, scale);
             context.font = CANVAS_FONT;
         }
         const textColor = this.props.textColor;
@@ -256,9 +258,8 @@ export default class DotPlotCanvas extends React.PureComponent {
         //     context.scale(window.devicePixelRatio, window.devicePixelRatio);
         // }
 
-        context.translate(4, (size.height + size.y + 4));
+        context.translate(4, scale * (size.height + size.y + 4));
         drawColorScheme(context, this.props.colorScale, textColor);
-
         context.translate(-10, (colorScaleHeight + 4));
 
         drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
