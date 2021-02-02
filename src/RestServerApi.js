@@ -133,8 +133,7 @@ export class RestServerApi {
             }).then(result => result.json());
     }
 
-    submitJob(datasetId) {
-        const data = {id: datasetId};
+    submitJob(data) {
         return fetch(API + '/submit_job',
             {
                 body: JSON.stringify(data),
@@ -143,11 +142,5 @@ export class RestServerApi {
             }).then(response => response.json());
     }
 
-    getJob(jobId) {
-        return fetch(API + '/job?id=' + jobId,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json());
-    }
 
 }

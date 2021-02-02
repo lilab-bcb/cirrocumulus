@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isEqual} from 'lodash';
+import {find, isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -23,10 +23,8 @@ import {
     createColorScale,
     getFeatureSets,
     getInterpolator,
-    indexSort,
     OBS_CAT_SEARCH_TOKEN,
     OBS_SEARCH_TOKEN,
-    randomSeq,
     splitSearchTokens,
     updateTraceColors
 } from '../util';
@@ -307,26 +305,35 @@ export function submitJob() {
         let jobId;
         let timeout = 30 * 1000;
 
-        function getJob() {
-            getState().serverInfo.api.getJob(jobId)
+        function getJobStatus() {
+            getState().dataset.api.getJob(jobId, false)
                 .then(result => {
+                    const jobResult = find(getState().jobResults, item => item.id === jobId);
+                    jobResult.status = result.status;
+                    console.log(result);
                     if (result.status === 'complete') {
-                        //dispatch(_setJobResult(result));
+                        dispatch(setMessage('Job complete'));
+                        dispatch(setJobResults(getState().jobResults.slice()));
                     } else if (result.status === 'error') {
+
                         handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
                     } else {
-                        window.setTimeout(getJob, timeout);
+                        window.setTimeout(getJobStatus, timeout);
                     }
                 }).catch(err => {
                 handleError(dispatch, err, 'Unable to get job. Please try again.');
             });
         }
 
-        getState().serverInfo.api.submitJob(getState().dataset.id)
+        const submitJobData = {id: getState().dataset.id, name: 'FIXME', type: 'de'};
+        getState().serverInfo.api.submitJob(submitJobData)
             .then(result => {
                 dispatch(setMessage('Job submitted'));
                 jobId = result.id;
-                window.setTimeout(getJob, timeout);
+                submitJobData.id = jobId;
+                getState().jobResults.push(submitJobData);
+                dispatch(setJobResults(getState().jobResults.slice()));
+                window.setTimeout(getJobStatus, timeout);
             }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -1182,15 +1189,14 @@ export function setJobResult(payload) {
             return dispatch(_setJobResult(payload));
         }
         dispatch(_setLoading(true));
-        getState().dataset.api.getJob(payload).then((result) => {
-            jobResult = Object.assign(jobResult, result);
-            updateJob(jobResult);
+        getState().dataset.api.getJob(payload, true).then((result) => {
+
             let jobResults = getState().jobResults;
-            const index = findIndex(jobResults, item => item.id === payload);
-            if (index === -1) {
-                throw new Error('Job not found');
+            const jobResult = find(jobResults, item => item.id === payload);
+            for (let key in result) {
+                jobResult[key] = result[key];
             }
-            jobResults[index] = jobResult;
+            updateJob(jobResult);
             dispatch(_setJobResult(payload));
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -2002,7 +2008,6 @@ function updateEmbeddingData(state, features) {
 
                 if (traceType === 'image') {
                     // TODO cache image
-                    chartData.indices = !isCategorical ? indexSort(chartData.values, true) : randomSeq(chartData.values.length);
                     const url = dataset.api.getFileUrl(embedding.spatial.image);
                     chartData.tileSource = new OpenSeadragon.ImageTileSource({
                         url: url,

@@ -212,7 +212,7 @@ export class DirectAccessDataset {
         return this.baseUrl + file;
     }
 
-    getJob(id) {
+    getJob(id, returnResults) {
         return fetch(this.baseUrl + 'uns/' + id + '.json').then(r => r.json());
     }
 

@@ -151,6 +151,12 @@ export function updateJob(jobResult) {
             }
         }
     }
+    if (jobResult.color == null) {
+        jobResult.color = jobResult.fields[0];
+    }
+    if (jobResult.size == null) {
+        jobResult.size = jobResult.fields[0];
+    }
     if (jobResult.rowSortOrder == null) {
         jobResult.rowSortOrder = [];
     }
@@ -443,9 +449,10 @@ class JobResultsPanel extends React.PureComponent {
             return (val == null || isNaN(val)) ? "NaN" : numberFormat2f(val);
         }
 
+        const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
         return <React.Fragment>
             <Box color="text.primary">
-                {jobResults.length > 1 &&
+                {showBrowseJobs &&
                 <Button style={{marginBottom: 8}} size={"small"} onClick={this.onBrowseJobs} variant="outlined"
                         color="primary">Browse All Results</Button>}
                 {jobResult && <React.Fragment>

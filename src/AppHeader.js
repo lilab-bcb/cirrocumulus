@@ -321,7 +321,7 @@ class AppHeader extends React.PureComponent {
 
     render() {
         const {
-            dataset, loadingApp, email, selection, classes, serverInfo, tab, user
+            dataset, loadingApp, jobResults, email, selection, classes, serverInfo, tab, user
         } = this.props;
 
 
@@ -384,7 +384,7 @@ class AppHeader extends React.PureComponent {
                     >
                         <AntTab value="embedding" label="Embeddings"/>
                         <AntTab value="distribution" label="Distributions"/>
-                        {dataset.results != null && <AntTab value="results" label="Results"/>}
+                        {jobResults.length > 0 && <AntTab value="results" label="Results"/>}
                     </Tabs>}
 
                     <div className={"cirro-condensed"}>
@@ -490,6 +490,7 @@ const mapStateToProps = state => {
         email: state.email,
 
         interpolator: state.interpolator,
+        jobResults: state.jobResults,
         loading: state.loading,
         loadingApp: state.loadingApp,
 

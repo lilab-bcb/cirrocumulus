@@ -63,8 +63,8 @@ export class RestDataset {
         return API + '/file?id=' + this.id + '&file=' + file + '&access_token=' + getIdToken();
     }
 
-    getJob(id) {
-        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+    getJob(id, returnResults) {
+        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id + (!returnResults ? '&status=1' : ''), {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         });
     }

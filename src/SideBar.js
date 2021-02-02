@@ -435,9 +435,9 @@ class SideBar extends React.PureComponent {
         this.props.downloadSelectedIds();
     };
 
-    handleDifferentialExpression = (event) => {
+    handleSubmitJob = (event) => {
         event.preventDefault();
-        this.props.handleDifferentialExpression();
+        this.props.handleSubmitJob();
     };
 
 
@@ -745,17 +745,15 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {false && fancy && <Divider orientation="vertical" flexItem/>}
-                                        {false && fancy && <Tooltip title={"Differential Expression"}>
+                                        {fancy && <Divider orientation="vertical" flexItem/>}
+                                        {fancy && <Tooltip title={"Differential Expression"}>
                                             <IconButton size={'small'}
-                                                        onClick={this.handleDifferentialExpression}><CompareIcon/></IconButton>
+                                                        onClick={this.handleSubmitJob}><CompareIcon/></IconButton>
                                         </Tooltip>}
                                     </Grid>
                                 </div>
                             </React.Fragment>
                             }
-
-
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>
@@ -1088,7 +1086,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             handleDeleteFeatureSet: value => {
                 dispatch(deleteFeatureSet(value));
             },
-            handleDifferentialExpression: value => {
+            handleSubmitJob: value => {
                 dispatch(submitJob(value));
             },
             onDistributionPlotOptions: (payload) => {
