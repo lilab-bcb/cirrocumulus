@@ -745,8 +745,8 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {fancy && <Divider orientation="vertical" flexItem/>}
-                                        {fancy && <Tooltip title={"Differential Expression"}>
+                                        {false && fancy && <Divider orientation="vertical" flexItem/>}
+                                        {false && fancy && <Tooltip title={"Differential Expression"}>
                                             <IconButton size={'small'}
                                                         onClick={this.handleSubmitJob}><CompareIcon/></IconButton>
                                         </Tooltip>}

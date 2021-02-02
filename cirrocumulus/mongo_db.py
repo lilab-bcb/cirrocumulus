@@ -194,16 +194,29 @@ class MongoDb:
             collection.update_one(dict(_id=ObjectId(set_id)), {'$set': entity_update})
             return set_id
 
-    def create_job(self, email, dataset_id, job_type, params):
+    def create_job(self, email, dataset_id, job_name, job_type, params):
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
-        return str(collection.insert_one(dict(dataset_id=dataset_id, job_type=job_type, params=params)).inserted_id)
+        return str(collection.insert_one(
+            dict(dataset_id=dataset_id, name=job_name, type=job_type, params=params)).inserted_id)
 
-    def get_job(self, email, job_id):
+    def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
-        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        doc = collection.find_one(dict(_id=ObjectId(job_id)), {"result": 0} if not return_result else None)
         self.get_dataset(email, doc['dataset_id'])
-        return dict(id=str(doc['_id']), dataset_id=doc['dataset_id'], status=doc['status'], result=doc['result'])
+        if return_result:
+            return doc['result']
+        else:
+            return dict(id=str(doc['_id']), status=doc['status'])
+
+    def get_jobs(self, email, dataset_id):
+        self.get_dataset(email, dataset_id)
+        collection = self.db.jobs
+        results = []
+        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1)):
+            results.append(
+                dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type']))
+        return results
 
     def update_job(self, email, job_id, status, result):
         collection = self.db.jobs

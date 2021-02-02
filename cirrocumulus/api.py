@@ -338,14 +338,18 @@ def handle_dataset():
 #     content = request.get_json(force=True, cache=False)
 #     email, dataset = get_email_and_dataset(content)
 #     params = content.get('params')
+#     job_type = content.get('type')
+#     job_name = content.get('name')
 #     return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-#         params=params))
+#         job_name=job_name, job_type=job_type, params=params))
 
 
 @blueprint.route('/job', methods=['GET'])
 def handle_job():
     email = auth_api.auth()['email']
     job_id = request.args.get('id', '')
+    job_status = request.args.get('status', '0')
+    return_result = job_status == '0'
     if job_id.startswith('cirro-'):  # precomputed result
         import os
         dataset_id = request.args.get('ds_id', '')
@@ -353,4 +357,14 @@ def handle_job():
         dataset = database_api.get_dataset(email, dataset_id)
         file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
         return send_file(file_path)
-    return database_api.get_job(email=email, job_id=job_id)
+    result = database_api.get_job(email=email, job_id=job_id, return_result=return_result)
+    if return_result:
+        result = Response(result, mimetype='application/json')
+        result.headers["Content-Encoding"] = 'gzip'
+    return result
+
+
+@blueprint.route('/jobs', methods=['GET'])
+def handle_jobs():
+    email = auth_api.auth()['email']
+    return database_api.get_jobs(email=email)

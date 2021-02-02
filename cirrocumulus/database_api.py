@@ -90,11 +90,11 @@ class DatabaseAPI:
     def delete_feature_set(self, email, dataset_id, set_id):
         return self.provider.delete_feature_set(email, dataset_id, set_id)
 
-    def create_job(self, email, dataset_id, job_type, params):
-        return self.provider.create_job(email, dataset_id, job_type, params)
+    def create_job(self, email, dataset_id, job_name, job_type, params):
+        return self.provider.create_job(email, dataset_id, job_name, job_type, params)
 
     def update_job(self, email, job_id, status, result):
         return self.provider.update_job(email, job_id, status, result)
 
-    def get_job(self, email, job_id):
-        return self.provider.get_job(email, job_id)
+    def get_job(self, email, job_id, return_result):
+        return self.provider.get_job(email, job_id, return_result)
