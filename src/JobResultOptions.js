@@ -6,6 +6,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {debounce, find} from 'lodash';
+import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setJobResults} from './actions';
@@ -13,7 +14,6 @@ import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {sortAndFilterJobResult, sortByGroup, updateJob, updateTopNJobResult} from './JobResultsPanel';
 import {createColorScale} from './util';
-
 
 const styles = theme => ({
     formControl: {
@@ -152,7 +152,6 @@ class JobResultOptions extends React.PureComponent {
             rowFilters,
             color,
             size,
-            fields,
             by,
             colorScale,
             ntopUI,
@@ -160,6 +159,8 @@ class JobResultOptions extends React.PureComponent {
             sizeScale
         } = jobResult;
 
+        const fields = jobResult.fields.slice();
+        fields.sort(natsort({insensitive: true}));
         return <React.Fragment>
 
             <div style={{marginTop: 16}}>
@@ -193,8 +194,9 @@ class JobResultOptions extends React.PureComponent {
                         onChange={this.onSortChange}
                         value={jobResult.sortByGroup}
                     >
-                        {jobResult.groups.map(item => (
-                            <MenuItem key={item} value={item}>{item}</MenuItem>
+                        {jobResult.columns.map(index => (
+                            <MenuItem key={jobResult.groups[index]}
+                                      value={jobResult.groups[index]}>{jobResult.groups[index]}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
