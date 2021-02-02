@@ -151,6 +151,9 @@ export function updateJob(jobResult) {
             }
         }
     }
+    if (jobResult.sortByGroup == null) {
+        jobResult.sortByGroup = jobResult.groups[0];
+    }
     if (jobResult.color == null) {
         jobResult.color = jobResult.fields[0];
     }
@@ -282,7 +285,19 @@ export function sortAndFilterJobResult(jobResult) {
         jobResult.sortedFilteredRows.push(filteredIndices);
     }
     updateTopNJobResult(jobResult);
+}
 
+export function sortByGroup(jobResult) {
+    const groupIndices = jobResult.sortedFilteredRows[jobResult.groups.indexOf(jobResult.sortByGroup)];
+    const indexToRank = [];
+    for (let i = 0; i < groupIndices.length; i++) {
+        indexToRank[groupIndices[i]] = i + 1;
+    }
+    jobResult.rows.sort((a, b) => {
+        const rankA = indexToRank[a] || a;
+        const rankB = indexToRank[b] || b;
+        return rankA - rankB;
+    });
 }
 
 export function updateTopNJobResult(jobResult) {
@@ -295,6 +310,7 @@ export function updateTopNJobResult(jobResult) {
         }
     }
     jobResult.rows = Array.from(indices);
+    sortByGroup(jobResult);
 }
 
 class JobResultsPanel extends React.PureComponent {

@@ -11,7 +11,7 @@ import {connect} from 'react-redux';
 import {setJobResults} from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
-import {sortAndFilterJobResult, updateJob, updateTopNJobResult} from './JobResultsPanel';
+import {sortAndFilterJobResult, sortByGroup, updateJob, updateTopNJobResult} from './JobResultsPanel';
 import {createColorScale} from './util';
 
 
@@ -62,6 +62,13 @@ class JobResultOptions extends React.PureComponent {
         jobResult.sizeScaleReversed = value;
         jobResult.sizeScale = null;
         updateJob(this.getJobResult());
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
+
+    onSortChange = (event) => {
+        const jobResult = this.getJobResult();
+        jobResult.sortByGroup = event.target.value;
+        sortByGroup(jobResult);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
@@ -179,6 +186,18 @@ class JobResultOptions extends React.PureComponent {
                     valueLabelDisplay="auto"
                     value={ntopUI}
                     onChange={this.onNtopChange}/>
+                <FormControl style={{display: 'block'}} className={classes.formControl}>
+                    <InputLabel shrink={true}>Sort</InputLabel>
+                    <Select
+                        input={<Input size={"small"}/>}
+                        onChange={this.onSortChange}
+                        value={jobResult.sortByGroup}
+                    >
+                        {jobResult.groups.map(item => (
+                            <MenuItem key={item} value={item}>{item}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
             </div>
             <div style={{marginTop: 8}}></div>
             <Tooltip title="Filters are applied separately per cluster"><Typography
@@ -250,32 +269,6 @@ class JobResultOptions extends React.PureComponent {
                                 onOptions={this.onOptions} showReversed={true}
                                 onReversedChange={this.onSizeReversedChange}/>
         </React.Fragment>;
-        // const {dataset, classes} = this.props;
-        // const results = dataset ? dataset.results : null;
-        // if (results == null) {
-        //     return null;
-        // }
-        // const {columns} = results;
-        //
-        // if (results.facets == null) {
-        //     results.facets = {};
-        // }
-        // if (results.allRows == null) {
-        //     results.allRows = results.rows;
-        // }
-        //
-        // return columns.map(column => {
-        //     return <FormControl key={column.field} className={classes.formControl}>
-        //         <AutocompleteVirtualized
-        //             label={column.field}
-        //             multiple={true}
-        //             options={getOptions(results.allRows, column.field)}
-        //             value={results.facets[column.field]}
-        //             onChange={(event, value) => this.onChange(event, value, column.field)}
-        //         />
-        //     </FormControl>;
-        // });
-
     }
 }
 
