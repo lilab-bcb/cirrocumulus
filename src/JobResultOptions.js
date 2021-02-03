@@ -188,7 +188,7 @@ class JobResultOptions extends React.PureComponent {
                     value={ntopUI}
                     onChange={this.onNtopChange}/>
                 <FormControl style={{display: 'block'}} className={classes.formControl}>
-                    <InputLabel shrink={true}>Sort</InputLabel>
+                    <InputLabel shrink={true}>Sort Features</InputLabel>
                     <Select
                         input={<Input size={"small"}/>}
                         onChange={this.onSortChange}
