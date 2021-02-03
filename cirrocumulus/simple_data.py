@@ -143,7 +143,7 @@ class SimpleData:
                     values = rank_genes_groups[rank_genes_groups_key][group_name]
                     column_name = '{}:{}'.format(group_name, rank_genes_groups_key)
                     group_df[column_name] = values
-
+                group_df = group_df[group_df.index != 'nan']
                 if de_result_df is None:
                     de_result_df = group_df
                 else:
