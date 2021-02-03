@@ -109,7 +109,8 @@ export function updateJob(jobResult) {
         jobResult.interpolator = {
             name: DEFAULT_DE_INTERPOLATOR,
             value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
-            reversed: true
+            reversed: true,
+            scale: null // 'min_max'
         };
     }
     const groups = jobResult.groups;
@@ -194,7 +195,12 @@ export function updateJob(jobResult) {
 
     // color='logfoldchanges', size='pvals_adj',
     if (jobResult.colorScale == null) {
-        let domain = getRange(jobResult.color);
+        let domain;
+        if (jobResult.interpolator.scale === 'min_max') {
+            domain = [0, 1];
+        } else {
+            domain = getRange(jobResult.color);
+        }
         // if (isNaN(jobResult.options.min) && isNaN(jobResult.options.max) && domain[0] < 0 && domain[1] > 0) {
         //     const max = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
         //     domain[0] = -max;
@@ -467,6 +473,7 @@ class JobResultsPanel extends React.PureComponent {
         let headerWidth = 0;
         let headerHeight = 0;
         let maxSize;
+        let rowNormalized = false;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -475,6 +482,7 @@ class JobResultsPanel extends React.PureComponent {
             by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
+            rowNormalized = jobResult.interpolator.scale === 'min_max';
             for (let i = 0; i < groups.length; i++) {
                 if (groups[i].length > 2) {
                     rotateHeaders = true;
@@ -552,6 +560,21 @@ class JobResultsPanel extends React.PureComponent {
                                 {rows.map(row => {
                                     const id = data[row]['index'];
                                     const selected = selectedFeatures.has(id);
+                                    let rowMin;
+                                    let rowMax;
+                                    if (rowNormalized) {
+                                        rowMin = Number.MAX_VALUE;
+                                        rowMax = -Number.MAX_VALUE;
+                                        jobResult.columns.forEach(column => {
+                                            const group = groups[column];
+                                            const colorField = group + ':' + color;
+                                            const colorValue = data[row][colorField];
+                                            if (colorValue != null && !isNaN(colorValue)) {
+                                                rowMin = colorValue < rowMin ? colorValue : rowMin;
+                                                rowMax = colorValue > rowMax ? colorValue : rowMax;
+                                            }
+                                        });
+                                    }
                                     return <TableRow
                                         hover
                                         onClick={(event) => this.handleClick(event, row)}
@@ -573,7 +596,8 @@ class JobResultsPanel extends React.PureComponent {
                                             const title = by + ':' + formatNumber(byValue) + ', '
                                                 + color + ':' + formatNumber(colorValue) +
                                                 ', ' + size + ':' + formatNumber(sizeValue);
-
+                                            const colorValueScaled = rowNormalized ? (colorValue - rowMin) / rowMax : colorValue;
+                                            const backgroundColor = jobResult.colorScale(colorValueScaled);
                                             return <TableCell className={classes.td} title={title}
                                                               key={group}>
                                                 <div className={classes.dot}
@@ -581,7 +605,7 @@ class JobResultsPanel extends React.PureComponent {
                                                          marginLeft: (maxSize - diameter) / 2,
                                                          width: diameter,
                                                          height: diameter,
-                                                         backgroundColor: jobResult.colorScale(colorValue)
+                                                         backgroundColor: backgroundColor
                                                      }}></div>
                                             </TableCell>;
                                         })}
@@ -594,7 +618,7 @@ class JobResultsPanel extends React.PureComponent {
                 }
             </Box>
             <Dialog onClose={this.onCloseJobs} aria-labelledby="job-results-title"
-                    open={this.state.showDialog || (tab === 'results' && jobResults.length > 1 && jobResult == null)}>
+                    open={this.state.showDialog}>
                 <DialogTitle id="job-results-title" onClose={this.onCloseJobs}>
                     Results
                 </DialogTitle>

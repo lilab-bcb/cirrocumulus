@@ -1,5 +1,6 @@
-import {InputLabel, MenuItem, Select, Tooltip} from '@material-ui/core';
+import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Input from '@material-ui/core/Input';
 import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -82,11 +83,20 @@ class JobResultOptions extends React.PureComponent {
 
     onInterpolator = (value) => {
         const jobResult = this.getJobResult();
+        const scale = jobResult.interpolator.scale;
         jobResult.interpolator = value;
+        jobResult.interpolator.scale = scale;
         jobResult.colorScale = createColorScale(jobResult.interpolator).domain(jobResult.colorScale.domain()).clamp(true);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
+    onColorScalingChange = (event) => {
+        const jobResult = this.getJobResult();
+        jobResult.colorScale = null;
+        jobResult.interpolator.scale = event.target.checked ? 'min_max' : null;
+        updateJob(jobResult);
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
     onColorChanged = (event) => {
         const jobResult = this.getJobResult();
         jobResult.colorScale = null;
@@ -255,6 +265,17 @@ class JobResultOptions extends React.PureComponent {
                                  interpolator={interpolator}
                                  onOptions={this.onOptions}
                                  onInterpolator={this.onInterpolator}/>
+            <Tooltip title={"Whether to standardize color values between 0 and 1"}>
+                <div><FormControlLabel
+                    control={
+                        <Switch
+                            checked={interpolator.scale === 'min_max'}
+                            onChange={this.onColorScalingChange}
+                        />
+                    }
+                    label="Standardize"
+                /></div>
+            </Tooltip>
             <FormControl style={{marginTop: 16}} className={classes.formControl}>
                 <InputLabel shrink={true}>Size</InputLabel>
                 <Select
