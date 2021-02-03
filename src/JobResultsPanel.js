@@ -11,6 +11,8 @@ import {
 } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import Divider from '@material-ui/core/Divider';
+import Grid from '@material-ui/core/Grid';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -31,6 +33,11 @@ const styles = theme => ({
         borderRadius: '50%',
         display: 'inlineBlock',
         border: '1px solid lightgray'
+    },
+    toolbar: {
+        '& hr': {
+            margin: theme.spacing(0, 0.5),
+        }
     },
     visuallyHidden: {
         border: 0,
@@ -342,6 +349,37 @@ class JobResultsPanel extends React.PureComponent {
         return find(jobResults, item => item.id === id);
     };
 
+    exportJobResult = (event) => {
+        const jobResult = this.getJobResult();
+        const output = [];
+        output.push('id');
+        jobResult.columns.forEach(columnIndex => {
+            const group = jobResult.groups[columnIndex];
+            jobResult.fields.forEach(field => {
+                output.push('\t');
+                output.push(group + ':' + field);
+            });
+        });
+        output.push('\n');
+        for (let i = 0; i < jobResult.data.length; i++) {
+            output.push(jobResult.data[i].index);
+            jobResult.columns.forEach(columnIndex => {
+                const group = jobResult.groups[columnIndex];
+                jobResult.fields.forEach(field => {
+                    const fieldName = group + ':' + field;
+                    const value = jobResult.data[i][fieldName];
+                    output.push('\t');
+                    output.push(value);
+                });
+            });
+            output.push('\n');
+        }
+        const blob = new Blob([output.join('')], {
+            type: 'text/plain;charset=utf-8'
+        });
+        window.saveAs(blob, jobResult.name + '.tsv');
+    };
+
     handleClick = (event, row) => {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
@@ -468,10 +506,18 @@ class JobResultsPanel extends React.PureComponent {
         const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
         return <React.Fragment>
             <Box color="text.primary">
-                {showBrowseJobs &&
-                <Button style={{marginBottom: 8}} size={"small"} onClick={this.onBrowseJobs} variant="outlined"
-                        color="primary">Browse All Results</Button>}
+                <Grid container alignItems="center" className={classes.toolbar}>
+                    {showBrowseJobs &&
+                    <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
+                            color="primary">Browse All Results</Button>}
+                    {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
+                    {jobResult && <Button size={"small"} onClick={this.exportJobResult}
+                                          variant="outlined"
+                                          color="primary">Export</Button>}
+                </Grid>
+
                 {jobResult && <React.Fragment>
+
                     <Typography
                         style={{marginBottom: headerHeight + 8}}
                         component={"h3"}
