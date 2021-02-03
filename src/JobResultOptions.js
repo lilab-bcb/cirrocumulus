@@ -97,6 +97,7 @@ class JobResultOptions extends React.PureComponent {
         updateJob(jobResult);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
+
     onColorChanged = (event) => {
         const jobResult = this.getJobResult();
         jobResult.colorScale = null;
@@ -172,7 +173,6 @@ class JobResultOptions extends React.PureComponent {
         const fields = jobResult.fields.slice();
         fields.sort(natsort({insensitive: true}));
         return <React.Fragment>
-
             <div style={{marginTop: 16}}>
                 <Typography
                     component={"h2"}>Rank Features</Typography>

@@ -44,7 +44,6 @@ export class EditableColorScheme extends React.PureComponent {
             colorMax = numberFormat2f(colorScale.domain()[1]);
         }
         return <React.Fragment>
-
             <ColorSchemeSelector handleInterpolator={onInterpolator}
                                  interpolator={interpolator}/>
             <div style={{color: textColor, width: 174}}><Typography

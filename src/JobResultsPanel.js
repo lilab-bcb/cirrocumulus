@@ -473,7 +473,7 @@ class JobResultsPanel extends React.PureComponent {
         let headerWidth = 0;
         let headerHeight = 0;
         let maxSize;
-        let rowNormalized = false;
+        let rowScale = null;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -482,7 +482,9 @@ class JobResultsPanel extends React.PureComponent {
             by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
-            rowNormalized = jobResult.interpolator.scale === 'min_max';
+            if (jobResult.interpolator.scale === 'min_max') {
+                rowScale = scaleLinear().range([0, 1]);
+            }
             for (let i = 0; i < groups.length; i++) {
                 if (groups[i].length > 2) {
                     rotateHeaders = true;
@@ -560,11 +562,9 @@ class JobResultsPanel extends React.PureComponent {
                                 {rows.map(row => {
                                     const id = data[row]['index'];
                                     const selected = selectedFeatures.has(id);
-                                    let rowMin;
-                                    let rowMax;
-                                    if (rowNormalized) {
-                                        rowMin = Number.MAX_VALUE;
-                                        rowMax = -Number.MAX_VALUE;
+                                    if (rowScale) {
+                                        let rowMin = Number.MAX_VALUE;
+                                        let rowMax = -Number.MAX_VALUE;
                                         jobResult.columns.forEach(column => {
                                             const group = groups[column];
                                             const colorField = group + ':' + color;
@@ -574,6 +574,7 @@ class JobResultsPanel extends React.PureComponent {
                                                 rowMax = colorValue > rowMax ? colorValue : rowMax;
                                             }
                                         });
+                                        rowScale.domain([rowMin, rowMax]);
                                     }
                                     return <TableRow
                                         hover
@@ -593,10 +594,15 @@ class JobResultsPanel extends React.PureComponent {
                                             const sizeValue = data[row][sizeField];
                                             const byValue = data[row][byField];
                                             const diameter = jobResult.sizeScale(sizeValue);
-                                            const title = by + ':' + formatNumber(byValue) + ', '
-                                                + color + ':' + formatNumber(colorValue) +
-                                                ', ' + size + ':' + formatNumber(sizeValue);
-                                            const colorValueScaled = rowNormalized ? (colorValue - rowMin) / rowMax : colorValue;
+                                            let title = by + ':' + formatNumber(byValue);
+                                            if (color !== by) {
+                                                title += ', ' + color + ':' + formatNumber(colorValue);
+                                            }
+                                            if (size !== by) {
+                                                title += ', ' + size + ':' + formatNumber(sizeValue);
+                                            }
+                                            const colorValueScaled = rowScale ? rowScale(colorValue) : colorValue;
+
                                             const backgroundColor = jobResult.colorScale(colorValueScaled);
                                             return <TableCell className={classes.td} title={title}
                                                               key={group}>

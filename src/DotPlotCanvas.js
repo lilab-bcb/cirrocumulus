@@ -4,6 +4,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
@@ -113,6 +114,7 @@ export default class DotPlotCanvas extends React.PureComponent {
     drawContext(context, size) {
         const data2d = this.props.data;
         const colorScale = this.props.colorScale;
+        const interpolator = this.props.interpolator;
         const categoryColorScales = this.props.categoryColorScales;
         const sizeScale = this.props.sizeScale;
         const drawCircles = this.props.drawCircles;
@@ -121,26 +123,43 @@ export default class DotPlotCanvas extends React.PureComponent {
         let diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
-
-        data2d.forEach((array, j) => { // each category
-            const ypix = j * diameter + (drawCircles ? maxRadius : 0);
-            for (let i = 0; i < array.length; i++) { // each feature
-                const mean = array[i].mean;
+        const rowScale = interpolator.scale === 'min_max' ? scaleLinear().range([0, 1]) : null;
+        const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
+        for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) { // each feature
+            let min = Number.MAX_VALUE;
+            let max = -Number.MAX_VALUE;
+            if (rowScale) {
+                for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+                    const array = data2d[categoryIndex];
+                    const mean = array[featureIndex].mean;
+                    min = Math.min(min, mean);
+                    max = Math.max(max, mean);
+                }
+                rowScale.domain([min, max]);
+            }
+            for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+                const array = data2d[categoryIndex];
+                let mean = array[featureIndex].mean;
+                const ypix = categoryIndex * diameter + (drawCircles ? maxRadius : 0);
+                if (rowScale) {
+                    mean = rowScale(mean);
+                }
                 const color = colorScale(mean);
                 context.fillStyle = color;
                 context.beginPath();
                 if (drawCircles) {
-                    const xpix = i * diameter + maxRadius + size.x;
-                    const frac = array[i].percentExpressed;
+                    const xpix = featureIndex * diameter + maxRadius + size.x;
+                    const frac = array[featureIndex].percentExpressed;
                     context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 } else {
-                    const xpix = i * diameter + size.x;
+                    const xpix = featureIndex * diameter + size.x;
                     context.rect(xpix, ypix, diameter, diameter);
                 }
                 context.fill();
-                // context.stroke();
             }
-        });
+            // context.stroke();
+        }
+
 
         context.textAlign = 'left';
         context.textBaseline = 'middle';

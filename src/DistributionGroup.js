@@ -1,5 +1,7 @@
-import {InputLabel, MenuItem, Select} from '@material-ui/core';
+import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Input from '@material-ui/core/Input';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
@@ -121,7 +123,7 @@ class DistributionGroup extends React.PureComponent {
             return null;
         }
         const meanAndPercentRange = getMeanAndPercentRange(distributionData);
-        const meanRange = meanAndPercentRange.mean;
+        const meanRange = interpolator.scale === 'min_max' ? [0, 1] : meanAndPercentRange.mean;
         const percentRange = meanAndPercentRange.percent;
         if (selectedData != null && selectedData.length > 0) {
             const selectedMeanAndPercentRange = getMeanAndPercentRange(selectedData);
@@ -182,8 +184,6 @@ class DistributionGroup extends React.PureComponent {
         const minRadius = 1;
         const colorScale = createColorScale(interpolator).domain(meanRange);
         const sizeScale = scaleLinear().domain(percentRange).range([minRadius, maxRadius]).clamp(true);
-
-
         updateNames(distributionData, categoricalNames);
         if (selectedData) {
             updateNames(selectedData, categoricalNames);
@@ -218,10 +218,11 @@ class DistributionGroup extends React.PureComponent {
         const sortChoices = [distributionData[0].dimension].concat(features);
 
         return (
-            <React.Fragment>
+            <Box color="text.primary">
                 {chartType !== 'violin' && <DotPlotCanvas
                     categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
+                    interpolator={interpolator}
                     sizeScale={sizeScale}
                     textColor={textColor}
                     drawCircles={chartType === 'dotplot'}
@@ -237,6 +238,7 @@ class DistributionGroup extends React.PureComponent {
                     <DotPlotCanvas
                         categoryColorScales={categoryColorScales}
                         colorScale={colorScale}
+                        interpolator={interpolator}
                         sizeScale={sizeScale}
                         subtitle="selection"
                         textColor={textColor}
@@ -256,6 +258,17 @@ class DistributionGroup extends React.PureComponent {
                                      interpolator={interpolator}
                                      onOptions={this.props.onDistributionPlotOptions}
                                      onInterpolator={this.props.handleInterpolator}/>}
+                <Tooltip title={"Whether to standardize color values between 0 and 1"}>
+                    <div><FormControlLabel
+                        control={
+                            <Switch
+                                checked={interpolator.scale === 'min_max'}
+                                onChange={this.props.onColorScalingChange}
+                            />
+                        }
+                        label="Standardize"
+                    /></div>
+                </Tooltip>
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
                     <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                         onOptions={this.props.onDistributionPlotOptions} showReversed={false}/>
@@ -274,8 +287,7 @@ class DistributionGroup extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
-
-            </React.Fragment>
+            </Box>
         );
     }
 

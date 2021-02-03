@@ -8,6 +8,19 @@ import DistributionGroup from './DistributionGroup';
 
 
 class DistributionPlots extends React.PureComponent {
+
+    onInterpolator = (value) => {
+        const scale = this.props.dotPlotInterpolator.scale;
+        value.scale = scale;
+        this.props.onInterpolator(value);
+    };
+
+    onColorScalingChange = (event) => {
+        const dotPlotInterpolator = this.props.dotPlotInterpolator;
+        dotPlotInterpolator.scale = event.target.checked ? 'min_max' : null;
+        this.props.onInterpolator(Object.assign({}, dotPlotInterpolator));
+    };
+
     render() {
         const {
             cachedData,
@@ -18,7 +31,6 @@ class DistributionPlots extends React.PureComponent {
             dotPlotInterpolator,
             embeddingData,
             globalFeatureSummary,
-            handleInterpolator,
             onDistributionPlotOptions,
             selectedDistributionData
         } = this.props;
@@ -55,11 +67,13 @@ class DistributionPlots extends React.PureComponent {
                                       globalFeatureSummary={globalFeatureSummary}
                                       selectedData={dimension2selecteddata[dimension]}
                                       interpolator={dotPlotInterpolator}
-                                      handleInterpolator={handleInterpolator}
-                                      onDistributionPlotOptions={onDistributionPlotOptions}
                                       distributionPlotOptions={distributionPlotOptions}
                                       categoricalNames={categoricalNames}
-                                      textColor={textColor}/>;
+                                      textColor={textColor}
+                                      handleInterpolator={this.onInterpolator}
+                                      onColorScalingChange={this.onColorScalingChange}
+                                      onDistributionPlotOptions={onDistributionPlotOptions}
+            />;
         })}</React.Fragment>;
     }
 
@@ -84,7 +98,7 @@ const mapDispatchToProps = dispatch => {
         onDistributionPlotOptions: (payload) => {
             dispatch(setDistributionPlotOptions(payload));
         },
-        handleInterpolator: value => {
+        onInterpolator: value => {
             dispatch(setDistributionPlotInterpolator(value));
         },
     };
