@@ -8,6 +8,7 @@ from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
+from .job_api import submit_job
 from .util import *
 
 blueprint = Blueprint('blueprint', __name__)
@@ -333,35 +334,41 @@ def handle_dataset():
     #     return 'Not authorized to read {}'.format(url), 403
 
 
-# @blueprint.route('/submit_job', methods=['POST'])
-# def handle_submit_job():
-#     content = request.get_json(force=True, cache=False)
-#     email, dataset = get_email_and_dataset(content)
-#     params = content.get('params')
-#     job_type = content.get('type')
-#     job_name = content.get('name')
-#     return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-#         job_name=job_name, job_type=job_type, params=params))
+@blueprint.route('/submit_job', methods=['POST'])
+def handle_submit_job():
+    content = request.get_json(force=True, cache=False)
+    email, dataset = get_email_and_dataset(content)
+    params = content.get('params')
+    job_type = content.get('type')
+    job_name = content.get('name')
+    return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+        job_name=job_name, job_type=job_type, params=params))
 
 
-@blueprint.route('/job', methods=['GET'])
+@blueprint.route('/job', methods=['GET', 'DELETE'])
 def handle_job():
     email = auth_api.auth()['email']
-    job_id = request.args.get('id', '')
-    job_status = request.args.get('status', '0')
-    return_result = job_status == '0'
-    if job_id.startswith('cirro-'):  # precomputed result
-        import os
-        dataset_id = request.args.get('ds_id', '')
-        email = auth_api.auth()['email']
-        dataset = database_api.get_dataset(email, dataset_id)
-        file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
-        return send_file(file_path)
-    result = database_api.get_job(email=email, job_id=job_id, return_result=return_result)
-    if return_result:
-        result = Response(result, mimetype='application/json')
-        result.headers["Content-Encoding"] = 'gzip'
-    return result
+    if request.method == 'DELETE':
+        content = request.get_json(force=True, cache=False)
+        job_id = content.get('id', '')
+        database_api.delete_job(email, job_id)
+        return to_json('', 204)
+    else:
+        job_id = request.args.get('id', '')
+        job_status = request.args.get('status', '0')
+        return_result = job_status == '0'
+        if job_id.startswith('cirro-'):  # precomputed result
+            import os
+            dataset_id = request.args.get('ds_id', '')
+            email = auth_api.auth()['email']
+            dataset = database_api.get_dataset(email, dataset_id)
+            file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
+            return send_file(file_path)
+        result = database_api.get_job(email=email, job_id=job_id, return_result=return_result)
+        if return_result:
+            result = Response(result, mimetype='application/json')
+            result.headers["Content-Encoding"] = 'gzip'
+        return result
 
 
 @blueprint.route('/jobs', methods=['GET'])

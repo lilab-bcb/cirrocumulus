@@ -198,7 +198,7 @@ class MongoDb:
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         return str(collection.insert_one(
-            dict(dataset_id=dataset_id, name=job_name, type=job_type, params=params)).inserted_id)
+            dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params)).inserted_id)
 
     def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
@@ -213,9 +213,9 @@ class MongoDb:
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         results = []
-        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1)):
+        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1)):
             results.append(
-                dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type']))
+                dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email']))
         return results
 
     def update_job(self, email, job_id, status, result):
@@ -223,3 +223,9 @@ class MongoDb:
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
+
+    def delete_job(self, email, job_id):
+        collection = self.db.jobs
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        collection.delete_one(dict(_id=ObjectId(job_id)))

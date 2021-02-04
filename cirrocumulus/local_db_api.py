@@ -174,6 +174,9 @@ class LocalDbAPI:
             results.append(id=job['id'], name=job['name'], type=job['type'], status=job['status'])
         return results
 
+    def delete_job(self, email, job_id):
+        del self.job_id_to_job[job_id]
+        
     def update_job(self, email, job_id, status, result):
         job = self.job_id_to_job[job_id]
         job['status'] = status

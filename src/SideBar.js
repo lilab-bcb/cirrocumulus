@@ -1,6 +1,7 @@
-import {InputLabel, Switch, Typography} from '@material-ui/core';
+import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@material-ui/core';
 
 import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -25,13 +26,11 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
-import SettingsIcon from '@material-ui/icons/Settings';
 import {debounce, findIndex} from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
@@ -191,7 +190,6 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
 
 class SideBar extends React.PureComponent {
 
-
     constructor(props) {
         super(props);
         this.state = {
@@ -237,9 +235,7 @@ class SideBar extends React.PureComponent {
         if (opacity >= 0 && opacity <= 1) {
             this.props.handleUnselectedMarkerOpacity(opacity);
         }
-
     };
-
 
     openDatasetFilter = (filterId) => {
         this.props.handleOpenDatasetFilter(filterId);
@@ -298,8 +294,6 @@ class SideBar extends React.PureComponent {
             }
             selection.push(embedding);
         });
-
-
         this.props.handleEmbeddings(selection);
     };
 
@@ -365,7 +359,6 @@ class SideBar extends React.PureComponent {
 
     onFeatureClick = (event, option) => {
         event.stopPropagation();
-
         const value = option.text !== undefined ? option.text : option;
         let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
@@ -403,7 +396,6 @@ class SideBar extends React.PureComponent {
     onChartSizeChange = (event) => {
         const value = event.target.value;
         this.props.handleChartSize(value);
-
     };
 
     onBinSummaryChange = (event) => {
@@ -435,11 +427,36 @@ class SideBar extends React.PureComponent {
         this.props.downloadSelectedIds();
     };
 
-    handleSubmitJob = (event) => {
-        event.preventDefault();
-        this.props.handleSubmitJob();
+    onJobNameChange = (event) => {
+        this.setState({jobName: event.target.value});
     };
 
+    onSubmitJobCancel = () => {
+        this.setState({jobName: '', jobParams: null});
+    };
+
+    onSubmitJobOK = () => {
+        this.state.jobParams.name = this.state.jobName;
+        this.props.handleSubmitJob(this.state.jobParams);
+        this.setState({jobName: '', jobParams: null});
+    };
+
+    onSubmitJob = (jobType) => {
+        if (jobType === 'corr') {
+            const primaryTraceKey = this.props.primaryTraceKey; // TODO, store this separately
+            let galleryTraces = this.props.embeddingData;
+            let feature;
+            for (let i = 0; i < galleryTraces.length; i++) {
+                if (primaryTraceKey === getTraceKey(galleryTraces[i])) {
+                    feature = galleryTraces[i].name;
+                    break;
+                }
+            }
+            this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: feature}}});
+        } else {
+            this.setState({jobName: '', jobParams: {type: 'de', params: {}}});
+        }
+    };
 
     onDatasetFilterChipDeleted = (name) => {
         this.props.removeDatasetFilter(name);
@@ -486,6 +503,7 @@ class SideBar extends React.PureComponent {
             embeddings,
             interpolator,
             markers,
+            primaryTraceKey,
             pointSize,
             searchTokens,
             selection,
@@ -554,12 +572,44 @@ class SideBar extends React.PureComponent {
         const featureSetOptions = getFeatureSetOptions(markers, categoricalNames);
         const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
         const selectedEmbeddings = getEmbeddingOptions(embeddings);
-        const fancy = serverInfo.fancy;
+        const dynamic = serverInfo.dynamic;
         const showBinPlot = false;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
         const featureSet = this.state.featureSet;
+
         return (
             <div className={classes.root}>
+                <Dialog
+                    open={this.state.jobParams != null}
+                    onClose={this.onSubmitJobCancel}
+                    aria-labelledby="submit-job-dialog-title"
+                    aria-describedby="submit-job-dialog-description"
+                >
+                    <DialogTitle id="submit-job-dialog-title">Submit Job</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="submit-job-dialog-description">
+                            Job Details
+                        </DialogContentText>
+                        <TextField
+                            onChange={this.onJobNameChange}
+                            value={this.state.jobName}
+                            autoFocus
+                            margin="dense"
+                            label="Job Name"
+                            type="text"
+                            fullWidth
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.onSubmitJobCancel}>
+                            Cancel
+                        </Button>
+                        <Button variant="contained" onClick={e => this.onSubmitJobOK(this.state.jobName)}
+                                color="primary">
+                            Submit
+                        </Button>
+                    </DialogActions>
+                </Dialog>
                 <Dialog
                     open={this.state.featureSetView}
                     onClose={this.onCloseViewFeatureSetDialog}
@@ -662,7 +712,7 @@ class SideBar extends React.PureComponent {
                                                          onChange={this.onMetafeaturesChange}
                                 />
                             </FormControl>}
-                            {(fancy && featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
+                            {(dynamic && featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
 
                                 <AutocompleteVirtualized label={"Sets"}
                                                          options={featureSetOptions}
@@ -680,7 +730,7 @@ class SideBar extends React.PureComponent {
                                                          onChange={this.onFeatureSetsChange}
                                                          getOptionSelected={(option, value) => option.id === value.id}
                                                          getChipText={option => option.name}/>
-                                {fancy && splitTokens.X.length > 0 &&
+                                {dynamic && splitTokens.X.length > 0 &&
                                 <Tooltip title={"Save Current Feature List"}>
                                     <IconButton size={'small'} onClick={this.onSaveFeatureList}>
                                         <SaveIcon/>
@@ -699,7 +749,6 @@ class SideBar extends React.PureComponent {
                     </AccordionSummaryStyled>
                     <AccordionDetailsStyled>
                         <div style={{marginLeft: 10, maxHeight: 500}}>
-
                             <Grid component="label" alignContent={"flex-start"} container alignItems="center"
                                   spacing={0}>
                                 <Grid item><InputLabel shrink={true} variant={"standard"}>Combine
@@ -737,7 +786,7 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                         </Tooltip>
-                                        {fancy && <Tooltip title={"Save Filter"}>
+                                        {dynamic && <Tooltip title={"Save Filter"}>
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
                                         </Tooltip>}
@@ -745,10 +794,20 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {false && fancy && <Divider orientation="vertical" flexItem/>}
-                                        {false && fancy && <Tooltip title={"Differential Expression"}>
-                                            <IconButton size={'small'}
-                                                        onClick={this.handleSubmitJob}><CompareIcon/></IconButton>
+                                        {dynamic && <Divider flexItem/>}
+                                        {dynamic && <Tooltip
+                                            title={"Find differentially expressed features between selected and unselected cells"}>
+                                            <Button size={"small"} variant="outlined"
+                                                    onClick={event => this.onSubmitJob('de')}>Differential
+                                                Expression</Button>
+                                        </Tooltip>}
+                                        {dynamic && <Tooltip
+                                            title={"Find features correlated with selected feature in selected cells"}>
+                                            <span>
+                                            <Button disabled={primaryTraceKey.startsWith('__count')} size={"small"}
+                                                    variant="outlined"
+                                                    onClick={event => this.onSubmitJob('corr')}>Correlation</Button>
+                                            </span>
                                         </Tooltip>}
                                     </Grid>
                                 </div>
@@ -877,12 +936,12 @@ class SideBar extends React.PureComponent {
                                 <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
                                                      interpolator={interpolator}/>
                             </FormControl>
-                            <Tooltip title={"More Options"}>
-                                <IconButton edge={false} size={'small'}
-                                            aria-label="More Options" onClick={this.props.onMoreOptions}>
-                                    <SettingsIcon/>
-                                </IconButton>
-                            </Tooltip>
+
+                            <Button size={'small'}
+                                    aria-label="More Options" onClick={this.props.onMoreOptions}>More Options...
+                            </Button>
+
+
                             {!isSummarized && showBinPlot && <div><FormControlLabel
                                 control={
                                     <Switch
@@ -931,7 +990,7 @@ class SideBar extends React.PureComponent {
 
                     </AccordionDetailsStyled>
                 </AccordionStyled>
-                {fancy &&
+                {dynamic &&
                 <AccordionStyled style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
                                  defaultExpanded>
                     <AccordionSummaryStyled expandIcon={<ExpandMoreIcon/>}>
@@ -958,8 +1017,6 @@ class SideBar extends React.PureComponent {
                                         </ListItem>
                                     ))}
                                 </List>
-
-
                                 <div style={{marginLeft: 10}}>
                                     <Divider/>
                                     <Tooltip title={"Export Filters"}>

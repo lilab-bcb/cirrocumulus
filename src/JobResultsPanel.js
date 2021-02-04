@@ -1,7 +1,9 @@
 import {
     Checkbox,
     Dialog,
+    DialogActions,
     DialogContent,
+    DialogContentText,
     DialogTitle,
     Table,
     TableBody,
@@ -13,17 +15,16 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Divider from '@material-ui/core/Divider';
 import Grid from '@material-ui/core/Grid';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
+import IconButton from '@material-ui/core/IconButton';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
+import DeleteIcon from '@material-ui/icons/Delete';
 import {scaleLinear} from 'd3-scale';
 import {find} from 'lodash';
 import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
-import {setJobResult, setSearchTokensDirectly, setTab} from './actions';
+import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
 import {createColorScale, getInterpolator, scaleConstantRange, X_SEARCH_TOKEN} from './util';
@@ -43,6 +44,21 @@ const styles = theme => ({
         borderCollapse: 'collapse',
         position: 'relative',
         width: 'unset'
+    },
+    tr: {
+        cursor: 'pointer',
+    },
+    deleteTr: {
+        cursor: 'pointer',
+        '& span': {
+            display: 'none',
+        },
+        '&:hover span': {
+            display: 'block',
+            position: 'absolute',
+            right: 0,
+            top: 0
+        }
     },
     rotateHeader: {
         top: 0,
@@ -341,6 +357,19 @@ class JobResultsPanel extends React.PureComponent {
         this.setState({showDialog: false});
     };
 
+    onDeleteJob = (event, job) => {
+        event.stopPropagation();
+        this.setState({browseJob: job});
+    };
+
+    onDeleteJobOK = (id) => {
+        this.props.onDeleteJob(id);
+        this.setState({browseJob: null});
+    };
+
+    onDeleteJobCancel = () => {
+        this.setState({browseJob: null});
+    };
     getJobResult = (id) => {
         const {jobResults, jobResultId} = this.props;
         if (id == null) {
@@ -446,8 +475,7 @@ class JobResultsPanel extends React.PureComponent {
     };
 
     render() {
-
-        const {jobResultId, jobResults, classes, searchTokens, tab} = this.props;
+        const {email, jobResultId, jobResults, classes, searchTokens} = this.props;
         const jobResult = this.getJobResult();
         const selectedFeatures = new Set();
         searchTokens.forEach(token => {
@@ -573,6 +601,7 @@ class JobResultsPanel extends React.PureComponent {
                                         rowScale.domain([rowMin, rowMax]);
                                     }
                                     return <TableRow
+                                        className={classes.tr}
                                         hover
                                         onClick={(event) => this.handleClick(event, row)}
                                         role="checkbox"
@@ -594,11 +623,10 @@ class JobResultsPanel extends React.PureComponent {
                                             if (color !== by) {
                                                 title += ', ' + color + ':' + formatNumber(colorValue);
                                             }
-                                            if (size !== by && isSizeScaled) {
+                                            if (size !== by && isSizeScaled && size !== color) {
                                                 title += ', ' + size + ':' + formatNumber(sizeValue);
                                             }
                                             const colorValueScaled = rowScale ? rowScale(colorValue) : colorValue;
-
                                             const backgroundColor = jobResult.colorScale(colorValueScaled);
                                             return <TableCell className={classes.td} title={title}
                                                               key={group}>
@@ -619,34 +647,68 @@ class JobResultsPanel extends React.PureComponent {
                 </React.Fragment>
                 }
             </Box>
+            <Dialog
+                open={this.state.browseJob != null}
+                onClose={this.onDeleteJobCancel}
+                aria-labelledby="confirm-dialog-title"
+                aria-describedby="conform-dialog-description"
+            >
+                <DialogTitle id="confirm-dialog-title">Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="confirm-dialog-description">
+                        Are you sure you want to delete {this.state.browseJob ? this.state.browseJob.name : ''}?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={this.onDeleteJobCancel}>
+                        Cancel
+                    </Button>
+                    <Button variant="contained" onClick={e => this.onDeleteJobOK(this.state.browseJob.id)}
+                            color="primary"
+                            autoFocus>
+                        OK
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <Dialog onClose={this.onCloseJobs} aria-labelledby="job-results-title"
                     open={this.state.showDialog}>
                 <DialogTitle id="job-results-title" onClose={this.onCloseJobs}>
                     Results
                 </DialogTitle>
-                <DialogContent dividers>
-                    <List style={{width: 500}} dense disablePadding component="nav"
-                          aria-label="results">
-                        {jobResults.map(choice => {
-                            let text = choice.name;
-                            if (choice.title) {
-                                text += ' - ' + choice.title;
-                            }
-                            return <ListItem alignItems="flex-start"
-                                             selected={choice.id === jobResultId}
-                                             key={choice.id}
-                                             button
-                                             onClick={(e) => this.onSelectJob(choice.id)}>
-                                <ListItemText
-                                    primary={text}
-                                    style={{
-                                        textOverflow: 'ellipsis',
-                                        overflow: 'hidden',
-                                        whiteSpace: 'nowrap'
-                                    }}/>
-                            </ListItem>;
-                        })}
-                    </List>
+                <DialogContent>
+                    <Table size="small" stickyHeader={true}>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Name</TableCell>
+                                <TableCell>Type</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {jobResults.map(jobResult => {
+                                let text = jobResult.name;
+                                if (jobResult.title) {
+                                    text += ' - ' + jobResult.title;
+                                }
+                                const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
+                                return <TableRow key={jobResult.id}
+                                                 className={classes.deleteTr}
+                                                 hover
+                                                 selected={jobResult.id === jobResultId}
+                                                 onClick={(event) => this.onSelectJob(jobResult.id)}
+                                                 role="checkbox"
+                                                 tabIndex={-1}>
+                                    <TableCell>{text}</TableCell>
+                                    <TableCell>{jobType}
+                                        {email == jobResult.email && !jobResult.id.startsWith('cirro-') &&
+                                        <IconButton edge="end" aria-label="delete"
+                                                    onClick={(event) => this.onDeleteJob(event, jobResult)}>
+                                            <DeleteIcon/>
+                                        </IconButton>}</TableCell>
+                                </TableRow>;
+                            })}
+                        </TableBody>
+                    </Table>
+
                 </DialogContent>
             </Dialog>
         </React.Fragment>;
@@ -656,6 +718,7 @@ class JobResultsPanel extends React.PureComponent {
 
 const mapStateToProps = state => {
         return {
+            email: state.email,
             jobResultId: state.jobResult,
             jobResults: state.jobResults,
             searchTokens: state.searchTokens,
@@ -667,6 +730,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         return {
             onSearchTokens: (payload) => {
                 dispatch(setSearchTokensDirectly(payload));
+            },
+            onDeleteJob: (payload) => {
+                dispatch(deleteJobResult(payload));
             },
             setTab: (payload) => {
                 dispatch(setTab(payload));

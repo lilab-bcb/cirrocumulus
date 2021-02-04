@@ -200,7 +200,7 @@ class JobResultOptions extends React.PureComponent {
                     valueLabelDisplay="auto"
                     value={ntopUI}
                     onChange={this.onNtopChange}/>
-                <FormControl style={{display: 'block'}} className={classes.formControl}>
+                {jobResult.groups.length > 1 && <FormControl style={{display: 'block'}} className={classes.formControl}>
                     <InputLabel shrink={true}>Sort Features</InputLabel>
                     <Select
                         input={<Input size={"small"}/>}
@@ -212,7 +212,7 @@ class JobResultOptions extends React.PureComponent {
                                       value={jobResult.groups[index]}>{jobResult.groups[index]}</MenuItem>
                         ))}
                     </Select>
-                </FormControl>
+                </FormControl>}
             </div>
             <div style={{marginTop: 8}}></div>
             <Tooltip title="Filters are applied separately per cluster"><Typography
@@ -268,7 +268,7 @@ class JobResultOptions extends React.PureComponent {
                                  interpolator={interpolator}
                                  onOptions={this.onOptions}
                                  onInterpolator={this.onInterpolator}/>
-            <Tooltip title={"Whether to standardize color values between 0 and 1"}>
+            {jobResult.groups.length > 1 && <Tooltip title={"Whether to normalize color values between 0 and 1"}>
                 <div><FormControlLabel
                     control={
                         <Switch
@@ -278,7 +278,7 @@ class JobResultOptions extends React.PureComponent {
                     }
                     label="Standardize"
                 /></div>
-            </Tooltip>
+            </Tooltip>}
             <FormControl style={{marginTop: 16}} className={classes.formControl}>
                 <InputLabel shrink={true}>Size</InputLabel>
                 <Select

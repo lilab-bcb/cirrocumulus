@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, isEqual} from 'lodash';
+import {find, findIndex, isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -177,8 +177,8 @@ export function initGapi() {
             if (serverInfo.clientId == null) {
                 serverInfo.clientId = '';
             }
-            if (serverInfo.fancy == null) {
-                serverInfo.fancy = true;
+            if (serverInfo.dynamic == null) {
+                serverInfo.dynamic = true;
             }
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '') { // no login required
@@ -285,10 +285,8 @@ export function deleteDatasetFilter(filterId) {
                         break;
                     }
                 }
-
                 dispatch(setDatasetFilters(datasetFilters.slice()));
                 dispatch(setMessage('Filter deleted'));
-
             }).finally(() => {
             dispatch(_setLoading(false));
             dispatch(setDialog(null));
@@ -299,23 +297,20 @@ export function deleteDatasetFilter(filterId) {
 }
 
 
-export function submitJob() {
+export function submitJob(jobData) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
         let jobId;
-        let timeout = 30 * 1000;
-
+        let timeout = 5 * 1000; // TODO
         function getJobStatus() {
             getState().dataset.api.getJob(jobId, false)
                 .then(result => {
                     const jobResult = find(getState().jobResults, item => item.id === jobId);
                     jobResult.status = result.status;
-                    console.log(result);
                     if (result.status === 'complete') {
                         dispatch(setMessage('Job complete'));
                         dispatch(setJobResults(getState().jobResults.slice()));
                     } else if (result.status === 'error') {
-
                         handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
                     } else {
                         window.setTimeout(getJobStatus, timeout);
@@ -325,13 +320,15 @@ export function submitJob() {
             });
         }
 
-        const submitJobData = {id: getState().dataset.id, name: 'FIXME', type: 'de'};
-        getState().serverInfo.api.submitJob(submitJobData)
+        jobData.id = getState().dataset.id;
+        jobData.params.filter = getFilterJson(getState());
+
+        getState().serverInfo.api.submitJob(jobData)
             .then(result => {
                 dispatch(setMessage('Job submitted'));
                 jobId = result.id;
-                submitJobData.id = jobId;
-                getState().jobResults.push(submitJobData);
+                jobData.id = jobId;
+                getState().jobResults.push(jobData);
                 dispatch(setJobResults(getState().jobResults.slice()));
                 window.setTimeout(getJobStatus, timeout);
             }).finally(() => {
@@ -766,7 +763,7 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.fancy ? getState().serverInfo.api.setCategoryNamePromise({
+        const p = getState().serverInfo.dynamic ? getState().serverInfo.api.setCategoryNamePromise({
             c: payload.name,
             o: payload.oldValue,
             n: payload.value,
@@ -1180,17 +1177,35 @@ function _setJobResult(payload) {
     return {type: SET_JOB_RESULT, payload: payload};
 }
 
+export function deleteJobResult(payload) {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        getState().dataset.api.deleteJob(payload).then(() => {
+            let jobResults = getState().jobResults;
+            const index = findIndex(jobResults, item => item.id === payload);
+            jobResults.splice(index, 1);
+            if (getState().jobResult === payload) {
+                dispatch(_setJobResult(null));
+            }
+            dispatch(setJobResults(jobResults.slice()));
+        }).finally(() => {
+            dispatch(_setLoading(false));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to delete result. Please try again.');
+        });
+    };
+}
+
 export function setJobResult(payload) {
     return function (dispatch, getState) {
         let jobResults = getState().jobResults;
         let jobResult = find(jobResults, item => item.id === payload);
-        if (jobResult.data != null) {
+        if (jobResult.data != null) { // data already loaded
             updateJob(jobResult);
             return dispatch(_setJobResult(payload));
         }
         dispatch(_setLoading(true));
         getState().dataset.api.getJob(payload, true).then((result) => {
-
             let jobResults = getState().jobResults;
             const jobResult = find(jobResults, item => item.id === payload);
             for (let key in result) {
@@ -1204,7 +1219,6 @@ export function setJobResult(payload) {
             handleError(dispatch, err, 'Unable to retrieve result. Please try again.');
         });
     };
-
 }
 
 export function setMarkerOpacity(payload) {

@@ -69,6 +69,16 @@ export class RestDataset {
         });
     }
 
+    deleteJob(id) {
+        return fetch(API + '/job',
+            {
+                body: JSON.stringify(
+                    {id: id}),
+                method: 'DELETE',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            });
+    }
+
     getDataPromise(data, cachedData) {
         data.id = this.id;
         let dataSend = data;

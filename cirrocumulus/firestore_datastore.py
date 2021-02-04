@@ -1,9 +1,9 @@
 import datetime
 import json
 
+from cirrocumulus.database_api import get_email_domain
 from google.cloud import datastore
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -18,6 +18,21 @@ class FirestoreDatastore:
 
     def __init__(self):
         self.datastore_client = datastore.Client()
+
+    def __get_key_and_dataset(self, email, dataset_id, ensure_owner=False):
+        client = self.datastore_client
+        key = client.key(DATASET, int(dataset_id))
+        dataset = client.get(key)
+        if dataset is None:
+            raise InvalidUsage('Please provide a valid id', 400)
+        readers = dataset.get('readers')
+
+        domain = get_email_domain(email)
+        if email not in readers and domain not in readers:
+            raise InvalidUsage('Not authorized', 403)
+        if ensure_owner and email not in dataset['owners']:
+            raise InvalidUsage('Not authorized', 403)
+        return key, dataset
 
     def server(self):
         client = self.datastore_client
@@ -131,20 +146,6 @@ class FirestoreDatastore:
         client.put(dataset_filter_entity)
         return dataset_filter_entity.id
 
-    def __get_key_and_dataset(self, email, dataset_id, ensure_owner=False):
-        client = self.datastore_client
-        key = client.key(DATASET, int(dataset_id))
-        dataset = client.get(key)
-        if dataset is None:
-            raise InvalidUsage('Please provide a valid id', 400)
-        readers = dataset.get('readers')
-
-        domain = get_email_domain(email)
-        if email not in readers and domain not in readers:
-            raise InvalidUsage('Not authorized', 403)
-        if ensure_owner and email not in dataset['owners']:
-            raise InvalidUsage('Not authorized', 403)
-        return key, dataset
 
     def delete_dataset(self, email, dataset_id):
         client = self.datastore_client
@@ -228,25 +229,49 @@ class FirestoreDatastore:
         client.put(entity)
         return entity.id
 
-    def create_job(self, email, dataset_id, params):
+    def create_job(self, email, dataset_id, job_name, job_type, params):
         dataset_id = int(dataset_id)
         client = self.datastore_client
         self.__get_key_and_dataset(email, dataset_id)
-        entity = datastore.Entity(client.key(JOB))
-        entity.update(dict(dataset_id=dataset_id, params=params))
+        entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["result"])
+        entity.update(dict(dataset_id=dataset_id, email=email, name=job_name, type=job_type, params=params))
         client.put(entity)
         return entity.id
 
-    def get_job(self, email, job_id):
+    def get_job(self, email, job_id, return_result):
         client = self.datastore_client
-        entity = client.get(client.key(JOB, job_id))
-        self.__get_key_and_dataset(email, entity['dataset_id'])
-        entity['id'] = JOB
-        return entity
+        key = client.key(JOB, int(job_id))
+        result = client.get(key)
+        self.__get_key_and_dataset(email, result['dataset_id'])
+        if return_result:
+            return result['result']
+        else:
+            return dict(id=result.id, status=result['status'])
 
     def update_job(self, email, job_id, status, result):
         client = self.datastore_client
-        entity = client.get(client.key(JOB, job_id))
+        key = client.key(JOB, int(job_id))
+        entity = client.get(key)
         self.__get_key_and_dataset(email, entity['dataset_id'])
         entity.update(dict(status=status, result=result))
         client.put(entity)
+
+    def get_jobs(self, email, dataset_id):
+        client = self.datastore_client
+        query = client.query(kind=JOB)
+        dataset_id = int(dataset_id)
+        self.__get_key_and_dataset(email, dataset_id, False)
+        query.add_filter('dataset_id', '=', dataset_id)
+        query.projection = ['name', 'type', 'status']
+        results = []
+        for result in query.fetch():
+            results.append(
+                dict(id=result.id, name=result['name'], type=result['type'], status=result['status']))
+        return results
+
+    def delete_job(self, email, job_id):
+        client = self.datastore_client
+        key = client.key(JOB, int(job_id))
+        result = client.get(key)
+        self.__get_key_and_dataset(email, result['dataset_id'])
+        client.delete(key)

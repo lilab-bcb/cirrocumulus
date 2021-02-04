@@ -672,7 +672,6 @@ function embeddingData(state = [], action) {
 
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
-
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous) {
                     let domain = traceInfo.colorScale.domain();
@@ -790,5 +789,4 @@ export default combineReducers({
     tab,
     unselectedMarkerOpacity,
     user
-
 });

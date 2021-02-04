@@ -227,7 +227,8 @@ class AppHeader extends React.PureComponent {
             json.distributionPlotOptions = distributionPlotOptions;
         }
         if (interpolator.name !== DEFAULT_INTERPOLATOR) {
-            json.colorScheme = interpolator.name;
+            const interpolatorJson = Object.assign({}, interpolator, {value: null});
+            json.colorScheme = interpolatorJson;
         }
 
         if (embeddingLabels.length > 0) {
