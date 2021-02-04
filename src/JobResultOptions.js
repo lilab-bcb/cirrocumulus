@@ -286,7 +286,7 @@ class JobResultOptions extends React.PureComponent {
                     onChange={this.onSizeChanged}
                     value={size}
                 >
-                    <MenuItem divider value={'(None)'}>{'(None))'}</MenuItem>
+                    <MenuItem divider value={'(None)'}>{'(None)'}</MenuItem>
                     {fields.map(item => (
                         <MenuItem key={item} value={item}>{item}</MenuItem>
                     ))}
