@@ -20,28 +20,9 @@ export class DirectAccessDataset {
         }
         this.url = url;
         this.baseUrl = this.url.substring(0, this.url.lastIndexOf('/') + 1);
-        if (this.format === 'jsonl') {
-            return new Promise((resolve, reject) => {
-                fetch(url + '.idx.json').then(r => r.json()).then(result => {
-                    this.key2bytes = result.index;
-                }).then(() => {
-                    fetch(url, this.getByteRange('schema')).then(response => {
-                        return response.json();
-                    }).then(result => {
-                        this.schema = result["schema"];
-                        resolve();
-                    });
-                });
-            });
-        } else {
-            return new Promise((resolve, reject) => {
-                fetch(url).then(r => r.json()).then(result => {
-                    this.schema = result;
-                    resolve();
-                });
-            });
-        }
+        return Promise.resolve();
     }
+
 
     getByteRange(key) {
         let range = this.key2bytes[key];
@@ -196,7 +177,33 @@ export class DirectAccessDataset {
     }
 
     getSchemaPromise() {
-        return Promise.resolve(this.schema);
+        if (this.schema != null) {
+            return Promise.resolve(this.schema);
+        }
+        const url = this.url;
+        const _this = this;
+        if (this.format === 'jsonl') {
+            return new Promise((resolve, reject) => {
+                fetch(url + '.idx.json').then(r => r.json()).then(result => {
+                    _this.key2bytes = result.index;
+                }).then(() => {
+                    fetch(url, _this.getByteRange('schema')).then(response => {
+                        return response.json();
+                    }).then(result => {
+                        _this.schema = result["schema"];
+                        resolve();
+                    });
+                });
+            });
+        } else {
+            return new Promise((resolve, reject) => {
+                fetch(url).then(r => r.json()).then(result => {
+                    _this.schema = result;
+                    resolve(result);
+                });
+            });
+        }
+
     }
 
     getVector(key, indices = null) {
@@ -214,6 +221,10 @@ export class DirectAccessDataset {
 
     getJob(id, returnResults) {
         return fetch(this.baseUrl + 'uns/' + id + '.json').then(r => r.json());
+    }
+
+    getJobs() {
+        return [];
     }
 
     getVectors(keys, indices = null) {

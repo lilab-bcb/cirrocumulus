@@ -69,6 +69,12 @@ export class RestDataset {
         });
     }
 
+    getJobs(id) {
+        return fetch(API + '/jobs?id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            return response.json();
+        });
+    }
+
     deleteJob(id) {
         return fetch(API + '/job',
             {

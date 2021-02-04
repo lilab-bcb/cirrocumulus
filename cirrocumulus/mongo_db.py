@@ -213,7 +213,7 @@ class MongoDb:
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         results = []
-        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1)):
+        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1, type=1)):
             results.append(
                 dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email']))
         return results

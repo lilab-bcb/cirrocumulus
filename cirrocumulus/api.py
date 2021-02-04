@@ -374,4 +374,5 @@ def handle_job():
 @blueprint.route('/jobs', methods=['GET'])
 def handle_jobs():
     email = auth_api.auth()['email']
-    return database_api.get_jobs(email=email)
+    ds_id = request.args.get('id', '')
+    return to_json(database_api.get_jobs(email=email, dataset_id=ds_id))

@@ -99,5 +99,8 @@ class DatabaseAPI:
     def get_job(self, email, job_id, return_result):
         return self.provider.get_job(email, job_id, return_result)
 
+    def get_jobs(self, email, dataset_id):
+        return self.provider.get_jobs(email, dataset_id)
+
     def delete_job(self, email, job_id):
         return self.provider.delete_job(email, job_id)

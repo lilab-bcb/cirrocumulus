@@ -299,7 +299,7 @@ export function deleteDatasetFilter(filterId) {
 
 export function submitJob(jobData) {
     return function (dispatch, getState) {
-        dispatch(_setLoading(true));
+
         let jobId;
         let timeout = 5 * 1000; // TODO
         function getJobStatus() {
@@ -327,12 +327,13 @@ export function submitJob(jobData) {
             .then(result => {
                 dispatch(setMessage('Job submitted'));
                 jobId = result.id;
+                jobData.email = getState().email;
                 jobData.id = jobId;
                 getState().jobResults.push(jobData);
                 dispatch(setJobResults(getState().jobResults.slice()));
                 window.setTimeout(getJobStatus, timeout);
             }).finally(() => {
-            dispatch(_setLoading(false));
+
         }).catch(err => {
             handleError(dispatch, err, 'Unable to submit job. Please try again.');
         });
@@ -1360,6 +1361,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         let categoryNameResults;
         let datasetFilters = [];
         let newDataset;
+        let jobResults = [];
 
         function onPromisesComplete() {
             newDataset = Object.assign({}, dataset, newDataset);
@@ -1396,10 +1398,11 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             dispatch(_setDataset(newDataset));
 
             if (newDataset.results && newDataset.results.length > 0) {
-                dispatch(setJobResults(newDataset.results));
-                if (newDataset.results.length === 1) {
-                    dispatch(setJobResult(newDataset.results[0].id));
-                }
+                jobResults = jobResults.concat(newDataset.results);
+            }
+            dispatch(setJobResults(jobResults));
+            if (jobResults.length === 1) {
+                dispatch(setJobResult(jobResults[0].id));
             }
 
             if (categoryNameResults != null) {
@@ -1425,27 +1428,28 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         } else {
             dataset.api = new RestDataset();
         }
+
         const initPromise = dataset.api.init(id, dataset.url);
-
-        return initPromise.then(() => {
-            let promises = [];
-            if (!isDirectAccess) {
-                const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
-                    categoryNameResults = results;
-                });
-
-                const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
-                    datasetFilters = results;
-                });
-                promises.push(categoriesRenamePromise);
-                promises.push(filtersPromise);
-            }
-            const schemaPromise = dataset.api.getSchemaPromise().then(result => {
-                newDataset = result;
+        const jobsPromise = dataset.api.getJobs(id).then(jobs => {
+            jobResults = jobs;
+        });
+        const schemaPromise = dataset.api.getSchemaPromise().then(result => {
+            newDataset = result;
+        });
+        const promises = [initPromise, jobsPromise, schemaPromise];
+        if (!isDirectAccess) {
+            const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
+                categoryNameResults = results;
             });
-            promises.push(schemaPromise);
-            return promises;
-        }).then(promises => Promise.all(promises)).then(() => onPromisesComplete()).finally(() => {
+
+            const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
+                datasetFilters = results;
+            });
+            promises.push(categoriesRenamePromise);
+            promises.push(filtersPromise);
+        }
+
+        return Promise.all(promises).then(() => onPromisesComplete()).finally(() => {
             if (setLoading) {
                 dispatch(_setLoading(false));
             }

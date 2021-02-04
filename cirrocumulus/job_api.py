@@ -9,10 +9,14 @@ import scipy.stats as ss
 from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures
 from .diff_exp import fdrcorrection
 
-executor = ThreadPoolExecutor(max_workers=2)
+
+executor = None
 
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
+    global executor
+    if executor is None:
+        executor = ThreadPoolExecutor(max_workers=2)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
         params=params)
     #  run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
