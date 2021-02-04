@@ -34,7 +34,6 @@ import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
 import {
     DEFAULT_DARK_MODE,
-    DEFAULT_INTERPOLATOR,
     DEFAULT_LABEL_FONT_SIZE,
     DEFAULT_LABEL_STROKE_WIDTH,
     DEFAULT_MARKER_OPACITY,
@@ -226,10 +225,10 @@ class AppHeader extends React.PureComponent {
         if (distributionData && distributionData.length > 0) {
             json.distributionPlotOptions = distributionPlotOptions;
         }
-        if (interpolator.name !== DEFAULT_INTERPOLATOR) {
-            const interpolatorJson = Object.assign({}, interpolator, {value: null});
-            json.colorScheme = interpolatorJson;
-        }
+
+        const interpolatorJson = Object.assign({}, interpolator, {value: null});
+        json.colorScheme = interpolatorJson;
+
 
         if (embeddingLabels.length > 0) {
             json.embeddingLabels = embeddingLabels;

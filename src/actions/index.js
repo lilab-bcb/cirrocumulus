@@ -898,13 +898,7 @@ function loadDefaultDataset() {
 function restoreSavedView(savedView) {
     return function (dispatch, getState) {
         if (savedView.colorScheme != null) {
-            let interpolator = getInterpolator(savedView.colorScheme);
-            if (interpolator != null) {
-                savedView.colorScheme = {
-                    name: savedView.colorScheme,
-                    value: interpolator,
-                };
-            }
+            savedView.colorScheme.value = getInterpolator(savedView.colorScheme.name);
         }
 
         if (savedView.datasetFilter != null) {
