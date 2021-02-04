@@ -73,6 +73,25 @@ export const FEATURE_SET_SEARCH_TOKEN = 'featureSet';
 export const METAFEATURE_SEARCH_TOKEN = 'metafeature';
 export const FEATURE_SET_SEARCH_TOKEN_ADD = 'featureSetAdd';
 
+export function scaleConstantRange(value) {
+
+    function scale(x) {
+        return value;
+    }
+
+    scale.invert = scale;
+    scale.domain = scale.range = function (_) {
+        return arguments.length ? (value = _[0]) : [value, value];
+    };
+
+    scale.copy = function () {
+        return scaleConstantRange(value);
+    };
+
+
+    return scale;
+}
+
 export function stripTrailingZeros(s) {
     let index = s.lastIndexOf('.');
     let ending = s.substring(index + 1);

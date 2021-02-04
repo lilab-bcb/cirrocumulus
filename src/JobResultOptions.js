@@ -61,7 +61,7 @@ class JobResultOptions extends React.PureComponent {
     onSizeReversedChange = (value) => {
         const jobResult = this.getJobResult();
         jobResult.sizeScaleReversed = value;
-        jobResult.sizeScale = null;
+        jobResult.sizeScale = undefined;
         updateJob(this.getJobResult());
         this.props.handleJobResults(this.props.jobResults.slice());
     };
@@ -76,8 +76,8 @@ class JobResultOptions extends React.PureComponent {
     onOptions = (options) => {
         const jobResult = this.getJobResult();
         jobResult.options = Object.assign(jobResult.options, options);
-        jobResult.colorScale = null;
-        jobResult.sizeScale = null;
+        jobResult.colorScale = undefined;
+        jobResult.sizeScale = undefined;
         this.handleJobResultDebounced(this.props.jobResultId);
     };
 
@@ -92,7 +92,7 @@ class JobResultOptions extends React.PureComponent {
 
     onColorScalingChange = (event) => {
         const jobResult = this.getJobResult();
-        jobResult.colorScale = null;
+        jobResult.colorScale = undefined;
         jobResult.interpolator.scale = event.target.checked ? 'min_max' : null;
         updateJob(jobResult);
         this.props.handleJobResults(this.props.jobResults.slice());
@@ -100,7 +100,7 @@ class JobResultOptions extends React.PureComponent {
 
     onColorChanged = (event) => {
         const jobResult = this.getJobResult();
-        jobResult.colorScale = null;
+        jobResult.colorScale = undefined;
         jobResult.color = event.target.value;
         updateJob(this.getJobResult());
         this.props.handleJobResults(this.props.jobResults.slice());
@@ -108,8 +108,9 @@ class JobResultOptions extends React.PureComponent {
 
     onSizeChanged = (event) => {
         const jobResult = this.getJobResult();
-        jobResult.sizeScale = null;
+        jobResult.sizeScale = undefined;
         jobResult.size = event.target.value;
+
         updateJob(this.getJobResult());
         this.props.handleJobResults(this.props.jobResults.slice());
     };
@@ -172,6 +173,8 @@ class JobResultOptions extends React.PureComponent {
 
         const fields = jobResult.fields.slice();
         fields.sort(natsort({insensitive: true}));
+        const sizeOptions = ['(None)'].concat(fields);
+
         return <React.Fragment>
             <div style={{marginTop: 16}}>
                 <Typography
@@ -283,14 +286,17 @@ class JobResultOptions extends React.PureComponent {
                     onChange={this.onSizeChanged}
                     value={size}
                 >
+                    <MenuItem divider value={'(None)'}>{'(None))'}</MenuItem>
                     {fields.map(item => (
                         <MenuItem key={item} value={item}>{item}</MenuItem>
                     ))}
                 </Select>
             </FormControl>
-            <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
-                                onOptions={this.onOptions} showReversed={true}
-                                onReversedChange={this.onSizeReversedChange}/>
+            <div style={{display: size === '(None)' ? 'none' : ''}}>
+                <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
+                                    onOptions={this.onOptions} showReversed={true}
+                                    onReversedChange={this.onSizeReversedChange}/>
+            </div>
         </React.Fragment>;
     }
 }

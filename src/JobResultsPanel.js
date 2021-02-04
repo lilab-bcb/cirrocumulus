@@ -26,7 +26,7 @@ import {connect} from 'react-redux';
 import {setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
-import {createColorScale, getInterpolator, X_SEARCH_TOKEN} from './util';
+import {createColorScale, getInterpolator, scaleConstantRange, X_SEARCH_TOKEN} from './util';
 
 const styles = theme => ({
     dot: {
@@ -38,17 +38,6 @@ const styles = theme => ({
         '& hr': {
             margin: theme.spacing(0, 0.5),
         }
-    },
-    visuallyHidden: {
-        border: 0,
-        clip: 'rect(0 0 0 0)',
-        height: 1,
-        margin: -1,
-        overflow: 'hidden',
-        padding: 0,
-        position: 'absolute',
-        top: 20,
-        width: 1,
     },
     table: {
         borderCollapse: 'collapse',
@@ -102,10 +91,10 @@ const DEFAULT_DE_INTERPOLATOR = 'RdBu';
 
 
 export function updateJob(jobResult) {
-    if (jobResult.options == null) {
+    if (jobResult.options === undefined) {
         jobResult.options = {};
     }
-    if (jobResult.interpolator == null) {
+    if (jobResult.interpolator === undefined) {
         jobResult.interpolator = {
             name: DEFAULT_DE_INTERPOLATOR,
             value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
@@ -116,7 +105,7 @@ export function updateJob(jobResult) {
     const groups = jobResult.groups;
     const data = jobResult.data;
 
-    if (jobResult.columns == null) {
+    if (jobResult.columns === undefined) {
         const sorter = natsort({insensitive: true});
         const indices = new Array(groups.length);
         for (let i = 0, n = jobResult.groups.length; i < n; i++) {
@@ -128,7 +117,7 @@ export function updateJob(jobResult) {
         });
     }
 
-    if (jobResult.rowFilters == null) {
+    if (jobResult.rowFilters === undefined) {
         const filters = [];
         jobResult.fields.forEach(field => {
             filters.push([field, '>', NaN, '']);
@@ -136,11 +125,11 @@ export function updateJob(jobResult) {
 
         jobResult.rowFilters = filters;
     }
-    if (jobResult.ntop == null) {
+    if (jobResult.ntop === undefined) {
         jobResult.ntop = 10;
         jobResult.ntopUI = 10;
     }
-    if (jobResult.sortedRows == null) {
+    if (jobResult.sortedRows === undefined) {
         const indices = new Array(data.length);
         for (let i = 0, n = data.length; i < n; i++) {
             indices[i] = i;
@@ -150,7 +139,7 @@ export function updateJob(jobResult) {
             jobResult.sortedRows.push(indices);
         }
     }
-    if (jobResult.by == null) {
+    if (jobResult.by === undefined) {
         jobResult.by = jobResult.fields[0];
         for (let i = 0; i < jobResult.fields.length; i++) {
             if (jobResult.fields[i].toLowerCase().indexOf('score') !== -1) {
@@ -159,19 +148,19 @@ export function updateJob(jobResult) {
             }
         }
     }
-    if (jobResult.sortByGroup == null) {
+    if (jobResult.sortByGroup === undefined) {
         jobResult.sortByGroup = jobResult.groups[0];
     }
-    if (jobResult.color == null) {
+    if (jobResult.color === undefined) {
         jobResult.color = jobResult.fields[0];
     }
-    if (jobResult.size == null) {
+    if (jobResult.size === undefined) {
         jobResult.size = jobResult.fields[0];
     }
-    if (jobResult.rowSortOrder == null) {
+    if (jobResult.rowSortOrder === undefined) {
         jobResult.rowSortOrder = [];
     }
-    if (jobResult.rows == null) {
+    if (jobResult.rows === undefined) {
         sortAndFilterJobResult(jobResult);
     }
 
@@ -194,7 +183,7 @@ export function updateJob(jobResult) {
     }
 
     // color='logfoldchanges', size='pvals_adj',
-    if (jobResult.colorScale == null) {
+    if (jobResult.colorScale === undefined) {
         let domain;
         if (jobResult.interpolator.scale === 'min_max') {
             domain = [0, 1];
@@ -214,18 +203,23 @@ export function updateJob(jobResult) {
         }
         jobResult.colorScale = createColorScale(jobResult.interpolator).domain(domain);
     }
-    if (jobResult.sizeScaleReversed == null) {
+    if (jobResult.sizeScaleReversed === undefined) {
         jobResult.sizeScaleReversed = false;
     }
-    if (jobResult.sizeScale == null) {
-        let domain = getRange(jobResult.size);
-        if (!isNaN(jobResult.options.minSize)) {
-            domain[0] = jobResult.options.minSize;
+    if (jobResult.sizeScale === undefined) {
+
+        if (jobResult.size !== '(None)') {
+            let domain = getRange(jobResult.size);
+            if (!isNaN(jobResult.options.minSize)) {
+                domain[0] = jobResult.options.minSize;
+            }
+            if (!isNaN(jobResult.options.maxSize)) {
+                domain[1] = jobResult.options.maxSize;
+            }
+            jobResult.sizeScale = scaleLinear().domain(domain).range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18]).clamp(true);
+        } else {
+            jobResult.sizeScale = scaleConstantRange(18);
         }
-        if (!isNaN(jobResult.options.maxSize)) {
-            domain[1] = jobResult.options.maxSize;
-        }
-        jobResult.sizeScale = scaleLinear().domain(domain).range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18]).clamp(true);
     }
 }
 
