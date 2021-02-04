@@ -468,6 +468,7 @@ class JobResultsPanel extends React.PureComponent {
         let headerHeight = 0;
         let maxSize;
         let rowScale = null;
+        let isSizeScaled = true;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -479,6 +480,7 @@ class JobResultsPanel extends React.PureComponent {
             if (jobResult.interpolator.scale === 'min_max') {
                 rowScale = scaleLinear().range([0, 1]);
             }
+            isSizeScaled = jobResult.size !== '(None)';
             for (let i = 0; i < groups.length; i++) {
                 if (groups[i].length > 2) {
                     rotateHeaders = true;
@@ -592,7 +594,7 @@ class JobResultsPanel extends React.PureComponent {
                                             if (color !== by) {
                                                 title += ', ' + color + ':' + formatNumber(colorValue);
                                             }
-                                            if (size !== by) {
+                                            if (size !== by && isSizeScaled) {
                                                 title += ', ' + size + ':' + formatNumber(sizeValue);
                                             }
                                             const colorValueScaled = rowScale ? rowScale(colorValue) : colorValue;
