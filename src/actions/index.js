@@ -22,6 +22,8 @@ import {
     FEATURE_TYPE,
     getFeatureSets,
     getInterpolator,
+    indexSort,
+    randomSeq,
     splitSearchTokens,
     updateTraceColors
 } from '../util';
@@ -2010,6 +2012,7 @@ function updateEmbeddingData(state, features) {
 
                 if (traceType === 'image') {
                     // TODO cache image
+                    chartData.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
                     const url = dataset.api.getFileUrl(embedding.spatial.image);
                     chartData.tileSource = new OpenSeadragon.ImageTileSource({
                         url: url,

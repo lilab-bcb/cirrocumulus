@@ -146,7 +146,6 @@ export function getPositions(trace) {
     let dst = 0;
 
     for (let i = 0; i < npoints; i++) {
-
         positions[dst++] = scaleLinear(trace.x[i], xExtent, xScale);
         positions[dst++] = scaleLinear(trace.y[i], yExtent, yScale);
         positions[dst++] = scaleLinear(is3d ? trace.z[i] : ranks[i] / (ranks.length + 1), zExtent, zScale);

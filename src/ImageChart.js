@@ -67,13 +67,11 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
     const indices = traceInfo.indices;
     if (!isSelectionEmpty) { // draw unselected cells 1st
         context.globalAlpha = unselectedMarkerOpacity;
-
         for (let i = 0; i < traceInfo.x.length; i++) {
             let index = indices[i];
             let x = traceInfo.x[index];
             let y = traceInfo.y[index];
-            const isSelected = selection.has(index);
-            if (!isSelected) {
+            if (!selection.has(index)) {
                 context.fillStyle = traceInfo.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
@@ -85,8 +83,7 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
             let index = indices[i];
             let x = traceInfo.x[index];
             let y = traceInfo.y[index];
-            const isSelected = selection.has(index);
-            if (isSelected) {
+            if (selection.has(index)) {
                 context.fillStyle = traceInfo.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
