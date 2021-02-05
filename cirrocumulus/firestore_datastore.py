@@ -1,9 +1,9 @@
 import datetime
 import json
 
-from cirrocumulus.database_api import get_email_domain
 from google.cloud import datastore
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -12,6 +12,7 @@ DATASET_FILTER = 'Dataset_Filter'
 FEATURE_SET = 'F_Set'
 USER = 'User'
 JOB = 'Job'
+JOB_RESULT = 'Job_Result'
 
 
 class FirestoreDatastore:
@@ -233,28 +234,42 @@ class FirestoreDatastore:
         dataset_id = int(dataset_id)
         client = self.datastore_client
         self.__get_key_and_dataset(email, dataset_id)
-        entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["result"])
-        entity.update(dict(dataset_id=dataset_id, email=email, name=job_name, type=job_type, params=params))
+        entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["params"])
+        import json
+        entity.update(dict(dataset_id=dataset_id, email=email, name=job_name, type=job_type, status='',
+            params=json.dumps(params)))
         client.put(entity)
-        return entity.id
+        job_id = entity.id
+
+        entity = datastore.Entity(client.key(JOB_RESULT, job_id), exclude_from_indexes=["result"])
+        entity.update(dict(dataset_id=dataset_id))
+        client.put(entity)
+        return str(job_id)
 
     def get_job(self, email, job_id, return_result):
         client = self.datastore_client
-        key = client.key(JOB, int(job_id))
+        job_id = int(job_id)
+        key = client.key(JOB_RESULT if return_result else JOB, job_id)
         result = client.get(key)
         self.__get_key_and_dataset(email, result['dataset_id'])
-        if return_result:
-            return result['result']
-        else:
-            return dict(id=result.id, status=result['status'])
+        return dict(status=result['result' if return_result else 'status'])
 
     def update_job(self, email, job_id, status, result):
         client = self.datastore_client
-        key = client.key(JOB, int(job_id))
+        job_id = int(job_id)
+        is_complete = result is not None
+        key = client.key(JOB, job_id)
         entity = client.get(key)
-        self.__get_key_and_dataset(email, entity['dataset_id'])
-        entity.update(dict(status=status, result=result))
+        if not is_complete:
+            self.__get_key_and_dataset(email, entity['dataset_id'])
+        entity.update(dict(status=status))
         client.put(entity)
+
+        if is_complete:
+            key = client.key(JOB_RESULT, job_id)
+            entity = client.get(key)
+            entity.update(dict(result=result))
+            client.put(entity)
 
     def get_jobs(self, email, dataset_id):
         client = self.datastore_client
@@ -262,16 +277,20 @@ class FirestoreDatastore:
         dataset_id = int(dataset_id)
         self.__get_key_and_dataset(email, dataset_id, False)
         query.add_filter('dataset_id', '=', dataset_id)
-        query.projection = ['name', 'type', 'status']
         results = []
         for result in query.fetch():
             results.append(
-                dict(id=result.id, name=result['name'], type=result['type'], status=result['status']))
+                dict(id=result.id, name=result['name'], type=result['type'], status=result['status'],
+                    email=result['email']))
         return results
 
     def delete_job(self, email, job_id):
         client = self.datastore_client
-        key = client.key(JOB, int(job_id))
+        job_id = int(job_id)
+        key = client.key(JOB, job_id)
         result = client.get(key)
-        self.__get_key_and_dataset(email, result['dataset_id'])
-        client.delete(key)
+        if result['email'] == email:
+            client.delete(key)
+            client.delete(client.key(JOB_RESULT, job_id))
+        else:
+            raise InvalidUsage('Not authorized', 403)

@@ -16,10 +16,10 @@ executor = None
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
     if executor is None:
-        executor = ThreadPoolExecutor(max_workers=2)
+        executor = ThreadPoolExecutor(max_workers=2)  # TODO
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
         params=params)
-    #  run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
+    # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
     return job_id
 
@@ -35,7 +35,6 @@ def get_mask(dataset_api, dataset, data_filter):
 
 def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params):
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
-
     schema = dataset_api.schema(dataset)
     var_names = schema['var']
     nfeatures = len(var_names)
@@ -91,6 +90,8 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                     # All numbers are identical
                     pass
                 index += 1
+        database_api.update_job(email=email, job_id=job_id, status='running {}/{}'.format(index, nfeatures),
+            result=None)
     pvals = fdrcorrection(pvals)
     if job_type == 'de':
         result_df = pd.DataFrame(

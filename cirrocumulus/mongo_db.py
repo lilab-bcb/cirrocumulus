@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
-from cirrocumulus.database_api import get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -202,12 +202,12 @@ class MongoDb:
 
     def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
-        doc = collection.find_one(dict(_id=ObjectId(job_id)), {"result": 0} if not return_result else None)
+        doc = collection.find_one(dict(_id=ObjectId(job_id)), {"result": 0} if not return_result else {'result': 1})
         self.get_dataset(email, doc['dataset_id'])
         if return_result:
             return doc['result']
         else:
-            return dict(id=str(doc['_id']), status=doc['status'])
+            return dict(status=doc['status'])
 
     def get_jobs(self, email, dataset_id):
         self.get_dataset(email, dataset_id)
@@ -226,6 +226,8 @@ class MongoDb:
 
     def delete_job(self, email, job_id):
         collection = self.db.jobs
-        doc = collection.find_one(dict(_id=ObjectId(job_id)))
-        self.get_dataset(email, doc['dataset_id'])
-        collection.delete_one(dict(_id=ObjectId(job_id)))
+        doc = collection.find_one(dict(_id=ObjectId(job_id)), dict(email=1))
+        if doc['email'] == email:
+            collection.delete_one(dict(_id=ObjectId(job_id)))
+        else:
+            raise InvalidUsage('Not authorized', 403)

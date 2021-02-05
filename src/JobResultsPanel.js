@@ -27,7 +27,7 @@ import {connect} from 'react-redux';
 import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
-import {createColorScale, getInterpolator, scaleConstantRange, FEATURE_TYPE} from './util';
+import {createColorScale, FEATURE_TYPE, getInterpolator, scaleConstantRange} from './util';
 
 const styles = theme => ({
     dot: {
@@ -689,17 +689,19 @@ class JobResultsPanel extends React.PureComponent {
                                 if (jobResult.title) {
                                     text += ' - ' + jobResult.title;
                                 }
+                                const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
+                                const isComplete = isPrecomputed || jobResult.status === 'complete';
                                 const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
                                 return <TableRow key={jobResult.id}
                                                  className={classes.deleteTr}
                                                  hover
                                                  selected={jobResult.id === jobResultId}
-                                                 onClick={(event) => this.onSelectJob(jobResult.id)}
+                                                 onClick={isComplete ? (event) => this.onSelectJob(jobResult.id) : null}
                                                  role="checkbox"
                                                  tabIndex={-1}>
                                     <TableCell>{text}</TableCell>
                                     <TableCell>{jobType}
-                                        {email == jobResult.email && !jobResult.id.startsWith('cirro-') &&
+                                        {email == jobResult.email && !isPrecomputed &&
                                         <IconButton edge="end" aria-label="delete"
                                                     onClick={(event) => this.onDeleteJob(event, jobResult)}>
                                             <DeleteIcon/>
