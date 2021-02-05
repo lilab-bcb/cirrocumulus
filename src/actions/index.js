@@ -1381,9 +1381,9 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                 jobResults = jobResults.concat(newDataset.results);
             }
             dispatch(setJobResults(jobResults));
-            if (jobResults.length === 1) {
-                dispatch(setJobResult(jobResults[0].id));
-            }
+            // if (jobResults.length === 1) {
+            //     dispatch(setJobResult(jobResults[0].id));
+            // }
 
             if (categoryNameResults != null) {
                 categoryNameResults.forEach(result => {
