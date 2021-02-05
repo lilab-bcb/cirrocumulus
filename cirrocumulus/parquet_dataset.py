@@ -24,13 +24,13 @@ class ParquetDataset(AbstractDataset):
     def read_summarized(self, file_system, path, obs_keys=[], var_keys=[], index=False, rename=False, dataset=None):
         result_df = pd.DataFrame()
         if index:
-            df = pq.read_table(file_system.open(path + '/index.parquet')).to_pandas()
+            df = pq.read_table(path + '/index.parquet', filesystem=file_system).to_pandas()
 
             for column in df:
                 result_df[column] = df[column]
 
         for key in var_keys + obs_keys:
-            df = pq.read_table(file_system.open(path + '/' + key + '.parquet')).to_pandas()
+            df = pq.read_table(path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
             if rename:
                 for column in df:
                     result_df['{}_{}'.format(key, column)] = df[column]
@@ -55,7 +55,7 @@ class ParquetDataset(AbstractDataset):
             shape = schema['shape']
             for i in range(len(var_keys)):
                 key = var_keys[i]
-                df = pq.read_table(file_system.open(node_path + '/' + key + '.parquet')).to_pandas()
+                df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
                 data.append(df['value'])
                 row.append(df['index'])
                 col.append(np.repeat(i, len(df)))
@@ -74,7 +74,7 @@ class ParquetDataset(AbstractDataset):
             node_path = os.path.join(path, node)
             for i in range(len(features)):
                 key = features[i]
-                df = pq.read_table(file_system.open(node_path + '/' + key + '.parquet')).to_pandas()
+                df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
                 result_df[key] = df['value']
         if len(obs_keys) > 0:
             if result_df is None:
@@ -84,7 +84,7 @@ class ParquetDataset(AbstractDataset):
                 cache_key = str(dataset_id) + '-' + key
                 cached_value = self.cached_data.get(cache_key)
                 if cached_value is None:
-                    df = pq.read_table(file_system.open(node_path + '/' + key + '.parquet'),
+                    df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system,
                         columns=['value']).to_pandas()
                     # ignore index in obs for now
                     cached_value = df['value']
@@ -105,7 +105,7 @@ class ParquetDataset(AbstractDataset):
                 cached_value = self.cached_data.get(cache_key)
                 if cached_value is None:
                     basis_path = (obsm_path + '/') + (b['full_name' if is_precomputed else 'name']) + '.parquet'
-                    df = pq.read_table(file_system.open(basis_path), columns=columns_to_fetch).to_pandas()
+                    df = pq.read_table(basis_path, filesystem=file_system, columns=columns_to_fetch).to_pandas()
                     cached_value = df
                     self.cached_data[cache_key] = cached_value
 
@@ -127,7 +127,7 @@ class ParquetDataset(AbstractDataset):
                 all_keys += b['coordinate_columns']
         if len(all_keys) == 0:
             return SimpleData(None, pd.DataFrame(), pd.Index([]))
-        return pq.read_table(file_system.open(path), columns=all_keys).to_pandas()
+        return pq.read_table(path, filesystem=file_system, columns=all_keys).to_pandas()
 
     def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
         dataset_id = dataset['id']
