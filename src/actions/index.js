@@ -72,9 +72,6 @@ export const SET_SAVED_DATASET_FILTER = 'SET_SAVED_DATASET_FILTER';
 export const SET_SEARCH_TOKENS = 'SET_SEARCH_TOKENS';
 
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
-export const SET_NUMBER_OF_BINS = 'SET_NUMBER_OF_BINS';
-export const SET_BIN_VALUES = 'SET_BIN_VALUES';
-export const SET_BIN_SUMMARY = 'SET_BIN_SUMMARY';
 export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
 export const SET_POINT_SIZE = 'SET_POINT_SIZE';
@@ -1300,26 +1297,6 @@ export function setSelectedEmbedding(payload) {
             dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
         }));
     };
-}
-
-
-export function setNumberOfBins(payload) {
-    return function (dispatch, getState) {
-        if (getState().numberOfBins !== payload) {
-            dispatch({type: SET_NUMBER_OF_BINS, payload: payload});
-        }
-    };
-}
-
-export function setBinSummary(payload) {
-    return function (dispatch, getState) {
-        dispatch({type: SET_BIN_SUMMARY, payload: payload});
-
-    };
-}
-
-export function setBinValues(payload) {
-    return {type: SET_BIN_VALUES, payload: payload};
 }
 
 

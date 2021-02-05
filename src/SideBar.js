@@ -51,15 +51,12 @@ import {
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
     setActiveFeature,
-    setBinSummary,
-    setBinValues,
     setChartSize,
     setCombineDatasetFilters,
     setDialog,
     setDistributionPlotOptions,
     setInterpolator,
     setMarkerOpacity,
-    setNumberOfBins,
     setPointSize,
     setSearchTokens,
     setSelectedEmbedding,
@@ -1038,33 +1035,20 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             handleEmbeddings: value => {
                 dispatch(setSelectedEmbedding(value));
             },
-
-            handleNumberOfBins: value => {
-                dispatch(setNumberOfBins(value));
-            },
             handlePointSize: value => {
                 dispatch(setPointSize(value));
             },
-
             handleMarkerOpacity: value => {
                 dispatch(setMarkerOpacity(value));
             },
-
             handleEmbeddingLabel: value => {
                 dispatch(toggleEmbeddingLabel(value));
             },
             handleUnselectedMarkerOpacity: value => {
                 dispatch(setUnselectedMarkerOpacity(value));
             },
-
             onMoreOptions: () => {
                 dispatch(setDialog(MORE_OPTIONS_DIALOG));
-            },
-            handleBinSummary: value => {
-                dispatch(setBinSummary(value));
-            },
-            handleBinValues: value => {
-                dispatch(setBinValues(value));
             },
             handleSearchTokens: (value, type) => {
                 dispatch(setSearchTokens(value == null ? [] : value, type));
