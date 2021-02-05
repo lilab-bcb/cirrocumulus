@@ -66,12 +66,14 @@ export const CATEGORY_20C = [
     '#74c476', '#a1d99b', '#c7e9c0', '#756bb1', '#9e9ac8', '#bcbddc',
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
-export const OBS_SEARCH_TOKEN = 'obs';
-export const OBS_CAT_SEARCH_TOKEN = 'obsCat';
-export const X_SEARCH_TOKEN = 'X';
-export const FEATURE_SET_SEARCH_TOKEN = 'featureSet';
-export const METAFEATURE_SEARCH_TOKEN = 'metafeature';
-export const FEATURE_SET_SEARCH_TOKEN_ADD = 'featureSetAdd';
+export const FEATURE_TYPE = {
+    OBS:'obs',
+    OBS_CAT:'obsCat',
+     X:'X',
+    FEATURE_SET : 'featureSet',
+    METAFEATURE: 'metafeature',
+    COUNT: 'count'}
+
 
 export function scaleConstantRange(value) {
 
@@ -403,18 +405,16 @@ export function splitSearchTokens(tokens) {
     let featureSetsAdd = [];
     let metafeatures = [];
     tokens.forEach(token => {
-        if (token.type === X_SEARCH_TOKEN) {
+        if (token.type === FEATURE_TYPE.X) {
             X.push(token.value);
-        } else if (token.type === OBS_SEARCH_TOKEN) {
+        } else if (token.type === FEATURE_TYPE.OBS) {
             obs.push(token.value);
-        } else if (token.type === OBS_CAT_SEARCH_TOKEN) {
+        } else if (token.type === FEATURE_TYPE.OBS_CAT) {
             obsCat.push(token.value);
-        } else if (token.type === FEATURE_SET_SEARCH_TOKEN) {
+        } else if (token.type === FEATURE_TYPE.FEATURE_SET) {
             featureSets.push(token.value);
-        } else if (token.type === METAFEATURE_SEARCH_TOKEN) {
+        } else if (token.type === FEATURE_TYPE.METAFEATURE) {
             metafeatures.push(token.value);
-        } else if (token.type === FEATURE_SET_SEARCH_TOKEN_ADD) {
-            featureSetsAdd.push(token.value);
         } else {
             console.log('Unknown type: ' + token);
         }

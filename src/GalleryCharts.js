@@ -5,7 +5,7 @@ import React from 'react';
 
 import {connect} from 'react-redux';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
-import {getTraceKey, setEmbeddingData, setPrimaryTraceKey} from './actions';
+import {getTraceKey, setActiveFeature, setEmbeddingData} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {splitSearchTokens} from './util';
@@ -30,7 +30,11 @@ class GalleryCharts extends React.PureComponent {
     }
 
     onChartSelected = (traceInfo) => {
-        this.props.handlePrimaryTraceKey(getTraceKey(traceInfo));
+        this.props.handleActiveFeature({
+            name: traceInfo.name,
+            type: traceInfo.featureType,
+            embeddingKey: getTraceKey(traceInfo)
+        });
         window.scrollTo(0, 0);
     };
 
@@ -122,7 +126,6 @@ const mapStateToProps = state => {
         markerOpacity: state.markerOpacity,
         pointSize: state.pointSize,
         primaryChartSize: state.primaryChartSize,
-        primaryTraceKey: state.primaryTraceKey,
         searchTokens: state.searchTokens,
         selection: state.selection,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
@@ -130,8 +133,8 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handlePrimaryTraceKey: (value) => {
-            dispatch(setPrimaryTraceKey(value));
+        handleActiveFeature: (value) => {
+            dispatch(setActiveFeature(value));
         },
         handleEmbeddingData: (value) => {
             dispatch(setEmbeddingData(value));

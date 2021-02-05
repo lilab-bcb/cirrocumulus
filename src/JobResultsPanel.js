@@ -27,7 +27,7 @@ import {connect} from 'react-redux';
 import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
-import {createColorScale, getInterpolator, scaleConstantRange, X_SEARCH_TOKEN} from './util';
+import {createColorScale, getInterpolator, scaleConstantRange, FEATURE_TYPE} from './util';
 
 const styles = theme => ({
     dot: {
@@ -422,7 +422,7 @@ class JobResultsPanel extends React.PureComponent {
             }
         }
         if (index === -1) {
-            searchTokens.push({value: feature, type: X_SEARCH_TOKEN});
+            searchTokens.push({value: feature, type: FEATURE_TYPE.X});
             // this.props.setTab('embedding');
         } else {
             searchTokens.splice(index, 1);
@@ -479,7 +479,7 @@ class JobResultsPanel extends React.PureComponent {
         const jobResult = this.getJobResult();
         const selectedFeatures = new Set();
         searchTokens.forEach(token => {
-            if (token.type === X_SEARCH_TOKEN) {
+            if (token.type === FEATURE_TYPE.X) {
                 selectedFeatures.add(token.value);
             }
         });

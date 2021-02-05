@@ -138,7 +138,7 @@ class AppHeader extends React.PureComponent {
         const {
             chartOptions,
             combineDatasetFilters,
-            primaryTraceKey,
+            activeFeature,
             dataset,
             embeddingLabels,
             distributionPlotOptions,
@@ -171,8 +171,8 @@ class AppHeader extends React.PureComponent {
             json.camera = chartRef.scatterPlot.getCameraDef();
 
         }
-        if (primaryTraceKey != null) {
-            json.primaryTraceKey = primaryTraceKey;
+        if (activeFeature != null) {
+            json.activeFeature = activeFeature;
         }
         let jsonChartOptions = {};
 
@@ -470,36 +470,33 @@ class AppHeader extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        dataset: state.dataset,
-        chartOptions: state.chartOptions,
-        embeddings: state.embeddings,
-        embeddingLabels: state.embeddingLabels,
-        searchTokens: state.searchTokens,
-        primaryTraceKey: state.primaryTraceKey,
+        activeFeature: state.activeFeature,
         binSummary: state.binSummary,
         binValues: state.binValues,
+        chartOptions: state.chartOptions,
         combineDatasetFilters: state.combineDatasetFilters,
-        datasetFilter: state.datasetFilter,
-        markerOpacity: state.markerOpacity,
-        pointSize: state.pointSize,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
-        savedDatasetState: state.savedDatasetState,
+        dataset: state.dataset,
         datasetChoices: state.datasetChoices,
+        datasetFilter: state.datasetFilter,
         dialog: state.dialog,
         distributionData: state.distributionData,
         email: state.email,
-
+        embeddingLabels: state.embeddingLabels,
+        embeddings: state.embeddings,
         interpolator: state.interpolator,
         jobResults: state.jobResults,
         loading: state.loading,
         loadingApp: state.loadingApp,
-
+        markerOpacity: state.markerOpacity,
         message: state.message,
-
+        pointSize: state.pointSize,
+        savedDatasetState: state.savedDatasetState,
+        searchTokens: state.searchTokens,
         selection: state.selection,
         serverInfo: state.serverInfo,
-        user: state.user,
-        tab: state.tab
+        tab: state.tab,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        user: state.user
     };
 };
 const mapDispatchToProps = (dispatch, ownProps) => {

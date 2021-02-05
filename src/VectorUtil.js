@@ -3,12 +3,13 @@ import natsort from 'natsort';
 
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
+import {FEATURE_TYPE} from './util';
 import {Vector} from './Vector';
 
 export function getVarNameType(key) {
     let index = key.indexOf('/');
     if (index === -1) {
-        return {name: key, type: 'X'};
+        return {name: key, type: FEATURE_TYPE.X};
     } else {
         let key_type = key.substring(0, index);
         let name = key.substring(index + 1);
@@ -140,9 +141,9 @@ export function computeDerivedStats(result, q, cachedData) {
     if (q.groupedStats) {
         const dimensions = q.groupedStats.dimensions || []; // array of arrays
         const measures = q.groupedStats.measures || [];
-
-        if (dimensions.length > 0 && measures.length > 0) {
-            result.distribution = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, measures));
+        const typeToMeasures = getTypeToMeasures(measures);
+        if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
+            result.distribution = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, typeToMeasures.X));
         }
     }
 
@@ -161,9 +162,8 @@ export function computeDerivedStats(result, q, cachedData) {
                 result.selection.coordinates[basis.full_name] = {'indices_or_bins': selectedIndices};
             });
         }
-
         if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
-            result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, measures, selectedIndices));
+            result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.X, selectedIndices));
         }
         result.selection.count = selectedIndices.length;
         result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, selectedIndices),

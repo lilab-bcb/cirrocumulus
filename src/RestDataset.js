@@ -106,7 +106,7 @@ export class RestDataset {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(r => r.json()).then(result => {
-            // convert sparse to dense
+            // convert sparse to dense?
 
             // if (result.values) {
             //     for (let key in result.values) {

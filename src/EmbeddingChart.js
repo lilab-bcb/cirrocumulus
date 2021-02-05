@@ -203,7 +203,6 @@ const mapStateToProps = state => {
         nObsSelected: state.selection.count,
         pointSize: state.pointSize,
         primaryChartSize: state.primaryChartSize,
-        primaryTraceKey: state.primaryTraceKey,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,

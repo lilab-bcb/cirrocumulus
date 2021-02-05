@@ -50,6 +50,7 @@ import {
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
+    setActiveFeature,
     setBinSummary,
     setBinValues,
     setChartSize,
@@ -60,7 +61,6 @@ import {
     setMarkerOpacity,
     setNumberOfBins,
     setPointSize,
-    setPrimaryTraceKey,
     setSearchTokens,
     setSelectedEmbedding,
     setTab,
@@ -72,14 +72,7 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {
-    FEATURE_SET_SEARCH_TOKEN,
-    getFeatureSets,
-    METAFEATURE_SEARCH_TOKEN,
-    OBS_SEARCH_TOKEN,
-    splitSearchTokens,
-    X_SEARCH_TOKEN
-} from './util';
+import {FEATURE_TYPE, getFeatureSets, splitSearchTokens,} from './util';
 
 const sorter = natsort({insensitive: true});
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
@@ -201,7 +194,6 @@ class SideBar extends React.PureComponent {
         };
         this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
         this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
-        // this.updateNumberOfBins = debounce(this.updateNumberOfBins, 200);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -250,11 +242,11 @@ class SideBar extends React.PureComponent {
     };
 
     onFeaturesChange = (event, value) => {
-        this.props.handleSearchTokens(value, X_SEARCH_TOKEN);
+        this.props.handleSearchTokens(value, FEATURE_TYPE.X);
     };
 
     onMetafeaturesChange = (event, value) => {
-        this.props.handleSearchTokens(value, METAFEATURE_SEARCH_TOKEN);
+        this.props.handleSearchTokens(value, FEATURE_TYPE.METAFEATURE);
     };
 
     onObservationsIconClick = (event, option) => {
@@ -271,7 +263,7 @@ class SideBar extends React.PureComponent {
                 values.push(val);
             }
         });
-        this.props.handleSearchTokens(values, OBS_SEARCH_TOKEN);
+        this.props.handleSearchTokens(values, FEATURE_TYPE.OBS);
     };
 
     onSaveFeatureList = () => {
@@ -306,7 +298,7 @@ class SideBar extends React.PureComponent {
                 values.push(val);
             }
         });
-        this.props.handleSearchTokens(values, FEATURE_SET_SEARCH_TOKEN);
+        this.props.handleSearchTokens(values, FEATURE_TYPE.FEATURE_SET);
     };
 
     onFeatureSetClick = (event, option) => {
@@ -347,8 +339,8 @@ class SideBar extends React.PureComponent {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
         const featureSetId = this.state.featureSet.id;
-        let value = searchTokens.filter(token => token.type === FEATURE_SET_SEARCH_TOKEN && token.value.id !== featureSetId);
-        this.props.handleSearchTokens(value, FEATURE_SET_SEARCH_TOKEN);
+        let value = searchTokens.filter(token => token.type === FEATURE_TYPE.FEATURE_SET && token.value.id !== featureSetId);
+        this.props.handleSearchTokens(value, FEATURE_TYPE.FEATURE_SET);
         this.props.handleDeleteFeatureSet(featureSetId);
         this.setState({featureSetAnchorEl: null, featureSet: null});
     };
@@ -366,7 +358,11 @@ class SideBar extends React.PureComponent {
                 if (this.props.tab !== 'embedding') {
                     this.props.handleTab('embedding');
                 }
-                this.props.handlePrimaryTraceKey(getTraceKey(galleryTraces[i]));
+                this.props.handleActiveFeature({
+                    name: galleryTraces[i].name,
+                    type: galleryTraces[i].featureType,
+                    embeddingKey: getTraceKey(galleryTraces[i])
+                });
                 break;
             }
         }
@@ -393,34 +389,35 @@ class SideBar extends React.PureComponent {
     //     }
     // };
 
+    // onBinSummaryChange = (event) => {
+    //     const value = event.target.value;
+    //     this.props.handleBinSummary(value);
+    //     let embeddings = this.props.embeddings;
+    //     for (let i = 0; i < embeddings.length; i++) {
+    //         if (!embeddings[i].precomputed) {
+    //             embeddings[i] = Object.assign(embeddings[i], {agg: value});
+    //         }
+    //     }
+    //     this.props.handleEmbeddings(embeddings.slice(0));
+    // };
+    //
+    // handleBinValuesChange = (event) => {
+    //     const value = event.target.checked;
+    //     this.props.handleBinValues(value);
+    //     let embeddings = this.props.embeddings;
+    //     for (let i = 0; i < embeddings.length; i++) {
+    //         if (!embeddings[i].precomputed) {
+    //             embeddings[i] = Object.assign(embeddings[i], {bin: value});
+    //         }
+    //     }
+    //     this.props.handleEmbeddings(embeddings.slice(0));
+    // };
+    //
     onChartSizeChange = (event) => {
         const value = event.target.value;
         this.props.handleChartSize(value);
     };
 
-    onBinSummaryChange = (event) => {
-        const value = event.target.value;
-        this.props.handleBinSummary(value);
-        let embeddings = this.props.embeddings;
-        for (let i = 0; i < embeddings.length; i++) {
-            if (!embeddings[i].precomputed) {
-                embeddings[i] = Object.assign(embeddings[i], {agg: value});
-            }
-        }
-        this.props.handleEmbeddings(embeddings.slice(0));
-    };
-
-    handleBinValuesChange = (event) => {
-        const value = event.target.checked;
-        this.props.handleBinValues(value);
-        let embeddings = this.props.embeddings;
-        for (let i = 0; i < embeddings.length; i++) {
-            if (!embeddings[i].precomputed) {
-                embeddings[i] = Object.assign(embeddings[i], {bin: value});
-            }
-        }
-        this.props.handleEmbeddings(embeddings.slice(0));
-    };
 
     handleSelectedCellsClick = (event) => {
         event.preventDefault();
@@ -443,16 +440,8 @@ class SideBar extends React.PureComponent {
 
     onSubmitJob = (jobType) => {
         if (jobType === 'corr') {
-            const primaryTraceKey = this.props.primaryTraceKey; // TODO, store this separately
-            let galleryTraces = this.props.embeddingData;
-            let feature;
-            for (let i = 0; i < galleryTraces.length; i++) {
-                if (primaryTraceKey === getTraceKey(galleryTraces[i])) {
-                    feature = galleryTraces[i].name;
-                    break;
-                }
-            }
-            this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: feature}}});
+            const activeFeature = this.props.activeFeature;
+            this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: activeFeature.name}}});
         } else {
             this.setState({jobName: '', jobParams: {type: 'de', params: {}}});
         }
@@ -489,8 +478,7 @@ class SideBar extends React.PureComponent {
 
     render() {
         const {
-            binSummary,
-            binValues,
+            activeFeature,
             categoricalNames,
             chartSize,
             classes,
@@ -503,7 +491,6 @@ class SideBar extends React.PureComponent {
             embeddings,
             interpolator,
             markers,
-            primaryTraceKey,
             pointSize,
             searchTokens,
             selection,
@@ -565,7 +552,6 @@ class SideBar extends React.PureComponent {
         const featureSets = getFeatureSets(markers, splitTokens.featureSets);
         const featureOptions = dataset.features;
         const metafeatureOptions = getMetafeaturesOptions(dataset.metafeatures);
-        const isSummarized = dataset.precomputed != null;
         const obsCat = dataset.obsCat;
         const obs = dataset.obs;
         const annotationOptions = getAnnotationOptions(obs, obsCat);
@@ -573,7 +559,6 @@ class SideBar extends React.PureComponent {
         const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
         const selectedEmbeddings = getEmbeddingOptions(embeddings);
         const dynamic = serverInfo.dynamic;
-        const showBinPlot = false;
         const featureSetAnchorEl = this.state.featureSetAnchorEl;
         const featureSet = this.state.featureSet;
 
@@ -804,7 +789,7 @@ class SideBar extends React.PureComponent {
                                         {dynamic && <Tooltip
                                             title={"Find features correlated with selected feature in selected cells"}>
                                             <span>
-                                            <Button disabled={primaryTraceKey.startsWith('__count')} size={"small"}
+                                            <Button disabled={activeFeature.type !== FEATURE_TYPE.X} size={"small"}
                                                     variant="outlined"
                                                     onClick={event => this.onSubmitJob('corr')}>Correlation</Button>
                                             </span>
@@ -941,51 +926,6 @@ class SideBar extends React.PureComponent {
                                     aria-label="More Options" onClick={this.props.onMoreOptions}>More Options...
                             </Button>
 
-
-                            {!isSummarized && showBinPlot && <div><FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={binValues}
-                                        value={'binPlot'}
-                                        onChange={this.handleBinValuesChange}
-                                    />
-                                }
-                                label="Bin Plot"
-                            /></div>}
-
-                            {/*{!isSummarized && binValues &&*/}
-                            {/*<TextField max="1000" min="20" step="100"*/}
-                            {/*           value={numberOfBins}*/}
-                            {/*           onChange={this.onNumberOfBinsChange} label="# Bins Per Axis"*/}
-                            {/*           className={classes.formControl}/>}*/}
-
-
-                            {!isSummarized && binValues && <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="summary">Bin Summary</InputLabel>
-                                <Select
-                                    className={classes.select}
-                                    input={<Input id="summary"/>}
-                                    onChange={this.onBinSummaryChange}
-                                    value={binSummary}
-                                >
-                                    {summaryOptions.map(c => (
-                                        <MenuItem key={c.value} value={c.value}>
-                                            <ListItemText primary={c.label}/>
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>}
-
-
-                            {/*<Typography*/}
-                            {/*    color="textSecondary"*/}
-                            {/*    display="block"*/}
-                            {/*    variant="caption"*/}
-                            {/*>*/}
-                            {/*    Unselected Chart Properties*/}
-                            {/*</Typography>*/}
-
-
                         </div>
 
                     </AccordionDetailsStyled>
@@ -1044,8 +984,7 @@ class SideBar extends React.PureComponent {
 
 const mapStateToProps = state => {
         return {
-            binSummary: state.binSummary,
-            binValues: state.binValues,
+            activeFeature: state.activeFeature,
             categoricalNames: state.categoricalNames,
             chartSize: state.chartSize,
             combineDatasetFilters: state.combineDatasetFilters,
@@ -1061,7 +1000,6 @@ const mapStateToProps = state => {
             markers: state.markers,
             numberOfBins: state.numberOfBins,
             pointSize: state.pointSize,
-            primaryTraceKey: state.primaryTraceKey,
             savedDatasetFilter: state.savedDatasetFilter,
             searchTokens: state.searchTokens,
             selection: state.selection,
@@ -1079,8 +1017,8 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             handleTab: (value) => {
                 dispatch(setTab(value));
             },
-            handlePrimaryTraceKey: (value) => {
-                dispatch(setPrimaryTraceKey(value));
+            handleActiveFeature: (value) => {
+                dispatch(setActiveFeature(value));
             },
             handleInterpolator: value => {
                 dispatch(setInterpolator(value));

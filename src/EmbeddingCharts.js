@@ -28,8 +28,8 @@ class EmbeddingCharts extends React.PureComponent {
 
 
     render() {
-        const {primaryTraceKey, embeddingData, selection, onGallery, primaryChartSize} = this.props;
-        let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === primaryTraceKey);
+        const {activeFeature, embeddingData, selection, onGallery, primaryChartSize} = this.props;
+        let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
         let userPoints = emptySet;
         if (primaryTrace) {
@@ -54,8 +54,8 @@ class EmbeddingCharts extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
+        activeFeature: state.activeFeature,
         embeddingData: state.embeddingData,
-        primaryTraceKey: state.primaryTraceKey,
         primaryChartSize: state.primaryChartSize,
         selection: state.selection
     };

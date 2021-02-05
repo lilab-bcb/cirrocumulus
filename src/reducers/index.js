@@ -5,8 +5,7 @@ import {
     DELETE_DATASET,
     getTraceKey,
     RESTORE_VIEW,
-    SET_BIN_SUMMARY,
-    SET_BIN_VALUES,
+    SET_ACTIVE_FEATURE,
     SET_CATEGORICAL_COLOR,
     SET_CATEGORICAL_NAME,
     SET_CHART_OPTIONS,
@@ -37,7 +36,6 @@ import {
     SET_NUMBER_OF_BINS,
     SET_POINT_SIZE,
     SET_PRIMARY_CHART_SIZE,
-    SET_PRIMARY_TRACE_KEY,
     SET_SAVED_DATASET_STATE,
     SET_SEARCH_TOKENS,
     SET_SELECTED_DISTRIBUTION_DATA,
@@ -298,48 +296,6 @@ function markers(state = [], action) {
             });
 
             return result;
-        default:
-            return state;
-    }
-}
-
-
-function binSummary(state = DEFAULT_BIN_SUMMARY, action) {
-    switch (action.type) {
-        case SET_BIN_SUMMARY:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_BIN_SUMMARY;
-        case RESTORE_VIEW:
-            return action.payload.binSummary != null ? action.payload.binSummary : state;
-        default:
-            return state;
-    }
-}
-
-
-function binValues(state = false, action) {
-    switch (action.type) {
-        case SET_BIN_VALUES:
-            return action.payload;
-        case SET_DATASET:
-            return false;
-        case RESTORE_VIEW:
-            return action.payload.binValues != null ? action.payload.binValues : state;
-        default:
-            return state;
-    }
-}
-
-
-function numberOfBins(state = DEFAULT_NUMBER_BINS, action) {
-    switch (action.type) {
-        case SET_NUMBER_OF_BINS:
-            return action.payload;
-        case SET_DATASET:
-            return DEFAULT_NUMBER_BINS;
-        case RESTORE_VIEW:
-            return action.payload.numberOfBins != null ? action.payload.numberOfBins : state;
         default:
             return state;
     }
@@ -709,18 +665,21 @@ export function savedDatasetState(state = {}, action) {
     }
 }
 
-export function primaryTraceKey(state = null, action) {
+// object with name, type, embeddingKey
+export function activeFeature(state = {}, action) {
     switch (action.type) {
         case SET_DATASET:
             return null;
-        case SET_PRIMARY_TRACE_KEY:
+        case SET_ACTIVE_FEATURE:
             return action.payload;
         case SET_EMBEDDING_DATA:
             let traces = action.payload.filter(traceInfo => traceInfo.active);
             if (traces.length === 0) {
                 return null;
             }
-            return getTraceKey(traces[traces.length - 1]); // last feature becomes primary
+            const trace = traces[traces.length - 1];
+            const embeddingKey = getTraceKey(trace); // last feature becomes primary
+            return {name: trace.name, type: trace.featureType, embeddingKey: embeddingKey};
         default:
             return state;
     }
@@ -748,8 +707,7 @@ function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
 }
 
 export default combineReducers({
-    binSummary,
-    binValues,
+    activeFeature,
     cachedData,
     categoricalNames,
     chartOptions,
@@ -777,10 +735,8 @@ export default combineReducers({
     markerOpacity,
     markers,
     message,
-    numberOfBins,
     pointSize,
     primaryChartSize,
-    primaryTraceKey,
     savedDatasetState,
     searchTokens,
     selectedDistributionData,

@@ -11,9 +11,7 @@ import {updateJob} from '../JobResultsPanel';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
-
 import {getPositions} from '../ThreeUtil';
-
 import {
     addFeatureSetsToX,
     CATEGORY_20B,
@@ -21,10 +19,9 @@ import {
     convertBinsToIndices,
     convertIndicesToBins,
     createColorScale,
+    FEATURE_TYPE,
     getFeatureSets,
     getInterpolator,
-    OBS_CAT_SEARCH_TOKEN,
-    OBS_SEARCH_TOKEN,
     splitSearchTokens,
     updateTraceColors
 } from '../util';
@@ -46,7 +43,7 @@ export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 
-export const SET_PRIMARY_TRACE_KEY = 'SET_PRIMARY_TRACE_KEY';
+export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
 export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
@@ -612,8 +609,8 @@ export function setPrimaryChartSize(payload) {
     return {type: SET_PRIMARY_CHART_SIZE, payload: payload};
 }
 
-export function setPrimaryTraceKey(payload) {
-    return {type: SET_PRIMARY_TRACE_KEY, payload: payload};
+export function setActiveFeature(payload) {
+    return {type: SET_ACTIVE_FEATURE, payload: payload};
 }
 
 function setGlobalFeatureSummary(payload) {
@@ -946,12 +943,16 @@ function restoreSavedView(savedView) {
                 if (savedView.distributionPlotOptions != null) {
                     dispatch(setDistributionPlotOptions(savedView.distributionPlotOptions));
                 }
-                let primaryTraceKey = savedView.primaryTraceKey;
-                if (primaryTraceKey == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q != null && savedView.q.length > 0) {
-                    primaryTraceKey = savedView.q[0] + '_' + getEmbeddingKey(savedView.embeddings[0]);
+                let activeFeature = savedView.activeFeature;
+                if (activeFeature == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q != null && savedView.q.length > 0) {
+                    activeFeature = {
+                        name: savedView.q[0],
+                        type: getFeatureType(getState().dataset, savedView.q[0]),
+                        embeddingKey: savedView.q[0] + '_' + getEmbeddingKey(savedView.embeddings[0])
+                    };
                 }
-                if (primaryTraceKey != null) {
-                    dispatch(setPrimaryTraceKey(primaryTraceKey));
+                if (activeFeature != null) {
+                    dispatch(setActiveFeature(activeFeature));
                 }
             })
             .finally(() => dispatch(_setLoading(false)))
@@ -1263,14 +1264,14 @@ export function setSearchTokens(values, type) {
         let searchTokens = state.searchTokens;
         // keep all other types
         let removeType = [type];
-        if (type === OBS_SEARCH_TOKEN) {
-            removeType.push(OBS_CAT_SEARCH_TOKEN);
+        if (type === FEATURE_TYPE.OBS) {
+            removeType.push(FEATURE_TYPE.OBS_CAT);
         }
         searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
-        if (type === OBS_SEARCH_TOKEN) {
+        if (type === FEATURE_TYPE.OBS) {
             const obsCat = state.dataset.obsCat;
             values.forEach(val => {
-                const type = obsCat.indexOf(val) !== -1 ? OBS_CAT_SEARCH_TOKEN : OBS_SEARCH_TOKEN;
+                const type = obsCat.indexOf(val) !== -1 ? FEATURE_TYPE.OBS_CAT : FEATURE_TYPE.OBS;
                 searchTokens.push({value: val, type: type});
             });
         } else {
@@ -1822,11 +1823,22 @@ function _updateCharts(onError) {
 
 }
 
+function getFeatureType(dataset, feature) {
+    if (feature === '__count') {
+        return FEATURE_TYPE.COUNT;
+    } else if (dataset.obsCat.indexOf(feature) !== -1) {
+        return FEATURE_TYPE.OBS_CAT;
+    } else if (dataset.obs.indexOf(feature) !== -1) {
+        return FEATURE_TYPE.OBS;
+    }
+    return FEATURE_TYPE.X;
+}
+
 // depends on global feature summary
 function updateEmbeddingData(state, features) {
     const embeddings = state.embeddings;
     let embeddingData = state.embeddingData;
-    const obsCat = state.dataset.obsCat;
+
     const globalFeatureSummary = state.globalFeatureSummary;
     const interpolator = state.interpolator;
     const dataset = state.dataset;
@@ -1870,8 +1882,8 @@ function updateEmbeddingData(state, features) {
                     purity = values.purity;
                     values = values.value;
                 }
-
-                let isCategorical = feature !== '__count' && obsCat.indexOf(feature) !== -1;
+                const featureType = getFeatureType(dataset, feature);
+                let isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
                 let colorScale = null;
 
                 if (!isCategorical) {
@@ -1938,6 +1950,7 @@ function updateEmbeddingData(state, features) {
                 let chartData = {
                     embedding: Object.assign({}, embedding),
                     name: feature,
+                    featureType: featureType,
                     x: x,
                     y: y,
                     z: z != null ? z : undefined,
