@@ -189,8 +189,7 @@ class SideBar extends React.PureComponent {
             opacity: props.markerOpacity,
             unselectedOpacity: props.unselectedMarkerOpacity,
             minColor: '',
-            maxColor: '',
-            forceUpdate: false,
+            maxColor: ''
         };
         this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
         this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
@@ -227,7 +226,6 @@ class SideBar extends React.PureComponent {
             name: this.props.activeFeature.name,
             summary: summary
         });
-        this.setState({forceUpdate: !this.state.forceUpdate});
     };
 
     onMaxChange = (value) => {
@@ -237,7 +235,6 @@ class SideBar extends React.PureComponent {
             name: this.props.activeFeature.name,
             summary: summary
         });
-        this.setState({forceUpdate: !this.state.forceUpdate});
     };
 
 
