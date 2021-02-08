@@ -29,6 +29,9 @@ class EmbeddingCharts extends React.PureComponent {
 
     render() {
         const {activeFeature, embeddingData, selection, onGallery, primaryChartSize} = this.props;
+        if (activeFeature == null) {
+            return <div style={{height: primaryChartSize.height}}></div>;
+        }
         let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
         let userPoints = emptySet;
