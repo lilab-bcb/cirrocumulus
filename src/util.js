@@ -67,13 +67,18 @@ export const CATEGORY_20C = [
     '#dadaeb', '#636363', '#969696', '#bdbdbd', '#d9d9d9'];
 
 export const FEATURE_TYPE = {
-    OBS:'obs',
-    OBS_CAT:'obsCat',
-     X:'X',
-    FEATURE_SET : 'featureSet',
+    OBS: 'obs',
+    OBS_CAT: 'obsCat',
+    X: 'X',
+    FEATURE_SET: 'featureSet',
     METAFEATURE: 'metafeature',
-    COUNT: 'count'}
+    COUNT: 'count'
+};
 
+
+export const INTERPOLATOR_SCALING_MIN_MAX_FEATURE = 'min_max_feature';
+export const INTERPOLATOR_SCALING_MIN_MAX_CATEGORY = 'min_max_category';
+export const INTERPOLATOR_SCALING_NONE = 'none';
 
 export function scaleConstantRange(value) {
 
@@ -183,7 +188,6 @@ export function updateTraceColors(traceInfo) {
             for (const category in categoryToStats) {
                 const stats = categoryToStats[category];
                 const query = category.replaceAll(' ', '_'); // FIXME
-
                 svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
                     node.style.fill = colorScale(stats.value);
                 });

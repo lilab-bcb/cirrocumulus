@@ -1,6 +1,5 @@
-import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@material-ui/core';
+import {InputLabel, MenuItem, Select, Tooltip} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Input from '@material-ui/core/Input';
 import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -14,7 +13,7 @@ import {setJobResults} from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {sortAndFilterJobResult, sortByGroup, updateJob, updateTopNJobResult} from './JobResultsPanel';
-import {createColorScale} from './util';
+import {createColorScale, INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE} from './util';
 
 const styles = theme => ({
     formControl: {
@@ -32,6 +31,8 @@ class JobResultOptions extends React.PureComponent {
         this.updateTopNJobResultDebounced = debounce(this.updateTopNJobResultDebounced, 500);
         this.state = {
             forceUpdate: false,
+            min: '',
+            max: ''
         };
     }
 
@@ -73,6 +74,29 @@ class JobResultOptions extends React.PureComponent {
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
+    onMinUIChange = (value) => {
+        this.setState({min: value});
+    };
+    onMaxUIChange = (value) => {
+        this.setState({max: value});
+    };
+
+    onMinChange = (value) => {
+        const jobResult = this.getJobResult();
+        jobResult.options.min = value;
+        jobResult.colorScale = undefined;
+        updateJob(jobResult);
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
+
+    onMaxChange = (value) => {
+        const jobResult = this.getJobResult();
+        jobResult.options.max = value;
+        jobResult.colorScale = undefined;
+        updateJob(jobResult);
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
+
     onOptions = (options) => {
         const jobResult = this.getJobResult();
         jobResult.options = Object.assign(jobResult.options, options);
@@ -90,10 +114,10 @@ class JobResultOptions extends React.PureComponent {
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
-    onColorScalingChange = (event) => {
+    onColorScalingChange = (value) => {
         const jobResult = this.getJobResult();
         jobResult.colorScale = undefined;
-        jobResult.interpolator.scale = event.target.checked ? 'min_max' : null;
+        jobResult.interpolator.scale = value;
         updateJob(jobResult);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
@@ -263,22 +287,32 @@ class JobResultOptions extends React.PureComponent {
                 </Select>
             </FormControl>
 
-            <EditableColorScheme colorScale={colorScale}
+            <EditableColorScheme domain={colorScale.domain()}
                                  textColor={textColor}
                                  interpolator={interpolator}
-                                 onOptions={this.onOptions}
+                                 min={this.state.min}
+                                 max={this.state.max}
+                                 onMinChange={this.onMinChange}
+                                 onMaxChange={this.onMaxChange}
+                                 onMinUIChange={this.onMinUIChange}
+                                 onMaxUIChange={this.onMaxUIChange}
                                  onInterpolator={this.onInterpolator}/>
-            {jobResult.groups.length > 1 && <Tooltip title={"Whether to normalize color values between 0 and 1"}>
-                <div><FormControlLabel
-                    control={
-                        <Switch
-                            checked={interpolator.scale === 'min_max'}
-                            onChange={this.onColorScalingChange}
-                        />
-                    }
-                    label="Standardize"
-                /></div>
-            </Tooltip>}
+
+            {jobResult.groups.length > 1 && <FormControl className={this.props.classes.formControl}>
+                <InputLabel shrink={true}>Standardize</InputLabel>
+                <Select
+                    input={<Input size={"small"}/>}
+                    onChange={event => this.onColorScalingChange(event.target.value)}
+                    value={interpolator.scale}
+                >
+                    <MenuItem value={"none"} divider>(None)</MenuItem>
+                    <MenuItem title={"Standardize features between 0 and 1"}
+                              value={INTERPOLATOR_SCALING_MIN_MAX_FEATURE}>Feature</MenuItem>
+                    <MenuItem title={"Standardize groups between 0 and 1"}
+                              value={INTERPOLATOR_SCALING_MIN_MAX_CATEGORY}>Category</MenuItem>
+
+                </Select>
+            </FormControl>}
             <FormControl style={{marginTop: 16}} className={classes.formControl}>
                 <InputLabel shrink={true}>Size</InputLabel>
                 <Select
@@ -286,7 +320,7 @@ class JobResultOptions extends React.PureComponent {
                     onChange={this.onSizeChanged}
                     value={size}
                 >
-                    <MenuItem divider value={'(None)'}>{'(None)'}</MenuItem>
+                    <MenuItem divider value={'none'}>{'(None)'}</MenuItem>
                     {fields.map(item => (
                         <MenuItem key={item} value={item}>{item}</MenuItem>
                     ))}

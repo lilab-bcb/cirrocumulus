@@ -135,7 +135,7 @@ class MetaEmbedding extends React.PureComponent {
                             if (this.props.traceInfo.isCategorical) {
                                 text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
                             } else {
-                                text += ', mean: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
+                                text += ', z-score: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
                             }
                         } else {
                             text += ', # spots: ' + intFormat(stats.n);

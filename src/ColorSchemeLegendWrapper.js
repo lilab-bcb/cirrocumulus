@@ -1,5 +1,3 @@
-import {InputLabel} from '@material-ui/core';
-import TextField from '@material-ui/core/TextField';
 import {debounce} from 'lodash';
 import React from 'react';
 import ContinuousLegend from './ContinuousLegend';
@@ -57,55 +55,51 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
         const {
-            scale,
+            colorScale,
+            datasetFilter,
+            featureSummary,
+            globalFeatureSummary,
+            handleUpdate,
+            maxHeight,
             name,
             nObs,
             nObsSelected,
-            featureSummary,
-            globalFeatureSummary,
-            maxHeight,
-            datasetFilter,
-            handleUpdate,
             selected
         } = this.props;
         let style = {display: 'inline-block', verticalAlign: 'top'};
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }
-
+        const isCount = name === '__count';
         return (
             <div className="cirro-condensed" style={style}>
                 {/*ContinuousLegend shows stats table */}
                 <ContinuousLegend name={name}
                                   selected={selected}
-                                  summary={scale.summary}
+                                  summary={colorScale.summary}
                                   featureSummary={featureSummary}
                                   nObs={nObs}
                                   nObsSelected={nObsSelected}
                                   globalFeatureSummary={globalFeatureSummary}
                                   maxHeight={maxHeight}></ContinuousLegend>
-                {name !== '__count' && this.props.handleDomain &&
-                <InputLabel shrink={true} variant={"standard"}>Custom Color Scale</InputLabel>}
-                {name !== '__count' && this.props.handleDomain &&
-                <TextField InputLabelProps={{shrink: true}} margin="none"
-                           style={{maxWidth: 60, marginRight: 4, marginTop: 0}}
-                           size="small" type="text"
+                {/*{!isCount && this.props.handleDomain &&*/}
+                {/*<InputLabel shrink={true} variant={"standard"}>Custom Color Scale</InputLabel>}*/}
+                {/*{name !== '__count' && this.props.handleDomain &&*/}
+                {/*<TextField InputLabelProps={{shrink: true}} margin="none"*/}
+                {/*           style={{maxWidth: 60, marginRight: 4, marginTop: 0}}*/}
+                {/*           size="small" type="text"*/}
 
-                           onChange={this.onMinChange} label="Min"
-                           value={this.state.min}/>}
-                {name !== '__count' && this.props.handleDomain &&
-                <TextField InputLabelProps={{shrink: true}} margin="none" style={{maxWidth: 60, marginTop: 0}}
-                           size="small"
-                           type="text"
+                {/*           onChange={this.onMinChange} label="Min"*/}
+                {/*           value={this.state.min}/>}*/}
+                {/*{!isCount && this.props.handleDomain &&*/}
+                {/*<TextField InputLabelProps={{shrink: true}} margin="none" style={{maxWidth: 60, marginTop: 0}}*/}
+                {/*           size="small"*/}
+                {/*           type="text"*/}
 
-                           onChange={this.onMaxChange} label="Max"
-                           value={this.state.max}/>}
-                {name !== '__count' &&
+                {/*           onChange={this.onMaxChange} label="Max"*/}
+                {/*           value={this.state.max}/>}*/}
+                {!isCount &&
                 <MeasureFilter datasetFilter={datasetFilter} name={name} handleUpdate={handleUpdate}/>}
-                {/*{this.props.showColorScheme &&*/}
-                {/*<ColorSchemeLegend width={this.props.width} height={this.props.height} style={{paddingLeft: 10}}*/}
-                {/*                   scale={scale}*/}
-                {/*                   label={this.props.label}></ColorSchemeLegend>}*/}
             </div>);
 
     }

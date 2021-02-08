@@ -24,7 +24,8 @@ class ContinuousLegend extends React.PureComponent {
                     {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.mean))}</td>}
                 </tr>
 
-                {globalSummary.numExpressed != null && <tr>
+                {globalSummary.numExpressed != null &&
+                <tr>
                     <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
                     <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
                     {selectionSummary &&

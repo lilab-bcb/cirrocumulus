@@ -1,3 +1,4 @@
+import {find} from 'lodash';
 import React from 'react';
 
 import {connect} from 'react-redux';
@@ -32,8 +33,7 @@ class EmbeddingCharts extends React.PureComponent {
         if (activeFeature == null) {
             return <div style={{height: primaryChartSize.height}}></div>;
         }
-        let primaryTraces = embeddingData.filter(traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
-        const primaryTrace = primaryTraces.length === 1 ? primaryTraces[0] : null;
+        const primaryTrace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         let userPoints = emptySet;
         if (primaryTrace) {
             const embedding = primaryTrace.embedding;

@@ -1,4 +1,4 @@
-import {Tooltip, Typography} from '@material-ui/core';
+import {Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
 import React from 'react';
@@ -34,7 +34,7 @@ class EmbeddingChart extends React.PureComponent {
         }
     }
 
-    handleExpandClick = (e) => {
+    handleToggleLegend = (e) => {
         e.preventDefault();
         this.setState({showDetails: !this.state.showDetails});
     };
@@ -78,16 +78,20 @@ class EmbeddingChart extends React.PureComponent {
                     marginTop: '3.2px',
                     position: 'absolute',
                     textAlign: 'right',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    maxWidth: 300,
                     right: 8,
                     zIndex: 1000
                 }}>
-                    {displayName !== '' ? <Tooltip title={"Embedding: " + traceInfo.embedding.name}>
-                        <Link onClick={this.handleExpandClick}>
-                            <Typography
-                                color="textPrimary" style={{marginRight: 14}}
-                                component={"h4"}>{displayName} {!traceInfo.continuous ?
-                                <small>({globalFeatureSummary[traceInfo.name].categories.length})</small> : null}</Typography></Link>
-                    </Tooltip> : null}
+                    {displayName !== '' &&
+                    <Link onClick={this.handleToggleLegend}>
+                        <Typography
+                            color="textPrimary" style={{marginRight: 14}}
+                            component={"h4"}>{displayName}
+                            <small> ({traceInfo.embedding.name})</small></Typography></Link>
+                    }
 
                     {traceInfo.continuous ?
                         <ColorSchemeLegendWrapper
@@ -101,7 +105,7 @@ class EmbeddingChart extends React.PureComponent {
                             }}
                             handleUpdate={onMeasureFilterUpdated}
                             datasetFilter={datasetFilter}
-                            scale={traceInfo.colorScale}
+                            colorScale={traceInfo.colorScale}
                             featureSummary={featureSummary}
                             globalFeatureSummary={globalFeatureSummary}
                             nObs={shape[0]}

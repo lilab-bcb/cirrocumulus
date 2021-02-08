@@ -1,5 +1,4 @@
-import {Switch, Tooltip} from '@material-ui/core';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
+import {InputLabel} from '@material-ui/core';
 import Input from '@material-ui/core/Input';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
@@ -45,10 +44,6 @@ class ColorSchemeSelector extends React.PureComponent {
         }));
     };
 
-    onReversedChange = (event) => {
-        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
-    };
-
     getScale(name) {
         return createColorScale({
             name: name,
@@ -64,9 +59,10 @@ class ColorSchemeSelector extends React.PureComponent {
             interpolator.reversed = false;
         }
         const interpolatorName = fixInterpolatorName(interpolator.name);
-        const width = 174;
+        const width = this.props.width || 176;
         const height = 14;
         return <React.Fragment>
+            <InputLabel shrink={true}>Color Scheme</InputLabel>
             <Select
                 input={<Input/>}
                 className={classes.select}
@@ -116,17 +112,6 @@ class ColorSchemeSelector extends React.PureComponent {
                                            scale={this.getScale(item)}/>
                     </MenuItem>))}
             </Select>
-            <Tooltip title={"Select to invert the color order"}>
-                <div><FormControlLabel
-                    control={
-                        <Switch
-                            checked={interpolator.reversed}
-                            onChange={this.onReversedChange}
-                        />
-                    }
-                    label="Reversed"
-                /></div>
-            </Tooltip>
         </React.Fragment>;
     }
 }

@@ -10,7 +10,7 @@ import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
-import {stripTrailingZeros} from './util';
+import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros} from './util';
 
 export const CHIP_SIZE = 12;
 
@@ -123,26 +123,49 @@ export default class DotPlotCanvas extends React.PureComponent {
         let diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
-        const rowScale = interpolator.scale === 'min_max' ? scaleLinear().range([0, 1]) : null;
+        const valueScale = interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE || interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY ? scaleLinear().range([0, 1]) : null;
         const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
-        for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) { // each feature
-            let min = Number.MAX_VALUE;
-            let max = -Number.MAX_VALUE;
-            if (rowScale) {
+        let domains = null;
+        if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+            domains = [];
+            for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
+                let min = Number.MAX_VALUE;
+                let max = -Number.MAX_VALUE;
                 for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
                     const array = data2d[categoryIndex];
                     const mean = array[featureIndex].mean;
                     min = Math.min(min, mean);
                     max = Math.max(max, mean);
                 }
-                rowScale.domain([min, max]);
+                domains.push([min, max]);
+            }
+        } else if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+            domains = [];
+            for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+                let min = Number.MAX_VALUE;
+                let max = -Number.MAX_VALUE;
+                for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
+                    const array = data2d[categoryIndex];
+                    const mean = array[featureIndex].mean;
+                    min = Math.min(min, mean);
+                    max = Math.max(max, mean);
+                }
+                domains.push([min, max]);
+            }
+        }
+        for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) { // each feature
+            if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                valueScale.domain(domains[featureIndex]);
             }
             for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+                if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                    valueScale.domain(domains[categoryIndex]);
+                }
                 const array = data2d[categoryIndex];
                 let mean = array[featureIndex].mean;
                 const ypix = categoryIndex * diameter + (drawCircles ? maxRadius : 0);
-                if (rowScale) {
-                    mean = rowScale(mean);
+                if (valueScale) {
+                    mean = valueScale(mean);
                 }
                 const color = colorScale(mean);
                 context.fillStyle = color;

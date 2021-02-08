@@ -15,9 +15,9 @@ class DistributionPlots extends React.PureComponent {
         this.props.onInterpolator(value);
     };
 
-    onColorScalingChange = (event) => {
+    onColorScalingChange = (value) => {
         const dotPlotInterpolator = this.props.dotPlotInterpolator;
-        dotPlotInterpolator.scale = event.target.checked ? 'min_max' : null;
+        dotPlotInterpolator.scale = value;
         this.props.onInterpolator(Object.assign({}, dotPlotInterpolator));
     };
 

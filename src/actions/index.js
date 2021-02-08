@@ -27,6 +27,8 @@ import {
     splitSearchTokens,
     updateTraceColors
 } from '../util';
+import {Vector} from '../Vector';
+import {variance} from '../VectorUtil';
 
 // export const API = 'http://localhost:5000/api';
 export const API = 'api';
@@ -1849,7 +1851,7 @@ function updateEmbeddingData(state, features) {
                 if (isBinned) {
                     featureKey = featurePlusEmbeddingKey;
                 }
-                let traceSummary = globalFeatureSummary[feature];
+                let featureSummary = globalFeatureSummary[feature];
                 let values = cachedData[featureKey];
                 if (values == null && feature === '__count' && !isBinned) {
                     values = new Int8Array(dataset.shape[0]);
@@ -1874,7 +1876,7 @@ function updateEmbeddingData(state, features) {
                         }
                         values = newValues;
                     }
-                    if (traceSummary == null || feature === '__count') {
+                    if (featureSummary == null || feature === '__count') {
 
                         let min = Number.MAX_VALUE;
                         let max = -Number.MAX_VALUE;
@@ -1885,20 +1887,20 @@ function updateEmbeddingData(state, features) {
                             max = value > max ? value : max;
                             sum += value;
                         }
-                        traceSummary = {min: min, max: max, mean: sum / values.length};
-                        globalFeatureSummary[feature] = traceSummary;
+                        featureSummary = {min: min, max: max, mean: sum / values.length};
+                        globalFeatureSummary[feature] = featureSummary;
                     }
-                    let domain = [traceSummary.min, traceSummary.max];
-                    if (traceSummary.customMin != null && !isNaN(traceSummary.customMin)) {
-                        domain[0] = traceSummary.customMin;
+                    let domain = [featureSummary.min, featureSummary.max];
+                    if (featureSummary.customMin != null && !isNaN(featureSummary.customMin)) {
+                        domain[0] = featureSummary.customMin;
                     }
-                    if (traceSummary.customMax != null && !isNaN(traceSummary.customMax)) {
-                        domain[1] = traceSummary.customMax;
+                    if (featureSummary.customMax != null && !isNaN(featureSummary.customMax)) {
+                        domain[1] = featureSummary.customMax;
                     }
                     colorScale = createColorScale(interpolator).domain(domain);
 
                 } else {
-                    let traceUniqueValues = traceSummary.categories;
+                    let traceUniqueValues = featureSummary.categories;
                     // if (traceUniqueValues.length === 1 && traceUniqueValues[0] === true) {
                     //     traceUniqueValues = traceUniqueValues.concat([null]);
                     //     traceSummary.categories = traceUniqueValues;
@@ -1922,7 +1924,7 @@ function updateEmbeddingData(state, features) {
                     }
 
                     colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
-                    colorScale.summary = traceSummary;
+                    colorScale.summary = featureSummary;
                 }
 
 
@@ -1992,6 +1994,8 @@ function updateEmbeddingData(state, features) {
                                     categoryToStats[category] = {value: maxValue, n: values.length};
                                 }
                             } else {
+                                colorScale.domain([-3, 3]);
+                                const means = [];
                                 for (const category in groupToValues) {
                                     const values = groupToValues[category];
                                     let sum = 0;
@@ -1999,9 +2003,21 @@ function updateEmbeddingData(state, features) {
                                         sum += values[i];
                                     }
                                     const mean = sum / values.length;
+                                    means.push(mean);
                                     categoryToStats[category] = {value: mean, n: values.length};
                                 }
+                                let sum = 0;
+                                for (let i = 0; i < means.length; i++) {
+                                    sum += means[i];
+                                }
+                                const mean = sum / means.length;
+                                const std = Math.sqrt(variance(new Vector('', means), mean));
+                                for (const category in categoryToStats) {
+                                    const s = categoryToStats[category];
+                                    s.value = (s.value - mean) / std;
+                                }
                             }
+
                             return categoryToStats;
                         }
 

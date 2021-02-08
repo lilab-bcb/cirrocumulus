@@ -31,7 +31,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
 import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
-import {debounce, findIndex} from 'lodash';
+import {debounce, find, findIndex} from 'lodash';
 import memoize from "memoize-one";
 import natsort from 'natsort';
 import React from 'react';
@@ -45,6 +45,7 @@ import {
     getDatasetFilterArray,
     getEmbeddingKey,
     getTraceKey,
+    handleDomainChange,
     MORE_OPTIONS_DIALOG,
     openDatasetFilter,
     removeDatasetFilter,
@@ -66,7 +67,7 @@ import {
     toggleEmbeddingLabel
 } from './actions';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
-import ColorSchemeSelector from './ColorSchemeSelector';
+import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
 import {FEATURE_TYPE, getFeatureSets, splitSearchTokens,} from './util';
@@ -83,10 +84,7 @@ const gallerySizeOptions = [{value: 300, label: 'Small'}, {value: 500, label: 'M
     value: 800,
     label: 'Large'
 }];
-const summaryOptions = [
-    {value: 'max', label: 'Maximum'},
-    {value: 'mean', label: 'Mean'},
-    {value: 'sum', label: 'Sum'}];
+
 const styles = theme => ({
     root: {
         display: 'flex',
@@ -98,10 +96,12 @@ const styles = theme => ({
         minWidth: 200,
         margin: theme.spacing(0, 1)
     },
+    margin: {
+        margin: theme.spacing(1, 1)
+    },
     select: {
         minWidth: 200,
     },
-
     toolbar: {
         '& hr': {
             margin: theme.spacing(0, 0.5),
@@ -187,7 +187,10 @@ class SideBar extends React.PureComponent {
             featureSet: null,
             featureSetView: false,
             opacity: props.markerOpacity,
-            unselectedOpacity: props.unselectedMarkerOpacity
+            unselectedOpacity: props.unselectedMarkerOpacity,
+            minColor: '',
+            maxColor: '',
+            forceUpdate: false,
         };
         this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
         this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
@@ -200,7 +203,43 @@ class SideBar extends React.PureComponent {
         if (prevProps.unselectedMarkerOpacity !== this.props.unselectedMarkerOpacity) {
             this.setState({unselectedOpacity: this.props.unselectedMarkerOpacity});
         }
+        // if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
+        //     const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
+        //
+        //     this.setState({
+        //         minColor: summary == null || summary.customMin == null ? '' : summary.customMin,
+        //         maxColor: summary == null || summary.customMax == null ? '' : summary.customMax
+        //     });
+        // }
     }
+
+    onMinUIChange = (value) => {
+        this.setState({minColor: value});
+    };
+
+    onMaxUIChange = (value) => {
+        this.setState({maxColor: value});
+    };
+    onMinChange = (value) => {
+        const summary = this.props.globalFeatureSummary[this.props.activeFeature.name];
+        summary.customMin = isNaN(value) ? undefined : value;
+        this.props.onDomain({
+            name: this.props.activeFeature.name,
+            summary: summary
+        });
+        this.setState({forceUpdate: !this.state.forceUpdate});
+    };
+
+    onMaxChange = (value) => {
+        const summary = this.props.globalFeatureSummary[this.props.activeFeature.name];
+        summary.customMax = isNaN(value) ? undefined : value;
+        this.props.onDomain({
+            name: this.props.activeFeature.name,
+            summary: summary
+        });
+        this.setState({forceUpdate: !this.state.forceUpdate});
+    };
+
 
     onMarkerOpacityChange = (event, value) => {
         this.setState({opacity: value});
@@ -224,6 +263,10 @@ class SideBar extends React.PureComponent {
         if (opacity >= 0 && opacity <= 1) {
             this.props.handleUnselectedMarkerOpacity(opacity);
         }
+    };
+
+    onReversedChange = (event) => {
+        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
     };
 
     openDatasetFilter = (filterId) => {
@@ -486,6 +529,7 @@ class SideBar extends React.PureComponent {
             distributionPlotOptions,
             embeddingLabels,
             embeddings,
+            embeddingData,
             interpolator,
             markers,
             pointSize,
@@ -493,7 +537,9 @@ class SideBar extends React.PureComponent {
             selection,
             serverInfo,
             tab,
+            textColor
         } = this.props;
+        const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const chartType = distributionPlotOptions.chartType;
         let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
         const datasetFilterKeys = [];
@@ -556,13 +602,21 @@ class SideBar extends React.PureComponent {
         const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
         const selectedEmbeddings = getEmbeddingOptions(embeddings);
         const dynamic = serverInfo.dynamic;
-        const featureSetAnchorEl = this.state.featureSetAnchorEl;
-        const featureSet = this.state.featureSet;
-
+        const {
+            featureSet,
+            featureSetAnchorEl,
+            featureSetView,
+            unselectedOpacity,
+            opacity,
+            jobParams,
+            jobName,
+            minColor,
+            maxColor
+        } = this.state;
         return (
             <div className={classes.root}>
                 <Dialog
-                    open={this.state.jobParams != null}
+                    open={jobParams != null}
                     onClose={this.onSubmitJobCancel}
                     aria-labelledby="submit-job-dialog-title"
                     aria-describedby="submit-job-dialog-description"
@@ -574,7 +628,7 @@ class SideBar extends React.PureComponent {
                         </DialogContentText>
                         <TextField
                             onChange={this.onJobNameChange}
-                            value={this.state.jobName}
+                            value={jobName}
                             autoFocus
                             margin="dense"
                             label="Job Name"
@@ -586,14 +640,14 @@ class SideBar extends React.PureComponent {
                         <Button onClick={this.onSubmitJobCancel}>
                             Cancel
                         </Button>
-                        <Button variant="contained" onClick={e => this.onSubmitJobOK(this.state.jobName)}
+                        <Button variant="contained" onClick={e => this.onSubmitJobOK(jobName)}
                                 color="primary">
                             Submit
                         </Button>
                     </DialogActions>
                 </Dialog>
                 <Dialog
-                    open={this.state.featureSetView}
+                    open={featureSetView}
                     onClose={this.onCloseViewFeatureSetDialog}
                     aria-labelledby="view-set-dialog-title"
                     fullWidth={true}
@@ -694,7 +748,7 @@ class SideBar extends React.PureComponent {
                                                          onChange={this.onMetafeaturesChange}
                                 />
                             </FormControl>}
-                            {(dynamic && featureSetOptions.length > 0) && <FormControl className={classes.formControl}>
+                            {featureSetOptions.length > 0 && <FormControl className={classes.formControl}>
 
                                 <AutocompleteVirtualized label={"Sets"}
                                                          options={featureSetOptions}
@@ -776,14 +830,14 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {dynamic && <Divider flexItem/>}
-                                        {dynamic && <Tooltip
+                                        {serverInfo.jobs && <Divider flexItem/>}
+                                        {serverInfo.jobs && <Tooltip
                                             title={"Find differentially expressed features between selected and unselected cells"}>
                                             <Button size={"small"} variant="outlined"
                                                     onClick={event => this.onSubmitJob('de')}>Differential
                                                 Expression</Button>
                                         </Tooltip>}
-                                        {dynamic && <Tooltip
+                                        {serverInfo.jobs && <Tooltip
                                             title={"Find features correlated with selected feature in selected cells"}>
                                             <span>
                                             <Button disabled={activeFeature.type !== FEATURE_TYPE.X} size={"small"}
@@ -863,7 +917,7 @@ class SideBar extends React.PureComponent {
                                 step={0.01}
                                 style={{marginLeft: 10, width: '86%'}}
                                 valueLabelDisplay="auto"
-                                value={this.state.opacity}
+                                value={opacity}
                                 onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
 
 
@@ -875,7 +929,7 @@ class SideBar extends React.PureComponent {
                                 step={0.01}
                                 style={{marginLeft: 10, width: '86%'}}
                                 valueLabelDisplay="auto"
-                                value={this.state.unselectedOpacity}
+                                value={unselectedOpacity}
                                 onChange={this.onUnselectedMarkerOpacityChange}
                                 aria-labelledby="continuous-slider"/>
 
@@ -912,12 +966,36 @@ class SideBar extends React.PureComponent {
                                 </Select>
                             </FormControl>
 
+                            <div className={this.props.classes.margin}>
+                                <EditableColorScheme
+                                    textColor={textColor}
+                                    interpolator={interpolator}
+                                    domain={primaryTrace && primaryTrace.continuous ? primaryTrace.colorScale.domain() : null}
+                                    min={minColor}
+                                    max={maxColor}
+                                    onMinChange={this.onMinChange}
+                                    onMaxChange={this.onMaxChange}
+                                    onMinUIChange={this.onMinUIChange}
+                                    onMaxUIChange={this.onMaxUIChange}
+                                    onInterpolator={this.props.handleInterpolator}/>
+                            </div>
+                            {/*<FormControl className={classes.formControl}>*/}
+                            {/*    <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>*/}
+                            {/*    <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}*/}
+                            {/*                         interpolator={interpolator}/>*/}
+                            {/*</FormControl>*/}
 
-                            <FormControl className={classes.formControl}>
-                                <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>
-                                <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}
-                                                     interpolator={interpolator}/>
-                            </FormControl>
+                            {/*<Tooltip title={"Select to invert the color order"}>*/}
+                            {/*    <div><FormControlLabel*/}
+                            {/*        control={*/}
+                            {/*            <Switch*/}
+                            {/*                checked={interpolator.reversed}*/}
+                            {/*                onChange={this.onReversedChange}*/}
+                            {/*            />*/}
+                            {/*        }*/}
+                            {/*        label="Reverse Colors"*/}
+                            {/*    /></div>*/}
+                            {/*</Tooltip>*/}
 
                             <Button size={'small'}
                                     aria-label="More Options" onClick={this.props.onMoreOptions}>More Options...
@@ -954,7 +1032,7 @@ class SideBar extends React.PureComponent {
                                         </ListItem>
                                     ))}
                                 </List>
-                                <div style={{marginLeft: 10}}>
+                                <div className={this.props.classes.margin}>
                                     <Divider/>
                                     <Tooltip title={"Export Filters"}>
                                         <IconButton size={'small'}
@@ -969,7 +1047,7 @@ class SideBar extends React.PureComponent {
                 <AccordionStyled style={tab === 'results' ? null : {display: 'none'}}
                                  defaultExpanded>
                     <AccordionDetailsStyled>
-                        <div style={{marginLeft: 8}}>
+                        <div className={this.props.classes.margin}>
                             <JobResultOptions/>
                         </div>
                     </AccordionDetailsStyled>
@@ -992,6 +1070,7 @@ const mapStateToProps = state => {
             embeddingData: state.embeddingData,
             embeddingLabels: state.embeddingLabels,
             embeddings: state.embeddings,
+            globalFeatureSummary: state.globalFeatureSummary,
             interpolator: state.interpolator,
             markerOpacity: state.markerOpacity,
             markers: state.markers,
@@ -1002,6 +1081,7 @@ const mapStateToProps = state => {
             selection: state.selection,
             serverInfo: state.serverInfo,
             tab: state.tab,
+            textColor: state.textColor,
             unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         };
     }
@@ -1022,6 +1102,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             handleChartSize: (value) => {
                 dispatch(setChartSize(value));
+            },
+            onDomain: (value) => {
+                dispatch(handleDomainChange(value));
             },
             handleCombineDatasetFilters: (value) => {
                 dispatch(setCombineDatasetFilters(value));

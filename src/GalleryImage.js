@@ -1,4 +1,3 @@
-import {Tooltip} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
@@ -145,17 +144,18 @@ class GalleryImage extends React.PureComponent {
                     height: this.props.chartSize,
                     cursor: 'pointer'
                 }}>
-
-                    <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
-                        <Typography color="textPrimary" component={"h4"}
-                                    onClick={this.onSelect}
-                                    style={{
-                                        marginTop: '3.2px',
-                                        position: 'absolute',
-                                        right: 4,
-                                        zIndex: 1000
-                                    }}>{name}</Typography>
-                    </Tooltip>
+                    <Typography color="textPrimary" component={"h4"}
+                                onClick={this.onSelect}
+                                style={{
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    marginTop: 3.2,
+                                    width: this.props.chartSize - 4,
+                                    position: 'absolute',
+                                    left: 4,
+                                    zIndex: 1000
+                                }}>{name}( <small>{this.props.traceInfo.embedding.name}</small>)</Typography>
 
 
                     {this.state.loading && <CircularProgress

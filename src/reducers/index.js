@@ -33,7 +33,6 @@ import {
     SET_MARKER_OPACITY,
     SET_MARKERS,
     SET_MESSAGE,
-    SET_NUMBER_OF_BINS,
     SET_POINT_SIZE,
     SET_PRIMARY_CHART_SIZE,
     SET_SAVED_DATASET_STATE,
@@ -47,7 +46,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {createColorScale, getInterpolator, updateTraceColors} from '../util';
+import {createColorScale, getInterpolator, INTERPOLATOR_SCALING_NONE, updateTraceColors} from '../util';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -81,7 +80,8 @@ const DEFAULT_INTERPOLATOR_OBJ = {
 const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
     name: DEFAULT_DOT_PLOT_INTERPOLATOR,
     value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR),
-    reversed: false
+    reversed: false,
+    scale: INTERPOLATOR_SCALING_NONE
 };
 
 
@@ -445,9 +445,9 @@ function dialog(state = null, action) {
 function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) {
     switch (action.type) {
         case SET_DISTRIBUTION_PLOT_INTERPOLATOR:
-            return action.payload;
+            return Object.assign({}, DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action.payload);
         case RESTORE_VIEW:
-            return action.payload.dotPlotInterpolator != null ? action.payload.dotPlotInterpolator : state;
+            return action.payload.dotPlotInterpolator != null ? Object.assign({}, DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action.payload.dotPlotInterpolator) : state;
         default:
             return state;
     }

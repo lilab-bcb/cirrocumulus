@@ -27,7 +27,15 @@ import {connect} from 'react-redux';
 import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat, numberFormat2f} from './formatters';
-import {createColorScale, FEATURE_TYPE, getInterpolator, scaleConstantRange} from './util';
+import {
+    createColorScale,
+    FEATURE_TYPE,
+    getInterpolator,
+    INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
+    INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
+    INTERPOLATOR_SCALING_NONE,
+    scaleConstantRange
+} from './util';
 
 const styles = theme => ({
     dot: {
@@ -115,7 +123,7 @@ export function updateJob(jobResult) {
             name: DEFAULT_DE_INTERPOLATOR,
             value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
             reversed: true,
-            scale: null // 'min_max'
+            scale: INTERPOLATOR_SCALING_NONE
         };
     }
     const groups = jobResult.groups;
@@ -201,7 +209,7 @@ export function updateJob(jobResult) {
     // color='logfoldchanges', size='pvals_adj',
     if (jobResult.colorScale === undefined) {
         let domain;
-        if (jobResult.interpolator.scale === 'min_max') {
+        if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
             domain = [0, 1];
         } else {
             domain = getRange(jobResult.color);
@@ -495,8 +503,9 @@ class JobResultsPanel extends React.PureComponent {
         let headerWidth = 0;
         let headerHeight = 0;
         let maxSize;
-        let rowScale = null;
+        let valueScale = null;
         let isSizeScaled = true;
+        let domains;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -505,8 +514,40 @@ class JobResultsPanel extends React.PureComponent {
             by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
-            if (jobResult.interpolator.scale === 'min_max') {
-                rowScale = scaleLinear().range([0, 1]);
+            if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
+                valueScale = scaleLinear().range([0, 1]);
+                domains = [];
+                if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                    jobResult.rows.forEach(row => {
+                        let min = Number.MAX_VALUE;
+                        let max = -Number.MAX_VALUE;
+                        jobResult.columns.forEach(column => {
+                            const group = groups[column];
+                            const colorField = group + ':' + color;
+                            const colorValue = data[row][colorField];
+                            if (colorValue != null && !isNaN(colorValue)) {
+                                min = colorValue < min ? colorValue : min;
+                                max = colorValue > max ? colorValue : max;
+                            }
+                        });
+                        domains.push([min, max]);
+                    });
+                } else if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                    jobResult.columns.forEach(column => {
+                        let min = Number.MAX_VALUE;
+                        let max = -Number.MAX_VALUE;
+                        jobResult.rows.forEach(row => {
+                            const group = groups[column];
+                            const colorField = group + ':' + color;
+                            const colorValue = data[row][colorField];
+                            if (colorValue != null && !isNaN(colorValue)) {
+                                min = colorValue < min ? colorValue : min;
+                                max = colorValue > max ? colorValue : max;
+                            }
+                        });
+                        domains.push([min, max]);
+                    });
+                }
             }
             isSizeScaled = jobResult.size !== '(None)';
             for (let i = 0; i < groups.length; i++) {
@@ -583,22 +624,11 @@ class JobResultsPanel extends React.PureComponent {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {rows.map(row => {
+                                {rows.map((row, rowIndex) => {
                                     const id = data[row]['index'];
                                     const selected = selectedFeatures.has(id);
-                                    if (rowScale) {
-                                        let rowMin = Number.MAX_VALUE;
-                                        let rowMax = -Number.MAX_VALUE;
-                                        jobResult.columns.forEach(column => {
-                                            const group = groups[column];
-                                            const colorField = group + ':' + color;
-                                            const colorValue = data[row][colorField];
-                                            if (colorValue != null && !isNaN(colorValue)) {
-                                                rowMin = colorValue < rowMin ? colorValue : rowMin;
-                                                rowMax = colorValue > rowMax ? colorValue : rowMax;
-                                            }
-                                        });
-                                        rowScale.domain([rowMin, rowMax]);
+                                    if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                                        valueScale.domain(domains[rowIndex]);
                                     }
                                     return <TableRow
                                         className={classes.tr}
@@ -610,7 +640,7 @@ class JobResultsPanel extends React.PureComponent {
                                     ><TableCell className={classes.rowHeader} component="th"
                                                 key={'id'}><Checkbox className={classes.checkbox}
                                                                      checked={selected}/>{id}</TableCell>
-                                        {jobResult.columns.map(column => {
+                                        {jobResult.columns.map((column, columnIndex) => {
                                             const group = groups[column];
                                             const colorField = group + ':' + color;
                                             const sizeField = group + ':' + size;
@@ -626,7 +656,10 @@ class JobResultsPanel extends React.PureComponent {
                                             if (size !== by && isSizeScaled && size !== color) {
                                                 title += ', ' + size + ':' + formatNumber(sizeValue);
                                             }
-                                            const colorValueScaled = rowScale ? rowScale(colorValue) : colorValue;
+                                            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                                                valueScale.domain(domains[columnIndex]);
+                                            }
+                                            const colorValueScaled = valueScale ? valueScale(colorValue) : colorValue;
                                             const backgroundColor = jobResult.colorScale(colorValueScaled);
                                             return <TableCell className={classes.td} title={title}
                                                               key={group}>
