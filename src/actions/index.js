@@ -24,7 +24,8 @@ import {
     getInterpolator,
     indexSort,
     randomSeq,
-    splitSearchTokens,
+    splitSearchTokens, TRACE_TYPE_IMAGE,
+    TRACE_TYPE_META_IMAGE, TRACE_TYPE_SCATTER,
     updateTraceColors
 } from '../util';
 import {Vector} from '../Vector';
@@ -1837,11 +1838,11 @@ function updateEmbeddingData(state, features) {
         const embeddingKey = getEmbeddingKey(embedding);
         const isBinned = isEmbeddingBinned(embedding);
         // type can be image, scatter, or meta_image
-        const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : 'scatter');
-        const coordinates = traceType !== 'meta_image' ? cachedData[embeddingKey] : null;
-        const x = traceType !== 'meta_image' ? coordinates[embedding.name + '_1'] : null;
-        const y = traceType !== 'meta_image' ? coordinates[embedding.name + '_2'] : null;
-        const z = traceType !== 'meta_image' ? coordinates[embedding.name + '_3'] : null;
+        const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
+        const coordinates = traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
+        const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
+        const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
+        const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
         const bins = isBinned ? coordinates.bins : null;
         features.forEach(feature => {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
@@ -1948,10 +1949,10 @@ function updateEmbeddingData(state, features) {
                     // purity: purity,
                     // text: values,
                 };
-                if (traceType === 'scatter') {
+                if (traceType === TRACE_TYPE_SCATTER) {
                     chartData.positions = getPositions(chartData);
                 }
-                if (traceType === 'meta_image') {
+                if (traceType === TRACE_TYPE_META_IMAGE) {
                     const svg = cachedData[getEmbeddingKey(embedding)];
                     chartData.source = svg.cloneNode(true);
                     chartData.gallerySource = svg.cloneNode(true);
@@ -1994,6 +1995,7 @@ function updateEmbeddingData(state, features) {
                                     categoryToStats[category] = {value: maxValue, n: values.length};
                                 }
                             } else {
+
                                 colorScale.domain([-3, 3]);
                                 const means = [];
                                 for (const category in groupToValues) {
@@ -2026,7 +2028,7 @@ function updateEmbeddingData(state, features) {
                 }
                 updateTraceColors(chartData);
 
-                if (traceType === 'image') {
+                if (traceType === TRACE_TYPE_IMAGE) {
                     // TODO cache image
                     chartData.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
                     const url = dataset.api.getFileUrl(embedding.spatial.image);

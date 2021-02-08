@@ -19,7 +19,7 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
-import {splitSearchTokens} from './util';
+import {splitSearchTokens, TRACE_TYPE_META_IMAGE} from './util';
 
 class EmbeddingChart extends React.PureComponent {
 
@@ -154,7 +154,7 @@ class EmbeddingChart extends React.PureComponent {
 
                 />}
 
-                {traceInfo.type === 'meta_image' &&
+                {traceInfo.type === TRACE_TYPE_META_IMAGE &&
                 <MetaEmbedding traceInfo={traceInfo}
                                cachedData={cachedData}
                                chartSize={primaryChartSize}

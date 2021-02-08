@@ -46,7 +46,13 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {createColorScale, getInterpolator, INTERPOLATOR_SCALING_NONE, updateTraceColors} from '../util';
+import {
+    createColorScale,
+    getInterpolator,
+    INTERPOLATOR_SCALING_NONE,
+    TRACE_TYPE_META_IMAGE,
+    updateTraceColors
+} from '../util';
 
 export const DEFAULT_BIN_SUMMARY = 'max';
 export const DEFAULT_NUMBER_BINS = 500;
@@ -602,7 +608,7 @@ function embeddingData(state = [], action) {
             state.forEach((traceInfo, stateIndex) => {
                 if (traceInfo.continuous && traceInfo.name === action.payload.name) {
                     const summary = action.payload.summary;
-                    let domain = [summary.min, summary.max];
+                    const domain = traceInfo.type === TRACE_TYPE_META_IMAGE ? [-3, 3] : [summary.min, summary.max];
                     if (summary.customMin != null && !isNaN(summary.customMin)) {
                         domain[0] = summary.customMin;
                     }

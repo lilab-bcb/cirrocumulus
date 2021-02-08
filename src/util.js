@@ -75,6 +75,9 @@ export const FEATURE_TYPE = {
     COUNT: 'count'
 };
 
+export const TRACE_TYPE_IMAGE = 'image';
+export const TRACE_TYPE_SCATTER = 'scatter';
+export const TRACE_TYPE_META_IMAGE = 'meta_image';
 
 export const INTERPOLATOR_SCALING_MIN_MAX_FEATURE = 'min_max_feature';
 export const INTERPOLATOR_SCALING_MIN_MAX_CATEGORY = 'min_max_category';
@@ -168,7 +171,7 @@ export function setClipboardData(clipboardData) {
 };
 
 export function updateTraceColors(traceInfo) {
-    if (traceInfo.type === 'image') {
+    if (traceInfo.type === TRACE_TYPE_IMAGE) {
         let colors = [];
         let colorScale = traceInfo.colorScale;
         const colorMapper = rgb => rgb.formatHex();
@@ -177,9 +180,9 @@ export function updateTraceColors(traceInfo) {
             colors.push(colorMapper(rgb));
         }
         traceInfo.colors = colors;
-    } else if (traceInfo.type === 'scatter') {
+    } else if (traceInfo.type === TRACE_TYPE_SCATTER) {
         traceInfo.colors = getColors(traceInfo);
-    } else if (traceInfo.type === 'meta_image') {
+    } else if (traceInfo.type === TRACE_TYPE_META_IMAGE) {
         let colorScale = traceInfo.colorScale;
         const svgNode = traceInfo.source;
         const galleryNode = traceInfo.gallerySource;
