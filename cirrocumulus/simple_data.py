@@ -136,8 +136,7 @@ class SimpleData:
             de_result_df = None
             group_names = rank_genes_groups['names'].dtype.names
             for group_name in group_names:
-                features = rank_genes_groups['names'][group_name]
-                group_df = pd.DataFrame(index=features)
+                group_df = pd.DataFrame(index=rank_genes_groups['names'][group_name])
 
                 for rank_genes_groups_key in rank_genes_groups_keys:
                     values = rank_genes_groups[rank_genes_groups_key][group_name]
@@ -150,7 +149,7 @@ class SimpleData:
                     de_result_df = de_result_df.join(group_df, how='outer')
                 if n_genes > 0:
                     marker_results.append(
-                        dict(category=category, name=str(group_name), features=features[:n_genes]))
+                        dict(category=category, name=str(group_name), features=group_df.index[:n_genes]))
 
             if de_results_format == 'records':
                 de_result_data = de_result_df.reset_index().to_dict(orient='records')
