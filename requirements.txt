@@ -5,8 +5,8 @@ flask-compress==1.8.0
 fsspec==0.8.5
 gunicorn==20.0.4
 loompy==3.0.6
-numpy==1.20.0
-pandas==1.2.1
+numpy==1.20.1
+pandas==1.2.2
 pyarrow==3.0.0
 pymongo==3.11.3
 scipy==1.6.0
