@@ -12,12 +12,15 @@ import {connect} from 'react-redux';
 import {setJobResults} from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
-import {sortAndFilterJobResult, sortByGroup, updateJob, updateTopNJobResult} from './JobResultsPanel';
+import {sortAndFilterJobResult, updateJob, updateTopNJobResult} from './JobResultsPanel';
 import {createColorScale, INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE} from './util';
 
 const styles = theme => ({
     formControl: {
-        // display: 'block',
+        display: 'block',
+        margin: theme.spacing(0, 1)
+    },
+    formControlInline: {
         margin: theme.spacing(0, 1)
     }
 });
@@ -70,7 +73,7 @@ class JobResultOptions extends React.PureComponent {
     onSortChange = (event) => {
         const jobResult = this.getJobResult();
         jobResult.sortByGroup = event.target.value;
-        sortByGroup(jobResult);
+        updateTopNJobResult(jobResult);
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
@@ -246,7 +249,7 @@ class JobResultOptions extends React.PureComponent {
                 // [field, op, val, uiValue]
                 const id = 'job_result' + filter[0];
                 return <div key={filter[0]} style={{paddingTop: 8}}>
-                    <FormControl className={classes.formControl}>
+                    <FormControl className={classes.formControlInline}>
                         <InputLabel>{filter[0]}</InputLabel>
                         <Select
                             labelId={id + '_label'}
@@ -313,6 +316,7 @@ class JobResultOptions extends React.PureComponent {
 
                 </Select>
             </FormControl>}
+
             <FormControl style={{marginTop: 16}} className={classes.formControl}>
                 <InputLabel shrink={true}>Size</InputLabel>
                 <Select

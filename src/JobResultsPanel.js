@@ -253,7 +253,7 @@ export function sortAndFilterJobResult(jobResult) {
     const groups = jobResult.groups;
     const ngroups = groups.length;
     jobResult.sortedRows = [];
-    // sort
+    // sort each group
     for (let groupIndex = 0; groupIndex < ngroups; groupIndex++) {
         const indices = [];
         for (let i = 0, n = jobResult.data.length; i < n; i++) {
@@ -318,30 +318,24 @@ export function sortAndFilterJobResult(jobResult) {
     updateTopNJobResult(jobResult);
 }
 
-export function sortByGroup(jobResult) {
-    const groupIndices = jobResult.sortedFilteredRows[jobResult.groups.indexOf(jobResult.sortByGroup)];
-    const indexToRank = [];
-    for (let i = 0; i < groupIndices.length; i++) {
-        indexToRank[groupIndices[i]] = i + 1;
-    }
-    jobResult.rows.sort((a, b) => {
-        const rankA = indexToRank[a] || a;
-        const rankB = indexToRank[b] || b;
-        return rankA - rankB;
-    });
-}
 
 export function updateTopNJobResult(jobResult) {
     let indices = new Set();
-    for (let groupIndex = 0; groupIndex < jobResult.groups.length; groupIndex++) {
-        const groupIndices = jobResult.sortedFilteredRows[groupIndex];
+    const index = jobResult.groups.indexOf(jobResult.sortByGroup);
+    const groupOrder = [index];
+    for (let i = 0; i < jobResult.groups.length; i++) {
+        if (i !== index) {
+            groupOrder.push(i);
+        }
+    }
+    for (let i = 0; i < jobResult.groups.length; i++) {
+        const groupIndices = jobResult.sortedFilteredRows[groupOrder[i]];
         const ntop = Math.min(jobResult.ntop, groupIndices.length);
-        for (let i = 0; i < ntop; i++) {
-            indices.add(groupIndices[i]);
+        for (let featureIndex = 0; featureIndex < ntop; featureIndex++) {
+            indices.add(groupIndices[featureIndex]);
         }
     }
     jobResult.rows = Array.from(indices);
-    sortByGroup(jobResult);
 }
 
 class JobResultsPanel extends React.PureComponent {
@@ -568,7 +562,7 @@ class JobResultsPanel extends React.PureComponent {
                     headerWidth = Math.max(headerWidth, d.getBoundingClientRect().width);
                 }
                 d.remove();
-                headerWidth = Math.min(headerWidth, 130);
+                headerWidth = Math.min(headerWidth, 150);
                 headerHeight = Math.cos(45) * headerWidth;
             }
             maxSize = Math.max(jobResult.sizeScale.range()[0], jobResult.sizeScale.range()[1]);
@@ -648,7 +642,7 @@ class JobResultsPanel extends React.PureComponent {
                                             const colorValue = data[row][colorField];
                                             const sizeValue = data[row][sizeField];
                                             const byValue = data[row][byField];
-                                            const diameter = jobResult.sizeScale(sizeValue);
+                                            const diameter = colorValue == null || isNaN(colorValue) ? 0 : jobResult.sizeScale(sizeValue);
                                             let title = by + ':' + formatNumber(byValue);
                                             if (color !== by) {
                                                 title += ', ' + color + ':' + formatNumber(colorValue);
