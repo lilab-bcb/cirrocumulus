@@ -593,7 +593,7 @@ class JobResultsPanel extends React.PureComponent {
                         color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
                         <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
                     <div style={{paddingTop: 6}}>
-                        <Table stickyHeader={true} className={classes.table}>
+                        {jobResult.rows.length > 0 && <Table stickyHeader={true} className={classes.table}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell style={{backgroundColor: 'unset', textAlign: 'center'}}
@@ -669,7 +669,7 @@ class JobResultsPanel extends React.PureComponent {
                                     </TableRow>;
                                 })}
                             </TableBody>
-                        </Table>
+                        </Table>}
                     </div>
                 </React.Fragment>
                 }
