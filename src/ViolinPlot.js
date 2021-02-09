@@ -119,7 +119,13 @@ export default class ViolinPlot extends React.PureComponent {
         const nameWidth = getNameWidth(data, context);
         const totalHeight = features.length * violinHeight + 4;
         const width = categories.length * violinWidth + 4;
-        return {x: yaxisWidth, offsets: nameWidth.offsets, y: nameWidth.sum, width: width, totalHeight: totalHeight};
+        return {
+            x: yaxisWidth,
+            endCoordinates: nameWidth.endCoordinates,
+            y: nameWidth.sum,
+            width: width,
+            totalHeight: totalHeight
+        };
     }
 
     render() {

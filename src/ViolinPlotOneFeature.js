@@ -131,22 +131,19 @@ export function drawFeature(context, size, feature, data, colorScale, options, d
             const pix = i * violinWidth + violinWidth / 2;
             const name = names[i];
             for (let j = 0; j < name.length; j++) {
-                // 4px, chip, 2px, text
-                let offset = size.offsets[j - 1] || 0;
-                if (offset > 0) {
-                    offset += 4;
-                }
+                // chip, 2px, text, 4px, ...
+                const chipStartCoord = j === 0 ? 0 : size.endCoordinates[j - 1];
                 const categoryColorScale = categoryColorScales[j];
                 const category = item.categories[j];
                 context.fillStyle = categoryColorScale(category);
                 context.beginPath();
-                context.rect(size.x + pix - CHIP_SIZE + 4, height - CHIP_SIZE - offset, CHIP_SIZE, CHIP_SIZE);
+                context.rect(size.x + pix - CHIP_SIZE + 4, height - CHIP_SIZE - chipStartCoord, CHIP_SIZE, CHIP_SIZE);
                 context.fill();
                 context.stroke();
 
                 context.save();
                 context.fillStyle = textColor;
-                context.translate(size.x + pix, height - offset - CHIP_SIZE - 2);
+                context.translate(size.x + pix, height - chipStartCoord - CHIP_SIZE - 2);
                 context.rotate(-Math.PI / 2);
                 context.fillText(name[j], 0, 0);
                 context.restore();
