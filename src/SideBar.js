@@ -693,8 +693,6 @@ class SideBar extends React.PureComponent {
                                                          }}
                                                          value={selectedEmbeddings}
                                                          getChipText={(option) => option.text}
-                                                         renderOption={(option) => <Typography
-                                                             noWrap>{option.text}</Typography>}
                                                          getOptionLabel={(option) => option.text}
                                                          getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
                                                          onChange={this.onEmbeddingsChange}

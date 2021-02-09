@@ -193,15 +193,29 @@ export default function AutocompleteVirtualized(props) {
     if (getOptionLabel == null) {
         getOptionLabel = props.groupBy ? (option) => option.text : (option) => option;
     }
-    let renderOption = props.renderOption;
-    if (renderOption == null) {
 
-        renderOption = props.groupBy ? (option) => <Typography title={option.text}
-                                                               noWrap>{option.text}</Typography> : (option) =>
-            <Typography
-                title={option} noWrap>{option}</Typography>;
-    }
-    //   const filterOptions = createFilterOptions({matchFrom: 'start'});
+    const renderOption = (option, {inputValue}) => {
+        inputValue = inputValue.toLowerCase();
+        const text = getOptionLabel(option);
+        if (inputValue !== '') {
+            const index = text.toLowerCase().indexOf(inputValue);
+            if (index !== -1) {
+                const inputLength = inputValue.length;
+                const before = text.substring(0, index);
+                const match = text.substring(index, index + inputLength);
+                const after = text.substring(index + inputLength);
+                return <Typography title={text} noWrap>
+                    {before}<b>{match}</b>{after}
+                </Typography>;
+            }
+        }
+        return <Typography title={text} noWrap>{text}</Typography>;
+    };
+    // const renderOption = props.groupBy ? (option) => {
+    //  const text = getOptionLabel(option);
+    //    return <Typography title={text}  noWrap>{text}</Typography>;
+    // };
+
     const filterOptions = (options, {inputValue}) => {
         inputValue = inputValue.trim().toLowerCase();
         if (inputValue === '') {
