@@ -306,8 +306,9 @@ export default class DotPlotCanvas extends React.PureComponent {
         drawColorScheme(context, this.props.colorScale, textColor);
         context.translate(-10, (colorScaleHeight + 4));
 
-        drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
-
+        if(this.props.drawCircles) {
+            drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
+        }
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
             // let prefix = [];
