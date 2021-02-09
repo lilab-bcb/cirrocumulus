@@ -4,10 +4,11 @@ import ListSubheader from '@material-ui/core/ListSubheader';
 import {makeStyles, useTheme} from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
-import Autocomplete, {createFilterOptions} from '@material-ui/lab/Autocomplete';
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {VariableSizeList} from 'react-window';
+
 
 const LISTBOX_PADDING = 0; // px
 
@@ -167,7 +168,7 @@ export default function AutocompleteVirtualized(props) {
         showDragIndicator(false);
     };
 
-    const filterOptions = createFilterOptions({matchFrom: 'start'});
+
     const onChipClick = props.onChipClick ? (event, option) => {
         props.onChipClick(event, option);
     } : null;
@@ -200,6 +201,32 @@ export default function AutocompleteVirtualized(props) {
             <Typography
                 title={option} noWrap>{option}</Typography>;
     }
+    //   const filterOptions = createFilterOptions({matchFrom: 'start'});
+    const filterOptions = (options, {inputValue}) => {
+        inputValue = inputValue.trim().toLowerCase();
+        if (inputValue === '') {
+            return options;
+        }
+        const inputLength = inputValue.length;
+        const exactMatches = [];
+        const startsWithMatches = [];
+        const containsMatches = [];
+        for (let i = 0, n = options.length; i < n; i++) {
+            const option = options[i];
+            const text = getOptionLabel(option).toLowerCase();
+            const index = text.indexOf(inputValue);
+            if (index === 0) {
+                if (text.length === inputLength) {
+                    exactMatches.push(option);
+                } else {
+                    startsWithMatches.push(option);
+                }
+            } else if (index !== -1) {
+                containsMatches.push(option);
+            }
+        }
+        return exactMatches.concat(startsWithMatches).concat(containsMatches);
+    };
     return (
         <Autocomplete
             multiple
