@@ -4,6 +4,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import {cumsum} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
@@ -15,29 +16,28 @@ import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEAT
 export const CHIP_SIZE = 12;
 
 export function getNameWidth(array2d, context) {
-    let offsets = [];
+    let endCoordinates = [];
     let ncategories = 0;
     if (array2d[0].length > 0) {
         ncategories = array2d[0][0].name.length;
         for (let i = 0; i < array2d[0][0].name.length; i++) {
-            offsets.push(0);
+            endCoordinates.push(0);
         }
     }
     array2d.forEach(array => {
         let name = array[0].name;
         for (let i = 0; i < ncategories; i++) {
-            offsets[i] = Math.max(offsets[i], context.measureText(name[i]).width);
+            endCoordinates[i] = Math.max(endCoordinates[i], context.measureText(name[i]).width);
         }
     });
-    for (let i = 0; i < offsets.length; i++) {
-        // 4px, chip, 2px, text
-        offsets[i] += 6;
-        offsets[i] += CHIP_SIZE;
+    for (let i = 0; i < endCoordinates.length; i++) {
+        // chip, 2px, text, 4px, ...
+        endCoordinates[i] += 6;
+        endCoordinates[i] += CHIP_SIZE;
     }
-    offsets[offsets.length - 1] += 4;
-    let xTotal = 0;
-    offsets.forEach(val => xTotal += val);
-    return {offsets: offsets, sum: xTotal};
+    endCoordinates = cumsum(endCoordinates);
+    endCoordinates[endCoordinates.length - 1] += 4;
+    return {endCoordinates: endCoordinates, sum: endCoordinates[endCoordinates.length - 1]};
 }
 
 
@@ -120,7 +120,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         const drawCircles = this.props.drawCircles;
         const textColor = this.props.textColor;
         const maxRadius = sizeScale.range()[1];
-        let diameter = maxRadius * 2;
+        const diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
         const valueScale = interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE || interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY ? scaleLinear().range([0, 1]) : null;
@@ -191,19 +191,15 @@ export default class DotPlotCanvas extends React.PureComponent {
             let name = array[0].name;
             const pix = i * diameter + maxRadius;
             for (let j = 0; j < name.length; j++) {
-                // 4px, chip, 2px, text
-                let xpixstart = size.xoffsets[j - 1] || 0;
-                if (xpixstart > 0) {
-                    xpixstart += 4;
-                }
+                const chipStartCoord = j === 0 ? 0 : size.endCoordinates[j - 1];
                 const categoryColorScale = categoryColorScales[j];
                 context.fillStyle = categoryColorScale(array[0].categories[j]);
                 context.beginPath();
-                context.rect(xpixstart, pix - maxRadius / 2 - 3, CHIP_SIZE, CHIP_SIZE);
+                context.rect(chipStartCoord, pix - maxRadius / 2 - 3, CHIP_SIZE, CHIP_SIZE);
                 context.fill();
                 context.stroke();
                 context.fillStyle = textColor;
-                context.fillText(name[j], xpixstart + 2 + CHIP_SIZE, pix);
+                context.fillText(name[j], chipStartCoord + 2 + CHIP_SIZE, pix);
             }
         });
         context.textAlign = 'right';
@@ -243,11 +239,17 @@ export default class DotPlotCanvas extends React.PureComponent {
         const diameter = maxRadius * 2;
         const height = array2d.length * diameter + 4;
         const width = array2d[0].length * diameter + 4;
-        return {xoffsets: nameWidth.offsets, x: nameWidth.sum, y: maxFeatureWidth, width: width, height: height};
+        return {
+            endCoordinates: nameWidth.endCoordinates,
+            x: nameWidth.sum,
+            y: maxFeatureWidth,
+            width: width,
+            height: height
+        };
     }
 
     update() {
-        const canvas = document.createElement('canvas');
+        const canvas = this.canvas == null ? document.createElement('canvas') : this.canvas;
         const context = canvas.getContext('2d');
         context.font = CANVAS_FONT;
         this.size = this.getSize(context);
