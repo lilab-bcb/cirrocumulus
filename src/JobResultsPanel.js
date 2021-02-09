@@ -642,7 +642,6 @@ class JobResultsPanel extends React.PureComponent {
                                             const colorValue = data[row][colorField];
                                             const sizeValue = data[row][sizeField];
                                             const byValue = data[row][byField];
-                                            const diameter = colorValue == null || isNaN(colorValue) ? 0 : jobResult.sizeScale(sizeValue);
                                             let title = by + ':' + formatNumber(byValue);
                                             if (color !== by) {
                                                 title += ', ' + color + ':' + formatNumber(colorValue);
@@ -650,6 +649,11 @@ class JobResultsPanel extends React.PureComponent {
                                             if (size !== by && isSizeScaled && size !== color) {
                                                 title += ', ' + size + ':' + formatNumber(sizeValue);
                                             }
+                                            if (colorValue == null || isNaN(colorValue)) {
+                                                return <TableCell className={classes.td} title={title}
+                                                                  key={group}/>;
+                                            }
+                                            const diameter = jobResult.sizeScale(sizeValue);
                                             if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
                                                 valueScale.domain(domains[columnIndex]);
                                             }
