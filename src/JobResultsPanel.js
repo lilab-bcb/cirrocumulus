@@ -228,10 +228,9 @@ export function updateJob(jobResult) {
         jobResult.colorScale = createColorScale(jobResult.interpolator).domain(domain);
     }
     if (jobResult.sizeScaleReversed === undefined) {
-        jobResult.sizeScaleReversed = false;
+        jobResult.sizeScaleReversed = jobResult.size!=null&&jobResult.size.indexOf('pval')!==-1;
     }
     if (jobResult.sizeScale === undefined) {
-
         if (jobResult.size !== '(None)') {
             let domain = getRange(jobResult.size);
             if (!isNaN(jobResult.options.minSize)) {
