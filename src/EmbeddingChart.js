@@ -1,4 +1,4 @@
-import {Typography} from '@material-ui/core';
+import {Tooltip, Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
 import React from 'react';
@@ -75,7 +75,7 @@ class EmbeddingChart extends React.PureComponent {
         return (
             <div style={{position: 'relative'}}>
                 <Box color="text.primary" style={{
-                    marginTop: '3.2px',
+                    marginTop: 3.2,
                     position: 'absolute',
                     textAlign: 'right',
                     overflow: 'hidden',
@@ -86,11 +86,10 @@ class EmbeddingChart extends React.PureComponent {
                     zIndex: 1000
                 }}>
                     {displayName !== '' &&
-                    <Link onClick={this.handleToggleLegend}>
+                    <Tooltip title={"Embedding: " + traceInfo.embedding.name}><Link onClick={this.handleToggleLegend}>
                         <Typography
                             color="textPrimary" style={{marginRight: 14}}
-                            component={"h4"}>{displayName}
-                            <small> ({traceInfo.embedding.name})</small></Typography></Link>
+                            component={"h4"}>{displayName}</Typography></Link></Tooltip>
                     }
 
                     {traceInfo.continuous ?

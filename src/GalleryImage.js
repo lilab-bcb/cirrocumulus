@@ -1,3 +1,4 @@
+import {Tooltip} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
@@ -144,27 +145,21 @@ class GalleryImage extends React.PureComponent {
                     height: this.props.chartSize,
                     cursor: 'pointer'
                 }}>
-                    <Typography color="textPrimary" component={"h4"}
-                                onClick={this.onSelect}
-                                style={{
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis',
-                                    marginTop: 3.2,
-                                    width: this.props.chartSize - 4,
-                                    position: 'absolute',
-                                    left: 4,
-                                    zIndex: 1000
-                                }}>{name}( <small>{this.props.traceInfo.embedding.name}</small>)</Typography>
-
-
+                    <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
+                        <Typography color="textPrimary" component={"h4"}
+                                    onClick={this.onSelect}
+                                    style={{
+                                        marginTop: 3.2,
+                                        position: 'absolute',
+                                        right: 4,
+                                        zIndex: 1000
+                                    }}>{name}</Typography>
+                    </Tooltip>
                     {this.state.loading && <CircularProgress
                         style={{position: 'absolute', left: this.props.chartSize / 2, top: this.props.chartSize / 2}}
                         size={20}/>}
-
                     <div onClick={this.onSelect} ref={this.elementRef}
                          style={{position: 'absolute', left: 0, top: 0}}></div>
-
                     {this.state.url &&
                     <div style={{position: 'absolute', left: 0, top: 0}}>
                         <img alt="" src={this.state.url}
