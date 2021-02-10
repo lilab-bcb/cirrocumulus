@@ -558,7 +558,8 @@ class JobResultsPanel extends React.PureComponent {
                     headerWidth = Math.max(headerWidth, d.getBoundingClientRect().width);
                 }
                 d.remove();
-                headerWidth = Math.min(headerWidth, 150);
+                headerWidth += 2; // prevent overflow
+                headerWidth = Math.min(headerWidth, 300);
                 headerHeight = Math.cos(45) * headerWidth;
             }
             maxSize = Math.max(jobResult.sizeScale.range()[0], jobResult.sizeScale.range()[1]);
@@ -590,7 +591,6 @@ class JobResultsPanel extends React.PureComponent {
                 </Grid>
 
                 {jobResult && <React.Fragment>
-
                     <Typography
                         style={{marginBottom: headerHeight + 8}}
                         component={"h3"}
