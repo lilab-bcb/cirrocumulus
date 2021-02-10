@@ -105,7 +105,7 @@ class GalleryCharts extends React.PureComponent {
         });
 
         return (
-            <React.Fragment><Typography variant="subtitle1">Gallery<Tooltip
+            <React.Fragment><Typography color={"textSecondary"} variant="subtitle1">Gallery<Tooltip
                 title="Drag gallery charts to reorder. Click chart to set primary view."><HelpOutlineIcon
                 style={{verticalAlign: 'text-bottom'}}/></Tooltip></Typography>
                 <SortableList
