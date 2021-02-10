@@ -38,15 +38,15 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     schema = dataset_api.schema(dataset)
     var_names = schema['var']
     nfeatures = len(var_names)
-    data_filter = params['filter']
-    mask1 = get_mask(dataset_api, dataset, data_filter)
+    mask1 = get_mask(dataset_api, dataset, params['filter'])
     batch_size = 1000  # TODO
     scores = np.full(nfeatures, 0)
     pvals = np.full(nfeatures, 1)
     is_sparse = None
     if job_type == 'de':
         fold_changes = np.full(nfeatures, 0)
-        mask2 = ~mask1
+        mask2 = get_mask(dataset_api, dataset, params['filter2'])
+        # overlapping cells are removed
     elif job_type == 'corr':
         df = dataset_api.read_dataset(keys=dict(X=[params['ref']]), dataset=dataset)
         df = df[mask1]
@@ -75,8 +75,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                     v2 = v2.sparse.to_dense()
                 try:
                     scores[index], pvals[index] = ss.mannwhitneyu(v1, v2, alternative="two-sided")
-                except ValueError:
-                    # All numbers are identical
+                except ValueError:  # All numbers are identical
                     pass
                 index += 1
         elif job_type == 'corr':
@@ -86,8 +85,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                     v1 = v1.sparse.to_dense()
                 try:
                     scores[index], pvals[index] = ss.pearsonr(ref, v1)
-                except ValueError:
-                    # All numbers are identical
+                except ValueError:  # All numbers are identical
                     pass
                 index += 1
         database_api.update_job(email=email, job_id=job_id, status='running {}/{}'.format(index, nfeatures),
@@ -95,13 +93,14 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     pvals = fdrcorrection(pvals)
     if job_type == 'de':
         result_df = pd.DataFrame(
-            data={'index': var_names, '1:pvals_adj': pvals, '1:fold_changes': fold_changes, '1:scores': scores})
-        result = dict(groups=['1'], fields=['pvals_adj', 'fold_changes', 'scores'],
+            data={'index': var_names, 'comparison:pvals_adj': pvals, 'comparison:fold_changes': fold_changes,
+                  'comparison:scores': scores})
+        result = dict(groups=['comparison'], fields=['pvals_adj', 'fold_changes', 'scores'],
             data=result_df.to_dict(orient='records'))
     elif job_type == 'corr':
         result_df = pd.DataFrame(
-            data={'index': var_names, '1:pvals_adj': pvals, '1:scores': scores})
-        result = dict(groups=['1'], fields=['pvals_adj', 'scores'], data=result_df.to_dict(orient='records'))
+            data={'index': var_names, 'selection:pvals_adj': pvals, 'selection:scores': scores})
+        result = dict(groups=['selection'], fields=['pvals_adj', 'scores'], data=result_df.to_dict(orient='records'))
     result = ujson.dumps(result, double_precision=2, orient='values').encode('UTF-8')
     result = gzip.compress(result)
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)
