@@ -204,6 +204,9 @@ class SideBar extends React.PureComponent {
         if (prevProps.unselectedMarkerOpacity !== this.props.unselectedMarkerOpacity) {
             this.setState({unselectedOpacity: this.props.unselectedMarkerOpacity});
         }
+        if (prevProps.dataset !== this.props.dataset) {
+            this.setState({group1: null, group2: null, group1Count: null, group2Count: null});
+        }
         // if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
         //     const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
         //
@@ -480,7 +483,7 @@ class SideBar extends React.PureComponent {
     onSubmitJobOK = () => {
         this.state.jobParams.name = this.state.jobName;
         this.props.handleSubmitJob(this.state.jobParams);
-        this.setState({jobName: '', jobParams: null, group1: null, group2: null});
+        this.setState({jobName: '', jobParams: null, group1: null, group2: null, group1Count: null, group2Count: null});
     };
 
     onSetGroup = (groupNumber) => {
@@ -495,7 +498,6 @@ class SideBar extends React.PureComponent {
             const activeFeature = this.props.activeFeature;
             this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: activeFeature.name}}});
         } else {
-
             this.setState({
                 jobName: '',
                 jobParams: {type: 'de', params: {filter: this.state.group1, filter2: this.state.group2}}
