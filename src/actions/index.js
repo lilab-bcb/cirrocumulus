@@ -300,20 +300,26 @@ export function deleteDatasetFilter(filterId) {
 
 export function submitJob(jobData) {
     return function (dispatch, getState) {
-
         let jobId;
         let timeout = 5 * 1000; // TODO
         function getJobStatus() {
             getState().dataset.api.getJob(jobId, false)
                 .then(result => {
                     const jobResult = find(getState().jobResults, item => item.id === jobId);
+                    const statusUpdated = jobResult.status !== result.status;
                     jobResult.status = result.status;
+                    let fetchJobStatus = true;
                     if (result.status === 'complete') {
                         dispatch(setMessage('Job complete'));
                         dispatch(setJobResults(getState().jobResults.slice()));
+                        fetchJobStatus = false;
                     } else if (result.status === 'error') {
                         handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
-                    } else {
+                        fetchJobStatus = false;
+                    } else if (statusUpdated) {
+                        dispatch(setJobResults(getState().jobResults.slice()));
+                    }
+                    if (fetchJobStatus) {
                         window.setTimeout(getJobStatus, timeout);
                     }
                 }).catch(err => {
