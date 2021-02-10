@@ -1,6 +1,12 @@
 Release Notes
 -------------
 
+- 1.1.13.post2 `February 10, 2021`
+    * Added standardize option that scales each feature or categorical group from zero to one for distributions and results visualization
+    * Added species to dataset import in when using `cirro serve`
+    * Added option to show/hide labels in embedding gallery
+    * `cirro launch` now accepts `Seurat`_ objects
+
 - 1.1.13.post1 `February 2, 2021`
     * Added sort functionality to full differential expression results visualization
 
@@ -209,3 +215,4 @@ Release Notes
 
 .. _Pegasus: http://pegasus.readthedocs.io/
 .. _Scanpy: https://scanpy.readthedocs.io/
+.. _Seurat: https://satijalab.org/seurat/
