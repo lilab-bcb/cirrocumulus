@@ -9,6 +9,9 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import Link from '@material-ui/core/Link';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import withStyles from '@material-ui/core/styles/withStyles';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import TextField from '@material-ui/core/TextField';
@@ -16,6 +19,20 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
+
+const styles = theme => ({
+
+    formControl: {
+        minWidth: 200,
+        marginTop: theme.spacing(1)
+    },
+    select: {
+        minWidth: 200,
+    }
+});
+
+const favoriteSpecies = ["Homo sapiens", "Mus musculus"];
+const otherSpecies = ["Gallus gallus", "Macaca fascicularis", "Macaca mulatta", "Rattus norvegicus"];
 
 function TabPanel(props) {
     const {children, value, index, ...other} = props;
@@ -57,6 +74,7 @@ class EditDatasetDialog extends React.PureComponent {
         this.state = {
             url: '',
             tabValue: 0,
+            species: this.props.dataset != null ? this.props.dataset.species : '',
             name: this.props.dataset != null ? this.props.dataset.name : '',
             title: this.props.title != null ? (this.props.dataset.title != null ? this.props.dataset.title : '') : '',
             description: this.props.dataset != null ? (this.props.dataset.description != null ? this.props.dataset.description : '') : '',
@@ -78,6 +96,7 @@ class EditDatasetDialog extends React.PureComponent {
                 readers = readers.join(', ');
             }
             this.setState({
+                species: this.props.dataset.species != null ? this.props.dataset.species : '',
                 name: this.props.dataset.name,
                 description: this.props.dataset.description != null ? this.props.dataset.description : '',
                 title: this.props.dataset.title != null ? this.props.dataset.title : '',
@@ -101,6 +120,7 @@ class EditDatasetDialog extends React.PureComponent {
         }
         let description = this.state.description.trim();
         let title = this.state.title.trim();
+        let species = this.state.species;
         this.setState({loading: true});
 
         let readers = null;
@@ -113,6 +133,7 @@ class EditDatasetDialog extends React.PureComponent {
             title: title,
             description: description,
             url: url,
+            species: species,
             readers: readers
         });
     };
@@ -125,6 +146,9 @@ class EditDatasetDialog extends React.PureComponent {
     };
     onUrlChanged = (event) => {
         this.setState({url: event.target.value});
+    };
+    onSpeciesChange = (event) => {
+        this.setState({species: event.target.value});
     };
     onNameChanged = (event) => {
         this.setState({name: event.target.value});
@@ -155,7 +179,6 @@ class EditDatasetDialog extends React.PureComponent {
                         autoComplete="off"
                         required={true}
                         value={this.state.name}
-                        helperText={"asfd"}
                         onChange={this.onNameChanged}
                         margin="dense"
                         label="Name"
@@ -173,6 +196,21 @@ class EditDatasetDialog extends React.PureComponent {
                         label={"URL (" + (this.props.serverInfo.email ? "gs://my_bucket/my_dataset" : "/Users/foo/my_dataset") + ")"}
                         fullWidth
                     />}
+
+                    <FormControl className={this.props.classes.formControl}>
+                        <InputLabel shrink={true} id="species-label">Species</InputLabel>
+                        <Select
+                            labelId="species-label"
+                            value={this.state.species}
+                            onChange={this.onSpeciesChange}
+                        >
+                            {favoriteSpecies.map(species => <MenuItem key={species}
+                                                                      value={species}>{species}</MenuItem>)}
+                            <MenuItem divider={true}/>
+                            {otherSpecies.map(species => <MenuItem key={species} value={species}>{species}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+
 
                     <TextField
                         disabled={this.state.loading}
@@ -273,7 +311,7 @@ const mapDispatchToProps = dispatch => {
     };
 };
 
-export default (connect(
+
+export default withStyles(styles)(connect(
     mapStateToProps, mapDispatchToProps,
 )(EditDatasetDialog));
-

@@ -333,6 +333,7 @@ class JobResultOptions extends React.PureComponent {
             <div style={{display: size === '(None)' ? 'none' : ''}}>
                 <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                     onOptions={this.onOptions} showReversed={true}
+                                    reversed={jobResult.sizeScaleReversed}
                                     onReversedChange={this.onSizeReversedChange}/>
             </div>
         </React.Fragment>;

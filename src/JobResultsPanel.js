@@ -228,7 +228,7 @@ export function updateJob(jobResult) {
         jobResult.colorScale = createColorScale(jobResult.interpolator).domain(domain);
     }
     if (jobResult.sizeScaleReversed === undefined) {
-        jobResult.sizeScaleReversed = jobResult.size!=null&&jobResult.size.indexOf('pval')!==-1;
+        jobResult.sizeScaleReversed = jobResult.size != null && jobResult.size.indexOf('pval') !== -1;
     }
     if (jobResult.sizeScale === undefined) {
         if (jobResult.size !== '(None)') {
@@ -424,13 +424,10 @@ class JobResultsPanel extends React.PureComponent {
         }
         if (index === -1) {
             searchTokens.push({value: feature, type: FEATURE_TYPE.X});
-            // this.props.setTab('embedding');
         } else {
             searchTokens.splice(index, 1);
         }
-
         this.props.onSearchTokens(searchTokens.slice());
-
     };
 
     sortColumns = () => {
@@ -571,6 +568,14 @@ class JobResultsPanel extends React.PureComponent {
             return (val == null || isNaN(val)) ? "NaN" : numberFormat2f(val);
         }
 
+        let showJobStatus = false;
+        for (let i = 0; i < jobResults.length; i++) {
+            const isPrecomputed = ('' + jobResults[i].id).startsWith('cirro-');
+            if (!isPrecomputed) {
+                showJobStatus = true;
+                break;
+            }
+        }
         const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
         return <React.Fragment>
             <Box color="text.primary">
@@ -711,6 +716,7 @@ class JobResultsPanel extends React.PureComponent {
                             <TableRow>
                                 <TableCell>Name</TableCell>
                                 <TableCell>Type</TableCell>
+                                {showJobStatus && <TableCell>Status</TableCell>}
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -722,6 +728,8 @@ class JobResultsPanel extends React.PureComponent {
                                 const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
                                 const isComplete = isPrecomputed || jobResult.status === 'complete';
                                 const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
+                                const status = isPrecomputed ? 'complete' : jobResult.status;
+                                // const date = isPrecomputed ? '' : jobResult.submitted;
                                 return <TableRow key={jobResult.id}
                                                  className={classes.deleteTr}
                                                  hover
@@ -730,12 +738,13 @@ class JobResultsPanel extends React.PureComponent {
                                                  role="checkbox"
                                                  tabIndex={-1}>
                                     <TableCell>{text}</TableCell>
-                                    <TableCell>{jobType}
+                                    <TableCell>{jobType}</TableCell>
+                                    {showJobStatus && <TableCell>{status}
                                         {email == jobResult.email && !isPrecomputed &&
                                         <IconButton edge="end" aria-label="delete"
                                                     onClick={(event) => this.onDeleteJob(event, jobResult)}>
                                             <DeleteIcon/>
-                                        </IconButton>}</TableCell>
+                                        </IconButton>}</TableCell>}
                                 </TableRow>;
                             })}
                         </TableBody>

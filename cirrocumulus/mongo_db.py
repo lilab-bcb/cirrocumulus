@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
+from cirrocumulus.database_api import get_email_domain
 from pymongo import MongoClient
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -67,6 +67,7 @@ class MongoDb:
                 'id': str(doc['_id']),
                 'name': doc['name'],
                 'readers': doc.get('readers'),
+                'species': doc.get('species'),
                 'description': doc.get('description'),
                 'title': doc.get('title'),
                 'url': doc['url'],
@@ -82,7 +83,8 @@ class MongoDb:
             query = dict(readers={'$in': [email, domain]})
         for doc in collection.find(query):
             results.append({'id': str(doc['_id']), 'name': doc['name'], 'title': doc.get('title'),
-                            'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url']})
+                            'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url'],
+                            'species': doc.get('species')})
         return results
 
     def dataset_filters(self, email, dataset_id):
@@ -136,7 +138,7 @@ class MongoDb:
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title, species):
         collection = self.db.datasets
         readers = set(readers)
         if email in readers:
@@ -146,7 +148,8 @@ class MongoDb:
                        'description': description,
                        'title': title,
                        'readers': list(readers),
-                       'url': url}
+                       'url': url,
+                       'species': species}
         if dataset_id is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))
@@ -196,9 +199,11 @@ class MongoDb:
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         self.get_dataset(email, dataset_id)
+        import datetime
         collection = self.db.jobs
         return str(collection.insert_one(
-            dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params)).inserted_id)
+            dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params,
+                submitted=datetime.datetime.utcnow())).inserted_id)
 
     def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
@@ -213,9 +218,10 @@ class MongoDb:
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         results = []
-        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1, type=1)):
+        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1, type=1, submitted=1)):
             results.append(
-                dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email']))
+                dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email'],
+                    submitted=doc.get('submitted')))
         return results
 
     def update_job(self, email, job_id, status, result):

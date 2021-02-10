@@ -52,6 +52,7 @@ import {
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
     setActiveFeature,
+    setChartOptions,
     setChartSize,
     setCombineDatasetFilters,
     setDialog,
@@ -107,7 +108,6 @@ const styles = theme => ({
             margin: theme.spacing(0, 0.5),
         }
     },
-
 });
 
 
@@ -219,6 +219,7 @@ class SideBar extends React.PureComponent {
     onMaxUIChange = (value) => {
         this.setState({maxColor: value});
     };
+
     onMinChange = (value) => {
         const summary = this.props.globalFeatureSummary[this.props.activeFeature.name];
         summary.customMin = isNaN(value) ? undefined : value;
@@ -236,7 +237,6 @@ class SideBar extends React.PureComponent {
             summary: summary
         });
     };
-
 
     onMarkerOpacityChange = (event, value) => {
         this.setState({opacity: value});
@@ -386,25 +386,6 @@ class SideBar extends React.PureComponent {
         this.onFeatureClick(event, event.target.innerText);
     };
 
-    onFeatureClick = (event, option) => {
-        event.stopPropagation();
-        const value = option.text !== undefined ? option.text : option;
-        let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
-        for (let i = 0; i < galleryTraces.length; i++) {
-            if (galleryTraces[i].name == value) {
-                if (this.props.tab !== 'embedding') {
-                    this.props.handleTab('embedding');
-                }
-                this.props.handleActiveFeature({
-                    name: galleryTraces[i].name,
-                    type: galleryTraces[i].featureType,
-                    embeddingKey: getTraceKey(galleryTraces[i])
-                });
-                break;
-            }
-        }
-    };
-
     // onNumberOfBinsChange = (event) => {
     //     this.props.handleNumberOfBinsUI(event.target.value);
     //     this.updateNumberOfBins(event.target.value);
@@ -449,12 +430,37 @@ class SideBar extends React.PureComponent {
     //     }
     //     this.props.handleEmbeddings(embeddings.slice(0));
     // };
+
+    onFeatureClick = (event, option) => {
+        event.stopPropagation();
+        const value = option.text !== undefined ? option.text : option;
+        let galleryTraces = this.props.embeddingData.filter(traceInfo => traceInfo.active);
+        for (let i = 0; i < galleryTraces.length; i++) {
+            if (galleryTraces[i].name == value) {
+                if (this.props.tab !== 'embedding') {
+                    this.props.handleTab('embedding');
+                }
+                this.props.handleActiveFeature({
+                    name: galleryTraces[i].name,
+                    type: galleryTraces[i].featureType,
+                    embeddingKey: getTraceKey(galleryTraces[i])
+                });
+                break;
+            }
+        }
+    };
+
     //
     onChartSizeChange = (event) => {
         const value = event.target.value;
         this.props.handleChartSize(value);
     };
 
+    onShowGalleryLabelsChange = (event) => {
+        const {chartOptions} = this.props;
+        chartOptions.showGalleryLabels = event.target.checked;
+        this.props.handleChartOptions(Object.assign({}, chartOptions));
+    };
 
     handleSelectedCellsClick = (event) => {
         event.preventDefault();
@@ -517,6 +523,7 @@ class SideBar extends React.PureComponent {
         const {
             activeFeature,
             categoricalNames,
+            chartOptions,
             chartSize,
             classes,
             combineDatasetFilters,
@@ -610,6 +617,7 @@ class SideBar extends React.PureComponent {
             minColor,
             maxColor
         } = this.state;
+        const jobs = false; // serverInfo.jobs
         return (
             <div className={classes.root}>
                 <Dialog
@@ -825,14 +833,14 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {serverInfo.jobs && <Divider flexItem/>}
-                                        {serverInfo.jobs && <Tooltip
+                                        {jobs && <Divider flexItem/>}
+                                        {jobs && <Tooltip
                                             title={"Find differentially expressed features between selected and unselected cells"}>
                                             <Button size={"small"} variant="outlined"
                                                     onClick={event => this.onSubmitJob('de')}>Differential
                                                 Expression</Button>
                                         </Tooltip>}
-                                        {serverInfo.jobs && <Tooltip
+                                        {jobs && <Tooltip
                                             title={"Find features correlated with selected feature in selected cells"}>
                                             <span>
                                             <Button disabled={activeFeature.type !== FEATURE_TYPE.X} size={"small"}
@@ -961,6 +969,16 @@ class SideBar extends React.PureComponent {
                                 </Select>
                             </FormControl>
 
+                            <div><FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={chartOptions.showGalleryLabels}
+                                        onChange={this.onShowGalleryLabelsChange}
+                                    />
+                                }
+                                label="Gallery Labels"
+                            /></div>
+
                             <div className={this.props.classes.margin}>
                                 <EditableColorScheme
                                     textColor={textColor}
@@ -1057,6 +1075,7 @@ const mapStateToProps = state => {
             activeFeature: state.activeFeature,
             categoricalNames: state.categoricalNames,
             chartSize: state.chartSize,
+            chartOptions: state.chartOptions,
             combineDatasetFilters: state.combineDatasetFilters,
             dataset: state.dataset,
             datasetFilter: state.datasetFilter,
@@ -1097,6 +1116,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             handleChartSize: (value) => {
                 dispatch(setChartSize(value));
+            },
+            handleChartOptions: (value) => {
+                dispatch(setChartOptions(value));
             },
             onDomain: (value) => {
                 dispatch(handleDomainChange(value));

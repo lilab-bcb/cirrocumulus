@@ -60,7 +60,7 @@ export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
-export const DEFAULT_DOT_PLOT_INTERPOLATOR = 'Reds';
+export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
 export const DEFAULT_DRAG_MODE = 'pan';
 export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
@@ -83,9 +83,9 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     reversed: false
 };
 
-const DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ = {
-    name: DEFAULT_DOT_PLOT_INTERPOLATOR,
-    value: getInterpolator(DEFAULT_DOT_PLOT_INTERPOLATOR),
+const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
+    name: DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
+    value: getInterpolator(DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR),
     reversed: false,
     scale: INTERPOLATOR_SCALING_NONE
 };
@@ -100,6 +100,7 @@ const DEFAULT_CHART_OPTIONS = {
     animating: false,
     dragmode: DEFAULT_DRAG_MODE,
     editSelection: false,
+    showGalleryLabels: false,
     showAxis: DEFAULT_SHOW_AXIS,
     showFog: DEFAULT_SHOW_FOG,
     darkMode: DEFAULT_DARK_MODE,
@@ -448,12 +449,16 @@ function dialog(state = null, action) {
 }
 
 
-function dotPlotInterpolator(state = DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action) {
+function distributionPlotInterpolator(state = DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action) {
     switch (action.type) {
         case SET_DISTRIBUTION_PLOT_INTERPOLATOR:
-            return Object.assign({}, DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action.payload);
+            return Object.assign({}, DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action.payload);
         case RESTORE_VIEW:
-            return action.payload.dotPlotInterpolator != null ? Object.assign({}, DEFAULT_DOT_PLOT_INTERPOLATOR_OBJ, action.payload.dotPlotInterpolator) : state;
+            if (action.payload.distributionPlotInterpolator != null) {
+                const interpolator = Object.assign({}, DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action.payload.distributionPlotInterpolator);
+                interpolator.value = getInterpolator(interpolator.name);
+                return interpolator;
+            }
         default:
             return state;
     }
@@ -726,7 +731,7 @@ export default combineReducers({
     dialog,
     distributionData,
     distributionPlotOptions,
-    dotPlotInterpolator,
+    distributionPlotInterpolator,
     email,
     embeddingData,
     embeddingLabels,

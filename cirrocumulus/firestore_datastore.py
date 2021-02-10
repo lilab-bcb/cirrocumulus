@@ -1,9 +1,9 @@
 import datetime
 import json
 
+from cirrocumulus.database_api import get_email_domain
 from google.cloud import datastore
 
-from cirrocumulus.database_api import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -70,7 +70,7 @@ class FirestoreDatastore:
         user = client.get(key)
         if user is None:
             user = datastore.Entity(client.key(USER, email))
-        user.update({'last_login': datetime.datetime.now()})
+        user.update({'last_login': datetime.datetime.utcnow()})
         client.put(user)
         return user
 
@@ -82,7 +82,7 @@ class FirestoreDatastore:
         for result in query.fetch():
             results.append(
                 {'id': result.id, 'name': result['name'], 'title': result.get('title'),
-                 'owner': email in result['owners'], 'url': result['url']})
+                 'owner': email in result['owners'], 'species': result.get('species'), 'url': result['url']})
         domain = get_email_domain(email)
         if domain is not None:
             query = client.query(kind=DATASET)
@@ -93,6 +93,7 @@ class FirestoreDatastore:
             for result in query.fetch():
                 if result.id not in unique_ids:
                     results.append({'id': result.id, 'name': result['name'], 'title': result.get('title'),
+                                    'species': result.get('species'),
                                     'owner': email in result['owners'],
                                     'url': result['url']})
         return results
@@ -147,7 +148,6 @@ class FirestoreDatastore:
         client.put(dataset_filter_entity)
         return dataset_filter_entity.id
 
-
     def delete_dataset(self, email, dataset_id):
         client = self.datastore_client
         key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
@@ -158,12 +158,12 @@ class FirestoreDatastore:
         dataset['id'] = dataset.id
         return dataset
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title, species):
         client = self.datastore_client
         if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
-            dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url', 'precomputed'])
+            dataset = datastore.Entity(client.key(DATASET), exclude_from_indexes=['url'])
             user = client.get(client.key(USER, email))
             if 'importer' not in user or not user['importer']:
                 raise InvalidUsage('Not authorized', 403)
@@ -175,7 +175,8 @@ class FirestoreDatastore:
                        'readers': list(readers),
                        'description': description,
                        'title': title,
-                       'url': url}
+                       'url': url,
+                       'species': species}
 
         if dataset_id is None:  # new dataset
             update_dict['owners'] = [email]
@@ -237,7 +238,7 @@ class FirestoreDatastore:
         entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["params"])
         import json
         entity.update(dict(dataset_id=dataset_id, email=email, name=job_name, type=job_type, status='',
-            params=json.dumps(params)))
+            submitted=datetime.datetime.utcnow(), params=json.dumps(params)))
         client.put(entity)
         job_id = entity.id
 
@@ -280,8 +281,8 @@ class FirestoreDatastore:
         results = []
         for result in query.fetch():
             results.append(
-                dict(id=result.id, name=result['name'], type=result['type'], status=result['status'],
-                    email=result['email']))
+                dict(id=result.id, name=result['name'], type=result['type'], submitted=result['submitted'],
+                    status=result['status'], email=result['email']))
         return results
 
     def delete_job(self, email, job_id):

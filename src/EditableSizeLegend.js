@@ -57,7 +57,7 @@ export class EditableSizeLegend extends React.PureComponent {
                         onChange={this.onReversedChange}
                     />
                 }
-                label="Reversed"
+                label="Reverse Sizes"
             /></div>}
             <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Size Range</InputLabel>
             <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}

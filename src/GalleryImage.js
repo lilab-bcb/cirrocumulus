@@ -25,18 +25,18 @@ class GalleryImage extends React.PureComponent {
 
     draw() {
         const {
-            obsCat,
             cachedData,
-            scatterPlot,
-            chartSize,
             categoricalNames,
-            containerElement,
-            traceInfo,
-            markerOpacity,
-            unselectedMarkerOpacity,
-            selection,
             chartOptions,
-            pointSize
+            chartSize,
+            containerElement,
+            markerOpacity,
+            obsCat,
+            pointSize,
+            scatterPlot,
+            selection,
+            traceInfo,
+            unselectedMarkerOpacity,
         } = this.props;
         const embedding = traceInfo.embedding;
         const fullName = getEmbeddingKey(embedding);
@@ -48,7 +48,7 @@ class GalleryImage extends React.PureComponent {
             updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
                 categoricalNames, chartOptions, obsCat, cachedData);
             const canvas = containerElement.querySelector('canvas');
-            const showLabels = obsCat.length > 0 && chartSize >= 600;
+            const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
             let overlayUrl = null;
             if (showLabels) {
                 const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);

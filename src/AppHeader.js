@@ -142,6 +142,7 @@ class AppHeader extends React.PureComponent {
             dataset,
             embeddingLabels,
             distributionPlotOptions,
+            distributionPlotInterpolator,
             embeddings,
             searchTokens,
             datasetFilter,
@@ -224,11 +225,11 @@ class AppHeader extends React.PureComponent {
 
         if (distributionData && distributionData.length > 0) {
             json.distributionPlotOptions = distributionPlotOptions;
+            json.distributionPlotInterpolator = Object.assign({}, distributionPlotInterpolator, {value: null});
         }
 
         const interpolatorJson = Object.assign({}, interpolator, {value: null});
         json.colorScheme = interpolatorJson;
-
 
         if (embeddingLabels.length > 0) {
             json.embeddingLabels = embeddingLabels;
@@ -480,6 +481,7 @@ const mapStateToProps = state => {
         datasetFilter: state.datasetFilter,
         dialog: state.dialog,
         distributionData: state.distributionData,
+        distributionPlotInterpolator: state.distributionPlotInterpolator,
         email: state.email,
         embeddingLabels: state.embeddingLabels,
         embeddings: state.embeddings,

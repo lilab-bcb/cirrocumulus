@@ -10,15 +10,15 @@ import DistributionGroup from './DistributionGroup';
 class DistributionPlots extends React.PureComponent {
 
     onInterpolator = (value) => {
-        const scale = this.props.dotPlotInterpolator.scale;
+        const scale = this.props.distributionPlotInterpolator.scale;
         value.scale = scale;
         this.props.onInterpolator(value);
     };
 
     onColorScalingChange = (value) => {
-        const dotPlotInterpolator = this.props.dotPlotInterpolator;
-        dotPlotInterpolator.scale = value;
-        this.props.onInterpolator(Object.assign({}, dotPlotInterpolator));
+        const distributionPlotInterpolator = this.props.distributionPlotInterpolator;
+        distributionPlotInterpolator.scale = value;
+        this.props.onInterpolator(Object.assign({}, distributionPlotInterpolator));
     };
 
     render() {
@@ -28,7 +28,7 @@ class DistributionPlots extends React.PureComponent {
             chartOptions,
             distributionData,
             distributionPlotOptions,
-            dotPlotInterpolator,
+            distributionPlotInterpolator,
             embeddingData,
             globalFeatureSummary,
             onDistributionPlotOptions,
@@ -66,7 +66,7 @@ class DistributionPlots extends React.PureComponent {
                                       distributionData={data}
                                       globalFeatureSummary={globalFeatureSummary}
                                       selectedData={dimension2selecteddata[dimension]}
-                                      interpolator={dotPlotInterpolator}
+                                      interpolator={distributionPlotInterpolator}
                                       distributionPlotOptions={distributionPlotOptions}
                                       categoricalNames={categoricalNames}
                                       textColor={textColor}
@@ -87,7 +87,7 @@ const mapStateToProps = state => {
         chartOptions: state.chartOptions,
         distributionData: state.distributionData,
         distributionPlotOptions: state.distributionPlotOptions,
-        dotPlotInterpolator: state.dotPlotInterpolator,
+        distributionPlotInterpolator: state.distributionPlotInterpolator,
         embeddingData: state.embeddingData,
         globalFeatureSummary: state.globalFeatureSummary,
         selectedDistributionData: state.selectedDistributionData

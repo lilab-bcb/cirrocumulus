@@ -302,13 +302,14 @@ def handle_dataset():
         readers = set(readers)
         dataset_name = content.get('name', '')
         description = content.get('description', '')
+        species = content.get('species', '')
         title = content.get('title', '')
         url = content.get('url', '')  # e.g. gs://foo/a/b/
         if dataset_name == '' or url == '':
             return 'Must supply dataset name and URL', 400
         dataset_id = database_api.upsert_dataset(email=email,
             dataset_id=dataset_id if request.method == 'PUT' else None,
-            dataset_name=dataset_name, url=url, readers=readers, description=description, title=title)
+            dataset_name=dataset_name, url=url, readers=readers, description=description, title=title, species=species)
         return to_json({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
@@ -334,19 +335,6 @@ def handle_dataset():
     # head_request.close()
     # if head_request.status_code != 200:
     #     return 'Not authorized to read {}'.format(url), 403
-
-
-@blueprint.route('/submit_job', methods=['POST'])
-def handle_submit_job():
-    import os
-    if os.environ.get('GAE_APPLICATION') is None:
-        content = request.get_json(force=True, cache=False)
-        email, dataset = get_email_and_dataset(content)
-        params = content.get('params')
-        job_type = content.get('type')
-        job_name = content.get('name')
-        return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-            job_name=job_name, job_type=job_type, params=params))
 
 
 @blueprint.route('/job', methods=['GET', 'DELETE'])
@@ -380,3 +368,16 @@ def handle_jobs():
     email = auth_api.auth()['email']
     ds_id = request.args.get('id', '')
     return to_json(database_api.get_jobs(email=email, dataset_id=ds_id))
+
+
+# @blueprint.route('/submit_job', methods=['POST'])
+# def handle_submit_job():
+#     import os
+#     if os.environ.get('GAE_APPLICATION') is None:
+#         content = request.get_json(force=True, cache=False)
+#         email, dataset = get_email_and_dataset(content)
+#         params = content.get('params')
+#         job_type = content.get('type')
+#         job_name = content.get('name')
+#         return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+#             job_name=job_name, job_type=job_type, params=params))

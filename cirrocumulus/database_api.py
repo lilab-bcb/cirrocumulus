@@ -64,9 +64,9 @@ class DatabaseAPI:
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         return self.provider.get_dataset(email, dataset_id, ensure_owner)
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title):
+    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title, species):
         return self.provider.upsert_dataset(email=email, dataset_id=dataset_id, dataset_name=dataset_name, url=url,
-            readers=readers, description=description, title=title)
+            readers=readers, description=description, title=title, species=species)
 
     def dataset_filters(self, email, dataset_id):
         return self.provider.dataset_filters(email, dataset_id)

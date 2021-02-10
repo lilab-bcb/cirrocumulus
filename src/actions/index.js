@@ -24,8 +24,10 @@ import {
     getInterpolator,
     indexSort,
     randomSeq,
-    splitSearchTokens, TRACE_TYPE_IMAGE,
-    TRACE_TYPE_META_IMAGE, TRACE_TYPE_SCATTER,
+    splitSearchTokens,
+    TRACE_TYPE_IMAGE,
+    TRACE_TYPE_META_IMAGE,
+    TRACE_TYPE_SCATTER,
     updateTraceColors
 } from '../util';
 import {Vector} from '../Vector';
@@ -1024,6 +1026,7 @@ export function saveDataset(payload) {
         const readers = payload.readers;
         const description = payload.description;
         const title = payload.title;
+        const species = payload.species;
         // let bucket = url.substring('gs://'.length);
         // let slash = bucket.indexOf('/');
         // let object = encodeURIComponent(bucket.substring(slash + 1));
@@ -1063,6 +1066,7 @@ export function saveDataset(payload) {
                 readers: readers,
                 description: description,
                 title: title,
+                species: species,
                 url: url
             })).then(importDatasetResult => {
             const dsUpdate = {
@@ -1070,6 +1074,7 @@ export function saveDataset(payload) {
                 id: importDatasetResult.id,
                 title: title,
                 url: url,
+                species: species,
                 readers: readers,
                 description: description,
                 owner: true
