@@ -207,7 +207,8 @@ class MongoDb:
 
     def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
-        doc = collection.find_one(dict(_id=ObjectId(job_id)), {"result": 0} if not return_result else {'result': 1})
+        doc = collection.find_one(dict(_id=ObjectId(job_id)),
+            {"result": 0} if not return_result else {'result': 1, "dataset_id": 1})
         self.get_dataset(email, doc['dataset_id'])
         if return_result:
             return doc['result']
