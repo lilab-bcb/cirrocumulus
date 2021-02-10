@@ -12,6 +12,7 @@ import TextField from '@material-ui/core/TextField';
 import ClearIcon from '@material-ui/icons/Clear';
 import FolderOpenIcon from '@material-ui/icons/FolderOpen';
 import InfoIcon from '@material-ui/icons/Info';
+import {groupBy} from 'lodash';
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
@@ -78,6 +79,9 @@ export class DatasetSelector extends React.PureComponent {
         }
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const hasMoreInfo = selectedDataset && (selectedDataset.title || selectedDataset.description);
+        const species2Items = groupBy(filteredChoices, 'species');
+        const speciesArray = Object.keys(species2Items);
+        speciesArray.sort();
         return (
             <React.Fragment>
                 <Popover
@@ -137,27 +141,38 @@ export class DatasetSelector extends React.PureComponent {
                                        </InputAdornment>
                                } : null}
                     />
-                    <List style={{width: 500}} dense disablePadding component="nav" aria-label="datasets">
-                        {filteredChoices.map(choice => {
-                            let text = choice.name;
-                            if (choice.title) {
-                                text += ' - ' + choice.title;
-                            }
-                            return <ListItem alignItems="flex-start" selected={choice.id === selectedId} key={choice.id}
-                                             button onClick={(e) => this.handleListItemClick(choice.id)}>
-                                <ListItemText
-                                    primary={text}
-                                    style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'}}/>
-                                <ListItemSecondaryAction>
-                                    <IconButton onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
-                                                edge="end"
-                                                aria-label="summary">
-                                        <InfoIcon/>
-                                    </IconButton>
-                                </ListItemSecondaryAction>
-                            </ListItem>;
-                        })}
-                    </List>
+                    {speciesArray.map(species => {
+                        const speciesText = species === 'null' ? 'Other' : species;
+                        const choices = species2Items[species];
+                        return <React.Fragment key={species}>
+                            <Typography component={"h2"}>{speciesText}</Typography>
+                            <List style={{width: 500}} dense disablePadding component="nav" aria-label="datasets">
+                                {choices.map(choice => {
+                                    let text = choice.name;
+                                    if (choice.title) {
+                                        text += ' - ' + choice.title;
+                                    }
+                                    return <ListItem alignItems="flex-start" selected={choice.id === selectedId}
+                                                     key={choice.id}
+                                                     button onClick={(e) => this.handleListItemClick(choice.id)}>
+                                        <ListItemText
+                                            primary={text}
+                                            style={{
+                                                textOverflow: 'ellipsis',
+                                                overflow: 'hidden',
+                                                whiteSpace: 'nowrap'
+                                            }}/>
+                                        <ListItemSecondaryAction>
+                                            <IconButton onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
+                                                        edge="end"
+                                                        aria-label="summary">
+                                                <InfoIcon/>
+                                            </IconButton>
+                                        </ListItemSecondaryAction>
+                                    </ListItem>;
+                                })}
+                            </List></React.Fragment>;
+                    })}
                 </Popover>
             </React.Fragment>
         );
