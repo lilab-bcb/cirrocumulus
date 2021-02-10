@@ -370,14 +370,14 @@ def handle_jobs():
     return to_json(database_api.get_jobs(email=email, dataset_id=ds_id))
 
 
-# @blueprint.route('/submit_job', methods=['POST'])
-# def handle_submit_job():
-#     import os
-#     if os.environ.get('GAE_APPLICATION') is None:
-#         content = request.get_json(force=True, cache=False)
-#         email, dataset = get_email_and_dataset(content)
-#         params = content.get('params')
-#         job_type = content.get('type')
-#         job_name = content.get('name')
-#         return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-#             job_name=job_name, job_type=job_type, params=params))
+@blueprint.route('/submit_job', methods=['POST'])
+def handle_submit_job():
+    import os
+    if os.environ.get('GAE_APPLICATION') is None:
+        content = request.get_json(force=True, cache=False)
+        email, dataset = get_email_and_dataset(content)
+        params = content.get('params')
+        job_type = content.get('type')
+        job_name = content.get('name')
+        return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+            job_name=job_name, job_type=job_type, params=params))
