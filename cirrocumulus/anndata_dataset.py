@@ -11,7 +11,7 @@ from cirrocumulus.simple_data import SimpleData
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr']):
+    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr', 'rds']):
         super().__init__()
         self.path_to_data = {}
         self.backed = backed
@@ -29,6 +29,24 @@ class AnndataDataset(AbstractDataset):
             return anndata.read_zarr(path)
         elif path_lc.endswith('.tsv'):
             return read_star_fusion_file(path)
+        elif path_lc.endswith('.rds'):  # Seurat, convert to h5ad
+            h5_file = path + '.h5ad'
+            import os
+            if not os.path.exists(h5_file) or abs(os.path.getmtime(h5_file) - os.path.getmtime(path)) > 0.00001:
+                import subprocess
+                import pkg_resources
+                import shutil
+                print('Converting Seurat object')
+                if os.path.exists(h5_file):
+                    os.remove(h5_file)
+                subprocess.check_call(
+                    ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat2h5ad.R'), path, h5_file])
+                shutil.copystat(path, h5_file)
+            adata = anndata.read(h5_file, backed=self.backed)
+            if adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
+                print('Using adata.raw')
+                adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
+            return adata
         return anndata.read(path, backed=self.backed)
         # elif path.endswith('.mtx'):
         #
