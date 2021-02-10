@@ -2,6 +2,7 @@ import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '
 
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
 import Chip from '@material-ui/core/Chip';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -38,6 +39,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {AccordionDetailsStyled, AccordionStyled, AccordionSummaryStyled} from './accordion';
 import {
+    datasetFilterToJson,
     deleteDatasetFilter,
     deleteFeatureSet,
     downloadSelectedIds,
@@ -472,13 +474,20 @@ class SideBar extends React.PureComponent {
     };
 
     onSubmitJobCancel = () => {
-        this.setState({jobName: '', jobParams: null});
+        this.setState({jobName: '', jobParams: null, group1: null, group2: null, group1Count: null, group2Count: null});
     };
 
     onSubmitJobOK = () => {
         this.state.jobParams.name = this.state.jobName;
         this.props.handleSubmitJob(this.state.jobParams);
-        this.setState({jobName: '', jobParams: null});
+        this.setState({jobName: '', jobParams: null, group1: null, group2: null});
+    };
+
+    onSetGroup = (groupNumber) => {
+        const d = {};
+        d['group' + groupNumber] = datasetFilterToJson(this.props.dataset, this.props.datasetFilter, this.props.combineDatasetFilters);
+        d['group' + groupNumber + 'Count'] = this.props.selection.count;
+        this.setState(d);
     };
 
     onSubmitJob = (jobType) => {
@@ -486,7 +495,11 @@ class SideBar extends React.PureComponent {
             const activeFeature = this.props.activeFeature;
             this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: activeFeature.name}}});
         } else {
-            this.setState({jobName: '', jobParams: {type: 'de', params: {}}});
+
+            this.setState({
+                jobName: '',
+                jobParams: {type: 'de', params: {filter: this.state.group1, filter2: this.state.group2}}
+            });
         }
     };
 
@@ -617,7 +630,7 @@ class SideBar extends React.PureComponent {
             minColor,
             maxColor
         } = this.state;
-        const jobs = false; // serverInfo.jobs
+        const jobsEnabled = serverInfo.jobs;
         return (
             <div className={classes.root}>
                 <Dialog
@@ -833,21 +846,6 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
                                         </Tooltip>
-                                        {jobs && <Divider flexItem/>}
-                                        {jobs && <Tooltip
-                                            title={"Find differentially expressed features between selected and unselected cells"}>
-                                            <Button size={"small"} variant="outlined"
-                                                    onClick={event => this.onSubmitJob('de')}>Differential
-                                                Expression</Button>
-                                        </Tooltip>}
-                                        {jobs && <Tooltip
-                                            title={"Find features correlated with selected feature in selected cells"}>
-                                            <span>
-                                            <Button disabled={activeFeature.type !== FEATURE_TYPE.X} size={"small"}
-                                                    variant="outlined"
-                                                    onClick={event => this.onSubmitJob('corr')}>Correlation</Button>
-                                            </span>
-                                        </Tooltip>}
                                     </Grid>
                                 </div>
                             </React.Fragment>
@@ -855,6 +853,42 @@ class SideBar extends React.PureComponent {
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>
+
+                {jobsEnabled && <AccordionStyled style={tab === 'embedding' ? null : {display: 'none'}}
+                                                 defaultExpanded>
+                    <AccordionSummaryStyled>
+                        <Typography>Analysis</Typography>
+                    </AccordionSummaryStyled>
+                    <AccordionDetailsStyled>
+                        <div className={this.props.classes.margin}>
+                            <Tooltip
+                                title={"Find differentially expressed features between two groups of cells"}><Typography>Differential
+                                Expression</Typography></Tooltip>
+                            <ButtonGroup variant="outlined">
+                                <Tooltip
+                                    title={'Group one' + (this.state.group1Count ? ' (' + intFormat(this.state.group1Count) + ' cells)' : '')}>
+                                    <Button size={"small"} disabled={isNaN(selection.count)}
+                                            onClick={event => this.onSetGroup(1)}>1</Button>
+                                </Tooltip>
+                                <Tooltip
+                                    title={'Group two' + (this.state.group2Count ? ' (' + intFormat(this.state.group2Count) + ' cells)' : '')}>
+                                    <Button size={"small"} disabled={isNaN(selection.count)}
+                                            onClick={event => this.onSetGroup(2)}>2</Button>
+                                </Tooltip>
+                                <Button size={"small"} variant="outlined"
+                                        disabled={isNaN(selection.count) || this.state.group1 == null || this.state.group2 == null}
+                                        onClick={event => this.onSubmitJob('de')}>Go</Button>
+                            </ButtonGroup>
+
+                            <Tooltip
+                                title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>
+                            <Button style={{minWidth: 40}}
+                                    disabled={isNaN(selection.count) || activeFeature.type !== FEATURE_TYPE.X}
+                                    size={"small"} variant="outlined"
+                                    onClick={event => this.onSubmitJob('corr')}>Go</Button>
+                        </div>
+                    </AccordionDetailsStyled>
+                </AccordionStyled>}
                 <AccordionStyled style={tab === 'distribution' ? null : {display: 'none'}} defaultExpanded>
                     <AccordionSummaryStyled>
                         <Typography>Distribution Options</Typography>
@@ -923,7 +957,6 @@ class SideBar extends React.PureComponent {
                                 value={opacity}
                                 onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
 
-
                             <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Filtered Marker
                                 Opacity</InputLabel>
                             <Slider
@@ -983,7 +1016,7 @@ class SideBar extends React.PureComponent {
                                 <EditableColorScheme
                                     textColor={textColor}
                                     interpolator={interpolator}
-                                    domain={primaryTrace && primaryTrace.continuous ? primaryTrace.colorScale.domain() : null}
+                                    domain={primaryTrace && primaryTrace.continuous && primaryTrace.name !== '__count' ? primaryTrace.colorScale.domain() : null}
                                     min={minColor}
                                     max={maxColor}
                                     onMinChange={this.onMinChange}
@@ -992,24 +1025,6 @@ class SideBar extends React.PureComponent {
                                     onMaxUIChange={this.onMaxUIChange}
                                     onInterpolator={this.props.handleInterpolator}/>
                             </div>
-                            {/*<FormControl className={classes.formControl}>*/}
-                            {/*    <InputLabel htmlFor="color-scheme">Color Scale</InputLabel>*/}
-                            {/*    <ColorSchemeSelector handleInterpolator={this.props.handleInterpolator}*/}
-                            {/*                         interpolator={interpolator}/>*/}
-                            {/*</FormControl>*/}
-
-                            {/*<Tooltip title={"Select to invert the color order"}>*/}
-                            {/*    <div><FormControlLabel*/}
-                            {/*        control={*/}
-                            {/*            <Switch*/}
-                            {/*                checked={interpolator.reversed}*/}
-                            {/*                onChange={this.onReversedChange}*/}
-                            {/*            />*/}
-                            {/*        }*/}
-                            {/*        label="Reverse Colors"*/}
-                            {/*    /></div>*/}
-                            {/*</Tooltip>*/}
-
                             <Button size={'small'}
                                     aria-label="More Options" onClick={this.props.onMoreOptions}>More Options...
                             </Button>
