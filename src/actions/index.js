@@ -328,8 +328,9 @@ export function submitJob(jobData) {
         }
 
         jobData.id = getState().dataset.id;
-        jobData.params.filter = getFilterJson(getState());
-
+        if (jobData.params.filter == null) {
+            jobData.params.filter = getFilterJson(getState());
+        }
         getState().serverInfo.api.submitJob(jobData)
             .then(result => {
                 dispatch(setMessage('Job submitted'));
@@ -537,17 +538,21 @@ export function getDatasetFilterArray(datasetFilter) {
 
 
 function getFilterJson(state) {
-    let filters = getDatasetFilterArray(state.datasetFilter);
+    return datasetFilterToJson(state.dataset, state.datasetFilter, state.combineDatasetFilters);
+}
+
+export function datasetFilterToJson(dataset, datasetFilter, combineDatasetFilters) {
+    let filters = getDatasetFilterArray(datasetFilter);
     if (filters.length > 0) {
-        const obs = state.dataset.obs;
-        const obsCat = state.dataset.obsCat;
+        const obs = dataset.obs;
+        const obsCat = dataset.obsCat;
         for (let i = 0; i < filters.length; i++) {
             // add obs/ prefix
             if (obsCat.indexOf(filters[i][0]) !== -1 || obs.indexOf(filters[i][0]) !== -1) {
                 filters[i][0] = 'obs/' + filters[i][0];
             }
         }
-        return {filters: filters, combine: state.combineDatasetFilters};
+        return {filters: filters, combine: combineDatasetFilters};
     }
 }
 
