@@ -387,7 +387,7 @@ class ImageChart extends React.PureComponent {
         //         let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
         //         const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
         //         if (point === -1) {
-        //             //   this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+        //             //   this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
         //         } else {
         //             _this.props.onSelected({
         //                 name: getEmbeddingKey(_this.props.traceInfo.embedding),

@@ -195,22 +195,23 @@ class MetaEmbedding extends React.PureComponent {
             this.tooltipElementRef.current.innerHTML = '';
         });
         containerElement.addEventListener('click', (e) => {
+            console.log(e.target.nodeName);
             if (e.target.nodeName === 'path') {
                 const categoryToIndices = this.props.traceInfo.categoryToIndices;
                 let text = e.target.id;
                 text = text.replaceAll('_', ' '); // FIXME
                 const indices = categoryToIndices[text];
-                if (indices) {
+                if (indices && indices.length > 0) {
                     this.props.onSelected({
                         name: getEmbeddingKey(this.props.traceInfo.embedding),
                         clear: true,
                         value: {basis: this.props.traceInfo.embedding, points: indices}
                     });
                 } else {
-                    this.props.onDeselect({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(this.props.traceInfo.embedding)});
                 }
             } else {
-                this.props.onDeselect({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+                this.props.onSelected({name: getEmbeddingKey(this.props.traceInfo.embedding)});
             }
         });
     }

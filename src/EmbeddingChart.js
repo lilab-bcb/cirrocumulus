@@ -52,7 +52,6 @@ class EmbeddingChart extends React.PureComponent {
             markerOpacity,
             onChartOptions,
             onColorChange,
-            onDeselect,
             onDimensionFilterUpdated,
             onDomain,
             onGallery,
@@ -143,7 +142,6 @@ class EmbeddingChart extends React.PureComponent {
                                    chartOptions={chartOptions}
                                    categoricalNames={categoricalNames}
                                    selection={selection}
-                                   onDeselect={onDeselect}
                                    onSelected={onSelect}
                                    pointSize={pointSize}
                                    markerOpacity={markerOpacity}
@@ -164,7 +162,6 @@ class EmbeddingChart extends React.PureComponent {
                                categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
                                onGallery={onGallery}
-                               onDeselect={onDeselect}
                                onSelected={onSelect}
 
                 />}
@@ -182,7 +179,6 @@ class EmbeddingChart extends React.PureComponent {
                     onInitialized={this.onInitialized}
                     markerOpacity={markerOpacity}
                     unselectedMarkerOpacity={unselectedMarkerOpacity}
-                    onDeselect={onDeselect}
                     onSelected={onSelect}
                     onGallery={onGallery}
                 />}
@@ -236,10 +232,7 @@ const mapDispatchToProps = dispatch => {
         },
         onSelect: (e) => {
             dispatch(handleBrushFilterUpdated(e));
-        },
-        onDeselect: (e) => {
-            dispatch(handleBrushFilterUpdated(e));
-        },
+        }
 
     };
 };

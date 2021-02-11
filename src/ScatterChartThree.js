@@ -436,7 +436,7 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
                 if (selectedIndices.length === 0) {
-                    this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
@@ -470,7 +470,7 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
                 if (selectedPoints.length === 0) {
-                    this.props.onDeselect({name: getEmbeddingKey(traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),

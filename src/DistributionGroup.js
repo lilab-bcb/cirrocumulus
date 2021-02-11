@@ -258,6 +258,7 @@ class DistributionGroup extends React.PureComponent {
                 {chartType !== 'violin' &&
                 <EditableColorScheme colorScale={colorScale}
                                      textColor={textColor}
+                                     domain={colorScale.domain()}
                                      interpolator={interpolator}
                                      onOptions={this.props.onDistributionPlotOptions}
                                      onInterpolator={this.props.handleInterpolator}/>}
