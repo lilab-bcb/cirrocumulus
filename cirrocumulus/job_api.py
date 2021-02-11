@@ -16,13 +16,14 @@ executor = None
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
     if executor is None:
-        from concurrent.futures.process import ProcessPoolExecutor
         from concurrent.futures.thread import ThreadPoolExecutor
         import os
-        max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
-        executor = ProcessPoolExecutor(max_workers=max_workers) if os.environ.get(
-            CIRRO_SERVE) != 'true' else ThreadPoolExecutor(
-            max_workers=max_workers)
+
+        if os.environ.get(CIRRO_SERVE) != 'true':
+            max_workers = 1
+        else:
+            max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
+    executor = ThreadPoolExecutor(max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
         params=params)
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
@@ -94,7 +95,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                 except ValueError:  # All numbers are identical
                     pass
                 index += 1
-        database_api.update_job(email=email, job_id=job_id, status='running {}/{}'.format(index, nfeatures),
+        database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * index / nfeatures),
             result=None)
     pvals = fdrcorrection(pvals)
     if job_type == 'de':
