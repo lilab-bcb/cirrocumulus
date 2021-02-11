@@ -1975,22 +1975,22 @@ function updateEmbeddingData(state, features) {
                         const categoryToIndices = {};
                         const passingIndices = getPassingFilterIndices(cachedData, {filters: chartData.embedding.attrs.selection});
                         for (let index of passingIndices) {
-                            const group = groupBy[index];
-                            let indices = categoryToIndices[group];
+                            const category = groupBy[index];
+                            let indices = categoryToIndices[category];
                             if (indices === undefined) {
                                 indices = [];
-                                categoryToIndices[group] = indices;
+                                categoryToIndices[category] = indices;
                             }
                             indices.push(index);
                         }
-
                         embedding.categoryToIndices = categoryToIndices;
                     }
-                    chartData.categoryToIndices = embedding.categoryToIndices;
-                    if (chartData.continuous) {
-                        // compute mean and standard deviation
-                        colorScale.domain([-3, 3]);
-                        if (chartData.name !== '__count') {
+                    if (chartData.name !== '__count') {
+                        chartData.categoryToIndices = embedding.categoryToIndices;
+                        if (chartData.continuous) {
+                            // compute mean and standard deviation
+                            colorScale.domain([-3, 3]);
+
                             let mean = 0;
                             let count = 0;
                             for (let category in embedding.categoryToIndices) {
@@ -2015,9 +2015,8 @@ function updateEmbeddingData(state, features) {
                             chartData.mean = mean;
                             chartData.stdev = Math.sqrt(variance);
                         }
+                        updateCategoryToStats(chartData, state.selection);
                     }
-                    updateCategoryToStats(chartData, state.selection);
-
                 }
                 updateTraceColors(chartData);
 
