@@ -168,11 +168,13 @@ class MetaEmbedding extends React.PureComponent {
         this.updateSvg();
         const containerElement = this.containerElementRef.current;
         containerElement.addEventListener('mousemove', (e) => {
+            containerElement.style.cursor = null;
             if (e.target.nodeName === 'path') {
                 const categoryToStats = this.props.traceInfo.categoryToStats;
                 let text = e.target.id;
                 text = text.replaceAll('_', ' '); // FIXME
                 if (categoryToStats) {
+                    containerElement.style.cursor = 'pointer';
                     const stats = categoryToStats[text];
                     if (stats) {
                         if (this.props.traceInfo.name !== '__count') {
@@ -203,7 +205,7 @@ class MetaEmbedding extends React.PureComponent {
                 if (indices && indices.length > 0) {
                     this.props.onSelected({
                         name: getEmbeddingKey(this.props.traceInfo.embedding),
-                        clear: !e.metaKey,
+                        clear: !e.metaKey && !e.shiftKey,
                         value: {basis: this.props.traceInfo.embedding, points: indices}
                     });
                 } else {
