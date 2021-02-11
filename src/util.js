@@ -192,11 +192,13 @@ export function updateTraceColors(traceInfo) {
                 const stats = categoryToStats[category];
                 const query = category.replaceAll(' ', '_'); // FIXME
                 svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                    node.style.fill = colorScale(stats.value);
+                    const color = stats.value === undefined ? '#f0f0f0' : colorScale(stats.value);
+                    node.style.fill = color;
                 });
 
                 galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
-                    node.style.fill = colorScale(stats.value);
+                    const color = stats.value === undefined ? '#f0f0f0' : colorScale(stats.value);
+                    node.style.fill = color;
                 });
             }
         }
@@ -345,8 +347,7 @@ export function getInterpolator(name) {
 }
 
 export function createColorScale(colorScaleDef) {
-    const scale = scaleSequential(colorScaleDef.value).clamp(true);
-    scale.unknown('#f0f0f0');
+    const scale = scaleSequential(colorScaleDef.value).clamp(true).unknown('#f0f0f0');
     if (colorScaleDef.reversed) {
         const interpolator = scale.interpolator();
         const mirror = t => interpolator(1 - t);

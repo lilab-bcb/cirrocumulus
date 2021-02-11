@@ -164,6 +164,8 @@ class EmbeddingChart extends React.PureComponent {
                                categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
                                onGallery={onGallery}
+                               onDeselect={onDeselect}
+                               onSelected={onSelect}
 
                 />}
                 {traceInfo.type === 'image' && <ImageChart

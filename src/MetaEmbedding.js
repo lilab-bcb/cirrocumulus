@@ -3,6 +3,7 @@ import Typography from '@material-ui/core/Typography';
 import {select} from 'd3-selection';
 import {zoom, zoomIdentity} from 'd3-zoom';
 import React from 'react';
+import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {intFormat, numberFormat2f} from './formatters';
 
@@ -61,7 +62,7 @@ export function updateCategoryToStats(trace, selection) {
             categoryToStats[category] = {value: maxValue, n: n};
         } else {
             const mean = sum / n;
-            categoryToStats[category] = {value: (mean - trace.mean) / trace.stdev, n: n};
+            categoryToStats[category] = {value: n === 0 ? undefined : (mean - trace.mean) / trace.stdev, n: n};
         }
     }
 
@@ -148,6 +149,7 @@ class MetaEmbedding extends React.PureComponent {
         const d3Zoom = zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
         this.d3Zoom = d3Zoom;
         select(svg).call(d3Zoom);
+
     };
 
     onHome = () => {
@@ -192,11 +194,27 @@ class MetaEmbedding extends React.PureComponent {
         containerElement.addEventListener('mouseleave', (e) => {
             this.tooltipElementRef.current.innerHTML = '';
         });
+        containerElement.addEventListener('click', (e) => {
+            if (e.target.nodeName === 'path') {
+                const categoryToIndices = this.props.traceInfo.categoryToIndices;
+                let text = e.target.id;
+                text = text.replaceAll('_', ' '); // FIXME
+                const indices = categoryToIndices[text];
+                if (indices) {
+                    this.props.onSelected({
+                        name: getEmbeddingKey(this.props.traceInfo.embedding),
+                        clear: true,
+                        value: {basis: this.props.traceInfo.embedding, points: indices}
+                    });
+                } else {
+                    this.props.onDeselect({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+                }
+            } else {
+                this.props.onDeselect({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+            }
+        });
     }
 
-    redraw() {
-
-    }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.props.traceInfo.source !== prevProps.traceInfo.source) {
