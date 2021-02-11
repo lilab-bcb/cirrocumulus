@@ -36,10 +36,10 @@ export function updateCategoryToStats(trace, selection) {
         const valueToCount = {};
         let sum = 0;
         let n = 0;
-        for (let i = 0, n = indices.length; i < n; i++) {
+        for (let i = 0, nIndices = indices.length; i < nIndices; i++) {
             const index = indices[i];
             if (selectionEmpty || selection.has(index)) {
-                const val = trace.values[i];
+                const val = trace.values[index];
                 if (!trace.continuous) {
                     valueToCount[val] = (valueToCount[val] || 0) + 1;
                 } else {
@@ -49,12 +49,12 @@ export function updateCategoryToStats(trace, selection) {
             }
         }
         if (!trace.continuous) {
-            let max = 0;
+            let maxCount = 0;
             let maxValue;
             for (let value in valueToCount) {
                 const count = valueToCount[value];
-                if (count > max) {
-                    max = count;
+                if (count > maxCount) {
+                    maxCount = count;
                     maxValue = value;
                 }
             }
