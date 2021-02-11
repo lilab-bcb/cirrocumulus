@@ -35,7 +35,7 @@ export function updateCategoryToStats(trace, selection) {
         const indices = categoryToIndices[category];
         const valueToCount = {};
         let sum = 0;
-        let count = 0;
+        let n = 0;
         for (let i = 0, n = indices.length; i < n; i++) {
             const index = indices[i];
             if (selectionEmpty || selection.has(index)) {
@@ -45,23 +45,23 @@ export function updateCategoryToStats(trace, selection) {
                 } else {
                     sum += val;
                 }
-                count++;
+                n++;
             }
         }
         if (!trace.continuous) {
             let max = 0;
             let maxValue;
             for (let value in valueToCount) {
-                let count = valueToCount[value];
+                const count = valueToCount[value];
                 if (count > max) {
                     max = count;
                     maxValue = value;
                 }
             }
-            categoryToStats[category] = {value: maxValue, n: count};
+            categoryToStats[category] = {value: maxValue, n: n};
         } else {
-            const mean = sum / count;
-            categoryToStats[category] = {value: (mean - trace.mean) / trace.stdev, n: count};
+            const mean = sum / n;
+            categoryToStats[category] = {value: (mean - trace.mean) / trace.stdev, n: n};
         }
     }
 
