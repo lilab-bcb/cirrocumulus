@@ -277,7 +277,6 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
 
     const npoints = traceInfo.npoints;
     const isSelectionEmpty = selection.size === 0;
-
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
         colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;

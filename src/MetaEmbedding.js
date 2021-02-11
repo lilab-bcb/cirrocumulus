@@ -26,6 +26,48 @@ const styles = theme => ({
     }
 });
 
+export function updateCategoryToStats(trace, selection) {
+    const categoryToStats = {};
+    const categoryToIndices = trace.categoryToIndices;
+    const selectionEmpty = selection.size === 0;
+    trace.categoryToStats = categoryToStats;
+    for (const category in categoryToIndices) {
+        const indices = categoryToIndices[category];
+        const valueToCount = {};
+        let sum = 0;
+        let count = 0;
+        for (let i = 0, n = indices.length; i < n; i++) {
+            const index = indices[i];
+            if (selectionEmpty || selection.has(index)) {
+                const val = trace.values[i];
+                if (!trace.continuous) {
+                    valueToCount[val] = (valueToCount[val] || 0) + 1;
+                } else {
+                    sum += val;
+                }
+                count++;
+            }
+        }
+        if (!trace.continuous) {
+            let max = 0;
+            let maxValue;
+            for (let value in valueToCount) {
+                let count = valueToCount[value];
+                if (count > max) {
+                    max = count;
+                    maxValue = value;
+                }
+            }
+            categoryToStats[category] = {value: maxValue, n: count};
+        } else {
+            const mean = sum / count;
+            categoryToStats[category] = {value: (mean - trace.mean) / trace.stdev, n: count};
+        }
+    }
+
+
+}
+
 class MetaEmbedding extends React.PureComponent {
 
     constructor(props) {
@@ -140,11 +182,9 @@ class MetaEmbedding extends React.PureComponent {
                         } else {
                             text += ', # spots: ' + intFormat(stats.n);
                         }
-
                     }
                 }
                 this.tooltipElementRef.current.innerHTML = text;
-
             } else {
                 this.tooltipElementRef.current.innerHTML = '';
             }
@@ -152,6 +192,10 @@ class MetaEmbedding extends React.PureComponent {
         containerElement.addEventListener('mouseleave', (e) => {
             this.tooltipElementRef.current.innerHTML = '';
         });
+    }
+
+    redraw() {
+
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {

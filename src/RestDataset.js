@@ -40,7 +40,7 @@ export class RestDataset {
         if (this.local) {
             if (cachedData['index'] == null) {
                 return this.getDataPromise({values: {dimensions: ['index']}}, cachedData).then(() => {
-                    const selectedIndices = getPassingFilterIndices(cachedData, q.filter);
+                    const selectedIndices = Array.from(getPassingFilterIndices(cachedData, q.filter));
                     const ids = [];
                     const index = cachedData['index'];
                     for (let i = 0, n = selectedIndices.length; i < n; i++) {

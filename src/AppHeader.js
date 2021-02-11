@@ -329,7 +329,7 @@ class AppHeader extends React.PureComponent {
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const hasDatasetDetails = dataset != null && (dataset.title || dataset.description);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
-        const hasSelection = dataset != null && shape != null && shape[0] > 0 && !isNaN(selection.count);
+        const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
 
         const showNewDataset = user != null && user.importer && !loadingApp.loading;
         const showEditDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading;
@@ -370,7 +370,7 @@ class AppHeader extends React.PureComponent {
                         <Button onClick={this.handleShowDatasetDetails}><b>{dataset.name}</b></Button>}
                         {!hasDatasetDetails && <b>{dataset.name}</b>}
                         <small>&nbsp;
-                            {hasSelection && shape != null && intFormat(selection.count) + ' / '}
+                            {hasSelection && shape != null && intFormat(selection.size) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}
                         </small>
 

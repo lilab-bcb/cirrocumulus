@@ -199,6 +199,8 @@ export function updateTraceColors(traceInfo) {
                     node.style.fill = colorScale(stats.value);
                 });
             }
+        } else {
+            console.log('categoryToStats not found for ' + traceInfo.name);
         }
     }
 }
@@ -346,6 +348,7 @@ export function getInterpolator(name) {
 
 export function createColorScale(colorScaleDef) {
     const scale = scaleSequential(colorScaleDef.value).clamp(true);
+    scale.unknown('#f0f0f0');
     if (colorScaleDef.reversed) {
         const interpolator = scale.interpolator();
         const mirror = t => interpolator(1 - t);

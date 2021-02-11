@@ -50,7 +50,6 @@ class EmbeddingChart extends React.PureComponent {
             featureSummary,
             globalFeatureSummary,
             markerOpacity,
-            nObsSelected,
             onChartOptions,
             onColorChange,
             onDeselect,
@@ -69,6 +68,7 @@ class EmbeddingChart extends React.PureComponent {
             unselectedMarkerOpacity
         } = this.props;
 
+        const nObsSelected = selection.size;
         const activeEmbeddingLabels = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         const displayName = traceInfo.name === '__count' ? '' : traceInfo.name;
 
@@ -160,6 +160,7 @@ class EmbeddingChart extends React.PureComponent {
                                setChartOptions={onChartOptions}
                                chartOptions={chartOptions}
                                dataset={dataset}
+                               selection={selection}
                                categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
                                onGallery={onGallery}
@@ -203,7 +204,7 @@ const mapStateToProps = state => {
         featureSummary: state.featureSummary,
         globalFeatureSummary: state.globalFeatureSummary,
         markerOpacity: state.markerOpacity,
-        nObsSelected: state.selection.count,
+        selection: state.selection,
         pointSize: state.pointSize,
         primaryChartSize: state.primaryChartSize,
         shape: state.dataset.shape,

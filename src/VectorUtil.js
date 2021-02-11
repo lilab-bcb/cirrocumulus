@@ -150,23 +150,23 @@ export function computeDerivedStats(result, q, cachedData) {
     if (q.selection) {
         const dimensions = q.selection.dimensions || [];
         const measures = q.selection.measures || [];
-        const embeddings = q.selection.embeddings || [];
+        // const embeddings = q.selection.embeddings || [];
         const typeToMeasures = getTypeToMeasures(measures);
         result.selection = {};
-        let selectedIndices = getPassingFilterIndices(cachedData, q.selection.filter);
-        if (embeddings.length > 0) {
-            result.selection.coordinates = {};
-            embeddings.forEach(embedding => {
-                let basis = getBasis(embedding.basis, embedding.nbins,
-                    embedding.agg, embedding.ndim || 2, embedding.precomputed);
-                result.selection.coordinates[basis.full_name] = {'indices_or_bins': selectedIndices};
-            });
-        }
+        result.selection.indices = getPassingFilterIndices(cachedData, q.selection.filter);
+        const selectedIndices = Array.from(result.selection.indices);
+        // if (embeddings.length > 0) {
+        //     result.selection.coordinates = {};
+        //     embeddings.forEach(embedding => {
+        //         let basis = getBasis(embedding.basis, embedding.nbins,
+        //             embedding.agg, embedding.ndim || 2, embedding.precomputed);
+        //         result.selection.coordinates[basis.full_name] = {'indices_or_bins': selectedIndices};
+        //     });
+        // }
         if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
             result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.X, selectedIndices));
         }
-        result.selection.count = selectedIndices.length;
-        result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, selectedIndices),
+        result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, result.selection.indices),
             getVectors(cachedData, typeToMeasures.X, selectedIndices));
     }
 }

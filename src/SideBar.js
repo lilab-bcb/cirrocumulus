@@ -73,7 +73,7 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {FEATURE_TYPE, getFeatureSets, splitSearchTokens,} from './util';
+import {FEATURE_TYPE, getFeatureSets, splitSearchTokens, TRACE_TYPE_META_IMAGE,} from './util';
 
 const sorter = natsort({insensitive: true});
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
@@ -207,14 +207,30 @@ class SideBar extends React.PureComponent {
         if (prevProps.dataset !== this.props.dataset) {
             this.setState({group1: null, group2: null, group1Count: null, group2Count: null});
         }
-        // if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
-        //     const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
-        //
-        //     this.setState({
-        //         minColor: summary == null || summary.customMin == null ? '' : summary.customMin,
-        //         maxColor: summary == null || summary.customMax == null ? '' : summary.customMax
-        //     });
-        // }
+        if (prevProps.activeFeature !== this.props.activeFeature) {
+            const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
+            if (this.props.activeFeature == null) {
+                this.setState({
+                    minColor: '',
+                    maxColor: ''
+                });
+            } else {
+                const trace = find(this.props.embeddingData, traceInfo => getTraceKey(traceInfo) === this.props.activeFeature.embeddingKey);
+                if (trace.type !== TRACE_TYPE_META_IMAGE) {
+                    this.setState({
+                        minColor: summary.customMin == null ? '' : summary.customMin,
+                        maxColor: summary.customMax == null ? '' : summary.customMax
+                    });
+                } else {
+                    this.setState({
+                        minColor: summary.customZMin == null ? '' : summary.customZMin,
+                        maxColor: summary.customZMax == null ? '' : summary.customZMax
+                    });
+                }
+            }
+
+
+        }
     }
 
     onMinUIChange = (value) => {
@@ -226,17 +242,29 @@ class SideBar extends React.PureComponent {
     };
 
     onMinChange = (value) => {
-        const summary = this.props.globalFeatureSummary[this.props.activeFeature.name];
-        summary.customMin = isNaN(value) ? undefined : value;
+        const {activeFeature, embeddingData, globalFeatureSummary} = this.props;
+        const summary = globalFeatureSummary[activeFeature.name];
+        const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+        if (trace.type !== TRACE_TYPE_META_IMAGE) {
+            summary.customMin = isNaN(value) ? undefined : value;
+        } else {
+            summary.customZMin = isNaN(value) ? undefined : value;
+        }
         this.props.onDomain({
-            name: this.props.activeFeature.name,
+            name: activeFeature.name,
             summary: summary
         });
     };
 
     onMaxChange = (value) => {
-        const summary = this.props.globalFeatureSummary[this.props.activeFeature.name];
-        summary.customMax = isNaN(value) ? undefined : value;
+        const {activeFeature, embeddingData, globalFeatureSummary} = this.props;
+        const summary = globalFeatureSummary[activeFeature.name];
+        const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+        if (trace.type !== TRACE_TYPE_META_IMAGE) {
+            summary.customMax = isNaN(value) ? undefined : value;
+        } else {
+            summary.customZMax = isNaN(value) ? undefined : value;
+        }
         this.props.onDomain({
             name: this.props.activeFeature.name,
             summary: summary
@@ -489,7 +517,7 @@ class SideBar extends React.PureComponent {
     onSetGroup = (groupNumber) => {
         const d = {};
         d['group' + groupNumber] = datasetFilterToJson(this.props.dataset, this.props.datasetFilter, this.props.combineDatasetFilters);
-        d['group' + groupNumber + 'Count'] = this.props.selection.count;
+        d['group' + groupNumber + 'Count'] = this.props.selection.size;
         this.setState(d);
     };
 
@@ -818,10 +846,10 @@ class SideBar extends React.PureComponent {
                                 <Grid item>OR</Grid>
                             </Grid>
 
-                            {datasetFilterKeys.length > 0 && !isNaN(selection.count) &&
+                            {datasetFilterKeys.length > 0 && selection.size > 0 &&
                             <React.Fragment>
                                 <div style={{marginBottom: 2}}>
-                                    {intFormat(selection.count) + " / " + intFormat(dataset.shape[0]) + ": "}
+                                    {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}
                                     {datasetFilterKeys.map(key => {
                                         return <Chip
                                             onDelete={() => {
@@ -869,23 +897,23 @@ class SideBar extends React.PureComponent {
                             <ButtonGroup variant="outlined">
                                 <Tooltip
                                     title={'Group one' + (this.state.group1Count ? ' (' + intFormat(this.state.group1Count) + ' cells)' : '')}>
-                                    <Button size={"small"} disabled={isNaN(selection.count)}
+                                    <Button size={"small"} disabled={selection.size === 0}
                                             onClick={event => this.onSetGroup(1)}>1</Button>
                                 </Tooltip>
                                 <Tooltip
                                     title={'Group two' + (this.state.group2Count ? ' (' + intFormat(this.state.group2Count) + ' cells)' : '')}>
-                                    <Button size={"small"} disabled={isNaN(selection.count)}
-                                            onClick={event => this.onSetGroup(2)}>2</Button>
+                                    <Button size={"small"} disabled={selection.size === 0}
+                                                  onClick={event => this.onSetGroup(2)}>2</Button>
                                 </Tooltip>
                                 <Button size={"small"} variant="outlined"
-                                        disabled={isNaN(selection.count) || this.state.group1 == null || this.state.group2 == null}
+                                        disabled={selection.size === 0 || this.state.group1 == null || this.state.group2 == null}
                                         onClick={event => this.onSubmitJob('de')}>Go</Button>
                             </ButtonGroup>
 
                             <Tooltip
                                 title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>
                             <Button style={{minWidth: 40}}
-                                    disabled={isNaN(selection.count) || activeFeature.type !== FEATURE_TYPE.X}
+                                    disabled={selection.size === 0 || activeFeature.type !== FEATURE_TYPE.X}
                                     size={"small"} variant="outlined"
                                     onClick={event => this.onSubmitJob('corr')}>Go</Button>
                         </div>

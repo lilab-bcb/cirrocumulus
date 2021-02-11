@@ -22,7 +22,6 @@ class GalleryImage extends React.PureComponent {
         this.elementRef = React.createRef();
     }
 
-
     draw() {
         const {
             cachedData,
@@ -38,14 +37,10 @@ class GalleryImage extends React.PureComponent {
             traceInfo,
             unselectedMarkerOpacity,
         } = this.props;
-        const embedding = traceInfo.embedding;
-        const fullName = getEmbeddingKey(embedding);
-        const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
-        const userPoints = chartSelection ? chartSelection.userPoints : new Set();
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
-            updateScatterChart(scatterPlot, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, pointSize,
+            updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
                 categoricalNames, chartOptions, obsCat, cachedData);
             const canvas = containerElement.querySelector('canvas');
             const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
@@ -81,7 +76,7 @@ class GalleryImage extends React.PureComponent {
                 drawEmbeddingImage(context, {
                     width: chartSize,
                     height: chartSize
-                }, traceInfo, userPoints, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
+                }, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
                 this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false, element: null});
                 canvas = null;
             }

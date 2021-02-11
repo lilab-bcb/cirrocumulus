@@ -8,6 +8,7 @@ import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
 import {updateJob} from '../JobResultsPanel';
+import {updateCategoryToStats} from '../MetaEmbedding';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
@@ -16,7 +17,6 @@ import {
     addFeatureSetsToX,
     CATEGORY_20B,
     CATEGORY_20C,
-    convertBinsToIndices,
     convertIndicesToBins,
     createColorScale,
     FEATURE_TYPE,
@@ -30,8 +30,6 @@ import {
     TRACE_TYPE_SCATTER,
     updateTraceColors
 } from '../util';
-import {Vector} from '../Vector';
-import {variance} from '../VectorUtil';
 
 // export const API = 'http://localhost:5000/api';
 export const API = 'api';
@@ -650,7 +648,6 @@ function handleFilterUpdated() {
         dispatch(_setLoading(true));
         // whenever filter is updated, we need to get selection statistics
         const state = getState();
-
         const searchTokens = splitSearchTokens(state.searchTokens);
         let filter = getFilterJson(state);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
@@ -665,24 +662,27 @@ function handleFilterUpdated() {
         if (filter) {
             q.selection.filter = filter;
         }
-        const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
+        // const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
         if (filter == null) {
-            if (!isCurrentSelectionEmpty) {
-                dispatch(setSelection({chart: {}}));
+            // if (!isCurrentSelectionEmpty) {
+            //     dispatch(setSelection({chart: {}}));
+            // }
+            if (state.selection.size !== 0) {
+                dispatch(setSelection(new Set()));
             }
             dispatch(setSelectedDistributionData([]));
             dispatch(setFeatureSummary({}));
             dispatch(_setLoading(false));
             return;
         }
-        let selectedEmbeddings = state.embeddings;
-        q.selection.embeddings = selectedEmbeddings.map(e => {
-            return getEmbeddingJson(e);
-        });
+        // let selectedEmbeddings = state.embeddings;
+        // q.selection.embeddings = selectedEmbeddings.map(e => {
+        //     return getEmbeddingJson(e);
+        // });
         const cachedData = state.cachedData;
         getState().dataset.api.getDataPromise(q, cachedData).then(result => {
-            dispatch(handleSelectionResult(result.selection, true));
+            dispatch(handleSelectionResult(result.selection));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
@@ -1460,54 +1460,53 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 }
 
 
-function handleSelectionResult(selectionResult, clear) {
+function handleSelectionResult(selectionResult) {
     return function (dispatch, getState) {
         const state = getState();
         if (selectionResult) {
-            const coordinates = selectionResult.coordinates;
-            if (coordinates != null) {
-                let chartSelection = {};
-                for (let key in coordinates) {
-                    const selectedIndicesOrBins = coordinates[key].indices_or_bins;
-                    const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
-                    if (embedding == null) {
-                        console.log(key + ' missing');
-                        continue;
-                    }
-                    let selectedPoints = selectedIndicesOrBins;
-                    if (isEmbeddingBinned(embedding)) {
-                        const coords = state.cachedData[getEmbeddingKey(embedding)];
-                        const bins = coords.bins;
-                        selectedPoints = convertBinsToIndices(bins, selectedIndicesOrBins);
-                    }
+            // const indices = selectionResult.indices;
+            // if (indices != null) {
+            // let chartSelection = {};
+            // for (let key in coordinates) {
+            //     const selectedIndicesOrBins = coordinates[key].indices_or_bins;
+            //     const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
+            //     if (embedding == null) {
+            //         console.log(key + ' missing from coordinates');
+            //         continue;
+            //     }
+            //     let selectedPoints = selectedIndicesOrBins;
+            //     if (isEmbeddingBinned(embedding)) {
+            //         const coords = state.cachedData[getEmbeddingKey(embedding)];
+            //         const bins = coords.bins;
+            //         selectedPoints = convertBinsToIndices(bins, selectedIndicesOrBins);
+            //     }
+            //
+            //     chartSelection[key] = {
+            //         userPoints: new Set(selectedPoints),
+            //         points: selectedIndicesOrBins
+            //     };
+            // }
 
-                    chartSelection[key] = {
-                        userPoints: new Set(selectedPoints),
-                        points: selectedIndicesOrBins
-                    };
-                }
-                dispatch(setSelection({
-                    count: selectionResult.count,
-                    chart: chartSelection
-                }));
-            } else {
-                const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
-                if (clear && !isCurrentSelectionEmpty) {
-                    dispatch(setSelection({count: selectionResult.count, chart: {}}));
-                }
-            }
+            // } else {
+            //     const isCurrentSelectionEmpty = state.selection.indices == null || Object.keys(state.selection.chart).length === 0;
+            //     if (clear && !isCurrentSelectionEmpty) {
+            //         dispatch(setSelection({count: selectionResult.count, indices: null}));
+            //     }
+            // }
 
+            dispatch(setSelection(selectionResult.indices));
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             if (selectionResult.summary) {
                 // merge or clear selection
-                let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
+                // let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
+                let selectionSummary = selectionResult.summary;
                 dispatch(setFeatureSummary(Object.assign({}, selectionSummary)));
             }
             if (selectionResult.distribution) {
                 let selectedDistributionData = state.selectedDistributionData;
-                if (clear) {
-                    selectedDistributionData = [];
-                }
+                // if (clear) {
+                //     selectedDistributionData = [];
+                // }
                 const searchTokens = splitSearchTokens(state.searchTokens);
                 addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
                 selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, searchTokens);
@@ -1836,7 +1835,6 @@ function getFeatureType(dataset, feature) {
 function updateEmbeddingData(state, features) {
     const embeddings = state.embeddings;
     let embeddingData = state.embeddingData;
-
     const globalFeatureSummary = state.globalFeatureSummary;
     const interpolator = state.interpolator;
     const dataset = state.dataset;
@@ -1972,75 +1970,54 @@ function updateEmbeddingData(state, features) {
                     const svg = cachedData[getEmbeddingKey(embedding)];
                     chartData.source = svg.cloneNode(true);
                     chartData.gallerySource = svg.cloneNode(true);
-                    if (chartData.name !== '__count') {
+                    if (embedding.categoryToIndices === undefined) {
                         const groupBy = cachedData[chartData.embedding.attrs.group];
-                        const selection = chartData.embedding.attrs.selection;
-                        const passingIndices = getPassingFilterIndices(cachedData, {filters: selection});
-                        let passingGroupToValues = {};
-                        for (let i = 0, n = passingIndices.length; i < n; i++) {
-                            const index = passingIndices[i];
-                            const category = groupBy[index];
-                            let values = passingGroupToValues[category];
-                            if (values == null) {
-                                values = [];
-                                passingGroupToValues[category] = values;
+                        const categoryToIndices = {};
+                        const passingIndices = getPassingFilterIndices(cachedData, {filters: chartData.embedding.attrs.selection});
+                        for (let index of passingIndices) {
+                            const group = groupBy[index];
+                            let indices = categoryToIndices[group];
+                            if (indices === undefined) {
+                                indices = [];
+                                categoryToIndices[group] = indices;
                             }
-                            values.push(chartData.values[index]);
-
+                            indices.push(index);
                         }
 
-                        function getCategoryToStats(groupToValues) {
-                            const categoryToStats = {};
-                            if (isCategorical) {
-                                for (const category in groupToValues) {
-                                    const values = groupToValues[category];
-                                    const valueToCount = {};
-                                    for (let i = 0, n = values.length; i < n; i++) {
-                                        const val = values[i];
-                                        valueToCount[val] = (valueToCount[val] || 0) + 1;
-                                    }
-                                    let max = 0;
-                                    let maxValue;
-                                    for (let value in valueToCount) {
-                                        let count = valueToCount[value];
-                                        if (count > max) {
-                                            max = count;
-                                            maxValue = value;
-                                        }
-                                    }
-                                    categoryToStats[category] = {value: maxValue, n: values.length};
-                                }
-                            } else {
-
-                                colorScale.domain([-3, 3]);
-                                const means = [];
-                                for (const category in groupToValues) {
-                                    const values = groupToValues[category];
-                                    let sum = 0;
-                                    for (let i = 0, n = values.length; i < n; i++) {
-                                        sum += values[i];
-                                    }
-                                    const mean = sum / values.length;
-                                    means.push(mean);
-                                    categoryToStats[category] = {value: mean, n: values.length};
-                                }
-                                let sum = 0;
-                                for (let i = 0; i < means.length; i++) {
-                                    sum += means[i];
-                                }
-                                const mean = sum / means.length;
-                                const std = Math.sqrt(variance(new Vector('', means), mean));
-                                for (const category in categoryToStats) {
-                                    const s = categoryToStats[category];
-                                    s.value = (s.value - mean) / std;
-                                }
-                            }
-
-                            return categoryToStats;
-                        }
-
-                        chartData.categoryToStats = getCategoryToStats(passingGroupToValues);
+                        embedding.categoryToIndices = categoryToIndices;
                     }
+                    chartData.categoryToIndices = embedding.categoryToIndices;
+                    if (chartData.continuous) {
+                        // compute mean and standard deviation
+                        colorScale.domain([-3, 3]);
+                        if (chartData.name !== '__count') {
+                            let mean = 0;
+                            let count = 0;
+                            for (let category in embedding.categoryToIndices) {
+                                const indices = embedding.categoryToIndices[category];
+                                for (let i = 0, n = indices.length; i < n; i++) {
+                                    mean += chartData.values[indices[i]];
+                                    count++;
+                                }
+                            }
+                            mean = mean / count;
+                            let sum = 0;
+                            for (let category in embedding.categoryToIndices) {
+                                const indices = embedding.categoryToIndices[category];
+                                for (let i = 0, n = indices.length; i < n; i++) {
+                                    let diff = chartData.values[indices[i]] - mean;
+                                    diff = diff * diff;
+                                    sum += diff;
+                                }
+                            }
+                            const n = count - 1;
+                            const variance = sum / n;
+                            chartData.mean = mean;
+                            chartData.stdev = Math.sqrt(variance);
+                        }
+                    }
+                    updateCategoryToStats(chartData, state.selection);
+
                 }
                 updateTraceColors(chartData);
 

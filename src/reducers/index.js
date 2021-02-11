@@ -46,6 +46,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
+import {updateCategoryToStats} from '../MetaEmbedding';
 import {
     createColorScale,
     getInterpolator,
@@ -363,16 +364,13 @@ function user(state = {}, action) {
     }
 }
 
-/**
- * Object that contains count (number), chart (object). Each key in chart is the full layout name. Each value contains
- * userPoints (selected points in chart space) and points (the selected points in bin space if binning)
- */
-function selection(state = {chart: {}}, action) {
+
+function selection(state = new Set(), action) {
     switch (action.type) {
         case SET_SELECTION:
             return action.payload;
         case SET_DATASET:
-            return {};
+            return new Set();
         default:
             return state;
     }
@@ -599,7 +597,6 @@ function cachedData(state = {}, action) {
             return {};
     }
     return state;
-
 }
 
 // each item has  data (list of traces, each trace has x, y, etc.), layout
@@ -608,42 +605,59 @@ function embeddingData(state = [], action) {
         case SET_EMBEDDING_DATA :
             return action.payload;
         case SET_SELECTION:
+            state.forEach(trace => {
+                if (trace.type === TRACE_TYPE_META_IMAGE) {
+                    updateCategoryToStats(trace, action.payload);
+                    updateTraceColors(trace);
+                }
+            });
             return state.slice();
         case SET_DOMAIN:
-            state.forEach((traceInfo, stateIndex) => {
-                if (traceInfo.continuous && traceInfo.name === action.payload.name) {
+            state.forEach((trace) => {
+                if (trace.continuous && trace.name === action.payload.name) {
                     const summary = action.payload.summary;
-                    const domain = traceInfo.type === TRACE_TYPE_META_IMAGE ? [-3, 3] : [summary.min, summary.max];
-                    if (summary.customMin != null && !isNaN(summary.customMin)) {
-                        domain[0] = summary.customMin;
+                    const domain = trace.type === TRACE_TYPE_META_IMAGE ? [-3, 3] : [summary.min, summary.max];
+
+                    if (trace.type === TRACE_TYPE_META_IMAGE) {
+                        if (summary.customZMin != null && !isNaN(summary.customZMin)) {
+                            domain[0] = summary.customZMin;
+                        }
+                        if (summary.customZMax != null && !isNaN(summary.customZMax)) {
+                            domain[1] = summary.customZMax;
+                        }
+                    } else {
+                        if (summary.customMin != null && !isNaN(summary.customMin)) {
+                            domain[0] = summary.customMin;
+                        }
+                        if (summary.customMax != null && !isNaN(summary.customMax)) {
+                            domain[1] = summary.customMax;
+                        }
                     }
-                    if (summary.customMax != null && !isNaN(summary.customMax)) {
-                        domain[1] = summary.customMax;
-                    }
-                    traceInfo.colorScale.domain(domain);
-                    updateTraceColors(traceInfo);
+
+                    trace.colorScale.domain(domain);
+                    updateTraceColors(trace);
                 }
             });
             return state.slice();
         case SET_CATEGORICAL_COLOR:
-            state.forEach((traceInfo, stateIndex) => {
-                if (!traceInfo.continuous && traceInfo.name === action.payload.name) {
-                    let index = traceInfo.colorScale.domain().indexOf(action.payload.value);
-                    let range = traceInfo.colorScale.range();
+            state.forEach((trace) => {
+                if (!trace.continuous && trace.name === action.payload.name) {
+                    let index = trace.colorScale.domain().indexOf(action.payload.value);
+                    let range = trace.colorScale.range();
                     range[index] = action.payload.color;
-                    traceInfo.colorScale.range(range);
-                    updateTraceColors(traceInfo);
+                    trace.colorScale.range(range);
+                    updateTraceColors(trace);
                 }
             });
             return state.slice();
 
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
-            state.forEach((traceInfo, stateIndex) => {
-                if (traceInfo.continuous) {
-                    let domain = traceInfo.colorScale.domain();
-                    traceInfo.colorScale = createColorScale(action.payload).domain(domain);
-                    updateTraceColors(traceInfo);
+            state.forEach((trace) => {
+                if (trace.continuous) {
+                    let domain = trace.colorScale.domain();
+                    trace.colorScale = createColorScale(action.payload).domain(domain);
+                    updateTraceColors(trace);
                 }
             });
             return state.slice();
@@ -684,7 +698,7 @@ export function activeFeature(state = {}, action) {
         case SET_ACTIVE_FEATURE:
             return action.payload;
         case SET_EMBEDDING_DATA:
-            let traces = action.payload.filter(traceInfo => traceInfo.active);
+            let traces = action.payload.filter(trace => trace.active);
             if (traces.length === 0) {
                 return null;
             }

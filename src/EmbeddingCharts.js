@@ -29,18 +29,11 @@ class EmbeddingCharts extends React.PureComponent {
 
 
     render() {
-        const {activeFeature, embeddingData, selection, onGallery, primaryChartSize} = this.props;
+        const {activeFeature, embeddingData, onGallery, primaryChartSize} = this.props;
         if (activeFeature == null) {
             return <div style={{height: primaryChartSize.height}}></div>;
         }
         const primaryTrace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
-        let userPoints = emptySet;
-        if (primaryTrace) {
-            const embedding = primaryTrace.embedding;
-            const fullName = getEmbeddingKey(embedding);
-            const chartSelection = selection != null && selection.chart != null ? selection.chart[fullName] : null;
-            userPoints = chartSelection ? chartSelection.userPoints : emptySet;
-        }
         if (primaryTrace == null) {
             return <div style={{height: primaryChartSize.height}}></div>;
         }
@@ -48,7 +41,6 @@ class EmbeddingCharts extends React.PureComponent {
         return (<EmbeddingChart
                 onGallery={onGallery}
                 traceInfo={primaryTrace}
-                selection={userPoints}
             />
         );
     }
@@ -59,8 +51,7 @@ const mapStateToProps = state => {
     return {
         activeFeature: state.activeFeature,
         embeddingData: state.embeddingData,
-        primaryChartSize: state.primaryChartSize,
-        selection: state.selection
+        primaryChartSize: state.primaryChartSize
     };
 };
 const mapDispatchToProps = dispatch => {

@@ -78,7 +78,7 @@ export class DirectAccessDataset {
         keys = keys.concat(X).concat(obs);
         return new Promise(resolve => {
             this.fetchData(keys).then(() => {
-                let indices = getPassingFilterIndices(this.key2data, dataFilter);
+                const indices = Array.from(getPassingFilterIndices(this.key2data, dataFilter));
                 let idVector = this.getVector('index', indices);
                 let ids = [];
                 for (let i = 0, n = idVector.size(); i < n; i++) {
