@@ -1,5 +1,4 @@
 import gzip
-from concurrent.futures.thread import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
@@ -8,6 +7,7 @@ import scipy.stats as ss
 
 from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures
 from .diff_exp import fdrcorrection
+from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
 
 
 executor = None
@@ -16,7 +16,13 @@ executor = None
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
     if executor is None:
-        executor = ThreadPoolExecutor(max_workers=2)  # TODO
+        from concurrent.futures.process import ProcessPoolExecutor
+        from concurrent.futures.thread import ThreadPoolExecutor
+        import os
+        max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
+        executor = ProcessPoolExecutor(max_workers=max_workers) if os.environ.get(
+            CIRRO_SERVE) != 'true' else ThreadPoolExecutor(
+            max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
         params=params)
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
