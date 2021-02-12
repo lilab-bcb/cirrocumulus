@@ -201,6 +201,32 @@ export function updateTraceColors(traceInfo) {
                     node.style.fill = color;
                 });
             }
+        } else {
+            for (const category in categoryToStats) {
+                const stats = categoryToStats[category];
+                const query = category.replaceAll(' ', '_'); // FIXME
+                svgNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                    if (stats.n === 0) {
+                        if (node.dataset.fill === undefined) {
+                            node.dataset.fill = node.style.fill;
+                        }
+                        node.style.fill = '#f0f0f0';
+                    } else if (node.dataset.fill !== undefined) {
+                        node.style.fill = node.dataset.fill;
+                    }
+                });
+
+                galleryNode.querySelectorAll('[id="' + query + '"]').forEach(node => {
+                    if (stats.n === 0) {
+                        if (node.dataset.fill === undefined) {
+                            node.dataset.fill = node.style.fill;
+                        }
+                        node.style.fill = '#f0f0f0';
+                    } else if (node.dataset.fill !== undefined) {
+                        node.style.fill = node.dataset.fill;
+                    }
+                });
+            }
         }
     }
 }

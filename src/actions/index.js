@@ -467,7 +467,7 @@ export function removeDatasetFilter(filterKey) {
             let datasetFilter = getState().datasetFilter;
             if (filterKey === 'selection') {
                 for (let key in datasetFilter) {
-                    if (datasetFilter[key].basis != null) {
+                    if (Array.isArray(datasetFilter[key])) {
                         delete datasetFilter[key];
                     }
                 }
@@ -2030,38 +2030,36 @@ function updateEmbeddingData(state, features) {
                     chartData.zscore = true;
                     chartData.gallerySource = svg.cloneNode(true);
                     chartData.categoryToIndices = embedding.categoryToIndices;
-                    if (chartData.name !== '__count') {
-                        if (chartData.continuous) {
-                            // compute mean and standard deviation
-                            colorScale.domain([-3, 3]);
-                            let mean = 0;
-                            let count = 0;
-                            for (let category in embedding.categoryToIndices) {
-                                const indices = embedding.categoryToIndices[category];
-                                for (let i = 0, n = indices.length; i < n; i++) {
-                                    mean += chartData.values[indices[i]];
-                                    count++;
-                                }
-                            }
-                            mean = mean / count;
-                            let sum = 0;
-                            for (let category in embedding.categoryToIndices) {
-                                const indices = embedding.categoryToIndices[category];
-                                for (let i = 0, n = indices.length; i < n; i++) {
-                                    let diff = chartData.values[indices[i]] - mean;
-                                    diff = diff * diff;
-                                    sum += diff;
-                                }
-                            }
-                            const n = count - 1;
-                            const variance = sum / n;
-                            chartData.mean = mean;
-                            chartData.stdev = Math.sqrt(variance);
-                        }
 
-                        chartData.fullCategoryToStats = createCategoryToStats(chartData, new Set());
-                        chartData.categoryToStats = state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
+                    if (chartData.continuous) {
+                        // compute mean and standard deviation
+                        colorScale.domain([-3, 3]);
+                        let mean = 0;
+                        let count = 0;
+                        for (let category in embedding.categoryToIndices) {
+                            const indices = embedding.categoryToIndices[category];
+                            for (let i = 0, n = indices.length; i < n; i++) {
+                                mean += chartData.values[indices[i]];
+                                count++;
+                            }
+                        }
+                        mean = mean / count;
+                        let sum = 0;
+                        for (let category in embedding.categoryToIndices) {
+                            const indices = embedding.categoryToIndices[category];
+                            for (let i = 0, n = indices.length; i < n; i++) {
+                                let diff = chartData.values[indices[i]] - mean;
+                                diff = diff * diff;
+                                sum += diff;
+                            }
+                        }
+                        const n = count - 1;
+                        const variance = sum / n;
+                        chartData.mean = mean;
+                        chartData.stdev = Math.sqrt(variance);
                     }
+                    chartData.fullCategoryToStats = createCategoryToStats(chartData, new Set());
+                    chartData.categoryToStats = state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
                 }
                 updateTraceColors(chartData);
 
