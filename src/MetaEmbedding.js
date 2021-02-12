@@ -28,11 +28,10 @@ const styles = theme => ({
     }
 });
 
-export function updateCategoryToStats(trace, selection) {
+export function createCategoryToStats(trace, selection) {
     const categoryToStats = {};
     const categoryToIndices = trace.categoryToIndices;
     const selectionEmpty = selection.size === 0;
-    trace.categoryToStats = categoryToStats;
     for (const category in categoryToIndices) {
         const indices = categoryToIndices[category];
         const valueToCount = {};
@@ -66,8 +65,7 @@ export function updateCategoryToStats(trace, selection) {
             categoryToStats[category] = {value: n === 0 ? undefined : (mean - trace.mean) / trace.stdev, n: n};
         }
     }
-
-
+    return categoryToStats;
 }
 
 class MetaEmbedding extends React.PureComponent {
@@ -147,6 +145,7 @@ class MetaEmbedding extends React.PureComponent {
             g.setAttribute("transform", transform);
         }
 
+
         const d3Zoom = zoom().scaleExtent([0.1, 10]).on("zoom", zoomed);
         this.d3Zoom = d3Zoom;
         select(svg).call(d3Zoom);
@@ -172,24 +171,26 @@ class MetaEmbedding extends React.PureComponent {
             containerElement.style.cursor = null;
             if (e.target.nodeName === 'path') {
                 const categoryToStats = this.props.traceInfo.categoryToStats;
-                let text = e.target.id;
-                text = text.replaceAll('_', ' '); // FIXME
+                let category = e.target.id;
+                category = category.replaceAll('_', ' '); // FIXME
+                let tooltip = category;
                 if (categoryToStats) {
                     containerElement.style.cursor = 'pointer';
-                    const stats = categoryToStats[text];
+                    const stats = categoryToStats[category];
                     if (stats) {
+                        const fullStats = this.props.traceInfo.fullCategoryToStats[category];
+                        const showFull = stats !== fullStats;
                         if (this.props.traceInfo.name !== '__count') {
-                            if (this.props.traceInfo.isCategorical) {
-                                text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
+                            if (!this.props.traceInfo.continuous) {
+                                tooltip += ', mode: ' + stats.value + (showFull ? ' (' + fullStats.value + ')' : '');
                             } else {
-                                text += ', z-score: ' + stripTrailingZeros(numberFormat2f(stats.value)) + ', # spots: ' + intFormat(stats.n);
+                                tooltip += ', z-score: ' + stripTrailingZeros(numberFormat2f(stats.value)) + (showFull ? ' (' + stripTrailingZeros(numberFormat2f(fullStats.value)) + ')' : '');
                             }
-                        } else {
-                            text += ', # spots: ' + intFormat(stats.n);
                         }
+                        tooltip += ', # spots: ' + intFormat(stats.n) + (showFull ? ' / ' + intFormat(fullStats.n) : '');
                     }
                 }
-                this.tooltipElementRef.current.innerHTML = text;
+                this.tooltipElementRef.current.innerHTML = tooltip;
             } else {
                 this.tooltipElementRef.current.innerHTML = '';
             }
@@ -220,6 +221,7 @@ class MetaEmbedding extends React.PureComponent {
 
 
     componentDidUpdate(prevProps, prevState, snapshot) {
+        this.tooltipElementRef.current.innerHTML = '';
         if (this.props.traceInfo.source !== prevProps.traceInfo.source) {
             select(prevProps.traceInfo.source).on(".zoom", null);
             this.updateSvg();

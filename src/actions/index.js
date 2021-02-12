@@ -8,7 +8,7 @@ import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
 import {updateJob} from '../JobResultsPanel';
-import {updateCategoryToStats} from '../MetaEmbedding';
+import {createCategoryToStats} from '../MetaEmbedding';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 
@@ -956,7 +956,6 @@ function restoreSavedView(savedView) {
             savedView.colorScheme.value = getInterpolator(savedView.colorScheme.name);
         }
 
-        console.log(savedView);
         if (savedView.datasetFilter == null) {
             savedView.datasetFilter = {};
 
@@ -1986,6 +1985,21 @@ function updateEmbeddingData(state, features) {
                     colorScale.summary = featureSummary;
                 }
 
+                if (traceType === TRACE_TYPE_META_IMAGE && embedding.categoryToIndices == null) {
+                    const groupBy = cachedData[embedding.attrs.group];
+                    const categoryToIndices = {};
+                    const passingIndices = getPassingFilterIndices(cachedData, {filters: embedding.attrs.selection});
+                    for (let index of passingIndices) {
+                        const category = groupBy[index];
+                        let indices = categoryToIndices[category];
+                        if (indices === undefined) {
+                            indices = [];
+                            categoryToIndices[category] = indices;
+                        }
+                        indices.push(index);
+                    }
+                    embedding.categoryToIndices = categoryToIndices;
+                }
 
                 let chartData = {
                     embedding: Object.assign({}, embedding),
@@ -2015,28 +2029,11 @@ function updateEmbeddingData(state, features) {
                     chartData.source = svg.cloneNode(true);
                     chartData.zscore = true;
                     chartData.gallerySource = svg.cloneNode(true);
-                    if (embedding.categoryToIndices === undefined) {
-                        const groupBy = cachedData[chartData.embedding.attrs.group];
-                        const categoryToIndices = {};
-                        const passingIndices = getPassingFilterIndices(cachedData, {filters: chartData.embedding.attrs.selection});
-                        for (let index of passingIndices) {
-                            const category = groupBy[index];
-                            let indices = categoryToIndices[category];
-                            if (indices === undefined) {
-                                indices = [];
-                                categoryToIndices[category] = indices;
-                            }
-                            indices.push(index);
-                        }
-                        embedding.categoryToIndices = categoryToIndices;
-                    }
                     chartData.categoryToIndices = embedding.categoryToIndices;
                     if (chartData.name !== '__count') {
-
                         if (chartData.continuous) {
                             // compute mean and standard deviation
                             colorScale.domain([-3, 3]);
-
                             let mean = 0;
                             let count = 0;
                             for (let category in embedding.categoryToIndices) {
@@ -2061,7 +2058,9 @@ function updateEmbeddingData(state, features) {
                             chartData.mean = mean;
                             chartData.stdev = Math.sqrt(variance);
                         }
-                        updateCategoryToStats(chartData, state.selection);
+
+                        chartData.fullCategoryToStats = createCategoryToStats(chartData, new Set());
+                        chartData.categoryToStats = state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
                     }
                 }
                 updateTraceColors(chartData);

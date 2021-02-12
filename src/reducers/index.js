@@ -46,7 +46,7 @@ import {
     SET_USER,
     UPDATE_DATASET,
 } from '../actions';
-import {updateCategoryToStats} from '../MetaEmbedding';
+import {createCategoryToStats} from '../MetaEmbedding';
 import {
     createColorScale,
     getInterpolator,
@@ -607,7 +607,7 @@ function embeddingData(state = [], action) {
         case SET_SELECTION:
             state.forEach(trace => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {
-                    updateCategoryToStats(trace, action.payload);
+                    trace.categoryToStats = action.payload.size === 0 ? trace.fullCategoryToStats : createCategoryToStats(trace, action.payload);
                     updateTraceColors(trace);
                 }
             });
