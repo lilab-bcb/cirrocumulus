@@ -125,13 +125,14 @@ export default class DotPlotCanvas extends React.PureComponent {
         // context.lineWidth = gridThickness;
         const valueScale = interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE || interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY ? scaleLinear().range([0, 1]) : null;
         const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
+        const ncategories = data2d.length;
         let domains = null;
         if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
             domains = [];
             for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
                 let min = Number.MAX_VALUE;
                 let max = -Number.MAX_VALUE;
-                for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+                for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
                     const array = data2d[categoryIndex];
                     const mean = array[featureIndex].mean;
                     min = Math.min(min, mean);
@@ -141,7 +142,7 @@ export default class DotPlotCanvas extends React.PureComponent {
             }
         } else if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
             domains = [];
-            for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+            for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
                 let min = Number.MAX_VALUE;
                 let max = -Number.MAX_VALUE;
                 for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
@@ -157,12 +158,12 @@ export default class DotPlotCanvas extends React.PureComponent {
             if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
                 valueScale.domain(domains[featureIndex]);
             }
-            for (let categoryIndex = 0; categoryIndex < data2d.length; categoryIndex++) {
+            for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
                 if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
                     valueScale.domain(domains[categoryIndex]);
                 }
-                const array = data2d[categoryIndex];
-                let mean = array[featureIndex].mean;
+                const item = data2d[categoryIndex][featureIndex];
+                let mean = item.mean;
                 const ypix = categoryIndex * diameter + (drawCircles ? maxRadius : 0);
                 if (valueScale) {
                     mean = valueScale(mean);
@@ -172,7 +173,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                 context.beginPath();
                 if (drawCircles) {
                     const xpix = featureIndex * diameter + maxRadius + size.x;
-                    const frac = array[featureIndex].percentExpressed;
+                    const frac = item.percentExpressed;
                     context.arc(xpix, ypix, sizeScale(frac), 0, 2 * Math.PI);
                 } else {
                     const xpix = featureIndex * diameter + size.x;
@@ -306,7 +307,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         drawColorScheme(context, this.props.colorScale, textColor);
         context.translate(-10, (colorScaleHeight + 4));
 
-        if(this.props.drawCircles) {
+        if (this.props.drawCircles) {
             drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
         }
         if (format === 'svg') {

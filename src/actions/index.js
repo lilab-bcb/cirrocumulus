@@ -682,7 +682,7 @@ function handleFilterUpdated() {
         // });
         const cachedData = state.cachedData;
         getState().dataset.api.getDataPromise(q, cachedData).then(result => {
-            dispatch(handleSelectionResult(result.selection));
+            dispatch(handleSelectionResult(result.selection, true));
         }).catch(err => {
             handleError(dispatch, err);
         }).finally(() => dispatch(_setLoading(false)));
@@ -700,8 +700,14 @@ export function handleBrushFilterUpdated(payload) {
             const bins = getState().cachedData[getEmbeddingKey(value.basis)].bins;
             value.points = convertIndicesToBins(value.points, bins);
         }
+        for (let key in datasetFilter) {
+            const value = datasetFilter[key];
+            if (key !== name && value.basis) { // only one active embedding filter
+                delete datasetFilter[key];
+            }
+        }
         let update = true;
-        if (value == null) { // remove
+        if (value == null) { // remove filter for embedding
             update = datasetFilter[name] != null;
             delete datasetFilter[name];
         } else {
@@ -1460,7 +1466,8 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 }
 
 
-function handleSelectionResult(selectionResult) {
+function handleSelectionResult(selectionResult, clear) {
+    // not need to clear when adding a new feature
     return function (dispatch, getState) {
         const state = getState();
         if (selectionResult) {
@@ -1498,15 +1505,14 @@ function handleSelectionResult(selectionResult) {
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             if (selectionResult.summary) {
                 // merge or clear selection
-                // let selectionSummary = clear ? selectionResult.summary : Object.assign(getState().featureSummary, selectionResult.summary);
-                let selectionSummary = selectionResult.summary;
-                dispatch(setFeatureSummary(Object.assign({}, selectionSummary)));
+                let selectionSummary = clear ? selectionResult.summary : Object.assign({}, getState().featureSummary, selectionResult.summary);
+                dispatch(setFeatureSummary(selectionSummary));
             }
             if (selectionResult.distribution) {
                 let selectedDistributionData = state.selectedDistributionData;
-                // if (clear) {
-                //     selectedDistributionData = [];
-                // }
+                if (clear) {
+                    selectedDistributionData = [];
+                }
                 const searchTokens = splitSearchTokens(state.searchTokens);
                 addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
                 selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, searchTokens);
@@ -1804,7 +1810,7 @@ function _updateCharts(onError) {
             // }
             dispatch(setEmbeddingData(embeddingData.slice()));
             if (result.selection) {
-                dispatch(handleSelectionResult(result.selection));
+                dispatch(handleSelectionResult(result.selection, false));
             } else { // clear selection
                 dispatch(setSelectedDistributionData(updateDistributionData(null, selectedDistributionData, searchTokens)));
             }
@@ -1969,6 +1975,7 @@ function updateEmbeddingData(state, features) {
                 if (traceType === TRACE_TYPE_META_IMAGE) {
                     const svg = cachedData[getEmbeddingKey(embedding)];
                     chartData.source = svg.cloneNode(true);
+                    chartData.zscore = true;
                     chartData.gallerySource = svg.cloneNode(true);
                     if (embedding.categoryToIndices === undefined) {
                         const groupBy = cachedData[chartData.embedding.attrs.group];

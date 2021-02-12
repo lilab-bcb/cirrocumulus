@@ -48,6 +48,7 @@ function updateNames(data, categoricalNames) {
 function reshapeData(data, distributionPlotOptions) {
     // create 2-d array with categories along rows and features along columns
     let categoryToFeatures = {};
+
     data.forEach(item => {
         let features = categoryToFeatures[item.name];
         if (features == null) {
@@ -88,8 +89,9 @@ function reshapeData(data, distributionPlotOptions) {
     }
     let data2d = [];
     for (let i = 0; i < categories.length; i++) {
-        let category = categories[i];
-        data2d.push(categoryToFeatures[category]);
+        const category = categories[i];
+        const features = categoryToFeatures[category];
+        data2d.push(features);
     }
     return data2d;
 }

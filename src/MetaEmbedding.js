@@ -6,6 +6,7 @@ import React from 'react';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {intFormat, numberFormat2f} from './formatters';
+import {stripTrailingZeros} from './util';
 
 const styles = theme => ({
 
@@ -181,7 +182,7 @@ class MetaEmbedding extends React.PureComponent {
                             if (this.props.traceInfo.isCategorical) {
                                 text += ', mode: ' + stats.value + ', # spots: ' + intFormat(stats.n);
                             } else {
-                                text += ', z-score: ' + numberFormat2f(stats.value) + ', # spots: ' + intFormat(stats.n);
+                                text += ', z-score: ' + stripTrailingZeros(numberFormat2f(stats.value)) + ', # spots: ' + intFormat(stats.n);
                             }
                         } else {
                             text += ', # spots: ' + intFormat(stats.n);
