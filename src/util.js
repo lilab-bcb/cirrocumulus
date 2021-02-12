@@ -187,7 +187,7 @@ export function updateTraceColors(traceInfo) {
         const svgNode = traceInfo.source;
         const galleryNode = traceInfo.gallerySource;
         const categoryToStats = traceInfo.categoryToStats;
-        if (categoryToStats) { // no categoryToStats for __count
+        if (traceInfo.name !== '__count') {
             for (const category in categoryToStats) {
                 const stats = categoryToStats[category];
                 const query = category.replaceAll(' ', '_'); // FIXME

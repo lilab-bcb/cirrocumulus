@@ -28,7 +28,6 @@ class CategoricalLegend extends React.PureComponent {
         };
     }
 
-
     handlePopoverClose = (e) => {
         this.setState({contextmenuEl: null, anchorEl: null});
     };
@@ -48,6 +47,7 @@ class CategoricalLegend extends React.PureComponent {
         });
         this.setState({forceUpdate: !this.state.forceUpdate});
     };
+
     handleNameChangeApply = (e) => {
         this.props.handleNameChange({
             name: this.props.name,
@@ -110,7 +110,7 @@ class CategoricalLegend extends React.PureComponent {
             categoricalNames
         } = this.props;
         let clickEnabled = this.props.clickEnabled;
-        const categoricalFilterValues = datasetFilter[name];
+        const categoricalFilter = datasetFilter[name];
         const selectionSummary = featureSummary[name];
         let selectedDimensionToCount = {};
         if (selectionSummary != null) {
@@ -231,7 +231,7 @@ class CategoricalLegend extends React.PureComponent {
                     <tbody>
                     {categories.map((category, i) => {
 
-                        const opacity = categoricalFilterValues == null || categoricalFilterValues.indexOf(category) !== -1 ? 1 : 0.4;
+                        const opacity = categoricalFilter == null || categoricalFilter.value.indexOf(category) !== -1 ? 1 : 0.4;
                         // const fractionUnselected = unselectedCategoryCounts != null ? unselectedCategoryCounts[i] / unselectedTotal : null;
                         // const unselectedSize = unselectedCategoryCounts == null ? 0 : fractionScale(fractionUnselected);
                         // const unselectedTitle = unselectedCategoryCounts == null ? null : intFormat(unselectedCategoryCounts[i]) + ' / ' + intFormat(unselectedTotal) + (unselectedCategoryCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionUnselected) + '%)') : '');

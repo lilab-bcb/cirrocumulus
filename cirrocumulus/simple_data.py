@@ -117,7 +117,8 @@ class SimpleData:
 
         for key in adata.uns.keys():
             rank_genes_groups = adata.uns[key]
-            if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and 'scores' in rank_genes_groups:
+            if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and (
+                    'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
                 scanpy_marker_keys.append(key)
         de_results = []  # array of dicts containing params logfoldchanges, pvals_adj, scores, names
 

@@ -421,7 +421,7 @@ class ScatterChartThree extends React.PureComponent {
                 const widthHalf = this.props.chartSize.width / 2;
                 const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
-                const selectedIndices = [];
+                const selectedIndices = new Set();
 
                 for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
@@ -431,17 +431,17 @@ class ScatterChartThree extends React.PureComponent {
                     pos.x = (pos.x * widthHalf) + widthHalf;
                     pos.y = -(pos.y * heightHalf) + heightHalf;
                     if (isPointInside(pos, points)) {
-                        selectedIndices.push(i);
+                        selectedIndices.add(i);
                     }
                 }
 
-                if (selectedIndices.length === 0) {
+                if (selectedIndices.size === 0) {
                     this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.props.chartOptions.editSelection,
-                        value: {basis: traceInfo.embedding, points: selectedIndices}
+                        value: {basis: traceInfo.embedding, indices: selectedIndices}
                     });
                 }
             };
@@ -455,7 +455,7 @@ class ScatterChartThree extends React.PureComponent {
                 const widthHalf = this.props.chartSize.width / 2;
                 const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
-                const selectedPoints = [];
+                const selectedIndices = new Set();
 
                 for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
@@ -465,17 +465,17 @@ class ScatterChartThree extends React.PureComponent {
                     pos.x = (pos.x * widthHalf) + widthHalf;
                     pos.y = -(pos.y * heightHalf) + heightHalf;
                     if (pos.x >= rect.x && pos.x <= (rect.x + rect.width) && pos.y >= rect.y && pos.y <= (rect.y + rect.height)) {
-                        selectedPoints.push(i);
+                        selectedIndices.add(i);
                     }
                 }
 
-                if (selectedPoints.length === 0) {
+                if (selectedIndices.size === 0) {
                     this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
                         clear: !this.props.chartOptions.editSelection,
-                        value: {basis: traceInfo.embedding, points: selectedPoints}
+                        value: {basis: traceInfo.embedding, indices: selectedIndices}
                     });
                 }
             };

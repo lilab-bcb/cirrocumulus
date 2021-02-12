@@ -357,17 +357,17 @@ class ImageChart extends React.PureComponent {
         this.viewer.addHandler('canvas-release', function (event) {
             if (_this.props.chartOptions.dragmode === 'lasso') {
                 event.preventDefaultAction = true;
-                const points = _this.findPointsInPolygon(lassoPathArray);
+                const indices = new Set(_this.findPointsInPolygon(lassoPathArray));
                 lassoPathArray = [];
                 lassoPath.setAttribute('d', '');
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
                     clear: !_this.props.chartOptions.editSelection,
-                    value: {basis: _this.props.traceInfo.embedding, points: points}
+                    value: {basis: _this.props.traceInfo.embedding, indices: indices}
                 });
             } else if (_this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
-                const points = _this.findPointsInRectangle(rectElement);
+                const indices = new Set(_this.findPointsInRectangle(rectElement));
                 rectElement.removeAttribute('x');
                 rectElement.removeAttribute('y');
                 rectElement.removeAttribute('width');
@@ -375,7 +375,7 @@ class ImageChart extends React.PureComponent {
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
                     clear: !_this.props.chartOptions.editSelection,
-                    value: {basis: _this.props.traceInfo.embedding, points: points}
+                    value: {basis: _this.props.traceInfo.embedding, indices: indices}
                 });
             }
         });

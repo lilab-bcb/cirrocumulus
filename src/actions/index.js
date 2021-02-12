@@ -17,7 +17,6 @@ import {
     addFeatureSetsToX,
     CATEGORY_20B,
     CATEGORY_20C,
-    convertIndicesToBins,
     createColorScale,
     FEATURE_TYPE,
     getFeatureSets,
@@ -254,11 +253,8 @@ export function openDatasetFilter(filterId) {
                     if (slashIndex !== -1) {
                         field = field.substring(slashIndex + 1);
                     }
-                    if (filterOperation === 'in') {
-                        datasetFilter[field] = item[2];
-                    } else {
-                        datasetFilter[field] = {operation: item[1], value: item[2]};
-                    }
+                    datasetFilter[field] = {operation: item[1], value: item[2]};
+
                 });
                 dispatch(setDatasetFilter(datasetFilter));
                 dispatch(handleFilterUpdated());
@@ -489,13 +485,13 @@ function getDatasetFilterDependencies(datasetFilter) {
     let basis = new Set();
     for (let key in datasetFilter) {
         // basis, path for brush filter
-        const value = datasetFilter[key];
-        if (window.Array.isArray(value)) {
+        const filterObject = datasetFilter[key];
+        if (Array.isArray(filterObject)) { // brush filter
+            continue;
+        } else if (filterObject.operation === 'in') {
             features.add(key);
-        } else if (value.basis != null) {
-            basis.add(value.basis);
         } else {
-            if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
+            if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
                 features.add(key);
             }
         }
@@ -503,30 +499,53 @@ function getDatasetFilterDependencies(datasetFilter) {
     return {features: features, basis: basis};
 }
 
+export function getDatasetFilterNames(datasetFilter) {
+    const names = [];
+    let isBrushing = false;
+    for (let key in datasetFilter) {
+        const value = datasetFilter[key];
+        let f = null;
+        if (Array.isArray(value)) {
+            isBrushing = true;
+        } else if (value.operation === 'in') {
+            names.push(key);
+        } else if (value.operation != null && value.operation !== '' && !isNaN(value.value) && value.value != null) {
+            names.push(key);
+        }
+    }
+    if (isBrushing) {
+        names.push('selection');
+    }
+    return names;
+}
+
 export function getDatasetFilterArray(datasetFilter) {
     let filters = [];
+    const brushIndices = new Set();
+    // brush filters are combined with OR
     for (let key in datasetFilter) {
         // basis, path for brush filter
         const value = datasetFilter[key];
-        let f = null;
-        if (window.Array.isArray(value)) {
-            f = [key, 'in', value];
-        } else if (value.basis != null) {
-            let points = value.points;
-            if (points.length > 1) { // take "or"
-                let allPoints = new Set();
-                points.forEach(p => p.forEach(i => allPoints.add(i)));
-                points = Array.from(allPoints);
-            } else {
-                points = points[0];
-            }
-            f = [getEmbeddingJson(value.basis), 'in', {points: points}];
-        } else {
-            if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
-                f = [key, value.operation, value.value];
-            }
+        if (Array.isArray(value)) {
+            value.forEach(brushFilter => {
+                brushFilter.indices.forEach(index => brushIndices.add(index));
+            });
         }
-
+    }
+    if (brushIndices.size > 0) {
+        filters.push(['index', 'in', brushIndices]);
+    }
+    for (let key in datasetFilter) {
+        const value = datasetFilter[key];
+        let f = null;
+        if (Array.isArray(value)) {
+            continue;
+        }
+        if (value.operation === 'in') {
+            f = [key, value.operation, value.value];
+        } else if (value.operation != null && value.operation !== '' && !isNaN(value.value) && value.value != null) {
+            f = [key, value.operation, value.value];
+        }
         if (f != null) {
             filters.push(f);
         }
@@ -693,34 +712,52 @@ function handleFilterUpdated() {
 export function handleBrushFilterUpdated(payload) {
     return function (dispatch, getState) {
         const name = payload.name; // full basis name
-        const value = payload.value;  // value has basis and points
+        const value = payload.value;  // value has basis and indices
         const clear = payload.clear;
+        const indices = payload.value != null ? payload.value.indices : null;
+
         let datasetFilter = getState().datasetFilter;
-        if (value && isEmbeddingBinned(value.basis)) {
-            const bins = getState().cachedData[getEmbeddingKey(value.basis)].bins;
-            value.points = convertIndicesToBins(value.points, bins);
-        }
-        for (let key in datasetFilter) {
-            const value = datasetFilter[key];
-            if (key !== name && value.basis) { // only one active embedding filter
-                delete datasetFilter[key];
-            }
-        }
-        let update = true;
-        if (value == null) { // remove filter for embedding
-            update = datasetFilter[name] != null;
-            delete datasetFilter[name];
-        } else {
+        // if (value && isEmbeddingBinned(value.basis)) {
+        //     const bins = getState().cachedData[getEmbeddingKey(value.basis)].bins;
+        //     value.points = convertIndicesToBins(value.points, bins);
+        // }
+        function clearFilters() {
             if (clear) {
-                datasetFilter[name] = {basis: value.basis, points: [value.points]};
-            } else {
-                const prior = datasetFilter[name];
-                if (prior != null) {
-                    datasetFilter[name].points.push(value.points);
-                } else {
-                    datasetFilter[name] = {basis: value.basis, points: [value.points]};
+                for (let key in datasetFilter) {
+                    const value = datasetFilter[key];
+                    if (Array.isArray(value)) {
+                        delete datasetFilter[key];
+                    }
                 }
             }
+        }
+
+        let update = true;
+        if (value == null || indices.size === 0) { // remove filter
+            update = datasetFilter[name] != null;
+            delete datasetFilter[name];
+            clearFilters();
+        } else {
+            let priorFilters = datasetFilter[name];
+            let isToggle = false;
+            if (priorFilters != null) {
+                const priorIndex = findIndex(priorFilters, f => f.id === value.id);
+                if (priorIndex !== -1) { // toggle region
+                    isToggle = true;
+                    priorFilters.splice(priorIndex, 1);
+                }
+            }
+            if (!isToggle) {
+                clearFilters();
+                priorFilters = datasetFilter[name];
+                if (priorFilters == null) {
+                    priorFilters = [];
+                    datasetFilter[name] = priorFilters;
+                }
+                priorFilters.push({basis: value.basis, indices: indices, id: value.id});
+            }
+
+
         }
         if (update) {
             dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
@@ -795,7 +832,7 @@ export function handleCategoricalNameChange(payload) {
 export function handleDimensionFilterUpdated(payload) {
     return function (dispatch, getState) {
         let name = payload.name;
-        let value = payload.value;
+        let newValue = payload.value;
         let shiftKey = payload.shiftKey;
         let metaKey = payload.metaKey;
         let datasetFilter = getState().datasetFilter;
@@ -807,47 +844,46 @@ export function handleDimensionFilterUpdated(payload) {
                 break;
             }
         }
-        let selectedValues = datasetFilter[name];
-        if (selectedValues == null) {
-            selectedValues = [];
-            datasetFilter[name] = selectedValues;
+        let categoricalFilter = datasetFilter[name];
+        if (categoricalFilter == null) {
+            categoricalFilter = {operation: 'in', value: []};
+            datasetFilter[name] = categoricalFilter;
         }
 
-        if (shiftKey && selectedValues.length > 0) {
+        if (shiftKey && categoricalFilter.value.length > 0) {
             // add last click to current
-            let lastIndex = categories.indexOf(selectedValues[selectedValues.length - 1]);
-            let currentIndex = categories.indexOf(value);
+            let lastIndex = categories.indexOf(categoricalFilter.value[categoricalFilter.value.length - 1]);
+            let currentIndex = categories.indexOf(newValue);
             // put clicked category at end of array
             if (currentIndex > lastIndex) {
                 for (let i = lastIndex; i <= currentIndex; i++) {
-                    let index = selectedValues.indexOf(value);
+                    let index = categoricalFilter.value.indexOf(newValue);
                     if (index !== -1) {
-                        selectedValues.splice(index, 1);
+                        categoricalFilter.value.splice(index, 1);
                     }
-                    selectedValues.push(categories[i]);
+                    categoricalFilter.value.push(categories[i]);
                 }
             } else {
                 for (let i = lastIndex; i >= currentIndex; i--) {
-                    let index = selectedValues.indexOf(value);
+                    let index = categoricalFilter.value.indexOf(newValue);
                     if (index !== -1) {
-                        selectedValues.splice(index, 1);
+                        categoricalFilter.value.splice(index, 1);
                     }
-                    selectedValues.push(categories[i]);
+                    categoricalFilter.value.push(categories[i]);
                 }
             }
         } else {
-            let selectedIndex = selectedValues.indexOf(value);
+            let selectedIndex = categoricalFilter.value.indexOf(newValue);
             if (!metaKey) { // clear and toggle current
-                selectedValues = [];
-                datasetFilter[name] = selectedValues;
+                categoricalFilter.value = [];
             }
             if (selectedIndex !== -1) { // exists, remove
-                selectedValues.splice(selectedIndex, 1);
-                if (selectedValues.length === 0) {
+                categoricalFilter.value.splice(selectedIndex, 1);
+                if (categoricalFilter.value.length === 0) {
                     delete datasetFilter[name];
                 }
             } else {
-                selectedValues.push(value);
+                categoricalFilter.value.push(newValue);
             }
         }
         dispatch(setDatasetFilter(datasetFilter));
@@ -920,15 +956,17 @@ function restoreSavedView(savedView) {
             savedView.colorScheme.value = getInterpolator(savedView.colorScheme.name);
         }
 
-        if (savedView.datasetFilter != null) {
+        console.log(savedView);
+        if (savedView.datasetFilter == null) {
+            savedView.datasetFilter = {};
+
+        } else {
             for (let key in savedView.datasetFilter) {
                 let value = savedView.datasetFilter[key];
-                if (!window.Array.isArray(value)) {
+                if (value.operation) {
                     value.uiValue = value.value;
                 }
             }
-        } else {
-            savedView.datasetFilter = {};
         }
 
         dispatch(_setLoading(true));
@@ -1992,8 +2030,9 @@ function updateEmbeddingData(state, features) {
                         }
                         embedding.categoryToIndices = categoryToIndices;
                     }
+                    chartData.categoryToIndices = embedding.categoryToIndices;
                     if (chartData.name !== '__count') {
-                        chartData.categoryToIndices = embedding.categoryToIndices;
+
                         if (chartData.continuous) {
                             // compute mean and standard deviation
                             colorScale.domain([-3, 3]);

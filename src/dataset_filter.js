@@ -48,27 +48,26 @@ export function getPassingFilterIndices(cachedData, data_filter) {
         let user_filters = data_filter.filters || [];
         let combine_filters = data_filter.combine || 'and';
         for (let i = 0; i < user_filters.length; i++) {
-            let filter_obj = user_filters[i];
-            let field = filter_obj[0];
-            let value = filter_obj[2];
+            let filterObject = user_filters[i];
+            let filterField = filterObject[0];
+            let filterValue = filterObject[2];
             let keep = null;
 
-            if (isObject(field)) { // selection box or lasso
-                let selected_points_basis = getBasis(field['basis'], field.nbins,
-                    field.agg, field.ndim || 2, field.precomputed);
+            if (isObject(filterField)) { // selection box or lasso
+                let selected_points_basis = getBasis(filterField['basis'], filterField.nbins,
+                    filterField.agg, filterField.ndim || 2, filterField.precomputed);
                 let coordinate_columns = selected_points_basis.coordinate_columns;
-                if (value.points) { // list of points
-                    // let p = new Set(value.points);
+                if (filterValue.indices) { // Set of passing indices
                     let field = selected_points_basis['nbins'] ? selected_points_basis['full_name'] : 'index';
                     if (field == 'index') {
-                        keep = new Set(value.points);
+                        keep = filterValue.indices;
                     } else { // binning
                         throw 'Not implemented';
                     }
                     // keep = getIndices(cachedData[field], (val) => p.has(val));
                 } else {
                     let selection_keep;
-                    let path = value.path;
+                    let path = filterValue.path;
                     for (let j = 0; j < path.length; j++) {
                         let p = path[j];
                         let xKeep = getIndices(cachedData[coordinate_columns[0]], (val) => val >= p.x && val <= p.x + p.width);
@@ -82,9 +81,13 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                     keep = keep ? combine(selection_keep, keep, combine_filters) : selection_keep;
                 }
             } else {
-                const nameType = getVarNameType(field);
-                let series = cachedData[nameType.name];
-                keep = getIndices(series, createFilterFunction(filter_obj));
+                if (filterField === 'index') {
+                    keep = filterValue; // [index, in, indices]
+                } else {
+                    const nameType = getVarNameType(filterField);
+                    let series = cachedData[nameType.name];
+                    keep = getIndices(series, createFilterFunction(filterObject));
+                }
             }
 
 

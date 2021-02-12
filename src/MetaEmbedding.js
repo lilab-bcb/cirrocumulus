@@ -200,14 +200,14 @@ class MetaEmbedding extends React.PureComponent {
         containerElement.addEventListener('click', (e) => {
             if (e.target.nodeName === 'path') {
                 const categoryToIndices = this.props.traceInfo.categoryToIndices;
-                let text = e.target.id;
-                text = text.replaceAll('_', ' '); // FIXME
-                const indices = categoryToIndices[text];
+                let category = e.target.id;
+                category = category.replaceAll('_', ' '); // FIXME
+                const indices = categoryToIndices[category];
                 if (indices && indices.length > 0) {
                     this.props.onSelected({
                         name: getEmbeddingKey(this.props.traceInfo.embedding),
                         clear: !e.metaKey && !e.shiftKey,
-                        value: {basis: this.props.traceInfo.embedding, points: indices}
+                        value: {basis: this.props.traceInfo.embedding, indices: new Set(indices), id: category}
                     });
                 } else {
                     this.props.onSelected({name: getEmbeddingKey(this.props.traceInfo.embedding)});

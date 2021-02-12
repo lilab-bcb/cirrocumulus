@@ -202,18 +202,25 @@ class AppHeader extends React.PureComponent {
 
         let datasetFilterJson = {};
         for (let key in datasetFilter) {
-            let value = datasetFilter[key];
-            if (window.Array.isArray(value)) {
-                datasetFilterJson[key] = value;
+            let filterObject = datasetFilter[key];
+            if (Array.isArray(filterObject)) { // brush filter
+                const array = [];
+                filterObject.forEach(brush => {
+                    const brushJson = Object.assign({}, brush);
+                    brushJson.indices = Array.from(brush.indices);
+                    array.push(brushJson);
+                });
+                datasetFilterJson[key] = array;
+            } else if (filterObject.operation === 'in') {
+                datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
             } else {
-                if (value.operation !== '' && !isNaN(value.value) && value.value != null) {
-                    datasetFilterJson[key] = {operation: value.operation, value: value.value};
+                if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
+                    datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
                 }
             }
         }
         if (Object.keys(datasetFilterJson).length > 0) {
             json.datasetFilter = datasetFilterJson;
-
         }
         json.combineDatasetFilters = combineDatasetFilters;
         if (markerOpacity !== DEFAULT_MARKER_OPACITY) {

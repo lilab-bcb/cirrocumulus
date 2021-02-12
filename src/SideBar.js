@@ -43,8 +43,7 @@ import {
     deleteDatasetFilter,
     deleteFeatureSet,
     downloadSelectedIds,
-    exportDatasetFilters,
-    getDatasetFilterArray,
+    exportDatasetFilters, getDatasetFilterNames,
     getEmbeddingKey,
     getTraceKey,
     handleDomainChange,
@@ -588,51 +587,8 @@ class SideBar extends React.PureComponent {
         } = this.props;
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const chartType = distributionPlotOptions.chartType;
-        let currentDatasetFilters = getDatasetFilterArray(datasetFilter);
-        const datasetFilterKeys = [];
-        let isBrushing = false;
-        currentDatasetFilters.forEach(f => {
-            if (typeof f[0] === 'object') {
-                isBrushing = true;
-            } else {
-                datasetFilterKeys.push(f[0]);
-            }
-        });
-        datasetFilterKeys.sort((a, b) => {
-            a = a.toLowerCase();
-            b = b.toLowerCase();
-            return a < b ? -1 : (a === b ? 0 : 1);
-        });
-        if (isBrushing) {
-            datasetFilterKeys.push('selection');
-        }
-
-        // for filters we only need one embedding trace per feature
-        // const traceNames = new Set();
-        // const filterTraces = [];
-        // let primaryTraceName;
-        // embeddingData.forEach(trace => {
-        //     if (primaryTraceKey === getTraceKey(trace)) {
-        //         primaryTraceName = trace.name;
-        //     }
-        //     if (trace.active && trace.name !== '__count' && !traceNames.has(trace.name)) {
-        //         traceNames.add(trace.name);
-        //         filterTraces.push(trace);
-        //     }
-        // });
-        // // put active trace 1st
-        // filterTraces.sort((a, b) => {
-        //     if (a.name === primaryTraceName) {
-        //         return -1;
-        //     }
-        //     if (b.name === primaryTraceName) {
-        //         return 1;
-        //     }
-        //     a = a.name.toLowerCase();
-        //     b = b.name.toLowerCase();
-        //     return a < b ? -1 : (a === b ? 0 : 1);
-        // });
-
+        const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
+        datasetFilterKeys.sort(sorter);
 
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {
@@ -903,7 +859,7 @@ class SideBar extends React.PureComponent {
                                 <Tooltip
                                     title={'Group two' + (this.state.group2Count ? ' (' + intFormat(this.state.group2Count) + ' cells)' : '')}>
                                     <Button size={"small"} disabled={selection.size === 0}
-                                                  onClick={event => this.onSetGroup(2)}>2</Button>
+                                            onClick={event => this.onSetGroup(2)}>2</Button>
                                 </Tooltip>
                                 <Button size={"small"} variant="outlined"
                                         disabled={selection.size === 0 || this.state.group1 == null || this.state.group2 == null}
