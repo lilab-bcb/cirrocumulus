@@ -97,15 +97,15 @@ function reshapeData(data, distributionPlotOptions) {
 }
 
 function getMeanAndPercentRange(result) {
-    let percentRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
+    // let percentRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
     let meanRange = [Number.MAX_VALUE, -Number.MAX_VALUE];
     result.forEach(feature => {
-        percentRange[0] = Math.min(feature.percentExpressed, percentRange[0]);
-        percentRange[1] = Math.max(feature.percentExpressed, percentRange[1]);
+        // percentRange[0] = Math.min(feature.percentExpressed, percentRange[0]);
+        // percentRange[1] = Math.max(feature.percentExpressed, percentRange[1]);
         meanRange[0] = Math.min(feature.mean, meanRange[0]);
         meanRange[1] = Math.max(feature.mean, meanRange[1]);
     });
-    return {mean: meanRange, percent: percentRange};
+    return {mean: meanRange, percent: [0, 100]};
 }
 
 class DistributionGroup extends React.PureComponent {
@@ -137,22 +137,6 @@ class DistributionGroup extends React.PureComponent {
             meanRange[1] = Math.max(meanRange[1], selectedMeanAndPercentRange.mean[1]);
             percentRange[0] = Math.min(percentRange[0], selectedMeanAndPercentRange.percent[0]);
             percentRange[1] = Math.max(percentRange[1], selectedMeanAndPercentRange.percent[1]);
-        }
-        if (meanRange[0] === meanRange[1]) {
-            meanRange[1]++;
-        }
-        if (percentRange[0] === percentRange[1]) {
-            percentRange[0] = 0;
-            percentRange[1] = 100;
-        }
-        if (meanRange[0] > 0) {
-            meanRange[0] = 0;
-        }
-        if (percentRange[0] > 0) {
-            percentRange[0] = 0;
-        }
-        if (percentRange[1] > 100) {
-            percentRange[1] = 100;
         }
 
         if (distributionPlotOptions.min != null && !isNaN(distributionPlotOptions.min)) {
