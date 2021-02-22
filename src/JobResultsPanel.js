@@ -423,7 +423,11 @@ class JobResultsPanel extends React.PureComponent {
             }
         }
         if (index === -1) {
-            searchTokens.push({value: feature, type: FEATURE_TYPE.X});
+            const dataset = this.props.dataset;
+            searchTokens.push({
+                value: feature,
+                type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
+            });
         } else {
             searchTokens.splice(index, 1);
         }
@@ -759,6 +763,7 @@ class JobResultsPanel extends React.PureComponent {
 
 const mapStateToProps = state => {
         return {
+            dataset: state.dataset,
             email: state.email,
             jobResultId: state.jobResult,
             jobResults: state.jobResults,
