@@ -265,6 +265,7 @@ class DistributionGroup extends React.PureComponent {
                     </Select>
                 </FormControl>}
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
+                    <InputLabel shrink={true}>Size</InputLabel>
                     <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                         onOptions={this.props.onDistributionPlotOptions} showReversed={false}/>
                 </div>}
