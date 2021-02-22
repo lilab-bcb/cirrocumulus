@@ -100,7 +100,7 @@ const DEFAULT_PRIMARY_CHART_SIZE = {
 const DEFAULT_CHART_OPTIONS = {
     animating: false,
     dragmode: DEFAULT_DRAG_MODE,
-    editSelection: false,
+    // editSelection: false,
     showGalleryLabels: false,
     showAxis: DEFAULT_SHOW_AXIS,
     showFog: DEFAULT_SHOW_FOG,

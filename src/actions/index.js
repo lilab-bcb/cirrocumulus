@@ -739,15 +739,15 @@ export function handleBrushFilterUpdated(payload) {
             clearFilters();
         } else {
             let priorFilters = datasetFilter[name];
-            let isToggle = false;
+            let isToggleRegion = false;
             if (priorFilters != null) {
-                const priorIndex = findIndex(priorFilters, f => f.id === value.id);
+                const priorIndex = value.id != null ? findIndex(priorFilters, f => f.id === value.id) : -1;
                 if (priorIndex !== -1) { // toggle region
-                    isToggle = true;
+                    isToggleRegion = true;
                     priorFilters.splice(priorIndex, 1);
                 }
             }
-            if (!isToggle) {
+            if (!isToggleRegion) {
                 clearFilters();
                 priorFilters = datasetFilter[name];
                 if (priorFilters == null) {
@@ -756,8 +756,6 @@ export function handleBrushFilterUpdated(payload) {
                 }
                 priorFilters.push({basis: value.basis, indices: indices, id: value.id});
             }
-
-
         }
         if (update) {
             dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
@@ -1989,6 +1987,9 @@ function updateEmbeddingData(state, features) {
                     const groupBy = cachedData[embedding.attrs.group];
                     const categoryToIndices = {};
                     const passingIndices = getPassingFilterIndices(cachedData, {filters: embedding.attrs.selection});
+                    if (passingIndices.size === 0) {
+                        throw new Error('No passing indices found');
+                    }
                     for (let index of passingIndices) {
                         const category = groupBy[index];
                         let indices = categoryToIndices[category];

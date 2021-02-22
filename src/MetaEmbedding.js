@@ -207,7 +207,7 @@ class MetaEmbedding extends React.PureComponent {
                 if (indices && indices.length > 0) {
                     this.props.onSelected({
                         name: getEmbeddingKey(this.props.traceInfo.embedding),
-                        clear: !e.metaKey && !e.shiftKey,
+                        clear: !e.metaKey && !e.ctrlKey,
                         value: {basis: this.props.traceInfo.embedding, indices: new Set(indices), id: category}
                     });
                 } else {

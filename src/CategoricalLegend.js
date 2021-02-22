@@ -84,7 +84,12 @@ class CategoricalLegend extends React.PureComponent {
     handleClick = (value, index, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
-            this.props.handleClick({name: this.props.name, value: value, shiftKey: e.shiftKey, metaKey: e.metaKey});
+            this.props.handleClick({
+                name: this.props.name,
+                value: value,
+                shiftKey: e.shiftKey,
+                metaKey: e.ctrlKey || e.metaKey
+            });
         }
     };
 

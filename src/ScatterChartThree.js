@@ -275,10 +275,10 @@ class ScatterChartThree extends React.PureComponent {
     };
 
 
-    onEditSelection = () => {
-        this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
-        this.props.setChartOptions(this.props.chartOptions);
-    };
+    // onEditSelection = () => {
+    //     this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
+    //     this.props.setChartOptions(this.props.chartOptions);
+    // };
 
 
     resetCamera = () => {
@@ -414,7 +414,7 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
             };
-            this.scatterPlot.lassoCallback = (points) => {
+            this.scatterPlot.lassoCallback = (points, appendToSelection) => {
                 const traceInfo = this.props.traceInfo;
                 const positions = traceInfo.positions;
                 const camera = this.scatterPlot.camera;
@@ -440,12 +440,12 @@ class ScatterChartThree extends React.PureComponent {
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
-                        clear: !this.props.chartOptions.editSelection,
+                        clear: !appendToSelection,
                         value: {basis: traceInfo.embedding, indices: selectedIndices}
                     });
                 }
             };
-            this.scatterPlot.boxCallback = (rect) => {
+            this.scatterPlot.boxCallback = (rect, appendToSelection) => {
                 if (this.scatterPlot.interactionMode === 'PAN') {
                     return;
                 }
@@ -474,7 +474,7 @@ class ScatterChartThree extends React.PureComponent {
                 } else {
                     this.props.onSelected({
                         name: getEmbeddingKey(traceInfo.embedding),
-                        clear: !this.props.chartOptions.editSelection,
+                        clear: !appendToSelection,
                         value: {basis: traceInfo.embedding, indices: selectedIndices}
                     });
                 }
@@ -520,7 +520,7 @@ class ScatterChartThree extends React.PureComponent {
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
-                    editSelection={this.props.chartOptions.editSelection}
+                    // editSelection={this.props.chartOptions.editSelection}
                     onGallery={this.props.onGallery}
                     animating={this.props.chartOptions.animating}
                     showFog={this.props.chartOptions.showFog}
@@ -530,7 +530,7 @@ class ScatterChartThree extends React.PureComponent {
                     onSaveImage={this.onSaveImage}
                     onDragMode={this.onDragMode}
                     onCopyImage={this.onCopyImage}
-                    onEditSelection={this.onEditSelection}
+                    // onEditSelection={this.onEditSelection}
                     onShowAxis={this.onShowAxis}
                     onHome={this.resetCamera}
                     showAxis={this.props.chartOptions.showAxis}

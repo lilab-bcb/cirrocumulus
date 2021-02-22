@@ -132,6 +132,7 @@ class ImageChart extends React.PureComponent {
     constructor(props) {
         super(props);
         this.id = uniqueId('cirro-image');
+        this.editSelection = false;
         this.tooltipElementRef = React.createRef();
         this.state = {loading: false};
     }
@@ -331,7 +332,7 @@ class ImageChart extends React.PureComponent {
         this.viewer.addHandler('canvas-press', function (event) {
             if (_this.props.chartOptions.dragmode === 'lasso' || _this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
-
+                _this.editSelection = event.metaKey || event.ctrlKey;
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
                 let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
@@ -362,7 +363,7 @@ class ImageChart extends React.PureComponent {
                 lassoPath.setAttribute('d', '');
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
-                    clear: !_this.props.chartOptions.editSelection,
+                    clear: !_this.editSelection,
                     value: {basis: _this.props.traceInfo.embedding, indices: indices}
                 });
             } else if (_this.props.chartOptions.dragmode === 'select') {
@@ -374,7 +375,7 @@ class ImageChart extends React.PureComponent {
                 rectElement.removeAttribute('height');
                 _this.props.onSelected({
                     name: getEmbeddingKey(_this.props.traceInfo.embedding),
-                    clear: !_this.props.chartOptions.editSelection,
+                    clear: !_this.editSelection,
                     value: {basis: _this.props.traceInfo.embedding, indices: indices}
                 });
             }
@@ -446,10 +447,10 @@ class ImageChart extends React.PureComponent {
         saveImage(traceInfo, {width: img.width, height: img.height}, bind(this.drawContext, this), format);
     };
 
-    onEditSelection = () => {
-        this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
-        this.props.setChartOptions(this.props.chartOptions);
-    };
+    // onEditSelection = () => {
+    //     this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
+    //     this.props.setChartOptions(this.props.chartOptions);
+    // };
 
 
     onZoomIn = () => {
@@ -478,7 +479,7 @@ class ImageChart extends React.PureComponent {
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
-                    editSelection={this.props.chartOptions.editSelection}
+                    // editSelection={this.props.chartOptions.editSelection}
                     onGallery={this.props.onGallery}
                     animating={false}
                     onZoomIn={this.onZoomIn}
@@ -487,7 +488,7 @@ class ImageChart extends React.PureComponent {
                     onHome={this.onHome}
                     onSaveImage={this.onSaveImage}
                     onDragMode={this.onDragMode}
-                    onEditSelection={this.onEditSelection}
+                    // onEditSelection={this.onEditSelection}
                 >
                 </ChartToolbar>
                 <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
