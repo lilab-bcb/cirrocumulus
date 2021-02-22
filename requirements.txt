@@ -1,7 +1,7 @@
 anndata==0.7.5
 CacheControl==0.12.6
 flask==1.1.2
-flask-compress==1.8.0
+flask-compress==1.9.0
 fsspec==0.8.5
 gunicorn==20.0.4
 loompy==3.0.6
@@ -9,4 +9,4 @@ numpy==1.20.1
 pandas==1.2.2
 pyarrow==3.0.0
 pymongo==3.11.3
-scipy==1.6.0
+scipy==1.6.1
