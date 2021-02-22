@@ -330,7 +330,7 @@ class JobResultOptions extends React.PureComponent {
                     ))}
                 </Select>
             </FormControl>
-            <div style={{display: size === '(None)' ? 'none' : ''}}>
+            <div style={{display: size === '(None)' ? 'none' : '', marginTop: 6}}>
                 <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                     onOptions={this.onOptions} showReversed={true}
                                     reversed={jobResult.sizeScaleReversed}
