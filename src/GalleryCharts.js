@@ -1,6 +1,7 @@
 import {Tooltip} from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+import natsort from 'natsort';
 import React from 'react';
 
 import {connect} from 'react-redux';
@@ -67,13 +68,22 @@ class GalleryCharts extends React.PureComponent {
             this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         }
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
-
-        for (let i = 0; i < galleryTraces.length; i++) {
-            if (galleryTraces[i].sortIndex == null) {
-                galleryTraces[i].sortIndex = i;
+        const sorter = natsort({insensitive: true});
+        galleryTraces.sort((a, b) => {
+            if (a.embedding.name === b.embedding.name) {
+                return sorter(a.name, b.name);
             }
+            return sorter(a.embedding.name, b.embedding.name);
+        });
+        for (let i = 0; i < galleryTraces.length; i++) {
+            galleryTraces[i].index = i;
         }
-        galleryTraces.sort((a, b) => a.sortIndex - b.sortIndex);
+        galleryTraces.sort((a, b) => {
+            const index1 = a.sortIndex !== undefined ? a.sortIndex : a.index;
+            const index2 = b.sortIndex !== undefined ? b.sortIndex : b.index;
+            return index1 - index2;
+        });
+
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         // const DragHandle = sortableHandle(() => <span>::</span>);
 
