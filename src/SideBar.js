@@ -866,12 +866,12 @@ class SideBar extends React.PureComponent {
                                         onClick={event => this.onSubmitJob('de')}>Go</Button>
                             </ButtonGroup>
 
-                            <Tooltip
-                                title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>
-                            <Button style={{minWidth: 40}}
-                                    disabled={selection.size === 0 || activeFeature.type !== FEATURE_TYPE.X}
-                                    size={"small"} variant="outlined"
-                                    onClick={event => this.onSubmitJob('corr')}>Go</Button>
+                            {/*<Tooltip*/}
+                            {/*    title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>*/}
+                            {/*<Button style={{minWidth: 40}}*/}
+                            {/*        disabled={selection.size === 0 || activeFeature.type !== FEATURE_TYPE.X}*/}
+                            {/*        size={"small"} variant="outlined"*/}
+                            {/*        onClick={event => this.onSubmitJob('corr')}>Go</Button>*/}
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>}
