@@ -1,9 +1,13 @@
 Release Notes
 -------------
 
+- 1.1.14 `February 23, 2021`
+    * Added interactive differential expression analysis
+    * To add to current selection, hold down the Ctrl or Command keys when using lasso or box select tools.
+
 - 1.1.13.post2 `February 10, 2021`
     * Added standardize option that scales each feature or categorical group from zero to one for distributions and results visualization
-    * Added species to dataset import in when using `cirro serve`
+    * Added species to dataset import when using `cirro serve`
     * Added option to show/hide labels in embedding gallery
     * `cirro launch` now accepts `Seurat`_ objects
 
