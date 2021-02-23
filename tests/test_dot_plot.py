@@ -18,8 +18,8 @@ def diff_results(summarized_df, measures, results):
             raise ValueError(key + ' not found')
         np.testing.assert_allclose(summarized_df[key]['mean'].values, values[index]['mean'],
             atol=0.000001, err_msg='{} mean'.format(key))
-        np.testing.assert_allclose(summarized_df[key]['fraction_expressed'].values,
-            values[index]['fractionExpressed'], err_msg='{} fractionExpressed'.format(key))
+        np.testing.assert_allclose(summarized_df[key]['percentExpressed'].values,
+            values[index]['percentExpressed'], err_msg='{} percentExpressed'.format(key))
 
 
 def get_df(test_data, measures, by):
@@ -29,11 +29,10 @@ def get_df(test_data, measures, by):
     df = pd.DataFrame(data=X, columns=measures)
     df[by] = test_data.obs[by].values
 
-    def fraction_expressed(g):
-        return (g != 0).sum() / len(g)
+    def percentExpressed(g):
+        return 100 * ((g != 0).sum() / len(g))
 
-    summarized_df = df.groupby(by).agg(['mean', fraction_expressed])
-    return summarized_df
+    return df.groupby(by, observed=True).agg(['mean', percentExpressed])
 
 
 def test_dot_plot(dataset_api, input_dataset, test_data, measures, by):
