@@ -20,6 +20,8 @@ function createContainer(chartSize) {
     return containerElement;
 }
 
+const sorter = natsort({insensitive: true});
+
 class GalleryCharts extends React.PureComponent {
     constructor(props) {
         super(props);
@@ -67,17 +69,20 @@ class GalleryCharts extends React.PureComponent {
             document.body.appendChild(this.containerElement);
             this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         }
-        let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
-        const sorter = natsort({insensitive: true});
+        const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
+        for (let i = 0; i < galleryTraces.length; i++) {
+            galleryTraces[i].index = i;
+        }
         galleryTraces.sort((a, b) => {
             if (a.embedding.name === b.embedding.name) {
-                return sorter(a.name, b.name);
+                return a.index - b.index;
             }
             return sorter(a.embedding.name, b.embedding.name);
         });
         for (let i = 0; i < galleryTraces.length; i++) {
             galleryTraces[i].index = i;
         }
+
         galleryTraces.sort((a, b) => {
             const index1 = a.sortIndex !== undefined ? a.sortIndex : a.index;
             const index2 = b.sortIndex !== undefined ? b.sortIndex : b.index;
