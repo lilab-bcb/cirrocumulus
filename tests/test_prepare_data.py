@@ -13,12 +13,12 @@ def test_prepare(test_data, measures, dimensions, continuous_obs, basis, tmp_pat
     test_data.obs = test_data.obs[dimensions + continuous_obs]
     prepare_data = PrepareData(adata=test_data, output=output_dir)
     prepare_data.execute()
-    ds = ParquetDataset()
+    pq_ds = ParquetDataset()
     dataset = dict(id='')
     schema = dict(shape=test_data.shape)
     fs = fsspec.filesystem('file')
-    prepared_df = ds.read(file_system=fs, path=output_dir, obs_keys=dimensions + continuous_obs, var_keys=measures,
-        basis=[get_basis(basis, -1, '')], dataset=dataset, schema=schema)
+    prepared_df = pq_ds.read_dataset(file_system=fs, path=output_dir, dataset=dataset, schema=schema,
+        keys=dict(X=measures, obs=dimensions + continuous_obs, basis=[get_basis(basis, -1, '')]))
 
     if not scipy.sparse.issparse(test_data.X):
         test_data.X = scipy.sparse.csr_matrix(test_data.X)
