@@ -121,4 +121,6 @@ class AnndataDataset(AbstractDataset):
                 dimensions = b['dimensions']
                 for i in range(dimensions):
                     df[b['coordinate_columns'][i]] = embedding_data[:, i]
+        if df is None:
+            df = pd.DataFrame(index=adata.obs.index)
         return df

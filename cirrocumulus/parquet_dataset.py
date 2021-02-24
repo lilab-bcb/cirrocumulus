@@ -8,7 +8,6 @@ import pyarrow.parquet as pq
 import scipy.sparse
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.simple_data import SimpleData
 
 
 class ParquetDataset(AbstractDataset):
@@ -111,6 +110,9 @@ class ParquetDataset(AbstractDataset):
 
                 for c in columns_to_fetch:
                     result_df[c] = cached_value[c]
+        if result_df is None:
+            shape = schema['shape']
+            result_df = pd.DataFrame(index=pd.RangeIndex(shape[0]))
         return result_df
 
     def read_data_dense(self, file_system, path, keys=None, dataset=None, schema=None):
@@ -126,7 +128,7 @@ class ParquetDataset(AbstractDataset):
             for b in basis:
                 all_keys += b['coordinate_columns']
         if len(all_keys) == 0:
-            return SimpleData(None, pd.DataFrame(), pd.Index([]))
+            return pq.read_table(path, filesystem=file_system, columns=['index']).to_pandas()
         return pq.read_table(path, filesystem=file_system, columns=all_keys).to_pandas()
 
     def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
