@@ -47,11 +47,11 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     nfeatures = len(var_names)
     mask1 = get_mask(dataset_api, dataset, params['filter'])
     batch_size = 1000  # TODO
-    scores = np.full(nfeatures, 0)
-    pvals = np.full(nfeatures, 1)
+    scores = np.zeros(nfeatures)
+    pvals = np.ones(nfeatures)
     is_sparse = None
     if job_type == 'de':
-        fold_changes = np.full(nfeatures, 0)
+        fold_changes = np.zeros(nfeatures)
         mask2 = get_mask(dataset_api, dataset, params['filter2'])
         # overlapping cells are removed
     elif job_type == 'corr':
@@ -61,7 +61,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         is_sparse = hasattr(ref, 'sparse')
         if is_sparse:
             ref = ref.sparse.to_dense()
-        is_pearson = params.get('method', 'pearson') == 'pearson'
+        is_pearson = False  # params.get('method', 'pearson') == 'pearson'
         if not is_pearson:
             ref_expressed = (ref != 0)
             ref_not_expressed = ~ref_expressed
