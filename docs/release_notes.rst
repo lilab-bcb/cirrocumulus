@@ -1,9 +1,13 @@
 Release Notes
 -------------
 
+- 1.1.14.post1 `February 24, 2021`
+    * Fixed error performing interactive differential expression analysis using `cirro launch`
+    * Sort gallery charts by first by feature and then by embedding
+
 - 1.1.14 `February 23, 2021`
     * Added interactive differential expression analysis
-    * To add to current selection, hold down the Ctrl or Command keys when using lasso or box select tools.
+    * To add to current selection, hold down the Ctrl or Command keys when using lasso or box select tools
 
 - 1.1.13.post2 `February 10, 2021`
     * Added standardize option that scales each feature or categorical group from zero to one for distributions and results visualization
