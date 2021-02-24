@@ -172,8 +172,8 @@ class LocalDbAPI:
     def get_jobs(self, email, dataset_id):
         results = []
         for job in self.job_id_to_job.values():
-            results.append(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
-                submitted=job['submitted'])
+            results.append(dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
+                submitted=job['submitted']))
         return results
 
     def delete_job(self, email, job_id):

@@ -59,6 +59,10 @@ def get_filter_expr(df, data_filter):
 
                     keep = selection_keep | keep if keep is not None else selection_keep
 
+            elif field == '__index':
+                import numpy as np
+                keep = np.zeros(len(df), dtype=bool)
+                keep[value] = True
             else:
                 series = df[field]
                 if op == 'in':
@@ -381,6 +385,8 @@ def data_filter_keys(data_filter):
                 basis = get_basis(key['basis'], key.get('nbins'), key.get('agg'),
                     key.get('ndim', '2'), key.get('precomputed', False))
                 basis_list.append(basis)
+            elif key == '__index':
+                continue
             else:
                 name, key_type = get_var_name_type(key)
                 user_filter[0] = name

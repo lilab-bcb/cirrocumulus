@@ -23,7 +23,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
             max_workers = 1
         else:
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
-    executor = ThreadPoolExecutor(max_workers=max_workers)
+        executor = ThreadPoolExecutor(max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
         params=params)
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
@@ -61,6 +61,10 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         is_sparse = hasattr(ref, 'sparse')
         if is_sparse:
             ref = ref.sparse.to_dense()
+        is_pearson = params.get('method', 'pearson') == 'pearson'
+        if not is_pearson:
+            ref_expressed = (ref != 0)
+            ref_not_expressed = ~ref_expressed
     index = 0
     for i in range(0, nfeatures, batch_size):
         start = i
@@ -91,7 +95,19 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                 if is_sparse:
                     v1 = v1.sparse.to_dense()
                 try:
-                    scores[index], pvals[index] = ss.pearsonr(ref, v1)
+                    if is_pearson:
+                        scores[index], pvals[index] = ss.pearsonr(ref, v1)
+                    else:
+                        #              gene1_exp, gene1_not_exp
+                        # gene2_exp
+                        # gene2_not_exp
+
+                        a = (v1[ref_expressed] != 0).sum()
+                        b = (v1[ref_not_expressed] != 0).sum()
+                        c = (v1[ref_expressed] == 0).sum()
+                        d = (v1[ref_not_expressed] == 0).sum()
+                        scores[index], pvals[index] = ss.fisher_exact(
+                            [[a, b], [c, d]])
                 except ValueError:  # All numbers are identical
                     pass
                 index += 1
