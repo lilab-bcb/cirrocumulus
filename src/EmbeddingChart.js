@@ -197,7 +197,6 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         datasetFilter: state.datasetFilter,
         embeddingChartSize: state.embeddingChartSize,
-        embeddingData: state.embeddingData,
         embeddingLabels: state.embeddingLabels,
         featureSummary: state.featureSummary,
         globalFeatureSummary: state.globalFeatureSummary,

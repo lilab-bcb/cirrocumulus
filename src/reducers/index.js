@@ -1,4 +1,5 @@
 import {isPlainObject} from 'lodash';
+import natsort from 'natsort';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -100,7 +101,6 @@ const DEFAULT_PRIMARY_CHART_SIZE = {
 const DEFAULT_CHART_OPTIONS = {
     animating: false,
     dragmode: DEFAULT_DRAG_MODE,
-    // editSelection: false,
     showGalleryLabels: false,
     showAxis: DEFAULT_SHOW_AXIS,
     showFog: DEFAULT_SHOW_FOG,
@@ -599,11 +599,38 @@ function cachedData(state = {}, action) {
     return state;
 }
 
+function sortEmbeddingTraces(traces) {
+    const sorter = natsort({insensitive: true});
+    // sort by feature insertion order, then embedding
+    const featureToMinIndex = {};
+    for (let i = 0; i < traces.length; i++) {
+        let prior = featureToMinIndex[traces[i].name];
+        let index = i;
+        if (prior !== undefined) {
+            index = Math.min(index, prior);
+        }
+        featureToMinIndex[traces[i].name] = index;
+    }
+    traces.sort((a, b) => {
+        if (a.name === b.name) {
+            const val = sorter(a.embedding.name, b.embedding.name);
+            if (val !== 0) {
+                return val;
+            }
+        }
+        // sortIndex added if user drags and drops gallery chart
+        const index1 = a.sortIndex !== undefined ? a.sortIndex : featureToMinIndex[a.name];
+        const index2 = b.sortIndex !== undefined ? b.sortIndex : featureToMinIndex[b.name];
+        return index1 - index2;
+    });
+    return traces;
+}
+
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
-            return action.payload;
+            return sortEmbeddingTraces(action.payload);
         case SET_SELECTION:
             state.forEach(trace => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {
