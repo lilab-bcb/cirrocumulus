@@ -65,10 +65,7 @@ export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
 export const SET_EMBEDDING_CHART_SIZE = "SET_EMBEDDING_CHART_SIZE";
-
 export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
-
-// update chart
 
 export const SET_SELECTION = 'SET_SELECTION';
 export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
@@ -504,7 +501,6 @@ export function getDatasetFilterNames(datasetFilter) {
     let isBrushing = false;
     for (let key in datasetFilter) {
         const value = datasetFilter[key];
-        let f = null;
         if (Array.isArray(value)) {
             isBrushing = true;
         } else if (value.operation === 'in') {
@@ -533,7 +529,7 @@ export function getDatasetFilterArray(datasetFilter) {
         }
     }
     if (brushIndices.size > 0) {
-        filters.push(['index', 'in', brushIndices]);
+        filters.push(['__index', 'in', brushIndices]);
     }
     for (let key in datasetFilter) {
         const value = datasetFilter[key];
@@ -565,8 +561,11 @@ export function datasetFilterToJson(dataset, datasetFilter, combineDatasetFilter
         const obsCat = dataset.obsCat;
         for (let i = 0; i < filters.length; i++) {
             // add obs/ prefix
-            if (obsCat.indexOf(filters[i][0]) !== -1 || obs.indexOf(filters[i][0]) !== -1) {
-                filters[i][0] = 'obs/' + filters[i][0];
+            const filter = filters[i];
+            if (filter[0] === '__index') {
+                filter[2] = Array.from(filter[2]); // convert Set to array
+            } else if (obsCat.indexOf(filter[0]) !== -1 || obs.indexOf(filter[0]) !== -1) {
+                filter[0] = 'obs/' + filter[0];
             }
         }
         return {filters: filters, combine: combineDatasetFilters};
@@ -1828,21 +1827,6 @@ function _updateCharts(onError) {
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
             updateEmbeddingData(state, features);
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
-            // if (state.chartOptions.activeEmbedding != null) { // when restoring view - put last so that it becomes active
-            //     let index = -1;
-            //     for (let i = 0; i < embeddingData.length; i++) {
-            //         if (state.chartOptions.activeEmbedding === getTraceKey(embeddingData[i])) {
-            //             index = i;
-            //             break;
-            //         }
-            //     }
-            //     if (index !== -1) {
-            //         let activeTrace = embeddingData[index];
-            //         embeddingData.splice(index, 1);
-            //         embeddingData.push(activeTrace);
-            //     }
-            //     state.chartOptions.activeEmbedding = null;
-            // }
             dispatch(setEmbeddingData(embeddingData.slice()));
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection, false));
@@ -1860,6 +1844,7 @@ function _updateCharts(onError) {
     };
 
 }
+
 
 function getFeatureType(dataset, feature) {
     if (feature === '__count') {

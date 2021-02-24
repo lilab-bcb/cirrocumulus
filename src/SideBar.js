@@ -43,7 +43,8 @@ import {
     deleteDatasetFilter,
     deleteFeatureSet,
     downloadSelectedIds,
-    exportDatasetFilters, getDatasetFilterNames,
+    exportDatasetFilters,
+    getDatasetFilterNames,
     getEmbeddingKey,
     getTraceKey,
     handleDomainChange,
@@ -644,7 +645,7 @@ class SideBar extends React.PureComponent {
                         <Button onClick={this.onSubmitJobCancel}>
                             Cancel
                         </Button>
-                        <Button variant="contained" onClick={e => this.onSubmitJobOK(jobName)}
+                        <Button disabled={jobName === ''} variant="contained" onClick={e => this.onSubmitJobOK(jobName)}
                                 color="primary">
                             Submit
                         </Button>

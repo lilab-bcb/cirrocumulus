@@ -59,7 +59,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                 let coordinate_columns = selected_points_basis.coordinate_columns;
                 if (filterValue.indices) { // Set of passing indices
                     let field = selected_points_basis['nbins'] ? selected_points_basis['full_name'] : 'index';
-                    if (field == 'index') {
+                    if (field == '__index') {
                         keep = filterValue.indices;
                     } else { // binning
                         throw 'Not implemented';
@@ -81,8 +81,8 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                     keep = keep ? combine(selection_keep, keep, combine_filters) : selection_keep;
                 }
             } else {
-                if (filterField === 'index') {
-                    keep = filterValue; // [index, in, indices]
+                if (filterField === '__index') {
+                    keep = new Set(filterValue); // [__index, in, indices]
                 } else {
                     const nameType = getVarNameType(filterField);
                     let series = cachedData[nameType.name];
