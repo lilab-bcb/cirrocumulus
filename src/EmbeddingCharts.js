@@ -2,11 +2,9 @@ import {find} from 'lodash';
 import React from 'react';
 
 import {connect} from 'react-redux';
-import {getEmbeddingKey, getTraceKey, setPrimaryChartSize} from './actions';
+import {getTraceKey, setPrimaryChartSize} from './actions';
 import EmbeddingChart from './EmbeddingChart';
 
-
-const emptySet = new Set();
 
 class EmbeddingCharts extends React.PureComponent {
 

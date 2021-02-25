@@ -28,6 +28,7 @@ import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import JobResultsPanel from './JobResultsPanel';
+import {LandingPage} from './LandingPage';
 import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 import SaveSetDialog from './SaveSetDialog';
@@ -130,6 +131,7 @@ class App extends PureComponent {
                                                         value={loadingApp.progress}/></h2>
                         </div>}
 
+                        {dataset == null && <div><LandingPage/></div>}
                         {dataset != null && <React.Fragment>
                             <div
                                 role="tabpanel"
