@@ -60,7 +60,7 @@ export function LandingPage() {
 
         <Typography variant="h5">Primary Embedding Controls</Typography>
         <ul>
-            <li>Pan: Mouse left click (2-d), Mouse right click (3-d)</li>
+            <li>Pan: Mouse left click (2-d), right click (3-d)</li>
             <li>Rotate 3-d: Mouse left click</li>
             <li>Zoom: Mouse wheel</li>
         </ul>
