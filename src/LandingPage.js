@@ -63,7 +63,7 @@ export function LandingPage() {
             <li>Rotate 3-d: Mouse left click</li>
             <li>Zoom: Mouse wheel</li>
             <li>When using lasso or select tool, hold down the Ctrl or Command key to add to selection</li>
-            <li>To resize, click and drag the divider below the primary embedding</li>
+            <li>Resize: Click and drag the divider below the primary embedding</li>
         </ul>
 
         <Typography variant="h5">Embedding Gallery</Typography>
