@@ -3,7 +3,6 @@ import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
-import {getEmbeddingKey} from './actions';
 import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
 import {
@@ -141,7 +140,7 @@ class GalleryImage extends React.PureComponent {
                     cursor: 'pointer'
                 }}>
                     <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
-                        <Typography color="textPrimary" component={"h4"}
+                        <Typography color="textPrimary" variant={"caption"}
                                     onClick={this.onSelect}
                                     style={{
                                         marginTop: 3.2,
