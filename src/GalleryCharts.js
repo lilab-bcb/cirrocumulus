@@ -26,8 +26,6 @@ class GalleryCharts extends React.PureComponent {
         this.containerElement = createContainer(this.props.chartSize);
         document.body.appendChild(this.containerElement);
         this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession != null, false, false);
-        this.emptySet = new Set();
-
     }
 
     onChartSelected = (traceInfo) => {
@@ -71,8 +69,8 @@ class GalleryCharts extends React.PureComponent {
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         // const DragHandle = sortableHandle(() => <span>::</span>);
 
-        const SortableItem = sortableElement(({traceInfo}) => <GalleryImage
-            traceInfo={traceInfo}
+        const SortableItem = sortableElement(({trace}) => <GalleryImage
+            traceInfo={trace}
             obsCat={obsCat}
             cachedData={cachedData}
             scatterPlot={this.scatterPlot}
@@ -86,13 +84,13 @@ class GalleryCharts extends React.PureComponent {
             selection={selection}
             containerElement={this.containerElement}
             onSelect={this.onChartSelected}
-            key={getTraceKey(traceInfo)}/>);
+            key={getTraceKey(trace)}/>);
 
         const SortableList = sortableContainer(({items}) => {
             return (
                 <ul style={{padding: 0}}>
-                    {items.map((traceInfo, index) => (
-                        <SortableItem key={getTraceKey(traceInfo)} index={index} traceInfo={traceInfo}/>
+                    {items.map((trace, index) => (
+                        <SortableItem key={getTraceKey(trace)} index={index} trace={trace}/>
                     ))}
                 </ul>
             );
