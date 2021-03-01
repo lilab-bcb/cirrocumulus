@@ -34,7 +34,7 @@
     "redux-thunk": "^2.3.0",
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git#1.0.0",
     "simplify-js": "^1.2.4",
-    "three": "^0.118.3",
+    "three": "^0.125.0",
     "web-vitals": "^0.2.4"
   },
   "scripts": {
