@@ -1,6 +1,4 @@
-import {Tooltip} from '@material-ui/core';
-import Typography from '@material-ui/core/Typography';
-import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
+import Divider from '@material-ui/core/Divider';
 import React from 'react';
 
 import {connect} from 'react-redux';
@@ -88,7 +86,7 @@ class GalleryCharts extends React.PureComponent {
 
         const SortableList = sortableContainer(({items}) => {
             return (
-                <ul style={{padding: 0}}>
+                <ul style={{padding: 0, marginTop: 4, marginBottom: 0}}>
                     {items.map((trace, index) => (
                         <SortableItem key={getTraceKey(trace)} index={index} trace={trace}/>
                     ))}
@@ -97,13 +95,12 @@ class GalleryCharts extends React.PureComponent {
         });
 
         return (
-            <React.Fragment><Typography color={"textSecondary"} variant="subtitle1">Gallery<Tooltip
-                title="Drag gallery charts to reorder. Click chart to set primary view."><HelpOutlineIcon
-                style={{verticalAlign: 'text-bottom'}}/></Tooltip></Typography>
+            <React.Fragment><Divider/>
                 <SortableList
                     distance={2}
                     axis="xy" items={galleryTraces}
-                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/></React.Fragment>);
+                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/></React.Fragment>
+        );
     }
 }
 
