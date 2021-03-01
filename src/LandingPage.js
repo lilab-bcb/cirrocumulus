@@ -57,13 +57,13 @@ export function LandingPage() {
                 Code</Link></li>
         </ul>
 
-
-        <Typography variant="h5">Embedding Controls</Typography>
+        <Typography variant="h5">Primary Embedding Controls</Typography>
         <ul>
             <li>Pan: Mouse left click (2-d), right click (3-d)</li>
             <li>Rotate 3-d: Mouse left click</li>
             <li>Zoom: Mouse wheel</li>
             <li>When using lasso or select tool, hold down the Ctrl or Command key to add to selection</li>
+            <li>To resize, click and drag the divider below the primary embedding</li>
         </ul>
 
         <Typography variant="h5">Embedding Gallery</Typography>
