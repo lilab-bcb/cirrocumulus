@@ -123,7 +123,7 @@ class EmbeddingChart extends React.PureComponent {
                             categoricalNames={categoricalNames}
                             name={traceInfo.name}
                             scale={traceInfo.colorScale}
-                            maxHeight={300}
+                            maxHeight={primaryChartSize.height - 40}
                             clickEnabled={true}
                             nObs={shape[0]}
                             nObsSelected={nObsSelected}
@@ -182,8 +182,6 @@ class EmbeddingChart extends React.PureComponent {
                     onSelected={onSelect}
                     onGallery={onGallery}
                 />}
-
-
             </div>);
 
     }

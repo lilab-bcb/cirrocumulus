@@ -16,7 +16,6 @@ class EmbeddingCharts extends React.PureComponent {
             this.props.handlePrimaryChartSize({width: width, height: height});
         };
         window.addEventListener('resize', this.resizeListener);
-
     }
 
     componentWillUnmount() {
@@ -25,13 +24,13 @@ class EmbeddingCharts extends React.PureComponent {
 
 
     render() {
-        const {activeFeature, embeddingData, onGallery, primaryChartSize} = this.props;
+        const {activeFeature, embeddingData, onGallery} = this.props;
         if (activeFeature == null) {
-            return <div style={{height: primaryChartSize.height}}></div>;
+            return null;
         }
         const primaryTrace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         if (primaryTrace == null) {
-            return <div style={{height: primaryChartSize.height}}></div>;
+            return null;
         }
 
         return (<EmbeddingChart
