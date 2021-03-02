@@ -23,6 +23,7 @@ import {
 import AppHeader from './AppHeader';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DistributionPlots from './DistributionPlots';
+import DraggableDivider from './DraggableDivider';
 import EditDatasetDialog from './EditDatasetDialog';
 import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
@@ -138,6 +139,7 @@ class App extends PureComponent {
                                 hidden={tab !== 'embedding'}
                             >
                                 <EmbeddingCharts onGallery={this.onGallery}/>
+                                <DraggableDivider/>
                                 <div ref={this.galleryRef}>
                                     <GalleryCharts/>
                                 </div>

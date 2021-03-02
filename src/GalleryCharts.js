@@ -1,9 +1,8 @@
-import Divider from '@material-ui/core/Divider';
 import React from 'react';
 
 import {connect} from 'react-redux';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
-import {getTraceKey, setActiveFeature, setEmbeddingData, setPrimaryChartSize} from './actions';
+import {getTraceKey, setActiveFeature, setEmbeddingData} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {splitSearchTokens} from './util';
@@ -42,38 +41,8 @@ class GalleryCharts extends React.PureComponent {
     };
 
 
-    onMouseDown = (event) => {
-        this.dragging = true;
-        this.clientY = event.clientY;
-        this.primaryChartHeight = this.props.primaryChartSize.height;
-        document.body.style.cursor = 'ns-resize';
-        window.addEventListener('mousemove', this.onMouseMove);
-        window.addEventListener('mouseup', this.onMouseUp);
-    };
-
-    onMouseUp = (event) => {
-        if (this.dragging) {
-            window.removeEventListener('mousemove', this.onMouseMove);
-            window.removeEventListener('mouseup', this.onMouseUp);
-            document.body.style.cursor = null;
-        }
-        this.dragging = false;
-    };
-
-    onMouseMove = (event) => {
-        if (this.dragging) {
-            const primaryChartSize = this.props.primaryChartSize;
-            const delta = this.clientY - event.clientY;
-            this.props.handlePrimaryChartSize({
-                width: primaryChartSize.width,
-                height: this.primaryChartHeight - delta
-            });
-        }
-    };
-
     render() {
         const {
-            activeFeature,
             cachedData,
             categoricalNames,
             chartSize,
@@ -96,7 +65,6 @@ class GalleryCharts extends React.PureComponent {
         const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         // const DragHandle = sortableHandle(() => <span>::</span>);
-
         const SortableItem = sortableElement(({trace}) => <GalleryImage
             traceInfo={trace}
             obsCat={obsCat}
@@ -105,9 +73,9 @@ class GalleryCharts extends React.PureComponent {
             markerOpacity={markerOpacity}
             chartOptions={chartOptions}
             pointSize={pointSize}
+            primaryChartSize={primaryChartSize}
             chartSize={chartSize}
             categoricalNames={categoricalNames}
-            primaryChartSize={primaryChartSize}
             unselectedMarkerOpacity={unselectedMarkerOpacity}
             selection={selection}
             containerElement={this.containerElement}
@@ -126,14 +94,6 @@ class GalleryCharts extends React.PureComponent {
 
         return (
             <React.Fragment>
-                {activeFeature && <div style={{
-                    height: 10, cursor: 'ns-resize', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center'
-                }}
-                     onMouseDown={this.onMouseDown}>
-                    <Divider style={{width: '100%'}}/>
-                </div>}
-
                 <SortableList
                     distance={2}
                     axis="xy" items={galleryTraces}
@@ -144,7 +104,6 @@ class GalleryCharts extends React.PureComponent {
 
 const mapStateToProps = state => {
     return {
-        activeFeature: state.activeFeature,
         cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
         chartOptions: state.chartOptions,
@@ -161,9 +120,6 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handlePrimaryChartSize: value => {
-            dispatch(setPrimaryChartSize(value));
-        },
         handleActiveFeature: (value) => {
             dispatch(setActiveFeature(value));
         },
