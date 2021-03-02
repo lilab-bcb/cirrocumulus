@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.14.post2 `March 2, 2021`
+    * Click and drag to resize primary embedding chart
+    * Added landing page
+
 - 1.1.14.post1 `February 24, 2021`
     * Fixed error performing interactive differential expression analysis using `cirro launch`
     * Sort gallery charts by first by feature and then by embedding
