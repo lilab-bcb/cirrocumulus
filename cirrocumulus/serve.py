@@ -68,8 +68,7 @@ def main(argsv):
         os.environ[CIRRO_AUTH_CLIENT_ID] = args.auth_client_id
 
     if args.footer is not None:
-        with open(args.footer, 'rt') as f:
-            os.environ[CIRRO_FOOTER] = f.read()
+        os.environ[CIRRO_FOOTER] = args.footer
 
     if args.email is not None:
         os.environ[CIRRO_EMAIL] = args.email

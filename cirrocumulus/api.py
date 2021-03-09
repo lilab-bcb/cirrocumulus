@@ -1,9 +1,9 @@
 from urllib.parse import urlparse
 
-import cirrocumulus.data_processing as data_processing
-from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER
 from flask import Blueprint, Response, request, stream_with_context
 
+import cirrocumulus.data_processing as data_processing
+from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER
 from .auth_api import AuthAPI
 from .database_api import DatabaseAPI
 from .dataset_api import DatasetAPI
@@ -29,7 +29,10 @@ def handle_server():
     server = database_api.server()
     server['clientId'] = auth_api.client_id
     import os
-    server['footer'] = os.environ.get(CIRRO_FOOTER)
+    footer_path = os.environ.get(CIRRO_FOOTER)
+    if footer_path is not None:
+        with open(footer_path, 'rt') as f:
+            server['footer'] = f.read()
     server['jobs'] = os.environ.get('GAE_APPLICATION') is None
     return to_json(server)
 
