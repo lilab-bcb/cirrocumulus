@@ -1,9 +1,11 @@
 import {Paper} from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
+import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
+import {reactMarkdownOptions} from './util';
 
 function LandingPage(props) {
     return <Paper elevation={0}>
@@ -74,9 +76,10 @@ function LandingPage(props) {
             <li>Click chart to set primary view</li>
         </ul>
         {props.serverInfo && props.serverInfo.footer &&
-        <ReactMarkdown linkTarget="_blank" children={props.serverInfo.footer}/>}
+        <Box><ReactMarkdown options={reactMarkdownOptions} children={props.serverInfo.footer}/></Box>}
     </Paper>;
 }
+
 
 const mapStateToProps = state => {
     return {

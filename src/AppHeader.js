@@ -12,8 +12,8 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import Brightness2Icon from '@material-ui/icons/Brightness3';
 import HelpIcon from '@material-ui/icons/Help';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
@@ -40,6 +40,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY
 } from "./reducers";
+import {reactMarkdownOptions} from './util';
 
 
 const styles = theme => ({
@@ -364,7 +365,7 @@ class AppHeader extends React.PureComponent {
                                 {dataset.title}
                             </Typography>}
                             {dataset.description &&
-                            <ReactMarkdown linkTarget="_blank" children={dataset.description}/>}
+                            <ReactMarkdown options={reactMarkdownOptions} children={dataset.description}/>}
                         </div>
                     </Popover>
                     }

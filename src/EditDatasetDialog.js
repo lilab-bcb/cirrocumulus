@@ -16,9 +16,10 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import TextField from '@material-ui/core/TextField';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from 'markdown-to-jsx';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
+import {reactMarkdownOptions} from './util';
 
 const styles = theme => ({
 
@@ -258,7 +259,7 @@ class EditDatasetDialog extends React.PureComponent {
                     </TabPanel>
                     <TabPanel value={this.state.tabValue} index={1}>
                         {this.state.description !== '' && <Box border={1}>
-                            <ReactMarkdown linkTarget="_blank" children={this.state.description}/>
+                            <ReactMarkdown options={reactMarkdownOptions} children={this.state.description}/>
                         </Box>}
                     </TabPanel>
 

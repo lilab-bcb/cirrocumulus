@@ -1,7 +1,11 @@
+import Link from '@material-ui/core/Link';
+import {withStyles} from '@material-ui/core/styles';
+import Typography from '@material-ui/core/Typography';
 import {shuffle} from 'd3-array';
 import {color} from 'd3-color';
 import {scaleLinear, scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
+import React from 'react';
 import simplify from 'simplify-js';
 import {getColors} from './ThreeUtil';
 
@@ -82,6 +86,42 @@ export const TRACE_TYPE_META_IMAGE = 'meta_image';
 export const INTERPOLATOR_SCALING_MIN_MAX_FEATURE = 'min_max_feature';
 export const INTERPOLATOR_SCALING_MIN_MAX_CATEGORY = 'min_max_category';
 export const INTERPOLATOR_SCALING_NONE = 'none';
+
+export function isMac() {
+    return window.navigator.platform.toLowerCase().indexOf('mac') !== -1;
+}
+
+const reactMarkdownStyles = (theme) => ({
+    listItem: {
+        marginTop: theme.spacing(1),
+    },
+});
+export const reactMarkdownOptions = {
+    overrides: {
+        h1: {
+            component: Typography,
+            props: {
+                gutterBottom: true,
+                variant: 'h5',
+            },
+        },
+        h2: {component: Typography, props: {gutterBottom: true, variant: 'h6'}},
+        h3: {component: Typography, props: {gutterBottom: true, variant: 'subtitle1'}},
+        h4: {
+            component: Typography,
+            props: {gutterBottom: true, variant: 'caption', paragraph: true},
+        },
+        p: {component: Typography, props: {paragraph: true}},
+        a: {component: Link, props:{target:'_blank'}},
+        li: {
+            component: withStyles(reactMarkdownStyles)(({classes, ...props}) => (
+                <li className={classes.listItem}>
+                    <Typography component="span" {...props} />
+                </li>
+            )),
+        },
+    },
+};
 
 export function scaleConstantRange(value) {
 

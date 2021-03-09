@@ -15,10 +15,11 @@ import ClearIcon from '@material-ui/icons/Clear';
 import FolderOpenIcon from '@material-ui/icons/FolderOpen';
 import InfoIcon from '@material-ui/icons/Info';
 import {groupBy} from 'lodash';
+import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 import {connect} from 'react-redux';
 import {setDialog} from './actions';
+import {reactMarkdownOptions} from './util';
 
 export class DatasetSelector extends React.PureComponent {
 
@@ -107,7 +108,7 @@ export class DatasetSelector extends React.PureComponent {
 
                         {selectedDataset && selectedDataset.title && <div>{selectedDataset.title}</div>}
                         {selectedDataset && selectedDataset.description &&
-                        <ReactMarkdown linkTarget="_blank" children={selectedDataset.description}/>}
+                        <ReactMarkdown options={reactMarkdownOptions} children={selectedDataset.description}/>}
                     </div>
                 </Popover>
                 <Button variant="contained" onClick={this.handleClick}
