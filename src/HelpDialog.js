@@ -3,7 +3,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setDialog} from './actions';
-import {LandingPage} from './LandingPage';
+import LandingPage from './LandingPage';
 
 class HelpDialog extends React.PureComponent {
 

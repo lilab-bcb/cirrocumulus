@@ -2,10 +2,12 @@ import {Paper} from '@material-ui/core';
 import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import {connect} from 'react-redux';
 
-export function LandingPage() {
+function LandingPage(props) {
     return <Paper elevation={0}>
-        <Typography variant="h5">About</Typography>
+        <Typography variant="h5">Cirrocumulus</Typography>
         <p>Cirrocumulus is an interactive visualization tool for large-scale single-cell genomics
             data, with the following key features:</p>
         <ul>
@@ -71,6 +73,20 @@ export function LandingPage() {
             <li>Drag charts to reorder</li>
             <li>Click chart to set primary view</li>
         </ul>
-
+        {props.serverInfo && props.serverInfo.footer &&
+        <ReactMarkdown linkTarget="_blank" children={props.serverInfo.footer}/>}
     </Paper>;
 }
+
+const mapStateToProps = state => {
+    return {
+        serverInfo: state.serverInfo
+    };
+};
+const mapDispatchToProps = dispatch => {
+    return {};
+};
+
+export default (connect(
+    mapStateToProps, mapDispatchToProps,
+)(LandingPage));

@@ -1,6 +1,7 @@
 import os
 
-from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL, CIRRO_SERVE
+from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL, CIRRO_SERVE, \
+    CIRRO_FOOTER
 from cirrocumulus.launch import create_app
 
 app = None
@@ -14,7 +15,7 @@ def cached_app():
 
     if app is None:
         app = create_app()
-        #
+
         # from flask_cors import CORS
         # CORS(app)
         configure()
@@ -58,12 +59,17 @@ def main(argsv):
     parser.add_argument('-b', '--bind', dest='bind',
         help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).',
         default='127.0.0.1:5000')
+    parser.add_argument('--footer', help='Markdown file to customize the application footer')
 
     args = parser.parse_args(argsv)
 
     bind = args.bind if args.bind is not None else '127.0.0.1:5000'
     if args.auth_client_id is not None:
         os.environ[CIRRO_AUTH_CLIENT_ID] = args.auth_client_id
+
+    if args.footer is not None:
+        with open(args.footer, 'rt') as f:
+            os.environ[CIRRO_FOOTER] = f.read()
 
     if args.email is not None:
         os.environ[CIRRO_EMAIL] = args.email

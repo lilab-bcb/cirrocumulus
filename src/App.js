@@ -29,7 +29,7 @@ import EmbeddingCharts from './EmbeddingCharts';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import JobResultsPanel from './JobResultsPanel';
-import {LandingPage} from './LandingPage';
+import LandingPage from './LandingPage';
 import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
 import SaveSetDialog from './SaveSetDialog';
@@ -200,13 +200,13 @@ class App extends PureComponent {
 
 const mapStateToProps = state => {
     return {
+        chartOptions: state.chartOptions,
         dataset: state.dataset,
         dialog: state.dialog,
         loading: state.loading,
         loadingApp: state.loadingApp,
         message: state.message,
-        tab: state.tab,
-        chartOptions: state.chartOptions
+        tab: state.tab
     };
 };
 const mapDispatchToProps = dispatch => {
