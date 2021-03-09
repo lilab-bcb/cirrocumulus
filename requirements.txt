@@ -6,7 +6,7 @@ fsspec==0.8.7
 gunicorn==20.0.4
 loompy==3.0.6
 numpy==1.20.1
-pandas==1.2.2
+pandas==1.2.3
 pyarrow==3.0.0
 pymongo==3.11.3
 scipy==1.6.1
