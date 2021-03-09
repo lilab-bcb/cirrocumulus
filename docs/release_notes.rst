@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.14.post3 `March 9, 2021`
+    * Added ability to customize footer in `cirro serve`
+
 - 1.1.14.post2 `March 2, 2021`
     * Click and drag to resize primary embedding chart
     * Added landing page
