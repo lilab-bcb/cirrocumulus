@@ -438,12 +438,12 @@ class AppHeader extends React.PureComponent {
                                 <Brightness2Icon/>
                             </IconButton>
                         </Tooltip>}
-                        <Tooltip title={'Help'}>
+                        {dataset != null && <Tooltip title={'Help'}>
                             <IconButton aria-label="Help"
                                         onClick={this.handleHelp}>
                                 <HelpIcon/>
                             </IconButton>
-                        </Tooltip>
+                        </Tooltip>}
                         {email != null && email !== '' &&
                         <Tooltip title={email}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
