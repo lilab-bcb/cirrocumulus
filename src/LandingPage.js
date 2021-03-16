@@ -35,17 +35,17 @@ function LandingPage(props) {
                                                                             rel="noopener noreferrer"
                                                                             href="https://cumulus.readthedocs.io/">Cumulus</Link>
             </li>
-            <li>Interactively create and share “AND” or “OR” filters</li>
+            <li>Interactive differential expression analysis (Mann-Whitney U test)</li>
+            <li>Create and share “AND” or “OR” filters</li>
             <li>Collaboratively annotate cell types in real time</li>
             <li>Quickly load multiple features from predefined lists</li>
             <li>Explore multiple features and embeddings simultaneously</li>
-            <li>Fast interactive exploration of 2 and 3-d embeddings of millions of cells, including zoom, pan, rotate
+            <li>Fast exploration of 2 and 3-d embeddings of millions of cells, including zoom, pan, rotate
                 (3-d), and lasso tools
             </li>
             <li>Save publication quality images</li>
             <li>Highly customizable - for example, set the color map, point size, or whether to use fog for 3-d
-                embeddings
-                to fade distant points
+                embeddings to fade distant points
             </li>
             <li>Visualize datasets in <Link target="_blank" rel="noopener noreferrer"
                                             href="https://anndata.readthedocs.io/">h5ad</Link>, <Link target="_blank"
