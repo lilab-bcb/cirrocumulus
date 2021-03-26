@@ -25,7 +25,7 @@ import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DistributionPlots from './DistributionPlots';
 import DraggableDivider from './DraggableDivider';
 import EditDatasetDialog from './EditDatasetDialog';
-import EmbeddingCharts from './EmbeddingCharts';
+import EmbeddingChart from './EmbeddingChart';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import JobResultsPanel from './JobResultsPanel';
@@ -132,13 +132,13 @@ class App extends PureComponent {
                                                         value={loadingApp.progress}/></h2>
                         </div>}
 
-                        {dataset == null && <div><LandingPage/></div>}
+                        {dataset == null && !loading && !loadingApp.loading && <div><LandingPage/></div>}
                         {dataset != null && <React.Fragment>
                             <div
                                 role="tabpanel"
                                 hidden={tab !== 'embedding'}
                             >
-                                <EmbeddingCharts onGallery={this.onGallery}/>
+                                <EmbeddingChart onGallery={this.onGallery}/>
                                 <DraggableDivider/>
                                 <div ref={this.galleryRef}>
                                     <GalleryCharts/>
