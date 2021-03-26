@@ -9,4 +9,4 @@ numpy==1.20.1
 pandas==1.2.3
 pyarrow==3.0.0
 pymongo==3.11.3
-scipy==1.6.1
+scipy==1.6.2
