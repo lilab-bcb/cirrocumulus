@@ -79,9 +79,9 @@ class MetaEmbedding extends React.PureComponent {
     onSaveImage = (format) => {
         let context;
         let canvas = null;
-        const {chartSize, traceInfo} = this.props;
+        const {chartSize, trace} = this.props;
         const totalSize = {width: chartSize.width, height: chartSize.height};
-        let name = traceInfo.name;
+        let name = trace.name;
         if (name === '__count') {
             name = 'count';
         }
@@ -93,7 +93,7 @@ class MetaEmbedding extends React.PureComponent {
             context.scale(window.devicePixelRatio, window.devicePixelRatio);
             context.fillStyle = 'white';
             context.fillRect(0, 0, totalSize.width, totalSize.height);
-            const xml = new XMLSerializer().serializeToString(traceInfo.source);
+            const xml = new XMLSerializer().serializeToString(trace.source);
             const svg64 = btoa(xml);
             const b64Start = 'data:image/svg+xml;base64,';
             const image64 = b64Start + svg64;
@@ -107,7 +107,7 @@ class MetaEmbedding extends React.PureComponent {
                 });
             };
         } else {
-            let blob = new Blob([new XMLSerializer().serializeToString(traceInfo.source)], {
+            let blob = new Blob([new XMLSerializer().serializeToString(trace.source)], {
                 type: 'text/plain;charset=utf-8'
             });
             window.saveAs(blob, name + '.svg');
@@ -117,7 +117,7 @@ class MetaEmbedding extends React.PureComponent {
     updateSvg = () => {
         const containerElement = this.containerElementRef.current;
         containerElement.innerHTML = '';
-        const svg = this.props.traceInfo.source;
+        const svg = this.props.trace.source;
         svg.setAttribute('width', this.props.chartSize.width);
         svg.setAttribute('height', this.props.chartSize.height);
         containerElement.append(svg);
@@ -153,15 +153,15 @@ class MetaEmbedding extends React.PureComponent {
     };
 
     onHome = () => {
-        select(this.props.traceInfo.source).call(this.d3Zoom.transform, zoomIdentity.scale(1));
+        select(this.props.trace.source).call(this.d3Zoom.transform, zoomIdentity.scale(1));
     };
 
     onZoomIn = () => {
-        select(this.props.traceInfo.source).call(this.d3Zoom.scaleBy, 1.5);
+        select(this.props.trace.source).call(this.d3Zoom.scaleBy, 1.5);
     };
 
     onZoomOut = () => {
-        select(this.props.traceInfo.source).call(this.d3Zoom.scaleBy, .5);
+        select(this.props.trace.source).call(this.d3Zoom.scaleBy, .5);
     };
 
     componentDidMount() {
@@ -170,7 +170,7 @@ class MetaEmbedding extends React.PureComponent {
         containerElement.addEventListener('mousemove', (e) => {
             containerElement.style.cursor = null;
             if (e.target.nodeName === 'path') {
-                const categoryToStats = this.props.traceInfo.categoryToStats;
+                const categoryToStats = this.props.trace.categoryToStats;
                 let category = e.target.id;
                 category = category.replaceAll('_', ' '); // FIXME
                 let tooltip = category;
@@ -178,10 +178,10 @@ class MetaEmbedding extends React.PureComponent {
                     containerElement.style.cursor = 'pointer';
                     const stats = categoryToStats[category];
                     if (stats) {
-                        const fullStats = this.props.traceInfo.fullCategoryToStats[category];
+                        const fullStats = this.props.trace.fullCategoryToStats[category];
                         const showFull = stats !== fullStats;
-                        if (this.props.traceInfo.name !== '__count') {
-                            if (!this.props.traceInfo.continuous) {
+                        if (this.props.trace.name !== '__count') {
+                            if (!this.props.trace.continuous) {
                                 tooltip += ', mode: ' + stats.value + (showFull ? ' (' + fullStats.value + ')' : '');
                             } else {
                                 tooltip += ', z-score: ' + stripTrailingZeros(numberFormat2f(stats.value)) + (showFull ? ' (' + stripTrailingZeros(numberFormat2f(fullStats.value)) + ')' : '');
@@ -200,21 +200,21 @@ class MetaEmbedding extends React.PureComponent {
         });
         containerElement.addEventListener('click', (e) => {
             if (e.target.nodeName === 'path') {
-                const categoryToIndices = this.props.traceInfo.categoryToIndices;
+                const categoryToIndices = this.props.trace.categoryToIndices;
                 let category = e.target.id;
                 category = category.replaceAll('_', ' '); // FIXME
                 const indices = categoryToIndices[category];
                 if (indices && indices.length > 0) {
                     this.props.onSelected({
-                        name: getEmbeddingKey(this.props.traceInfo.embedding),
+                        name: getEmbeddingKey(this.props.trace.embedding),
                         clear: !e.metaKey && !e.ctrlKey,
-                        value: {basis: this.props.traceInfo.embedding, indices: new Set(indices), id: category}
+                        value: {basis: this.props.trace.embedding, indices: new Set(indices), id: category}
                     });
                 } else {
-                    this.props.onSelected({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(this.props.trace.embedding)});
                 }
             } else {
-                this.props.onSelected({name: getEmbeddingKey(this.props.traceInfo.embedding)});
+                this.props.onSelected({name: getEmbeddingKey(this.props.trace.embedding)});
             }
         });
     }
@@ -222,11 +222,11 @@ class MetaEmbedding extends React.PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         this.tooltipElementRef.current.innerHTML = '';
-        if (this.props.traceInfo.source !== prevProps.traceInfo.source) {
-            select(prevProps.traceInfo.source).on(".zoom", null);
+        if (this.props.trace.source !== prevProps.trace.source) {
+            select(prevProps.trace.source).on(".zoom", null);
             this.updateSvg();
         } else if (this.props.chartSize.width !== prevProps.chartSize.width || this.props.chartSize.height !== prevProps.chartSize.height) {
-            const svg = this.props.traceInfo.source;
+            const svg = this.props.trace.source;
             svg.setAttribute('width', this.props.chartSize.width);
             svg.setAttribute('height', this.props.chartSize.height);
             select(svg).call(this.d3Zoom.transform, zoomIdentity.scale(1));

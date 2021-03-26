@@ -19,22 +19,22 @@ export function getSpotRadius(trace, pointSize) {
     return pointSize * (trace.embedding.spatial.spot_diameter ? trace.embedding.spatial.spot_diameter / 2 : 20);
 }
 
-export function drawEmbeddingImage(context, chartSize, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, spotRadius) {
-    if (traceInfo.tileSource.ready) {
-        const img = traceInfo.tileSource.levels[traceInfo.tileSource.levels.length - 1].context2D.canvas;
+export function drawEmbeddingImage(context, chartSize, trace, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, spotRadius) {
+    if (trace.tileSource.ready) {
+        const img = trace.tileSource.levels[trace.tileSource.levels.length - 1].context2D.canvas;
         if (chartSize == null) {
             chartSize = {width: img.width, height: img.height};
         }
         const zoom = Math.min(chartSize.width / img.width, chartSize.height / img.height);
         context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
         context.scale(zoom, zoom);
-        drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, obsCat, cachedData);
+        drawSpots(context, zoom, trace, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
+        drawLabels(context, zoom, trace, chartOptions, categoricalNames, obsCat, cachedData);
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 }
 
-function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, obsCat, cachedData) {
+function drawLabels(context, zoom, trace, chartOptions, categoricalNames, obsCat, cachedData) {
     const showLabels = obsCat.length > 0;
     if (showLabels) {
         context.textAlign = 'center';
@@ -47,7 +47,7 @@ function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, ob
 
         context.font = fontSize + 'px Roboto Condensed,Helvetica,Arial,sans-serif';
 
-        const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
+        const labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCat, cachedData);
         const labels = getLabels(obsCat, labelsPositions.labels, categoricalNames);
         for (let i = 0, index = 0, n = labels.length; i < n; i++, index += 3) {
             let x = labelsPositions.positions[index];
@@ -58,33 +58,33 @@ function drawLabels(context, zoom, traceInfo, chartOptions, categoricalNames, ob
     }
 }
 
-function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius) {
+function drawSpots(context, zoom, trace, selection, markerOpacity, unselectedMarkerOpacity, spotRadius) {
     context.lineWidth = 2 * 1 / zoom;
     if (context.setLineDash) {
         context.setLineDash([2, 2]);
     }
     const isSelectionEmpty = selection.size === 0;
-    const indices = traceInfo.indices;
+    const indices = trace.indices;
     if (!isSelectionEmpty) { // draw unselected cells 1st
         context.globalAlpha = unselectedMarkerOpacity;
-        for (let i = 0; i < traceInfo.x.length; i++) {
+        for (let i = 0; i < trace.x.length; i++) {
             let index = indices[i];
-            let x = traceInfo.x[index];
-            let y = traceInfo.y[index];
+            let x = trace.x[index];
+            let y = trace.y[index];
             if (!selection.has(index)) {
-                context.fillStyle = traceInfo.colors[index];
+                context.fillStyle = trace.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
                 context.fill();
             }
         }
         context.globalAlpha = markerOpacity;
-        for (let i = 0; i < traceInfo.x.length; i++) {
+        for (let i = 0; i < trace.x.length; i++) {
             let index = indices[i];
-            let x = traceInfo.x[index];
-            let y = traceInfo.y[index];
+            let x = trace.x[index];
+            let y = trace.y[index];
             if (selection.has(index)) {
-                context.fillStyle = traceInfo.colors[index];
+                context.fillStyle = trace.colors[index];
                 context.beginPath();
                 context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
                 context.fill();
@@ -92,11 +92,11 @@ function drawSpots(context, zoom, traceInfo, selection, markerOpacity, unselecte
         }
     } else {
         context.globalAlpha = markerOpacity;
-        for (let i = 0; i < traceInfo.x.length; i++) {
+        for (let i = 0; i < trace.x.length; i++) {
             let index = indices[i];
-            let x = traceInfo.x[index];
-            let y = traceInfo.y[index];
-            context.fillStyle = traceInfo.colors[index];
+            let x = trace.x[index];
+            let y = trace.y[index];
+            context.fillStyle = trace.colors[index];
             context.beginPath();
             context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
             context.fill();
@@ -138,7 +138,7 @@ class ImageChart extends React.PureComponent {
     }
 
     findPointsInPolygon(points) {
-        let data = this.props.traceInfo;
+        let data = this.props.trace;
         // let spotRadius = data[0].embedding.spotDiameter / 2;
         let indices = [];
         for (let i = 0; i < data.x.length; i++) {
@@ -150,7 +150,7 @@ class ImageChart extends React.PureComponent {
     }
 
     findPointsInRectangle(rect) {
-        let data = this.props.traceInfo;
+        let data = this.props.trace;
         const spotRadius = getSpotRadius(data, this.props.pointSize);
         let indices = [];
         const x = parseFloat(rect.getAttribute('x'));
@@ -169,7 +169,7 @@ class ImageChart extends React.PureComponent {
 
 
     findPointIndex(xpix, ypix) {
-        let data = this.props.traceInfo;
+        let data = this.props.trace;
         const spotRadius = getSpotRadius(data, this.props.pointSize);
         for (let i = 0; i < data.x.length; i++) {
             if (Math.abs(data.x[i] - xpix) <= spotRadius && Math.abs(data.y[i] - ypix) <= spotRadius) {
@@ -180,11 +180,11 @@ class ImageChart extends React.PureComponent {
     }
 
     setTooltip(xpix, ypix) {
-        let traceInfo = this.props.traceInfo;
+        let trace = this.props.trace;
         const point = this.findPointIndex(xpix, ypix);
         if (point != -1) {
-            let value = traceInfo.values[point];
-            let categoryObject = this.props.categoricalNames[traceInfo.name];
+            let value = trace.values[point];
+            let categoryObject = this.props.categoricalNames[trace.name];
             if (categoryObject) {
                 let renamedValue = categoryObject[value];
                 if (renamedValue != null) {
@@ -217,13 +217,13 @@ class ImageChart extends React.PureComponent {
 
     _drawOverlay(opts) {
         let context = opts.context;
-        let traceInfo = this.props.traceInfo;
+        let trace = this.props.trace;
         const selection = this.props.selection;
         let markerOpacity = this.props.markerOpacity;
         let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
-        const spotRadius = getSpotRadius(traceInfo, this.props.pointSize);
-        drawSpots(context, opts.zoom, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
-        drawLabels(context, opts.zoom, traceInfo, this.props.chartOptions, this.props.categoricalNames, this.props.obsCat, this.props.cachedData);
+        const spotRadius = getSpotRadius(trace, this.props.pointSize);
+        drawSpots(context, opts.zoom, trace, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
+        drawLabels(context, opts.zoom, trace, this.props.chartOptions, this.props.categoricalNames, this.props.obsCat, this.props.cachedData);
     }
 
     createViewer() {
@@ -235,9 +235,9 @@ class ImageChart extends React.PureComponent {
         //     buildPyramid: true,
         //     crossOriginPolicy: "Anonymous"
         // });
-        if (!this.props.traceInfo.tileSource.ready) {
+        if (!this.props.trace.tileSource.ready) {
             this.setState({loading: true});
-            this.props.traceInfo.tileSource.addOnceHandler('ready', (src) => {
+            this.props.trace.tileSource.addOnceHandler('ready', (src) => {
                 this.setState({loading: false});
             });
         } else {
@@ -252,7 +252,7 @@ class ImageChart extends React.PureComponent {
             // visibilityRatio: 0.2,
             showNavigationControl: false,
             // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
-            tileSources: this.props.traceInfo.tileSource
+            tileSources: this.props.trace.tileSource
         });
         let viewer = this.viewer;
 
@@ -362,9 +362,9 @@ class ImageChart extends React.PureComponent {
                 lassoPathArray = [];
                 lassoPath.setAttribute('d', '');
                 _this.props.onSelected({
-                    name: getEmbeddingKey(_this.props.traceInfo.embedding),
+                    name: getEmbeddingKey(_this.props.trace.embedding),
                     clear: !_this.editSelection,
-                    value: {basis: _this.props.traceInfo.embedding, indices: indices}
+                    value: {basis: _this.props.trace.embedding, indices: indices}
                 });
             } else if (_this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
@@ -374,9 +374,9 @@ class ImageChart extends React.PureComponent {
                 rectElement.removeAttribute('width');
                 rectElement.removeAttribute('height');
                 _this.props.onSelected({
-                    name: getEmbeddingKey(_this.props.traceInfo.embedding),
+                    name: getEmbeddingKey(_this.props.trace.embedding),
                     clear: !_this.editSelection,
-                    value: {basis: _this.props.traceInfo.embedding, indices: indices}
+                    value: {basis: _this.props.trace.embedding, indices: indices}
                 });
             }
         });
@@ -388,12 +388,12 @@ class ImageChart extends React.PureComponent {
         //         let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
         //         const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
         //         if (point === -1) {
-        //             //   this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
+        //             //   this.props.onSelected({name: getEmbeddingKey(trace.embedding)});
         //         } else {
         //             _this.props.onSelected({
-        //                 name: getEmbeddingKey(_this.props.traceInfo.embedding),
+        //                 name: getEmbeddingKey(_this.props.trace.embedding),
         //                 clear: !_this.props.chartOptions.editSelection,
-        //                 value: {basis: _this.props.traceInfo.embedding, points: [point]}
+        //                 value: {basis: _this.props.trace.embedding, points: [point]}
         //             });
         //         }
         //     }
@@ -436,15 +436,15 @@ class ImageChart extends React.PureComponent {
 
     componentDidMount() {
         if (this.viewer == null) {
-            this.createViewer(this.props.traceInfo.url);
+            this.createViewer(this.props.trace.url);
         }
     }
 
 
     onSaveImage = (format) => {
-        const {traceInfo} = this.props;
+        const {trace} = this.props;
         const img = this.viewer.source.levels[this.viewer.source.levels.length - 1].context2D.canvas;
-        saveImage(traceInfo, {width: img.width, height: img.height}, bind(this.drawContext, this), format);
+        saveImage(trace, {width: img.width, height: img.height}, bind(this.drawContext, this), format);
     };
 
     // onEditSelection = () => {

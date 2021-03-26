@@ -127,32 +127,32 @@ class ScatterChartThree extends React.PureComponent {
     }
 
 
-    calculatePointSize(traceInfo) {
-        const n = traceInfo.npoints;
+    calculatePointSize(trace) {
+        const n = trace.npoints;
         const SCALE = 200;
         const LOG_BASE = 8;
         const DIVISOR = 1.5;
         // Scale point size inverse-logarithmically to the number of points.
         const pointSize = SCALE / Math.log(n) / Math.log(LOG_BASE);
-        return traceInfo.dimensions === 3 ? pointSize : pointSize / DIVISOR;
+        return trace.dimensions === 3 ? pointSize : pointSize / DIVISOR;
     }
 
     drawContext(context, chartSize, format) {
         const {
             obsCat,
             cachedData,
-            traceInfo,
+            trace,
             markerOpacity,
             unselectedMarkerOpacity,
             selection,
             categoricalNames,
             chartOptions
         } = this.props;
-        const pointSize = this.calculatePointSize(traceInfo);
+        const pointSize = this.calculatePointSize(trace);
         const scaleFactor = this.props.pointSize;
         const PI2 = 2 * Math.PI;
-        const colors = traceInfo.colors;
-        const positions = traceInfo.positions;
+        const colors = trace.colors;
+        const positions = trace.positions;
         const camera = this.scatterPlot.camera;
         const width = chartSize.width;
         const height = chartSize.height;
@@ -163,8 +163,8 @@ class ScatterChartThree extends React.PureComponent {
         const widthHalf = width / 2;
         const heightHalf = height / 2;
         const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
-        const npoints = traceInfo.npoints;
-        const is3d = traceInfo.dimensions === 3;
+        const npoints = trace.npoints;
+        const is3d = trace.dimensions === 3;
         let outputPointSize;
         let fog = this.scatterPlot.scene.fog;
         let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
@@ -247,7 +247,7 @@ class ScatterChartThree extends React.PureComponent {
             context.fill();
         }
         if (obsCat.length > 0) {
-            const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
+            const labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCat, cachedData);
             let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
             context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
             drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, chartSize, camera);
@@ -270,8 +270,8 @@ class ScatterChartThree extends React.PureComponent {
 
 
     onSaveImage = (format) => {
-        const {traceInfo, chartSize} = this.props;
-        saveImage(traceInfo, chartSize, bind(this.drawContext, this), format);
+        const {trace, chartSize} = this.props;
+        saveImage(trace, chartSize, bind(this.drawContext, this), format);
     };
 
 
@@ -355,8 +355,8 @@ class ScatterChartThree extends React.PureComponent {
                 if (point == null) {
                     this.tooltipElementRef.current.innerHTML = ' ';
                 } else {
-                    const traceInfo = this.props.traceInfo;
-                    const positions = traceInfo.positions;
+                    const trace = this.props.trace;
+                    const positions = trace.positions;
                     const camera = this.scatterPlot.camera;
                     const widthHalf = this.props.chartSize.width / 2;
                     const heightHalf = this.props.chartSize.height / 2;
@@ -376,7 +376,7 @@ class ScatterChartThree extends React.PureComponent {
                     }
 
                     if (selectedIndex === -1) {
-                        for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                        for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
                             pos.x = positions[k];
                             pos.y = positions[k + 1];
                             pos.z = positions[k + 2];
@@ -391,8 +391,8 @@ class ScatterChartThree extends React.PureComponent {
                     }
                     this.lastHoverIndex = selectedIndex;
                     if (selectedIndex !== -1) {
-                        let value = traceInfo.values[selectedIndex];
-                        let categoryObject = this.props.categoricalNames[traceInfo.name];
+                        let value = trace.values[selectedIndex];
+                        let categoryObject = this.props.categoricalNames[trace.name];
                         if (categoryObject) {
                             let renamedValue = categoryObject[value];
                             if (renamedValue != null) {
@@ -415,15 +415,15 @@ class ScatterChartThree extends React.PureComponent {
 
             };
             this.scatterPlot.lassoCallback = (points, appendToSelection) => {
-                const traceInfo = this.props.traceInfo;
-                const positions = traceInfo.positions;
+                const trace = this.props.trace;
+                const positions = trace.positions;
                 const camera = this.scatterPlot.camera;
                 const widthHalf = this.props.chartSize.width / 2;
                 const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
                 const selectedIndices = new Set();
 
-                for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
                     pos.y = positions[k + 1];
                     pos.z = positions[k + 2];
@@ -436,12 +436,12 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
                 if (selectedIndices.size === 0) {
-                    this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(trace.embedding)});
                 } else {
                     this.props.onSelected({
-                        name: getEmbeddingKey(traceInfo.embedding),
+                        name: getEmbeddingKey(trace.embedding),
                         clear: !appendToSelection,
-                        value: {basis: traceInfo.embedding, indices: selectedIndices}
+                        value: {basis: trace.embedding, indices: selectedIndices}
                     });
                 }
             };
@@ -449,15 +449,15 @@ class ScatterChartThree extends React.PureComponent {
                 if (this.scatterPlot.interactionMode === 'PAN') {
                     return;
                 }
-                const traceInfo = this.props.traceInfo;
-                const positions = traceInfo.positions;
+                const trace = this.props.trace;
+                const positions = trace.positions;
                 const camera = this.scatterPlot.camera;
                 const widthHalf = this.props.chartSize.width / 2;
                 const heightHalf = this.props.chartSize.height / 2;
                 const pos = new Vector3();
                 const selectedIndices = new Set();
 
-                for (let i = 0, j = 0, k = 0; i < traceInfo.npoints; i++, j += 4, k += 3) {
+                for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
                     pos.y = positions[k + 1];
                     pos.z = positions[k + 2];
@@ -470,12 +470,12 @@ class ScatterChartThree extends React.PureComponent {
                 }
 
                 if (selectedIndices.size === 0) {
-                    this.props.onSelected({name: getEmbeddingKey(traceInfo.embedding)});
+                    this.props.onSelected({name: getEmbeddingKey(trace.embedding)});
                 } else {
                     this.props.onSelected({
-                        name: getEmbeddingKey(traceInfo.embedding),
+                        name: getEmbeddingKey(trace.embedding),
                         clear: !appendToSelection,
-                        value: {basis: traceInfo.embedding, indices: selectedIndices}
+                        value: {basis: trace.embedding, indices: selectedIndices}
                     });
                 }
             };
@@ -502,7 +502,7 @@ class ScatterChartThree extends React.PureComponent {
         const {
             obsCat,
             cachedData,
-            traceInfo,
+            trace,
             markerOpacity,
             unselectedMarkerOpacity,
             selection,
@@ -510,7 +510,7 @@ class ScatterChartThree extends React.PureComponent {
             chartOptions,
             categoricalNames
         } = this.props;
-        updateScatterChart(this.scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
+        updateScatterChart(this.scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }
 
@@ -525,7 +525,7 @@ class ScatterChartThree extends React.PureComponent {
                     animating={this.props.chartOptions.animating}
                     showFog={this.props.chartOptions.showFog}
                     onShowFog={this.onShowFog}
-                    is3d={this.props.traceInfo && this.props.traceInfo.z != null}
+                    is3d={this.props.trace && this.props.trace.z != null}
                     toggleAnimation={this.onToggleAnimation}
                     onSaveImage={this.onSaveImage}
                     onDragMode={this.onDragMode}
