@@ -94,6 +94,7 @@ Server
 
     cirro serve
 
+You can see the full list of command line options by typing `cirro serve --help`.
 
 - Use the `prepare_data` command to freeze an h5ad, loom, or Seurat file in cirrocumulus format. The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
 
