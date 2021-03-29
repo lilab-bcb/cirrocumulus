@@ -87,6 +87,7 @@ Server
     - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
     - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
       and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+    - Note that you need to install google-auth (`pip install google-auth`) to use Google OAuth.
 
 - Install MongoDB_ and start the MongoDB server
 
@@ -107,6 +108,12 @@ You can see the full list of command line options by typing `cirro serve --help`
 - You can programmatically add a dataset by posting to the /api/dataset endpoint::
 
     curl 'http://localhost:5000/api/dataset' --data-binary '{"name":"my_name","readers":[],"description":"my_desc","url":"/data/my_dataset_path"}'
+
+- Please note that additional libraries are needed for cloud storage:
+
+    - Amazon S3: `pip install s3fs`
+    - Google Cloud Storage: `pip install gcsfs`
+    - Microsoft Azure: `pip install adlfs`
 
 
 Google App Engine
