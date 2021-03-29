@@ -99,7 +99,8 @@ Server
 
 - Add a dataset and optionally share with dataset with collaborators. If you enabled authentication, then no users are allowed to add datasets to cirrocumulus.
   Set the property "importer" to true on an entry in the users collection to enable that user to import datasets. For example, in `MongoDB Compass`_:
-  .. image:: images/mongodb.png
+
+.. image:: images/mongodb.png
 
 
 - You can programmatically add a dataset by posting to the /api/dataset endpoint::
