@@ -3,9 +3,9 @@ CacheControl==0.12.6
 flask==1.1.2
 flask-compress==1.9.0
 fsspec==0.8.7
-gunicorn==20.0.4
+gunicorn==20.1.0
 loompy==3.0.6
-numpy==1.20.1
+numpy==1.20.2
 pandas==1.2.3
 pyarrow==3.0.0
 pymongo==3.11.3

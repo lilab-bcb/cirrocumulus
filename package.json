@@ -35,7 +35,7 @@
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git#1.0.0",
     "simplify-js": "^1.2.4",
     "three": "^0.118.3",
-    "web-vitals": "^0.2.4"
+    "web-vitals": "^1.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
