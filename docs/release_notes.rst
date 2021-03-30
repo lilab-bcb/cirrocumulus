@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.14.post5 `March 30, 2021`
+    * Fixed issue that distribution charts did not update when color scheme changed
+
 - 1.1.14.post4 `March 26, 2021`
     * Fixed issue that primary embedding chart did not update when color scheme changed
 
