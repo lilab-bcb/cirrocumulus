@@ -110,11 +110,31 @@ function getMeanAndPercentRange(result) {
 
 class DistributionGroup extends React.PureComponent {
 
+    constructor(props) {
+        super(props);
+        this.state = {
+            min: '',
+            max: ''
+        };
+    }
 
     onSortOrderChanged = (event) => {
         this.props.onDistributionPlotOptions({sortBy: event.target.value});
     };
 
+    onMinUIChange = (value) => {
+        this.setState({min: value});
+    };
+    onMaxUIChange = (value) => {
+        this.setState({max: value});
+    };
+
+    onMinChange = (value) => {
+        this.props.onDistributionPlotOptions({min: value});
+    };
+    onMaxChange = (value) => {
+        this.props.onDistributionPlotOptions({max: value});
+    };
     render() {
         const {
             textColor,
@@ -246,8 +266,14 @@ class DistributionGroup extends React.PureComponent {
                                      textColor={textColor}
                                      domain={colorScale.domain()}
                                      interpolator={interpolator}
-                                     onOptions={this.props.onDistributionPlotOptions}
-                                     onInterpolator={this.props.handleInterpolator}/>}
+                                     onInterpolator={this.props.handleInterpolator}
+                                     min={this.state.min}
+                                     max={this.state.max}
+                                     onMinChange={this.onMinChange}
+                                     onMaxChange={this.onMaxChange}
+                                     onMinUIChange={this.onMinUIChange}
+                                     onMaxUIChange={this.onMaxUIChange}
+                />}
 
                 {chartType !== 'violin' && <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Standardize</InputLabel>
