@@ -36,7 +36,7 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
             renamedDimensions.push(categoricalNames[obsCat[categoryIndex]] || {});
         }
         const hasSelection = selection != null && selection.size > 0;
-
+        const dimensionIndex = ncategories - 1;
         const categoryToValueToCounts = {};
         for (let i = 0; i < nObs; i++) {
             if (hasSelection && !selection.has(i)) {
@@ -58,7 +58,12 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
                 valueToCounts = {};
                 categoryToValueToCounts[series] = valueToCounts;
             }
-            const category = categoryValues[ncategories - 1][i];
+            let category = categoryValues[dimensionIndex][i];
+            const nameMap = renamedDimensions[dimensionIndex];
+            let newCategory = nameMap[category];
+            if (newCategory !== undefined) {
+                category = newCategory;
+            }
             const count = valueToCounts[category] || 0;
             valueToCounts[category] = count + 1;
         }
