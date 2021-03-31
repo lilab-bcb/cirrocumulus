@@ -36,7 +36,7 @@ class DistributionPlots extends React.PureComponent {
         } = this.props;
 
         if (distributionData.length === 0) {
-            return <h4>Please enter one or more categorical observations and one or more features.</h4>;
+            return null;
         }
         const textColor = chartOptions.darkMode ? 'white' : 'black';
         let dimension2data = groupBy(distributionData, 'dimension');

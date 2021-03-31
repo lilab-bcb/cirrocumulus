@@ -21,6 +21,7 @@ import {
     setMessage,
 } from './actions';
 import AppHeader from './AppHeader';
+import CompositionPlots from './CompositionPlots';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DistributionPlots from './DistributionPlots';
 import DraggableDivider from './DraggableDivider';
@@ -150,6 +151,7 @@ class App extends PureComponent {
                                 hidden={tab !== 'distribution'}
                             >
                                 <DistributionPlots/>
+                                <CompositionPlots/>
                             </div>
                             <div
                                 role="tabpanel"
