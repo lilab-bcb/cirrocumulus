@@ -6,7 +6,6 @@ import {withStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {scaleLinear} from 'd3-scale';
-import {memoizeOne} from 'memoize-one';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {intFormat} from './formatters';
@@ -14,7 +13,8 @@ import {intFormat} from './formatters';
 const styles = theme => ({
     table: {
         width: 'min-content',
-        '& td': {padding: 6}
+        '& td': {padding: 6},
+        '& th': {padding: 6}
     },
 });
 
