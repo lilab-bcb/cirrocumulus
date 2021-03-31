@@ -130,7 +130,7 @@ function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
 
 /**
  *
- * @param state Array of value, type where type can be X, obs, or obsCat
+ * @param state Array of {value:str, type:str} where type is FEATURE_TYPE
  * @param action
  * @returns {*|*[]}
  */
