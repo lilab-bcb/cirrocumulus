@@ -1,11 +1,10 @@
+import os
 from urllib.parse import urlparse
 
-from flask import Blueprint, Response, request, stream_with_context
-
 import cirrocumulus.data_processing as data_processing
-from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER
-from .auth_api import AuthAPI
-from .database_api import DatabaseAPI
+from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD
+from flask import Blueprint, Response, request, stream_with_context, current_app
+
 from .dataset_api import DatasetAPI
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
@@ -14,8 +13,6 @@ from .util import *
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
-auth_api = AuthAPI()
-database_api = DatabaseAPI()
 
 
 @blueprint.errorhandler(InvalidUsage)
@@ -23,17 +20,25 @@ def handle_invalid_usage(error):
     return Response(error.message, error.status_code)
 
 
+def get_database():
+    return current_app.config['DATABASE']
+
+
+def get_auth():
+    return current_app.config['AUTH']
+
+
 @blueprint.route('/server', methods=['GET'])
 def handle_server():
     # no login required
-    server = database_api.server()
-    server['clientId'] = auth_api.client_id
-    import os
+    server = get_database().server()
+    server['clientId'] = get_auth().client_id
     footer_path = os.environ.get(CIRRO_FOOTER)
     if footer_path is not None:
         with open(footer_path, 'rt') as f:
             server['footer'] = f.read()
     server['jobs'] = os.environ.get('GAE_APPLICATION') is None
+    server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
     return to_json(server)
 
 
@@ -41,13 +46,13 @@ def handle_server():
 def handle_dataset_filters():
     """List filters available for a dataset.
     """
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
     dataset_id = request.args.get('id', '')
 
     if dataset_id == '':
         return 'Please provide an id', 400
 
-    dataset_filters = database_api.dataset_filters(email, dataset_id)
+    dataset_filters = get_database().dataset_filters(email, dataset_id)
     # {'id': result.id, 'name': result['name']}
     return to_json(dataset_filters)
 
@@ -56,12 +61,12 @@ def handle_dataset_filters():
 def handle_export_dataset_filters():
     """Download filters in a csv file for a dataset.
     """
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
     dataset_id = request.args.get('id', '')
 
     if dataset_id == '':
         return 'Please provide an id', 400
-
+    database_api = get_database()
     dataset_filters = database_api.dataset_filters(email, dataset_id)
     dataset = database_api.get_dataset(email, dataset_id)
     text = data_processing.handle_export_dataset_filters(dataset_api, dataset, dataset_filters)
@@ -73,7 +78,8 @@ def handle_category_name():
     """CRUD for category name.
     """
 
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     if request.method == 'GET':
         dataset_id = request.args.get('id', '')
         if dataset_id == '':
@@ -99,7 +105,8 @@ def handle_feature_set():
     """CRUD for a feature set.
     """
 
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     # if request.method == 'GET':
     #     filter_id = request.args.get('id', '')
     #     dataset_id = request.args.get('ds_id', '')
@@ -137,7 +144,8 @@ def handle_dataset_filter():
     """CRUD for a dataset filter.
     """
 
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     if request.method == 'GET':
         filter_id = request.args.get('id', '')
         dataset_id = request.args.get('ds_id', '')
@@ -173,7 +181,8 @@ def handle_dataset_filter():
 def handle_schema():
     """Get dataset schema.
     """
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
     schema = dataset_api.schema(dataset)
@@ -183,7 +192,6 @@ def handle_schema():
 
 
 def get_file_path(file, dataset_url):
-    import os
     # when serving dataset, image must be relative to dataset directory
     if os.environ.get(CIRRO_SERVE) == 'true':
         _, ext = os.path.splitext(dataset_url)
@@ -227,7 +235,8 @@ def send_file(file_path):
 
 @blueprint.route('/file', methods=['GET'])
 def handle_file():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
     file_path = get_file_path(request.args.get('file'), dataset['url'])
@@ -236,16 +245,18 @@ def handle_file():
 
 @blueprint.route('/user', methods=['GET'])
 def handle_user():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     user = database_api.user(email)
     return to_json(user)
 
 
 def get_email_and_dataset(content):
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
     dataset_id = content.get('id', '')
     if dataset_id == '':
         return 'Please supply an id', 400
+    database_api = get_database()
     dataset = database_api.get_dataset(email, dataset_id)
     return email, dataset
 
@@ -287,30 +298,47 @@ def handle_selected_ids():
 # List available datasets
 @blueprint.route('/datasets', methods=['GET'])
 def handle_datasets():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     return to_json(database_api.datasets(email))
+
+
+def upload_file(file):
+    from werkzeug.utils import secure_filename
+    filename = secure_filename(file.filename)
+    dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
+    fs = dataset_api.fs_adapter.get_fs(dest).open(dest, mode='wb')
+    file.save(fs)
+    fs.close()
+    return dest
 
 
 @blueprint.route('/dataset', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_dataset():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     # POST=new dataset, PUT=update dataset, DELETE=delete, GET=get dataset info
     if request.method == 'PUT' or request.method == 'POST':
-        content = request.get_json(force=True, cache=False)
-        dataset_id = content.get('id', '')
-        if request.method == 'PUT' and dataset_id == '':
+        dataset_id = request.form.get('id')
+        dataset_name = request.form.get('name')
+        description = request.form.get('description')
+        species = request.form.get('species')
+        title = request.form.get('title')
+        url = request.form.get('url')  # e.g. gs://foo/a/b/
+        file = request.files.get('file')
+        readers = request.form.get('readers')
+        if readers is not None:
+            import json
+            readers = json.loads(readers)
+        if request.method == 'PUT' and dataset_id is None:  # update
             return 'Please supply an id', 400
-        readers = content.get('readers', [])
-        if readers is None:
-            readers = []
-        readers = set(readers)
-        dataset_name = content.get('name', '')
-        description = content.get('description', '')
-        species = content.get('species', '')
-        title = content.get('title', '')
-        url = content.get('url', '')  # e.g. gs://foo/a/b/
-        if dataset_name == '' or url == '':
-            return 'Must supply dataset name and URL', 400
+        if request.method == 'POST' and dataset_name == '':  # new
+            return 'Must supply dataset name', 400
+
+        if file is not None:
+            if os.environ.get(CIRRO_UPLOAD) is None:
+                return 'Upload not supported', 400
+            url = upload_file(file)
         dataset_id = database_api.upsert_dataset(email=email,
             dataset_id=dataset_id if request.method == 'PUT' else None,
             dataset_name=dataset_name, url=url, readers=readers, description=description, title=title, species=species)
@@ -325,25 +353,10 @@ def handle_dataset():
         return to_json(database_api.get_dataset(email, dataset_id, True))
 
 
-    # if request.method == 'POST' or (request.method == 'PUT' and url != dataset_dict.get('url',
-    #         '')):  # only check if can read on new dataset created
-    # bucket = url[5:]  # remove gs://
-    # slash = bucket.index('/')
-    # gcp_object = urllib.parse.quote(bucket[slash + 1:], safe='')
-    # bucket = urllib.parse.quote(bucket[0: slash], safe='')
-
-    # head_request = requests.head(
-    #     'https://www.googleapis.com/storage/v1/b/{bucket}/o/{object}'.format(bucket=bucket,
-    #         object=gcp_object),
-    #     headers={'Authorization': 'Bearer ' + request_util.credentials.get_access_token().access_token})
-    # head_request.close()
-    # if head_request.status_code != 200:
-    #     return 'Not authorized to read {}'.format(url), 403
-
-
 @blueprint.route('/job', methods=['GET', 'DELETE'])
 def handle_job():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     if request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
         job_id = content.get('id', '')
@@ -354,9 +367,8 @@ def handle_job():
         job_status = request.args.get('status', '0')
         return_result = job_status == '0'
         if job_id.startswith('cirro-'):  # precomputed result
-            import os
             dataset_id = request.args.get('ds_id', '')
-            email = auth_api.auth()['email']
+            email = get_auth().auth()['email']
             dataset = database_api.get_dataset(email, dataset_id)
             file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
             return send_file(file_path)
@@ -369,15 +381,16 @@ def handle_job():
 
 @blueprint.route('/jobs', methods=['GET'])
 def handle_jobs():
-    email = auth_api.auth()['email']
+    email = get_auth().auth()['email']
+    database_api = get_database()
     ds_id = request.args.get('id', '')
     return to_json(database_api.get_jobs(email=email, dataset_id=ds_id))
 
 
 @blueprint.route('/submit_job', methods=['POST'])
 def handle_submit_job():
-    import os
-    if os.environ.get('GAE_APPLICATION') is None:
+    if os.environ.get('GAE_APPLICATION') is None:  # TODO
+        database_api = get_database()
         content = request.get_json(force=True, cache=False)
         email, dataset = get_email_and_dataset(content)
         params = content.get('params')

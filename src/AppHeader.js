@@ -30,6 +30,7 @@ import {
     setTab,
 } from './actions';
 import {drawerWidth} from './App';
+import CirroIcon from './CirroIcon';
 import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
 import {
@@ -345,7 +346,7 @@ class AppHeader extends React.PureComponent {
         const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
         return (
             <AppBar position="fixed" color="default" className={classes.appBar}>
-                <Toolbar variant="dense">
+                <Toolbar variant="dense" style={{paddingLeft: 6}}>
                     {dataset != null && <Popover
                         id={"dataset-details"}
                         open={datasetDetailsOpen}
@@ -360,6 +361,7 @@ class AppHeader extends React.PureComponent {
                             horizontal: 'center',
                         }}
                     >
+
                         <div style={{width: 500}}>
                             {dataset.title && <Typography className={classes.typography}>
                                 {dataset.title}
@@ -369,8 +371,13 @@ class AppHeader extends React.PureComponent {
                         </div>
                     </Popover>
                     }
+                    {dataset == null && <Typography variant="h5">
+                        <CirroIcon/> Cirrocumulus
+                    </Typography>}
+                    {dataset != null && <CirroIcon/>}
                     {dataset != null &&
                     <Typography
+                        style={{paddingLeft: 6}}
                         aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
                         aria-haspopup="true"
                         component={"h3"}>
@@ -381,7 +388,6 @@ class AppHeader extends React.PureComponent {
                             {hasSelection && shape != null && intFormat(selection.size) + ' / '}
                             {shape != null && intFormat(shape[0]) + ' cells'}
                         </small>
-
                     </Typography>
                     }
 
@@ -396,12 +402,7 @@ class AppHeader extends React.PureComponent {
                         {jobResults.length > 0 && <AntTab value="results" label="Results"/>}
                     </Tabs>}
 
-                    <div className={"cirro-condensed"}>
-                        {/*<CloudIcon style={{verticalAlign: 'bottom'}} fontSize={'large'}/>*/}
-                        {/*<h3*/}
-                        {/*    style={{display: 'inline', marginRight: 20}}>Cirro</h3>*/}
 
-                    </div>
                     <div style={{marginLeft: 'auto'}}>
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>

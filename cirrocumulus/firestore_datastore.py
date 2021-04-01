@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from cirrocumulus.database_api import get_email_domain
+from cirrocumulus.util import get_email_domain
 from google.cloud import datastore
 
 from .invalid_usage import InvalidUsage
@@ -158,7 +158,16 @@ class FirestoreDatastore:
         dataset['id'] = dataset.id
         return dataset
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title, species):
+    def is_importer(self, email):
+        # TODO check if user can modify dataset
+        client = self.datastore_client
+        user = client.get(client.key(USER, email))
+        if 'importer' not in user:
+            raise False
+        return user['importer']
+
+    def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
+                       species=None):
         client = self.datastore_client
         if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
@@ -167,20 +176,25 @@ class FirestoreDatastore:
             user = client.get(client.key(USER, email))
             if 'importer' not in user or not user['importer']:
                 raise InvalidUsage('Not authorized', 403)
-        readers = set(readers)
-        if email in readers:
-            readers.remove(email)
-        readers.add(email)
-        update_dict = {'name': dataset_name,
-                       'readers': list(readers),
-                       'description': description,
-                       'title': title,
-                       'url': url,
-                       'species': species}
+        update_dict = {}
+        if dataset_name is not None:
+            update_dict['name'] = dataset_name
+        if url is not None:
+            update_dict['url'] = url
 
-        if dataset_id is None:  # new dataset
-            update_dict['owners'] = [email]
+        if readers is not None:
+            readers = set(readers)
+            if email in readers:
+                readers.remove(email)
+            readers.add(email)
+            update_dict['readers'] = list(readers)
+        if description is not None:
+            update_dict['description'] = description
 
+        if title is not None:
+            update_dict['title'] = title
+        if species is not None:
+            update_dict['species'] = species
         dataset.update(update_dict)
         client.put(dataset)
         dataset_id = dataset.id

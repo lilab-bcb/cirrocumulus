@@ -31,18 +31,46 @@ export class RestServerApi {
             });
     }
 
-    upsertDatasetPromise(datasetId, dataset) {
-        let isEdit = datasetId != null;
-        if (datasetId != null) {
-            dataset.id = datasetId;
+    upsertDatasetPromise(data) {
+        const isEdit = data.id != null;
+        const formData = new FormData();
+        for (let key in data) {
+            let value = data[key];
+            if (value != null) {
+                if (key == 'readers') {
+                    value = JSON.stringify(value);
+                }
+                formData.append(key, value);
+            }
         }
-        return fetch(API + '/dataset',
-            {
-                body: JSON.stringify(dataset),
-                method: isEdit ? 'PUT' : 'POST',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(importDatasetResponse => importDatasetResponse.json());
+        const request = new XMLHttpRequest();
+        request.open(isEdit ? 'PUT' : 'POST', API + '/dataset');
+        request.setRequestHeader('Authorization', 'Bearer ' + getIdToken());
+
+
+        request.addEventListener('load', function (e) {
+            // HTTP status message (200, 404 etc)
+            console.log('load', request.status);
+
+            // request.response holds response from the server
+            console.log('load', request.response);
+        });
+        request.send(formData);
+        return request;
     }
+
+    // upsertDatasetPromise(datasetId, dataset) {
+    //     let isEdit = datasetId != null;
+    //     if (datasetId != null) {
+    //         dataset.id = datasetId;
+    //     }
+    //     return fetch(API + '/dataset',
+    //         {
+    //             body: JSON.stringify(dataset),
+    //             method: isEdit ? 'PUT' : 'POST',
+    //             headers: {'Authorization': 'Bearer ' + getIdToken()},
+    //         }).then(importDatasetResponse => importDatasetResponse.json());
+    // }
 
 
     getDatasetPromise(datasetId) {

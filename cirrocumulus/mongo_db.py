@@ -1,7 +1,7 @@
 import json
 
 from bson import ObjectId
-from cirrocumulus.database_api import get_email_domain
+from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
 
 from .invalid_usage import InvalidUsage
@@ -138,18 +138,35 @@ class MongoDb:
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
-    def upsert_dataset(self, email, dataset_id, dataset_name, url, readers, description, title, species):
+    def is_importer(self, email):
+        # TODO check if user can modify dataset
+        user = self.db.users.find_one(dict(email=email))
+        if 'importer' not in user:
+            raise False
+        return user['importer']
+
+    def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
+                       species=None):
         collection = self.db.datasets
-        readers = set(readers)
-        if email in readers:
-            readers.remove(email)
-        readers.add(email)
-        update_dict = {'name': dataset_name,
-                       'description': description,
-                       'title': title,
-                       'readers': list(readers),
-                       'url': url,
-                       'species': species}
+        update_dict = {}
+        if dataset_name is not None:
+            update_dict['name'] = dataset_name
+        if url is not None:
+            update_dict['url'] = url
+
+        if readers is not None:
+            readers = set(readers)
+            if email in readers:
+                readers.remove(email)
+            readers.add(email)
+            update_dict['readers'] = list(readers)
+        if description is not None:
+            update_dict['description'] = description
+        if title is not None:
+            update_dict['title'] = title
+        if species is not None:
+            update_dict['species'] = species
+
         if dataset_id is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))

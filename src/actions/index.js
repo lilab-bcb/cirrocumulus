@@ -1067,84 +1067,70 @@ export function getIdToken() {
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
-
+        dispatch(_setLoading(true));
         const name = payload.name;
         const url = payload.url;
-
-        if (name === '' || url === '') {
-            return;
-        }
+        const file = payload.file;
         const readers = payload.readers;
         const description = payload.description;
         const title = payload.title;
         const species = payload.species;
-        // let bucket = url.substring('gs://'.length);
-        // let slash = bucket.indexOf('/');
-        // let object = encodeURIComponent(bucket.substring(slash + 1));
-        // bucket = encodeURIComponent(bucket.substring(0, slash));
+        let existingDataset = payload.dataset;
+        const isEdit = existingDataset != null;
+        if (existingDataset == null) {
+            existingDataset = {};
+        }
+        const data = {};
+        data.readers = readers;
+        if (name != null && name!==existingDataset.name) {
+            data.name = name;
+        }
+        if (description != null && description !== existingDataset.description) {
+            data.description = description;
+        }
+        if (title != null && title !== existingDataset.title) {
+            data.title = title;
+        }
+        if (species != null && species !== existingDataset.species) {
+            data.species = species;
+        }
+        if (url != null && url !== existingDataset.url) {
+            data.url = url;
+        }
+        if (file != null) {
+            data.file = file;
+        }
 
-        dispatch(_setLoading(true));
-        const isEdit = payload.dataset != null;
-        const serverInfo = getState().serverInfo;
-        const updatePermissions = !isEdit || url !== payload.dataset.url;
-        // if (updatePermissions) {
+        if (isEdit) {
+            data.id = payload.dataset.id;
+        }
 
-        // updateDatasetPermissionPromise = fetch(
-        //     'https://www.googleapis.com/storage/v1/b/' + bucket + '/o/' + object,
-        //     {
-        //         body: JSON.stringify({
-        //             'acl': [{
-        //                 'entity': 'user-' + serverEmail,
-        //                 'role': 'READER'
-        //             }]
-        //         }),
-        //         method: 'PATCH',
-        //         headers: {'Authorization': 'Bearer ' + getAccessToken(), 'Content-Type': 'application/json'},
-        //     });
-
-        // } else {
-        let updateDatasetPermissionPromise = Promise.resolve({ok: true});
-
-        // }
-        updateDatasetPermissionPromise.then(permissionsResponse => {
-
-            // if (!permissionsResponse.ok) {
-            //     dispatch(setMessage('Unable to set dataset read permissions. Please ensure that you are the dataset owner or manually add ' + serverEmail + ' as a reader.'));
-            // }
-        }).then(() => getState().serverInfo.api.upsertDatasetPromise(payload.dataset ? payload.dataset.id : null,
-            {
-                name: name,
-                readers: readers,
-                description: description,
-                title: title,
-                species: species,
-                url: url
-            })).then(importDatasetResult => {
-            const dsUpdate = {
-                name: name,
-                id: importDatasetResult.id,
-                title: title,
-                url: url,
-                species: species,
-                readers: readers,
-                description: description,
-                owner: true
-            };
-            if (isEdit) {
-                dispatch(updateDataset(dsUpdate));
-                dispatch(setMessage('Dataset updated'));
-            } else {
-                dispatch(_addDataset(dsUpdate));
-                if (serverInfo.email) {
-                    dispatch(setMessage(updatePermissions ? 'Please ensure that ' + serverInfo.email + ' is a "Storage Object Viewer"' : 'Dataset created'));
-                }
+        const request = getState().serverInfo.api.upsertDatasetPromise(data);
+        request.upload.addEventListener('progress', function (e) {
+            if (file) {
+                let percent = (e.loaded / e.total) * 100;
+                dispatch(setMessage('Percent ' + percent));
             }
-
-        }).finally(() => {
+        });
+        request.addEventListener('load', function (e) {
             dispatch(_setLoading(false));
             dispatch(setDialog(null));
-        }).catch(err => {
-            handleError(dispatch, err);
+            const status = request.status;
+            if (status != 200) {
+                return dispatch(setMessage('Unable to save dataset. Please try again.'));
+            }
+            // request.response holds response from the server
+            const resp = JSON.parse(request.response);
+            data.id = resp.id;
+            data.owner = true;
+
+            if (isEdit) {
+                dispatch(updateDataset(data));
+                dispatch(setMessage('Dataset updated'));
+            } else {
+                dispatch(_addDataset(data));
+                dispatch(setMessage('Dataset added'));
+            }
         });
     };
 }

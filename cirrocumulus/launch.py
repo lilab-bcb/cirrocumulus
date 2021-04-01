@@ -5,12 +5,12 @@ from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATI
 from cirrocumulus.parquet_dataset import ParquetDataset
 
 
-def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
+def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marker_paths):
     from cirrocumulus.api import dataset_api
-    from cirrocumulus.api import auth_api, database_api
     from cirrocumulus.local_db_api import LocalDbAPI
     from cirrocumulus.no_auth import NoAuth
-    auth_api.provider = NoAuth()
+
+    app.config['AUTH'] = NoAuth()
     dataset_api.add(ParquetDataset())
     anndata_dataset = AnndataDataset('r' if backed else None)
     dataset_ids = []
@@ -22,7 +22,6 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
             to_concat = []
             all_ids = None
             for path in dataset_paths:
-                print(path)
                 d = anndata_dataset.get_data(path)
                 all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
                 to_concat.append(d)
@@ -67,7 +66,7 @@ def configure(list_of_dataset_paths, spatial_directories, backed, marker_paths):
             anndata_dataset.add_data(dataset_id, adata)
         dataset_api.add(anndata_dataset)
 
-    database_api.provider = LocalDbAPI(dataset_ids)
+    app.config['DATABASE'] = LocalDbAPI(dataset_ids)
 
     if spatial_directories is not None and len(spatial_directories) > 0:
         for i in range(len(spatial_directories)):
@@ -125,7 +124,7 @@ def main(argsv):
     app = create_app()
     # from flask_cors import CORS
     # CORS(app)
-    configure(args.dataset, args.spatial, args.backed, args.markers)
+    configure_app(app, args.dataset, args.spatial, args.backed, args.markers)
     if not args.no_open:
         import webbrowser
         host = args.host if args.host is not None else 'http://127.0.0.1'

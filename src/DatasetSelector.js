@@ -81,7 +81,7 @@ export class DatasetSelector extends React.PureComponent {
         }
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const hasMoreInfo = selectedDataset && (selectedDataset.title || selectedDataset.description);
-        const species2Items = groupBy(filteredChoices, 'species');
+        const species2Items = groupBy(filteredChoices, item => item.species || '');
         const speciesArray = Object.keys(species2Items);
         speciesArray.sort();
         return (
@@ -141,7 +141,7 @@ export class DatasetSelector extends React.PureComponent {
                         <Typography>No Results</Typography>}
                         {speciesArray.map(species => {
 
-                            const speciesText = species === 'null' ? 'Other' : species;
+                            const speciesText = species === '' ? 'Other' : species;
                             const choices = species2Items[species];
                             return <React.Fragment key={species}>
                                 <Typography component={"h2"}>{speciesText}</Typography>

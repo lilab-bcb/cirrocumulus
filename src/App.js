@@ -25,7 +25,7 @@ import CompositionPlots from './CompositionPlots';
 import DeleteDatasetDialog from './DeleteDatasetDialog';
 import DistributionPlots from './DistributionPlots';
 import DraggableDivider from './DraggableDivider';
-import EditDatasetDialog from './EditDatasetDialog';
+import EditNewDatasetDialog from './EditNewDatasetDialog';
 import EmbeddingChart from './EmbeddingChart';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
@@ -109,7 +109,7 @@ class App extends PureComponent {
         return (<ThemeProvider theme={theme}>
                 <div className={classes.root}>
                     {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
-                    <EditDatasetDialog/>}
+                    <EditNewDatasetDialog/>}
                     {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
                     {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
                     {dialog === HELP_DIALOG && <HelpDialog/>}

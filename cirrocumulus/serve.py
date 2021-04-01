@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL, CIRRO_SERVE, \
-    CIRRO_FOOTER
+    CIRRO_FOOTER, CIRRO_UPLOAD
 from cirrocumulus.launch import create_app
 
 app = None
@@ -12,19 +12,16 @@ DEFAULT_DATABASE = 'cirrocumulus'
 
 def cached_app():
     global app
-
     if app is None:
         app = create_app()
-
         # from flask_cors import CORS
         # CORS(app)
-        configure()
+        configure_app(app)
     return app
 
 
-def configure():
+def configure_app(app):
     from cirrocumulus.api import dataset_api
-    from cirrocumulus.api import auth_api, database_api
     from cirrocumulus.no_auth import NoAuth
     auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
     db_uri = os.environ.get(CIRRO_DB_URI, DEFAULT_DB_URI)
@@ -32,12 +29,12 @@ def configure():
     email = os.environ.get(CIRRO_EMAIL)
     os.environ[CIRRO_SERVE] = 'true'
     if auth_client_id is None:
-        auth_api.provider = NoAuth()
+        app.config['AUTH'] = NoAuth()
     else:
         from cirrocumulus.google_auth import GoogleAuth
-        auth_api.provider = GoogleAuth(auth_client_id)
+        app.config['AUTH'] = GoogleAuth(auth_client_id)
     from cirrocumulus.mongo_db import MongoDb
-    database_api.provider = MongoDb(db_uri, database, email)
+    app.config['DATABASE'] = MongoDb(db_uri, database, email)
     from cirrocumulus.parquet_dataset import ParquetDataset
     dataset_api.add(ParquetDataset())
     from cirrocumulus.anndata_dataset import AnndataDataset
@@ -60,6 +57,7 @@ def main(argsv):
         help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).',
         default='127.0.0.1:5000')
     parser.add_argument('--footer', help='Markdown file to customize the application footer')
+    parser.add_argument('--upload', help='URL to allow users to upload files')
 
     args = parser.parse_args(argsv)
 
@@ -76,12 +74,14 @@ def main(argsv):
         os.environ[CIRRO_DB_URI] = args.db_uri
     if args.database is not None:
         os.environ[CIRRO_DATABASE] = args.database
-
     if args.workers is not None:
         workers = args.workers
     else:
         import os
         workers = 2 * os.cpu_count()
+    if args.upload is not None:
+        os.environ[CIRRO_UPLOAD] = args.upload
+
     run_args = [
             'gunicorn',
             '-b', bind,
