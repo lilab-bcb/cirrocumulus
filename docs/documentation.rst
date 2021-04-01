@@ -5,7 +5,7 @@ Documentation
 Overview
 ^^^^^^^^^
 
-The cirrocumulus interface consists of an app bar, side bar, primary embedding, embedding toolbar, embedding gallery, and dot plot.
+The cirrocumulus interface consists of an app bar, side bar, primary embedding, embedding gallery and toolbar, distribution plots, and differential expression results explorer.
 
 .. image:: images/overview.png
 
@@ -118,24 +118,26 @@ or categorical values:
 
 The side bar contains additional controls, such as the embedding point size and opacity.
 
-Dot plot
+Distributions
 ^^^^^^^^^^^^^^^
 
-In addition to embeddings, you can also view gene distributions across cell categories using dot plots:
+The "Distributions" tab allows users to explore gene distributions across cell categories using dot plots, heatmaps, or violin plots:
 
 .. image:: images/dotplot.png
 
 
-When selecting more than one category, the dot plot first groups by the primary category, then by the secondary category, etc.
-For example, when you select "leiden" and "sample", the dot plot first groups by leiden cluster and then by sample.
+When selecting more than one category, the plot first groups by the primary category, then by the secondary category, etc.
+For example, when you select "leiden" and "sample", the plot first groups by leiden cluster and then by sample.
 
-You can switch to this view by selecting "Dot Plot" from the app bar.
+Additionally, a composition plot is show to show categorical distributions:
+
+.. image:: images/composition_plot.png
 
 App Bar
 ^^^^^^^^^^
 
 The app bar shows the number of cells in your dataset and the number of selected cells. Additionally, it
-lets you switch between the embedding view and the dot plot view.
+lets you switch between different tabs.
 
 Share your visualization state with your collaborators by selecting "Copy Link" from the "More" menu.
 
