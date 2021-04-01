@@ -22,7 +22,7 @@ sys.path.insert(0, str(HERE.parent))
 # -- Project information -----------------------------------------------------
 
 project = "Cirrocumulus"
-copyright = "2020 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
+copyright = "2021 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
 author = (
     "Joshua Gould, Bo Li, and Yiming Yang"
 )
