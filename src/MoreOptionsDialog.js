@@ -44,6 +44,7 @@ class MoreOptionsDialog extends React.PureComponent {
 
     onLabelStrokeWidth = (event) => {
         this.setState({labelStrokeWidth: event.target.value});
+        this.onLabelStrokeWidthUpdate(event.target.value);
     };
 
     onLabelStrokeWidthUpdate = (value) => {
