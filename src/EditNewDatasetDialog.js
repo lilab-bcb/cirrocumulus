@@ -259,6 +259,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                         <Tab label="URL" icon={<LinkIcon/>}/>
                     </Tabs>
                     <TabPanel value={this.state.uploadTabValue} index={0}>
+
                         <Button size="small" variant="outlined" disabled={this.state.loading}
                                 onClick={e => this.fileInputRef.current.click()}>Select File</Button>
                         <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
@@ -266,6 +267,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                         <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
                         <Typography style={{display: 'block'}} color="textPrimary"
                                     variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
+                        <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
                     </TabPanel>
                     <TabPanel value={this.state.uploadTabValue} index={1}>
                         <TextField
@@ -295,7 +297,6 @@ class EditNewDatasetDialog extends React.PureComponent {
                     fullWidth
                 />
 
-                <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true} id="species-label">Species</InputLabel>
                     <Select
