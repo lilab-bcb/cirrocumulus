@@ -16,6 +16,8 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import TextField from '@material-ui/core/TextField';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import LinkIcon from '@material-ui/icons/Link';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -76,7 +78,6 @@ class EditNewDatasetDialog extends React.PureComponent {
         this.init = false;
         this.fileInputRef = React.createRef();
         this.fileDropRef = React.createRef();
-        this.dragMessageRef = React.createRef();
         this.state = {
             url: '',
             writePreviewTabValue: 0,
@@ -254,8 +255,8 @@ class EditNewDatasetDialog extends React.PureComponent {
                     </FormControl>
                     <Tabs value={this.state.uploadTabValue} onChange={this.onUploadTabChanged}
                           aria-label="upload">
-                        <Tab label="My Computer"/>
-                        <Tab label="URL"/>
+                        <Tab label="My Computer" icon={<CloudUploadIcon/>}/>
+                        <Tab label="URL" icon={<LinkIcon/>}/>
                     </Tabs>
                     <TabPanel value={this.state.uploadTabValue} index={0}>
                         <Button size="small" variant="outlined" disabled={this.state.loading}
