@@ -8,7 +8,9 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {scaleLinear} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
-import {intFormat} from './formatters';
+import {chiSquare} from './ChiSquare';
+import {fisherTest} from './FisherExact';
+import {intFormat, numberFormat2f} from './formatters';
 
 const styles = theme => ({
     table: {
@@ -162,6 +164,27 @@ function CompositionPlot(props) {
 
     };
 
+    const countsTable = [];
+
+    uniqueValues.map(uniqueValue => {
+        const counts = [];
+        countsTable.push(counts);
+        series.map(seriesName => {
+            const valueToCounts = categoryToValueToCounts[seriesName];
+            const count = valueToCounts[uniqueValue] || 0;
+            counts.push(count);
+        });
+    });
+    let pValue = null;
+    let stat = null;
+    if (countsTable.length === 2 && countsTable[0].length === 2) { // fisher exact
+        pValue = fisherTest(countsTable[0][0], countsTable[0][1], countsTable[1][0], countsTable[1][1]);
+        stat = 'Fisher\'s Exact';
+    } else if (countsTable.length >= 2 && countsTable[0].length >= 2) {
+        const result = chiSquare(countsTable);
+        pValue = result.p;
+        stat = 'Chi-Square';
+    }
 
     return <React.Fragment>
         <div>
@@ -191,9 +214,12 @@ function CompositionPlot(props) {
             <canvas ref={canvasRef}></canvas>
             <div>
                 <Table size={"small"} className={props.classes.table}>
-                    <TableHead><TableRow><TableCell></TableCell>{series.map(item => <TableCell>{item}</TableCell>)}
-                    </TableRow></TableHead>
-                    <TableBody>{uniqueValues.map(uniqueValue => {
+                    <TableHead><TableRow><TableCell></TableCell>{series.map(item => <TableCell
+                        key={item}>{item}</TableCell>)}
+                    </TableRow>
+                    </TableHead>
+                    <TableBody>{uniqueValues.map((uniqueValue, uniqueValueIndex) => {
+                        const counts = countsTable[uniqueValueIndex];
                         return <TableRow><TableCell style={{whiteSpace: 'nowrap'}} component={"th"}>
                             <div style={{
                                 display: 'inline-block',
@@ -203,17 +229,20 @@ function CompositionPlot(props) {
                                 verticalAlign: 'text-bottom',
                                 backgroundColor: colorScale(uniqueValue)
                             }}></div>
-                            {uniqueValue}</TableCell>{series.map(seriesName => {
-                            const valueToCounts = categoryToValueToCounts[seriesName];
-                            const count = valueToCounts[uniqueValue] || 0;
+                            {uniqueValue}</TableCell>{series.map((seriesName, seriesIndex) => {
+                            const count = counts[seriesIndex];
                             const countFormatted = intFormat(count);
-                            return <TableCell style={{textAlign: 'center'}}>{countFormatted}</TableCell>;
+                            return <TableCell key={seriesName}
+                                              style={{textAlign: 'center'}}>{countFormatted}</TableCell>;
                         })}</TableRow>;
                     })}
                     </TableBody>
                 </Table>
+                {pValue != null &&
+                <Typography color="textPrimary">{stat} p-value: {numberFormat2f(pValue)}</Typography>}
             </div>
         </div>
+
     </React.Fragment>;
 }
 

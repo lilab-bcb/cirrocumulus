@@ -1,10 +1,9 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
-import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import CompositionPlot from './CompositionPlot';
-import {FEATURE_TYPE} from './util';
+import {FEATURE_TYPE, NATSORT} from './util';
 
 function getColorScale(embeddingData, dimension) {
     let categoryColorScale = null;
@@ -67,9 +66,8 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
             const count = valueToCounts[category] || 0;
             valueToCounts[category] = count + 1;
         }
-        const sorter = natsort({insensitive: true});
         const series = Object.keys(categoryToValueToCounts);
-        series.sort(sorter);
+        series.sort(NATSORT);
         let uniqueValuesSet = new Set();
         for (let key in categoryToValueToCounts) {
             const valueToCounts = categoryToValueToCounts[key];
@@ -79,7 +77,7 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
         }
 
         const uniqueValues = Array.from(uniqueValuesSet);
-        uniqueValues.sort(sorter);
+        uniqueValues.sort(NATSORT);
         return {categoryToValueToCounts: categoryToValueToCounts, uniqueValues: uniqueValues, series: series};
     }
     return null;

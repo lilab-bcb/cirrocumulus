@@ -21,7 +21,6 @@ import Typography from '@material-ui/core/Typography';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {scaleLinear} from 'd3-scale';
 import {find} from 'lodash';
-import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
@@ -33,7 +32,7 @@ import {
     getInterpolator,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
-    INTERPOLATOR_SCALING_NONE,
+    INTERPOLATOR_SCALING_NONE, NATSORT,
     scaleConstantRange
 } from './util';
 
@@ -130,14 +129,13 @@ export function updateJob(jobResult) {
     const data = jobResult.data;
 
     if (jobResult.columns === undefined) {
-        const sorter = natsort({insensitive: true});
         const indices = new Array(groups.length);
         for (let i = 0, n = jobResult.groups.length; i < n; i++) {
             indices[i] = i;
         }
         jobResult.columns = indices;
         jobResult.columns.sort((a, b) => {
-            return sorter(jobResult.groups[a], jobResult.groups[b]);
+            return NATSORT(jobResult.groups[a], jobResult.groups[b]);
         });
     }
 

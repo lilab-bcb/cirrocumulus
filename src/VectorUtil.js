@@ -1,9 +1,8 @@
 import {isObject} from 'lodash';
-import natsort from 'natsort';
 
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
-import {FEATURE_TYPE} from './util';
+import {FEATURE_TYPE, NATSORT} from './util';
 import {Vector} from './Vector';
 
 export function getVarNameType(key) {
@@ -179,9 +178,9 @@ export function valueCounts(v) {
         let count = valueToCount.get(key) || 0;
         valueToCount.set(key, count + 1);
     }
-    let keys = Array.from(valueToCount.keys());
-    keys.sort(natsort());
-    let counts = keys.map(key => valueToCount.get(key));
+    const keys = Array.from(valueToCount.keys());
+    keys.sort(NATSORT);
+    const counts = keys.map(key => valueToCount.get(key));
     return {categories: keys, counts: counts};
 }
 

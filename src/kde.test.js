@@ -5,7 +5,7 @@
 // p + geom_violin(scale = "width") + geom_boxplot(width=0.1)
 // p
 
-const {nrd0, nrd, density, boxplotStats} = require('./kde');
+const {nrd0, density, boxplotStats} = require('./kde');
 const eruptions = [3.600, 1.800, 3.333, 2.283, 4.533, 2.883, 4.700, 3.600, 1.950, 4.350, 1.833, 3.917, 4.200, 1.750, 4.700, 2.167, 1.750, 4.800, 1.600, 4.250, 1.800
     , 1.750, 3.450, 3.067, 4.533, 3.600, 1.967, 4.083, 3.850, 4.433, 4.300, 4.467, 3.367, 4.033, 3.833, 2.017, 1.867, 4.833, 1.833, 4.783, 4.350, 1.883
     , 4.567, 1.750, 4.533, 3.317, 3.833, 2.100, 4.633, 2.000, 4.800, 4.716, 1.833, 4.833, 1.733, 4.883, 3.717, 1.667, 4.567, 4.317, 2.233, 4.500, 1.750
@@ -29,14 +29,14 @@ it('nrd0-zeros', () => {
     // bw.nrd0(c(0,0,0))
     expect(nrd0(boxplotStats([0, 0, 0]))).toBeCloseTo(0.7224674);
 });
-it('nrd', () => {
-    // bw.nrd(faithful$eruptions)
-    expect(nrd(eruptions)).toBeCloseTo(0.394293);
-});
-it('nrd-zeros', () => {
-    // bw.nrd(c(0,0,0))
-    expect(nrd([0, 0, 0])).toBeCloseTo(0);
-});
+// it('nrd', () => {
+//     // bw.nrd(faithful$eruptions)
+//     expect(nrd(eruptions)).toBeCloseTo(0.394293);
+// });
+// it('nrd-zeros', () => {
+//     // bw.nrd(c(0,0,0))
+//     expect(nrd([0, 0, 0])).toBeCloseTo(0);
+// });
 
 it('density', () => {
     // density(faithful$eruptions, n=200, cut=0)

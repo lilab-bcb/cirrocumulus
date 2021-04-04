@@ -4,7 +4,6 @@ import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
-import natsort from 'natsort';
 import React from 'react';
 import DotPlotCanvas from './DotPlotCanvas';
 import {EditableColorScheme} from './EditableColorScheme';
@@ -14,7 +13,7 @@ import {
     createColorScale,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
-    INTERPOLATOR_SCALING_NONE
+    INTERPOLATOR_SCALING_NONE, NATSORT
 } from './util';
 import ViolinPlot from './ViolinPlot';
 
@@ -82,9 +81,9 @@ function reshapeData(data, distributionPlotOptions) {
         });
 
     } else { // sort by category
-        const sorter = natsort({insensitive: true});
+
         categories.sort((a, b) => {
-            return sorter(a, b);
+            return NATSORT(a, b);
         });
     }
     let data2d = [];

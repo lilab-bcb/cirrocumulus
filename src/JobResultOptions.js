@@ -6,14 +6,18 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import {debounce, find} from 'lodash';
-import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setJobResults} from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {sortAndFilterJobResult, updateJob, updateTopNJobResult} from './JobResultsPanel';
-import {createColorScale, INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE} from './util';
+import {
+    createColorScale,
+    INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
+    INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
+    NATSORT
+} from './util';
 
 const styles = theme => ({
     formControl: {
@@ -199,7 +203,7 @@ class JobResultOptions extends React.PureComponent {
         } = jobResult;
 
         const fields = jobResult.fields.slice();
-        fields.sort(natsort({insensitive: true}));
+        fields.sort(NATSORT);
         const sizeOptions = ['(None)'].concat(fields);
 
         return <React.Fragment>

@@ -9,9 +9,9 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import natsort from 'natsort';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
+import {NATSORT} from './util';
 
 class CategoricalLegend extends React.PureComponent {
 
@@ -81,7 +81,7 @@ class CategoricalLegend extends React.PureComponent {
         this.setState({contextmenuEl: null});
     };
 
-    handleClick = (value, index, e) => {
+    handleClick = (value, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
             this.props.handleClick({
@@ -93,7 +93,7 @@ class CategoricalLegend extends React.PureComponent {
         }
     };
 
-    handleContextmenu = (value, index, e) => {
+    handleContextmenu = (value, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
             e.stopPropagation();
@@ -124,19 +124,8 @@ class CategoricalLegend extends React.PureComponent {
             }
         }
         const globalDimensionSummary = globalFeatureSummary[name];
-        // if (globalDimensionSummary.max == null) {
-        //     let max = 0;
-        //     let min = Number.MAX_VALUE;
-        //     for (let i = 0; i < globalDimensionSummary.counts.length; i++) {
-        //         max = Math.max(max, globalDimensionSummary[i]);
-        //         min = Math.min(min, globalDimensionSummary[i]);
-        //     }
-        //     globalDimensionSummary.min = min;
-        //     globalDimensionSummary.max = max;
-        // }
-        const categories = globalDimensionSummary.categories;
+        const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
         const renamedCategories = categoricalNames[name] || {};
-        const sorter = natsort({insensitive: true});
         categories.sort((a, b) => {
             let renamed1 = renamedCategories[a];
             if (renamed1 != null) {
@@ -146,7 +135,7 @@ class CategoricalLegend extends React.PureComponent {
             if (renamed2 != null) {
                 b = renamed2;
             }
-            return sorter(a, b);
+            return NATSORT(a, b);
         });
 
         clickEnabled = clickEnabled && categories.length > 1;
@@ -155,7 +144,7 @@ class CategoricalLegend extends React.PureComponent {
             style = Object.assign({}, style, this.props.style);
         }
 
-        let renamedCategoryValue = renamedCategories[this.state.categoryValue] || this.state.categoryValue;
+        const renamedCategoryValue = renamedCategories[this.state.categoryValue] || this.state.categoryValue;
         return (
             <div className="cirro-chart-legend" style={style}>
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
@@ -192,29 +181,7 @@ class CategoricalLegend extends React.PureComponent {
                     </React.Fragment>}
                 </Dialog>
 
-                {/*<Popover*/}
-                {/*    open={Boolean(this.state.anchorEl)}*/}
-                {/*    anchorEl={this.state.anchorEl}*/}
-                {/*    onClose={this.handlePopoverClose}*/}
-                {/*    anchorOrigin={{*/}
-                {/*        vertical: 'bottom',*/}
-                {/*        horizontal: 'center',*/}
-                {/*    }}*/}
-                {/*    transformOrigin={{*/}
-                {/*        vertical: 'top',*/}
-                {/*        horizontal: 'center',*/}
-                {/*    }}*/}
-                {/*>*/}
-                {/*    <Typography>Edit {this.state.categoryValue} Color</Typography>*/}
-                {/*    <input ref={input => this.inputElement = input} type="color" value={this.state.color}*/}
-                {/*           onChange={this.handleColorChange} style={{width: 100}}/>*/}
-                {/*    <Button onClick={handleClose} color="primary">*/}
-                {/*        Cancel*/}
-                {/*    </Button>*/}
-                {/*    <Button onClick={handleClose} color="primary">*/}
-                {/*        Apply*/}
-                {/*    </Button>*/}
-                {/*</Popover>*/}
+
                 <Menu
                     anchorEl={this.state.contextmenuEl}
                     open={Boolean(this.state.contextmenuEl)}
@@ -234,27 +201,25 @@ class CategoricalLegend extends React.PureComponent {
                     </tr>
                     </thead>
                     <tbody>
-                    {categories.map((category, i) => {
-
+                    {categories.map((category) => {
+                        const categoryIndex = globalDimensionSummary.categories.indexOf(category);
+                        if (categoryIndex === -1) {
+                            throw new Error(category + ' not found');
+                        }
                         const opacity = categoricalFilter == null || categoricalFilter.value.indexOf(category) !== -1 ? 1 : 0.4;
-                        // const fractionUnselected = unselectedCategoryCounts != null ? unselectedCategoryCounts[i] / unselectedTotal : null;
-                        // const unselectedSize = unselectedCategoryCounts == null ? 0 : fractionScale(fractionUnselected);
-                        // const unselectedTitle = unselectedCategoryCounts == null ? null : intFormat(unselectedCategoryCounts[i]) + ' / ' + intFormat(unselectedTotal) + (unselectedCategoryCounts[i] > 0 ? (' ( ' + numberFormat(100 * fractionUnselected) + '%)') : '');
-                        const categoryCount = globalDimensionSummary.counts[i];
+                        const categoryCount = globalDimensionSummary.counts[categoryIndex];
+
                         const selectedCategoryCount = selectedDimensionToCount[category] || 0;
 
                         //            not-selected, selected
                         // in category      a       b
                         // not in category  c       d
-                        const a = categoryCount - selectedCategoryCount;
-                        const b = selectedCategoryCount;
-                        const c = nObs - nObsSelected - selectedCategoryCount;
-                        const d = nObsSelected - selectedCategoryCount;
-                        // const pValue = fisherTest(a, b, c, d);
+                        // const a = categoryCount - selectedCategoryCount;
+                        // const b = selectedCategoryCount;
+                        // const c = nObs - nObsSelected - selectedCategoryCount;
+                        // const d = nObsSelected - selectedCategoryCount;
 
                         const fractionSelected = selectionSummary == null ? 0 : selectedCategoryCount / nObsSelected;
-                        // const selectedSize = fractionScale(fractionSelected);
-                        // const globalSize = fractionScale(count / nObs);
                         const globalTitle = numberFormat(100 * categoryCount / nObs) + '%';
                         let categoryText = category;
                         let renamed = renamedCategories[category];
@@ -264,8 +229,8 @@ class CategoricalLegend extends React.PureComponent {
                         const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
-                            onContextMenu={(e) => this.handleContextmenu(category, i, e)}
-                            onClick={(e) => this.handleClick(category, i, e)} key={category}>
+                            onContextMenu={(e) => this.handleContextmenu(category, e)}
+                            onClick={(e) => this.handleClick(category, e)} key={category}>
                             {clickEnabled && <td>
                                 <div style={{
                                     display: 'inline-block',
@@ -284,7 +249,7 @@ class CategoricalLegend extends React.PureComponent {
                                     userSelect: 'none'
                                 }} title={'' + categoryText}>{'' + categoryText}</div>
                                 <IconButton style={{padding: 0, fontSize: 14}} size="small"
-                                            onClick={(e) => this.handleContextmenu(category, i, e)} aria-label="Menu"
+                                            onClick={(e) => this.handleContextmenu(category, e)} aria-label="Menu"
                                             aria-haspopup="true">
                                     <ArrowDropDownIcon fontSize={"inherit"}/>
                                 </IconButton>
@@ -295,49 +260,11 @@ class CategoricalLegend extends React.PureComponent {
                                     <span>{intFormat(categoryCount)}</span>
                                 </Tooltip>
 
-                                {/*<div*/}
-                                {/*    title={globalTitle}*/}
-                                {/*    style={{*/}
-                                {/*        display: 'inline-block',*/}
-                                {/*        position: 'relative',*/}
-                                {/*        width: maxSize,*/}
-                                {/*        border: '1px solid black',*/}
-                                {/*        height: 9*/}
-                                {/*    }}>*/}
-
-                                {/*    <div style={{*/}
-                                {/*        position: 'absolute',*/}
-                                {/*        width: globalSize,*/}
-                                {/*        left: 0,*/}
-                                {/*        top: 0,*/}
-                                {/*        backgroundColor: 'LightGrey',*/}
-                                {/*        height: 9*/}
-                                {/*    }}/>*/}
-                                {/*</div>*/}
                             </td>
                             {selectionSummary && <td>
                                 <Tooltip title={selectionTitle}>
                                     <div>{intFormat(selectedCategoryCount)}</div>
                                 </Tooltip>
-                                {/*<div*/}
-                                {/*    title={selectionTitle}*/}
-                                {/*    style={{*/}
-                                {/*        display: 'inline-block',*/}
-                                {/*        position: 'relative',*/}
-                                {/*        width: maxSize,*/}
-                                {/*        border: '1px solid black',*/}
-                                {/*        height: 9*/}
-                                {/*    }}>*/}
-
-                                {/*    <div style={{*/}
-                                {/*        position: 'absolute',*/}
-                                {/*        width: selectedSize,*/}
-                                {/*        left: 0,*/}
-                                {/*        top: 0,*/}
-                                {/*        backgroundColor: 'LightGrey',*/}
-                                {/*        height: 9*/}
-                                {/*    }}/>*/}
-                                {/*</div>*/}
                             </td>}
                         </tr>;
                     })

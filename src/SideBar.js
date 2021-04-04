@@ -34,7 +34,6 @@ import HighlightOffIcon from '@material-ui/icons/HighlightOff';
 import SaveIcon from '@material-ui/icons/Save';
 import {debounce, find, findIndex} from 'lodash';
 import memoize from "memoize-one";
-import natsort from 'natsort';
 import React from 'react';
 import {connect} from 'react-redux';
 import {AccordionDetailsStyled, AccordionStyled, AccordionSummaryStyled} from './accordion';
@@ -73,9 +72,8 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {FEATURE_TYPE, getFeatureSets, splitSearchTokens, TRACE_TYPE_META_IMAGE,} from './util';
+import {FEATURE_TYPE, getFeatureSets, NATSORT, splitSearchTokens, TRACE_TYPE_META_IMAGE,} from './util';
 
-const sorter = natsort({insensitive: true});
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
     label: '75%'
@@ -126,11 +124,11 @@ const getAnnotationOptions = memoize(
             options.push({group: 'Categorical', text: item, id: item});
         });
         options.sort((item1, item2) => {
-            const c = sorter(item1.group, item2.group);
+            const c = NATSORT(item1.group, item2.group);
             if (c !== 0) {
                 return c;
             }
-            return sorter(item1.text, item2.text);
+            return NATSORT(item1.text, item2.text);
         });
         return options;
     }
@@ -143,7 +141,7 @@ const getEmbeddingOptions = memoize(
         });
 
         options.sort((item1, item2) => {
-            return sorter(item1.text.toLowerCase(), item2.text.toLowerCase());
+            return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
         });
         return options;
     }
@@ -151,7 +149,7 @@ const getEmbeddingOptions = memoize(
 const getMetafeaturesOptions = memoize((items) => {
         if (items) {
             const options = items.slice();
-            options.sort(sorter);
+            options.sort(NATSORT);
             return options;
         }
     }
@@ -172,11 +170,11 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
             }
         });
         options.sort((item1, item2) => {
-            const c = sorter(item1.group, item2.group);
+            const c = NATSORT(item1.group, item2.group);
             if (c !== 0) {
                 return c;
             }
-            return sorter(item1.text, item2.text);
+            return NATSORT(item1.text, item2.text);
         });
         return options;
     }
@@ -592,7 +590,7 @@ class SideBar extends React.PureComponent {
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const chartType = distributionPlotOptions.chartType;
         const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
-        datasetFilterKeys.sort(sorter);
+        datasetFilterKeys.sort(NATSORT);
 
         let savedDatasetFilter = this.props.savedDatasetFilter;
         if (savedDatasetFilter == null) {

@@ -1,5 +1,4 @@
 import {isPlainObject} from 'lodash';
-import natsort from 'natsort';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -51,7 +50,7 @@ import {createCategoryToStats} from '../MetaEmbedding';
 import {
     createColorScale,
     getInterpolator,
-    INTERPOLATOR_SCALING_NONE,
+    INTERPOLATOR_SCALING_NONE, NATSORT,
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
@@ -379,7 +378,9 @@ function selection(state = new Set(), action) {
 /**
  * Feature summary maps measure and dimension names to another object containing
  * categories and counts for dimensions, and statistics such as min, max for measures.
- * Features summaries are in the space of selected cells.
+ * Features summaries are in the space of selected cells. Example:
+ * featureSummary['louvain'] =
+ *
  */
 function featureSummary(state = {}, action) {
     switch (action.type) {
@@ -600,7 +601,6 @@ function cachedData(state = {}, action) {
 }
 
 function sortEmbeddingTraces(traces) {
-    const sorter = natsort({insensitive: true});
     // sort by feature insertion order, then embedding
     const featureToMinIndex = {};
     for (let i = 0; i < traces.length; i++) {
@@ -613,7 +613,7 @@ function sortEmbeddingTraces(traces) {
     }
     traces.sort((a, b) => {
         if (a.name === b.name) {
-            const val = sorter(a.embedding.name, b.embedding.name);
+            const val = NATSORT(a.embedding.name, b.embedding.name);
             if (val !== 0) {
                 return val;
             }

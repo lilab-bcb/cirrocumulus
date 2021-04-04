@@ -5,10 +5,11 @@ import {shuffle} from 'd3-array';
 import {color} from 'd3-color';
 import {scaleLinear, scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
+import natsort from 'natsort';
 import React from 'react';
 import simplify from 'simplify-js';
 import {getColors} from './ThreeUtil';
-
+export const NATSORT = natsort({insensitive: true});
 export const interpolators = {};
 interpolators['Diverging'] = [
     'interpolateBrBG',
