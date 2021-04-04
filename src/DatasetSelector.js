@@ -19,7 +19,7 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setDialog} from './actions';
-import {reactMarkdownOptions} from './util';
+import {NATSORT, reactMarkdownOptions} from './util';
 
 export class DatasetSelector extends React.PureComponent {
 
@@ -83,7 +83,7 @@ export class DatasetSelector extends React.PureComponent {
         const hasMoreInfo = selectedDataset && (selectedDataset.title || selectedDataset.description);
         const species2Items = groupBy(filteredChoices, item => item.species || '');
         const speciesArray = Object.keys(species2Items);
-        speciesArray.sort();
+        speciesArray.sort(NATSORT);
         return (
             <React.Fragment>
                 <Popover
