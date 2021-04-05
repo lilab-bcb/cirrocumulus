@@ -78,6 +78,7 @@ class EditNewDatasetDialog extends React.PureComponent {
         this.init = false;
         this.fileInputRef = React.createRef();
         this.fileDropRef = React.createRef();
+        this.dragIndicator = React.createRef();
         this.state = {
             url: '',
             writePreviewTabValue: 0,
@@ -91,21 +92,32 @@ class EditNewDatasetDialog extends React.PureComponent {
         };
     }
 
+    showDragIndicator(event, show) {
+        event.stopPropagation();
+        event.preventDefault();
+        this.dragIndicator.current.style.background = show ? '#1976d2' : '';
+    }
+
+
     initDragDrop = () => {
         if (!this.init) {
             const fileDropRef = this.fileDropRef.current;
             this.init = true;
+
             fileDropRef.addEventListener('dragover', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
+                this.showDragIndicator(e, true);
             });
             fileDropRef.addEventListener('dragenter', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
+                this.showDragIndicator(e, true);
+            });
+            fileDropRef.addEventListener('dragend', (e) => {
+                this.showDragIndicator(e, false);
+            });
+            fileDropRef.addEventListener('dragleave', (e) => {
+                this.showDragIndicator(e, false);
             });
             fileDropRef.addEventListener('drop', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
+                this.showDragIndicator(e, false);
                 const filesArray = e.dataTransfer.files;
                 if (filesArray.length === 1) {
                     this.setState({file: filesArray[0]});
@@ -259,14 +271,15 @@ class EditNewDatasetDialog extends React.PureComponent {
                         <Tab label="URL" icon={<LinkIcon/>}/>
                     </Tabs>
                     <TabPanel value={this.state.uploadTabValue} index={0}>
-
-                        <Button size="small" variant="outlined" disabled={this.state.loading}
-                                onClick={e => this.fileInputRef.current.click()}>Select File</Button>
-                        <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
-                            And Drop</Typography>
-                        <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
-                        <Typography style={{display: 'block'}} color="textPrimary"
-                                    variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
+                        <div ref={this.dragIndicator}>
+                            <Button size="small" variant="outlined" disabled={this.state.loading}
+                                    onClick={e => this.fileInputRef.current.click()}>Select File</Button>
+                            <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
+                                And Drop</Typography>
+                            <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
+                            <Typography style={{display: 'block'}} color="textPrimary"
+                                        variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
+                        </div>
                         <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
                     </TabPanel>
                     <TabPanel value={this.state.uploadTabValue} index={1}>
