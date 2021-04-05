@@ -188,12 +188,7 @@ function dataset(state = null, action) {
 function datasetChoices(state = [], action) {
     switch (action.type) {
         case SET_DATASET_CHOICES:
-            action.payload.sort((a, b) => {
-                a = a.name.toLowerCase();
-                b = b.name.toLowerCase();
-                return a === b ? 0 : (a < b ? -1 : 1);
-            });
-
+            action.payload.sort(NATSORT);
             return action.payload;
         case SET_EMAIL:
             if (action.payload == null) {
@@ -202,11 +197,7 @@ function datasetChoices(state = [], action) {
             return state;
         case ADD_DATASET:
             state.push(action.payload);
-            state.sort((a, b) => {
-                a = a.name.toLowerCase();
-                b = b.name.toLowerCase();
-                return a === b ? 0 : (a < b ? -1 : 1);
-            });
+            state.sort(NATSORT);
             return state.slice();
         case UPDATE_DATASET:
         case DELETE_DATASET:
@@ -220,11 +211,7 @@ function datasetChoices(state = [], action) {
             if (index !== -1) {
                 if (action.type === UPDATE_DATASET) {
                     state[index] = action.payload;
-                    state.sort((a, b) => {
-                        a = a.name.toLowerCase();
-                        b = b.name.toLowerCase();
-                        return a === b ? 0 : (a < b ? -1 : 1);
-                    });
+                    state.sort(NATSORT);
                 } else {
                     state.splice(index, 1);
                 }
