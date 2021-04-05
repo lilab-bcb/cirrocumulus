@@ -287,7 +287,7 @@ class ImageChart extends React.PureComponent {
                 //     tooltip.style.display = 'none';
                 // }
             } else {
-                this.props.setTooltip('');
+                _this.props.setTooltip('');
             }
         };
         //

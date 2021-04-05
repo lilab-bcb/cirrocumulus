@@ -116,7 +116,6 @@ class EmbeddingChart extends React.PureComponent {
                             color="textPrimary" style={{marginRight: 14}}
                             component={"h4"}>{displayName}</Typography></Link></Tooltip>
                     }
-
                     {primaryTrace.continuous ?
                         <ColorSchemeLegendWrapper
                             key={primaryTrace.name}
@@ -157,8 +156,6 @@ class EmbeddingChart extends React.PureComponent {
                             featureSummary={featureSummary}/>
                     }
                 </Box>
-
-
                 {primaryTrace.type === 'scatter' &&
                 <ScatterChartThree trace={primaryTrace}
                                    cachedData={cachedData}
@@ -188,8 +185,9 @@ class EmbeddingChart extends React.PureComponent {
                                selection={selection}
                                categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
-                               onGallery={onGallery}
                                onSelected={onSelect}
+                               onGallery={onGallery}
+                               setTooltip={setTooltip}
 
                 />}
                 {primaryTrace.type === 'image' && <ImageChart
@@ -208,6 +206,7 @@ class EmbeddingChart extends React.PureComponent {
                     unselectedMarkerOpacity={unselectedMarkerOpacity}
                     onSelected={onSelect}
                     onGallery={onGallery}
+                    setTooltip={setTooltip}
                 />}
             </div>);
 
