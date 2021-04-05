@@ -1,4 +1,3 @@
-import {Typography} from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {bind, uniqueId} from 'lodash';
@@ -133,7 +132,6 @@ class ImageChart extends React.PureComponent {
         super(props);
         this.id = uniqueId('cirro-image');
         this.editSelection = false;
-        this.tooltipElementRef = React.createRef();
         this.state = {loading: false};
     }
 
@@ -197,9 +195,9 @@ class ImageChart extends React.PureComponent {
                     value = value.substring(0, value.lastIndexOf('.'));
                 }
             }
-            this.tooltipElementRef.current.innerHTML = '' + value;
+            this.props.setTooltip('' + value);
         } else {
-            this.tooltipElementRef.current.innerHTML = ' ';
+            this.props.setTooltip('');
         }
     }
 
@@ -273,8 +271,8 @@ class ImageChart extends React.PureComponent {
         let lastBoundingBox = {x: 0, y: 0, width: 0, height: 0};
 
         this.viewer.innerTracker.moveHandler = function (event) {
-            if (_this.tooltipElementRef.current == null) {
-                _this.tooltipElementRef.current.innerHTML = ' ';
+            if (viewer.world == null) {
+                _this.props.setTooltip('');
             } else if (_this.props.chartOptions.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
                 let webPoint = event.position;
                 let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
@@ -289,7 +287,7 @@ class ImageChart extends React.PureComponent {
                 //     tooltip.style.display = 'none';
                 // }
             } else {
-                _this.tooltipElementRef.current.innerHTML = ' ';
+                this.props.setTooltip('');
             }
         };
         //
@@ -400,9 +398,8 @@ class ImageChart extends React.PureComponent {
         // };
 
         viewer.addHandler('canvas-exit', function (event) {
-            if (_this.tooltipElementRef.current) {
-                _this.tooltipElementRef.current.innerHTML = ' ';
-            }
+            _this.props.setTooltip('');
+
         });
 
         let svgOverlay = new OpenseadragonSvgOverlay(viewer);
@@ -491,13 +488,7 @@ class ImageChart extends React.PureComponent {
                     // onEditSelection={this.onEditSelection}
                 >
                 </ChartToolbar>
-                <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
-                    display: 'inline-block',
-                    paddingLeft: 5,
-                    verticalAlign: 'top'
-                }}>&nbsp;</Typography>
             </div>
-
             <div style={{
                 display: 'inline-block',
                 width: this.props.chartSize.width,

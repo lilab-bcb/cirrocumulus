@@ -13,7 +13,8 @@ import {
     createColorScale,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
-    INTERPOLATOR_SCALING_NONE, NATSORT
+    INTERPOLATOR_SCALING_NONE,
+    NATSORT
 } from './util';
 import ViolinPlot from './ViolinPlot';
 
@@ -134,6 +135,7 @@ class DistributionGroup extends React.PureComponent {
     onMaxChange = (value) => {
         this.props.onDistributionPlotOptions({max: value});
     };
+
     render() {
         const {
             textColor,
@@ -142,7 +144,8 @@ class DistributionGroup extends React.PureComponent {
             distributionPlotOptions,
             categoricalNames,
             selectedData,
-            interpolator
+            interpolator,
+            setTooltip
         } = this.props;
         if (distributionData == null || distributionData.length === 0) {
             return null;
@@ -234,14 +237,15 @@ class DistributionGroup extends React.PureComponent {
                     sizeScale={sizeScale}
                     textColor={textColor}
                     drawCircles={chartType === 'dotplot'}
+                    setTooltip={setTooltip}
                     data={data}/>}
                 {chartType === 'violin' && <ViolinPlot
                     categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
                     textColor={textColor}
                     options={distributionPlotOptions}
+                    setTooltip={setTooltip}
                     data={data}/>}
-
                 {chartType !== 'violin' && selectedData != null && selectedData.length > 0 ?
                     <DotPlotCanvas
                         categoryColorScales={categoryColorScales}
@@ -250,6 +254,7 @@ class DistributionGroup extends React.PureComponent {
                         sizeScale={sizeScale}
                         subtitle="selection"
                         textColor={textColor}
+                        setTooltip={setTooltip}
                         drawCircles={chartType === 'dotplot'}
                         data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
                 {chartType === 'violin' && selectedData != null && selectedData.length > 0 ?
@@ -259,6 +264,7 @@ class DistributionGroup extends React.PureComponent {
                         subtitle="selection"
                         options={distributionPlotOptions}
                         textColor={textColor}
+                        setTooltip={setTooltip}
                         data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
                 {chartType !== 'violin' &&
                 <EditableColorScheme colorScale={colorScale}
@@ -273,7 +279,6 @@ class DistributionGroup extends React.PureComponent {
                                      onMinUIChange={this.onMinUIChange}
                                      onMaxUIChange={this.onMaxUIChange}
                 />}
-
                 {chartType !== 'violin' && <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Standardize</InputLabel>
                     <Select
@@ -286,7 +291,6 @@ class DistributionGroup extends React.PureComponent {
                                   value={INTERPOLATOR_SCALING_MIN_MAX_FEATURE}>Feature</MenuItem>
                         <MenuItem title={"Standardize groups between 0 and 1"}
                                   value={INTERPOLATOR_SCALING_MIN_MAX_CATEGORY}>Category</MenuItem>
-
                     </Select>
                 </FormControl>}
                 {chartType === 'dotplot' && <div style={{paddingTop: 16}}>
@@ -294,8 +298,6 @@ class DistributionGroup extends React.PureComponent {
                     <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                         onOptions={this.props.onDistributionPlotOptions} showReversed={false}/>
                 </div>}
-
-
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Sort By</InputLabel>
                     <Select

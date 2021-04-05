@@ -5,7 +5,6 @@ import Typography from '@material-ui/core/Typography';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
-import CirroIcon from './CirroIcon';
 import {reactMarkdownOptions} from './util';
 
 function LandingPage(props) {

@@ -32,7 +32,8 @@ class DistributionPlots extends React.PureComponent {
             embeddingData,
             globalFeatureSummary,
             onDistributionPlotOptions,
-            selectedDistributionData
+            selectedDistributionData,
+            setTooltip
         } = this.props;
 
         if (distributionData.length === 0) {
@@ -43,7 +44,7 @@ class DistributionPlots extends React.PureComponent {
         let dimension2selecteddata = groupBy(selectedDistributionData, 'dimension');
 
 
-        return <React.Fragment>{Object.keys(dimension2data).map(dimension => {
+        return <>{Object.keys(dimension2data).map(dimension => {
             const data = dimension2data[dimension];
             const categoryColorScales = [];
             data[0].dimensions.forEach(dimension => {
@@ -62,6 +63,7 @@ class DistributionPlots extends React.PureComponent {
             });
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
+                                      setTooltip={setTooltip}
                                       categoryColorScales={categoryColorScales}
                                       distributionData={data}
                                       globalFeatureSummary={globalFeatureSummary}
@@ -72,9 +74,8 @@ class DistributionPlots extends React.PureComponent {
                                       textColor={textColor}
                                       handleInterpolator={this.onInterpolator}
                                       onColorScalingChange={this.onColorScalingChange}
-                                      onDistributionPlotOptions={onDistributionPlotOptions}
-            />;
-        })}</React.Fragment>;
+                                      onDistributionPlotOptions={onDistributionPlotOptions}/>;
+        })}</>;
     }
 
 

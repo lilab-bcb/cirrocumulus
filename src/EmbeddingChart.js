@@ -32,7 +32,7 @@ class EmbeddingChart extends React.PureComponent {
         this.state = {showDetails: true};
         this.resizeListener = () => {
             let width = window.innerWidth - 280;
-            let height = Math.max(50, window.innerHeight - 370);
+            let height = Math.max(50, window.innerHeight - 390);
             this.props.handlePrimaryChartSize({width: width, height: height});
             this.windowHeight = window.innerHeight;
         };
@@ -80,6 +80,7 @@ class EmbeddingChart extends React.PureComponent {
             primaryChartSize,
             searchTokens,
             selection,
+            setTooltip,
             shape,
             unselectedMarkerOpacity
         } = this.props;
@@ -173,6 +174,7 @@ class EmbeddingChart extends React.PureComponent {
                                    unselectedMarkerOpacity={unselectedMarkerOpacity}
                                    color={primaryTrace.colors}
                                    onGallery={onGallery}
+                                   setTooltip={setTooltip}
 
                 />}
 

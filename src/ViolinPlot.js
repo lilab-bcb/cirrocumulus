@@ -18,7 +18,6 @@ export default class ViolinPlot extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.tooltipElementRef = React.createRef();
         this.canvas = null;
         this.state = {saveImageEl: null};
     }
@@ -101,13 +100,12 @@ export default class ViolinPlot extends React.PureComponent {
         if (item) {
             const mean = item.mean;
             const median = item.boxplotStats.median;
-
             const meanFormatted = stripTrailingZeros(numberFormat2f(mean));
             const medianFormatted = stripTrailingZeros(numberFormat2f(median));
             const percentExpressed = stripTrailingZeros(numberFormat(item.percentExpressed));
-            this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', median: ' + medianFormatted + ', % expressed: ' + percentExpressed + ', ' + item.name.join(', ');
+            this.props.setTooltip('mean: ' + meanFormatted + ', median: ' + medianFormatted + ', % expressed: ' + percentExpressed + ', ' + item.name.join(', '));
         } else {
-            this.tooltipElementRef.current.innerHTML = '';
+            this.props.setTooltip('');
         }
     };
 
@@ -161,17 +159,6 @@ export default class ViolinPlot extends React.PureComponent {
                     <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
 
                 </Menu>
-
-                <Typography color="textPrimary" className="cirro-condensed" ref={this.tooltipElementRef} style={{
-                    display: 'inline-block',
-                    paddingLeft: 5,
-                    verticalAlign: 'top',
-                    whiteSpace: 'nowrap',
-                    width: 500,
-                    minWidth: 500,
-                    maxWidth: 500,
-                    textOverflow: 'ellipsis'
-                }}></Typography>
 
             </div>
             {features.map(feature => {

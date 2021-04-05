@@ -1,4 +1,3 @@
-import {Typography} from '@material-ui/core';
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind} from 'lodash';
@@ -94,7 +93,6 @@ class ScatterChartThree extends React.PureComponent {
     constructor(props) {
         super(props);
         this.containerElementRef = React.createRef();
-        this.tooltipElementRef = React.createRef();
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
         this.state = {forceUpdate: false};
@@ -353,7 +351,7 @@ class ScatterChartThree extends React.PureComponent {
             spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
             this.scatterPlot.hoverCallback = (point) => {
                 if (point == null) {
-                    this.tooltipElementRef.current.innerHTML = ' ';
+                    this.props.setTooltip('');
                 } else {
                     const trace = this.props.trace;
                     const positions = trace.positions;
@@ -406,9 +404,9 @@ class ScatterChartThree extends React.PureComponent {
                                 value = value.substring(0, value.lastIndexOf('.'));
                             }
                         }
-                        this.tooltipElementRef.current.innerHTML = '' + value;
+                        this.props.setTooltip('' + value);
                     } else {
-                        this.tooltipElementRef.current.innerHTML = ' ';
+                        this.props.setTooltip('');
                     }
 
                 }
@@ -536,11 +534,6 @@ class ScatterChartThree extends React.PureComponent {
                     showAxis={this.props.chartOptions.showAxis}
                 >
                 </ChartToolbar>
-                <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
-                    display: 'inline-block',
-                    paddingLeft: 5,
-                    verticalAlign: 'top'
-                }}>&nbsp;</Typography>
             </div>
 
             <div style={{

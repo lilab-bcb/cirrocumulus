@@ -37,7 +37,7 @@ export function createFilterFunction(filter) {
     } else if (op === '<=') {
         applyFunction = (d) => d <= value;
     } else {
-        throw('Unknown filter: ' + op);
+        throw new Error('Unknown filter: ' + op);
     }
     return applyFunction;
 }
@@ -62,7 +62,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
                     if (field == '__index') {
                         keep = filterValue.indices;
                     } else { // binning
-                        throw 'Not implemented';
+                        throw new Error('Not implemented');
                     }
                     // keep = getIndices(cachedData[field], (val) => p.has(val));
                 } else {

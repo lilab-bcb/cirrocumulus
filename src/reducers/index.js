@@ -94,7 +94,7 @@ const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
 
 const DEFAULT_PRIMARY_CHART_SIZE = {
     width: window.innerWidth - 280,
-    height: Math.max(300, window.innerHeight - 370)
+    height: Math.max(300, window.innerHeight - 390)
 };
 
 const DEFAULT_CHART_OPTIONS = {

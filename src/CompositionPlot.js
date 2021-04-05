@@ -155,10 +155,10 @@ function CompositionPlot(props) {
             let blob = new Blob([svg], {
                 type: 'text/plain;charset=utf-8'
             });
-            window.saveAs(blob, 'composition' + '.svg');
+            window.saveAs(blob, 'composition.svg');
         } else {
             canvas.toBlob(blob => {
-                window.saveAs(blob, 'composition' + '.png', true);
+                window.saveAs(blob, 'composition.png', true);
             });
         }
 
@@ -166,10 +166,10 @@ function CompositionPlot(props) {
 
     const countsTable = [];
 
-    uniqueValues.map(uniqueValue => {
+    uniqueValues.forEach(uniqueValue => {
         const counts = [];
         countsTable.push(counts);
-        series.map(seriesName => {
+        series.forEach(seriesName => {
             const valueToCounts = categoryToValueToCounts[seriesName];
             const count = valueToCounts[uniqueValue] || 0;
             counts.push(count);

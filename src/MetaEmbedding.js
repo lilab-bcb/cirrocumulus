@@ -1,5 +1,4 @@
 import withStyles from '@material-ui/core/styles/withStyles';
-import Typography from '@material-ui/core/Typography';
 import {select} from 'd3-selection';
 import {zoom, zoomIdentity} from 'd3-zoom';
 import React from 'react';
@@ -73,7 +72,6 @@ class MetaEmbedding extends React.PureComponent {
     constructor(props) {
         super(props);
         this.containerElementRef = React.createRef();
-        this.tooltipElementRef = React.createRef();
     }
 
     onSaveImage = (format) => {
@@ -190,13 +188,13 @@ class MetaEmbedding extends React.PureComponent {
                         tooltip += ', # spots: ' + intFormat(stats.n) + (showFull ? ' / ' + intFormat(fullStats.n) : '');
                     }
                 }
-                this.tooltipElementRef.current.innerHTML = tooltip;
+                this.props.setTooltip(tooltip);
             } else {
-                this.tooltipElementRef.current.innerHTML = '';
+                this.props.setTooltip('');
             }
         });
         containerElement.addEventListener('mouseleave', (e) => {
-            this.tooltipElementRef.current.innerHTML = '';
+            this.props.setTooltip('');
         });
         containerElement.addEventListener('click', (e) => {
             if (e.target.nodeName === 'path') {
@@ -221,7 +219,7 @@ class MetaEmbedding extends React.PureComponent {
 
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        this.tooltipElementRef.current.innerHTML = '';
+        this.props.setTooltip('');
         if (this.props.trace.source !== prevProps.trace.source) {
             select(prevProps.trace.source).on(".zoom", null);
             this.updateSvg();
@@ -251,11 +249,6 @@ class MetaEmbedding extends React.PureComponent {
                     // onEditSelection={this.onEditSelection}
                 >
                 </ChartToolbar>
-                <Typography color="textPrimary" ref={this.tooltipElementRef} style={{
-                    display: 'inline-block',
-                    paddingLeft: 5,
-                    verticalAlign: 'top'
-                }}>&nbsp;</Typography>
             </div>
 
             <div style={{

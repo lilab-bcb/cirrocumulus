@@ -185,6 +185,7 @@ export default class ViolinPlotOneFeature extends React.PureComponent {
     };
 
     mouseout = (event) => {
+        this.mousemove.cancel();
         this.props.onTooltip(null);
     };
 

@@ -46,7 +46,6 @@ export default class DotPlotCanvas extends React.PureComponent {
     constructor(props) {
         super(props);
         this.divRef = React.createRef();
-        this.tooltipElementRef = React.createRef();
         this.canvas = null;
         this.state = {saveImageEl: null};
     }
@@ -74,20 +73,20 @@ export default class DotPlotCanvas extends React.PureComponent {
                 const row = Math.floor((xy[1]) / (maxRadius * 2));
 
                 if (col >= 0 && col < this.props.data[0].length && row >= 0 && row < this.props.data.length) {
-                    this.tooltipElementRef.current.innerHTML = '';
+                    this.props.setTooltip('');
                     const array = this.props.data[row];
                     const mean = array[col].mean;
 
                     let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
                     let percentExpressed = stripTrailingZeros(numberFormat(array[col].percentExpressed));
 
-                    this.tooltipElementRef.current.innerHTML = 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', ');
+                    this.props.setTooltip( 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', '));
                 } else {
-                    this.tooltipElementRef.current.innerHTML = '';
+                    this.props.setTooltip('');
                 }
             };
             let onMouseOut = (event) => {
-                this.tooltipElementRef.current.innerHTML = '';
+                this.props.setTooltip('');
             };
             this.canvas = document.createElement('canvas');
             this.canvas.addEventListener("mousemove", onMouseMove);
@@ -355,23 +354,9 @@ export default class DotPlotCanvas extends React.PureComponent {
                 >
                     <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
                     <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
-
                 </Menu>
-
-                <Typography color="textPrimary" className="cirro-condensed" ref={this.tooltipElementRef} style={{
-                    display: 'inline-block',
-                    paddingLeft: 5,
-                    verticalAlign: 'top',
-                    whiteSpace: 'nowrap',
-                    width: 500,
-                    minWidth: 500,
-                    maxWidth: 500,
-                    textOverflow: 'ellipsis'
-                }}></Typography>
-
             </div>
             <div ref={this.divRef}></div>
-
         </div>);
 
     }

@@ -5,6 +5,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import {createMuiTheme, withStyles} from '@material-ui/core/styles';
+import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import {ThemeProvider} from '@material-ui/styles';
 import React, {PureComponent} from 'react';
@@ -85,6 +86,7 @@ class App extends PureComponent {
     constructor(props) {
         super(props);
         this.state = {tab: 'embedding'};
+        this.tooltipElementRef = React.createRef();
         this.galleryRef = React.createRef();
     }
 
@@ -97,6 +99,10 @@ class App extends PureComponent {
         window.scrollTo(0, this.galleryRef.current.offsetTop);
     };
 
+    setTooltip = (text) => {
+        text = text === '' ? '&nbsp;' : text;
+        this.tooltipElementRef.current.innerHTML = text;
+    };
 
     render() {
 
@@ -106,6 +112,7 @@ class App extends PureComponent {
         const theme = !chartOptions.darkMode ? lightTheme : darkTheme;
         const color = theme.palette.primary.main;
         const bgcolor = chartOptions.darkMode ? 'black' : 'white';
+        const footerBackground = chartOptions.darkMode ? '#212121' : '#f5f5f5';
         return (<ThemeProvider theme={theme}>
                 <div className={classes.root}>
                     {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
@@ -134,23 +141,22 @@ class App extends PureComponent {
                         </div>}
 
                         {dataset == null && !loading && !loadingApp.loading && <div><LandingPage/></div>}
-                        {dataset != null && <React.Fragment>
+                        {dataset != null && <>
                             <div
                                 role="tabpanel"
                                 hidden={tab !== 'embedding'}
                             >
-                                <EmbeddingChart onGallery={this.onGallery}/>
+                                <EmbeddingChart onGallery={this.onGallery} setTooltip={this.setTooltip}/>
                                 <DraggableDivider/>
                                 <div ref={this.galleryRef}>
                                     <GalleryCharts/>
                                 </div>
-
                             </div>
                             <div
                                 role="tabpanel"
                                 hidden={tab !== 'distribution'}
                             >
-                                <DistributionPlots/>
+                                <DistributionPlots setTooltip={this.setTooltip}/>
                                 <CompositionPlots/>
                             </div>
                             <div
@@ -159,9 +165,19 @@ class App extends PureComponent {
                             >
                                 <JobResultsPanel/>
                             </div>
-                        </React.Fragment>}
-
-
+                            <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
+                                        style={{
+                                            display: tab !== 'embedding' && tab !== 'distribution' ? 'none' : null,
+                                            position: 'fixed',
+                                            background: footerBackground,
+                                            width: '100%',
+                                            bottom: 0,
+                                            top: 'auto',
+                                            marginBottom: 0,
+                                            whiteSpace: 'nowrap',
+                                            textOverflow: 'ellipsis'
+                                        }}>&nbsp;</Typography>
+                        </>}
                     </main>
 
                     {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
