@@ -109,7 +109,7 @@ export default function AutocompleteVirtualized(props) {
         let files = dt.files;
         let reader = new FileReader();
         reader.onload = function (event) {
-            let text = event.target.result;
+            let text = event.target.result.trim();
             let tokens = text.split(/[\n,\t]/);
             enterTokens(event, tokens);
         };
@@ -123,21 +123,28 @@ export default function AutocompleteVirtualized(props) {
     };
 
     function enterTokens(event, tokens) {
-        let results = [];
-        tokens.forEach(token => {
-            token = token.toLowerCase().trim().replace(/"/g, '');
-            if (token !== '') {
-                for (let i = 0; i < props.options.length; i++) {
-                    const option = props.options[i];
-                    const text = option.text != null ? option.text : option;
-                    if (text.toLowerCase() === token) {
-                        results.push(option);
-                        break;
-                    }
-
-                }
+        const results = props.value;
+        tokens = tokens.map(token => token.toLowerCase().trim().replace(/"/g, '')).filter(token => token !== '');
+        if (tokens.length > 0) {
+            let textToOption = new Map();
+            for (let i = 0; i < props.options.length; i++) {
+                const option = props.options[i];
+                const text = option.text != null ? option.text : option;
+                const textLowerCase = text.toLowerCase();
+                textToOption.set(textLowerCase, option);
             }
-        });
+            results.forEach(option => { // remove existing
+                const text = option.text != null ? option.text : option;
+                textToOption.delete(text.toLowerCase());
+            });
+            tokens.forEach(token => {
+                const option = textToOption.get(token);
+                if (option != null) {
+                    textToOption.delete(token); // delete so that we don't add new token 2x
+                    results.push(option);
+                }
+            });
+        }
         props.onChange(event, results);
     }
 
@@ -146,6 +153,7 @@ export default function AutocompleteVirtualized(props) {
         if (text != null && text.length > 0) {
             event.preventDefault();
             event.stopPropagation();
+            text = text.trim();
             let tokens = text.split(/[\n,\t]/);
             enterTokens(event, tokens);
         }
