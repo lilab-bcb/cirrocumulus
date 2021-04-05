@@ -84,6 +84,10 @@ export class DatasetSelector extends React.PureComponent {
         const species2Items = groupBy(filteredChoices, item => item.species || '');
         const speciesArray = Object.keys(species2Items);
         speciesArray.sort(NATSORT);
+        const otherIndex = speciesArray.indexOf("");
+        if (otherIndex !== -1) { // move Other (empty string) to end
+            speciesArray.push(speciesArray.splice(otherIndex, 1)[0]);
+        }
         return (
             <React.Fragment>
                 <Popover
