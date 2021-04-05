@@ -111,9 +111,9 @@ export class DatasetSelector extends React.PureComponent {
                         <ReactMarkdown options={reactMarkdownOptions} children={selectedDataset.description}/>}
                     </div>
                 </Popover>
-                <Button variant="contained" onClick={this.handleClick}
-                        color={selectedId == null ? "primary" : "default"}
-                        startIcon={<FolderOpenIcon/>}>Open</Button>
+                {selectedId == null && <Button variant="contained" onClick={this.handleClick}
+                                               color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
+                {selectedId != null && <IconButton onClick={this.handleClick}><FolderOpenIcon/></IconButton>}
 
                 <Dialog
                     open={open}
