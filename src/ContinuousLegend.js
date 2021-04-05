@@ -58,9 +58,9 @@ class ContinuousLegend extends React.PureComponent {
         }
 
         return (
-            <React.Fragment>
+            <>
                 {globalSummary != null && name !== '__count' && this.getTable(summaryNames, selectionSummary, globalSummary)}
-            </React.Fragment>);
+            </>);
     }
 }
 

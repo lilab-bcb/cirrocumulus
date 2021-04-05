@@ -1,4 +1,4 @@
-import {Typography} from '@material-ui/core';
+import {Tooltip, Typography} from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Dialog from '@material-ui/core/Dialog';
@@ -117,7 +117,8 @@ export class DatasetSelector extends React.PureComponent {
                 </Popover>
                 {selectedId == null && <Button variant="contained" onClick={this.handleClick}
                                                color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
-                {selectedId != null && <IconButton onClick={this.handleClick}><FolderOpenIcon/></IconButton>}
+                {selectedId != null &&
+                <Tooltip title={'Open'}><IconButton onClick={this.handleClick}><FolderOpenIcon/></IconButton></Tooltip>}
 
                 <Dialog
                     open={open}

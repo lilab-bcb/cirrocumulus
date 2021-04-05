@@ -186,7 +186,7 @@ function CompositionPlot(props) {
         stat = 'Chi-Square';
     }
 
-    return <React.Fragment>
+    return <>
         <div>
             <Typography style={{display: 'inline-block'}} component={"h4"}
                         color="textPrimary">{title}{subtitle &&
@@ -243,7 +243,7 @@ function CompositionPlot(props) {
             </div>
         </div>
 
-    </React.Fragment>;
+    </>;
 }
 
 export default withStyles(styles)(CompositionPlot);

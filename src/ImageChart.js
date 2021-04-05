@@ -472,7 +472,7 @@ class ImageChart extends React.PureComponent {
 
 
     render() {
-        return <React.Fragment>
+        return <>
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     dragmode={this.props.chartOptions.dragmode}
@@ -501,7 +501,7 @@ class ImageChart extends React.PureComponent {
                 left: this.props.chartSize.width / 2,
                 top: this.props.chartSize.height / 2
             }} size={20}/>}
-        </React.Fragment>;
+        </>;
     }
 }
 

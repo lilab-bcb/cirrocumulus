@@ -73,7 +73,7 @@ class ChartToolbar extends React.PureComponent {
 
         const {dragmode, editSelection, showLabels, showAxis} = this.props;
         const {saveImageEl} = this.state;
-        return (<React.Fragment>
+        return (<>
 
             {this.props.onZoomIn && <Tooltip title={"Zoom In"}>
                 <IconButton edge={false} size={'small'}
@@ -225,7 +225,7 @@ class ChartToolbar extends React.PureComponent {
             {/*</Tooltip>*/}
 
             {/*<Tooltip title={*/}
-            {/*    <React.Fragment>*/}
+            {/*    <>*/}
             {/*        <h6>3D controls</h6>*/}
             {/*        <b>Rotate</b> Mouse left click.*/}
             {/*        <b>Pan</b> Mouse right click.*/}
@@ -234,7 +234,7 @@ class ChartToolbar extends React.PureComponent {
             {/*        <h6>2D controls</h6>*/}
             {/*        <b>Pan</b> Mouse left click.*/}
             {/*        <b>Zoom</b> Mouse wheel.*/}
-            {/*    </React.Fragment>*/}
+            {/*    </>*/}
             {/*}>*/}
             {/*    <IconButton edge={false} size={'small'} aria-label="Help">*/}
             {/*        <HelpIcon/>*/}
@@ -250,7 +250,7 @@ class ChartToolbar extends React.PureComponent {
             {/*        </svg>*/}
             {/*    </IconButton>*/}
             {/*</Tooltip>*/}
-        </React.Fragment>);
+        </>);
     }
 }
 

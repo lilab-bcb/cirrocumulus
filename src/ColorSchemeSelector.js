@@ -61,7 +61,7 @@ class ColorSchemeSelector extends React.PureComponent {
         const interpolatorName = fixInterpolatorName(interpolator.name);
         const width = this.props.width || 176;
         const height = 14;
-        return <React.Fragment>
+        return <>
             <InputLabel shrink={true}>Color Scheme</InputLabel>
             <Select
                 input={<Input/>}
@@ -112,7 +112,7 @@ class ColorSchemeSelector extends React.PureComponent {
                                            scale={this.getScale(item)}/>
                     </MenuItem>))}
             </Select>
-        </React.Fragment>;
+        </>;
     }
 }
 

@@ -44,7 +44,7 @@ export class EditableSizeLegend extends React.PureComponent {
 
         const {sizeScale, reversed, showReversed, textColor} = this.props;
 
-        return <React.Fragment>
+        return <>
             <SizeLegend style={{display: 'block'}}
                         width={174}
                         textColor={textColor}
@@ -67,7 +67,7 @@ export class EditableSizeLegend extends React.PureComponent {
             <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
                        onChange={this.onMaxSizeChange} label={"Max"}
                        value={this.state.maxSize}/>
-        </React.Fragment>;
+        </>;
     }
 }
 

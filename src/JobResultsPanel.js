@@ -148,8 +148,9 @@ export function updateJob(jobResult) {
         jobResult.rowFilters = filters;
     }
     if (jobResult.ntop === undefined) {
-        jobResult.ntop = 10;
-        jobResult.ntopUI = 10;
+        const ntop = Math.min(10, jobResult.data.length);
+        jobResult.ntop = ntop;
+        jobResult.ntopUI = ntop;
     }
     if (jobResult.sortedRows === undefined) {
         const indices = new Array(data.length);
@@ -229,7 +230,7 @@ export function updateJob(jobResult) {
         jobResult.sizeScaleReversed = jobResult.size != null && jobResult.size.indexOf('pval') !== -1;
     }
     if (jobResult.sizeScale === undefined) {
-        if (jobResult.size !== '(None)') {
+        if (jobResult.size !== 'none') {
             let domain = getRange(jobResult.size);
             if (!isNaN(jobResult.options.minSize)) {
                 domain[0] = jobResult.options.minSize;
@@ -541,7 +542,7 @@ class JobResultsPanel extends React.PureComponent {
                     });
                 }
             }
-            isSizeScaled = jobResult.size !== '(None)';
+            isSizeScaled = jobResult.size !== 'none';
             for (let i = 0; i < groups.length; i++) {
                 if (groups[i].length > 2) {
                     rotateHeaders = true;
@@ -580,7 +581,7 @@ class JobResultsPanel extends React.PureComponent {
             }
         }
         const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
-        return <React.Fragment>
+        return <>
             <Box color="text.primary">
                 <Grid container alignItems="center" className={classes.toolbar}>
                     {showBrowseJobs &&
@@ -592,7 +593,7 @@ class JobResultsPanel extends React.PureComponent {
                                           color="primary">Export</Button>}
                 </Grid>
 
-                {jobResult && <React.Fragment>
+                {jobResult && <>
                     <Typography
                         style={{marginBottom: headerHeight + 8}}
                         component={"h3"}
@@ -681,7 +682,7 @@ class JobResultsPanel extends React.PureComponent {
                             </TableBody>
                         </Table>}
                     </div>
-                </React.Fragment>
+                </>
                 }
             </Box>
             <Dialog
@@ -754,7 +755,7 @@ class JobResultsPanel extends React.PureComponent {
 
                 </DialogContent>
             </Dialog>
-        </React.Fragment>;
+        </>;
     };
 }
 

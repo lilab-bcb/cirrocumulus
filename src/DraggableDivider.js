@@ -41,7 +41,7 @@ class DraggableDivider extends React.PureComponent {
         const {activeFeature} = this.props;
 
         return (
-            <React.Fragment>
+            <>
                 {activeFeature && <div style={{
                     height: 10, cursor: 'ns-resize', display: 'flex',
                     alignItems: 'center', justifyContent: 'center'
@@ -49,7 +49,7 @@ class DraggableDivider extends React.PureComponent {
                                        onMouseDown={this.onMouseDown}>
                     <Divider style={{width: '100%'}}/>
                 </div>}
-            </React.Fragment>
+            </>
         );
     }
 }

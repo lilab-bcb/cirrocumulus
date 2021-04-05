@@ -232,7 +232,7 @@ class MetaEmbedding extends React.PureComponent {
     }
 
     render() {
-        return <React.Fragment>
+        return <>
             <div className={this.props.classes.root}>
                 <ChartToolbar
                     // dragmode={this.props.chartOptions.dragmode}
@@ -258,7 +258,7 @@ class MetaEmbedding extends React.PureComponent {
             }}
                  ref={this.containerElementRef}>
             </div>
-        </React.Fragment>;
+        </>;
     }
 }
 

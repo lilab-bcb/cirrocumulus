@@ -301,13 +301,14 @@ export function submitJob(jobData) {
                     jobResult.status = result.status;
                     let fetchJobStatus = true;
                     if (result.status === 'complete') {
-                        dispatch(setMessage('Job complete'));
+                        dispatch(setMessage(jobData.name + ': complete'));
                         dispatch(setJobResults(getState().jobResults.slice()));
                         fetchJobStatus = false;
                     } else if (result.status === 'error') {
                         handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
                         fetchJobStatus = false;
-                    } else if (statusUpdated) {
+                    } else if (statusUpdated) { // force repaint
+                        dispatch(setMessage(jobData.name + ': ' + result.status));
                         dispatch(setJobResults(getState().jobResults.slice()));
                     }
                     if (fetchJobStatus) {
@@ -1067,7 +1068,6 @@ export function getIdToken() {
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
-        dispatch(_setLoading(true));
         const name = payload.name;
         const url = payload.url;
         const file = payload.file;
@@ -1081,8 +1081,24 @@ export function saveDataset(payload) {
             existingDataset = {};
         }
         const data = {};
-        data.readers = readers;
-        if (name != null && name!==existingDataset.name) {
+        if (existingDataset.readers == null) {
+            data.readers = readers;
+        } else {
+            const existingReaders = new Set(existingDataset.readers);
+            let setsEqual = existingReaders.size === readers.length;
+            if (setsEqual) {
+                for (let i = 0; i < readers.length; i++) {
+                    if (!existingReaders.has(readers[i])) {
+                        setsEqual = false;
+                        break;
+                    }
+                }
+            }
+            if (!setsEqual) {
+                data.readers = readers;
+            }
+        }
+        if (name != null && name !== existingDataset.name) {
             data.name = name;
         }
         if (description != null && description !== existingDataset.description) {
@@ -1100,11 +1116,13 @@ export function saveDataset(payload) {
         if (file != null) {
             data.file = file;
         }
-
+        if (Object.keys(data).length === 0) {
+            return;
+        }
         if (isEdit) {
             data.id = payload.dataset.id;
         }
-
+        dispatch(_setLoading(true));
         const request = getState().serverInfo.api.upsertDatasetPromise(data);
         request.upload.addEventListener('progress', function (e) {
             if (file) {

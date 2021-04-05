@@ -56,10 +56,10 @@ export class EditableColorScheme extends React.PureComponent {
             }
         }
         const width = 176;
-        return <React.Fragment>
+        return <>
             <ColorSchemeSelector handleInterpolator={onInterpolator}
                                  interpolator={interpolator}/>
-            <React.Fragment>
+            <>
                 <div style={{color: textColor, width: width}}><Typography
                     variant={"caption"}>{colorMin}</Typography><Typography
                     variant={"caption"}
@@ -77,7 +77,7 @@ export class EditableColorScheme extends React.PureComponent {
                            disabled={domain == null}
                            onChange={this.onMaxChange} label={"Max"}
                            value={max}/>
-            </React.Fragment>
+            </>
             <Tooltip title={"Select to invert the color order"}>
                 <div><FormControlLabel
                     control={
@@ -89,7 +89,7 @@ export class EditableColorScheme extends React.PureComponent {
                     label="Reverse Colors"
                 /></div>
             </Tooltip>
-        </React.Fragment>;
+        </>;
     }
 }
 

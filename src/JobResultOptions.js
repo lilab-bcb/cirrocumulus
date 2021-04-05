@@ -141,7 +141,6 @@ class JobResultOptions extends React.PureComponent {
         const jobResult = this.getJobResult();
         jobResult.sizeScale = undefined;
         jobResult.size = event.target.value;
-
         updateJob(this.getJobResult());
         this.props.handleJobResults(this.props.jobResults.slice());
     };
@@ -204,9 +203,8 @@ class JobResultOptions extends React.PureComponent {
 
         const fields = jobResult.fields.slice();
         fields.sort(NATSORT);
-        const sizeOptions = ['(None)'].concat(fields);
 
-        return <React.Fragment>
+        return <>
             <div style={{marginTop: 16}}>
                 <Typography
                     component={"h2"}>Rank Features</Typography>
@@ -225,7 +223,7 @@ class JobResultOptions extends React.PureComponent {
                 <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Number of Features</InputLabel>
                 <Slider
                     min={5}
-                    max={50}
+                    max={Math.min(100, jobResult.data.length)}
                     step={5}
                     style={{marginLeft: 10, width: '86%'}}
                     valueLabelDisplay="auto"
@@ -334,13 +332,13 @@ class JobResultOptions extends React.PureComponent {
                     ))}
                 </Select>
             </FormControl>
-            <div style={{display: size === '(None)' ? 'none' : '', marginTop: 6}}>
+            <div style={{display: size === 'none' ? 'none' : '', marginTop: 6}}>
                 <EditableSizeLegend sizeScale={sizeScale} textColor={textColor}
                                     onOptions={this.onOptions} showReversed={true}
                                     reversed={jobResult.sizeScaleReversed}
                                     onReversedChange={this.onSizeReversedChange}/>
             </div>
-        </React.Fragment>;
+        </>;
     }
 }
 

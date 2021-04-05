@@ -97,7 +97,7 @@ function CompositionPlots(props) {
         const textColor = chartOptions.darkMode ? 'white' : 'black';
         const selectedComposition = selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
         const title = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
-        return <React.Fragment><CompositionPlot categoryToValueToCounts={composition.categoryToValueToCounts}
+        return <><CompositionPlot categoryToValueToCounts={composition.categoryToValueToCounts}
                                                 dimension={dimension}
                                                 title={title}
                                                 colorScale={colorScale} series={composition.series}
@@ -111,7 +111,7 @@ function CompositionPlots(props) {
                              subtitle="selection"
                              colorScale={colorScale} series={selectedComposition.series}
                              uniqueValues={selectedComposition.uniqueValues}
-                             textColor={textColor}/>}</React.Fragment>;
+                             textColor={textColor}/>}</>;
     }
     return null;
 }

@@ -150,7 +150,7 @@ class CategoricalLegend extends React.PureComponent {
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
                         aria-labelledby="edit-category-dialog-title">
 
-                    {Boolean(this.state.anchorEl) && this.state.menu == 'color' && <React.Fragment>
+                    {Boolean(this.state.anchorEl) && this.state.menu == 'color' && <>
                         <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Color</DialogTitle>
                         <DialogContent>
                             <input type="color" value={this.state.color}
@@ -164,8 +164,8 @@ class CategoricalLegend extends React.PureComponent {
                                 Apply
                             </Button>
                         </DialogActions>
-                    </React.Fragment>}
-                    {Boolean(this.state.anchorEl) && this.state.menu == 'name' && <React.Fragment>
+                    </>}
+                    {Boolean(this.state.anchorEl) && this.state.menu == 'name' && <>
                         <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Name</DialogTitle>
                         <DialogContent>
                             <TextField type="text" onChange={this.handleNameChange} value={this.state.name}/>
@@ -178,7 +178,7 @@ class CategoricalLegend extends React.PureComponent {
                                 OK
                             </Button>
                         </DialogActions>
-                    </React.Fragment>}
+                    </>}
                 </Dialog>
 
 

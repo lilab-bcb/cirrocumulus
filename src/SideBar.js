@@ -506,13 +506,13 @@ class SideBar extends React.PureComponent {
     };
 
     onSubmitJobCancel = () => {
-        this.setState({jobName: '', jobParams: null, group1: null, group2: null, group1Count: null, group2Count: null});
+        this.setState({jobName: '', jobParams: null});
     };
 
     onSubmitJobOK = () => {
         this.state.jobParams.name = this.state.jobName;
         this.props.handleSubmitJob(this.state.jobParams);
-        this.setState({jobName: '', jobParams: null, group1: null, group2: null, group1Count: null, group2Count: null});
+        this.setState({jobName: '', jobParams: null});
     };
 
     onSetGroup = (groupNumber) => {
@@ -805,7 +805,7 @@ class SideBar extends React.PureComponent {
                             </Grid>
 
                             {datasetFilterKeys.length > 0 && selection.size > 0 &&
-                            <React.Fragment>
+                            <>
                                 <div style={{marginBottom: 2}}>
                                     {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}
                                     {datasetFilterKeys.map(key => {
@@ -836,7 +836,7 @@ class SideBar extends React.PureComponent {
                                         </Tooltip>
                                     </Grid>
                                 </div>
-                            </React.Fragment>
+                            </>
                             }
                         </div>
                     </AccordionDetailsStyled>
@@ -1032,7 +1032,7 @@ class SideBar extends React.PureComponent {
                             {datasetFilters.length === 0 &&
                             <Box color="text.secondary" style={{paddingLeft: 10}}>No saved filters</Box>}
                             {datasetFilters.length > 0 &&
-                            <React.Fragment>
+                            <>
                                 <List dense={true}>
                                     {datasetFilters.map(item => (
                                         <ListItem key={item.id} data-key={item.id} button
@@ -1056,7 +1056,7 @@ class SideBar extends React.PureComponent {
                                     </Tooltip>
 
                                 </div>
-                            </React.Fragment>}
+                            </>}
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>}
