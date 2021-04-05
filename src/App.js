@@ -134,7 +134,8 @@ class App extends PureComponent {
                         {dataset != null && <SideBar key={dataset.id}/>}
                     </Drawer>
 
-                    <main style={{backgroundColor: bgcolor, color: color}} className={classes.content}>
+                    <main style={{backgroundColor: bgcolor, color: color, paddingBottom: 24}}
+                          className={classes.content}>
                         {loadingApp.loading &&
                         <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
                                                         value={loadingApp.progress}/></h2>
