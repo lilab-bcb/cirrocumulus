@@ -228,6 +228,8 @@ class EditNewDatasetDialog extends React.PureComponent {
         const canUpload = this.props.serverInfo.upload;
         const isNew = this.props.dataset == null;
         let saveEnabled = !this.state.loading && this.state.name.trim() !== '';
+        const isAuthEnabled = this.props.serverInfo.clientId !== '';
+
         if (isNew) {
             if (this.state.uploadTabValue === 1 || !this.props.serverInfo.upload) {
                 const url = this.state.url.trim();
@@ -338,7 +340,6 @@ class EditNewDatasetDialog extends React.PureComponent {
                 />
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink>Summary</InputLabel>
-
                     <FormHelperText style={{marginTop: 14}}><Link
                         href={"https://www.markdownguide.org/cheat-sheet/"}
                         target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
@@ -373,17 +374,16 @@ class EditNewDatasetDialog extends React.PureComponent {
                     </Box>}
                 </TabPanel>
 
-
-                {!this.state.loading && this.props.serverInfo.clientId !== '' &&
                 <TextField
                     value={this.state.readers}
                     onChange={this.onEmailChanged}
                     margin="dense"
-                    label="Share"
-                    helperText="Enter comma separated list of emails"
+                    label="Readers"
+                    helperText={isAuthEnabled ? "Enter comma separated list of emails" : "Enable authentication to permit sharing"}
+                    disabled={this.state.loading || !isAuthEnabled}
                     fullWidth
                     multiline
-                />}
+                />
             </DialogContent>
             <DialogActions>
                 <Button disabled={this.state.loading} onClick={this.handleClose}>
