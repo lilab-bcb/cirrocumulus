@@ -39,7 +39,7 @@ Serve
 ^^^^^^^^^^^^^
 ::
 
-    cirro serve [--database DATABASE] [--db_uri DB_URI] [--email EMAIL] [--auth_client_id AUTH_CLIENT_ID] [-w WORKERS] [-t TIMEOUT] [-b BIND]
+    cirro serve [--database DATABASE] [--db_uri DB_URI] [--email EMAIL] [--auth_client_id AUTH_CLIENT_ID] [-w WORKERS] [-t TIMEOUT] [-b BIND] [--footer FOOTER] [--upload UPLOAD]
 
 
 .. table::
@@ -60,7 +60,10 @@ Serve
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | --bind                            | Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST). (default 127.0.0.1:5000)  |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-
+    | --footer                          | Markdown file to customize the application footer                                                                                                              |
+    +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | --upload                          | URL to allow users to upload files                                                                                                                             |
+    +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 The `serve` command starts the cirrocumulus server for use in a shared server environment which can handle concurrent requests from multiple users.
