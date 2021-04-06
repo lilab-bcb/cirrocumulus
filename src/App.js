@@ -100,7 +100,7 @@ class App extends PureComponent {
     };
 
     setTooltip = (text) => {
-        text = text === '' ? '&nbsp;' : text;
+        text = text === '' || text == null ? '&nbsp;' : text;
         this.tooltipElementRef.current.innerHTML = text;
     };
 
@@ -164,11 +164,10 @@ class App extends PureComponent {
                                 role="tabpanel"
                                 hidden={tab !== 'results'}
                             >
-                                <JobResultsPanel/>
+                                <JobResultsPanel setTooltip={this.setTooltip}/>
                             </div>
                             <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
                                         style={{
-                                            display: tab !== 'embedding' && tab !== 'distribution' ? 'none' : null,
                                             position: 'fixed',
                                             background: footerBackground,
                                             width: '100%',

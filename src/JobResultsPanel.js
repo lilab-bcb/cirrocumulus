@@ -32,7 +32,8 @@ import {
     getInterpolator,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
-    INTERPOLATOR_SCALING_NONE, NATSORT,
+    INTERPOLATOR_SCALING_NONE,
+    NATSORT,
     scaleConstantRange
 } from './util';
 
@@ -93,6 +94,7 @@ const styles = theme => ({
         position: 'absolute',
         bottom: 0,
         left: 0,
+        pointerEvents: 'none',
         overflow: 'hidden',
         textOverflow: 'ellipsis'
     },
@@ -343,6 +345,14 @@ class JobResultsPanel extends React.PureComponent {
         super(props);
         this.state = {showDialog: false};
     }
+
+    onMouseMove = (event) => {
+        this.props.setTooltip(event.target.dataset.title);
+    };
+
+    onMouseOut = (event) => {
+        this.props.setTooltip('');
+    };
 
     onBrowseJobs = (event) => {
         this.setState({showDialog: true});
@@ -600,7 +610,9 @@ class JobResultsPanel extends React.PureComponent {
                         color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
                         <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
                     <div style={{paddingTop: 6}}>
-                        {jobResult.rows.length > 0 && <Table stickyHeader={true} className={classes.table}>
+                        {jobResult.rows.length > 0 &&
+                        <Table onMouseMove={this.onMouseMove} onMouseOut={this.onMouseOut} stickyHeader={true}
+                               className={classes.table}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell style={{backgroundColor: 'unset', textAlign: 'center'}}
@@ -657,7 +669,7 @@ class JobResultsPanel extends React.PureComponent {
                                                 title += ', ' + size + ':' + formatNumber(sizeValue);
                                             }
                                             if (colorValue == null || isNaN(colorValue)) {
-                                                return <TableCell className={classes.td} title={title}
+                                                return <TableCell className={classes.td} data-title={title}
                                                                   key={group}/>;
                                             }
                                             const diameter = jobResult.sizeScale(sizeValue);
@@ -666,10 +678,11 @@ class JobResultsPanel extends React.PureComponent {
                                             }
                                             const colorValueScaled = valueScale ? valueScale(colorValue) : colorValue;
                                             const backgroundColor = jobResult.colorScale(colorValueScaled);
-                                            return <TableCell className={classes.td} title={title}
+                                            return <TableCell className={classes.td} data-title={title}
                                                               key={group}>
                                                 <div className={classes.dot}
                                                      style={{
+                                                         pointerEvents: 'none',
                                                          marginLeft: (maxSize - diameter) / 2,
                                                          width: diameter,
                                                          height: diameter,
@@ -752,7 +765,6 @@ class JobResultsPanel extends React.PureComponent {
                             })}
                         </TableBody>
                     </Table>
-
                 </DialogContent>
             </Dialog>
         </>;
