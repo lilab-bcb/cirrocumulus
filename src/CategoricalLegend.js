@@ -189,9 +189,8 @@ class CategoricalLegend extends React.PureComponent {
                 >
                     <MenuItem onClick={this.handleEditName}>Edit Name</MenuItem>
                     <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
-
                 </Menu>
-                <table style={{textAlign: 'left'}}>
+                <table style={{textAlign: 'left', userSelect:'none'}}>
                     <thead>
                     <tr>
                         {clickEnabled && <td></td>}
