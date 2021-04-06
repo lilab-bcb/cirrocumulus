@@ -3,6 +3,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Typography from '@material-ui/core/Typography';
+import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import {cumsum} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
@@ -80,7 +81,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                     let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
                     let percentExpressed = stripTrailingZeros(numberFormat(array[col].percentExpressed));
 
-                    this.props.setTooltip( 'mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', '));
+                    this.props.setTooltip('mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', '));
                 } else {
                     this.props.setTooltip('');
                 }
@@ -109,6 +110,39 @@ export default class DotPlotCanvas extends React.PureComponent {
         context.scale(devicePixelRatio, devicePixelRatio);
         this.drawContext(context, this.size);
     }
+
+    exportFile = () => {
+        const data2d = this.props.data;
+        const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
+        const ncategories = data2d.length;
+        let text = [];
+        text.push('id');
+        for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
+            text.push('\t');
+            const name = data2d[categoryIndex][0].name.join('_');
+            text.push(name + ':mean');
+            text.push('\t');
+            text.push(name + ':percent_expressed');
+        }
+        text.push('\n');
+        for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
+            for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
+                const item = data2d[categoryIndex][featureIndex];
+                if (categoryIndex === 0) {
+                    text.push(item.feature);
+                }
+                text.push('\t');
+                text.push(item.mean);
+                text.push('\t');
+                text.push(item.percentExpressed);
+            }
+            text.push('\n');
+        }
+        let blob = new Blob([text.join('')], {
+            type: 'text/plain;charset=utf-8'
+        });
+        window.saveAs(blob, this.props.data[0][0].dimension + '.tsv');
+    };
 
     drawContext(context, size) {
         const data2d = this.props.data;
@@ -355,6 +389,11 @@ export default class DotPlotCanvas extends React.PureComponent {
                     <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
                     <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
                 </Menu>
+                <Tooltip title={"Export"}>
+                    <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.exportFile}>
+                        <CloudDownloadIcon/>
+                    </IconButton>
+                </Tooltip>
             </div>
             <div ref={this.divRef}></div>
         </div>);

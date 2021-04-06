@@ -9,7 +9,8 @@ import {
     TableBody,
     TableCell,
     TableHead,
-    TableRow
+    TableRow,
+    Tooltip
 } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -18,6 +19,7 @@ import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Typography from '@material-ui/core/Typography';
+import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {scaleLinear} from 'd3-scale';
 import {find} from 'lodash';
@@ -598,9 +600,8 @@ class JobResultsPanel extends React.PureComponent {
                     <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
                             color="primary">Browse All Results</Button>}
                     {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
-                    {jobResult && <Button size={"small"} onClick={this.exportJobResult}
-                                          variant="outlined"
-                                          color="primary">Export</Button>}
+                    {jobResult && <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
+                                                                        onClick={this.exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>}
                 </Grid>
 
                 {jobResult && <>
