@@ -220,7 +220,7 @@ function CompositionPlot(props) {
                     </TableHead>
                     <TableBody>{uniqueValues.map((uniqueValue, uniqueValueIndex) => {
                         const counts = countsTable[uniqueValueIndex];
-                        return <TableRow><TableCell style={{whiteSpace: 'nowrap'}} component={"th"}>
+                        return <TableRow key={uniqueValue}><TableCell style={{whiteSpace: 'nowrap'}} component={"th"}>
                             <div style={{
                                 display: 'inline-block',
                                 width: '1em',
