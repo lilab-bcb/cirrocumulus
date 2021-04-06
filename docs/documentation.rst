@@ -129,7 +129,7 @@ The "Distributions" tab allows users to explore gene distributions across cell c
 When selecting more than one category, the plot first groups by the primary category, then by the secondary category, etc.
 For example, when you select "leiden" and "sample", the plot first groups by leiden cluster and then by sample.
 
-Additionally, a composition plot is show to show categorical distributions:
+Additionally, a composition plot shows categorical distributions:
 
 .. image:: images/composition_plot.png
 
