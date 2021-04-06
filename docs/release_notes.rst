@@ -1,6 +1,12 @@
 Release Notes
 -------------
 
+- 1.1.15 `April 6, 2021`
+    * Added composition plot
+    * Pass `--upload` flag to `cirro serve` to enable file uploads
+    * Show plot tooltips in bottom bar
+    * Export data from dot plot
+
 - 1.1.14.post5 `March 30, 2021`
     * Fixed issue that distribution charts did not update when color scheme changed
 
