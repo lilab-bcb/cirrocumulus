@@ -8,13 +8,12 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import sys
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
 from pathlib import Path
-import sys
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parent))
@@ -24,14 +23,13 @@ sys.path.insert(0, str(HERE.parent))
 project = "Cirrocumulus"
 copyright = "2021 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
 author = (
-    "Joshua Gould, Bo Li, and Yiming Yang"
+        "Joshua Gould, Bo Li, and Yiming Yang"
 )
 
 # The short X.Y version
 version = "0.0.4"
 # The full version, including alpha/beta/rc tags
 release = "0.0.4"
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -43,24 +41,24 @@ needs_sphinx = '1.7'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.doctest",
-    "sphinx.ext.todo",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.coverage",
-    "sphinx.ext.imgmath",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
+        "sphinx.ext.autodoc",
+        "sphinx.ext.intersphinx",
+        "sphinx.ext.doctest",
+        "sphinx.ext.todo",
+        "sphinx.ext.mathjax",
+        "sphinx.ext.coverage",
+        "sphinx.ext.imgmath",
+        "sphinx.ext.ifconfig",
+        "sphinx.ext.viewcode",
+        "sphinx.ext.githubpages",
+        "sphinx.ext.autosummary",
+        "sphinx.ext.napoleon",
+        "sphinx_autodoc_typehints",
 ]
 
 autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource"
+        "members": True,
+        "member-order": "bysource"
 }
 autosummary_generate = True
 todo_include_todos = False
@@ -99,7 +97,6 @@ intersphinx_mapping = dict(
     sklearn=('https://scikit-learn.org/dev/', None),
 )
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -136,47 +133,40 @@ html_context = dict(
     conf_py_path="/docs/",  # Path in the checkout to the docs root
 )
 
-
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "cirrocumulus_doc"
 
-
-def setup(app):
-    app.add_stylesheet("css/custom.css")
-
-
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
+        # The paper size ('letterpaper' or 'a4paper').
+        #
+        # 'papersize': 'letterpaper',
+        # The font size ('10pt', '11pt' or '12pt').
+        #
+        # 'pointsize': '10pt',
+        # Additional stuff for the LaTeX preamble.
+        #
+        # 'preamble': '',
+        # Latex figure (float) alignment
+        #
+        # 'figure_align': 'htbp',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (
-        master_doc,
-        "cirrocumulus.tex",
-        "Cirrocumulus Documentation",
-        "Bo Li, Joshua Gould, Yiming Yang",
-        "manual",
-    )
+        (
+                master_doc,
+                "cirrocumulus.tex",
+                "Cirrocumulus Documentation",
+                "Bo Li, Joshua Gould, Yiming Yang",
+                "manual",
+        )
 ]
-
 
 # -- Options for manual page output ------------------------------------------
 
@@ -184,24 +174,22 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [(master_doc, "cirrocumulus", "Cirrocumulus Documentation", [author], 1)]
 
-
 # -- Options for Texinfo output ----------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (
-        master_doc,
-        "cirrocumulus",
-        "Cirrocumulus Documentation",
-        author,
-        "cirrocumulus",
-        "An interactive visualization tool for large-scale single-cell genomics data",
-        "Miscellaneous",
-    )
+        (
+                master_doc,
+                "cirrocumulus",
+                "Cirrocumulus Documentation",
+                author,
+                "cirrocumulus",
+                "An interactive visualization tool for large-scale single-cell genomics data",
+                "Miscellaneous",
+        )
 ]
-
 
 # -- Extension configuration -------------------------------------------------
 
@@ -209,5 +197,3 @@ texinfo_documents = [
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
-
