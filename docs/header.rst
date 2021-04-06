@@ -15,7 +15,7 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Explore multiple features and embeddings simultaneously
 * Fast interactive exploration of 2 and 3-d embeddings of millions of cells, including zoom, pan, rotate (3-d), and lasso tools
 * Save publication quality images
-* Highly customizable * for example, set the color map, point size, or whether to use fog for 3-d embeddings to fade distant points
+* Highly customizable - for example, set the color map, point size, or whether to use fog for 3-d embeddings to fade distant points
 * Visualize datasets in h5ad_, loom_, Seurat_, or `STAR-Fusion`_  formats
 
 
