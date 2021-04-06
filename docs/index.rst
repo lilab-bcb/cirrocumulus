@@ -1,5 +1,4 @@
 .. include:: header.rst
-.. include:: quick_start.rst
 
 .. toctree::
    :maxdepth: 1

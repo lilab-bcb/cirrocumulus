@@ -19,10 +19,42 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Highly customizable * for example, set the color map, point size, or whether to use fog for 3-d embeddings to fade distant points
 * Visualize datasets in h5ad_, loom_, Seurat_, or `STAR-Fusion`_  formats
 
-.. _Pegasus: http://pegasus.readthedocs.io/
-.. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
-.. _Scanpy: https://scanpy.readthedocs.io/
+
+Quick Start
+-------------
+
+Install the package::
+
+    pip install cirrocumulus
+
+Launch cirrocumulus via the command line::
+
+    cirro launch <path_to_dataset>
+
+- Datasets can be provided in h5ad_, loom_, Seurat_, or `STAR-Fusion`_  formats
+- Launch accepts more than one dataset to enable quick dataset switching or to combine modalities (e.g gene fusions and expression) stored in separate files.
+- Predefined marker lists can be provided in JSON format (`see example`_) to quickly browse features of interest.
+
+Example Data
+^^^^^^^^^^^^^
+- Download `3k PBMCs from a healthy donor data`_ and launch::
+
+    cirro launch pbmc3k.h5ad --markers markers.json
+
+
+- Download `human lymph node spatial data`_ and launch::
+
+    cirro launch V1_Human_Lymph_Node/V1_Human_Lymph_Node.h5ad --spatial V1_Human_Lymph_Node/spatial
+
+
+.. _3k PBMCs from a healthy donor data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/example_data.zip
+.. _human lymph node spatial data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/V1_Human_Lymph_Node.zip
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _Seurat: https://satijalab.org/seurat/
+.. _see example: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
+.. _Pegasus: http://pegasus.readthedocs.io/
+.. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
+.. _Scanpy: https://scanpy.readthedocs.io/
+
