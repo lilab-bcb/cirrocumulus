@@ -1,6 +1,5 @@
-=================================================
-Cirrocumulus for Single-Cell Data Visualization
-=================================================
+Cirrocumulus
+----------------
 
 Cirrocumulus is an interactive visualization tool for large-scale single-cell genomics data, with the following features:
 
@@ -37,6 +36,7 @@ Launch cirrocumulus via the command line::
 
 Example Data
 ^^^^^^^^^^^^^
+
 - Download `3k PBMCs from a healthy donor data`_ and launch::
 
     cirro launch pbmc3k.h5ad --markers markers.json
@@ -57,4 +57,3 @@ Example Data
 .. _Pegasus: http://pegasus.readthedocs.io/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _Scanpy: https://scanpy.readthedocs.io/
-
