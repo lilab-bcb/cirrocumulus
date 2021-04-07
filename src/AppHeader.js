@@ -1,6 +1,7 @@
 import {Divider, IconButton, Menu, Tooltip} from '@material-ui/core';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
+import Link from '@material-ui/core/Link';
 import MenuItem from '@material-ui/core/MenuItem';
 import Popover from '@material-ui/core/Popover';
 import {withStyles} from '@material-ui/core/styles';
@@ -336,7 +337,6 @@ class AppHeader extends React.PureComponent {
 
 
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
-        const hasDatasetDetails = dataset != null && (dataset.title || dataset.description);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
 
@@ -362,34 +362,53 @@ class AppHeader extends React.PureComponent {
                         }}
                     >
 
-                        <div style={{width: 500}}>
+                        <div style={{width: 500, padding: '1em'}}>
+                            <Typography className={classes.typography}>
+                                {dataset.name}
+                            </Typography>
+                            <Divider/>
+                            {dataset.species && <Typography className={classes.typography}>
+                                Species: {dataset.species}
+                            </Typography>}
+                            <Typography className={classes.typography}>
+                                URL: {dataset.url}
+                            </Typography>
+
                             {dataset.title && <Typography className={classes.typography}>
-                                {dataset.title}
+                                Title: {dataset.title}
                             </Typography>}
                             {dataset.description &&
-                            <ReactMarkdown options={reactMarkdownOptions} children={dataset.description}/>}
+                            <>Description: <ReactMarkdown options={reactMarkdownOptions}
+                                                          children={dataset.description}/></>}
                         </div>
                     </Popover>
                     }
                     {dataset == null && <Typography variant="h5">
                         <CirroIcon/> Cirrocumulus
                     </Typography>}
-                    {dataset != null && <CirroIcon/>}
-                    {dataset != null &&
-                    <Typography
-                        style={{paddingLeft: 6}}
+                    {dataset && <CirroIcon/>}
+                    {dataset &&
+                    <Link
+                        style={{
+                            paddingLeft: 6,
+                            whiteSpace: 'nowrap',
+                            maxWidth: 300,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}
+                        href="#"
+                        underline={"none"}
+                        onClick={this.handleShowDatasetDetails}
                         aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
                         aria-haspopup="true"
                         component={"h3"}>
-                        {hasDatasetDetails &&
-                        <Button onClick={this.handleShowDatasetDetails}><b>{dataset.name}</b></Button>}
-                        {!hasDatasetDetails && <b>{dataset.name}</b>}
-                        <small>&nbsp;
-                            {hasSelection && shape != null && intFormat(selection.size) + ' / '}
-                            {shape != null && intFormat(shape[0]) + ' cells'}
-                        </small>
-                    </Typography>
+                        <b>{dataset.name}</b>
+                    </Link>
                     }
+                    {dataset && <small>&nbsp;
+                        {hasSelection && shape != null && intFormat(selection.size) + ' / '}
+                        {shape != null && intFormat(shape[0]) + ' cells'}
+                    </small>}
 
                     {dataset != null && <Tabs
                         value={tab}
