@@ -208,8 +208,9 @@ class SimpleData:
                     for group_name in group_names:
                         fc_column = '{}:log2FC'.format(group_name)
                         name = '{}:{}'.format(group_name, field_name)
-                        idx_up = de_res[fc_column].values > 0
-                        df_up = de_res.loc[idx_up].sort_values(by=[name, fc_column], ascending=[field_ascending, False])
+                        idx_up = de_result_df[fc_column] > 0
+                        df_up = de_result_df.loc[idx_up].sort_values(by=[name, fc_column],
+                            ascending=[field_ascending, False])
                         features = df_up[:n_genes].index.values
                         marker_results.append(dict(category='markers', name=str(group_name), features=features))
 
