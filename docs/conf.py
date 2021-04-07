@@ -109,3 +109,7 @@ html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'cirrocumulusdoc'
+
+
+def setup(app):
+    app.add_css_file('my_theme.css')
