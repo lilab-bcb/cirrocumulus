@@ -913,30 +913,42 @@ export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};
 }
 
-function loadDefaultDatasetEmbedding() {
+function loadDefaultDatasetView() {
     return function (dispatch, getState) {
         const dataset = getState().dataset;
         const embeddingNames = dataset.embeddings.map(e => e.name);
-        let names = ['tissue_hires', 'fle', 'umap', 'tsne'];
-        let embeddingNames2Priority = {};
-        embeddingNames.forEach(name => {
-            const nameLower = name.toLowerCase();
-            for (let i = 0; i < names.length; i++) {
-                if (nameLower.indexOf(names[i]) !== -1) {
-                    embeddingNames2Priority[name] = i;
-                    break;
+        if (embeddingNames.length > 0) {
+            let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
+            let embeddingName = null;
+            for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
+                for (let i = 0; i < embeddingNames.length; i++) {
+                    if (embeddingNames[i].toLowerCase().indexOf(embeddingPriorities[priorityIndex]) !== -1) {
+                        embeddingName = embeddingNames[i];
+                        break;
+                    }
                 }
             }
-        });
-        embeddingNames.sort((a, b) => {
-            a = embeddingNames2Priority[a] || Number.MAX_VALUE;
-            b = embeddingNames2Priority[b] || Number.MAX_VALUE;
-            return a - b;
-        });
 
-        if (embeddingNames.length > 0) {
-            dispatch(setSelectedEmbedding([dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingNames[0])]]));
+            if (embeddingName == null) {
+                embeddingName = embeddingNames[0];
+            }
+            const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
+            let obsCat = null;
+            let catPriorities = ['leiden', 'louvain', 'seurat_clusters', 'clusters'];
+            for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+                for (let i = 0; i < dataset.obsCat.length; i++) {
+                    if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
+                        obsCat = dataset.obsCat[i];
+                        break;
+                    }
+                }
+            }
+            if (obsCat != null) {
+                dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
+            }
+            dispatch(setSelectedEmbedding([selectedEmbedding]));
         }
+
     };
 }
 
@@ -1160,7 +1172,6 @@ export function deleteDataset(payload) {
             dispatch(_setDataset(null));
             dispatch(_deleteDataset({id: payload.dataset.id}));
             dispatch(setDialog(null));
-
             dispatch(setMessage('Dataset deleted'));
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -1461,7 +1472,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             if (savedDatasetState) {
                 dispatch(restoreSavedView(savedDatasetState));
             } else if (loadDefaultView) {
-                dispatch(loadDefaultDatasetEmbedding());
+                dispatch(loadDefaultDatasetView());
             }
         }
 
@@ -1598,7 +1609,6 @@ function _updateCharts(onError) {
             return;
         }
         dispatch(_setLoading(true));
-
         const searchTokens = splitSearchTokens(state.searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
         let distribution = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
