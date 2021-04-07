@@ -8,7 +8,7 @@ import * as scaleChromatic from 'd3-scale-chromatic';
 import natsort from 'natsort';
 import React from 'react';
 import simplify from 'simplify-js';
-import {getColors} from './ThreeUtil';
+
 export const NATSORT = natsort({insensitive: true});
 export const interpolators = {};
 interpolators['Diverging'] = [
@@ -80,6 +80,13 @@ export const FEATURE_TYPE = {
     COUNT: 'count'
 };
 
+export const TIES_STRATEGY_IGNORE = 0;
+export const TIES_STRATEGY_AVERAGE = 1;
+export const TIES_STRATEGY_MAXIMUM = 2;
+export const TIES_STRATEGY_MINIMUM = 3;
+export const TIES_STRATEGY_SEQUENTIAL = 4;
+
+
 export const TRACE_TYPE_IMAGE = 'image';
 export const TRACE_TYPE_SCATTER = 'scatter';
 export const TRACE_TYPE_META_IMAGE = 'meta_image';
@@ -113,7 +120,7 @@ export const reactMarkdownOptions = {
             props: {gutterBottom: true, variant: 'caption', paragraph: true},
         },
         p: {component: Typography, props: {paragraph: true}},
-        a: {component: Link, props:{target:'_blank'}},
+        a: {component: Link, props: {target: '_blank'}},
         li: {
             component: withStyles(reactMarkdownStyles)(({classes, ...props}) => (
                 <li className={classes.listItem}>
@@ -209,7 +216,26 @@ export function setClipboardData(clipboardData) {
     };
     document.execCommand('copy');
     container.addEventListener('click', fakeHandlerCallback);
-};
+}
+
+function getColorsRgba(trace) {
+    const RGBA_NUM_ELEMENTS = 4;
+    const rgbScale = getRgbScale();
+
+    let dst = 0;
+    let colorScale = trace.colorScale;
+    const n = trace.x.length;
+    const colors = new Float32Array(n * RGBA_NUM_ELEMENTS);
+
+    for (let i = 0; i < n; ++i) {
+        let c = color(colorScale(trace.values[i]));
+        colors[dst++] = rgbScale(c.r);
+        colors[dst++] = rgbScale(c.g);
+        colors[dst++] = rgbScale(c.b);
+        colors[dst++] = 1;
+    }
+    return colors;
+}
 
 export function updateTraceColors(traceInfo) {
     if (traceInfo.type === TRACE_TYPE_IMAGE) {
@@ -222,7 +248,7 @@ export function updateTraceColors(traceInfo) {
         }
         traceInfo.colors = colors;
     } else if (traceInfo.type === TRACE_TYPE_SCATTER) {
-        traceInfo.colors = getColors(traceInfo);
+        traceInfo.colors = getColorsRgba(traceInfo);
     } else if (traceInfo.type === TRACE_TYPE_META_IMAGE) {
         let colorScale = traceInfo.colorScale;
         const svgNode = traceInfo.source;
@@ -285,35 +311,121 @@ export function rankIndexArray(index) {
         rank[index[j]] = j + 1;
     }
     return rank;
-};
+}
 
 export function indexSort(array, ascending) {
     const pairs = [];
     for (let i = 0, length = array.length; i < length; i++) {
         pairs.push({
             value: array[i],
-            index: i
+            position: i
         });
     }
     return indexSortPairs(pairs, ascending);
-};
+}
 
-function indexSortPairs(array, ascending) {
+function resolveTie(ranks, tiesTrace, tiesStrategy = TIES_STRATEGY_AVERAGE) {
+
+    // constant value of ranks over tiesTrace
+    const c = ranks[tiesTrace[0]];
+
+    // length of sequence of tied ranks
+    const length = tiesTrace.length;
+
+    switch (tiesStrategy) {
+        case  TIES_STRATEGY_AVERAGE:  // Replace ranks with average
+            fill(ranks, tiesTrace, (2 * c + length - 1) / 2.0);
+            break;
+        case TIES_STRATEGY_MAXIMUM:   // Replace ranks with maximum values
+            fill(ranks, tiesTrace, c + length - 1);
+            break;
+        case TIES_STRATEGY_MINIMUM:   // Replace ties with minimum
+            fill(ranks, tiesTrace, c);
+            break;
+        case TIES_STRATEGY_SEQUENTIAL:  // Fill sequentially from c to c + length - 1
+            // walk and fill
+
+            const f = Math.round(c);
+            for (let i = 0, n = tiesTrace.length; i < n; i++) {
+                ranks[tiesTrace[i]] = f + i;
+            }
+            break;
+        default:
+            throw new Error();
+    }
+}
+
+/**
+ * Sets<code>data[i] = value</code> for each i in <code>tiesTrace.</code>
+ *
+ * @param data array to modify
+ * @param tiesTrace list of index values to set
+ * @param value value to set
+ */
+function fill(data, tiesTrace, value) {
+    for (let i = 0, n = tiesTrace.length; i < n; i++) {
+        data[tiesTrace[i]] = value;
+    }
+}
+
+export function rankdata(values) {
+    const ranks = [];
+    for (let i = 0, n = values.length; i < n; i++) {
+        ranks.push({
+            value: values[i],
+            position: i
+        });
+    }
+
+    ranks.sort(function (a, b) {
+        return (a.value < b.value ? -1 : (a.value === b.value ? (a.position < b.position ? -1 : 1) : 1));
+    });
+
+    // Walk the sorted array, filling output array using sorted positions,
+    // resolving ties as we go
+    const out = new Array(ranks.length);
+    let pos = 1;  // position in sorted array
+    out[ranks[0].position] = pos;
+    let tiesTrace = [];
+    tiesTrace.push(ranks[0].position);
+    for (let i = 1; i < ranks.length; i++) {
+        if (ranks[i].value > ranks[i - 1].value) {
+            // tie sequence has ended (or had length 1)
+            pos = i + 1;
+            if (tiesTrace.length > 1) {  // if seq is nontrivial, resolve
+                resolveTie(out, tiesTrace);
+            }
+            tiesTrace = [];
+            tiesTrace.push(ranks[i].position);
+        } else {
+            // tie sequence continues
+            tiesTrace.push(ranks[i].position);
+        }
+        out[ranks[i].position] = pos;
+    }
+    if (tiesTrace.length > 1) {  // handle tie sequence at end
+        resolveTie(out, tiesTrace);
+    }
+    return out;
+}
+
+function indexSortPairs(ranks, ascending) {
     if (ascending) {
-        array.sort(function (a, b) {
-            return (a.value < b.value ? -1 : (a.value === b.value ? (a.index < b.index ? -1 : 1) : 1));
+        ranks.sort(function (a, b) {
+            return (a.value < b.value ? -1 : (a.value === b.value ? (a.position < b.position ? -1 : 1) : 1));
         });
     } else {
-        array.sort(function (a, b) {
-            return (a.value < b.value ? 1 : (a.value === b.value ? (a.index < b.index ? 1 : -1) : -1));
+        ranks.sort(function (a, b) {
+            return (a.value < b.value ? 1 : (a.value === b.value ? (a.position < b.position ? 1 : -1) : -1));
         });
     }
-    const indices = new Uint32Array(array.length);
-    for (let i = 0, n = array.length; i < n; i++) {
-        indices[i] = array[i].index;
+
+    const indices = new Uint32Array(ranks.length);
+    for (let i = 0, n = ranks.length; i < n; i++) {
+        indices[i] = ranks[i].position;
     }
     return indices;
-};
+}
 
 export function randomSeq(n, start = 0) {
     const indices = new Uint32Array(n);
@@ -362,7 +474,7 @@ export function fdr(nominalPValues) {
         fdr[i] = Math.min(fdr[i], 1);
     }
     return fdr;
-};
+}
 
 export function isPointInside(point, vs) {
     // ray-casting algorithm based on

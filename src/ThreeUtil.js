@@ -67,27 +67,8 @@ export function createScatterPlot(containerElement, premultipliedAlpha, labels, 
     return scatterPlot;
 }
 
-export function getColors(trace) {
-    const RGBA_NUM_ELEMENTS = 4;
-    const rgbScale = getRgbScale();
-
-    let dst = 0;
-    let colorScale = trace.colorScale;
-    const n = trace.x.length;
-    const colors = new Float32Array(n * RGBA_NUM_ELEMENTS);
-
-    for (let i = 0; i < n; ++i) {
-        let c = color(colorScale(trace.values[i]));
-        colors[dst++] = rgbScale(c.r);
-        colors[dst++] = rgbScale(c.g);
-        colors[dst++] = rgbScale(c.b);
-        colors[dst++] = 1;
-    }
-    return colors;
-}
 
 export function getPositions(trace) {
-
     let xExtent = [Infinity, -Infinity];
     let yExtent = [Infinity, -Infinity];
     let zExtent = [Infinity, -Infinity];

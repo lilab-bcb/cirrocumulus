@@ -1,6 +1,6 @@
 // R chisq.test
 
-const {fisherTest} = require('./FisherExact');
+import {fisherTest} from './FisherExact';
 
 
 it('test_1', () => {

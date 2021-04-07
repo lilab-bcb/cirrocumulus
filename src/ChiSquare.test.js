@@ -1,6 +1,6 @@
 // R chisq.test
 
-const {chiSquare} = require('./ChiSquare');
+import {chiSquare} from './ChiSquare';
 
 
 it('Agresti(2007) p.39', () => {
