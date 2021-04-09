@@ -113,6 +113,7 @@ function getMeanAndPercentRange(result) {
 }
 
 export function computeDiffExp(data, pseudocount = 1) {
+  
     for (let i = 0; i < data.length; i++) { // category
         const deResults = [];
         for (let j = 0; j < data[0].length; j++) { // feature

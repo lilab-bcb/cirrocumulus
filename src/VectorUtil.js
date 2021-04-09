@@ -234,6 +234,7 @@ export function groupedStats(dimensions, varMeasures) {
                 categories: value.key,
                 feature: v.getName(),
                 mean: categoryStats.mean,
+                n: categoryVector.size(),
                 percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
                 vector: categoryVector
             };
@@ -245,15 +246,20 @@ export function groupedStats(dimensions, varMeasures) {
 
 }
 
-function expm1(x) {
-    const u = Math.exp(x);
-    if (u == 1.0) {
-        return x;
-    } else if (u - 1.0 == -1.0) {
-        return -1;
-    } else {
-        return (u - 1.0) * x / Math.log(u);
+export function toArray(v) {
+    const result = new Array(v.size());
+    for (let i = 0, n = v.size(); i < n; i++) {
+        result[i] = v.get(i);
     }
+    return result;
+}
+
+export function toFloatArray(v) {
+    const result = new Float32Array(v.size());
+    for (let i = 0, n = v.size(); i < n; i++) {
+        result[i] = v.get(i);
+    }
+    return result;
 }
 
 export function variance(v, mean) {

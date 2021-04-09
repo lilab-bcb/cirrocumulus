@@ -7,7 +7,7 @@ import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {getNameWidth} from './DotPlotCanvas';
-import {numberFormat, numberFormat2f} from './formatters';
+import {intFormat, numberFormat2f} from './formatters';
 import {stripTrailingZeros} from './util';
 import ViolinPlotOneFeature, {drawFeature} from './ViolinPlotOneFeature';
 
@@ -98,12 +98,9 @@ export default class ViolinPlot extends React.PureComponent {
 
     onTooltip = (item) => {
         if (item) {
-            const mean = item.mean;
             const median = item.boxplotStats.median;
-            const meanFormatted = stripTrailingZeros(numberFormat2f(mean));
-            const medianFormatted = stripTrailingZeros(numberFormat2f(median));
-            const percentExpressed = stripTrailingZeros(numberFormat(item.percentExpressed));
-            this.props.setTooltip('mean: ' + meanFormatted + ', median: ' + medianFormatted + ', % expressed: ' + percentExpressed + ', ' + item.name.join(', '));
+            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + ', median: ' + stripTrailingZeros(numberFormat2f(median)) + ', % expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + ', # cells: ' + intFormat(item.n) + ', ' + item.name.join(', ');
+            this.props.setTooltip(tip);
         } else {
             this.props.setTooltip('');
         }

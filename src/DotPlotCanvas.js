@@ -11,7 +11,7 @@ import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {computeDiffExp} from './DistributionGroup';
-import {numberFormat, numberFormat2f} from './formatters';
+import {intFormat, numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros} from './util';
 
@@ -78,9 +78,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                     this.props.setTooltip('');
                     const array = this.props.data[row];
                     const item = array[col];
-                    const mean = item.mean;
-
-                    let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(mean)) + ', % expressed: ' + stripTrailingZeros(numberFormat(item.percentExpressed));
+                    let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + ', % expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + ', # cells: ' + intFormat(item.n);
                     if (item.de) {
                         tip += ', % expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
                         tip += ', log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
@@ -401,6 +399,12 @@ export default class DotPlotCanvas extends React.PureComponent {
                     <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
                 </Menu>
 
+
+                {/*<Tooltip title={"Differential Expression"}>*/}
+                {/*    <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.diffExp}>*/}
+                {/*        <CompareIcon/>*/}
+                {/*    </IconButton>*/}
+                {/*</Tooltip>*/}
                 <Tooltip title={"Export"}>
                     <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.exportFile}>
                         <CloudDownloadIcon/>
