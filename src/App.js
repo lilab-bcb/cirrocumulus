@@ -158,6 +158,11 @@ class App extends PureComponent {
                                 hidden={tab !== 'distribution'}
                             >
                                 <DistributionPlots setTooltip={this.setTooltip}/>
+                            </div>
+                            <div
+                                role="tabpanel"
+                                hidden={tab !== 'composition'}
+                            >
                                 <CompositionPlots/>
                             </div>
                             <div

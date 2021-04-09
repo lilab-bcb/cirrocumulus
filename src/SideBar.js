@@ -27,6 +27,7 @@ import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
+import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
@@ -685,7 +686,7 @@ class SideBar extends React.PureComponent {
 
                 </Menu>
                 <AccordionStyled
-                    style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
+                    style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}
                     defaultExpanded>
                     <AccordionSummaryStyled>
                         <Typography>View</Typography>
@@ -863,7 +864,7 @@ class SideBar extends React.PureComponent {
                                     <Button size={"small"} disabled={selection.size === 0}
                                             onClick={event => this.onSetGroup(2)}>2</Button>
                                 </Tooltip>
-                                <Button size={"small"} variant="outlined"
+                                <Button startIcon={<CompareIcon/>} size={"small"} variant="outlined"
                                         disabled={selection.size === 0 || this.state.group1 == null || this.state.group2 == null}
                                         onClick={event => this.onSubmitJob('de')}>Go</Button>
                             </ButtonGroup>
@@ -1022,8 +1023,9 @@ class SideBar extends React.PureComponent {
                     </AccordionDetailsStyled>
                 </AccordionStyled>
                 {dynamic &&
-                <AccordionStyled style={tab === 'embedding' || tab === 'distribution' ? null : {display: 'none'}}
-                                 defaultExpanded>
+                <AccordionStyled
+                    style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}
+                    defaultExpanded>
                     <AccordionSummaryStyled expandIcon={<ExpandMoreIcon/>}>
                         <Typography>Saved Filters</Typography>
                     </AccordionSummaryStyled>

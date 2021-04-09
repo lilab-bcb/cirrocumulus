@@ -9,13 +9,17 @@ import DotPlotCanvas from './DotPlotCanvas';
 import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {boxplotStats, density, nrd0} from './kde';
+import {mannWhitney} from './MannWhitneyUTest';
 import {
     createColorScale,
+    fdr,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
     INTERPOLATOR_SCALING_NONE,
     NATSORT
 } from './util';
+import {Vector} from './Vector';
+import {stats} from './VectorUtil';
 import ViolinPlot from './ViolinPlot';
 
 const styles = theme => ({
@@ -106,6 +110,46 @@ function getMeanAndPercentRange(result) {
         meanRange[1] = Math.max(feature.mean, meanRange[1]);
     });
     return {mean: meanRange, percent: [0, 100]};
+}
+
+export function computeDiffExp(data, pseudocount = 1) {
+    for (let i = 0; i < data.length; i++) { // category
+        const deResults = [];
+        for (let j = 0; j < data[0].length; j++) { // feature
+            const item = data[i][j];
+            const vector = item.vector;
+            const values = new Float32Array(vector.size());
+            for (let valueIndex = 0, n = values.length; valueIndex < n; valueIndex++) {
+                values[valueIndex] = vector.get(valueIndex);
+            }
+            const restValues = [];
+            for (let categoryIndex = 0; categoryIndex < data.length; categoryIndex++) {
+                if (i !== categoryIndex) {
+                    const restItem = data[categoryIndex][j];
+                    const restVector = restItem.vector;
+                    for (let valueIndex = 0, n = restVector.size(); valueIndex < n; valueIndex++) {
+                        restValues.push(restVector.get(valueIndex));
+                    }
+                }
+            }
+
+            const selectedStats = stats(new Vector('', values));
+            const restStats = stats(new Vector('', restValues));
+            const result = mannWhitney(values, restValues);
+            result.foldChange = Math.log2((selectedStats.logSum / selectedStats.n) + pseudocount) - Math.log2((restStats.logSum / restStats.n) + pseudocount); // seurat
+            //result.foldChange = Math.log2(Math.expm1(mean1 + 1e-9) / Math.expm1(mean2 + 1e-9)) // scanpy;
+            result.percentExpressed2 = 100 * (restStats.numExpressed / restStats.n);
+            deResults.push(result);
+        }
+        const correctedPValues = fdr(deResults.map(item => item.p));
+        for (let j = 0; j < data[0].length; j++) { // feature
+            const item = data[i][j];
+            const de = deResults[j];
+            de.fdr = correctedPValues[j];
+            item.de = de;
+        }
+    }
+
 }
 
 class DistributionGroup extends React.PureComponent {
@@ -226,7 +270,7 @@ class DistributionGroup extends React.PureComponent {
                 });
             });
         }
-
+        const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions) : null;
         const sortChoices = [distributionData[0].dimension].concat(features);
         return (
             <Box color="text.primary">
@@ -246,26 +290,26 @@ class DistributionGroup extends React.PureComponent {
                     options={distributionPlotOptions}
                     setTooltip={setTooltip}
                     data={data}/>}
-                {chartType !== 'violin' && selectedData != null && selectedData.length > 0 ?
-                    <DotPlotCanvas
-                        categoryColorScales={categoryColorScales}
-                        colorScale={colorScale}
-                        interpolator={interpolator}
-                        sizeScale={sizeScale}
-                        subtitle="selection"
-                        textColor={textColor}
-                        setTooltip={setTooltip}
-                        drawCircles={chartType === 'dotplot'}
-                        data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
-                {chartType === 'violin' && selectedData != null && selectedData.length > 0 ?
-                    <ViolinPlot
-                        categoryColorScales={categoryColorScales}
-                        colorScale={colorScale}
-                        subtitle="selection"
-                        options={distributionPlotOptions}
-                        textColor={textColor}
-                        setTooltip={setTooltip}
-                        data={reshapeData(selectedData, distributionPlotOptions)}/> : null}
+                {chartType !== 'violin' && selectedData2d &&
+                <DotPlotCanvas
+                    categoryColorScales={categoryColorScales}
+                    colorScale={colorScale}
+                    interpolator={interpolator}
+                    sizeScale={sizeScale}
+                    subtitle="selection"
+                    textColor={textColor}
+                    setTooltip={setTooltip}
+                    drawCircles={chartType === 'dotplot'}
+                    data={selectedData2d}/>}
+                {chartType === 'violin' && selectedData2d &&
+                <ViolinPlot
+                    categoryColorScales={categoryColorScales}
+                    colorScale={colorScale}
+                    subtitle="selection"
+                    options={distributionPlotOptions}
+                    textColor={textColor}
+                    setTooltip={setTooltip}
+                    data={selectedData2d}/>}
                 {chartType !== 'violin' &&
                 <EditableColorScheme colorScale={colorScale}
                                      textColor={textColor}

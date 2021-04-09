@@ -43,7 +43,6 @@ class DistributionPlots extends React.PureComponent {
         let dimension2data = groupBy(distributionData, 'dimension');
         let dimension2selecteddata = groupBy(selectedDistributionData, 'dimension');
 
-
         return <>{Object.keys(dimension2data).map(dimension => {
             const data = dimension2data[dimension];
             const categoryColorScales = [];

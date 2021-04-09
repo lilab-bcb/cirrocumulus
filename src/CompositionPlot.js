@@ -210,7 +210,7 @@ function CompositionPlot(props) {
 
             </Menu>
         </div>
-        <div style={{'display': 'flex'}}>
+        <div style={{display: 'flex', flex: 'flex-wrap'}}>
             <canvas ref={canvasRef}></canvas>
             <div>
                 <Table size={"small"} className={props.classes.table}>

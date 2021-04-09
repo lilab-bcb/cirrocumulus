@@ -10,6 +10,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
+import {computeDiffExp} from './DistributionGroup';
 import {numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros} from './util';
@@ -76,12 +77,19 @@ export default class DotPlotCanvas extends React.PureComponent {
                 if (col >= 0 && col < this.props.data[0].length && row >= 0 && row < this.props.data.length) {
                     this.props.setTooltip('');
                     const array = this.props.data[row];
-                    const mean = array[col].mean;
+                    const item = array[col];
+                    const mean = item.mean;
 
-                    let meanFormatted = stripTrailingZeros(numberFormat2f(mean));
-                    let percentExpressed = stripTrailingZeros(numberFormat(array[col].percentExpressed));
+                    let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(mean)) + ', % expressed: ' + stripTrailingZeros(numberFormat(item.percentExpressed));
+                    if (item.de) {
+                        tip += ', % expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
+                        tip += ', log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
+                        tip += ', p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p));
+                        tip += ', FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr));
+                        // tip += ', Mann-Whitney U : ' + stripTrailingZeros(numberFormat2f(item.de.statistic));
+                    }
 
-                    this.props.setTooltip('mean: ' + meanFormatted + ', % expressed: ' + percentExpressed + ', ' + array[col].feature + ', ' + array[col].name.join(', '));
+                    this.props.setTooltip(tip + ', ' + item.feature + ', ' + item.name.join(', '));
                 } else {
                     this.props.setTooltip('');
                 }
@@ -111,6 +119,9 @@ export default class DotPlotCanvas extends React.PureComponent {
         this.drawContext(context, this.size);
     }
 
+    diffExp = () => {
+        computeDiffExp(this.props.data);
+    };
     exportFile = () => {
         const data2d = this.props.data;
         const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
@@ -389,6 +400,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                     <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
                     <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
                 </Menu>
+
                 <Tooltip title={"Export"}>
                     <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.exportFile}>
                         <CloudDownloadIcon/>

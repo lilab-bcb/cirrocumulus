@@ -245,6 +245,17 @@ export function groupedStats(dimensions, varMeasures) {
 
 }
 
+function expm1(x) {
+    const u = Math.exp(x);
+    if (u == 1.0) {
+        return x;
+    } else if (u - 1.0 == -1.0) {
+        return -1;
+    } else {
+        return (u - 1.0) * x / Math.log(u);
+    }
+}
+
 export function variance(v, mean) {
     const size = v.size();
     if (size <= 1) {
@@ -264,29 +275,38 @@ export function variance(v, mean) {
     return ss / n;
 }
 
+
 export function stats(v) {
-    let min = Number.MAX_VALUE;
-    let max = -Number.MAX_VALUE;
-    let mean = 0;
-    let numExpressed = 0;
+
     if (v.size() === 0) {
         return {
-            'min': Number.NaN, 'max': Number.NaN, 'sum': Number.NaN, 'mean': Number.NaN, 'numExpressed': Number.NaN,
+            min: Number.NaN,
+            max: Number.NaN,
+            sum: Number.NaN,
+            mean: Number.NaN,
+            numExpressed: Number.NaN,
+            logSum: Number.NaN
         };
     }
+    let min = Number.MAX_VALUE;
+    let max = -Number.MAX_VALUE;
+    let sum = 0;
+    let numExpressed = 0;
+    let logSum = 0;
     for (let i = 0, size = v.size(); i < size; i++) {
         const value = v.get(i);
         min = value < min ? value : min;
         max = value > max ? value : max;
-        mean += value;
+        sum += value;
+        logSum += Math.expm1(value);
         if (value !== 0) {
             numExpressed++;
         }
     }
-    let sum = mean;
-    mean = mean / v.size();
+
+    const mean = sum / v.size();
     return {
-        'min': min, 'max': max, 'sum': sum, 'mean': mean, 'numExpressed': numExpressed,
+        min: min, max: max, sum: sum, mean: mean, numExpressed: numExpressed, n: v.size(), logSum: logSum
     };
 }
 

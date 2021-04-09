@@ -29,8 +29,14 @@ it('testBigDataSet', () => {
 
 it('testTiesRank', () => {
     // compare with scipy.stats.rankdata
-    const ranks = rankdata([3, 3, 2, 1, 1]);
-    const expected = [4.5, 4.5, 3, 1.5, 1.5];
+    let ranks = rankdata([3, 3, 2, 1, 1]);
+    let expected = [4.5, 4.5, 3, 1.5, 1.5];
+    for (let i = 0; i < ranks.length; i++) {
+        expect(ranks[i]).toBe(expected[i]);
+    }
+
+    ranks = rankdata([1, 1, 3, 3, 2]);
+    expected = [1.5, 1.5, 4.5, 4.5, 3];
     for (let i = 0; i < ranks.length; i++) {
         expect(ranks[i]).toBe(expected[i]);
     }
@@ -39,5 +45,17 @@ it('testTiesRank', () => {
 it('testTies', () => {
     const result = mannWhitney([4, 3, 2], [3, 2, 1]);
     expect(result.statistic).toBe(7);
+});
+
+it('testSame', () => {
+    const result = mannWhitney([3, 2, 1], [3, 2, 1]);
+    expect(result.statistic).toBe(4.5);
+    expect(result.p).toBe(1);
+});
+
+it('testDifferent', () => {
+    const result = mannWhitney([6, 5, 4], [3, 2, 1]);
+    expect(result.statistic).toBe(9.0);
+    expect(result.p).toBeCloseTo(0.049534613435626706);
 });
 

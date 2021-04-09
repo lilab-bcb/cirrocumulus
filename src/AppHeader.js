@@ -42,7 +42,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY
 } from "./reducers";
-import {reactMarkdownOptions} from './util';
+import {FEATURE_TYPE, reactMarkdownOptions} from './util';
 
 
 const styles = theme => ({
@@ -332,14 +332,24 @@ class AppHeader extends React.PureComponent {
 
     render() {
         const {
-            dataset, loadingApp, jobResults, email, selection, classes, serverInfo, tab, user
+            dataset,
+            distributionData,
+            loadingApp,
+            jobResults,
+            email,
+            selection,
+            classes,
+            searchTokens,
+            serverInfo,
+            tab,
+            user
         } = this.props;
 
 
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
-
+        const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
         const showNewDataset = user != null && user.importer && !loadingApp.loading;
         const showEditDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading;
         const showMoreMenu = (showNewDataset || dataset != null) && !loadingApp.loading;
@@ -405,7 +415,7 @@ class AppHeader extends React.PureComponent {
                         <b>{dataset.name}</b>
                     </Link>
                     }
-                    {dataset && <small>&nbsp;
+                    {dataset && <small style={{whiteSpace: 'nowrap'}}>&nbsp;
                         {hasSelection && shape != null && intFormat(selection.size) + ' / '}
                         {shape != null && intFormat(shape[0]) + ' cells'}
                     </small>}
@@ -417,12 +427,13 @@ class AppHeader extends React.PureComponent {
                         onChange={this.handleTabChange}
                     >
                         <AntTab value="embedding" label="Embeddings"/>
-                        <AntTab value="distribution" label="Distributions"/>
+                        <AntTab value="distribution" label="Distributions" disabled={distributionData.length === 0}/>
+                        <AntTab value="composition" label="Composition" disabled={obsCat.length < 2}/>
                         {jobResults.length > 0 && <AntTab value="results" label="Results"/>}
                     </Tabs>}
 
 
-                    <div style={{marginLeft: 'auto'}}>
+                    <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
