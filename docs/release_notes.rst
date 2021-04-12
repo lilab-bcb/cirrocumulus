@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.15.post1 `April 12, 2021`
+    * Moved composition plot to separate tab
+    * Added `--header` flag to `cirro serve` to customize application header
+    * Auto-display cluster annotation by default
+
 - 1.1.15 `April 6, 2021`
     * Added composition plot
     * Pass `--upload` flag to `cirro serve` to enable file uploads
