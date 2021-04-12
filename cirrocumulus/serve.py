@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_DATABASE, CIRRO_EMAIL, CIRRO_SERVE, \
-    CIRRO_FOOTER, CIRRO_UPLOAD
+    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from cirrocumulus.launch import create_app
 
 app = None
@@ -57,6 +57,7 @@ def main(argsv):
         help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).',
         default='127.0.0.1:5000')
     parser.add_argument('--footer', help='Markdown file to customize the application footer')
+    parser.add_argument('--brand', help='Text to display in application header')
     parser.add_argument('--upload', help='URL to allow users to upload files')
 
     args = parser.parse_args(argsv)
@@ -67,6 +68,9 @@ def main(argsv):
 
     if args.footer is not None:
         os.environ[CIRRO_FOOTER] = args.footer
+
+    if args.brand is not None:
+        os.environ[CIRRO_BRAND] = args.brand
 
     if args.email is not None:
         os.environ[CIRRO_EMAIL] = args.email

@@ -2,7 +2,7 @@ import os
 from urllib.parse import urlparse
 
 import cirrocumulus.data_processing as data_processing
-from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD
+from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
 from .dataset_api import DatasetAPI
@@ -37,6 +37,8 @@ def handle_server():
     if footer_path is not None:
         with open(footer_path, 'rt') as f:
             server['footer'] = f.read()
+
+    server['brand'] = os.environ.get(CIRRO_BRAND)
     server['jobs'] = os.environ.get('GAE_APPLICATION') is None
     server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
     return to_json(server)
