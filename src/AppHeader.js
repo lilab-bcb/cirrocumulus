@@ -387,7 +387,7 @@ class AppHeader extends React.PureComponent {
                             {dataset.description &&
                             <>Description: <ReactMarkdown options={reactMarkdownOptions}
                                                           children={dataset.description}/></>}
-                            {!process.env.REACT_APP_STATIC && <Typography className={classes.typography}>
+                            {!process.env.REACT_APP_STATIC === 'true' && <Typography className={classes.typography}>
                                 URL: {dataset.url}
                             </Typography>}
                         </div>

@@ -1,4 +1,4 @@
-import {Paper} from '@material-ui/core';
+import {Divider, Paper} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
 import Typography from '@material-ui/core/Typography';
@@ -77,6 +77,9 @@ function LandingPage(props) {
         </ul>
         {props.serverInfo && props.serverInfo.footer &&
         <Box><ReactMarkdown options={reactMarkdownOptions} children={props.serverInfo.footer}/></Box>}
+
+        <Divider/>
+        <p>Version: {process.env.REACT_APP_VERSION}</p>
     </Paper>;
 }
 

@@ -167,7 +167,7 @@ export function initGapi() {
         }
 
         window.setTimeout(loadingAppProgress, 500);
-        if (process.env.REACT_APP_STATIC) {
+        if (process.env.REACT_APP_STATIC === 'true') {
             const serverInfo = {clientId: '', dynamic: false};
             serverInfo.api = new StaticServerApi();
             dispatch(setServerInfo(serverInfo));
