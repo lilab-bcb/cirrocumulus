@@ -511,14 +511,32 @@ class JobResultsPanel extends React.PureComponent {
         let valueScale = null;
         let isSizeScaled = true;
         let domains;
+        let tooltipFields = null;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
+            isSizeScaled = jobResult.size !== 'none';
             data = jobResult.data;
             color = jobResult.color;
             by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
+            tooltipFields = [];
+            tooltipFields.push(by);
+
+            if (color !== by) {
+                tooltipFields.push(color);
+            }
+            if (size !== by && isSizeScaled && size !== color) {
+                tooltipFields.push(size);
+            }
+
+            jobResult.fields.forEach(field => {
+                if (tooltipFields.indexOf(field) === -1) {
+                    tooltipFields.push(field);
+                }
+            });
+
             if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
                 valueScale = scaleLinear().range([0, 1]);
                 domains = [];
@@ -554,7 +572,7 @@ class JobResultsPanel extends React.PureComponent {
                     });
                 }
             }
-            isSizeScaled = jobResult.size !== 'none';
+
             for (let i = 0; i < groups.length; i++) {
                 if (groups[i].length > 2) {
                     rotateHeaders = true;
@@ -658,17 +676,14 @@ class JobResultsPanel extends React.PureComponent {
                                             const group = groups[column];
                                             const colorField = group + ':' + color;
                                             const sizeField = group + ':' + size;
-                                            const byField = group + ':' + by;
                                             const colorValue = data[row][colorField];
                                             const sizeValue = data[row][sizeField];
-                                            const byValue = data[row][byField];
-                                            let title = by + ':' + formatNumber(byValue);
-                                            if (color !== by) {
-                                                title += ', ' + color + ':' + formatNumber(colorValue);
-                                            }
-                                            if (size !== by && isSizeScaled && size !== color) {
-                                                title += ', ' + size + ':' + formatNumber(sizeValue);
-                                            }
+                                            let title = [];
+                                            tooltipFields.forEach(field => {
+                                                const value = data[row][group + ':' + field];
+                                                title.push(field + ': ' + value);
+                                            });
+                                            title = title.join(', ');
                                             if (colorValue == null || isNaN(colorValue)) {
                                                 return <TableCell className={classes.td} data-title={title}
                                                                   key={group}/>;
