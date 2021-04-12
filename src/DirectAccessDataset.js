@@ -12,7 +12,7 @@ export class DirectAccessDataset {
         this.key2data = {};
         this.format = "json";
         this.schema = null;
-        if (this.url.endsWith(".jsonl") || this.url.endsWith(".jsonl.gz")) {
+        if (url.endsWith(".jsonl") || url.endsWith(".jsonl.gz")) {
             this.format = "jsonl";
         }
         if (this.format === 'json' && !url.endsWith('.json') && !url.endsWith('.json.gz')) {
@@ -32,8 +32,16 @@ export class DirectAccessDataset {
         return {headers: {'Range': 'bytes=' + range[0] + '-' + range[1]}};
     }
 
+    _fetchJson(key) {
+        return fetch(this.baseUrl + key + '.json').then(r => r.json());
+    }
+
+    _fetchJsonl(key) {
+        return fetch(this.url, this.getByteRange(key)).then(r => r.json()).then(r => r[key]);
+    }
+
     _fetch(key) {
-        return this.format === 'json' ? fetch(this.baseUrl + key + '.json').then(r => r.json()) : fetch(this.url, this.getByteRange(key)).then(r => r.json());
+        return this.format === 'json' ? this._fetchJson(key) : this._fetchJsonl(key);
     }
 
     fetchData(keys) {
@@ -90,10 +98,11 @@ export class DirectAccessDataset {
     }
 
     getDataPromise(q, cachedData) {
+
+        const queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
+        const results = {};
         let dimensions = [];
         let measures = [];
-        let queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
-        const results = {};
         queryKeys.forEach(key => {
             if (key in q) {
                 let obj = q[key];
@@ -102,7 +111,14 @@ export class DirectAccessDataset {
                 }
                 obj.forEach(value => {
                     if (value.dimensions) {
-                        dimensions = dimensions.concat(value.dimensions);
+                        // groupedStats dimensions is array of arrays
+                        if (isArray(value.dimensions)) {
+                            value.dimensions.forEach(dim => {
+                                dimensions = dimensions.concat(dim);
+                            });
+                        } else {
+                            dimensions = dimensions.concat(value.dimensions);
+                        }
                     }
                     if (value.measures) {
                         measures = measures.concat(value.measures);
@@ -117,11 +133,10 @@ export class DirectAccessDataset {
         if (q.selection) { // get any embeddings
             const dataFilter = q.selection.filter;
             const {basis, X, obs} = splitDataFilter(dataFilter);
-
             dimensions = dimensions.concat(obs);
             measures = measures.concat(X);
             const embeddings = q.selection.embeddings || [];
-            let mappedEmbeddings = [];
+            const mappedEmbeddings = [];
             embeddings.forEach(embedding => {
                 let basis = getBasis(embedding.basis, embedding.nbins, embedding.agg,
                     embedding.ndim || 2, embedding.precomputed);
@@ -146,7 +161,6 @@ export class DirectAccessDataset {
         return new Promise(resolve => {
 
             this.fetchData(dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).concat(Array.from(basisKeys))).then(() => {
-
                 if (q.embedding) {
                     results.embeddings = [];
                     q.embedding.forEach(embedding => {
@@ -155,10 +169,10 @@ export class DirectAccessDataset {
                     });
                 }
                 if (q.values) {
-                    let dimensions = q.values.dimensions || [];
-                    let measures = q.values.measures || [];
+                    const dimensions = q.values.dimensions || [];
+                    const measures = q.values.measures || [];
                     const typeToMeasures = getTypeToMeasures(measures);
-                    let values = {};
+                    const values = {};
                     dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).forEach(key => {
                         if (key === '__count') {
                             values[key] = new Int8Array(this.schema.shape[0]);
@@ -191,7 +205,7 @@ export class DirectAccessDataset {
                         return response.json();
                     }).then(result => {
                         _this.schema = result["schema"];
-                        resolve();
+                        resolve(_this.schema);
                     });
                 });
             });
@@ -224,7 +238,7 @@ export class DirectAccessDataset {
     }
 
     getJobs() {
-        return [];
+        return Promise.resolve([]);
     }
 
     getVectors(keys, indices = null) {

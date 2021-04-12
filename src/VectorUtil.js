@@ -142,6 +142,7 @@ export function computeDerivedStats(result, q, cachedData) {
         const measures = q.groupedStats.measures || [];
         const typeToMeasures = getTypeToMeasures(measures);
         if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
+            // TODO, currently we only handle dimensions[0]
             result.distribution = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, typeToMeasures.X));
         }
     }

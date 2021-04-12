@@ -11,6 +11,7 @@ import {updateJob} from '../JobResultsPanel';
 import {createCategoryToStats} from '../MetaEmbedding';
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
+import {StaticServerApi} from '../StaticServerApi';
 
 import {getPositions} from '../ThreeUtil';
 import {
@@ -166,7 +167,16 @@ export function initGapi() {
         }
 
         window.setTimeout(loadingAppProgress, 500);
-
+        if (process.env.REACT_APP_STATIC) {
+            const serverInfo = {clientId: '', dynamic: false};
+            serverInfo.api = new StaticServerApi();
+            dispatch(setServerInfo(serverInfo));
+            dispatch(_setLoadingApp({loading: false}));
+            dispatch(listDatasets()).then(() => {
+                dispatch(_loadSavedView());
+            });
+            return Promise.resolve();
+        }
         return fetch(API + '/server').then(result => result.json()).then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
@@ -176,8 +186,7 @@ export function initGapi() {
                 serverInfo.dynamic = true;
             }
             dispatch(setServerInfo(serverInfo));
-            if (serverInfo.clientId === '') { // no login required
-
+            if (serverInfo.clientId === '' || serverInfo.clientId == null) { // no login required
 
                 dispatch(_setLoadingApp({loading: false}));
                 dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
@@ -187,7 +196,6 @@ export function initGapi() {
                 dispatch(listDatasets()).then(() => {
                     dispatch(_loadSavedView());
                 });
-
 
             } else {
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
@@ -1897,6 +1905,8 @@ function updateEmbeddingData(state, features) {
         const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
         const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
         const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
+
+
         const bins = isBinned ? coordinates.bins : null;
         features.forEach(feature => {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;

@@ -380,9 +380,6 @@ class AppHeader extends React.PureComponent {
                             {dataset.species && <Typography className={classes.typography}>
                                 Species: {dataset.species}
                             </Typography>}
-                            <Typography className={classes.typography}>
-                                URL: {dataset.url}
-                            </Typography>
 
                             {dataset.title && <Typography className={classes.typography}>
                                 Title: {dataset.title}
@@ -390,6 +387,9 @@ class AppHeader extends React.PureComponent {
                             {dataset.description &&
                             <>Description: <ReactMarkdown options={reactMarkdownOptions}
                                                           children={dataset.description}/></>}
+                            {!process.env.REACT_APP_STATIC && <Typography className={classes.typography}>
+                                URL: {dataset.url}
+                            </Typography>}
                         </div>
                     </Popover>
                     }

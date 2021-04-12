@@ -48,29 +48,17 @@ export class RestServerApi {
         request.setRequestHeader('Authorization', 'Bearer ' + getIdToken());
 
 
-        request.addEventListener('load', function (e) {
-            // HTTP status message (200, 404 etc)
-            console.log('load', request.status);
-
-            // request.response holds response from the server
-            console.log('load', request.response);
-        });
+        // request.addEventListener('load', function (e) {
+        //     // HTTP status message (200, 404 etc)
+        //     console.log('load', request.status);
+        //
+        //     // request.response holds response from the server
+        //     console.log('load', request.response);
+        // });
         request.send(formData);
         return request;
     }
 
-    // upsertDatasetPromise(datasetId, dataset) {
-    //     let isEdit = datasetId != null;
-    //     if (datasetId != null) {
-    //         dataset.id = datasetId;
-    //     }
-    //     return fetch(API + '/dataset',
-    //         {
-    //             body: JSON.stringify(dataset),
-    //             method: isEdit ? 'PUT' : 'POST',
-    //             headers: {'Authorization': 'Bearer ' + getIdToken()},
-    //         }).then(importDatasetResponse => importDatasetResponse.json());
-    // }
 
 
     getDatasetPromise(datasetId) {
@@ -118,7 +106,6 @@ export class RestServerApi {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             });
     }
-
 
     exportDatasetFiltersPromise(datasetId) {
         return fetch(API + '/export_filters?id=' + datasetId, {
@@ -169,6 +156,5 @@ export class RestServerApi {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(response => response.json());
     }
-
 
 }
