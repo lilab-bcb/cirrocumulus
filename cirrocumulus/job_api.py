@@ -47,13 +47,18 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     nfeatures = len(var_names)
     mask1 = get_mask(dataset_api, dataset, params['filter'])
     batch_size = 1000  # TODO
+    percent_expressed1 = np.zeros(nfeatures)
+    percent_expressed2 = np.zeros(nfeatures)
     scores = np.zeros(nfeatures)
     pvals = np.ones(nfeatures)
     is_sparse = None
+    v1_size = mask1.sum()
+
     if job_type == 'de':
-        fold_changes = np.zeros(nfeatures)
+        avg_log2FC = np.zeros(nfeatures)
         mask2 = get_mask(dataset_api, dataset, params['filter2'])
-        # overlapping cells are removed
+        v2_size = mask2.sum()
+        
     elif job_type == 'corr':
         df = dataset_api.read_dataset(keys=dict(X=[params['ref']]), dataset=dataset)
         df = df[mask1]
@@ -77,15 +82,17 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
             for feature in features:
                 v1 = df1[feature]
                 v2 = df2[feature]
-                fc = v1.mean() - v2.mean()
-                fold_changes[index] = fc
+
                 if is_sparse is None:
                     is_sparse = hasattr(v1, 'sparse')
                 if is_sparse:
                     v1 = v1.sparse.to_dense()
                     v2 = v2.sparse.to_dense()
+                avg_log2FC[index] = np.log2(np.expm1(v1).mean() + 1) - np.log2(np.expm1(v2).mean() + 1)
+                percent_expressed1[index] = 100 * ((v1 != 0).sum() / v1_size)
+                percent_expressed2[index] = 100 * ((v2 != 0).sum() / v2_size)
                 try:
-                    scores[index], pvals[index] = ss.mannwhitneyu(v1, v2, alternative="two-sided")
+                    scores[index], pvals[index] = ss.mannwhitneyu(v1, v2, alternative="two-sided", use_continuity=False)
                 except ValueError:  # All numbers are identical
                     pass
                 index += 1
@@ -116,9 +123,11 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     pvals = fdrcorrection(pvals)
     if job_type == 'de':
         result_df = pd.DataFrame(
-            data={'index': var_names, 'comparison:pvals_adj': pvals, 'comparison:fold_changes': fold_changes,
-                  'comparison:scores': scores})
-        result = dict(groups=['comparison'], fields=['pvals_adj', 'fold_changes', 'scores'],
+            data={'index': var_names, 'comparison:pvals_adj': pvals, 'comparison:avg_log2FC': avg_log2FC,
+                  'comparison:scores': scores, 'comparison:percent_expressed1': percent_expressed1,
+                  'comparison:percent_expressed2': percent_expressed2})
+        result = dict(groups=['comparison'],
+            fields=['pvals_adj', 'avg_log2FC', 'scores', 'percent_expressed1', 'percent_expressed2'],
             data=result_df.to_dict(orient='records'))
     elif job_type == 'corr':
         result_df = pd.DataFrame(
