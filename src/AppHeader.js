@@ -434,6 +434,11 @@ class AppHeader extends React.PureComponent {
 
 
                     <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
+                        {serverInfo.brand && <Typography variant="h5"
+                                                         style={{
+                                                             display: 'inline-block',
+                                                             paddingRight: 6
+                                                         }}>{serverInfo.brand}</Typography>}
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"
@@ -497,7 +502,6 @@ class AppHeader extends React.PureComponent {
                               onClose={this.handleUserMenuClose}>
                             <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
                         </Menu>}
-
                         {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
                                                 onClick={this.props.handleLogin}>Sign In</Button>}
                     </div>
