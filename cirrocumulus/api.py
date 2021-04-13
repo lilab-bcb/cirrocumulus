@@ -309,9 +309,31 @@ def upload_file(file):
     from werkzeug.utils import secure_filename
     filename = secure_filename(file.filename)
     dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
-    fs = dataset_api.fs_adapter.get_fs(dest).open(dest, mode='wb')
-    file.save(fs)
-    fs.close()
+    dest_fs = dataset_api.fs_adapter.get_fs(dest).open(dest, mode='wb')
+    file.save(dest_fs)
+    dest_fs.close()
+    return dest
+
+
+def copy_url(url):
+    import fsspec
+    from werkzeug.utils import secure_filename
+    filename = os.path.basename(url)
+    filename = secure_filename(filename)
+    dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
+    src_url = urlparse(url)
+    src_fs = fsspec.filesystem(src_url.scheme if not src_url.scheme == '' else 'file')
+    dest_url = urlparse(dest)
+    dest_fs = fsspec.filesystem(dest_url.scheme if not dest_url.scheme == '' else 'file')
+    out = dest_fs.open(dest, 'wb')
+    n = 1024 * 1024
+    with src_fs.open(url, mode='rb') as r:
+        while True:
+            b = r.read(n)
+            if not b:
+                break
+            out.write(b)
+    out.close()
     return dest
 
 
@@ -336,6 +358,9 @@ def handle_dataset():
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_name == '':  # new
             return 'Must supply dataset name', 400
+
+        if url is not None and os.environ.get(CIRRO_UPLOAD) is not None:
+            url = copy_url(url)
 
         if file is not None:
             if os.environ.get(CIRRO_UPLOAD) is None:
