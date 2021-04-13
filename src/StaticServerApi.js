@@ -1,11 +1,4 @@
-// general server stuff
-
 export class StaticServerApi {
-
-
-    isStaticApi() {
-        return true;
-    }
 
     getDatasetsPromise() {
         return fetch('/datasets.json')
@@ -17,6 +10,5 @@ export class StaticServerApi {
                 return results;
             });
     }
-
 
 }
