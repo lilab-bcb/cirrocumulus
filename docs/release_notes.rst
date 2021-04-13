@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.15.post2 `April 13, 2021`
+    * Fixed error adding new dataset on Google App Engine
+    * Show cirrocumulus version
+
 - 1.1.15.post1 `April 12, 2021`
     * Moved composition plot to separate tab
     * Added `--header` flag to `cirro serve` to customize application header
