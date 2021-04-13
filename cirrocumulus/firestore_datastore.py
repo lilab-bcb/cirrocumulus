@@ -169,6 +169,7 @@ class FirestoreDatastore:
     def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
                        species=None):
         client = self.datastore_client
+        update_dict = {}
         if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
@@ -176,7 +177,7 @@ class FirestoreDatastore:
             user = client.get(client.key(USER, email))
             if 'importer' not in user or not user['importer']:
                 raise InvalidUsage('Not authorized', 403)
-        update_dict = {}
+            update_dict['owners'] = [email]
         if dataset_name is not None:
             update_dict['name'] = dataset_name
         if url is not None:
