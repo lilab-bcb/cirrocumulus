@@ -173,6 +173,8 @@ class MongoDb:
                 if 'importer' not in user or not user['importer']:
                     raise InvalidUsage('Not authorized', 403)
             update_dict['owners'] = [email]
+            if 'readers' not in update_dict:
+                update_dict['readers'] = [email]
             return str(collection.insert_one(update_dict).inserted_id)
         else:
             self.get_dataset(email, dataset_id, True)
