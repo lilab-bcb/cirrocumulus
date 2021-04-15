@@ -107,7 +107,7 @@ You can see the full list of command line options by typing `cirro serve --help`
 
 - You can programmatically add a dataset by posting to the /api/dataset endpoint::
 
-    curl 'http://localhost:5000/api/dataset' --data-binary '{"name":"my_name","readers":[],"description":"my_desc","url":"/data/my_dataset_path"}'
+    curl http://localhost:5000/api/dataset -X POST -F 'name=my_name' -F 'url=data/my_dataset_path' -F 'description=my_desc'  -F 'species=Mus musculus'
 
 - Please note that additional libraries are needed for cloud storage:
 
