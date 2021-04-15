@@ -170,6 +170,13 @@ class FirestoreDatastore:
                        species=None):
         client = self.datastore_client
         update_dict = {}
+        if readers is not None:
+            readers = set(readers)
+            if email in readers:
+                readers.remove(email)
+            readers.add(email)
+            update_dict['readers'] = list(readers)
+
         if dataset_id is not None:  # only owner can update
             key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
         else:
@@ -178,17 +185,13 @@ class FirestoreDatastore:
             if 'importer' not in user or not user['importer']:
                 raise InvalidUsage('Not authorized', 403)
             update_dict['owners'] = [email]
+            if 'readers' not in update_dict:
+                update_dict['readers'] = [email]
         if dataset_name is not None:
             update_dict['name'] = dataset_name
         if url is not None:
             update_dict['url'] = url
 
-        if readers is not None:
-            readers = set(readers)
-            if email in readers:
-                readers.remove(email)
-            readers.add(email)
-            update_dict['readers'] = list(readers)
         if description is not None:
             update_dict['description'] = description
 
