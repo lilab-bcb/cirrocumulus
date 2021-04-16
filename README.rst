@@ -18,4 +18,13 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Highly customizable - for example, set the color map, point size, or whether to use fog for 3-d embeddings to fade distant points
 * Visualize datasets in h5ad_, loom_, Seurat_, or `STAR-Fusion`_  formats
 
-Complete documenation available at https://cirrocumulus.readthedocs.io
+Complete documentation available at https://cirrocumulus.readthedocs.io
+
+.. _h5ad: https://anndata.readthedocs.io/
+.. _loom: https://linnarssonlab.org/loompy/format/
+.. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
+.. _Seurat: https://satijalab.org/seurat/
+.. _Pegasus: http://pegasus.readthedocs.io/
+.. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
+.. _Scanpy: https://scanpy.readthedocs.io/
+
