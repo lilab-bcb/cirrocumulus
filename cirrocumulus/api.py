@@ -1,14 +1,14 @@
 import os
-from urllib.parse import urlparse
 
-import cirrocumulus.data_processing as data_processing
-from cirrocumulus.envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
+from .file_system_adapter import get_scheme
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import *
+from .util import to_json
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -204,11 +204,11 @@ def get_file_path(file, dataset_url):
         file_path = os.path.join(dataset_url, file)
     else:
         file_path = file
-        pr = urlparse(file_path)
-        if (pr.scheme == '' or pr.scheme == 'file') and not os.path.exists(file_path):
-            _, ext = os.path.splitext(dataset_url)
-            if ext != '':
-                url = os.path.dirname(dataset_url)
+        scheme = get_scheme(file_path)
+        if scheme == 'file' and not os.path.exists(file_path):
+            # _, ext = os.path.splitext(dataset_url)
+            # if ext != '':
+            #     url = os.path.dirname(dataset_url)
             file_path = os.path.join(dataset_url, file)
     return file_path
 
@@ -321,10 +321,10 @@ def copy_url(url):
     filename = os.path.basename(url)
     filename = secure_filename(filename)
     dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
-    src_url = urlparse(url)
-    src_fs = fsspec.filesystem(src_url.scheme if not src_url.scheme == '' else 'file')
-    dest_url = urlparse(dest)
-    dest_fs = fsspec.filesystem(dest_url.scheme if not dest_url.scheme == '' else 'file')
+    src_scheme = get_scheme(url)
+    src_fs = fsspec.filesystem(src_scheme)
+    dest_scheme = get_scheme(dest)
+    dest_fs = fsspec.filesystem(dest_scheme)
     out = dest_fs.open(dest, 'wb')
     n = 1024 * 1024
     with src_fs.open(url, mode='rb') as r:

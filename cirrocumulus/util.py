@@ -2,6 +2,8 @@
 import pandas._libs.json as ujson
 from flask import make_response
 
+from .file_system_adapter import get_scheme
+
 
 def to_json(data, response=200):
     # response = make_response(simplejson.dumps(data, check_circular=True), response)
@@ -23,7 +25,7 @@ def get_email_domain(email):
 
 def load_dataset_schema(url):
     import os
-    from urllib.parse import urlparse
+
     import fsspec
     import json
 
@@ -38,8 +40,8 @@ def load_dataset_schema(url):
     extension = get_extension(url)
     json_schema = None
     if extension in ['.json', '.json.gz', '']:
-        pr = urlparse(url)
-        fs = fsspec.filesystem(pr.scheme if not pr.scheme == '' else 'file')
+        scheme = get_scheme(url)
+        fs = fsspec.filesystem(scheme)
         if extension == '':
             url = os.path.join(url, 'index.json.gz')
             extension = get_extension(url)
