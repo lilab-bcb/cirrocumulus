@@ -1,8 +1,8 @@
 import os
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
-import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from .file_system_adapter import get_scheme
@@ -197,8 +197,6 @@ def get_file_path(file, dataset_url):
     # when serving dataset, image must be relative to dataset directory
     if os.environ.get(CIRRO_SERVE) == 'true':
         _, ext = os.path.splitext(dataset_url)
-        if ext != '':
-            url = os.path.dirname(dataset_url)
         if file[0] == '/' or file.find('..') != -1:
             raise ValueError('Incorrect path')
         file_path = os.path.join(dataset_url, file)
@@ -206,9 +204,6 @@ def get_file_path(file, dataset_url):
         file_path = file
         scheme = get_scheme(file_path)
         if scheme == 'file' and not os.path.exists(file_path):
-            # _, ext = os.path.splitext(dataset_url)
-            # if ext != '':
-            #     url = os.path.dirname(dataset_url)
             file_path = os.path.join(dataset_url, file)
     return file_path
 
@@ -318,11 +313,17 @@ def upload_file(file):
 def copy_url(url):
     import fsspec
     from werkzeug.utils import secure_filename
-    filename = os.path.basename(url)
-    filename = secure_filename(filename)
-    dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
+    upload = os.environ.get(CIRRO_UPLOAD)
+
+    if url.endswith('/'):  # don't copy directories
+        return url
+    from urllib.parse import urlparse
+    if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
+        return url
     src_scheme = get_scheme(url)
     src_fs = fsspec.filesystem(src_scheme)
+    filename = secure_filename(os.path.basename(url))
+    dest = os.path.join(upload, filename)
     dest_scheme = get_scheme(dest)
     dest_fs = fsspec.filesystem(dest_scheme)
     out = dest_fs.open(dest, 'wb')
