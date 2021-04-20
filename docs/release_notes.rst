@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+
+- 1.1.15.post3 `April 20, 2021`
+    * Fixed opening files with drive names on Windows
+
 - 1.1.15.post2 `April 13, 2021`
     * Fixed error adding new dataset on Google App Engine
     * Show cirrocumulus version
