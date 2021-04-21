@@ -57,7 +57,7 @@ def main(argsv):
         help='Server socket to bind. Server sockets can be any of $(HOST), $(HOST):$(PORT), fd://$(FD), or unix:$(PATH). An IP is a valid $(HOST).',
         default='127.0.0.1:5000')
     parser.add_argument('--footer', help='Markdown file to customize the application footer')
-    parser.add_argument('--header', help='Text to display in application header')
+    parser.add_argument('--header', help='Markdown file to customize the application header')
     parser.add_argument('--upload', help='URL to allow users to upload files')
 
     args = parser.parse_args(argsv)

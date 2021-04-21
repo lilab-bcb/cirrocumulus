@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isEqual} from 'lodash';
+import {find, findIndex, isArray, isEqual} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -31,8 +31,7 @@ import {
     updateTraceColors
 } from '../util';
 
-// export const API = 'http://localhost:5000/api';
-export const API = 'api';
+export const API = process.env.REACT_APP_API_URL || 'api';
 
 const authScopes = [
     'email',
@@ -1985,14 +1984,18 @@ function updateEmbeddingData(state, features) {
                             colors = CATEGORY_20B.concat(CATEGORY_20C);
                         }
                     } else {
-                        colors = [];
-                        traceUniqueValues.forEach((value, index) => {
-                            let color = colorMap[value];
-                            if (color == null) {
-                                color = schemeCategory10[index % schemeCategory10.length];
-                            }
-                            colors.push(color);
-                        });
+                        if (isArray(colorMap)) {
+                            colors = colorMap;
+                        } else {
+                            colors = [];
+                            traceUniqueValues.forEach((value, index) => {
+                                let color = colorMap[value];
+                                if (color == null) {
+                                    color = schemeCategory10[index % schemeCategory10.length];
+                                }
+                                colors.push(color);
+                            });
+                        }
                     }
 
 

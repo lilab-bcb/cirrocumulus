@@ -1,8 +1,8 @@
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from .file_system_adapter import get_scheme
@@ -33,12 +33,13 @@ def handle_server():
     # no login required
     server = get_database().server()
     server['clientId'] = get_auth().client_id
-    footer_path = os.environ.get(CIRRO_FOOTER)
-    if footer_path is not None:
-        with open(footer_path, 'rt') as f:
+    if os.environ.get(CIRRO_FOOTER) is not None:
+        with open(os.environ.get(CIRRO_FOOTER), 'rt') as f:
             server['footer'] = f.read()
-
-    server['brand'] = os.environ.get(CIRRO_BRAND)
+    if os.environ.get(CIRRO_BRAND) is not None:
+        with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
+            server['brand'] = f.read()
+    # server['brand'] = os.environ.get(CIRRO_BRAND)
     server['jobs'] = os.environ.get('GAE_APPLICATION') is None
     server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
     return to_json(server)

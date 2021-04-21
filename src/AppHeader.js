@@ -42,7 +42,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY
 } from "./reducers";
-import {FEATURE_TYPE, reactMarkdownOptions} from './util';
+import {FEATURE_TYPE, REACT_MD_OVERRIDES} from './util';
 
 
 const styles = theme => ({
@@ -385,7 +385,7 @@ class AppHeader extends React.PureComponent {
                                 Title: {dataset.title}
                             </Typography>}
                             {dataset.description &&
-                            <>Description: <ReactMarkdown options={reactMarkdownOptions}
+                            <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
                                                           children={dataset.description}/></>}
                             {!process.env.REACT_APP_STATIC === 'true' && <Typography className={classes.typography}>
                                 URL: {dataset.url}
@@ -434,11 +434,25 @@ class AppHeader extends React.PureComponent {
 
 
                     <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
-                        {serverInfo.brand && <Typography variant="h5"
-                                                         style={{
-                                                             display: 'inline-block',
-                                                             paddingRight: 6
-                                                         }}>{serverInfo.brand}</Typography>}
+                        {/*{serverInfo.brand && <Typography variant="h5"*/}
+                        {/*                                 style={{*/}
+                        {/*                                     display: 'inline-block',*/}
+                        {/*                                     paddingRight: 6*/}
+                        {/*                                 }}>{serverInfo.brand}</Typography>}*/}
+
+                        {serverInfo.brand &&
+                        <ReactMarkdown options={{
+                            overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
+                                props.display = 'inline';
+                                props.gutterBottom = false;
+                                const elem = React.createElement(type, props, children);
+                                return elem;
+                            }
+                        }}
+
+                                       children={serverInfo.brand}/>}
+
+
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
                             <IconButton aria-label="Menu" aria-haspopup="true"

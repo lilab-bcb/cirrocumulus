@@ -104,31 +104,39 @@ const reactMarkdownStyles = (theme) => ({
         marginTop: theme.spacing(1),
     },
 });
-export const reactMarkdownOptions = {
-    overrides: {
-        h1: {
-            component: Typography,
-            props: {
-                gutterBottom: true,
-                variant: 'h5',
-            },
-        },
-        h2: {component: Typography, props: {gutterBottom: true, variant: 'h6'}},
-        h3: {component: Typography, props: {gutterBottom: true, variant: 'subtitle1'}},
-        h4: {
-            component: Typography,
-            props: {gutterBottom: true, variant: 'caption', paragraph: true},
-        },
-        p: {component: Typography, props: {paragraph: true}},
-        a: {component: Link, props: {target: '_blank'}},
-        li: {
-            component: withStyles(reactMarkdownStyles)(({classes, ...props}) => (
-                <li className={classes.listItem}>
-                    <Typography component="span" {...props} />
-                </li>
-            )),
+
+
+export const REACT_MD_OVERRIDES = {
+    h1: {
+        component: Typography,
+        props: {
+            gutterBottom: true,
+            variant: 'h5',
         },
     },
+    h2: {component: Typography, props: {gutterBottom: true, variant: 'h6'}},
+    h3: {component: Typography, props: {gutterBottom: true, variant: 'subtitle1'}},
+    h4: {
+        component: Typography,
+        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+    },
+    h5: {
+        component: Typography,
+        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+    },
+    h6: {
+        component: Typography,
+        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+    },
+    p: {component: Typography, props: {paragraph: true}},
+    a: {component: Link, props: {target: '_blank'}},
+    li: {
+        component: withStyles(reactMarkdownStyles)(({classes, ...props}) => (
+            <li className={classes.listItem}>
+                <Typography component="span" {...props} />
+            </li>
+        )),
+    }
 };
 
 export function scaleConstantRange(value) {

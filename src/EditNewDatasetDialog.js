@@ -22,7 +22,7 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
-import {reactMarkdownOptions} from './util';
+import {REACT_MD_OVERRIDES} from './util';
 
 const styles = theme => ({
 
@@ -370,7 +370,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                 </TabPanel>
                 <TabPanel value={this.state.writePreviewTabValue} index={1}>
                     {this.state.description !== '' && <Box border={1}>
-                        <ReactMarkdown options={reactMarkdownOptions} children={this.state.description}/>
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={this.state.description}/>
                     </Box>}
                 </TabPanel>
 

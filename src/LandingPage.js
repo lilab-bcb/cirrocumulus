@@ -5,7 +5,7 @@ import Typography from '@material-ui/core/Typography';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
-import {reactMarkdownOptions} from './util';
+import {REACT_MD_OVERRIDES} from './util';
 
 function LandingPage(props) {
     return <Paper elevation={0}>
@@ -76,7 +76,7 @@ function LandingPage(props) {
             <li>Click chart to set primary view</li>
         </ul>
         {props.serverInfo && props.serverInfo.footer &&
-        <Box><ReactMarkdown options={reactMarkdownOptions} children={props.serverInfo.footer}/></Box>}
+        <Box><ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={props.serverInfo.footer}/></Box>}
 
         <Divider/>
         <p>Version: {process.env.REACT_APP_VERSION}</p>
