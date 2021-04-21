@@ -262,14 +262,20 @@ class SimpleData:
         for meta_image in meta_images:
             embeddings.append(meta_image)
         schema_dict['embeddings'] = embeddings
-        colors = {}
-        schema_dict['colors'] = colors
+        field_to_value_to_color = dict()  # field -> value -> color
+        schema_dict['colors'] = field_to_value_to_color
 
         for key in adata.uns.keys():
             if key.endswith('_colors'):
                 field = key[0:len(key) - len('_colors')]
                 if field in adata.obs:
-                    colors[field] = adata.uns[key]
+                    colors = adata.uns[key]
+                    categories = adata.obs[field].cat.categories
+                    if len(categories) == len(colors):
+                        color_map = dict()
+                        for i in range(len(categories)):
+                            color_map[str(categories[i])] = colors[i]
+                        field_to_value_to_color[field] = color_map
 
         return schema_dict
 

@@ -1972,11 +1972,9 @@ function updateEmbeddingData(state, features) {
                     //     traceSummary.counts = traceSummary.counts.concat([state.dataset.shape[0] - traceSummary.counts[0]]);
                     // }
 
-                    let colors = dataset.colors ? dataset.colors[feature] : null;
-                    if (colors != null && colors.length !== traceUniqueValues.length) {
-                        colors = null;
-                    }
-                    if (colors == null) {
+                    let colorMap = dataset.colors ? dataset.colors[feature] : null;
+                    let colors;
+                    if (colorMap == null) {
                         if (traceUniqueValues.length <= 10) {
                             colors = schemeCategory10;
                         } else if (traceUniqueValues.length <= 12) {
@@ -1986,7 +1984,17 @@ function updateEmbeddingData(state, features) {
                         } else {
                             colors = CATEGORY_20B.concat(CATEGORY_20C);
                         }
+                    } else {
+                        colors = [];
+                        traceUniqueValues.forEach((value, index) => {
+                            let color = colorMap[value];
+                            if (color == null) {
+                                color = schemeCategory10[index % schemeCategory10.length];
+                            }
+                            colors.push(color);
+                        });
                     }
+
 
                     colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
                     colorScale.summary = featureSummary;
