@@ -421,6 +421,41 @@ class JobResultsPanel extends React.PureComponent {
         window.saveAs(blob, jobResult.name + '.tsv');
     };
 
+
+    toggleAll = (event, isSelected) => {
+        event.stopPropagation();
+        isSelected = !isSelected;
+
+        const jobResult = this.getJobResult();
+        const features = new Set();
+        for (let i = 0; i < jobResult.rows.length; i++) {
+            const feature = jobResult.data[jobResult.rows[i]]['index'];
+            features.add(feature);
+        }
+
+        let searchTokens = this.props.searchTokens;
+        if (!isSelected) {
+            searchTokens = searchTokens.filter(token => !features.has(token.value));
+        } else {
+            const dataset = this.props.dataset;
+            features.forEach(feature => {
+                let found = false;
+                for (let i = 0; i < searchTokens.length; i++) {
+                    if (searchTokens[i].value === feature) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    searchTokens.push({
+                        value: feature,
+                        type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
+                    });
+                }
+            });
+        }
+        this.props.onSearchTokens(searchTokens.slice());
+    };
     handleClick = (event, row) => {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
@@ -512,6 +547,7 @@ class JobResultsPanel extends React.PureComponent {
         let isSizeScaled = true;
         let domains;
         let tooltipFields = null;
+        let selectAllChecked = true;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -580,6 +616,15 @@ class JobResultsPanel extends React.PureComponent {
                 }
             }
             rows = jobResult.rows;
+
+            for (let i = 0; i < rows.length; i++) {
+                const id = data[rows[i]]['index'];
+                const selected = selectedFeatures.has(id);
+                if (!selected) {
+                    selectAllChecked = false;
+                    break;
+                }
+            }
             if (rotateHeaders) {
                 const d = document.createElement('span');
                 d.style.position = 'absolute';
@@ -611,6 +656,8 @@ class JobResultsPanel extends React.PureComponent {
             }
         }
         const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
+
+
         return <>
             <Box color="text.primary">
                 <Grid container alignItems="center" className={classes.toolbar}>
@@ -634,8 +681,12 @@ class JobResultsPanel extends React.PureComponent {
                                className={classes.table}>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell style={{backgroundColor: 'unset', textAlign: 'center'}}
-                                               key={'__id'}></TableCell>
+                                    <TableCell className={classes.rowHeader} component="th"
+                                               style={{backgroundColor: 'unset', textAlign: 'left'}}
+                                               key={'__id'}><Checkbox
+                                        onClick={(event) => this.toggleAll(event, selectAllChecked)}
+                                        className={classes.checkbox}
+                                        checked={selectAllChecked}/></TableCell>
                                     {jobResult.columns.map(column => {
                                         const group = groups[column];
                                         if (rotateHeaders) {
