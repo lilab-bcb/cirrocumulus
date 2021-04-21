@@ -224,6 +224,12 @@ class SimpleData:
         if 'metagenes' in adata.uns:
             metagenes = adata.uns['metagenes']
             schema_dict['metafeatures'] = metagenes['var'].index
+
+        category_to_order = {}
+        for key in adata.obs_keys():
+            if pd.api.types.is_categorical_dtype(adata.obs[key]) and adata.obs[key].cat.ordered:
+                category_to_order[key] = adata.obs[key].cat.categories
+        schema_dict['categoryOrder'] = category_to_order
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
         #
         # if spatial_node is not None:

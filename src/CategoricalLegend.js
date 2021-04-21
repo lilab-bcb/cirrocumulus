@@ -105,6 +105,7 @@ class CategoricalLegend extends React.PureComponent {
     render() {
         const {
             scale,
+            dataset,
             datasetFilter,
             name,
             featureSummary,
@@ -126,18 +127,26 @@ class CategoricalLegend extends React.PureComponent {
         const globalDimensionSummary = globalFeatureSummary[name];
         const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
         const renamedCategories = categoricalNames[name] || {};
-        categories.sort((a, b) => {
-            let renamed1 = renamedCategories[a];
-            if (renamed1 != null) {
-                a = renamed1;
+        if (dataset.categoryOrder && dataset.categoryOrder[name]) {
+            const orderedCategories = dataset.categoryOrder[name];
+            const categoryToIndex = new Map();
+            for (let i = 0; i < orderedCategories.length; i++) {
+                categoryToIndex.set(orderedCategories[i], i);
             }
-            let renamed2 = renamedCategories[b];
-            if (renamed2 != null) {
-                b = renamed2;
-            }
-            return NATSORT(a, b);
-        });
-
+            categories.sort((a, b) => categoryToIndex.get(a) - categoryToIndex.get(b));
+        } else {
+            categories.sort((a, b) => {
+                let renamed1 = renamedCategories[a];
+                if (renamed1 != null) {
+                    a = renamed1;
+                }
+                let renamed2 = renamedCategories[b];
+                if (renamed2 != null) {
+                    b = renamed2;
+                }
+                return NATSORT(a, b);
+            });
+        }
         clickEnabled = clickEnabled && categories.length > 1;
         let style = {maxHeight: maxHeight, display: 'inline-block'};
         if (this.props.style) {
@@ -180,8 +189,6 @@ class CategoricalLegend extends React.PureComponent {
                         </DialogActions>
                     </>}
                 </Dialog>
-
-
                 <Menu
                     anchorEl={this.state.contextmenuEl}
                     open={Boolean(this.state.contextmenuEl)}
@@ -190,7 +197,7 @@ class CategoricalLegend extends React.PureComponent {
                     <MenuItem onClick={this.handleEditName}>Edit Name</MenuItem>
                     <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
                 </Menu>
-                <table style={{textAlign: 'left', userSelect:'none'}}>
+                <table style={{textAlign: 'left', userSelect: 'none'}}>
                     <thead>
                     <tr>
                         {clickEnabled && <td></td>}

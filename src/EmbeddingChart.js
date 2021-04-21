@@ -141,6 +141,7 @@ class EmbeddingChart extends React.PureComponent {
                             style={{
                                 display: this.state.showDetails ? 'block' : 'none',
                             }}
+                            dataset={dataset}
                             datasetFilter={datasetFilter}
                             handleClick={onDimensionFilterUpdated}
                             handleColorChange={onColorChange}
