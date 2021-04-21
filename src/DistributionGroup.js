@@ -49,19 +49,19 @@ function updateNames(data, categoricalNames) {
     });
 }
 
-function reshapeData(data, distributionPlotOptions) {
+function reshapeData(data, distributionPlotOptions, categoryOrder) {
     // create 2-d array with categories along rows and features along columns
-    let categoryToFeatures = {};
+    let categoryToItems = {};
 
     data.forEach(item => {
-        let features = categoryToFeatures[item.name];
+        let features = categoryToItems[item.name];
         if (features == null) {
             features = [];
-            categoryToFeatures[item.name] = features;
+            categoryToItems[item.name] = features;
         }
         features.push(item);
     });
-    const categories = Object.keys(categoryToFeatures);
+    let categories = Object.keys(categoryToItems);
     const dimension = data[0].dimension;
 
     if (distributionPlotOptions.sortBy !== dimension) { // sort categories by feature
@@ -86,16 +86,35 @@ function reshapeData(data, distributionPlotOptions) {
         });
 
     } else { // sort by category
-
-        categories.sort((a, b) => {
-            return NATSORT(a, b);
+        const sorters = data[0].dimensions.map(name => {
+            if (categoryOrder[name]) {
+                const orderedCategories = categoryOrder[name];
+                const categoryToIndex = new Map();
+                for (let i = 0; i < orderedCategories.length; i++) {
+                    categoryToIndex.set(orderedCategories[i], i);
+                }
+                return (a, b) => categoryToIndex.get(a) - categoryToIndex.get(b);
+            }
+            return NATSORT;
         });
+        const ndim = sorters.length;
+        const categoryItems = categories.map(category => categoryToItems[category][0]);
+        categoryItems.sort((a, b) => {
+            for (let i = 0; i < ndim; i++) {
+                const r = sorters[i](a.categories[i], b.categories[i]);
+                if (r !== 0) {
+                    return r;
+                }
+            }
+            return 0;
+        });
+        categories = categoryItems.map(item => item.name);
     }
     let data2d = [];
     for (let i = 0; i < categories.length; i++) {
         const category = categories[i];
-        const features = categoryToFeatures[category];
-        data2d.push(features);
+        const items = categoryToItems[category];
+        data2d.push(items);
     }
     return data2d;
 }
@@ -113,7 +132,7 @@ function getMeanAndPercentRange(result) {
 }
 
 export function computeDiffExp(data, pseudocount = 1) {
-  
+
     for (let i = 0; i < data.length; i++) { // category
         const deResults = [];
         for (let j = 0; j < data[0].length; j++) { // feature
@@ -185,6 +204,7 @@ class DistributionGroup extends React.PureComponent {
         const {
             textColor,
             categoryColorScales,
+            dataset,
             distributionData,
             distributionPlotOptions,
             categoricalNames,
@@ -245,7 +265,7 @@ class DistributionGroup extends React.PureComponent {
         if (selectedData) {
             updateNames(selectedData, categoricalNames);
         }
-        const data = reshapeData(distributionData, distributionPlotOptions);
+        const data = reshapeData(distributionData, distributionPlotOptions, dataset.categoryOrder || {});
         const features = data[0].map(item => item.feature);
         if (chartType === 'violin') {
             const allData = selectedData ? distributionData.concat(selectedData) : distributionData;
@@ -271,7 +291,7 @@ class DistributionGroup extends React.PureComponent {
                 });
             });
         }
-        const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions) : null;
+        const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions, dataset.categoryOrder || {}) : null;
         const sortChoices = [distributionData[0].dimension].concat(features);
         return (
             <Box color="text.primary">

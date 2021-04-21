@@ -26,6 +26,7 @@ class DistributionPlots extends React.PureComponent {
             cachedData,
             categoricalNames,
             chartOptions,
+            dataset,
             distributionData,
             distributionPlotOptions,
             distributionPlotInterpolator,
@@ -64,6 +65,7 @@ class DistributionPlots extends React.PureComponent {
                                       cachedData={cachedData}
                                       setTooltip={setTooltip}
                                       categoryColorScales={categoryColorScales}
+                                      dataset={dataset}
                                       distributionData={data}
                                       globalFeatureSummary={globalFeatureSummary}
                                       selectedData={dimension2selecteddata[dimension]}
@@ -85,6 +87,7 @@ const mapStateToProps = state => {
         cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
         chartOptions: state.chartOptions,
+        dataset: state.dataset,
         distributionData: state.distributionData,
         distributionPlotOptions: state.distributionPlotOptions,
         distributionPlotInterpolator: state.distributionPlotInterpolator,
