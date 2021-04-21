@@ -19,6 +19,25 @@ function getColorScale(embeddingData, dimension) {
     return categoryColorScale;
 }
 
+function createSorter(name, categoryOrder, categoricalNames) {
+    if (categoryOrder[name]) {
+        const orderedCategories = categoryOrder[name];
+        const categoryToIndex = new Map();
+        const nameMap = categoricalNames[name] || {};
+        for (let i = 0; i < orderedCategories.length; i++) {
+            let value = orderedCategories[i];
+            let newValue = nameMap[value];
+            if (newValue !== undefined) {
+                value = newValue;
+            }
+            categoryToIndex.set(value, i);
+        }
+        return (a, b) => categoryToIndex.get(a) - categoryToIndex.get(b);
+    }
+    return NATSORT;
+
+}
+
 function getComposition(dataset, obsCat, cachedData, categoricalNames, selection) {
     const ncategories = obsCat.length;
 
@@ -36,7 +55,8 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
         }
         const hasSelection = selection != null && selection.size > 0;
         const dimensionIndex = ncategories - 1;
-        const categoryToValueToCounts = {};
+        const seriesToValueToCounts = {};
+        const seriesToSeriesArray = {};
         for (let i = 0; i < nObs; i++) {
             if (hasSelection && !selection.has(i)) {
                 continue;
@@ -51,11 +71,12 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
                 }
                 seriesArray.push(value);
             }
-            const series = seriesArray.join(',');
-            let valueToCounts = categoryToValueToCounts[series];
+            const seriesKey = seriesArray.join(',');
+            let valueToCounts = seriesToValueToCounts[seriesKey];
             if (valueToCounts === undefined) {
                 valueToCounts = {};
-                categoryToValueToCounts[series] = valueToCounts;
+                seriesToSeriesArray[seriesKey] = seriesArray;
+                seriesToValueToCounts[seriesKey] = valueToCounts;
             }
             let category = categoryValues[dimensionIndex][i];
             const nameMap = renamedDimensions[dimensionIndex];
@@ -66,19 +87,37 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
             const count = valueToCounts[category] || 0;
             valueToCounts[category] = count + 1;
         }
-        const series = Object.keys(categoryToValueToCounts);
-        series.sort(NATSORT);
+
+        const sorters = [];
+        const categoryOrder = dataset.categoryOrder || {};
+        for (let categoryIndex = 0; categoryIndex < ncategories - 1; categoryIndex++) {
+            const name = obsCat[categoryIndex];
+            sorters.push(createSorter(name, categoryOrder, categoricalNames));
+        }
+        const series = Object.keys(seriesToValueToCounts);
+
+        series.sort((a, b) => {
+            const val1 = seriesToSeriesArray[a];
+            const val2 = seriesToSeriesArray[b];
+            for (let i = 0; i < sorters.length; i++) {
+                const r = sorters[i](val1[i], val2[i]);
+                if (r !== 0) {
+                    return r;
+                }
+            }
+        });
+
         let uniqueValuesSet = new Set();
-        for (let key in categoryToValueToCounts) {
-            const valueToCounts = categoryToValueToCounts[key];
+        for (let key in seriesToValueToCounts) {
+            const valueToCounts = seriesToValueToCounts[key];
             for (const value in valueToCounts) {
                 uniqueValuesSet.add(value);
             }
         }
 
         const uniqueValues = Array.from(uniqueValuesSet);
-        uniqueValues.sort(NATSORT);
-        return {categoryToValueToCounts: categoryToValueToCounts, uniqueValues: uniqueValues, series: series};
+        uniqueValues.sort(createSorter(obsCat[ncategories - 1], categoryOrder, categoricalNames));
+        return {seriesToValueToCounts: seriesToValueToCounts, uniqueValues: uniqueValues, series: series};
     }
     return null;
 }
@@ -97,15 +136,15 @@ function CompositionPlots(props) {
         const textColor = chartOptions.darkMode ? 'white' : 'black';
         const selectedComposition = selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
         const title = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
-        return <><CompositionPlot categoryToValueToCounts={composition.categoryToValueToCounts}
-                                                dimension={dimension}
-                                                title={title}
-                                                colorScale={colorScale} series={composition.series}
-                                                uniqueValues={composition.uniqueValues}
-                                                textColor={textColor}/>
+        return <><CompositionPlot seriesToValueToCounts={composition.seriesToValueToCounts}
+                                  dimension={dimension}
+                                  title={title}
+                                  colorScale={colorScale} series={composition.series}
+                                  uniqueValues={composition.uniqueValues}
+                                  textColor={textColor}/>
 
             {selectedComposition &&
-            <CompositionPlot categoryToValueToCounts={selectedComposition.categoryToValueToCounts}
+            <CompositionPlot seriesToValueToCounts={selectedComposition.seriesToValueToCounts}
                              dimension={dimension}
                              title={title}
                              subtitle="selection"

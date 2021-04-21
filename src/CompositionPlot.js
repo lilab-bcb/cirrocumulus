@@ -27,11 +27,11 @@ function CompositionPlot(props) {
     const size = useRef({});
     const barWidth = 20;
     const barSpace = 10;
-    const {categoryToValueToCounts, colorScale, series, textColor, title, subtitle, uniqueValues} = props;
+    const {seriesToValueToCounts, colorScale, series, textColor, title, subtitle, uniqueValues} = props;
     const barHeight = 600;
 
     function drawContext(context) {
-        if (categoryToValueToCounts == null) {
+        if (seriesToValueToCounts == null) {
             return;
         }
         const height = size.current.height;
@@ -44,7 +44,7 @@ function CompositionPlot(props) {
         const y0 = yScale(0);
         for (let seriesIndex = 0; seriesIndex < series.length; seriesIndex++) {
             const seriesName = series[seriesIndex];
-            const valueToCounts = categoryToValueToCounts[seriesName];
+            const valueToCounts = seriesToValueToCounts[seriesName];
             let sum = 0;
             uniqueValues.forEach(uniqueValue => {
                 const count = valueToCounts[uniqueValue] || 0;
@@ -170,7 +170,7 @@ function CompositionPlot(props) {
         const counts = [];
         countsTable.push(counts);
         series.forEach(seriesName => {
-            const valueToCounts = categoryToValueToCounts[seriesName];
+            const valueToCounts = seriesToValueToCounts[seriesName];
             const count = valueToCounts[uniqueValue] || 0;
             counts.push(count);
         });
