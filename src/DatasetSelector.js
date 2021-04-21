@@ -18,7 +18,7 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setDialog} from './actions';
-import {NATSORT, reactMarkdownOptions} from './util';
+import {NATSORT, REACT_MD_OVERRIDES} from './util';
 
 export class DatasetSelector extends React.PureComponent {
 
@@ -107,7 +107,8 @@ export class DatasetSelector extends React.PureComponent {
                         {!hasMoreInfo && <div>No description available</div>}
                         {selectedDataset && selectedDataset.title && <div>{selectedDataset.title}</div>}
                         {selectedDataset && selectedDataset.description &&
-                        <ReactMarkdown options={reactMarkdownOptions} children={selectedDataset.description}/>}
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                       children={selectedDataset.description}/>}
                     </div>
                 </Popover>
                 {selectedId == null && <Button variant="contained" onClick={this.handleClick}
