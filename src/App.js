@@ -82,10 +82,8 @@ const styles = (theme) => {
 
 class App extends PureComponent {
 
-
     constructor(props) {
         super(props);
-        this.state = {tab: 'embedding'};
         this.tooltipElementRef = React.createRef();
         this.galleryRef = React.createRef();
     }
