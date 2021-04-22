@@ -49,8 +49,10 @@ import {
 import {createCategoryToStats} from '../MetaEmbedding';
 import {
     createColorScale,
+    FEATURE_TYPE,
     getInterpolator,
-    INTERPOLATOR_SCALING_NONE, NATSORT,
+    INTERPOLATOR_SCALING_NONE,
+    NATSORT,
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
@@ -416,10 +418,21 @@ function loadingApp(state = {loading: false, progress: 0}, action) {
 }
 
 
+// one of embedding, distribution, composition, results
 function tab(state = 'embedding', action) {
     switch (action.type) {
         case SET_TAB:
             return action.payload;
+        case SET_DATASET:
+            return 'embedding';
+        case SET_DISTRIBUTION_DATA:
+            if (state === 'distribution' && action.payload.length === 0) {
+                return 'embedding';
+            }
+        case SET_SEARCH_TOKENS:
+            if (state === 'composition' && action.payload.filter(item => item.type === FEATURE_TYPE.OBS_CAT).length < 2) {
+                return 'embedding';
+            }
         default:
             return state;
     }
