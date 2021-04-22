@@ -1,6 +1,8 @@
 Release Notes
 -------------
 
+- 1.1.15.post4 `April 20, 2021`
+    * Changed `--header` flag in `cirro serve` to accept Markdown file
 
 - 1.1.15.post3 `April 20, 2021`
     * Fixed opening files with drive names on Windows
