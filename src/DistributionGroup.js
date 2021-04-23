@@ -270,7 +270,7 @@ class DistributionGroup extends React.PureComponent {
         }
         const data2d = reshapeData(distributionData, distributionPlotOptions, dataset.categoryOrder || {});
         const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions, dataset.categoryOrder || {}) : null;
-        if (data2d == null && selectedData == null) {
+        if ((data2d == null || data2d.length === 0) && (selectedData2d == null || selectedData2d.length === 0)) {
             return null;
         }
         const features = (data2d ? data2d[0] : selectedData2d[0]).map(item => item.feature);
