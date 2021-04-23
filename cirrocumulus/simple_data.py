@@ -274,15 +274,17 @@ class SimpleData:
         for key in adata.uns.keys():
             if key.endswith('_colors'):
                 field = key[0:len(key) - len('_colors')]
-                if field in adata.obs and pd.api.types.is_categorical_dtype(adata.obs[key]):
+                if field in adata.obs:
                     colors = adata.uns[key]
-                    categories = adata.obs[field].cat.categories
-                    if len(categories) == len(colors):
-                        color_map = dict()
-                        for i in range(len(categories)):
-                            color_map[str(categories[i])] = colors[i]
-                        field_to_value_to_color[field] = color_map
-
+                    if pd.api.types.is_categorical_dtype(adata.obs[field]):
+                        categories = adata.obs[field].cat.categories
+                        if len(categories) == len(colors):
+                            color_map = dict()
+                            for i in range(len(categories)):
+                                color_map[str(categories[i])] = colors[i]
+                            field_to_value_to_color[field] = color_map
+                    else:
+                        print("Skipping colors for {}".format(key))
         return schema_dict
 
     @staticmethod
