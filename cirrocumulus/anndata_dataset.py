@@ -65,7 +65,7 @@ class AnndataDataset(AbstractDataset):
         adata = self.path_to_data.get(path)
         if adata is None:
             adata = self.read_adata(path)
-            if scipy.sparse.isspmatrix_csr(adata.X):
+            if scipy.sparse.isspmatrix_csr(adata.X) and adata.X.shape[1] > 1:
                 adata.X = adata.X.tocsc()
             self.add_data(path, adata)
         return adata
