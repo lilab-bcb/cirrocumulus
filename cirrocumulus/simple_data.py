@@ -274,7 +274,7 @@ class SimpleData:
         for key in adata.uns.keys():
             if key.endswith('_colors'):
                 field = key[0:len(key) - len('_colors')]
-                if field in adata.obs:
+                if field in adata.obs and pd.api.types.is_categorical_dtype(adata.obs[key]):
                     colors = adata.uns[key]
                     categories = adata.obs[field].cat.categories
                     if len(categories) == len(colors):
