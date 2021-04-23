@@ -62,6 +62,9 @@ function reshapeData(data, distributionPlotOptions, categoryOrder) {
         features.push(item);
     });
     let categories = Object.keys(categoryToItems);
+    if (categories.length >= 2000) {
+        return null;
+    }
     const dimension = data[0].dimension;
 
     if (distributionPlotOptions.sortBy !== dimension) { // sort categories by feature
@@ -265,8 +268,12 @@ class DistributionGroup extends React.PureComponent {
         if (selectedData) {
             updateNames(selectedData, categoricalNames);
         }
-        const data = reshapeData(distributionData, distributionPlotOptions, dataset.categoryOrder || {});
-        const features = data[0].map(item => item.feature);
+        const data2d = reshapeData(distributionData, distributionPlotOptions, dataset.categoryOrder || {});
+        const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions, dataset.categoryOrder || {}) : null;
+        if (data2d == null && selectedData == null) {
+            return null;
+        }
+        const features = (data2d ? data2d[0] : selectedData2d[0]).map(item => item.feature);
         if (chartType === 'violin') {
             const allData = selectedData ? distributionData.concat(selectedData) : distributionData;
             features.forEach((feature) => {
@@ -291,11 +298,11 @@ class DistributionGroup extends React.PureComponent {
                 });
             });
         }
-        const selectedData2d = selectedData && selectedData.length > 0 ? reshapeData(selectedData, distributionPlotOptions, dataset.categoryOrder || {}) : null;
+
         const sortChoices = [distributionData[0].dimension].concat(features);
         return (
             <Box color="text.primary">
-                {chartType !== 'violin' && <DotPlotCanvas
+                {chartType !== 'violin' && data2d && <DotPlotCanvas
                     categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
                     interpolator={interpolator}
@@ -303,14 +310,14 @@ class DistributionGroup extends React.PureComponent {
                     textColor={textColor}
                     drawCircles={chartType === 'dotplot'}
                     setTooltip={setTooltip}
-                    data={data}/>}
-                {chartType === 'violin' && <ViolinPlot
+                    data={data2d}/>}
+                {chartType === 'violin' && data2d && <ViolinPlot
                     categoryColorScales={categoryColorScales}
                     colorScale={colorScale}
                     textColor={textColor}
                     options={distributionPlotOptions}
                     setTooltip={setTooltip}
-                    data={data}/>}
+                    data={data2d}/>}
                 {chartType !== 'violin' && selectedData2d &&
                 <DotPlotCanvas
                     categoryColorScales={categoryColorScales}
