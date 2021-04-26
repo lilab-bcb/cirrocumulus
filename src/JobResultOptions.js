@@ -1,5 +1,6 @@
-import {InputLabel, MenuItem, Select, Tooltip} from '@material-ui/core';
+import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Input from '@material-ui/core/Input';
 import Slider from '@material-ui/core/Slider';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -162,6 +163,13 @@ class JobResultOptions extends React.PureComponent {
         this.props.handleJobResults(this.props.jobResults.slice());
     };
 
+    onByAscendingChange = (event) => {
+        const jobResult = this.getJobResult();
+        jobResult.byAscending = event.target.checked;
+        sortAndFilterJobResult(jobResult);
+        this.props.handleJobResults(this.props.jobResults.slice());
+    };
+
     onOperationChanged = (filter, value) => {
         filter[1] = value;
         sortAndFilterJobResult(this.getJobResult());
@@ -195,6 +203,7 @@ class JobResultOptions extends React.PureComponent {
             color,
             size,
             by,
+            byAscending,
             colorScale,
             ntopUI,
             interpolator,
@@ -220,6 +229,16 @@ class JobResultOptions extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
+                <div><FormControlLabel
+                    control={
+                        <Switch
+                            value={"byAscending"}
+                            checked={byAscending}
+                            onChange={this.onByAscendingChange}
+                        />
+                    }
+                    label="Ascending"
+                /></div>
                 <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Number of Features</InputLabel>
                 <Slider
                     min={5}

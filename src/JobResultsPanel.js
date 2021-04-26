@@ -166,6 +166,9 @@ export function updateJob(jobResult) {
             jobResult.sortedRows.push(indices);
         }
     }
+    if (jobResult.byAscending === undefined) {
+        jobResult.byAscending = false;
+    }
     if (jobResult.by === undefined) {
         jobResult.by = jobResult.fields[0];
         for (let i = 0; i < jobResult.fields.length; i++) {
@@ -251,7 +254,7 @@ export function updateJob(jobResult) {
 
 export function sortAndFilterJobResult(jobResult) {
     const by = jobResult.by;
-
+    const byAscending = jobResult.byAscending;
     const groups = jobResult.groups;
     const ngroups = groups.length;
     jobResult.sortedRows = [];
@@ -272,13 +275,23 @@ export function sortAndFilterJobResult(jobResult) {
             if (aNaN && bNaN) {
                 return 0;
             }
-            if (aNaN) {
-                return 1;
+            if (byAscending) {
+                if (aNaN) {
+                    return -1;
+                }
+                if (bNaN) {
+                    return 1;
+                }
+                return val1 - val2;
+            } else {
+                if (aNaN) {
+                    return 1;
+                }
+                if (bNaN) {
+                    return -1;
+                }
+                return val2 - val1;
             }
-            if (bNaN) {
-                return -1;
-            }
-            return val2 - val1;
         });
         jobResult.sortedRows.push(indices);
     }
