@@ -941,12 +941,24 @@ function loadDefaultDatasetView() {
             }
             const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
             let obsCat = null;
-            let catPriorities = ['leiden', 'louvain', 'seurat_clusters', 'clusters'];
-            for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
-                for (let i = 0; i < dataset.obsCat.length; i++) {
-                    if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
-                        obsCat = dataset.obsCat[i];
-                        break;
+            if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
+                let category = dataset.markers_read_only[0].category;
+                const suffix = ' (rank_genes_groups)';
+                if (category.endsWith(suffix)) {
+                    category = category.substring(0, category.length - suffix.length);
+                }
+                if (dataset.obsCat.indexOf(category) !== -1) {
+                    obsCat = category;
+                }
+            }
+            if (obsCat == null) {
+                let catPriorities = ['leiden', 'louvain', 'seurat_clusters', 'clusters'];
+                for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+                    for (let i = 0; i < dataset.obsCat.length; i++) {
+                        if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
+                            obsCat = dataset.obsCat[i];
+                            break;
+                        }
                     }
                 }
             }
