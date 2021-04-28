@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.16 `April 28, 2021`
+    * Enable selecting top markers by a field in ascending or descending order
+    * Updated auto-display logic
+
 - 1.1.15.post4 `April 22, 2021`
     * Changed `--header` flag in `cirro serve` to accept Markdown file
 
