@@ -1,9 +1,8 @@
-import {color} from 'd3-color';
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color, OrthographicCamera, Vector3} from 'three';
 import {getEmbeddingKey} from './actions';
 import {getVisualizer} from './ScatterChartThree';
-import {getRgbScale, indexSort, randomSeq, rankIndexArray} from './util';
+import {indexSort, randomSeq, rankIndexArray} from './util';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
 const SCATTER_PLOT_CUBE_LENGTH = 2;
@@ -12,7 +11,6 @@ export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
 function scaleLinear(value, domain, range) {
     const domainDifference = domain[1] - domain[0];
     const rangeDifference = range[1] - range[0];
-
     const percentDomain = (value - domain[0]) / domainDifference;
     return percentDomain * rangeDifference + range[0];
 }
@@ -122,7 +120,6 @@ export function getPositions(trace) {
     const xScale = makeScaleRange(xRange, halfCube);
     const yScale = makeScaleRange(yRange, halfCube);
     const zScale = makeScaleRange(zRange, halfCube);
-
     const positions = new Float32Array(npoints * 3);
     let dst = 0;
 
@@ -131,6 +128,7 @@ export function getPositions(trace) {
         positions[dst++] = scaleLinear(trace.y[i], yExtent, yScale);
         positions[dst++] = scaleLinear(is3d ? trace.z[i] : ranks[i] / (ranks.length + 1), zExtent, zScale);
     }
+
     return positions;
 
 }
@@ -253,14 +251,22 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
 }
 
 export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData) {
+    const is3d = traceInfo.z != null;
     const colors = traceInfo.colors;
     let positions = traceInfo.positions;
 
     const npoints = traceInfo.npoints;
     const isSelectionEmpty = selection.size === 0;
+    const updateZ = !isSelectionEmpty && !is3d;
+    if (updateZ) {
+        positions = positions.slice();
+    }
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
         colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
+        if (updateZ && !isSelected) {
+            positions[k] = -1;
+        }
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
