@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.16.post1 `April 28, 2021`
+    * Plot selected cells on top of unselected cells in embedding chart
+
 - 1.1.16 `April 28, 2021`
     * Enable selecting top markers by a field in ascending or descending order
     * Updated auto-display logic
