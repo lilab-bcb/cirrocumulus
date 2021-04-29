@@ -952,7 +952,7 @@ function loadDefaultDatasetView() {
                 }
             }
             if (obsCat == null) {
-                let catPriorities = ['leiden', 'louvain', 'seurat_clusters', 'clusters'];
+                let catPriorities = ['anno', 'cell_type', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
                 for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
                     for (let i = 0; i < dataset.obsCat.length; i++) {
                         if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
