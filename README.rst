@@ -49,8 +49,6 @@ Example Data
 
 Complete documentation available at https://cirrocumulus.readthedocs.io
 
-.. image:: https://img.shields.io/pypi/dm/cirrocumulus
-
 
 .. _3k PBMCs from a healthy donor data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/example_data.zip
 .. _human lymph node spatial data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/V1_Human_Lymph_Node.zip
