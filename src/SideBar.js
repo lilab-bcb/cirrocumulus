@@ -14,6 +14,7 @@ import FormHelperText from '@material-ui/core/FormHelperText';
 import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
+import Link from '@material-ui/core/Link';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
@@ -73,7 +74,14 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {FEATURE_TYPE, getFeatureSets, NATSORT, splitSearchTokens, TRACE_TYPE_META_IMAGE,} from './util';
+import {
+    copyToClipboard,
+    FEATURE_TYPE,
+    getFeatureSets,
+    NATSORT,
+    splitSearchTokens,
+    TRACE_TYPE_META_IMAGE,
+} from './util';
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -99,7 +107,7 @@ const styles = theme => ({
     formControl: {
         display: 'block',
         minWidth: 200,
-        margin: theme.spacing(0, 1)
+        margin: theme.spacing(0, 1),
     },
     margin: {
         margin: theme.spacing(1, 1)
@@ -111,7 +119,7 @@ const styles = theme => ({
         '& hr': {
             margin: theme.spacing(0, 0.5),
         }
-    },
+    }
 });
 
 
@@ -466,6 +474,12 @@ class SideBar extends React.PureComponent {
     //     this.props.handleEmbeddings(embeddings.slice(0));
     // };
 
+    onFeatureCopy = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        let searchTokens = this.props.searchTokens;
+        copyToClipboard(searchTokens.filter(token => token.type === FEATURE_TYPE.X).map(item => item.value).join('\n'));
+    };
     onFeatureClick = (event, option) => {
         event.stopPropagation();
         const value = option.text !== undefined ? option.text : option;
@@ -714,8 +728,15 @@ class SideBar extends React.PureComponent {
                                                          options={featureOptions}
                                                          value={splitTokens.X}
                                                          onChange={this.onFeaturesChange}
-                                                         helperText={"Enter or paste list"}
+                                                         helperText={<>Enter or paste list <Link
+                                                             style={{
+                                                                 float: 'right',
+                                                                 display: splitTokens.X.length === 0 ? 'none' : ''
+                                                             }}
+                                                             onClick={this.onFeatureCopy}>Copy</Link></>}
+
                                 />
+
                             </FormControl>}
 
                             {annotationOptions.length > 0 && <FormControl className={classes.formControl}>

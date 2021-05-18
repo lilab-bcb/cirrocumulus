@@ -158,6 +158,38 @@ export function scaleConstantRange(value) {
     return scale;
 }
 
+export function copyToClipboard(text){
+    const container = document.activeElement;
+    const fakeElem = document.createElement('textarea');
+    const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
+    fakeElem.style.fontSize = '12pt';
+    fakeElem.style.border = '0';
+    fakeElem.style.padding = '0';
+    fakeElem.style.margin = '0';
+    // Move element out of screen horizontally
+    fakeElem.style.position = 'absolute';
+    fakeElem.style[isRTL ? 'right' : 'left'] = '-9999px';
+    fakeElem.setAttribute('readonly', '');
+    // Move element to the same position vertically
+    let yPosition = window.pageYOffset || document.documentElement.scrollTop;
+    fakeElem.style.top = yPosition + 'px';
+    fakeElem.value = text;
+    container.appendChild(fakeElem);
+
+    fakeElem.select();
+    fakeElem.setSelectionRange(0, fakeElem.value.length);
+
+    document.execCommand('copy');
+
+    const fakeHandlerCallback = (event) => {
+        document.activeElement.blur();
+        window.getSelection().removeAllRanges();
+        container.removeChild(fakeElem);
+        container.removeEventListener('click', fakeHandlerCallback);
+    };
+    container.addEventListener('click', fakeHandlerCallback);
+}
+
 export function stripTrailingZeros(s) {
     let index = s.lastIndexOf('.');
     let ending = s.substring(index + 1);

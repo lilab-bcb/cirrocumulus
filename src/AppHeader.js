@@ -42,7 +42,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY
 } from "./reducers";
-import {FEATURE_TYPE, REACT_MD_OVERRIDES} from './util';
+import {copyToClipboard, FEATURE_TYPE, REACT_MD_OVERRIDES} from './util';
 
 
 const styles = theme => ({
@@ -260,41 +260,11 @@ class AppHeader extends React.PureComponent {
     };
 
     copyLink = (event) => {
-
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
         linkText += '#q=' + encodeURIComponent(JSON.stringify(this.getLinkJson()));
-        const container = document.activeElement;
-        const fakeElem = document.createElement('textarea');
-        const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
-        fakeElem.style.fontSize = '12pt';
-        fakeElem.style.border = '0';
-        fakeElem.style.padding = '0';
-        fakeElem.style.margin = '0';
-        // Move element out of screen horizontally
-        fakeElem.style.position = 'absolute';
-        fakeElem.style[isRTL ? 'right' : 'left'] = '-9999px';
-        fakeElem.setAttribute('readonly', '');
-        // Move element to the same position vertically
-        let yPosition = window.pageYOffset || document.documentElement.scrollTop;
-        fakeElem.style.top = yPosition + 'px';
-        fakeElem.value = linkText;
-        container.appendChild(fakeElem);
-
-        fakeElem.select();
-        fakeElem.setSelectionRange(0, fakeElem.value.length);
-
-        document.execCommand('copy');
-
-        const fakeHandlerCallback = (event) => {
-            document.activeElement.blur();
-            window.getSelection().removeAllRanges();
-            container.removeChild(fakeElem);
-            container.removeEventListener('click', fakeHandlerCallback);
-        };
+        copyToClipboard(linkText);
         this.props.setMessage('Link copied');
-        container.addEventListener('click', fakeHandlerCallback);
         this.setState({moreMenuOpen: false});
-
     };
 
 
