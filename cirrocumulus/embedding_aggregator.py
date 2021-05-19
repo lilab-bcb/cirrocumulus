@@ -138,8 +138,8 @@ class EmbeddingAggregator:
                 series = series[series.columns[0]]
             is_sparse = hasattr(series, 'sparse')
             if is_sparse:
-                result['values'][column] = series.sparse.to_dense()
-                # result['values'][column] = dict(index=series.values.sp_index, values=series.values.sp_values)
+                # result['values'][column] = series.sparse.to_dense()
+                result['values'][column] = dict(index=series.values.sp_index.indices, value=series.values.sp_values)
             else:
                 result['values'][column] = series
 
