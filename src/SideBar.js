@@ -383,7 +383,7 @@ class SideBar extends React.PureComponent {
 
     onFeatureSetClick = (event, option) => {
         const id = option.id;
-        const target = event.target;
+        const target = event.target.closest(".MuiFormControl-root");
         let markers = this.props.markers;
 
         let featureSet = null;
@@ -702,14 +702,13 @@ class SideBar extends React.PureComponent {
                 <AccordionStyled
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}
                     defaultExpanded>
-                    <AccordionSummaryStyled>
+                    <AccordionSummaryStyled style={{marginBottom: 4}}>
                         <Typography>View</Typography>
                     </AccordionSummaryStyled>
                     <AccordionDetailsStyled>
                         <div>
                             {tab === 'embedding' && embeddingOptions.length > 0 &&
                             <FormControl className={classes.formControl}>
-
                                 <AutocompleteVirtualized label={"Embeddings"}
                                                          options={embeddingOptions}
                                                          getChipTitle={(option) => {

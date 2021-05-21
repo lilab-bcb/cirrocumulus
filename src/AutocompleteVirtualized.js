@@ -7,6 +7,7 @@ import useMediaQuery from '@material-ui/core/useMediaQuery';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {VariableSizeList} from 'react-window';
 
 
@@ -164,9 +165,11 @@ export default function AutocompleteVirtualized(props) {
     }
 
     function onDragOver(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        showDragIndicator(true);
+        if (event.dataTransfer.files.length > 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            showDragIndicator(true);
+        }
 
     };
 
@@ -249,48 +252,84 @@ export default function AutocompleteVirtualized(props) {
         }
         return exactMatches.concat(startsWithMatches).concat(containsMatches);
     };
+    const handleTagDelete = (event, index) => {
+        const newValue = props.value.slice();
+        newValue.splice(index, 1);
+        props.onChange(event, newValue);
+    };
+
+    const onSortEnd = (event) => {
+        const newValue = props.value.slice();
+        const tmp = newValue[event.newIndex];
+        newValue[event.newIndex] = newValue[event.oldIndex];
+        newValue[event.oldIndex] = tmp;
+        props.onChange(event, newValue);
+    };
+
+    const SortableItem = sortableElement(({option, sortIndex}) => {
+        return <Chip
+            variant="default"
+            tabIndex="-1"
+            key={sortIndex}
+            style={{zIndex: 1000000}}
+            onDelete={event => handleTagDelete(event, sortIndex)}
+            onClick={onChipClick ? event => onChipClick(event, option) : null}
+            label={getChipText(option)}
+            title={getChipTitle(option)}
+            size="small"
+            icon={getChipIcon(option)}
+        />;
+    });
+
+    const SortableList = sortableContainer(({items}) => {
+        return (
+            <ul style={{padding: 0, marginTop: 0, marginBottom: 0}}>
+                {items.map((option, index) => {
+                        return <SortableItem key={index} option={option} index={index} sortIndex={index}/>;
+                    }
+                )}
+            </ul>
+        );
+    });
+
+
     return (
-        <Autocomplete
-            multiple
-            ref={ref}
-            filterOptions={filterOptions}
-            disableListWrap
-            classes={classes}
-            getOptionSelected={getOptionSelected}
-            value={props.value}
-            openOnFocus={true}
-            filterSelectedOptions={true}
-            getOptionLabel={getOptionLabel}
-            groupBy={props.groupBy ? (option) => option.group : null}
-            blurOnSelect={true}
-            ChipProps={{size: 'small'}}
-            ListboxComponent={ListboxComponent}
-            renderGroup={renderGroup}
-            options={props.options}
-            autoHighlight={true}
-            onChange={props.onChange}
-            renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                    return (
-                        <Chip
-                            variant="default"
-                            onClick={onChipClick ? event => onChipClick(event, option) : null}
-                            label={getChipText(option)}
-                            title={getChipTitle(option)}
-                            size="small"
-                            icon={getChipIcon(option)}
-                            {...getTagProps({index})}
-                        />);
-                })
-            }
-            renderInput={(params) => <TextField margin="dense" {...params} label={props.label}
-                                                helperText={props.helperText}/>}
-            renderOption={renderOption}
-            onPaste={onPaste}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
-            onDragLeave={onDragEnd}
-        />
+        <>
+            <SortableList
+                distance={2}
+                onSortEnd={onSortEnd}
+                axis="xy" items={props.value}
+            />
+            <Autocomplete
+                multiple
+                ref={ref}
+                filterOptions={filterOptions}
+                disableListWrap
+                classes={classes}
+                getOptionSelected={getOptionSelected}
+                value={props.value}
+                openOnFocus={true}
+                filterSelectedOptions={true}
+                getOptionLabel={getOptionLabel}
+                groupBy={props.groupBy ? (option) => option.group : null}
+                blurOnSelect={true}
+                ChipProps={{size: 'small'}}
+                ListboxComponent={ListboxComponent}
+                renderGroup={renderGroup}
+                options={props.options}
+                autoHighlight={true}
+                onChange={props.onChange}
+                renderTags={(value, getTagProps) =>
+                    null
+                }
+                renderInput={(params) => <TextField margin="dense" {...params} label={props.label}
+                                                    helperText={props.helperText}/>}
+                renderOption={renderOption}
+                onPaste={onPaste}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onDragEnd={onDragEnd}
+                onDragLeave={onDragEnd}
+            /></>
     );
 }

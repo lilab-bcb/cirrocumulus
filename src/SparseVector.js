@@ -1,27 +1,32 @@
-export class Vector {
-    constructor(name, values) {
+import {sortedIndexOf} from 'lodash';
+
+
+export class SparseVector {
+    constructor(name, indices, values, size) {
         this.name = name;
+        if (indices.length !== values.length) {
+            throw new Error();
+        }
+        this.indices = indices;
         this.values = values;
+        this.n = size;
     }
 
     getName() {
         return this.name;
     }
 
+    isSparse() {
+        return true;
+    }
+
     size() {
-        return this.values.length;
+        return this.n;
     }
 
     get(i) {
-        return this.values[i];
-    }
-
-    asArray() {
-        return this.values;
-    }
-
-    isSparse() {
-        return false;
+        const index = sortedIndexOf(this.indices, i);
+        return index === -1 ? 0 : this.values[index];
     }
 
     [Symbol.iterator]() {

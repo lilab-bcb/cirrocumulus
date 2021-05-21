@@ -93,11 +93,10 @@ class GalleryCharts extends React.PureComponent {
         });
 
         return (
-            <>
                 <SortableList
                     distance={2}
                     axis="xy" items={galleryTraces}
-                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/></>
+                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>
         );
     }
 }
