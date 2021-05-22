@@ -742,7 +742,7 @@ class SideBar extends React.PureComponent {
 
                                 <AutocompleteVirtualized label={"Cell Metadata"}
                                                          options={annotationOptions}
-                                                         value={splitTokens.obsCat.concat(splitTokens.obs)}
+                                                         value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
                                                          onChipClick={this.onFeatureClick}
                                                          groupBy={true}
                                                          getChipIcon={(option) => {
