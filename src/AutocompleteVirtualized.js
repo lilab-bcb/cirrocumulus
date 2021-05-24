@@ -196,6 +196,11 @@ export default function AutocompleteVirtualized(props) {
     if (getChipIcon == null) {
         getChipIcon = (option) => null;
     }
+    let getOptionIcon = props.getOptionIcon;
+    if (getOptionIcon == null) {
+        getOptionIcon = (option) => null;
+    }
+
     let getChipTitle = props.getChipTitle;
     if (getChipTitle == null) {
         getChipTitle = (option) => null;
@@ -208,19 +213,20 @@ export default function AutocompleteVirtualized(props) {
     const renderOption = (option, {inputValue}) => {
         inputValue = inputValue.toLowerCase();
         const text = getOptionLabel(option);
+        const icon = getOptionIcon(option);
         if (inputValue !== '') {
             const index = text.toLowerCase().indexOf(inputValue);
-            if (index !== -1) {
+            if (index !== -1) { // bold the matching text when searching
                 const inputLength = inputValue.length;
                 const before = text.substring(0, index);
                 const match = text.substring(index, index + inputLength);
                 const after = text.substring(index + inputLength);
-                return <Typography title={text} noWrap>
+                return <>{icon}<Typography title={text} noWrap>
                     {before}<b>{match}</b>{after}
-                </Typography>;
+                </Typography></>;
             }
         }
-        return <Typography title={text} noWrap>{text}</Typography>;
+        return <>{icon}<Typography title={text} noWrap>{text}</Typography></>;
     };
     // const renderOption = props.groupBy ? (option) => {
     //  const text = getOptionLabel(option);

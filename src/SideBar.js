@@ -1,5 +1,4 @@
 import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@material-ui/core';
-
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
@@ -74,6 +73,7 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
+import NumberIcon from './NumberIcon';
 import {
     copyToClipboard,
     FEATURE_TYPE,
@@ -133,10 +133,10 @@ const getAnnotationOptions = memoize(
             options.push({group: 'Categorical', text: item, id: item});
         });
         options.sort((item1, item2) => {
-            const c = NATSORT(item1.group, item2.group);
-            if (c !== 0) {
-                return c;
-            }
+            // const c = NATSORT(item1.group, item2.group);
+            // if (c !== 0) {
+            //     return c;
+            // }
             return NATSORT(item1.text, item2.text);
         });
         return options;
@@ -744,7 +744,17 @@ class SideBar extends React.PureComponent {
                                                          options={annotationOptions}
                                                          value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
                                                          onChipClick={this.onFeatureClick}
-                                                         groupBy={true}
+                                                         groupBy={false}
+                                                         getOptionLabel={(option) => option.text}
+                                                         getOptionIcon={(option) => option.group === 'Categorical' ?
+                                                             <FontDownloadRoundedIcon style={{
+                                                                 marginRight: 2,
+                                                                 fontSize: '0.9rem'
+
+                                                             }}/> : <NumberIcon style={{
+                                                                 marginRight: 2,
+                                                                 fontSize: '0.9rem'
+                                                             }}/>}
                                                          getChipIcon={(option) => {
                                                              return splitTokens.obsCat.indexOf(option) !== -1 ?
                                                                  <FontDownloadRoundedIcon
