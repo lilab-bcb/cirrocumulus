@@ -9,7 +9,7 @@ import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {getNameWidth} from './DotPlotCanvas';
 import {intFormat, numberFormat2f} from './formatters';
 import {stripTrailingZeros} from './util';
-import ViolinPlotOneFeature, {drawFeature} from './ViolinPlotOneFeature';
+import ViolinPlotOneFeature, {drawFeature, getViolinPlotScales} from './ViolinPlotOneFeature';
 
 const yaxisWidth = 30;
 
@@ -86,7 +86,8 @@ export default class ViolinPlot extends React.PureComponent {
         for (let i = 0; i < features.length; i++) {
             context.save();
             context.translate(0, violinHeight * i);
-            drawFeature(context, size, features[i], data, colorScale, options, i === features.length - 1, categoryColorScales, textColor);
+            const {xscale, yscale} = getViolinPlotScales(data, i, options);
+            drawFeature(context, size, features[i], data, colorScale, options, i === features.length - 1, categoryColorScales, textColor, xscale, yscale);
             context.textBaseline = 'top';
             context.textAlign = "middle";
             context.fillStyle = textColor;
@@ -124,7 +125,6 @@ export default class ViolinPlot extends React.PureComponent {
     }
 
     render() {
-
         const {saveImageEl} = this.state;
         const {categoryColorScales, colorScale, data, options, textColor} = this.props;
         const features = data[0].map(item => item.feature);
@@ -133,6 +133,7 @@ export default class ViolinPlot extends React.PureComponent {
         const dummyContext = dummyCanvas.getContext('2d');
         dummyContext.font = CANVAS_FONT;
         const size = this.getSize(dummyContext);
+
         return (<div style={{position: 'relative'}}>
             <div>
                 <Typography style={{display: 'inline-block'}} component={"h4"}
@@ -158,10 +159,12 @@ export default class ViolinPlot extends React.PureComponent {
                 </Menu>
 
             </div>
+
             {features.map(feature => {
                 return <ViolinPlotOneFeature onTooltip={this.onTooltip}
                                              key={feature}
-                                             feature={feature} data={data}
+                                             feature={feature}
+                                             data={data}
                                              categoryColorScales={categoryColorScales}
                                              options={options}
                                              size={size}
