@@ -146,7 +146,7 @@ export function updateJob(jobResult) {
     if (jobResult.rowFilters === undefined) {
         const filters = [];
         jobResult.fields.forEach(field => {
-            filters.push([field, '>', NaN, '']);
+            filters.push([field, field === 'p_val' || field === 'q_val' || field === 'fdr' ? '<' : '>', NaN, '']);
         });
 
         jobResult.rowFilters = filters;
