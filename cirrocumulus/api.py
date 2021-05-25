@@ -1,8 +1,8 @@
 import os
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
-import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from .file_system_adapter import get_scheme
@@ -316,7 +316,7 @@ def copy_url(url):
     from werkzeug.utils import secure_filename
     upload = os.environ.get(CIRRO_UPLOAD)
 
-    if url.endswith('/'):  # don't copy directories
+    if url.endswith('/') or os.path.isdir(url):  # don't copy directories
         return url
     from urllib.parse import urlparse
     if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
