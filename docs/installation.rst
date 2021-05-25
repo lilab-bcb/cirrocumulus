@@ -61,9 +61,9 @@ Add conda to your path::
 
     reuse Anaconda3
 
-Activate the cumulus virtual environment::
+Activate your virtual environment containing cirrocumulus::
 
-    source activate /seq/regev_genome_portal/conda_env/cumulus
+    source activate /path_to_your_conda_envs/cirrocumulus
 
 Launch, specifying the host IP address::
 
