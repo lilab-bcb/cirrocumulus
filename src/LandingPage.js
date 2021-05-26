@@ -55,7 +55,6 @@ function LandingPage(props) {
         <ul>
             <li><Link target="_blank" rel="noopener noreferrer"
                       href="http://cirrocumulus.readthedocs.io/">Documentation</Link></li>
-            <li>Contact: cirrocumulus@broadinstitute.org</li>
             <li><Link target="_blank" rel="noopener noreferrer"
                       href="https://github.com/klarman-cell-observatory/cirrocumulus">Source
                 Code</Link></li>
