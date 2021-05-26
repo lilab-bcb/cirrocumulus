@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.16.post2 `May 26, 2021`
+    * Drag and drop chips to reorder
+    * Handle thousands of categories in violin plot
+
 - 1.1.16.post1 `April 28, 2021`
     * Plot selected cells on top of unselected cells in embedding chart
 
