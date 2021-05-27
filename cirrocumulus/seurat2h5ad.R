@@ -37,6 +37,11 @@ if (method == 'reticulate') {
   assay <- DefaultAssay(object = rds)
   exprs <- GetAssayData(object = rds, slot = "data", assay = assay)
   col_data <- rds[[]]
+  for(name in names(col_data)) {
+    if(class(col_data[[name]])=='data.frame') {
+      col_data[[name]] <- NULL
+    }
+  }
   col_data$ident <- Idents(object = rds)
   row_data <- rds[[assay]][[]]
   if (length(row_data) == 0) {
