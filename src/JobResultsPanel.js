@@ -146,7 +146,8 @@ export function updateJob(jobResult) {
     if (jobResult.rowFilters === undefined) {
         const filters = [];
         jobResult.fields.forEach(field => {
-            filters.push([field, field === 'p_val' || field === 'q_val' || field === 'fdr' ? '<' : '>', NaN, '']);
+            const fieldLowercase = field.toLowerCase();
+            filters.push([field, fieldLowercase.indexOf('pval') !== -1 || fieldLowercase.indexOf('p_val') !== -1 || fieldLowercase.indexOf('qval') !== -1 || fieldLowercase.indexOf('q_val') !== -1 || field.indexOf('fdr') !== -1 ? '<' : '>', NaN, '']);
         });
 
         jobResult.rowFilters = filters;
