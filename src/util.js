@@ -158,7 +158,7 @@ export function scaleConstantRange(value) {
     return scale;
 }
 
-export function copyToClipboard(text){
+export function copyToClipboard(text) {
     const container = document.activeElement;
     const fakeElem = document.createElement('textarea');
     const isRTL = document.documentElement.getAttribute('dir') == 'rtl';
@@ -262,18 +262,56 @@ function getColorsRgba(trace) {
     const RGBA_NUM_ELEMENTS = 4;
     const rgbScale = getRgbScale();
 
-    let dst = 0;
-    let colorScale = trace.colorScale;
-    const n = trace.x.length;
-    const colors = new Float32Array(n * RGBA_NUM_ELEMENTS);
 
-    for (let i = 0; i < n; ++i) {
-        let c = color(colorScale(trace.values[i]));
-        colors[dst++] = rgbScale(c.r);
-        colors[dst++] = rgbScale(c.g);
-        colors[dst++] = rgbScale(c.b);
-        colors[dst++] = 1;
+    let colorScale = trace.colorScale;
+    const npoints = trace.x.length;
+    const colors = new Float32Array(npoints * RGBA_NUM_ELEMENTS);
+
+    function rescaleRgb(c) {
+        c.r = rgbScale(c.r);
+        c.g = rgbScale(c.g);
+        c.b = rgbScale(c.b);
+        return c;
     }
+
+    if (!trace.continuous) {
+        const categories = colorScale.domain();
+        const category2color = new Map();
+        categories.forEach(category => {
+            category2color.set(category, rescaleRgb(color(colorScale(category))));
+        });
+        for (let i = 0, dst = 0; i < npoints; ++i) {
+            const c = category2color.get(trace.values[i]);
+            colors[dst++] = c.r;
+            colors[dst++] = c.g;
+            colors[dst++] = c.b;
+            colors[dst++] = 1;
+        }
+    } else {
+        const ncolors = 500;
+        const colorBins = [];
+        const domain = colorScale.domain();
+        const binScale = scaleLinear().domain(domain).range([0, ncolors - 1]);
+        for (let i = 0; i < ncolors; ++i) {
+            const value = binScale.invert(i);
+            colorBins.push(rescaleRgb(color(colorScale(value))));
+        }
+        for (let i = 0, dst = 0; i < npoints; ++i) {
+            const value = trace.values[i];
+            let bin = Math.ceil(binScale(value));
+            if (bin < 0) {
+                bin = 0;
+            } else if (bin >= ncolors) {
+                bin = ncolors - 1;
+            }
+            const c = colorBins[bin];
+            colors[dst++] = c.r;
+            colors[dst++] = c.g;
+            colors[dst++] = c.b;
+            colors[dst++] = 1;
+        }
+    }
+
     return colors;
 }
 
