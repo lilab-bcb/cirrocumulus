@@ -226,7 +226,12 @@ class SideBar extends React.PureComponent {
                 });
             } else {
                 const trace = find(this.props.embeddingData, traceInfo => getTraceKey(traceInfo) === this.props.activeFeature.embeddingKey);
-                if (trace.type !== TRACE_TYPE_META_IMAGE) {
+                if (trace == null) {
+                    this.setState({
+                        minColor: '',
+                        maxColor: ''
+                    });
+                } else if (trace.type !== TRACE_TYPE_META_IMAGE) {
                     this.setState({
                         minColor: summary.customMin == null ? '' : summary.customMin,
                         maxColor: summary.customMax == null ? '' : summary.customMax
@@ -801,14 +806,15 @@ class SideBar extends React.PureComponent {
                                                          onChange={this.onFeatureSetsChange}
                                                          getOptionSelected={(option, value) => option.id === value.id}
                                                          getChipText={option => option.name}/>
-                                {dynamic && splitTokens.X.length > 0 &&
-                                <Tooltip title={"Save Current Feature List"}>
-                                    <IconButton size={'small'} onClick={this.onSaveFeatureList}>
-                                        <SaveIcon/>
-                                    </IconButton>
-                                </Tooltip>
-                                }
+
                             </FormControl>}
+                            {dynamic && splitTokens.X.length > 0 &&
+                            <Tooltip title={"Save Current Feature List"}>
+                                <IconButton size={'small'} onClick={this.onSaveFeatureList}>
+                                    <SaveIcon/>
+                                </IconButton>
+                            </Tooltip>
+                            }
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>
