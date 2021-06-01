@@ -105,6 +105,7 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
                     return r;
                 }
             }
+            return 0;
         });
 
         let uniqueValuesSet = new Set();
