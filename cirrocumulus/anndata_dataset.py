@@ -42,12 +42,12 @@ class AnndataDataset(AbstractDataset):
                 subprocess.check_call(
                     ['Rscript', pkg_resources.resource_filename("cirrocumulus", 'seurat2h5ad.R'), path, h5_file])
                 shutil.copystat(path, h5_file)
-            adata = anndata.read(h5_file, backed=self.backed)
+            adata = anndata.read_h5ad(h5_file, backed='r' if self.backed else None)
             if adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
                 print('Using adata.raw')
                 adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
             return adata
-        return anndata.read(path, backed=self.backed)
+        return anndata.read_h5ad(path, backed='r' if self.backed else None)
         # elif path.endswith('.mtx'):
         #
         #     return anndata.read_mtx(path, backed=self.backed)
