@@ -90,7 +90,7 @@ export class RestDataset {
         let dataSend = data;
         const local = this.local;
 
-        if (this.local) {
+        if (local) {
             dataSend = {};
             //  ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
             if (data.embedding || data.values) {
@@ -99,10 +99,10 @@ export class RestDataset {
                 dataSend.values = data.values;
             }
         }
-        let body = JSON.stringify(dataSend);
-        let p = body !== '{}' ? fetch(API + '/data',
+        let jsonData = JSON.stringify(dataSend);
+        let p = jsonData !== '{}' ? fetch(API + '/data',
             {
-                body: body,
+                body: jsonData,
                 method: 'POST',
                 headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
             }).then(r => r.json()).then(result => {

@@ -1,9 +1,8 @@
 import datetime
-import json
 
-from cirrocumulus.util import get_email_domain
 from google.cloud import datastore
 
+from cirrocumulus.util import get_email_domain
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -34,6 +33,50 @@ class FirestoreDatastore:
         if ensure_owner and email not in dataset['owners']:
             raise InvalidUsage('Not authorized', 403)
         return key, dataset
+
+    def __get_entity_list(self, email, dataset_id, kind):
+        client = self.datastore_client
+        self.__get_key_and_dataset(email, dataset_id)
+        query = client.query(kind=kind)
+        query.add_filter('dataset_id', '=', int(dataset_id))
+        results = []
+        for result in query.fetch():
+            results.append(result)
+        return results
+
+    def __delete_entity(self, email, kind, entity_id):
+        client = self.datastore_client
+        key = client.key(kind, int(entity_id))
+        e = client.get(key)
+        self.__get_key_and_dataset(email, e['dataset_id'])
+        client.delete(key)
+
+    def __get_entity(self, email, kind, entity_id):
+        client = self.datastore_client
+        e = client.get(client.key(kind, int(entity_id)))
+        self.__get_key_and_dataset(email, e['dataset_id'])
+        return e
+
+    def __upsert_entity(self, email, dataset_id, entity_id, kind, entity_update):
+        dataset_id = int(dataset_id)
+        client = self.datastore_client
+        self.__get_key_and_dataset(email, dataset_id)
+        if entity_id is None:
+            e = datastore.Entity(client.key(kind),
+                exclude_from_indexes=['value'])
+        else:
+            entity_id = int(entity_id)
+            key = client.key(kind, entity_id)
+            e = client.get(key)
+
+        if email is not None:
+            entity_update['email'] = email
+        if dataset_id is not None:
+            entity_update['dataset_id'] = dataset_id
+
+        e.update(entity_update)
+        client.put(e)
+        return e.id
 
     def server(self):
         client = self.datastore_client
@@ -98,56 +141,6 @@ class FirestoreDatastore:
                                     'url': result['url']})
         return results
 
-    def dataset_filters(self, email, dataset_id):
-        client = self.datastore_client
-        self.__get_key_and_dataset(email, dataset_id)
-        query = client.query(kind=DATASET_FILTER)
-        query.add_filter('dataset_id', '=', int(dataset_id))
-        results = []
-        for result in query.fetch():
-            results.append(result)
-        return results
-
-    def delete_dataset_filter(self, email, dataset_id, filter_id):
-        client = self.datastore_client
-        key = client.key(DATASET_FILTER, int(filter_id))
-        dataset_filter = client.get(key)
-        self.__get_key_and_dataset(email, dataset_filter['dataset_id'])
-        client.delete(key)
-
-    def get_dataset_filter(self, email, dataset_id, filter_id):
-        client = self.datastore_client
-        dataset_filter = client.get(client.key(DATASET_FILTER, int(filter_id)))
-        self.__get_key_and_dataset(email, dataset_filter['dataset_id'])
-        return dataset_filter
-
-    def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
-        dataset_id = int(dataset_id)
-        client = self.datastore_client
-        self.__get_key_and_dataset(email, dataset_id)
-        if filter_id is None:
-            dataset_filter_entity = datastore.Entity(client.key(DATASET_FILTER),
-                exclude_from_indexes=['value'])
-        else:
-            filter_id = int(filter_id)
-            key = client.key(DATASET_FILTER, filter_id)
-            dataset_filter_entity = client.get(key)
-        entity_update = {}
-        if filter_name is not None:
-            entity_update['name'] = filter_name
-        if dataset_filter is not None:
-            entity_update['value'] = json.dumps(dataset_filter)
-        if email is not None:
-            entity_update['email'] = email
-        if dataset_id is not None:
-            entity_update['dataset_id'] = dataset_id
-        if filter_notes is not None:
-            entity_update['notes'] = filter_notes
-
-        dataset_filter_entity.update(entity_update)
-        client.put(dataset_filter_entity)
-        return dataset_filter_entity.id
-
     def delete_dataset(self, email, dataset_id):
         client = self.datastore_client
         key, dataset = self.__get_key_and_dataset(email, dataset_id, True)
@@ -205,49 +198,21 @@ class FirestoreDatastore:
         return dataset_id
 
     def get_feature_sets(self, email, dataset_id):
-        client = self.datastore_client
-        query = client.query(kind=FEATURE_SET)
-        dataset_id = int(dataset_id)
-        self.__get_key_and_dataset(email, dataset_id, False)
-        query.add_filter('dataset_id', '=', dataset_id)
-        results = []
-        for result in query.fetch():
-            results.append(
-                dict(id=result.id, category=result['category'], name=result['name'], features=result['features']))
-        return results
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=FEATURE_SET)
 
     def delete_feature_set(self, email, dataset_id, set_id):
-        client = self.datastore_client
-        key = client.key(FEATURE_SET, int(set_id))
-        result = client.get(key)
-        self.__get_key_and_dataset(email, result['dataset_id'])
-        client.delete(key)
+        return self.__delete_entity(email=email, kind=FEATURE_SET, entity_id=set_id)
 
     def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
-        dataset_id = int(dataset_id)
-        client = self.datastore_client
-        self.__get_key_and_dataset(email, dataset_id)
-        if set_id is None:
-            entity = datastore.Entity(client.key(FEATURE_SET))
-        else:
-            set_id = int(set_id)
-            key = client.key(FEATURE_SET, set_id)
-            entity = client.get(key)
         entity_update = {}
         if name is not None:
             entity_update['name'] = name
         if category is not None:
             entity_update['category'] = category
-        if email is not None:
-            entity_update['email'] = email
-        if dataset_id is not None:
-            entity_update['dataset_id'] = dataset_id
         if features is not None:
             entity_update['features'] = features
-
-        entity.update(entity_update)
-        client.put(entity)
-        return entity.id
+        return self.__upsert_entity(email=email, dataset_id=dataset_id, entity_id=set_id, kind=FEATURE_SET,
+            entity_update=entity_update)
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         dataset_id = int(dataset_id)

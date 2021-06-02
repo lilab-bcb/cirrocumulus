@@ -1,9 +1,9 @@
 import json
 
 from bson import ObjectId
-from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.util import get_email_domain
 from .invalid_usage import InvalidUsage
 
 
@@ -13,7 +13,7 @@ class MongoDb:
         self.client = MongoClient(db_uri)
         self.db = self.client[database]
         self.email = email
-
+       
     def server(self):
         d = dict(mode='server')
         if self.email is not None:
@@ -87,9 +87,10 @@ class MongoDb:
                             'species': doc.get('species')})
         return results
 
-    def dataset_filters(self, email, dataset_id):
+    # views
+    def dataset_views(self, email, dataset_id):
         self.get_dataset(email, dataset_id)
-        collection = self.db.filters
+        collection = self.db.views
         results = []
 
         for doc in collection.find(dict(dataset_id=dataset_id)):
@@ -98,38 +99,36 @@ class MongoDb:
                  'notes': doc['notes'], 'email': doc['email']})
         return results
 
-    def delete_dataset_filter(self, email, dataset_id, filter_id):
-        collection = self.db.filters
-        doc = collection.find_one(dict(_id=ObjectId(filter_id)))
+    def delete_dataset_view(self, email, dataset_id, view_id):
+        collection = self.db.views
+        doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
-        collection.delete_one(dict(_id=ObjectId(filter_id)))
+        collection.delete_one(dict(_id=ObjectId(view_id)))
 
-    def get_dataset_filter(self, email, dataset_id, filter_id):
-        collection = self.db.filters
-        doc = collection.find_one(dict(_id=ObjectId(filter_id)))
+    def get_dataset_view(self, email, dataset_id, view_id):
+        collection = self.db.views
+        doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
         return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                'notes': doc['notes'], 'email': doc['email']}
+                'email': doc['email']}
 
-    def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
+    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
         self.get_dataset(email, dataset_id)
-        collection = self.db.filters
+        collection = self.db.views
         entity_update = {}
-        if filter_name is not None:
-            entity_update['name'] = filter_name
-        if dataset_filter is not None:
-            entity_update['value'] = json.dumps(dataset_filter)
+        if name is not None:
+            entity_update['name'] = name
+        if value is not None:
+            entity_update['value'] = json.dumps(value)
         if email is not None:
             entity_update['email'] = email
         if dataset_id is not None:
             entity_update['dataset_id'] = dataset_id
-        if filter_notes is not None:
-            entity_update['notes'] = filter_notes
-        if filter_id is None:
+        if view_id is None:
             return str(collection.insert_one(entity_update).inserted_id)
         else:
-            collection.update_one(dict(_id=ObjectId(filter_id)), {'$set': entity_update})
-            return filter_id
+            collection.update_one(dict(_id=ObjectId(view_id)), {'$set': entity_update})
+            return view_id
 
     def delete_dataset(self, email, dataset_id):
         self.get_dataset(email, dataset_id, True)

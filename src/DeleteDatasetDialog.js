@@ -40,10 +40,11 @@ class DeleteDatasetDialog extends React.PureComponent {
                     {this.props.dataset && <h3>Are you sure you want to delete {this.props.dataset.name}?</h3>}
                 </DialogContent>
                 <DialogActions>
-                    <Button disabled={this.state.loading} onClick={this.handleClose} color="primary">
+                    <Button disabled={this.state.loading} onClick={this.handleClose}>
                         Cancel
                     </Button>
-                    <Button disabled={this.state.loading} onClick={this.handleDelete} color="primary">
+                    <Button disabled={this.state.loading} onClick={this.handleDelete} variant="contained"
+                            color="primary">
                         Delete
                     </Button>
                 </DialogActions>

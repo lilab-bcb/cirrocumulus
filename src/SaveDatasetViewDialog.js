@@ -7,32 +7,18 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
 import React from 'react';
 import {connect} from 'react-redux';
-import {saveDatasetFilter, setDialog, setMessage} from './actions';
+import {saveView, setDialog, setMessage} from './actions';
 
-class SaveDatasetFilterDialog extends React.PureComponent {
+class SaveDatasetViewDialog extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            open: true,
-            name: '',
-            notes: ''
+            name: ''
         };
-    }
-
-    componentDidMount() {
-        if (this.props.savedFilter == null) {
-            this.setState({name: '', notes: '', create: true});
-        } else {
-            this.setState({name: this.props.savedFilter.name, notes: this.props.savedFilter.notes});
-        }
     }
 
     onNameChanged = (event) => {
         this.setState({name: event.target.value});
-    };
-
-    onNotesChanged = (event) => {
-        this.setState({notes: event.target.value});
     };
 
     handleClose = () => {
@@ -41,30 +27,25 @@ class SaveDatasetFilterDialog extends React.PureComponent {
 
     handleSave = () => {
         let name = this.state.name.trim();
-        let notes = this.state.notes;
-        if (notes != null) {
-            notes = notes.trim();
-        }
-        this.setState({loading: true});
-        this.props.handleSave({name: name, notes: notes});
+        this.props.handleSave({name: name});
     };
 
 
     render() {
-        let {name, notes, create} = this.state;
+        const {name} = this.state;
+        const create = true;
         return (
             <Dialog
                 open={true}
                 onClose={this.handleClose}
-                aria-labelledby="edit-dataset-filter-dialog-title"
+                aria-labelledby="edit-dataset-view-dialog-title"
                 fullWidth={true}
                 maxWidth={'sm'}
             >
-                <DialogTitle id="edit-dataset-filter-dialog-title">{create
-                    ? 'Create'
-                    : 'Edit'} Filter</DialogTitle>
+                <DialogTitle id="edit-dataset-view-dialog-title">{create
+                    ? 'Save'
+                    : 'Edit'} Link</DialogTitle>
                 <DialogContent>
-
                     <TextField
                         required={true}
                         value={name}
@@ -75,22 +56,13 @@ class SaveDatasetFilterDialog extends React.PureComponent {
                         fullWidth
                     />
 
-                    <TextField
-                        required={false}
-                        autoComplete="off"
-                        value={notes}
-                        onChange={this.onNotesChanged}
-                        margin="dense"
-                        label="Notes"
-                        fullWidth
-                    />
-
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={this.handleClose} color="primary">
+                    <Button onClick={this.handleClose}>
                         Cancel
                     </Button>
-                    <Button disabled={name.trim().length === 0} onClick={this.handleSave} color="primary">
+                    <Button disabled={name.trim().length === 0} onClick={this.handleSave} variant="contained"
+                            color="primary">
                         Save
                     </Button>
                 </DialogActions>
@@ -100,14 +72,12 @@ class SaveDatasetFilterDialog extends React.PureComponent {
 }
 
 const mapStateToProps = state => {
-    return {
-        savedFilter: state.savedDatasetFilter,
-    };
+    return {};
 };
 const mapDispatchToProps = dispatch => {
     return {
         handleSave: value => {
-            dispatch(saveDatasetFilter(value));
+            dispatch(saveView(value));
         },
         handleCancel: value => {
             dispatch(setDialog(null));
@@ -121,5 +91,5 @@ const mapDispatchToProps = dispatch => {
 
 export default (connect(
     mapStateToProps, mapDispatchToProps,
-)(SaveDatasetFilterDialog));
+)(SaveDatasetViewDialog));
 

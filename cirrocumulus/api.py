@@ -1,8 +1,8 @@
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
 from .file_system_adapter import get_scheme
@@ -43,37 +43,6 @@ def handle_server():
     server['jobs'] = os.environ.get('GAE_APPLICATION') is None
     server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
     return to_json(server)
-
-
-@blueprint.route('/filters', methods=['GET'])
-def handle_dataset_filters():
-    """List filters available for a dataset.
-    """
-    email = get_auth().auth()['email']
-    dataset_id = request.args.get('id', '')
-
-    if dataset_id == '':
-        return 'Please provide an id', 400
-
-    dataset_filters = get_database().dataset_filters(email, dataset_id)
-    # {'id': result.id, 'name': result['name']}
-    return to_json(dataset_filters)
-
-
-@blueprint.route('/export_filters', methods=['GET'])
-def handle_export_dataset_filters():
-    """Download filters in a csv file for a dataset.
-    """
-    email = get_auth().auth()['email']
-    dataset_id = request.args.get('id', '')
-
-    if dataset_id == '':
-        return 'Please provide an id', 400
-    database_api = get_database()
-    dataset_filters = database_api.dataset_filters(email, dataset_id)
-    dataset = database_api.get_dataset(email, dataset_id)
-    text = data_processing.handle_export_dataset_filters(dataset_api, dataset, dataset_filters)
-    return Response(text, mimetype='text/plain')
 
 
 @blueprint.route('/category_name', methods=['GET', 'PUT'])
@@ -142,41 +111,50 @@ def handle_feature_set():
         return to_json('', 204)
 
 
-@blueprint.route('/filter', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def handle_dataset_filter():
-    """CRUD for a dataset filter.
+@blueprint.route('/views', methods=['GET'])
+def handle_dataset_views():
+    """List available views for a dataset.
     """
+    email = get_auth().auth()['email']
+    dataset_id = request.args.get('id', '')
 
+    if dataset_id == '':
+        return 'Please provide an id', 400
+
+    return to_json(get_database().dataset_views(email, dataset_id))
+
+
+@blueprint.route('/view', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def handle_dataset_view():
+    """CRUD for a dataset view.
+    """
     email = get_auth().auth()['email']
     database_api = get_database()
     if request.method == 'GET':
-        filter_id = request.args.get('id', '')
+        view_id = request.args.get('id', '')
         dataset_id = request.args.get('ds_id', '')
-        if filter_id == '' or dataset_id == '':
+        if view_id == '' or dataset_id == '':
             return 'Please provide an id', 400
-        return to_json(database_api.get_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id))
+        return to_json(database_api.get_dataset_view(email, dataset_id=dataset_id, view_id=view_id))
     content = request.get_json(force=True, cache=False)
-    filter_id = content.get('id')
+    view_id = content.get('id')
+    name = content.get('name')
     dataset_id = content.get('ds_id')
     # POST=new, PUT=update , DELETE=delete, GET=get
     if request.method == 'PUT' or request.method == 'POST':
-        if request.method == 'PUT' and filter_id is None:
+        if request.method == 'PUT' and view_id is None:
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_id is None:
             return 'Please supply a ds_id', 400
-        dataset_filter = content.get('value')
-        filter_name = content.get('name')
-        filter_notes = content.get('notes')
-        filter_id = database_api.upsert_dataset_filter(
+        view_id = database_api.upsert_dataset_view(
             email=email,
             dataset_id=dataset_id,
-            filter_id=filter_id if request.method == 'PUT' else None,
-            dataset_filter=dataset_filter,
-            filter_name=filter_name,
-            filter_notes=filter_notes)
-        return to_json({'id': filter_id})
+            view_id=view_id if request.method == 'PUT' else None,
+            name=name,
+            value=content.get('value'))
+        return to_json({'id': view_id})
     elif request.method == 'DELETE':
-        database_api.delete_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id)
+        database_api.delete_dataset_view(email, dataset_id=dataset_id, view_id=view_id)
         return to_json('', 204)
 
 
@@ -263,7 +241,6 @@ def get_email_and_dataset(content):
 def handle_data():
     json_request = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(json_request)
-
     return to_json(
         data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
             embedding_list=json_request.get('embedding'),

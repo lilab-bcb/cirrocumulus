@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isArray, isEqual} from 'lodash';
+import {find, findIndex, isArray} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -9,6 +9,7 @@ import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
 import {updateJob} from '../JobResultsPanel';
 import {createCategoryToStats} from '../MetaEmbedding';
+
 import {RestDataset} from '../RestDataset';
 import {RestServerApi} from '../RestServerApi';
 import {StaticServerApi} from '../StaticServerApi';
@@ -40,11 +41,28 @@ const authScopes = [
     // 'https://www.googleapis.com/auth/contacts.readonly',
     // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
+
+export const DEFAULT_BIN_SUMMARY = 'max';
+export const DEFAULT_NUMBER_BINS = 500;
+export const DEFAULT_POINT_SIZE = 1;
+export const DEFAULT_MARKER_OPACITY = 1;
+export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
+export const DEFAULT_INTERPOLATOR = 'Viridis';
+export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
+export const DEFAULT_DRAG_MODE = 'pan';
+export const DEFAULT_SHOW_LABELS = false;
+export const DEFAULT_SHOW_AXIS = true;
+export const DEFAULT_SHOW_FOG = false;
+export const DEFAULT_DARK_MODE = false;
+export const DEFAULT_LABEL_FONT_SIZE = 14;
+export const DEFAULT_LABEL_STROKE_WIDTH = 4;
+
 export const SET_EMBEDDING_LABELS = 'SET_EMBEDDING_LABELS';
 export const SET_DISTRIBUTION_PLOT_INTERPOLATOR = 'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
+export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
 export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
 
 export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
@@ -239,31 +257,14 @@ export function login() {
     };
 }
 
-export function openDatasetFilter(filterId) {
+
+export function openView(id) {
     return function (dispatch, getState) {
-
         dispatch(_setLoading(true));
-
-        getState().serverInfo.api.getDatasetFilterPromise(filterId, getState().dataset.id)
+        getState().serverInfo.api.getViewPromise(id, getState().dataset.id)
             .then(result => {
-                result.id = filterId;
-                let filterValue = JSON.parse(result.value);
-                let datasetFilter = {};
-
-                filterValue.filters.forEach(item => {
-                    let filterOperation = item[1];
-                    let field = item[0];
-                    let slashIndex = field.indexOf('/');
-                    if (slashIndex !== -1) {
-                        field = field.substring(slashIndex + 1);
-                    }
-                    datasetFilter[field] = {operation: item[1], value: item[2]};
-
-                });
-                dispatch(setDatasetFilter(datasetFilter));
-                dispatch(handleFilterUpdated());
-
-
+                const savedView = JSON.parse(result.value);
+                dispatch(restoreSavedView(savedView));
             }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
@@ -272,25 +273,50 @@ export function openDatasetFilter(filterId) {
     };
 }
 
-export function deleteDatasetFilter(filterId) {
+
+export function saveView(payload) {
     return function (dispatch, getState) {
+        const state = getState();
+        const value = getDatasetStateJson(state);
+        delete value['dataset'];
+        const savedViewObj = {ds_id: state.dataset.id, name: payload.name, value: value};
+
         dispatch(_setLoading(true));
-        getState().serverInfo.api.deleteDatasetFilterPromise(filterId, getState().dataset.id)
-            .then(() => {
-                let datasetFilters = getState().datasetFilters;
-                for (let i = 0; i < datasetFilters.length; i++) {
-                    if (datasetFilters[i].id === filterId) {
-                        datasetFilters.splice(i, 1);
-                        break;
-                    }
-                }
-                dispatch(setDatasetFilters(datasetFilters.slice()));
-                dispatch(setMessage('Filter deleted'));
+        getState().serverInfo.api.upsertViewPromise(savedViewObj, false)
+            .then(result => {
+                savedViewObj.id = result.id;
+                const array = getState().datasetViews;
+                array.push(savedViewObj);
+                dispatch(setDatasetViews(array.slice()));
+                dispatch(setMessage('Link saved'));
             }).finally(() => {
             dispatch(_setLoading(false));
             dispatch(setDialog(null));
         }).catch(err => {
-            handleError(dispatch, err, 'Unable to delete filter. Please try again.');
+            handleError(dispatch, err, 'Unable to save link. Please try again.');
+        });
+    };
+}
+
+export function deleteView(id) {
+    return function (dispatch, getState) {
+        dispatch(_setLoading(true));
+        getState().serverInfo.api.deleteViewPromise(id, getState().dataset.id)
+            .then(() => {
+                let array = getState().datasetViews;
+                for (let i = 0; i < array.length; i++) {
+                    if (array[i].id === id) {
+                        array.splice(i, 1);
+                        break;
+                    }
+                }
+                dispatch(setDatasetFilters(array.slice()));
+                dispatch(setMessage('Link deleted'));
+            }).finally(() => {
+            dispatch(_setLoading(false));
+            dispatch(setDialog(null));
+        }).catch(err => {
+            handleError(dispatch, err, 'Unable to delete link. Please try again.');
         });
     };
 }
@@ -406,62 +432,6 @@ export function saveFeatureSet(payload) {
     };
 }
 
-export function saveDatasetFilter(payload) {
-    return function (dispatch, getState) {
-        const state = getState();
-        let filterValue = getFilterJson(state, true);
-
-        let requestBody = {ds_id: state.dataset.id};
-        if (payload.filterId != null) {
-            requestBody.id = payload.filterId;
-        }
-        let savedDatasetFilter = {};
-
-        let sendRequest = false;
-        if (payload.name !== savedDatasetFilter.name) {
-            requestBody.name = payload.name;
-            sendRequest = true;
-        }
-        if (payload.notes !== savedDatasetFilter.notes) {
-            requestBody.notes = payload.notes;
-            sendRequest = true;
-        }
-        if (!isEqual(filterValue, savedDatasetFilter.value)) {
-            requestBody.value = filterValue;
-            sendRequest = true;
-        }
-        if (!sendRequest) {
-            dispatch(setDialog(null));
-            return;
-        }
-        for (let key in requestBody) {
-            savedDatasetFilter[key] = requestBody[key];
-        }
-        dispatch(_setLoading(true));
-        getState().serverInfo.api.upsertDatasetFilterPromise(requestBody, payload.filterId != null)
-            .then(result => {
-                requestBody.id = result.id;
-                let datasetFilters = getState().datasetFilters;
-                if (payload.filterId != null) {
-                    for (let i = 0; i < datasetFilters.length; i++) {
-                        if (datasetFilters[i].id === result.id) {
-                            datasetFilters[i] = requestBody;
-                            break;
-                        }
-                    }
-                } else {
-                    datasetFilters.push(requestBody);
-                }
-                dispatch(setDatasetFilters(datasetFilters.slice()));
-                dispatch(setMessage('Filter saved'));
-            }).finally(() => {
-            dispatch(_setLoading(false));
-            dispatch(setDialog(null));
-        }).catch(err => {
-            handleError(dispatch, err, 'Unable to save filter. Please try again.');
-        });
-    };
-}
 
 export function removeDatasetFilter(filterKey) {
     return function (dispatch, getState) {
@@ -1000,6 +970,7 @@ function restoreSavedView(savedView) {
         dispatch(_setLoading(true));
         let datasetPromise;
         if (savedView.dataset != null) {
+            console.log('set dataset');
             datasetPromise = dispatch(setDataset(savedView.dataset, false, false));
         } else {
             datasetPromise = Promise.resolve();
@@ -1406,6 +1377,10 @@ function setDatasetFilters(payload) {
     return {type: SET_DATASET_FILTERS, payload: payload};
 }
 
+function setDatasetViews(payload) {
+    return {type: SET_DATASET_VIEWS, payload: payload};
+}
+
 
 export function setDataset(id, loadDefaultView = true, setLoading = true) {
     return function (dispatch, getState) {
@@ -1435,7 +1410,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         dataset.obsCat = [];
 
         let categoryNameResults;
-        let datasetFilters = [];
+        let datasetViews = [];
         let newDataset;
         let jobResults = [];
 
@@ -1490,7 +1465,8 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                     }));
                 });
             }
-            dispatch(setDatasetFilters(datasetFilters));
+            dispatch(setDatasetViews(datasetViews));
+            // dispatch(setDatasetFilters(datasetFilters));
             if (savedDatasetState) {
                 dispatch(restoreSavedView(savedDatasetState));
             } else if (loadDefaultView) {
@@ -1518,11 +1494,11 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                 categoryNameResults = results;
             });
 
-            const filtersPromise = getState().serverInfo.api.getFiltersPromise(dataset.id).then(results => {
-                datasetFilters = results;
+            const savedViewsPromise = getState().serverInfo.api.getViewsPromise(dataset.id).then(results => {
+                datasetViews = results;
             });
             promises.push(categoriesRenamePromise);
-            promises.push(filtersPromise);
+            promises.push(savedViewsPromise);
         }
 
         return Promise.all(promises).then(() => onPromisesComplete()).finally(() => {
@@ -2146,3 +2122,111 @@ export function listDatasets() {
 }
 
 
+export function getDatasetStateJson(state) {
+    const {
+        chartOptions,
+        combineDatasetFilters,
+        activeFeature,
+        dataset,
+        embeddingLabels,
+        distributionPlotOptions,
+        distributionPlotInterpolator,
+        embeddings,
+        searchTokens,
+        datasetFilter,
+        interpolator,
+        markerOpacity,
+        pointSize,
+        unselectedMarkerOpacity,
+        distributionData
+    } = state;
+
+    let json = {
+        dataset: dataset.id,
+        embeddings: embeddings.map(embedding => {
+            if (embedding.bin) {
+                embedding = Object.assign({}, embedding);
+                delete embedding._bin;
+                return embedding;
+            } else {
+                return {name: embedding.name, dimensions: embedding.dimensions};
+            }
+
+        })
+    };
+
+    const chartRef = chartOptions.ref;
+    if (json.embeddings.length > 0 && chartRef != null && chartRef.scatterPlot) {
+        json.camera = chartRef.scatterPlot.getCameraDef();
+
+    }
+    if (activeFeature != null) {
+        json.activeFeature = activeFeature;
+    }
+    let jsonChartOptions = {};
+
+    const defaultChartOptions = {
+        showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
+        labelFontSize: DEFAULT_LABEL_FONT_SIZE,
+        labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
+    };
+
+    for (let key in defaultChartOptions) {
+        let value = chartOptions[key];
+        if (value !== defaultChartOptions[key]) {
+            jsonChartOptions[key] = value;
+        }
+    }
+    if (pointSize !== DEFAULT_POINT_SIZE) {
+        json.pointSize = pointSize;
+    }
+
+    json.chartOptions = jsonChartOptions;
+
+    if (searchTokens.length > 0) {
+        json.q = searchTokens;
+    }
+
+    let datasetFilterJson = {};
+    for (let key in datasetFilter) {
+        let filterObject = datasetFilter[key];
+        if (Array.isArray(filterObject)) { // brush filter
+            const array = [];
+            filterObject.forEach(brush => {
+                const brushJson = Object.assign({}, brush);
+                brushJson.indices = Array.from(brush.indices);
+                array.push(brushJson);
+            });
+            datasetFilterJson[key] = array;
+        } else if (filterObject.operation === 'in') {
+            datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
+        } else {
+            if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
+                datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
+            }
+        }
+    }
+    if (Object.keys(datasetFilterJson).length > 0) {
+        json.datasetFilter = datasetFilterJson;
+    }
+    json.combineDatasetFilters = combineDatasetFilters;
+    if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
+        json.markerOpacity = markerOpacity;
+    }
+    if (unselectedMarkerOpacity !== DEFAULT_UNSELECTED_MARKER_OPACITY) {
+        json.unselectedMarkerOpacity = unselectedMarkerOpacity;
+    }
+
+    if (distributionData && distributionData.length > 0) {
+        json.distributionPlotOptions = distributionPlotOptions;
+        json.distributionPlotInterpolator = Object.assign({}, distributionPlotInterpolator, {value: null});
+    }
+
+    const interpolatorJson = Object.assign({}, interpolator, {value: null});
+    json.colorScheme = interpolatorJson;
+
+    if (embeddingLabels.length > 0) {
+        json.embeddingLabels = embeddingLabels;
+    }
+    return json;
+};

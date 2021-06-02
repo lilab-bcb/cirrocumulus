@@ -13,7 +13,6 @@ export class RestServerApi {
         }).then(result => result.json());
     }
 
-
     getDatasetsPromise() {
         return fetch(API + '/datasets', {headers: {'Authorization': 'Bearer ' + getIdToken()}})
             .then(response => {
@@ -60,7 +59,6 @@ export class RestServerApi {
     }
 
 
-
     getDatasetPromise(datasetId) {
         return fetch(API + '/dataset?id=' + datasetId,
             {
@@ -70,7 +68,14 @@ export class RestServerApi {
     }
 
 
-// categories and filters
+    // category names
+    getCategoryNamesPromise(datasetId) {
+        return fetch(API + '/category_name?id=' + datasetId,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json());
+    }
+
     setCategoryNamePromise(data) {
         return fetch(API + '/category_name',
             {
@@ -80,8 +85,16 @@ export class RestServerApi {
             });
     }
 
-    upsertDatasetFilterPromise(data, isUpdate) {
-        return fetch(API + '/filter',
+    // views
+    getViewsPromise(datasetId) {
+        return fetch(API + '/views?id=' + datasetId,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(result => result.json());
+    }
+
+    upsertViewPromise(data, isUpdate) {
+        return fetch(API + '/view',
             {
                 body: JSON.stringify(data),
                 method: isUpdate ? 'PUT' : 'POST',
@@ -89,6 +102,23 @@ export class RestServerApi {
             }).then(response => response.json());
     }
 
+    deleteViewPromise(viewId, datasetId) {
+        return fetch(API + '/view',
+            {
+                body: JSON.stringify({id: viewId, ds_id: datasetId}),
+                method: 'DELETE',
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            });
+    }
+
+    getViewPromise(viewId, datasetId) {
+        return fetch(API + '/view?id=' + viewId + '&ds_id=' + datasetId,
+            {
+                headers: {'Authorization': 'Bearer ' + getIdToken()},
+            }).then(response => response.json());
+    }
+
+    // feature sets
     upsertFeatureSet(data, isUpdate) {
         return fetch(API + '/feature_set',
             {
@@ -118,35 +148,6 @@ export class RestServerApi {
         });
     }
 
-    deleteDatasetFilterPromise(filterId, datasetId) {
-        return fetch(API + '/filter',
-            {
-                body: JSON.stringify({id: filterId, ds_id: datasetId}),
-                method: 'DELETE',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            });
-    }
-
-    getDatasetFilterPromise(filterId, datasetId) {
-        return fetch(API + '/filter?id=' + filterId + '&ds_id=' + datasetId,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(response => response.json());
-    }
-
-    getCategoryNamesPromise(datasetId) {
-        return fetch(API + '/category_name?id=' + datasetId,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json());
-    }
-
-    getFiltersPromise(datasetId) {
-        return fetch(API + '/filters?id=' + datasetId,
-            {
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
-            }).then(result => result.json());
-    }
 
     submitJob(data) {
         return fetch(API + '/submit_job',

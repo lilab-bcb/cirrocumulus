@@ -19,6 +19,7 @@ import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
     EDIT_DATASET_DIALOG,
+    getDatasetStateJson,
     HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
     login,
@@ -34,14 +35,6 @@ import {drawerWidth} from './App';
 import CirroIcon from './CirroIcon';
 import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
-import {
-    DEFAULT_DARK_MODE,
-    DEFAULT_LABEL_FONT_SIZE,
-    DEFAULT_LABEL_STROKE_WIDTH,
-    DEFAULT_MARKER_OPACITY,
-    DEFAULT_SHOW_FOG,
-    DEFAULT_UNSELECTED_MARKER_OPACITY
-} from "./reducers";
 import {copyToClipboard, FEATURE_TYPE, REACT_MD_OVERRIDES} from './util';
 
 
@@ -138,113 +131,7 @@ class AppHeader extends React.PureComponent {
     };
 
     getLinkJson = () => {
-        const {
-            chartOptions,
-            combineDatasetFilters,
-            activeFeature,
-            dataset,
-            embeddingLabels,
-            distributionPlotOptions,
-            distributionPlotInterpolator,
-            embeddings,
-            searchTokens,
-            datasetFilter,
-            interpolator,
-            markerOpacity,
-            pointSize,
-            unselectedMarkerOpacity,
-            distributionData
-        } = this.props;
-
-        let json = {
-            dataset: dataset.id,
-            embeddings: embeddings.map(embedding => {
-                if (embedding.bin) {
-                    embedding = Object.assign({}, embedding);
-                    delete embedding._bin;
-                    return embedding;
-                } else {
-                    return {name: embedding.name, dimensions: embedding.dimensions};
-                }
-
-            })
-        };
-
-        const chartRef = chartOptions.ref;
-        if (json.embeddings.length > 0 && chartRef != null && chartRef.scatterPlot) {
-            json.camera = chartRef.scatterPlot.getCameraDef();
-
-        }
-        if (activeFeature != null) {
-            json.activeFeature = activeFeature;
-        }
-        let jsonChartOptions = {};
-
-        const defaultChartOptions = {
-            showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
-            labelFontSize: DEFAULT_LABEL_FONT_SIZE,
-            labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
-        };
-
-        for (let key in defaultChartOptions) {
-            let value = chartOptions[key];
-            if (value !== defaultChartOptions[key]) {
-                jsonChartOptions[key] = value;
-            }
-        }
-        if (pointSize !== 1) {
-            json.pointSize = pointSize;
-        }
-
-        json.chartOptions = jsonChartOptions;
-
-
-        if (searchTokens.length > 0) {
-            json.q = searchTokens;
-        }
-
-        let datasetFilterJson = {};
-        for (let key in datasetFilter) {
-            let filterObject = datasetFilter[key];
-            if (Array.isArray(filterObject)) { // brush filter
-                const array = [];
-                filterObject.forEach(brush => {
-                    const brushJson = Object.assign({}, brush);
-                    brushJson.indices = Array.from(brush.indices);
-                    array.push(brushJson);
-                });
-                datasetFilterJson[key] = array;
-            } else if (filterObject.operation === 'in') {
-                datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
-            } else {
-                if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
-                    datasetFilterJson[key] = {operation: filterObject.operation, value: filterObject.value};
-                }
-            }
-        }
-        if (Object.keys(datasetFilterJson).length > 0) {
-            json.datasetFilter = datasetFilterJson;
-        }
-        json.combineDatasetFilters = combineDatasetFilters;
-        if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
-            json.markerOpacity = markerOpacity;
-        }
-        if (unselectedMarkerOpacity !== DEFAULT_UNSELECTED_MARKER_OPACITY) {
-            json.unselectedMarkerOpacity = unselectedMarkerOpacity;
-        }
-
-        if (distributionData && distributionData.length > 0) {
-            json.distributionPlotOptions = distributionPlotOptions;
-            json.distributionPlotInterpolator = Object.assign({}, distributionPlotInterpolator, {value: null});
-        }
-
-        const interpolatorJson = Object.assign({}, interpolator, {value: null});
-        json.colorScheme = interpolatorJson;
-
-        if (embeddingLabels.length > 0) {
-            json.embeddingLabels = embeddingLabels;
-        }
-        return json;
+        return getDatasetStateJson(this.props);
     };
 
     handleDataset = (id) => {

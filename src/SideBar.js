@@ -40,16 +40,15 @@ import {connect} from 'react-redux';
 import {AccordionDetailsStyled, AccordionStyled, AccordionSummaryStyled} from './accordion';
 import {
     datasetFilterToJson,
-    deleteDatasetFilter,
     deleteFeatureSet,
+    deleteView,
     downloadSelectedIds,
-    exportDatasetFilters,
     getDatasetFilterNames,
     getEmbeddingKey,
     getTraceKey,
     handleDomainChange,
     MORE_OPTIONS_DIALOG,
-    openDatasetFilter,
+    openView,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
@@ -314,12 +313,13 @@ class SideBar extends React.PureComponent {
         this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
     };
 
-    openDatasetFilter = (filterId) => {
-        this.props.handleOpenDatasetFilter(filterId);
+
+    openView = (id) => {
+        this.props.handleOpenView(id);
     };
 
-    deleteDatasetFilter = (filterId) => {
-        this.props.handleDeleteDatasetFilter(filterId);
+    deleteView = (id) => {
+        this.props.handleDeleteView(id);
     };
 
     onPointSizeChange = (event) => {
@@ -485,6 +485,7 @@ class SideBar extends React.PureComponent {
         let searchTokens = this.props.searchTokens;
         copyToClipboard(searchTokens.filter(token => token.type === FEATURE_TYPE.X).map(item => item.value).join('\n'));
     };
+
     onFeatureClick = (event, option) => {
         event.stopPropagation();
         const value = option.text !== undefined ? option.text : option;
@@ -504,7 +505,7 @@ class SideBar extends React.PureComponent {
         }
     };
 
-    //
+
     onChartSizeChange = (event) => {
         const value = event.target.value;
         this.props.handleChartSize(value);
@@ -562,7 +563,11 @@ class SideBar extends React.PureComponent {
         this.props.removeDatasetFilter(null);
     };
 
-    onDatasetFilterSaved = () => {
+    onViewSaved = () => {
+        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
+    };
+
+    onDatasetViewSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
 
@@ -593,7 +598,7 @@ class SideBar extends React.PureComponent {
             combineDatasetFilters,
             dataset,
             datasetFilter,
-            datasetFilters,
+            datasetViews,
             distributionPlotOptions,
             embeddingLabels,
             embeddings,
@@ -612,10 +617,6 @@ class SideBar extends React.PureComponent {
         const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
         datasetFilterKeys.sort(NATSORT);
 
-        let savedDatasetFilter = this.props.savedDatasetFilter;
-        if (savedDatasetFilter == null) {
-            savedDatasetFilter = {};
-        }
         const splitTokens = splitSearchTokens(searchTokens);
         const featureSets = getFeatureSets(markers, splitTokens.featureSets);
         const featureOptions = dataset.features;
@@ -863,10 +864,6 @@ class SideBar extends React.PureComponent {
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                                         </Tooltip>
-                                        {dynamic && <Tooltip title={"Save Filter"}>
-                                            <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
-                                                        onClick={this.onDatasetFilterSaved}><SaveIcon/></IconButton>
-                                        </Tooltip>}
                                         <Tooltip title={"Download Selected IDs"}>
                                             <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
                                                         onClick={this.handleSelectedCellsClick}><CloudDownloadIcon/></IconButton>
@@ -1058,27 +1055,32 @@ class SideBar extends React.PureComponent {
 
                     </AccordionDetailsStyled>
                 </AccordionStyled>
+
                 {dynamic &&
                 <AccordionStyled
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}
                     defaultExpanded>
                     <AccordionSummaryStyled expandIcon={<ExpandMoreIcon/>}>
-                        <Typography>Saved Filters</Typography>
+                        <Typography>Links</Typography>
                     </AccordionSummaryStyled>
                     <AccordionDetailsStyled>
                         <div style={{width: '100%'}}>
-                            {datasetFilters.length === 0 &&
-                            <Box color="text.secondary" style={{paddingLeft: 10}}>No saved filters</Box>}
-                            {datasetFilters.length > 0 &&
+                            <Tooltip title={"Save Link"}>
+                                <IconButton size={'small'} onClick={this.onViewSaved}><SaveIcon/></IconButton>
+                            </Tooltip>
+                            <Divider/>
+                            {datasetViews.length === 0 &&
+                            <Box color="text.secondary" style={{paddingLeft: 10}}>No saved links</Box>}
+                            {datasetViews.length > 0 &&
                             <>
+
                                 <List dense={true}>
-                                    {datasetFilters.map(item => (
+                                    {datasetViews.map(item => (
                                         <ListItem key={item.id} data-key={item.id} button
-                                                  selected={item.id === savedDatasetFilter.id}
-                                                  onClick={e => this.openDatasetFilter(item.id)}>
+                                                  onClick={e => this.openView(item.id)}>
                                             <ListItemText primary={item.name}/>
                                             <ListItemSecondaryAction
-                                                onClick={e => this.deleteDatasetFilter(item.id)}>
+                                                onClick={e => this.deleteView(item.id)}>
                                                 <IconButton edge="end" aria-label="delete">
                                                     <DeleteIcon/>
                                                 </IconButton>
@@ -1086,18 +1088,11 @@ class SideBar extends React.PureComponent {
                                         </ListItem>
                                     ))}
                                 </List>
-                                <div className={this.props.classes.margin}>
-                                    <Divider/>
-                                    <Tooltip title={"Export Filters"}>
-                                        <IconButton size={'small'}
-                                                    onClick={this.props.handleExportDatasetFilters}><CloudDownloadIcon/></IconButton>
-                                    </Tooltip>
-
-                                </div>
                             </>}
                         </div>
                     </AccordionDetailsStyled>
                 </AccordionStyled>}
+
                 <AccordionStyled style={tab === 'results' ? null : {display: 'none'}}
                                  defaultExpanded>
                     <AccordionDetailsStyled>
@@ -1121,6 +1116,7 @@ const mapStateToProps = state => {
             dataset: state.dataset,
             datasetFilter: state.datasetFilter,
             datasetFilters: state.datasetFilters,
+            datasetViews: state.datasetViews,
             distributionPlotOptions: state.distributionPlotOptions,
             embeddingData: state.embeddingData,
             embeddingLabels: state.embeddingLabels,
@@ -1194,14 +1190,11 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             handleSearchTokens: (value, type) => {
                 dispatch(setSearchTokens(value == null ? [] : value, type));
             },
-            handleOpenDatasetFilter: value => {
-                dispatch(openDatasetFilter(value));
+            handleOpenView: value => {
+                dispatch(openView(value));
             },
-            handleDeleteDatasetFilter: value => {
-                dispatch(deleteDatasetFilter(value));
-            },
-            handleExportDatasetFilters: () => {
-                dispatch(exportDatasetFilters());
+            handleDeleteView: value => {
+                dispatch(deleteView(value));
             },
             handleDeleteFeatureSet: value => {
                 dispatch(deleteFeatureSet(value));
@@ -1211,8 +1204,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             onDistributionPlotOptions: (payload) => {
                 dispatch(setDistributionPlotOptions(payload));
-            },
-
+            }
         };
     }
 ;

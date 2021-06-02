@@ -40,9 +40,42 @@ class LocalDbAPI:
             meta = create_dataset_meta(path)
             if 'filters' not in json_data:
                 json_data['filters'] = {}
+            if 'views' not in json_data:
+                json_data['views'] = {}
             if 'categories' not in json_data:
                 json_data['categories'] = {}
             self.dataset_to_info[path] = dict(json_data=json_data, meta=meta, json_path=json_path)
+
+    def __delete_entity(self, dataset_id, entity_id, kind):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        del json_data[kind][entity_id]
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
+
+    def __get_entity(self, dataset_id, entity_id, kind):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        return json_data[kind][entity_id]
+
+    def __get_entity_list(self, dataset_id, kind):
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        results = []
+        filters = json_data[kind]
+        for key in filters:
+            r = filters[key]
+            r['id'] = key
+            results.append(r)
+        return results
+
+    def __upsert_entity(self, dataset_id, entity_id, kind, entity_dict):
+        if entity_id is None:
+            entity_id = unique_id()
+        json_data = self.dataset_to_info[dataset_id]['json_data']
+        entity = json_data[kind].get(entity_id)
+        if entity is None:
+            entity = {}
+            json_data[kind][entity_id] = entity
+        entity.update(entity_dict)
+        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
+        return entity_id
 
     def server(self):
         return dict(mode='client')
@@ -90,16 +123,6 @@ class LocalDbAPI:
                 entity['email'] = email
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
 
-    def dataset_filters(self, email, dataset_id):
-        json_data = self.dataset_to_info[dataset_id]['json_data']
-        results = []
-        filters = json_data['filters']
-        for key in filters:
-            r = filters[key]
-            r['id'] = key
-            results.append(r)
-        return results
-
     def get_feature_sets(self, email, dataset_id):
         json_data = self.dataset_to_info[dataset_id]['json_data']
         return json_data.get('markers', [])
@@ -127,35 +150,26 @@ class LocalDbAPI:
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
         return set_id
 
-    def delete_dataset_filter(self, email, dataset_id, filter_id):
-        json_data = self.dataset_to_info[dataset_id]['json_data']
-        del json_data['filters'][filter_id]
-        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
+    def dataset_views(self, email, dataset_id):
+        return self.__get_entity_list(dataset_id=dataset_id, kind='views')
 
-    def get_dataset_filter(self, email, dataset_id, filter_id):
-        json_data = self.dataset_to_info[dataset_id]['json_data']
-        return json_data['filters'][filter_id]
+    def delete_dataset_view(self, email, dataset_id, view_id):
+        return self.__delete_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
 
-    def upsert_dataset_filter(self, email, dataset_id, filter_id, filter_name, filter_notes, dataset_filter):
-        if filter_id is None:
-            filter_id = unique_id()
-        json_data = self.dataset_to_info[dataset_id]['json_data']
-        entity = json_data['filters'].get(filter_id)
-        if entity is None:
-            entity = {}
-            json_data['filters'][filter_id] = entity
-        if filter_name is not None:
-            entity['name'] = filter_name
-        if dataset_filter is not None:
-            entity['value'] = json.dumps(dataset_filter)
+    def get_dataset_view(self, email, dataset_id, view_id):
+        return self.__get_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
+
+    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
+        entity = {}
+        if name is not None:
+            entity['name'] = name
+        if value is not None:
+            entity['value'] = json.dumps(value)
         if email is not None:
             entity['email'] = email
         if dataset_id is not None:
             entity['dataset_id'] = dataset_id
-        if filter_notes is not None:
-            entity['notes'] = filter_notes
-        write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
-        return filter_id
+        return self.__upsert_entity(dataset_id=dataset_id, entity_id=view_id, kind='views', entity_dict=entity)
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         job_id = unique_id()

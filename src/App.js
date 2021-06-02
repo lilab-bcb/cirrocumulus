@@ -33,7 +33,7 @@ import HelpDialog from './HelpDialog';
 import JobResultsPanel from './JobResultsPanel';
 import LandingPage from './LandingPage';
 import MoreOptionsDialog from './MoreOptionsDialog';
-import SaveDatasetFilterDialog from './SaveDatasetFilterDialog';
+import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
 

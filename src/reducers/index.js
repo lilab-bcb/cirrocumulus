@@ -2,6 +2,17 @@ import {isPlainObject} from 'lodash';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
+    DEFAULT_DARK_MODE,
+    DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
+    DEFAULT_DRAG_MODE,
+    DEFAULT_INTERPOLATOR,
+    DEFAULT_LABEL_FONT_SIZE,
+    DEFAULT_LABEL_STROKE_WIDTH,
+    DEFAULT_MARKER_OPACITY,
+    DEFAULT_POINT_SIZE,
+    DEFAULT_SHOW_AXIS,
+    DEFAULT_SHOW_FOG,
+    DEFAULT_UNSELECTED_MARKER_OPACITY,
     DELETE_DATASET,
     getTraceKey,
     RESTORE_VIEW,
@@ -15,6 +26,7 @@ import {
     SET_DATASET_CHOICES,
     SET_DATASET_FILTER,
     SET_DATASET_FILTERS,
+    SET_DATASET_VIEWS,
     SET_DIALOG,
     SET_DISTRIBUTION_DATA,
     SET_DISTRIBUTION_PLOT_INTERPOLATOR,
@@ -57,20 +69,6 @@ import {
     updateTraceColors
 } from '../util';
 
-export const DEFAULT_BIN_SUMMARY = 'max';
-export const DEFAULT_NUMBER_BINS = 500;
-export const DEFAULT_POINT_SIZE = 1;
-export const DEFAULT_MARKER_OPACITY = 1;
-export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
-export const DEFAULT_INTERPOLATOR = 'Viridis';
-export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
-export const DEFAULT_DRAG_MODE = 'pan';
-export const DEFAULT_SHOW_LABELS = false;
-export const DEFAULT_SHOW_AXIS = true;
-export const DEFAULT_SHOW_FOG = false;
-export const DEFAULT_DARK_MODE = false;
-export const DEFAULT_LABEL_FONT_SIZE = 14;
-export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
 const DEFAULT_DIST_PLOT_OPTIONS = {
     chartType: 'dotplot',
@@ -542,6 +540,16 @@ function datasetFilters(state = [], action) {
     }
 }
 
+function datasetViews(state = [], action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return [];
+        case SET_DATASET_VIEWS:
+            return action.payload;
+        default:
+            return state;
+    }
+}
 
 function datasetFilter(state = {}, action) {
     switch (action.type) {
@@ -769,6 +777,7 @@ export default combineReducers({
     datasetChoices,
     datasetFilter,
     datasetFilters,
+    datasetViews,
     dialog,
     distributionData,
     distributionPlotOptions,
