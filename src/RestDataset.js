@@ -110,10 +110,16 @@ export class RestDataset {
             if (result.values) {
                 for (let key in result.values) {
                     let data = result.values[key];
-                    if (data.index) {  // sparse
+                    if (data.indices) {  // sparse
                         let values = new Float32Array(this.schema.shape[0]);
-                        for (let i = 0, n = data.index.length; i < n; i++) {
-                            values[data.index[i]] = data.value[i];
+                        for (let i = 0, n = data.indices.length; i < n; i++) {
+                            values[data.indices[i]] = data.values[i];
+                        }
+                        result.values[key] = values;
+                    } else if (data.categories) {  // category
+                        let values = new Array(this.schema.shape[0]);
+                        for (let i = 0, n = data.values.length; i < n; i++) {
+                            values[i] = data.categories[data.values[i]];
                         }
                         result.values[key] = values;
                     }

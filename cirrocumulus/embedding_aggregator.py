@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def mean_agg(x):
@@ -139,9 +140,12 @@ class EmbeddingAggregator:
             is_sparse = hasattr(series, 'sparse')
             if is_sparse:
                 # result['values'][column] = series.sparse.to_dense()
-                result['values'][column] = dict(index=series.values.sp_index.indices, value=series.values.sp_values)
+                result['values'][column] = dict(indices=series.values.sp_index.indices, values=series.values.sp_values)
             else:
-                result['values'][column] = series
+                if pd.api.types.is_categorical_dtype(series):
+                    result['values'][column] = dict(values=series.values, categories=series.cat.categories.values)
+                else:
+                    result['values'][column] = series
 
         if self.coords:
             for column in basis['coordinate_columns']:
