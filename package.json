@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.16.post2",
+  "version": "1.1.16.post3",
   "private": true,
   "homepage": ".",
   "dependencies": {
@@ -36,7 +36,7 @@
     "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git#1.0.1",
     "simplify-js": "^1.2.4",
     "three": "^0.129.0",
-    "web-vitals": "^1.1.2"
+    "web-vitals": "^2.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
