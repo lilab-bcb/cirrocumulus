@@ -1,13 +1,15 @@
 import datetime
-
-from google.cloud import datastore
+import json
 
 from cirrocumulus.util import get_email_domain
+from google.cloud import datastore
+
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
 CAT_NAME = 'Cat_Name'
 DATASET_FILTER = 'Dataset_Filter'
+DATASET_VIEW = 'D_View'
 FEATURE_SET = 'F_Set'
 USER = 'User'
 JOB = 'Job'
@@ -197,6 +199,7 @@ class FirestoreDatastore:
         dataset_id = dataset.id
         return dataset_id
 
+    # feature sets
     def get_feature_sets(self, email, dataset_id):
         return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=FEATURE_SET)
 
@@ -212,6 +215,27 @@ class FirestoreDatastore:
         if features is not None:
             entity_update['features'] = features
         return self.__upsert_entity(email=email, dataset_id=dataset_id, entity_id=set_id, kind=FEATURE_SET,
+            entity_update=entity_update)
+
+    # views
+    def dataset_views(self, email, dataset_id):
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW)
+
+    def delete_dataset_view(self, email, dataset_id, view_id):
+        return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
+
+    def get_dataset_view(self, email, dataset_id, view_id):
+        return self.__get_entity(email=email, dataset_id=dataset_id, entity_id=view_id, kind=DATASET_VIEW)
+
+    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
+        entity_update = {}
+        if email is not None:
+            entity_update['email'] = email
+        if name is not None:
+            entity_update['name'] = name
+        if value is not None:
+            entity_update['value'] = json.dumps(value)
+        return self.__upsert_entity(email=email, dataset_id=dataset_id, entity_id=view_id, kind=DATASET_VIEW,
             entity_update=entity_update)
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
