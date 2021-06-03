@@ -36,13 +36,16 @@ class FirestoreDatastore:
             raise InvalidUsage('Not authorized', 403)
         return key, dataset
 
-    def __get_entity_list(self, email, dataset_id, kind):
+    def __get_entity_list(self, email, dataset_id, kind, keys):
         client = self.datastore_client
         self.__get_key_and_dataset(email, dataset_id)
         query = client.query(kind=kind)
         query.add_filter('dataset_id', '=', int(dataset_id))
         results = []
         for result in query.fetch():
+            d = dict(id=result.id)
+            for key in keys:
+                d[key] = result.get(key)
             results.append(result)
         return results
 
@@ -201,7 +204,8 @@ class FirestoreDatastore:
 
     # feature sets
     def get_feature_sets(self, email, dataset_id):
-        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=FEATURE_SET)
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=FEATURE_SET,
+            keys=['category', 'name', 'features'])
 
     def delete_feature_set(self, email, dataset_id, set_id):
         return self.__delete_entity(email=email, kind=FEATURE_SET, entity_id=set_id)
@@ -219,13 +223,13 @@ class FirestoreDatastore:
 
     # views
     def dataset_views(self, email, dataset_id):
-        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW)
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW, keys=['name'])
 
     def delete_dataset_view(self, email, dataset_id, view_id):
         return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
 
     def get_dataset_view(self, email, dataset_id, view_id):
-        return self.__get_entity(email=email, dataset_id=dataset_id, entity_id=view_id, kind=DATASET_VIEW)
+        return self.__get_entity(email=email, entity_id=view_id, kind=DATASET_VIEW)
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
         entity_update = {}
