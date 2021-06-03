@@ -2181,7 +2181,10 @@ export function getDatasetStateJson(state) {
         json.pointSize = pointSize;
     }
 
-    json.chartOptions = jsonChartOptions;
+
+    if (Object.keys(jsonChartOptions).length > 0) {
+        json.chartOptions = jsonChartOptions;
+    }
 
     if (searchTokens.length > 0) {
         json.q = searchTokens;
@@ -2209,7 +2212,9 @@ export function getDatasetStateJson(state) {
     if (Object.keys(datasetFilterJson).length > 0) {
         json.datasetFilter = datasetFilterJson;
     }
-    json.combineDatasetFilters = combineDatasetFilters;
+    if (combineDatasetFilters !== 'and') {
+        json.combineDatasetFilters = combineDatasetFilters;
+    }
     if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
         json.markerOpacity = markerOpacity;
     }
@@ -2222,8 +2227,11 @@ export function getDatasetStateJson(state) {
         json.distributionPlotInterpolator = Object.assign({}, distributionPlotInterpolator, {value: null});
     }
 
-    const interpolatorJson = Object.assign({}, interpolator, {value: null});
-    json.colorScheme = interpolatorJson;
+    // TODO save custom color ranges per feature
+    const interpolatorJson = Object.assign({}, interpolator, {value: undefined});
+    if (interpolatorJson.name !== 'Viridis' || interpolatorJson.reversed) {
+        json.colorScheme = interpolatorJson;
+    }
 
     if (embeddingLabels.length > 0) {
         json.embeddingLabels = embeddingLabels;
