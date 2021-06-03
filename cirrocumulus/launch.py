@@ -126,9 +126,15 @@ def main(argsv):
     # CORS(app)
     configure_app(app, args.dataset, args.spatial, args.backed, args.markers)
     if not args.no_open:
-        import webbrowser
+        import webbrowser, requests
         host = args.host if args.host is not None else 'http://127.0.0.1'
         url = host + ':' + str(args.port)
+        try:
+            if requests.get(url).ok:
+                import sys
+                sys.exit('Address already in use')
+        except:
+            pass
         webbrowser.open(url)
     app.run(host=args.host, port=args.port, debug=False)
 
