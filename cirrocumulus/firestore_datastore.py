@@ -292,8 +292,8 @@ class FirestoreDatastore:
         results = []
         for result in query.fetch():
             results.append(
-                dict(id=result.id, name=result['name'], type=result['type'], submitted=result['submitted'],
-                    status=result['status'], email=result['email']))
+                dict(id=result.id, name=result['name'], type=result['type'], submitted=result.get('submitted'),
+                    status=result.get('status'), email=result.get('email')))
         return results
 
     def delete_job(self, email, job_id):
