@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.16.post3 `June 3, 2021`
+    * Embedding chart performance improvements
+    * Replace saved filters with links in order to save complete state
+
 - 1.1.16.post2 `May 26, 2021`
     * Drag and drop chips to reorder
     * Handle thousands of categories in violin plot
