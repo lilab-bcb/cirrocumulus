@@ -47,7 +47,8 @@ class TileDBDataset:
         for c in annotations['obs']['columns']:
             if c['name'] == 'name_0':  # index
                 continue
-            if c['type'] == 'categorical':
+            print(c)
+            if 'type' in c and c['type'] == 'categorical':
                 obs_cat.append(c['name'])
                 category_order[c['name']] = c['categories']
             else:
