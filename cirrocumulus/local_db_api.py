@@ -16,8 +16,9 @@ def create_dataset_meta(path):
 
 
 def write_json(json_data, json_path):
-    with open(json_path, 'wt') as f:
-        json.dump(json_data, f)
+    if os.path.exists(os.path.dirname(json_path)):  # only support writing local files
+        with open(json_path, 'wt') as f:
+            json.dump(json_data, f)
 
 
 class LocalDbAPI(AbstractDB):
