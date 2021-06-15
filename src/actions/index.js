@@ -25,6 +25,10 @@ import {
     getInterpolator,
     indexSort,
     randomSeq,
+    SERVER_CAPABILITY_JOBS,
+    SERVER_CAPABILITY_RENAME_CATEGORIES,
+    SERVER_CAPABILITY_SAVE_FEATURE_SETS,
+    SERVER_CAPABILITY_SAVE_LINKS,
     splitSearchTokens,
     TRACE_TYPE_IMAGE,
     TRACE_TYPE_META_IMAGE,
@@ -185,7 +189,7 @@ export function initGapi() {
 
         window.setTimeout(loadingAppProgress, 500);
         if (process.env.REACT_APP_STATIC === 'true') {
-            const serverInfo = {clientId: '', dynamic: false};
+            const serverInfo = {clientId: '', capabilities: new Set()};
             serverInfo.api = new StaticServerApi();
             dispatch(setServerInfo(serverInfo));
             dispatch(_setLoadingApp({loading: false}));
@@ -194,25 +198,58 @@ export function initGapi() {
             });
             return Promise.resolve();
         }
-        return fetch(API + '/server').then(result => result.json()).then(serverInfo => {
+        let urlOptions = window.location.search.substring(1);
+        // can be run in server mode by passing url only and no loading datasets or saving to DB
+        let staticDatasetUrl = null;
+        if (urlOptions.length > 0) {
+            let pairs = urlOptions.split('&');
+            pairs.forEach(pair => {
+                let keyVal = pair.split('=');
+                if (keyVal.length === 2) {
+                    if (keyVal[0] === 'id') { // load a dataset by URL
+                        staticDatasetUrl = keyVal[1];
+                    }
+                }
+            });
+        }
+        let getServerInfo;
+        if (staticDatasetUrl == null) {
+            getServerInfo = fetch(API + '/server').then(result => result.json())
+        } else {
+            getServerInfo = Promise.resolve({
+                mode: 'client',
+                capabilities: new Set([SERVER_CAPABILITY_JOBS])
+            });
+        }
+
+        return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
                 serverInfo.clientId = '';
             }
-            if (serverInfo.dynamic == null) {
-                serverInfo.dynamic = true;
+            if (serverInfo.capabilities == null) {
+                serverInfo.capabilities = new Set([SERVER_CAPABILITY_RENAME_CATEGORIES, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_FEATURE_SETS, SERVER_CAPABILITY_SAVE_LINKS]);
             }
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '' || serverInfo.clientId == null) { // no login required
-
                 dispatch(_setLoadingApp({loading: false}));
                 dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
                 if (serverInfo.mode === 'server') {
                     dispatch(setUser({importer: true}));
                 }
-                dispatch(listDatasets()).then(() => {
+                if (staticDatasetUrl == null) {
+                    dispatch(listDatasets()).then(() => {
+                        dispatch(_loadSavedView());
+                    });
+                } else {
+                    dispatch(_setDatasetChoices([{
+                        id: staticDatasetUrl,
+                        url: staticDatasetUrl,
+                        name: staticDatasetUrl,
+                        description: ''
+                    }]));
                     dispatch(_loadSavedView());
-                });
+                }
 
             } else {
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
@@ -794,7 +831,7 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.dynamic ? getState().serverInfo.api.setCategoryNamePromise({
+        const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
             c: payload.name,
             o: payload.oldValue,
             n: payload.value,
@@ -1025,10 +1062,8 @@ function restoreSavedView(savedView) {
 function _loadSavedView() {
     return function (dispatch, getState) {
         let savedView = {dataset: null};
-        let q = window.location.search.substring(3);
-        if (q.length === 0) {
-            q = window.location.hash.substring(3);
-        }
+        // #q=
+        let q = window.location.hash.substring(3);
         if (q.length > 0) {
             try {
                 savedView = JSON.parse(window.decodeURIComponent(q));
@@ -1482,13 +1517,17 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
 
         const initPromise = dataset.api.init(id, dataset.url);
-        const jobsPromise = dataset.api.getJobs(id).then(jobs => {
+        const promises = [initPromise]
+
+        promises.push(dataset.api.getJobs(id).then(jobs => {
             jobResults = jobs;
-        });
+        }));
+
         const schemaPromise = dataset.api.getSchemaPromise().then(result => {
             newDataset = result;
         });
-        const promises = [initPromise, jobsPromise, schemaPromise];
+        promises.push(schemaPromise)
+
         if (!isDirectAccess) {
             const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
                 categoryNameResults = results;

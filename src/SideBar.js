@@ -78,6 +78,9 @@ import {
     FEATURE_TYPE,
     getFeatureSets,
     NATSORT,
+    SERVER_CAPABILITY_JOBS,
+    SERVER_CAPABILITY_SAVE_FEATURE_SETS,
+    SERVER_CAPABILITY_SAVE_LINKS,
     splitSearchTokens,
     TRACE_TYPE_META_IMAGE,
 } from './util';
@@ -627,7 +630,6 @@ class SideBar extends React.PureComponent {
         const featureSetOptions = getFeatureSetOptions(markers, categoricalNames);
         const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
         const selectedEmbeddings = getEmbeddingOptions(embeddings);
-        const dynamic = serverInfo.dynamic;
         const {
             featureSet,
             featureSetAnchorEl,
@@ -639,7 +641,7 @@ class SideBar extends React.PureComponent {
             minColor,
             maxColor
         } = this.state;
-        const jobsEnabled = serverInfo.jobs;
+
         return (
             <div className={classes.root}>
                 <Dialog
@@ -809,7 +811,7 @@ class SideBar extends React.PureComponent {
                                                          getChipText={option => option.name}/>
 
                             </FormControl>}
-                            {dynamic && splitTokens.X.length > 0 &&
+                            {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) && splitTokens.X.length > 0 &&
                             <Tooltip title={"Save Current Feature List"}>
                                 <IconButton size={'small'} onClick={this.onSaveFeatureList}>
                                     <SaveIcon/>
@@ -876,8 +878,9 @@ class SideBar extends React.PureComponent {
                     </AccordionDetailsStyled>
                 </AccordionStyled>
 
-                {jobsEnabled && <AccordionStyled style={tab === 'embedding' ? null : {display: 'none'}}
-                                                 defaultExpanded>
+                {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
+                <AccordionStyled style={tab === 'embedding' ? null : {display: 'none'}}
+                                 defaultExpanded>
                     <AccordionSummaryStyled>
                         <Typography>Analysis</Typography>
                     </AccordionSummaryStyled>
@@ -1056,7 +1059,7 @@ class SideBar extends React.PureComponent {
                     </AccordionDetailsStyled>
                 </AccordionStyled>
 
-                {dynamic &&
+                {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
                 <AccordionStyled
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}
                     defaultExpanded>
@@ -1073,7 +1076,6 @@ class SideBar extends React.PureComponent {
                             <Box color="text.secondary" style={{paddingLeft: 10}}>No saved links</Box>}
                             {datasetViews.length > 0 &&
                             <>
-
                                 <List dense={true}>
                                     {datasetViews.map(item => (
                                         <ListItem key={item.id} data-key={item.id} button

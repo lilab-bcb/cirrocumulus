@@ -60,6 +60,11 @@ interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 //     '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
 //     '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
 
+export const SERVER_CAPABILITY_RENAME_CATEGORIES = 'rename_categories';
+export const SERVER_CAPABILITY_JOBS = 'jobs';
+export const SERVER_CAPABILITY_SAVE_FEATURE_SETS = 'save_feature_sets';
+export const SERVER_CAPABILITY_SAVE_LINKS = 'save_links';
+
 export const CATEGORY_20B = [
     '#393b79', '#5254a3', '#6b6ecf',
     '#9c9ede', '#637939', '#8ca252', '#b5cf6b', '#cedb9c', '#8c6d31',

@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 
+from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.io_util import unique_id
 
 
@@ -19,9 +20,10 @@ def write_json(json_data, json_path):
         json.dump(json_data, f)
 
 
-class LocalDbAPI:
+class LocalDbAPI(AbstractDB):
 
     def __init__(self, paths):
+        super().__init__(mode='client')
         self.dataset_to_info = {}  # json_data, meta, json_path
         self.job_id_to_job = {}
 
@@ -56,7 +58,10 @@ class LocalDbAPI:
         return json_data[kind][entity_id]
 
     def __get_entity_list(self, dataset_id, kind):
-        json_data = self.dataset_to_info[dataset_id]['json_data']
+        info = self.dataset_to_info.get(dataset_id)
+        if info is None:
+            return []
+        json_data = info['json_data']
         results = []
         filters = json_data[kind]
         for key in filters:
@@ -77,9 +82,6 @@ class LocalDbAPI:
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
         return entity_id
 
-    def server(self):
-        return dict(mode='client')
-
     def user(self, email):
         return dict()
 
@@ -90,13 +92,22 @@ class LocalDbAPI:
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
-        result = self.dataset_to_info[dataset_id]['meta']
-        result['id'] = dataset_id
+        info = self.dataset_to_info.get(dataset_id)
+        if info is None:  # on the fly
+            result = {'id': dataset_id, 'url': dataset_id, 'name': os.path.splitext(os.path.basename(dataset_id))[0],
+                      'description': ''}
+        else:
+            result = info['meta']
+            result['id'] = dataset_id
+
         return result
 
     def category_names(self, email, dataset_id):
         results = []
-        json_data = self.dataset_to_info[dataset_id]['json_data']
+        info = self.dataset_to_info.get(dataset_id)
+        if info is None:
+            return results
+        json_data = info['json_data']
         categories = json_data['categories']
         for category_name in categories:
             category = categories[category_name]
@@ -124,7 +135,10 @@ class LocalDbAPI:
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
 
     def get_feature_sets(self, email, dataset_id):
-        json_data = self.dataset_to_info[dataset_id]['json_data']
+        info = self.dataset_to_info.get(dataset_id)
+        if info is None:
+            return []
+        json_data = ['json_data']
         return json_data.get('markers', [])
 
     def delete_feature_set(self, email, dataset_id, set_id):
@@ -174,7 +188,7 @@ class LocalDbAPI:
     def create_job(self, email, dataset_id, job_name, job_type, params):
         job_id = unique_id()
         self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
-            status=None, result=None, submitted=datetime.datetime.utcnow())
+                                          status=None, result=None, submitted=datetime.datetime.utcnow())
         return job_id
 
     def get_job(self, email, job_id, return_result):
@@ -187,7 +201,7 @@ class LocalDbAPI:
         results = []
         for job in self.job_id_to_job.values():
             results.append(dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
-                submitted=job['submitted']))
+                                submitted=job['submitted']))
         return results
 
     def delete_job(self, email, job_id):
