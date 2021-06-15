@@ -11,13 +11,12 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
     from cirrocumulus.no_auth import NoAuth
 
     app.config['AUTH'] = NoAuth()
-    dataset_api.add(ParquetDataset())
-
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
     except:  # tiledb install is optional
         pass
+    dataset_api.add(ParquetDataset())
     anndata_dataset = AnndataDataset('r' if backed else None)
     dataset_ids = []
     for dataset_paths in list_of_dataset_paths:

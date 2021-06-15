@@ -37,13 +37,14 @@ def configure_app(app):
     else:
         from cirrocumulus.local_db_api import LocalDbAPI
         app.config['DATABASE'] = LocalDbAPI([])
-    from cirrocumulus.parquet_dataset import ParquetDataset
-    dataset_api.add(ParquetDataset())
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
     except:  # tiledb install is optional
         pass
+    from cirrocumulus.parquet_dataset import ParquetDataset
+    dataset_api.add(ParquetDataset())
+
     from cirrocumulus.anndata_dataset import AnndataDataset
     anndata_dataset = AnndataDataset('r' if False else None)
     dataset_api.add(anndata_dataset)
