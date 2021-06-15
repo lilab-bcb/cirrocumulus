@@ -138,7 +138,7 @@ class LocalDbAPI(AbstractDB):
         info = self.dataset_to_info.get(dataset_id)
         if info is None:
             return []
-        json_data = ['json_data']
+        json_data = info['json_data']
         return json_data.get('markers', [])
 
     def delete_feature_set(self, email, dataset_id, set_id):
