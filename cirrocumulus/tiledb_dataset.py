@@ -52,6 +52,7 @@ class TileDBDataset:
                 category_order[c['name']] = c['categories']
             else:
                 obs.append(c['name'])
+        schema_dict['obsIndex'] = annotations['obs'].get('index', 'name_0')
         schema_dict['obs'] = obs
         schema_dict['obsCat'] = obs_cat
         schema_dict['categoryOrder'] = category_order
@@ -97,6 +98,7 @@ class TileDBDataset:
                 if scipy.sparse.issparse(X):
                     df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
                 else:
+                    X = scipy.sparse.csr_matrix(X)
                     df = pd.DataFrame(data=X, columns=var_keys)
             # for key in keys.keys(): uns not supported
         #     if df is None:
@@ -113,7 +115,7 @@ class TileDBDataset:
 
             for key in obs_keys:
                 if key == 'index':
-                    _obs_keys.append('name_0')
+                    _obs_keys.append(schema.get('obsIndex', 'name_0'))
                 else:
                     _obs_keys.append(key)
             with tiledb.open(os.path.join(path, 'obs'), mode="r") as array:
