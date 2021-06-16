@@ -22,8 +22,8 @@ def group_df(test_data, measures, dimensions, continuous_obs, basis):
     for key in dimensions:
         agg_dict[key] = lambda x: x.mode()[0]
     EmbeddingAggregator.convert_coords_to_bin(df, nbins=100,
-        coordinate_columns=basis['coordinate_columns'],
-        bin_name=basis['full_name'])
+                                              coordinate_columns=basis['coordinate_columns'],
+                                              bin_name=basis['full_name'])
     # group by bin then agg
     return df.groupby(basis['full_name']).agg(agg_dict)
 
@@ -32,10 +32,16 @@ def diff_binning(grouped_df, measures, dimensions, continuous_obs, basis, result
     for key in basis['coordinate_columns']:
         np.testing.assert_array_equal(results['coordinates'][key], grouped_df[key].values, err_msg=key)
     for key in measures:
-        np.testing.assert_allclose(results['values'][key], grouped_df[key].values, err_msg=key, rtol=1e-05, atol=1e-06)
+        v = results['values'][key]  # dict of indices, values
+        if isinstance(v, dict):
+            values = np.zeros(len(grouped_df))
+            values[v['indices']] = v['values']
+        else:
+            values = v
+        np.testing.assert_allclose(values, grouped_df[key].values, err_msg=key, rtol=1e-05, atol=1e-06)
     for key in continuous_obs:
         np.testing.assert_allclose(results['values'][key], grouped_df[key].values, err_msg=key, rtol=1e-05,
-            atol=1e-08)
+                                   atol=1e-08)
     for key in dimensions:
         np.testing.assert_array_equal(results['values'][key]['value'], grouped_df[key].values, err_msg=key)
 
@@ -46,12 +52,19 @@ def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions,
     values = dict(dimensions=dimensions, measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)))
     results = handle_data(dataset_api=dataset_api, dataset=input_dataset, values=values, embedding_list=embedding_list)
     df = create_df(test_data, measures, dimensions + continuous_obs, basis)
-    for key in basis['coordinate_columns']:
-        np.testing.assert_array_equal(results['embeddings'][0]['coordinates'][key], df[key].values, err_msg=key)
+
     for key in measures:
-        np.testing.assert_array_equal(results['values'][key], df[key].values, err_msg=key)
+        v = results['values'][key]  # dict of indices, values
+        if isinstance(v, dict):
+            values = np.zeros(len(df))
+            values[v['indices']] = v['values']
+        else:
+            values = v
+        np.testing.assert_array_equal(values, df[key].values, err_msg=key)
     for key in dimensions:
         np.testing.assert_array_equal(results['values'][key], test_data.obs[key], err_msg=key)
+    for key in basis['coordinate_columns']:
+        np.testing.assert_array_equal(results['embeddings'][0]['coordinates'][key], df[key].values, err_msg=key)
 
 
 @pytest.fixture(autouse=True, params=['sum', 'mean', 'max'])
