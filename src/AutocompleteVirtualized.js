@@ -301,41 +301,51 @@ export default function AutocompleteVirtualized(props) {
 
     return (
         <>
-            <SortableList
-                distance={2}
-                onSortEnd={onSortEnd}
-                axis="xy" items={props.value}
-            />
             <Autocomplete
                 multiple
                 ref={ref}
+                size={"small"}
                 filterOptions={filterOptions}
                 disableListWrap
                 classes={classes}
                 getOptionSelected={getOptionSelected}
                 value={props.value}
-                openOnFocus={true}
+
                 filterSelectedOptions={true}
                 getOptionLabel={getOptionLabel}
                 groupBy={props.groupBy ? (option) => option.group : null}
-                blurOnSelect={true}
+
                 ChipProps={{size: 'small'}}
                 ListboxComponent={ListboxComponent}
                 renderGroup={renderGroup}
                 options={props.options}
+                blurOnSelect={true}
+                openOnFocus={false}
                 autoHighlight={true}
                 onChange={props.onChange}
                 renderTags={(value, getTagProps) =>
                     null
                 }
-                renderInput={(params) => <TextField margin="dense" {...params} label={props.label}
-                                                    helperText={props.helperText}/>}
+                renderInput={(params) => <div ref={params.InputProps.ref}><TextField
+                    style={{
+                        width: 200
+                    }}
+                    InputLabelProps={{shrink: true}}
+                    margin="dense" {...params.inputProps}
+                    label={props.label}
+                    helperText={props.helperText}/>
+                </div>}
                 renderOption={renderOption}
                 onPaste={onPaste}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
                 onDragEnd={onDragEnd}
                 onDragLeave={onDragEnd}
+            />
+            <SortableList
+                distance={2}
+                onSortEnd={onSortEnd}
+                axis="xy" items={props.value}
             /></>
     );
 }

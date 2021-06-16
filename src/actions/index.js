@@ -37,7 +37,6 @@ import {
 } from '../util';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
-
 const authScopes = [
     'email',
     // 'profile',
@@ -206,7 +205,7 @@ export function initGapi() {
             pairs.forEach(pair => {
                 let keyVal = pair.split('=');
                 if (keyVal.length === 2) {
-                    if (keyVal[0] === 'id') { // load a dataset by URL
+                    if (keyVal[0] === 'url') { // load a dataset by URL
                         staticDatasetUrl = keyVal[1];
                     }
                 }
@@ -415,14 +414,17 @@ export function deleteFeatureSet(id) {
         dispatch(_setLoading(true));
         getState().serverInfo.api.deleteFeatureSet(id, getState().dataset.id)
             .then(result => {
-
                 let markers = getState().markers;
+                let found = false;
                 for (let i = 0; i < markers.length; i++) {
                     if (markers[i].id === id) {
                         markers.splice(i, 1);
-                        // remove from searchTokens
+                        found = true;
                         break;
                     }
+                }
+                if (!found) {
+                    console.log('Unable to find feature set id ' + id)
                 }
                 dispatch(setMarkers(markers.slice()));
                 dispatch(setMessage('Set deleted'));
@@ -1380,6 +1382,7 @@ export function setSearchTokens(values, type) {
                 return {value: item, type: type};
             }));
         }
+        console.log(searchTokens);
         dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
         dispatch(_updateCharts());
     };
