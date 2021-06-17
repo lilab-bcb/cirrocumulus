@@ -179,6 +179,10 @@ Developer Instructions
 
     pip install -e .
 
+- Install flask_cors::
+
+    pip install flask_cors
+
 - Install typescript::
 
     yarn global add typescript
