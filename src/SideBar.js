@@ -593,16 +593,16 @@ class SideBar extends React.PureComponent {
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
                 <div
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                    <Typography gutterBottom={false} component={"h1"}
+                                className={classes.title}>Links</Typography>
                     <Divider/>
-                    <div style={{width: 200}}>
-                        <Typography gutterBottom={false} component={"h1"}
-                                    className={classes.title}>Links</Typography>
-                        <Tooltip title={"Save Current Visualization State"}><Link
-                            style={{
-                                float: 'right'
-                            }}
-                            onClick={this.onViewSaved}>Save</Link></Tooltip>
-                    </div>
+                    <div></div>
+                    <Tooltip title={"Save Current Visualization State"}><Link
+                        style={{
+                            float: 'right'
+                        }}
+                        onClick={this.onViewSaved}>Save</Link></Tooltip>
+
                     {datasetViews.length === 0 &&
                     <Box color="text.secondary">No saved links</Box>}
                     {datasetViews.length > 0 &&
