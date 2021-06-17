@@ -8,14 +8,13 @@ import {
     splitSearchTokens
 } from "./util";
 import NumberIcon from "./NumberIcon";
-import {InputLabel, Paper, Switch, Typography} from '@material-ui/core';
+import {InputLabel, Switch, Typography} from '@material-ui/core';
 import FormControl from '@material-ui/core/FormControl';
 import IconButton from '@material-ui/core/IconButton';
 import Link from '@material-ui/core/Link';
 import Tooltip from '@material-ui/core/Tooltip';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
-import SaveIcon from '@material-ui/icons/Save';
 import {findIndex} from 'lodash';
 import memoize from "memoize-one";
 import React, {useState} from 'react';
@@ -57,9 +56,6 @@ const styles = theme => ({
             margin: theme.spacing(0, 0.5),
         }
     },
-    section: {
-        margin: theme.spacing(1, 0)
-    }
 });
 const getAnnotationOptions = memoize(
     (obs, obsCat) => {
@@ -349,11 +345,11 @@ function ExplorePanel(props) {
                       onClick={onDeleteFeatureSet}>Delete</MenuItem>
 
         </Menu>
-        <div variant="outlined"
-             style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-            <Paper elevation={0} className={classes.section}>
+        <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+            <div className={classes.section}>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Explore</Typography>
+                <Divider/>
                 {tab === 'embedding' && embeddingOptions.length > 0 &&
                 <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Embeddings"}
@@ -453,10 +449,11 @@ function ExplorePanel(props) {
                                                      onClick={onSaveFeatureList}>Save</Link></Tooltip></> : null}/>
 
                 </FormControl>}
-            </Paper>
-            <Paper elevation={0} className={classes.section} style={{maxHeight: 500}}>
+            </div>
+            <div className={classes.section} style={{maxHeight: 500}}>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Filters</Typography>
+                <Divider/>
                 <Grid component="label" alignContent={"flex-start"} container alignItems="center"
                       spacing={0}>
                     <Grid item><InputLabel shrink={true} variant={"standard"}>Combine</InputLabel></Grid>
@@ -500,7 +497,7 @@ function ExplorePanel(props) {
                     </div>
                 </>
                 }
-            </Paper>
+            </div>
         </div>
     </>
 }

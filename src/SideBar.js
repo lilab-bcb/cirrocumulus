@@ -1,4 +1,4 @@
-import {DialogActions, DialogContentText, InputLabel, Paper, Switch, Typography} from '@material-ui/core';
+import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
@@ -57,6 +57,7 @@ import ExplorePanel from "./ExplorePanel";
 import Link from "@material-ui/core/Link";
 import withStyles from "@material-ui/core/styles/withStyles";
 import {connect} from 'react-redux';
+import Divider from "@material-ui/core/Divider";
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -76,19 +77,14 @@ const gallerySizeOptions = [{value: 200, label: 'Extra Small'}, {value: 300, lab
 const styles = theme => ({
     root: {
         display: 'flex',
-        width: '100%',
         flexDirection: 'column',
-        margin: theme.spacing(1, 1)
+        margin: theme.spacing(0, 0.5)
     },
     title: {textTransform: 'uppercase'},
-    section: {
-        margin: theme.spacing(1, 0)
-    },
     formControl: {
         display: 'block',
         minWidth: 200,
-        maxWidth: 200,
-        margin: theme.spacing(0, 0),
+        maxWidth: 200
     },
     select: {
         minWidth: 200,
@@ -115,7 +111,7 @@ class SideBar extends React.PureComponent {
         this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
     }
 
-   
+
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.chartOptions.labelFontSize !== this.props.chartOptions.labelFontSize) {
             this.setState({
@@ -407,12 +403,13 @@ class SideBar extends React.PureComponent {
 
                 <ExplorePanel/>
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
-                <Paper elevation={0} className={classes.section} style={tab === 'embedding' ? null : {display: 'none'}}>
+                <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Tooltip
                         title={"Find differentially expressed features between two groups of cells"}>
                         <Typography
                             component={"h1"} className={classes.title}>Differential
                             Expression</Typography></Tooltip>
+                    <Divider/>
                     <ButtonGroup variant="outlined">
                         <Tooltip
                             title={'Group one' + (this.state.group1Count ? ' (' + intFormat(this.state.group1Count) + ' cells)' : '')}>
@@ -435,12 +432,12 @@ class SideBar extends React.PureComponent {
                     {/*        disabled={selection.size === 0 || activeFeature.type !== FEATURE_TYPE.X}*/}
                     {/*        size={"small"} variant="outlined"*/}
                     {/*        onClick={event => this.onSubmitJob('corr')}>Go</Button>*/}
-                </Paper>}
-                <Paper elevation={0} className={classes.section}
-                       style={tab === 'distribution' ? null : {display: 'none'}}>
+                </div>}
+                <div
+                    style={tab === 'distribution' ? null : {display: 'none'}}>
                     <Typography gutterBottom={false} component={"h1"}
                                 className={classes.title}>View</Typography>
-
+                    <Divider/>
                     <div style={{marginTop: 8}}>
                         {chartType === 'violin' && <FormControl className={classes.formControl}>
                             <InputLabel id="violin-scale-label">Scale</InputLabel>
@@ -485,10 +482,11 @@ class SideBar extends React.PureComponent {
                         </FormControl>
                     </div>
 
-                </Paper>
+                </div>
 
-                <Paper elevation={0} className={classes.section} style={tab === 'embedding' ? null : {display: 'none'}}>
+                <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>
+                    <Divider/>
                     <InputLabel style={{marginTop: 8}} shrink={true}>Marker
                         Opacity</InputLabel>
                     <Slider
@@ -590,11 +588,12 @@ class SideBar extends React.PureComponent {
                         />
                     </FormControl>
 
-                </Paper>
+                </div>
 
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
-                <Paper elevation={0} className={classes.section}
-                       style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                <div
+                    style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                    <Divider/>
                     <div style={{width: 200}}>
                         <Typography gutterBottom={false} component={"h1"}
                                     className={classes.title}>Links</Typography>
@@ -623,7 +622,7 @@ class SideBar extends React.PureComponent {
                     </List>
                     }
 
-                </Paper>}
+                </div>}
 
                 <div style={tab === 'results' ? null : {display: 'none'}}>
                     <JobResultOptions/>
