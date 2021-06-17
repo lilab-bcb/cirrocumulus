@@ -15,7 +15,6 @@ import {
     EDIT_DATASET_DIALOG,
     HELP_DIALOG,
     IMPORT_DATASET_DIALOG,
-    MORE_OPTIONS_DIALOG,
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
     setDialog,
@@ -32,7 +31,6 @@ import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
 import JobResultsPanel from './JobResultsPanel';
 import LandingPage from './LandingPage';
-import MoreOptionsDialog from './MoreOptionsDialog';
 import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
@@ -118,7 +116,6 @@ class App extends PureComponent {
                     {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
                     {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
                     {dialog === HELP_DIALOG && <HelpDialog/>}
-                    {dialog === MORE_OPTIONS_DIALOG && <MoreOptionsDialog/>}
                     {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
                     <AppHeader/>
                     <Drawer

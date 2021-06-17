@@ -30,7 +30,6 @@ import {
     downloadSelectedIds,
     getTraceKey,
     handleDomainChange,
-    MORE_OPTIONS_DIALOG,
     openView,
     removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
@@ -88,6 +87,7 @@ const styles = theme => ({
     formControl: {
         display: 'block',
         minWidth: 200,
+        maxWidth: 200,
         margin: theme.spacing(0, 0),
     },
     select: {
@@ -104,13 +104,30 @@ class SideBar extends React.PureComponent {
             opacity: props.markerOpacity,
             unselectedOpacity: props.unselectedMarkerOpacity,
             minColor: '',
-            maxColor: ''
+            maxColor: '',
+            labelFontSize: props.chartOptions.labelFontSize,
+            labelStrokeWidth: props.chartOptions.labelStrokeWidth
         };
+
+        this.onLabelFontSizeUpdate = debounce(this.onLabelFontSizeUpdate, 500);
+        this.onLabelStrokeWidthUpdate = debounce(this.onLabelStrokeWidthUpdate, 500);
         this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
         this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
     }
 
+   
     componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevProps.chartOptions.labelFontSize !== this.props.chartOptions.labelFontSize) {
+            this.setState({
+                labelFontSize: this.props.chartOptions.labelFontSize
+            });
+        }
+        if (prevProps.chartOptions.labelStrokeWidth !== this.props.chartOptions.labelStrokeWidth) {
+            this.setState({
+                labelStrokeWidth: this.props.chartOptions.labelStrokeWidth
+            });
+        }
+
         if (prevProps.markerOpacity !== this.props.markerOpacity) {
             this.setState({opacity: this.props.markerOpacity});
         }
@@ -150,6 +167,33 @@ class SideBar extends React.PureComponent {
 
         }
     }
+
+    onLabelFontSizeUpdate = (value) => {
+        if (!isNaN(value) && value > 0) {
+            this.props.chartOptions.labelFontSize = value;
+            this.props.handleChartOptions(this.props.chartOptions);
+            this.setState({labelFontSize: value});
+        }
+    };
+
+    onLabelFontSize = (event) => {
+        this.setState({labelFontSize: event.target.value});
+        this.onLabelFontSizeUpdate(event.target.value);
+    };
+
+    onLabelStrokeWidth = (event) => {
+        this.setState({labelStrokeWidth: event.target.value});
+        this.onLabelStrokeWidthUpdate(event.target.value);
+    };
+
+    onLabelStrokeWidthUpdate = (value) => {
+        if (!isNaN(value) && value >= 0) {
+            this.props.chartOptions.labelStrokeWidth = value;
+            this.props.handleChartOptions(this.props.chartOptions);
+            this.setState({labelStrokeWidth: value});
+        }
+
+    };
 
     onMinUIChange = (value) => {
         this.setState({minColor: value});
@@ -451,7 +495,7 @@ class SideBar extends React.PureComponent {
                         min={0.0}
                         max={1}
                         step={0.01}
-                        style={{width: '86%'}}
+                        style={{width: 200}}
                         valueLabelDisplay="auto"
                         value={opacity}
                         onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
@@ -462,7 +506,7 @@ class SideBar extends React.PureComponent {
                         min={0.0}
                         max={1}
                         step={0.01}
-                        style={{width: '86%'}}
+                        style={{width: 200}}
                         valueLabelDisplay="auto"
                         value={unselectedOpacity}
                         onChange={this.onUnselectedMarkerOpacityChange}
@@ -524,16 +568,34 @@ class SideBar extends React.PureComponent {
                         onMaxUIChange={this.onMaxUIChange}
                         onInterpolator={this.props.handleInterpolator}/>
 
-                    <Button size={'small'}
-                            aria-label="More Options" onClick={this.props.onMoreOptions}>More Options...
-                    </Button>
+                    <FormControl className={classes.formControl}>
+                        <TextField
+                            value={this.state.labelFontSize}
+                            onChange={this.onLabelFontSize}
+                            size="small"
+                            InputLabelProps={{shrink: true}}
+                            fullWidth
+                            label="Label Font Size"
+                        />
+                    </FormControl>
+
+                    <FormControl className={classes.formControl}>
+                        <TextField
+                            value={this.state.labelStrokeWidth}
+                            onChange={this.onLabelStrokeWidth}
+                            size="small"
+                            InputLabelProps={{shrink: true}}
+                            fullWidth
+                            label="Label Shadow Size"
+                        />
+                    </FormControl>
 
                 </Paper>
 
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
                 <Paper elevation={0} className={classes.section}
                        style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-                    <div style={{width:200}}>
+                    <div style={{width: 200}}>
                         <Typography gutterBottom={false} component={"h1"}
                                     className={classes.title}>Links</Typography>
                         <Tooltip title={"Save Current Visualization State"}><Link
@@ -648,9 +710,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             handleUnselectedMarkerOpacity: value => {
                 dispatch(setUnselectedMarkerOpacity(value));
-            },
-            onMoreOptions: () => {
-                dispatch(setDialog(MORE_OPTIONS_DIALOG));
             },
             handleSearchTokens: (value, type) => {
                 dispatch(setSearchTokens(value == null ? [] : value, type));
