@@ -1382,7 +1382,6 @@ export function setSearchTokens(values, type) {
                 return {value: item, type: type};
             }));
         }
-        console.log(searchTokens);
         dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
         dispatch(_updateCharts());
     };
