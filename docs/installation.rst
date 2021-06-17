@@ -160,6 +160,50 @@ Google App Engine
 - Read more about App Engine in the `App Engine`_ documentation.
 
 
+Developer Instructions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Create a new conda environment::
+
+    conda create --name cirrocumulus-dev
+
+ - Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus.git
+
+- Change to cirrocumulus directory::
+
+    cd cirrocumulus
+
+- Install cirrocumulus Python package in editable mode::
+
+    pip install -e .
+
+- Install typescript::
+
+    yarn global add typescript
+
+- Install JavaScript dependencies::
+
+    yarn install
+
+
+- Create the file .env.development with the contents:
+
+    REACT_APP_API_URL=http://localhost:5000/api
+
+- Launch cirrocumulus with the --cors and --no-open options::
+
+    cirro launch path_to_h5ad_file --cors --no-open
+
+- Run JavaScript app in development mode::
+
+    yarn start
+
+- Navigate to http://localhost:3000
+
+
+
 .. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
