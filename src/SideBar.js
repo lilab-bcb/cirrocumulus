@@ -17,15 +17,12 @@ import ListItemText from '@material-ui/core/ListItemText';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
-import withStyles from '@material-ui/core/styles/withStyles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
-import SaveIcon from '@material-ui/icons/Save';
 import {debounce, find} from 'lodash';
 import React from 'react';
-import {connect} from 'react-redux';
 import {
     datasetFilterToJson,
     deleteFeatureSet,
@@ -58,6 +55,9 @@ import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
 import {SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE,} from './util';
 import ExplorePanel from "./ExplorePanel";
+import Link from "@material-ui/core/Link";
+import withStyles from "@material-ui/core/styles/withStyles";
+import {connect} from 'react-redux';
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -392,7 +392,8 @@ class SideBar extends React.PureComponent {
                     {/*        size={"small"} variant="outlined"*/}
                     {/*        onClick={event => this.onSubmitJob('corr')}>Go</Button>*/}
                 </Paper>}
-                <Paper elevation={0} className={classes.section} style={tab === 'distribution' ? null : {display: 'none'}}>
+                <Paper elevation={0} className={classes.section}
+                       style={tab === 'distribution' ? null : {display: 'none'}}>
                     <Typography gutterBottom={false} component={"h1"}
                                 className={classes.title}>View</Typography>
 
@@ -532,35 +533,34 @@ class SideBar extends React.PureComponent {
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
                 <Paper elevation={0} className={classes.section}
                        style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-                    <Typography gutterBottom={false} component={"h1"}
-                                className={classes.title}>Links</Typography>
-                    <>
-                        <div style={{width: '100%'}}>
-                            <Tooltip title={"Save Link"}>
-                                <IconButton size={'small'} onClick={this.onViewSaved}><SaveIcon/></IconButton>
-                            </Tooltip>
+                    <div style={{width:200}}>
+                        <Typography gutterBottom={false} component={"h1"}
+                                    className={classes.title}>Links</Typography>
+                        <Tooltip title={"Save Current Visualization State"}><Link
+                            style={{
+                                float: 'right'
+                            }}
+                            onClick={this.onViewSaved}>Save</Link></Tooltip>
+                    </div>
+                    {datasetViews.length === 0 &&
+                    <Box color="text.secondary">No saved links</Box>}
+                    {datasetViews.length > 0 &&
+                    <List dense={true}>
+                        {datasetViews.map(item => (
+                            <ListItem key={item.id} data-key={item.id} button
+                                      onClick={e => this.openView(item.id)}>
+                                <ListItemText primary={item.name}/>
+                                <ListItemSecondaryAction
+                                    onClick={e => this.deleteView(item.id)}>
+                                    <IconButton edge="end" aria-label="delete">
+                                        <DeleteIcon/>
+                                    </IconButton>
+                                </ListItemSecondaryAction>
+                            </ListItem>
+                        ))}
+                    </List>
+                    }
 
-                            {datasetViews.length === 0 &&
-                            <Box color="text.secondary" style={{paddingLeft: 10}}>No saved links</Box>}
-                            {datasetViews.length > 0 &&
-                            <>
-                                <List dense={true}>
-                                    {datasetViews.map(item => (
-                                        <ListItem key={item.id} data-key={item.id} button
-                                                  onClick={e => this.openView(item.id)}>
-                                            <ListItemText primary={item.name}/>
-                                            <ListItemSecondaryAction
-                                                onClick={e => this.deleteView(item.id)}>
-                                                <IconButton edge="end" aria-label="delete">
-                                                    <DeleteIcon/>
-                                                </IconButton>
-                                            </ListItemSecondaryAction>
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            </>}
-                        </div>
-                    </>
                 </Paper>}
 
                 <div style={tab === 'results' ? null : {display: 'none'}}>
