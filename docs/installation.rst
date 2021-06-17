@@ -167,7 +167,7 @@ Developer Instructions
 
     conda create --name cirrocumulus-dev
 
- - Clone the cirrocumulus repository::
+- Clone the cirrocumulus repository::
 
     git clone https://github.com/klarman-cell-observatory/cirrocumulus.git
 
@@ -191,10 +191,7 @@ Developer Instructions
 
     yarn install
 
-
-- Create the file .env.development with the contents:
-
-    REACT_APP_API_URL=http://localhost:5000/api
+- Create the file .env.development with the contents REACT_APP_API_URL=http://localhost:5000/api
 
 - Launch cirrocumulus with the --cors and --no-open options::
 
