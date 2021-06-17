@@ -443,18 +443,17 @@ function ExplorePanel(props) {
                                              groupBy={true}
                                              onChange={onFeatureSetsChange}
                                              getOptionSelected={(option, value) => option.id === value.id}
-                                             getChipText={option => option.name}/>
+                                             getChipText={option => option.name}
+                                             helperText={serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) ? <>
+                                                 <Tooltip title={"Save Current Genes/Features"}><Link
+                                                     style={{
+                                                         float: 'right',
+                                                         display: splitTokens.X.length === 0 ? 'none' : ''
+                                                     }}
+                                                     onClick={onSaveFeatureList}>Save</Link></Tooltip></> : null}/>
 
                 </FormControl>}
-                {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) && splitTokens.X.length > 0 &&
-                <Tooltip title={"Save Current Feature List"}>
-                    <IconButton size={'small'} onClick={onSaveFeatureList}>
-                        <SaveIcon/>
-                    </IconButton>
-                </Tooltip>
-                }
             </Paper>
-
             <Paper elevation={0} className={classes.section} style={{maxHeight: 500}}>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Filters</Typography>
