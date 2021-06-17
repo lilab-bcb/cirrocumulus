@@ -8,6 +8,7 @@ import * as scaleChromatic from 'd3-scale-chromatic';
 import natsort from 'natsort';
 import React from 'react';
 import simplify from 'simplify-js';
+import {isString} from "lodash";
 
 export const NATSORT = natsort({insensitive: true});
 export const interpolators = {};
@@ -655,17 +656,23 @@ export function addFeatureSetsToX(featureSets, X) {
     });
 }
 
-export function getFeatureSets(markers, featureSetIds) {
-    let featureSets = [];
-    featureSetIds.forEach(featureSetId => {
-        for (let i = 0; i < markers.length; i++) {
-            if (markers[i].id === featureSetId) {
-                featureSets.push(markers[i]);
-                break;
+export function getFeatureSets(markers, featureSets) {
+    const filteredFeatureSets = [];
+    if (featureSets.length > 0) {
+        let markerIdToMarker = new Map();
+        markers.forEach(m => {
+            markerIdToMarker.set(m.id, m);
+        });
+
+        featureSets.forEach(featureSet => {
+            const featureSetId = isString(featureSet) ? featureSet : featureSet.value;
+            const m = markerIdToMarker.get(featureSetId);
+            if (m != null) {
+                filteredFeatureSets.push(m);
             }
-        }
-    });
-    return featureSets;
+        });
+    }
+    return filteredFeatureSets;
 }
 
 export function splitSearchTokens(tokens) {
@@ -673,7 +680,6 @@ export function splitSearchTokens(tokens) {
     let obs = [];
     let obsCat = [];
     let featureSets = [];
-    let featureSetsAdd = [];
     let metafeatures = [];
     tokens.forEach(token => {
         if (token.type === FEATURE_TYPE.X) {
