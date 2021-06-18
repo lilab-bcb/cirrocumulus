@@ -56,7 +56,7 @@ export const DEFAULT_DRAG_MODE = 'pan';
 export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = false;
-export const DEFAULT_DARK_MODE = false;
+export const DEFAULT_DARK_MODE = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
