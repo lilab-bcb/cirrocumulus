@@ -132,6 +132,7 @@ class GalleryImage extends React.PureComponent {
         }
         return (
             <Box borderColor="text.primary" border={1}
+                 data-testid="gallery-image"
                  style={{display: 'inline-block', margin: 2}}>
                 <div style={{
                     position: 'relative',

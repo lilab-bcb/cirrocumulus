@@ -353,6 +353,7 @@ function ExplorePanel(props) {
                 {tab === 'embedding' && embeddingOptions.length > 0 &&
                 <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Embeddings"}
+                                             testId={'embeddings-input'}
                                              options={embeddingOptions}
                                              getChipTitle={(option) => {
                                                  return option.text;
@@ -367,6 +368,7 @@ function ExplorePanel(props) {
                 {featureOptions.length > 0 && <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized onChipClick={onFeatureClick}
                                              label={"Genes/Features"}
+                                             testId={'genes-input'}
                                              options={featureOptions}
                                              value={splitTokens.X}
                                              onChange={onFeaturesChange}
@@ -382,6 +384,7 @@ function ExplorePanel(props) {
                 </FormControl>}
                 {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Cell Metadata"}
+                                             testId={'cell-meta-input'}
                                              options={annotationOptions}
                                              value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
                                              onChipClick={onFeatureClick}
@@ -425,6 +428,7 @@ function ExplorePanel(props) {
                 </FormControl>}
                 {<FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Sets"}
+                                             testId={'sets-input'}
                                              options={featureSetOptions}
                                              value={featureSets}
                                              onChipClick={onFeatureSetClick}

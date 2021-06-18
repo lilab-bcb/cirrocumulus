@@ -302,6 +302,7 @@ export default function AutocompleteVirtualized(props) {
     return (
         <>
             <Autocomplete
+                data-testid={props.testId}
                 multiple
                 ref={ref}
                 size={"small"}

@@ -155,7 +155,7 @@ class CategoricalLegend extends React.PureComponent {
 
         const renamedCategoryValue = renamedCategories[this.state.categoryValue] || this.state.categoryValue;
         return (
-            <div className="cirro-chart-legend" style={style}>
+            <div data-testid="categorical-legend" className="cirro-chart-legend" style={style}>
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
                         aria-labelledby="edit-category-dialog-title">
 

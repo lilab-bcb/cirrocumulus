@@ -84,7 +84,7 @@ const styles = theme => ({
     formControl: {
         display: 'block',
         minWidth: 200,
-        maxWidth: 200
+        // maxWidth: 200
     },
     select: {
         minWidth: 200,
