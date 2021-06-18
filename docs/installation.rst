@@ -179,10 +179,6 @@ Developer Instructions
 
     pip install -e .
 
-- Install flask_cors::
-
-    pip install flask_cors
-
 - Install typescript::
 
     yarn global add typescript
@@ -191,13 +187,13 @@ Developer Instructions
 
     yarn install
 
-- Create the file .env.development with the contents REACT_APP_API_URL=http://localhost:5000/api
 
-- Launch cirrocumulus with the --cors and --no-open options::
 
-    cirro launch path_to_h5ad_file --cors --no-open
+- Launch cirrocumulus with the --no-open flag::
 
-- Run JavaScript app in development mode::
+    cirro launch path_to_h5ad_file --no-open
+
+- Run JavaScript server in development mode::
 
     yarn start
 

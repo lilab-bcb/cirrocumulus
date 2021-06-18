@@ -13,8 +13,6 @@ def cached_app():
     global app
     if app is None:
         app = create_app()
-        # from flask_cors import CORS
-        # CORS(app)
         configure_app(app)
     return app
 

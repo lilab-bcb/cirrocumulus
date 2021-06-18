@@ -125,13 +125,9 @@ def main(argsv):
 
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-    parser.add_argument('--cors', dest='cors', action='store_true', help=argparse.SUPPRESS)
 
     args = parser.parse_args(argsv)
     app = create_app()
-    if args.cors:
-        from flask_cors import CORS
-        CORS(app)
     configure_app(app, args.dataset, args.spatial, args.backed, args.markers)
     if not args.no_open:
         import webbrowser, requests
