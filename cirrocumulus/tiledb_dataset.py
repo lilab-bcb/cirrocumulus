@@ -97,9 +97,11 @@ class TileDBDataset:
                 X = array.multi_index[:, indices]['']
                 if scipy.sparse.issparse(X):
                     df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
-                else:
-                    X = scipy.sparse.csr_matrix(X)
-                    df = pd.DataFrame(data=X, columns=var_keys)
+                else:  # force sparse
+                    df = pd.DataFrame()
+                    for i in range(len(var_keys)):
+                        df[var_keys[i]] = pd.arrays.SparseArray(X[:, i], fill_value=0)
+
             # for key in keys.keys(): uns not supported
         #     if df is None:
         #         df = pd.DataFrame()
