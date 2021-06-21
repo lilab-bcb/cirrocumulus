@@ -187,8 +187,6 @@ Developer Instructions
 
     yarn install
 
-
-
 - Launch cirrocumulus with the --no-open flag::
 
     cirro launch path_to_h5ad_file --no-open
@@ -199,7 +197,7 @@ Developer Instructions
 
 - Navigate to http://localhost:3000
 
-- In order to run, End to End tests (yarn e2e), please install GraphicsMagick (brew install graphicsmagick on Mac)
+- In order to run End to End tests (yarn e2e), please install GraphicsMagick (brew install graphicsmagick on Mac)
 
 .. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
