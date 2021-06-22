@@ -4,5 +4,6 @@ module.exports = {
     transform: {
         "\\.js$": "react-scripts/config/jest/babelTransform"
     },
-    verbose: true
+    verbose: true,
+    testTimeout: 10000
 };
