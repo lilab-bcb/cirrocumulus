@@ -11,7 +11,6 @@ async function featureScreenshot(options) {
     await page.keyboard.type(options.name)
     await page.keyboard.press('Enter')
     await page.waitForSelector('[data-testid="scatter-chart-three"]')
-    const start = new Date();
     await page.evaluate(() => {
         document.querySelector('[data-testid="chart-extra"]').style.display = 'none'
     });
