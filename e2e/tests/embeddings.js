@@ -2,10 +2,12 @@ const puppeteer = require('puppeteer');
 const gm = require('gm');
 
 async function featureScreenshot(options) {
+
     const browser = await puppeteer.launch({headless: true});
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
     await page.goto('http://localhost:5000/')
+    console.log('aaa')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
     await page.click('[data-testid="genes-input"]')
     await page.keyboard.type(options.name)
@@ -16,6 +18,7 @@ async function featureScreenshot(options) {
     });
     const element = await page.$('[data-testid="scatter-chart-three"] > canvas');
     await element.screenshot({path: options.path})
+    console.log('aaa')
     return {page, browser}
 }
 
@@ -29,12 +32,13 @@ function diffImages(image1, image2, tolerance) {
 
 it('embeddings"', async () => {
     const {page, browser} = await featureScreenshot({name: 'CST3', input: 'genes-input', path: 'CST3.png'});
+    console.log('xxx')
     const gallery = await page.$$('[data-testid="gallery-image"]');
     await gallery[0].click();
-
+    console.log('xxx')
     const louvainCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
     await louvainCanvas.screenshot({path: 'louvain.png'})
-
+    console.log('xxx')
     const gallery2 = await page.$$('[data-testid="gallery-image"]');
     await gallery2[1].click();
     const geneCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
