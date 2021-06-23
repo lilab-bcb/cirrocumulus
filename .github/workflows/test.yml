@@ -32,6 +32,7 @@ jobs:
           yarn global add typescript
           yarn install
           CI=false; yarn build
+          sudo apt-get install graphicsmagick
       - name: Test with pytest
         run: |
           pytest
