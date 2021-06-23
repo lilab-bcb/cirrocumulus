@@ -37,7 +37,7 @@ jobs:
           pytest
       - name: Test with yarn
         run: |
-          yarn test --watchAll=false
+          yarn test
       - name: End to End
         run: |
-          yarn e2e
+          CI=true; yarn e2e
