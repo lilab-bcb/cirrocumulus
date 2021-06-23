@@ -5,17 +5,15 @@ async function featureScreenshot(options) {
     const browser = await puppeteer.launch({headless: true});
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
-    await page.goto('http://localhost:3000/')
-
+    await page.goto('http://localhost:5000/')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
     await page.click('[data-testid="genes-input"]')
-
     await page.keyboard.type(options.name)
     await page.keyboard.press('Enter')
     await page.waitForSelector('[data-testid="scatter-chart-three"]')
-    await page.waitForTimeout(100);
+    const start = new Date();
     await page.evaluate(() => {
-        document.querySelector('[data-testid="chart-extra"]').remove();
+        document.querySelector('[data-testid="chart-extra"]').style.display = 'none'
     });
     const element = await page.$('[data-testid="scatter-chart-three"] > canvas');
     await element.screenshot({path: options.path})
@@ -32,15 +30,32 @@ function diffImages(image1, image2, tolerance) {
 
 it('embeddings"', async () => {
     const {page, browser} = await featureScreenshot({name: 'CST3', input: 'genes-input', path: 'CST3.png'});
-    const gallery = await page.$('[data-testid="gallery-image"]');
-    await gallery.click();
-    const element = await page.$('[data-testid="scatter-chart-three"] > canvas');
-    await element.screenshot({path: 'louvain.png'})
-    await page.waitForTimeout(100);
+    const gallery = await page.$$('[data-testid="gallery-image"]');
+    await gallery[0].click();
+
+    const louvainCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
+    await louvainCanvas.screenshot({path: 'louvain.png'})
+
+    const gallery2 = await page.$$('[data-testid="gallery-image"]');
+    await gallery2[1].click();
+    const geneCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
+    await page.evaluate(() => {
+        document.querySelector('[data-testid="chart-extra"]').style.display = '';
+    });
+
+    await page.focus('[data-testid="continuous-legend"] input[type=text]')
+    await page.keyboard.type('0')
+    await page.keyboard.press('Enter')
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+        document.querySelector('[data-testid="chart-extra"]').style.display = 'none';
+    });
+    await geneCanvas.screenshot({path: 'CST3_filtered.png'})
     await browser.close();
     await diffImages('CST3.png', 'screenshots/CST3.png', 0);
     // categories are drawn in random order
-    await diffImages('louvain.png', 'screenshots/louvain.png', 0.01);
+    await diffImages('louvain.png', 'screenshots/louvain.png', 0.001);
+    await diffImages('CST3_filtered.png', 'screenshots/CST3_filtered.png', 0.001);
 });
 
 
