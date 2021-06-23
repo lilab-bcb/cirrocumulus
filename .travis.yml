@@ -4,9 +4,9 @@ python:
   - "3.8"
 services:
   - docker
-
 before_install:
   - docker build -t cumulus/cirrocumulus -f Dockerfile.test .
+script:
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; pytest;"
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; yarn e2e;"
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; yarn test;"
