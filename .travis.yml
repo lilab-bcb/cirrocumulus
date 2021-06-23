@@ -6,7 +6,7 @@ services:
   - docker
 
 before_install:
-  - docker build -t cumulus/cirrocumulus .
+  - docker build -t cumulus/cirrocumulus -f Dockerfile.test .
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; pytest;"
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; e2e;"
   - docker run -d -p 127.0.0.1:80:4567 cumulus/cirrocumulus /bin/sh -c "cd /root/cirrocumulus; yarn test;"
