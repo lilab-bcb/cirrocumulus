@@ -31,7 +31,7 @@ jobs:
           python -m pip install .
           yarn global add typescript
           yarn install
-          yarn build
+          CI=false; yarn build
       - name: Test with pytest
         run: |
           pytest
