@@ -47,9 +47,6 @@ jobs:
           CI: true
       - name: End to End test
         run: |
-          cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &
-          sleep 3
-          cd e2e; ../node_modules/.bin/jest
-          kill $(lsof -t -i:5000)
+          yarn e2e
         env:
           CI: true
