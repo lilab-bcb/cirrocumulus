@@ -31,8 +31,10 @@ jobs:
           python -m pip install .
           yarn global add typescript
           yarn install
-          CI=false; yarn build
+          yarn build
           sudo apt-get install graphicsmagick
+        env:
+          CI: true
       - name: Test with pytest
         run: |
           pytest
@@ -44,3 +46,5 @@ jobs:
           cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &
           cd e2e; ../node_modules/.bin/jest
           kill $(lsof -t -i:5000)
+        env:
+          CI: true
