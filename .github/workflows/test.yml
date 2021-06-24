@@ -41,4 +41,4 @@ jobs:
           yarn test
       - name: End to End
         run: |
-          CI=true; yarn e2e
+          CI=true; cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &; cd e2e && ../node_modules/.bin/jest; kill $(lsof -t -i:5000)
