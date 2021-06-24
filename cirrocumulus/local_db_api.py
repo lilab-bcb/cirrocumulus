@@ -26,7 +26,7 @@ class LocalDbAPI(AbstractDB):
     def __init__(self, paths):
         super().__init__(mode='client')
         self.dataset_to_info = {}  # json_data, meta, json_path
-        self.job_id_to_job = {}
+
 
         for path in paths:
             json_data = {}
@@ -186,29 +186,4 @@ class LocalDbAPI(AbstractDB):
             entity['dataset_id'] = dataset_id
         return self.__upsert_entity(dataset_id=dataset_id, entity_id=view_id, kind='views', entity_dict=entity)
 
-    def create_job(self, email, dataset_id, job_name, job_type, params):
-        job_id = unique_id()
-        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
-                                          status=None, result=None, submitted=datetime.datetime.utcnow())
-        return job_id
 
-    def get_job(self, email, job_id, return_result):
-        job = self.job_id_to_job[job_id]
-        if return_result:
-            return job['result']
-        return dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'], submitted=job['submitted'])
-
-    def get_jobs(self, email, dataset_id):
-        results = []
-        for job in self.job_id_to_job.values():
-            results.append(dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
-                                submitted=job['submitted']))
-        return results
-
-    def delete_job(self, email, job_id):
-        del self.job_id_to_job[job_id]
-
-    def update_job(self, email, job_id, status, result):
-        job = self.job_id_to_job[job_id]
-        job['status'] = status
-        job['result'] = result
