@@ -42,5 +42,5 @@ jobs:
       - name: End to End
         run: |
           cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &
-          CI=true; cd e2e && ../node_modules/.bin/jest
+          cd e2e; ../node_modules/.bin/jest
           kill $(lsof -t -i:5000)
