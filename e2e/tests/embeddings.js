@@ -7,8 +7,9 @@ async function featureScreenshot(options) {
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
     await page.goto('http://localhost:5000/')
-    console.log('aaa')
+    console.log('1')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
+    console.log('2')
     await page.click('[data-testid="genes-input"]')
     await page.keyboard.type(options.name)
     await page.keyboard.press('Enter')
@@ -17,8 +18,9 @@ async function featureScreenshot(options) {
         document.querySelector('[data-testid="chart-extra"]').style.display = 'none'
     });
     const element = await page.$('[data-testid="scatter-chart-three"] > canvas');
+    console.log('3')
     await element.screenshot({path: options.path})
-    console.log('aaa')
+    console.log('4')
     return {page, browser}
 }
 
