@@ -8,6 +8,8 @@ async function featureScreenshot(options) {
     await page.setViewport({width: 1500, height: 1000})
     await page.goto('http://localhost:5000/')
     console.log('1')
+    await page.screenshot('test.png')
+    console.log('1a')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
     console.log('2')
     await page.click('[data-testid="genes-input"]')
@@ -34,13 +36,10 @@ function diffImages(image1, image2, tolerance) {
 
 it('embeddings"', async () => {
     const {page, browser} = await featureScreenshot({name: 'CST3', input: 'genes-input', path: 'CST3.png'});
-    console.log('xxx')
     const gallery = await page.$$('[data-testid="gallery-image"]');
     await gallery[0].click();
-    console.log('xxx')
     const louvainCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
     await louvainCanvas.screenshot({path: 'louvain.png'})
-    console.log('xxx')
     const gallery2 = await page.$$('[data-testid="gallery-image"]');
     await gallery2[1].click();
     const geneCanvas = await page.$('[data-testid="scatter-chart-three"] > canvas');
