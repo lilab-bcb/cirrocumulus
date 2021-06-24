@@ -179,6 +179,10 @@ Developer Instructions
 
     pip install -e .
 
+- Install additional optional dependencies::
+
+    pip install s3fs tiledb
+
 - Install typescript::
 
     yarn global add typescript
