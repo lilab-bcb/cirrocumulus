@@ -1,11 +1,12 @@
 const puppeteer = require('puppeteer')
 const gm = require('gm')
+global.Promise = jest.requireActual('promise');
 
 async function featureScreenshot(options) {
     const browser = await puppeteer.launch({headless: true})
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
-    const response = await page.goto('http://localhost:5000/')
+    const response = await page.goto('http://127.0.0.1:5000/')
     if (response.status() !== 200) {
         throw new Error('Invalid status');
     }
