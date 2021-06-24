@@ -203,6 +203,13 @@ Developer Instructions
 
 - In order to run End to End tests (yarn e2e), please install GraphicsMagick (brew install graphicsmagick on Mac)
 
+- Testing::
+
+    yarn e2e
+    yarn test
+    pytest
+
+
 .. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/
