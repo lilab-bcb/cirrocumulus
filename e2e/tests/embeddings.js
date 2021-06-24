@@ -2,10 +2,10 @@ const puppeteer = require('puppeteer')
 const gm = require('gm')
 
 async function featureScreenshot(options) {
-    const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']})
+    const browser = await puppeteer.launch({headless: true})
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
-    await page.goto('http://127.0.0.1:5000/')
+    await page.goto('http://10.1.0.12:5000/')
     console.log('aaa')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
     console.log('bbbb')
