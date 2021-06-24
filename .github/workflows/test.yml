@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.7, 3.8, 3.9 ]
+        python-version: [ 3.8 ]
         node-version: [ 16.x ]
     steps:
       - uses: actions/checkout@v2
@@ -41,4 +41,6 @@ jobs:
           yarn test
       - name: End to End
         run: |
-          CI=true; cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &; cd e2e && ../node_modules/.bin/jest; kill $(lsof -t -i:5000)
+          cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &
+          CI=true; cd e2e && ../node_modules/.bin/jest
+          kill $(lsof -t -i:5000)
