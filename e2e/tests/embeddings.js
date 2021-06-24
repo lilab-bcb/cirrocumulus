@@ -8,9 +8,8 @@ async function featureScreenshot(options) {
     await page.setViewport({width: 1500, height: 1000})
     await page.goto('http://localhost:5000/')
     console.log('1')
-    await page.screenshot('test.png')
-    console.log('1a')
-    await page.waitForSelector('[data-testid="' + options.input + '"]')
+
+    await page.waitForSelector('[data-testid="' + options.input + '"]', {timeout: 30000})
     console.log('2')
     await page.click('[data-testid="genes-input"]')
     await page.keyboard.type(options.name)
