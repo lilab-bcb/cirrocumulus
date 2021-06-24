@@ -41,7 +41,6 @@
     "web-vitals": "^2.0.1"
   },
   "scripts": {
-    "test-data": "",
     "e2e": "cd e2e && ../node_modules/.bin/jest",
     "start": "react-scripts start",
     "build": "react-scripts build",
