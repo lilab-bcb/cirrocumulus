@@ -20,9 +20,7 @@ async function featureScreenshot(options) {
         document.querySelector('[data-testid="chart-extra"]').style.display = 'none'
     });
     const element = await page.$('[data-testid="scatter-chart-three"] > canvas');
-    console.log('3')
     await element.screenshot({path: options.path})
-    console.log('4')
     return {page, browser}
 }
 

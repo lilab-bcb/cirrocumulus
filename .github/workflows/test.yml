@@ -38,12 +38,17 @@ jobs:
       - name: Test with pytest
         run: |
           pytest
+        env:
+          CI: true
       - name: Test with yarn
         run: |
           yarn test
-      - name: End to End
+        env:
+          CI: true
+      - name: End to End test
         run: |
           cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &
+          sleep 3
           cd e2e; ../node_modules/.bin/jest
           kill $(lsof -t -i:5000)
         env:
