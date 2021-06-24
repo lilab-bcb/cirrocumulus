@@ -1,6 +1,5 @@
 const puppeteer = require('puppeteer')
 const gm = require('gm')
-global.Promise = jest.requireActual('promise');
 
 async function featureScreenshot(options) {
     const browser = await puppeteer.launch({headless: true})

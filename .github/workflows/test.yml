@@ -1,9 +1,9 @@
 name: test
 on:
   push:
-    branches: [ $default-branch, develop ]
+    branches: [ $default-branch ]
   pull_request:
-    branches: [ $default-branch, develop ]
+    branches: [ $default-branch ]
 
 jobs:
   build:
@@ -43,10 +43,5 @@ jobs:
       - name: Test with yarn
         run: |
           yarn test
-        env:
-          CI: true
-      - name: End to End test
-        run: |
-          yarn e2e
         env:
           CI: true
