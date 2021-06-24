@@ -34,7 +34,7 @@ jobs:
           yarn build
           sudo apt-get install graphicsmagick
         env:
-          CI: true
+          CI: false
       - name: Test with pytest
         run: |
           pytest
