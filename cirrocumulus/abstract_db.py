@@ -1,5 +1,8 @@
 # Abstract database class supporting datasets, categories, views, feature sets, users, jobs, and job results
 # Only methods server and datasets must be supported in 'client' mode
+from cirrocumulus.io_util import unique_id
+
+
 class AbstractDB:
 
     def __init__(self, mode, email=None):
@@ -11,6 +14,7 @@ class AbstractDB:
         """
         self.mode = mode
         self.email = email
+        self.job_id_to_job = {}
 
     def server(self):
         """Gets server information, such as whether backend is running in 'server' or 'client' mode. Server mode
@@ -215,33 +219,40 @@ class AbstractDB:
         """
         raise NotImplementedError()
 
+
     def create_job(self, email, dataset_id, job_name, job_type, params):
         """ Creates a job
 
         Args:
-           email: User email or None
-           dataset_id: Dataset id
-           job_name: Job name
-           job_type: Job type
-           params: JSON encoded job params
+         email: User email or None
+         dataset_id: Dataset id
+         job_name: Job name
+         job_type: Job type
+         params: JSON encoded job params
 
         Returns:
-           job id
-        """
-        raise NotImplementedError()
+         job id
+      """
+        job_id = unique_id()
+        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
+                                          status=None, result=None, submitted=datetime.datetime.utcnow())
+        return job_id
 
     def get_job(self, email, job_id, return_result):
         """ Gets a job
 
-        Args:
-           email: User email or None
-           job_id: Job id
-           return_result: Whether to return the job result or status only
+       Args:
+          email: User email or None
+          job_id: Job id
+          return_result: Whether to return the job result or status only
 
-        Returns:
-           The job
-       """
-        raise NotImplementedError()
+       Returns:
+          The job
+      """
+        job = self.job_id_to_job[job_id]
+        if return_result:
+            return job['result']
+        return dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'], submitted=job['submitted'])
 
     def get_jobs(self, email, dataset_id):
         """ Gets a list of all jobs for a dataset.
@@ -252,8 +263,21 @@ class AbstractDB:
 
         Returns:
             List of jobs
-        """
-        raise NotImplementedError()
+      """
+        results = []
+        for job in self.job_id_to_job.values():
+            results.append(dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
+                                submitted=job['submitted']))
+        return results
+
+    def delete_job(self, email, job_id):
+        """ Deletes a job.
+
+      Args:
+          email: User email or None
+          job_id: Job id
+      """
+        del self.job_id_to_job[job_id]
 
     def update_job(self, email, job_id, status, result):
         """ Updates job info.
@@ -264,13 +288,6 @@ class AbstractDB:
               status: Job status
               result: Job result
           """
-        raise NotImplementedError()
-
-    def delete_job(self, email, job_id):
-        """ Deletes a job.
-
-        Args:
-            email: User email or None
-            job_id: Job id
-        """
-        raise NotImplementedError()
+        job = self.job_id_to_job[job_id]
+        job['status'] = status
+        job['result'] = result
