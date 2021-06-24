@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.8 ]
+        python-version: [ 3,7, 3.8 ]
         node-version: [ 16.x ]
     steps:
       - uses: actions/checkout@v2
@@ -25,7 +25,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: |
-          sudo apt-get install graphicsmagick
           python -m pip install --upgrade pip
           python -m pip install pytest
           pip install -r requirements.txt
@@ -43,10 +42,5 @@ jobs:
       - name: Test with yarn
         run: |
           yarn test
-        env:
-          CI: true
-      - name: End to End test
-        run: |
-          yarn e2e
         env:
           CI: true
