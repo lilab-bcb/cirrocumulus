@@ -25,6 +25,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: |
+          sudo apt-get install chromium-browser graphicsmagick
           python -m pip install --upgrade pip
           python -m pip install pytest
           pip install -r requirements.txt
@@ -32,7 +33,6 @@ jobs:
           yarn global add typescript
           yarn install
           yarn build
-          sudo apt-get install chromium-browser graphicsmagick
         env:
           CI: false
       - name: Test with pytest
