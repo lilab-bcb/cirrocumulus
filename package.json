@@ -41,8 +41,8 @@
     "web-vitals": "^2.0.1"
   },
   "scripts": {
-    "test-data": "cirro launch test-data/pbmc3k_no_raw.h5ad --no-open &",
-    "e2e": "yarn test-data && cd e2e && ../node_modules/.bin/jest e2e && kill $(lsof -t -i:5000)",
+    "test-data": "",
+    "e2e": "cd e2e && ../node_modules/.bin/jest",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
