@@ -1,7 +1,7 @@
 name: test
 on:
   push:
-    branches: [ $default-branch, develop ]
+    branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
 
@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: [ 3.7]
+        python-version: [ 3.7, 3.8]
         node-version: [ 16.x ]
     steps:
       - uses: actions/checkout@v2
@@ -43,10 +43,5 @@ jobs:
       - name: Test with yarn
         run: |
           yarn test
-        env:
-          CI: true
-      - name: End to End
-        run: |
-          yarn e2e
         env:
           CI: true
