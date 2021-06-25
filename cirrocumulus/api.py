@@ -4,7 +4,7 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
 from .file_system_adapter import get_scheme
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
@@ -31,18 +31,19 @@ def get_auth():
 @blueprint.route('/server', methods=['GET'])
 def handle_server():
     # no login required
-    server = get_database().server()
-    server['clientId'] = get_auth().client_id
+    d = {}
+    d['email'] = os.environ.get(CIRRO_EMAIL)
+    d['capabilities'] = get_database().capabilities()
+    d['clientId'] = get_auth().client_id
     if os.environ.get(CIRRO_FOOTER) is not None:
         with open(os.environ.get(CIRRO_FOOTER), 'rt') as f:
-            server['footer'] = f.read()
+            d['footer'] = f.read()
     if os.environ.get(CIRRO_BRAND) is not None:
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
-            server['brand'] = f.read()
+            d['brand'] = f.read()
     # server['brand'] = os.environ.get(CIRRO_BRAND)
-    server['jobs'] = os.environ.get('GAE_APPLICATION') is None
-    server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
-    return to_json(server)
+    d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
+    return to_json(d)
 
 
 @blueprint.route('/category_name', methods=['GET', 'PUT'])
@@ -243,11 +244,11 @@ def handle_data():
     email, dataset = get_email_and_dataset(json_request)
     return to_json(
         data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
-            embedding_list=json_request.get('embedding'),
-            values=json_request.get('values'),
-            stats=json_request.get('stats'),
-            grouped_stats=json_request.get('groupedStats'),
-            selection=json_request.get('selection')))
+                                    embedding_list=json_request.get('embedding'),
+                                    values=json_request.get('values'),
+                                    stats=json_request.get('stats'),
+                                    grouped_stats=json_request.get('groupedStats'),
+                                    selection=json_request.get('selection')))
 
 
 @blueprint.route('/selection', methods=['POST'])
@@ -257,8 +258,9 @@ def handle_selection():
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
     return to_json(data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
-        measures=content.get('measures', []), dimensions=content.get('dimensions', []),
-        embeddings=content.get('embeddings', [])))
+                                                    measures=content.get('measures', []),
+                                                    dimensions=content.get('dimensions', []),
+                                                    embeddings=content.get('embeddings', [])))
 
 
 @blueprint.route('/selected_ids', methods=['POST'])
@@ -346,8 +348,9 @@ def handle_dataset():
                 return 'Upload not supported', 400
             url = upload_file(file)
         dataset_id = database_api.upsert_dataset(email=email,
-            dataset_id=dataset_id if request.method == 'PUT' else None,
-            dataset_name=dataset_name, url=url, readers=readers, description=description, title=title, species=species)
+                                                 dataset_id=dataset_id if request.method == 'PUT' else None,
+                                                 dataset_name=dataset_name, url=url, readers=readers,
+                                                 description=description, title=title, species=species)
         return to_json({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
@@ -403,4 +406,4 @@ def handle_submit_job():
         job_type = content.get('type')
         job_name = content.get('name')
         return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-            job_name=job_name, job_type=job_type, params=params))
+                                  job_name=job_name, job_type=job_type, params=params))

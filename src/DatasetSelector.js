@@ -177,9 +177,7 @@ export class DatasetSelector extends React.PureComponent {
                                 </List></React.Fragment>;
                         })}
                     </DialogContent>
-
                 </Dialog>
-
             </React.Fragment>
         );
     }

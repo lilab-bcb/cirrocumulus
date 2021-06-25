@@ -1,10 +1,13 @@
 import datetime
 import json
 
-from cirrocumulus.util import get_email_domain
 from google.cloud import datastore
+
 from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain
+from .envir import SERVER_CAPABILITY_JOBS, CIRRO_EMAIL
 from .invalid_usage import InvalidUsage
+import os
 
 DATASET = 'Dataset'
 CAT_NAME = 'Cat_Name'
@@ -19,8 +22,14 @@ JOB_RESULT = 'Job_Result'
 class FirestoreDatastore(AbstractDB):
 
     def __init__(self):
+        super().__init__()
         self.datastore_client = datastore.Client()
-        super().__init__(mode='server', email=self.datastore_client.project + '@appspot.gserviceaccount.com')
+        os.environ[CIRRO_EMAIL] = self.datastore_client.project + '@appspot.gserviceaccount.com'
+
+    def capabilities(self):
+        c = super().capabilities()
+        c[SERVER_CAPABILITY_JOBS] = False
+        return c
 
     def __get_key_and_dataset(self, email, dataset_id, ensure_owner=False):
         client = self.datastore_client

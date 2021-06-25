@@ -45,3 +45,8 @@ jobs:
           yarn test
         env:
           CI: true
+      - name: End to End test
+        run: |
+          yarn e2e
+        env:
+          CI: true

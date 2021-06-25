@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
-    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
+    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS
 from cirrocumulus.launch import create_app
 
 app = None
@@ -21,20 +21,20 @@ def configure_app(app):
     from cirrocumulus.api import dataset_api
     from cirrocumulus.no_auth import NoAuth
     auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
-    db_uri = os.environ.get(CIRRO_DB_URI, DEFAULT_DB_URI)
-    email = os.environ.get(CIRRO_EMAIL)
     os.environ[CIRRO_SERVE] = 'true'
     if auth_client_id is None:
         app.config['AUTH'] = NoAuth()
     else:
         from cirrocumulus.google_auth import GoogleAuth
         app.config['AUTH'] = GoogleAuth(auth_client_id)
-    if db_uri != '':
-        from cirrocumulus.mongo_db import MongoDb
-        app.config['DATABASE'] = MongoDb(db_uri, email)
-    else:
-        from cirrocumulus.local_db_api import LocalDbAPI
-        app.config['DATABASE'] = LocalDbAPI([])
+    import importlib
+    database_class_name = os.environ.get(CIRRO_DATABASE_CLASS, 'cirrocumulus.mongo_db.MongoDb')
+    if os.environ[CIRRO_DB_URI] == '':
+        os.environ[CIRRO_DATABASE_CLASS] = 'cirrocumulus.local_db_api.LocalDbAPI'
+    dot_index = database_class_name.rfind('.')
+    db_class = getattr(importlib.import_module(database_class_name[0:dot_index]), database_class_name[dot_index + 1:])
+    app.config['DATABASE'] = db_class()
+
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
@@ -73,6 +73,8 @@ def main(argsv):
     if args.auth_client_id is not None:
         os.environ[CIRRO_AUTH_CLIENT_ID] = args.auth_client_id
 
+    os.environ[CIRRO_DB_URI] = args.db_uri
+
     if args.footer is not None:
         os.environ[CIRRO_FOOTER] = args.footer
 
@@ -81,8 +83,6 @@ def main(argsv):
 
     if args.email is not None:
         os.environ[CIRRO_EMAIL] = args.email
-    if args.db_uri is not None:
-        os.environ[CIRRO_DB_URI] = args.db_uri
     if args.workers is not None:
         workers = args.workers
     else:

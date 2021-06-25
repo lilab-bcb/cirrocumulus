@@ -1,32 +1,27 @@
 # Abstract database class supporting datasets, categories, views, feature sets, users, jobs, and job results
 # Only methods server and datasets must be supported in 'client' mode
+from cirrocumulus.envir import *
 from cirrocumulus.io_util import unique_id
 
 
 class AbstractDB:
 
-    def __init__(self, mode, email=None):
+    def __init__(self):
         """Initializes the object
 
-        Args:
-            mode: Either 'server' or 'client'
-            email: The email the server is running as. Used to alert user to make uploaded data readable by 'email'.
         """
-        self.mode = mode
-        self.email = email
         self.job_id_to_job = {}
 
-    def server(self):
-        """Gets server information, such as whether backend is running in 'server' or 'client' mode. Server mode
-        allows users to save saved views, rename categories, etc.
-
-        Returns:
-            Dict with the keys mode and email
-       """
-        d = dict(mode=self.mode)
-        if self.email is not None:
-            d['email'] = self.email
-        return d
+    def capabilities(self):  # allow everything
+        c = {}
+        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = True
+        c[SERVER_CAPABILITY_JOBS] = True
+        c[SERVER_CAPABILITY_SAVE_FEATURE_SETS] = True
+        c[SERVER_CAPABILITY_SAVE_LINKS] = True
+        c[SERVER_CAPABILITY_EDIT_DATASET] = True
+        c[SERVER_CAPABILITY_ADD_DATASET] = True
+        c[SERVER_CAPABILITY_DELETE_DATASET] = True
+        return c
 
     def datasets(self, email):
         """ Gets list of available datasets
@@ -218,7 +213,6 @@ class AbstractDB:
             Upserted id
         """
         raise NotImplementedError()
-
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         """ Creates a job

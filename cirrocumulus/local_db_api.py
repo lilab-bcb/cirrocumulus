@@ -1,8 +1,8 @@
-import datetime
 import json
 import os
 
 from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.envir import *
 from cirrocumulus.io_util import unique_id
 
 
@@ -24,9 +24,8 @@ def write_json(json_data, json_path):
 class LocalDbAPI(AbstractDB):
 
     def __init__(self, paths):
-        super().__init__(mode='client')
+        super().__init__()
         self.dataset_to_info = {}  # json_data, meta, json_path
-
 
         for path in paths:
             json_data = {}
@@ -48,6 +47,13 @@ class LocalDbAPI(AbstractDB):
             if 'categories' not in json_data:
                 json_data['categories'] = {}
             self.dataset_to_info[path] = dict(json_data=json_data, meta=meta, json_path=json_path)
+
+    def capabilities(self):
+        c = super().capabilities()
+        c[SERVER_CAPABILITY_EDIT_DATASET] = False
+        c[SERVER_CAPABILITY_ADD_DATASET] = False
+        c[SERVER_CAPABILITY_DELETE_DATASET] = False
+        return c
 
     def __delete_entity(self, dataset_id, entity_id, kind):
         json_data = self.dataset_to_info[dataset_id]['json_data']
@@ -185,5 +191,3 @@ class LocalDbAPI(AbstractDB):
         if dataset_id is not None:
             entity['dataset_id'] = dataset_id
         return self.__upsert_entity(dataset_id=dataset_id, entity_id=view_id, kind='views', entity_dict=entity)
-
-

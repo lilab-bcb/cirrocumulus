@@ -27,7 +27,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {deleteJobResult, setJobResult, setSearchTokensDirectly, setTab} from './actions';
 import {createFilterFunction} from './dataset_filter';
-import {intFormat, numberFormat2f} from './formatters';
+import {intFormat} from './formatters';
 import {
     createColorScale,
     FEATURE_TYPE,
@@ -657,9 +657,6 @@ class JobResultsPanel extends React.PureComponent {
             maxSize = Math.max(jobResult.sizeScale.range()[0], jobResult.sizeScale.range()[1]);
         }
 
-        function formatNumber(val) {
-            return (val == null || isNaN(val)) ? "NaN" : numberFormat2f(val);
-        }
 
         let showJobStatus = false;
         for (let i = 0; i < jobResults.length; i++) {

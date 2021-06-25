@@ -24,11 +24,9 @@ import {
     getFeatureSets,
     getInterpolator,
     indexSort,
-    randomSeq,
+    randomSeq, SERVER_CAPABILITY_ADD_DATASET,
     SERVER_CAPABILITY_JOBS,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
-    SERVER_CAPABILITY_SAVE_FEATURE_SETS,
-    SERVER_CAPABILITY_SAVE_LINKS,
     splitSearchTokens,
     TRACE_TYPE_IMAGE,
     TRACE_TYPE_META_IMAGE,
@@ -204,19 +202,18 @@ export function initGapi() {
             let pairs = urlOptions.split('&');
             pairs.forEach(pair => {
                 let keyVal = pair.split('=');
-                if (keyVal.length === 2) {
-                    if (keyVal[0] === 'url') { // load a dataset by URL
-                        staticDatasetUrl = keyVal[1];
-                    }
+                if (keyVal.length === 2 && keyVal[0] === 'url') { // load a dataset by URL
+                    staticDatasetUrl = keyVal[1];
+                } else if (keyVal.length === 2 && keyVal[0] === 'id') { // load a dataset by ID
+                    staticDatasetUrl = keyVal[1];
                 }
             });
         }
         let getServerInfo;
         if (staticDatasetUrl == null) {
             getServerInfo = fetch(API + '/server').then(result => result.json())
-        } else {
+        } else { // no database
             getServerInfo = Promise.resolve({
-                mode: 'client',
                 capabilities: new Set([SERVER_CAPABILITY_JOBS])
             });
         }
@@ -226,14 +223,18 @@ export function initGapi() {
             if (serverInfo.clientId == null) {
                 serverInfo.clientId = '';
             }
-            if (serverInfo.capabilities == null) {
-                serverInfo.capabilities = new Set([SERVER_CAPABILITY_RENAME_CATEGORIES, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_FEATURE_SETS, SERVER_CAPABILITY_SAVE_LINKS]);
+            const capabilities = new Set();
+            for (let key in serverInfo.capabilities) {
+                if (serverInfo.capabilities[key]) {
+                    capabilities.add(key);
+                }
             }
+            serverInfo.capabilities = capabilities;
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '' || serverInfo.clientId == null) { // no login required
                 dispatch(_setLoadingApp({loading: false}));
-                dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
-                if (serverInfo.mode === 'server') {
+                dispatch(_setEmail(capabilities.has(SERVER_CAPABILITY_ADD_DATASET) ? '' : null));
+                if (capabilities.has(SERVER_CAPABILITY_ADD_DATASET)) {
                     dispatch(setUser({importer: true}));
                 }
                 if (staticDatasetUrl == null) {
@@ -961,7 +962,7 @@ function loadDefaultDatasetView() {
                 }
             }
             if (obsCat == null) {
-                let catPriorities = ['anno', 'cell_type', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
+                let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
                 for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
                     for (let i = 0; i < dataset.obsCat.length; i++) {
                         if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {

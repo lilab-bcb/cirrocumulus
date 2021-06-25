@@ -4,15 +4,17 @@ from bson import ObjectId
 from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
+import os
 
+from .envir import CIRRO_DB_URI
 from .invalid_usage import InvalidUsage
 
 
 class MongoDb(AbstractDB):
 
-    def __init__(self, db_uri='mongodb://localhost:27017/cirrocumulus', email=None):
-        super().__init__(mode='server', email=email)
-        self.client = MongoClient(db_uri)
+    def __init__(self):
+        super().__init__()
+        self.client = MongoClient(os.environ[CIRRO_DB_URI])
         self.db = self.client.get_default_database()
 
     def category_names(self, email, dataset_id):

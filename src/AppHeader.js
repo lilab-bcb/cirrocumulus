@@ -35,7 +35,14 @@ import {drawerWidth} from './App';
 import CirroIcon from './CirroIcon';
 import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
-import {copyToClipboard, FEATURE_TYPE, REACT_MD_OVERRIDES} from './util';
+import {
+    copyToClipboard,
+    FEATURE_TYPE,
+    REACT_MD_OVERRIDES,
+    SERVER_CAPABILITY_ADD_DATASET,
+    SERVER_CAPABILITY_DELETE_DATASET,
+    SERVER_CAPABILITY_EDIT_DATASET
+} from './util';
 
 
 const styles = theme => ({
@@ -207,9 +214,11 @@ class AppHeader extends React.PureComponent {
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
         const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
-        const showNewDataset = user != null && user.importer && !loadingApp.loading;
-        const showEditDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading;
-        const showMoreMenu = (showNewDataset || dataset != null) && !loadingApp.loading;
+        const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET)
+        const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
+        const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
+
+        const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
         const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
         return (
             <AppBar position="fixed" color="default" className={classes.appBar}>
@@ -329,13 +338,13 @@ class AppHeader extends React.PureComponent {
                                                    horizontal: 'right',
                                                }} open={this.state.moreMenuOpen}
                                                onClose={this.handleMoreMenuClose}>
-                            {showNewDataset && <MenuItem onClick={this.handleImportDataset}>
+                            {showAddDataset && <MenuItem onClick={this.handleImportDataset}>
                                 New Dataset
                             </MenuItem>}
 
-                            {showEditDeleteDataset && <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
-                            {showEditDeleteDataset && <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
-                            {(showNewDataset || showEditDeleteDataset) && dataset != null && <Divider/>}
+                            {showEditDataset && <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
+                            {showDeleteDataset && <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
+                            {(showAddDataset || showEditDataset || showDeleteDataset) && dataset != null && <Divider/>}
                             {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
                         </Menu>}
 

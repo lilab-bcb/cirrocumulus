@@ -65,6 +65,9 @@ export const SERVER_CAPABILITY_RENAME_CATEGORIES = 'rename_categories';
 export const SERVER_CAPABILITY_JOBS = 'jobs';
 export const SERVER_CAPABILITY_SAVE_FEATURE_SETS = 'save_feature_sets';
 export const SERVER_CAPABILITY_SAVE_LINKS = 'save_links';
+export const SERVER_CAPABILITY_EDIT_DATASET = 'edit_dataset';
+export const SERVER_CAPABILITY_ADD_DATASET = 'add_dataset';
+export const SERVER_CAPABILITY_DELETE_DATASET = 'delete_dataset';
 
 export const CATEGORY_20B = [
     '#393b79', '#5254a3', '#6b6ecf',
