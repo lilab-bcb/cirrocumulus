@@ -599,7 +599,8 @@ class SideBar extends React.PureComponent {
                     <div></div>
                     <Tooltip title={"Save Current Visualization State"}><Link
                         style={{
-                            float: 'right'
+                            float: 'right',
+                            fontSize: '0.75rem',
                         }}
                         onClick={this.onViewSaved}>Save</Link></Tooltip>
 
