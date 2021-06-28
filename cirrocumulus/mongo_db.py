@@ -93,7 +93,7 @@ class MongoDb(AbstractDB):
         for doc in collection.find(dict(dataset_id=dataset_id)):
             results.append(
                 {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                 'notes': doc['notes'], 'email': doc['email']})
+                 'notes': doc.get('notes'), 'email': doc['email']})
         return results
 
     def delete_dataset_view(self, email, dataset_id, view_id):
