@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.17 `June 28, 2021`
+    * Added TileDB support
 
 - 1.1.16.post3 `June 3, 2021`
     * Embedding chart performance improvements
