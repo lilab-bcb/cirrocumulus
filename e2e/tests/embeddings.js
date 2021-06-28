@@ -5,10 +5,7 @@ async function featureScreenshot(options) {
     const browser = await puppeteer.launch({headless: true})
     const page = await browser.newPage()
     await page.setViewport({width: 1500, height: 1000})
-    const response = await page.goto('http://127.0.0.1:5000/')
-    if (response.status() !== 200) {
-        throw new Error('Invalid status');
-    }
+    await page.goto('http://127.0.0.1:5000/')
     await page.waitForSelector('[data-testid="' + options.input + '"]')
 
     await page.click('[data-testid="genes-input"]')
