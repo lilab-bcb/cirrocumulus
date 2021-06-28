@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.2",
+  "version": "1.1.17",
   "private": true,
   "homepage": ".",
   "proxy": "http://localhost:5000",
