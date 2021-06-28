@@ -8,6 +8,7 @@ import * as scaleChromatic from 'd3-scale-chromatic';
 import natsort from 'natsort';
 import React from 'react';
 import simplify from 'simplify-js';
+import {isString} from "lodash";
 
 export const NATSORT = natsort({insensitive: true});
 export const interpolators = {};
@@ -59,6 +60,14 @@ interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 //     '#ffbb78', '#2ca02c', '#98df8a', '#d62728', '#ff9896', '#9467bd',
 //     '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
 //     '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
+
+export const SERVER_CAPABILITY_RENAME_CATEGORIES = 'rename_categories';
+export const SERVER_CAPABILITY_JOBS = 'jobs';
+export const SERVER_CAPABILITY_SAVE_FEATURE_SETS = 'save_feature_sets';
+export const SERVER_CAPABILITY_SAVE_LINKS = 'save_links';
+export const SERVER_CAPABILITY_EDIT_DATASET = 'edit_dataset';
+export const SERVER_CAPABILITY_ADD_DATASET = 'add_dataset';
+export const SERVER_CAPABILITY_DELETE_DATASET = 'delete_dataset';
 
 export const CATEGORY_20B = [
     '#393b79', '#5254a3', '#6b6ecf',
@@ -650,17 +659,23 @@ export function addFeatureSetsToX(featureSets, X) {
     });
 }
 
-export function getFeatureSets(markers, featureSetIds) {
-    let featureSets = [];
-    featureSetIds.forEach(featureSetId => {
-        for (let i = 0; i < markers.length; i++) {
-            if (markers[i].id === featureSetId) {
-                featureSets.push(markers[i]);
-                break;
+export function getFeatureSets(markers, featureSets) {
+    const filteredFeatureSets = [];
+    if (featureSets.length > 0) {
+        let markerIdToMarker = new Map();
+        markers.forEach(m => {
+            markerIdToMarker.set(m.id, m);
+        });
+
+        featureSets.forEach(featureSet => {
+            const featureSetId = isString(featureSet) ? featureSet : featureSet.value;
+            const m = markerIdToMarker.get(featureSetId);
+            if (m != null) {
+                filteredFeatureSets.push(m);
             }
-        }
-    });
-    return featureSets;
+        });
+    }
+    return filteredFeatureSets;
 }
 
 export function splitSearchTokens(tokens) {
@@ -668,7 +683,6 @@ export function splitSearchTokens(tokens) {
     let obs = [];
     let obsCat = [];
     let featureSets = [];
-    let featureSetsAdd = [];
     let metafeatures = [];
     tokens.forEach(token => {
         if (token.type === FEATURE_TYPE.X) {

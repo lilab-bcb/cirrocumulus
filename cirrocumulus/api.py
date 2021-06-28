@@ -4,11 +4,11 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
 from .file_system_adapter import get_scheme
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import to_json
+from .util import json_response
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -31,18 +31,19 @@ def get_auth():
 @blueprint.route('/server', methods=['GET'])
 def handle_server():
     # no login required
-    server = get_database().server()
-    server['clientId'] = get_auth().client_id
+    d = {}
+    d['email'] = os.environ.get(CIRRO_EMAIL)
+    d['capabilities'] = get_database().capabilities()
+    d['clientId'] = get_auth().client_id
     if os.environ.get(CIRRO_FOOTER) is not None:
         with open(os.environ.get(CIRRO_FOOTER), 'rt') as f:
-            server['footer'] = f.read()
+            d['footer'] = f.read()
     if os.environ.get(CIRRO_BRAND) is not None:
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
-            server['brand'] = f.read()
+            d['brand'] = f.read()
     # server['brand'] = os.environ.get(CIRRO_BRAND)
-    server['jobs'] = os.environ.get('GAE_APPLICATION') is None
-    server['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
-    return to_json(server)
+    d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
+    return json_response(d)
 
 
 @blueprint.route('/category_name', methods=['GET', 'PUT'])
@@ -56,7 +57,7 @@ def handle_category_name():
         dataset_id = request.args.get('id', '')
         if dataset_id == '':
             return 'Please provide an id', 400
-        return to_json(database_api.category_names(email, dataset_id))
+        return json_response(database_api.category_names(email, dataset_id))
     content = request.get_json(force=True, cache=False)
     category = content.get('c')
     original_name = content.get('o')
@@ -84,7 +85,7 @@ def handle_feature_set():
     #     dataset_id = request.args.get('ds_id', '')
     #     if filter_id == '' or dataset_id == '':
     #         return 'Please provide an id', 400
-    #     return to_json(database_api.get_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id))
+    #     return json_response(database_api.get_dataset_filter(email, dataset_id=dataset_id, filter_id=filter_id))
     content = request.get_json(force=True, cache=False)
     set_id = content.get('id')
     dataset_id = content.get('ds_id')
@@ -105,10 +106,10 @@ def handle_feature_set():
             name=name,
             category=category,
             features=features)
-        return to_json({'id': set_id})
+        return json_response({'id': set_id})
     elif request.method == 'DELETE':
         database_api.delete_feature_set(email, dataset_id=dataset_id, set_id=set_id)
-        return to_json('', 204)
+        return json_response('', 204)
 
 
 @blueprint.route('/views', methods=['GET'])
@@ -121,7 +122,7 @@ def handle_dataset_views():
     if dataset_id == '':
         return 'Please provide an id', 400
 
-    return to_json(get_database().dataset_views(email, dataset_id))
+    return json_response(get_database().dataset_views(email, dataset_id))
 
 
 @blueprint.route('/view', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -135,7 +136,7 @@ def handle_dataset_view():
         dataset_id = request.args.get('ds_id', '')
         if view_id == '' or dataset_id == '':
             return 'Please provide an id', 400
-        return to_json(database_api.get_dataset_view(email, dataset_id=dataset_id, view_id=view_id))
+        return json_response(database_api.get_dataset_view(email, dataset_id=dataset_id, view_id=view_id))
     content = request.get_json(force=True, cache=False)
     view_id = content.get('id')
     name = content.get('name')
@@ -152,10 +153,10 @@ def handle_dataset_view():
             view_id=view_id if request.method == 'PUT' else None,
             name=name,
             value=content.get('value'))
-        return to_json({'id': view_id})
+        return json_response({'id': view_id})
     elif request.method == 'DELETE':
         database_api.delete_dataset_view(email, dataset_id=dataset_id, view_id=view_id)
-        return to_json('', 204)
+        return json_response('', 204)
 
 
 @blueprint.route('/schema', methods=['GET'])
@@ -169,7 +170,7 @@ def handle_schema():
     schema = dataset_api.schema(dataset)
     schema.update(dataset)  # add title, etc from database to schema
     schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
-    return to_json(schema)
+    return json_response(schema)
 
 
 def get_file_path(file, dataset_url):
@@ -224,7 +225,7 @@ def handle_user():
     email = get_auth().auth()['email']
     database_api = get_database()
     user = database_api.user(email)
-    return to_json(user)
+    return json_response(user)
 
 
 def get_email_and_dataset(content):
@@ -241,13 +242,13 @@ def get_email_and_dataset(content):
 def handle_data():
     json_request = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(json_request)
-    return to_json(
+    return json_response(
         data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
-            embedding_list=json_request.get('embedding'),
-            values=json_request.get('values'),
-            stats=json_request.get('stats'),
-            grouped_stats=json_request.get('groupedStats'),
-            selection=json_request.get('selection')))
+                                    embedding_list=json_request.get('embedding'),
+                                    values=json_request.get('values'),
+                                    stats=json_request.get('stats'),
+                                    grouped_stats=json_request.get('groupedStats'),
+                                    selection=json_request.get('selection')))
 
 
 @blueprint.route('/selection', methods=['POST'])
@@ -256,9 +257,10 @@ def handle_selection():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
-    return to_json(data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
-        measures=content.get('measures', []), dimensions=content.get('dimensions', []),
-        embeddings=content.get('embeddings', [])))
+    return json_response(data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+                                                    measures=content.get('measures', []),
+                                                    dimensions=content.get('dimensions', []),
+                                                    embeddings=content.get('embeddings', [])))
 
 
 @blueprint.route('/selected_ids', methods=['POST'])
@@ -266,7 +268,7 @@ def handle_selected_ids():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
-    return to_json(
+    return json_response(
         data_processing.handle_selection_ids(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter))
 
 
@@ -275,7 +277,7 @@ def handle_selected_ids():
 def handle_datasets():
     email = get_auth().auth()['email']
     database_api = get_database()
-    return to_json(database_api.datasets(email))
+    return json_response(database_api.datasets(email))
 
 
 def upload_file(file):
@@ -346,17 +348,18 @@ def handle_dataset():
                 return 'Upload not supported', 400
             url = upload_file(file)
         dataset_id = database_api.upsert_dataset(email=email,
-            dataset_id=dataset_id if request.method == 'PUT' else None,
-            dataset_name=dataset_name, url=url, readers=readers, description=description, title=title, species=species)
-        return to_json({'id': dataset_id})
+                                                 dataset_id=dataset_id if request.method == 'PUT' else None,
+                                                 dataset_name=dataset_name, url=url, readers=readers,
+                                                 description=description, title=title, species=species)
+        return json_response({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
         dataset_id = content.get('id', '')
         database_api.delete_dataset(email, dataset_id)
-        return to_json('', 204)
+        return json_response('', 204)
     elif request.method == 'GET':
         dataset_id = request.args.get('id', '')
-        return to_json(database_api.get_dataset(email, dataset_id, True))
+        return json_response(database_api.get_dataset(email, dataset_id, True))
 
 
 @blueprint.route('/job', methods=['GET', 'DELETE'])
@@ -367,7 +370,7 @@ def handle_job():
         content = request.get_json(force=True, cache=False)
         job_id = content.get('id', '')
         database_api.delete_job(email, job_id)
-        return to_json('', 204)
+        return json_response('', 204)
     else:
         job_id = request.args.get('id', '')
         job_status = request.args.get('status', '0')
@@ -378,11 +381,7 @@ def handle_job():
             dataset = database_api.get_dataset(email, dataset_id)
             file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
             return send_file(file_path)
-        result = database_api.get_job(email=email, job_id=job_id, return_result=return_result)
-        if return_result:
-            result = Response(result, mimetype='application/json')
-            result.headers["Content-Encoding"] = 'gzip'
-        return result
+        return database_api.get_job(email=email, job_id=job_id, return_result=return_result)
 
 
 @blueprint.route('/jobs', methods=['GET'])
@@ -390,7 +389,7 @@ def handle_jobs():
     email = get_auth().auth()['email']
     database_api = get_database()
     ds_id = request.args.get('id', '')
-    return to_json(database_api.get_jobs(email=email, dataset_id=ds_id))
+    return json_response(database_api.get_jobs(email=email, dataset_id=ds_id))
 
 
 @blueprint.route('/submit_job', methods=['POST'])
@@ -403,4 +402,4 @@ def handle_submit_job():
         job_type = content.get('type')
         job_name = content.get('name')
         return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-            job_name=job_name, job_type=job_type, params=params))
+                                  job_name=job_name, job_type=job_type, params=params))

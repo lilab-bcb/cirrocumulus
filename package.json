@@ -3,6 +3,7 @@
   "version": "1.1.16.post3",
   "private": true,
   "homepage": ".",
+  "proxy": "http://localhost:5000",
   "license": "BSD-3-Clause",
   "dependencies": {
     "@material-ui/core": "^4.11.4",
@@ -40,6 +41,7 @@
     "web-vitals": "^2.0.1"
   },
   "scripts": {
+    "e2e": "cd e2e && ../node_modules/.bin/jest",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -64,6 +66,10 @@
     ]
   },
   "devDependencies": {
-    "typescript": "^4.3.2"
+    "gm": "^1.23.1",
+    "http-proxy-middleware": "^2.0.0",
+    "jest-puppeteer": "^5.0.4",
+    "puppeteer": "^10.0.0",
+    "typescript": "^4.3.4"
   }
 }

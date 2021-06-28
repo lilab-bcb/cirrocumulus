@@ -160,6 +160,56 @@ Google App Engine
 - Read more about App Engine in the `App Engine`_ documentation.
 
 
+Developer Instructions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Create a new conda environment::
+
+    conda create --name cirrocumulus-dev
+
+- Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus.git
+
+- Change to cirrocumulus directory::
+
+    cd cirrocumulus
+
+- Install cirrocumulus Python package in editable mode::
+
+    pip install -e .
+
+- Install additional optional dependencies::
+
+    pip install s3fs tiledb
+
+- Install typescript::
+
+    yarn global add typescript
+
+- Install JavaScript dependencies::
+
+    yarn install
+
+- Launch cirrocumulus with the --no-open flag::
+
+    cirro launch path_to_h5ad_file --no-open
+
+- Run JavaScript server in development mode::
+
+    yarn start
+
+- Navigate to http://localhost:3000
+
+- In order to run End to End tests (yarn e2e), please install GraphicsMagick (brew install graphicsmagick on Mac)
+
+- Testing::
+
+    yarn e2e
+    yarn test
+    pytest
+
+
 .. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
 .. _App Engine: https://cloud.google.com/appengine/docs/

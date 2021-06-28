@@ -144,6 +144,7 @@ export class DatasetSelector extends React.PureComponent {
 
                             const speciesText = species === '' ? 'Other' : species;
                             const choices = species2Items[species];
+                            choices.sort((a, b) => NATSORT(a.name, b.name));
                             return <React.Fragment key={species}>
                                 <Typography component={"h2"}>{speciesText}</Typography>
                                 <List dense disablePadding component="nav">
@@ -176,9 +177,7 @@ export class DatasetSelector extends React.PureComponent {
                                 </List></React.Fragment>;
                         })}
                     </DialogContent>
-
                 </Dialog>
-
             </React.Fragment>
         );
     }

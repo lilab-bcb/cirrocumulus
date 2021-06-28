@@ -11,12 +11,17 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
     from cirrocumulus.no_auth import NoAuth
 
     app.config['AUTH'] = NoAuth()
+    try:
+        from cirrocumulus.tiledb_dataset import TileDBDataset
+        dataset_api.add(TileDBDataset())
+    except:  # tiledb install is optional
+        pass
     dataset_api.add(ParquetDataset())
     anndata_dataset = AnndataDataset('r' if backed else None)
     dataset_ids = []
     for dataset_paths in list_of_dataset_paths:
         dataset_paths = dataset_paths.split(',')
-        dataset_id = os.path.normpath(dataset_paths[0])
+        dataset_id = dataset_paths[0]
         dataset_ids.append(dataset_id)
         if len(dataset_paths) > 1:
             to_concat = []
@@ -105,25 +110,24 @@ def create_app():
 
 def main(argsv):
     import argparse
+
     parser = argparse.ArgumentParser(description='Run cirrocumulus')
     parser.add_argument('dataset',
-        help='Path to dataset in h5ad, loom, or STAR-Fusion format. Separate multiple datasets with '
-             'a comma instead of a space in order to join datasets by cell id', nargs='+')
+                        help='Path to dataset in h5ad, loom, or STAR-Fusion format. Separate multiple datasets with '
+                             'a comma instead of a space in order to join datasets by cell id', nargs='+')
     parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
     parser.add_argument('--markers',
-        help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
-        nargs='*')
+                        help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
+                        nargs='*')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host',
-        help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
+                        help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
 
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
 
     args = parser.parse_args(argsv)
     app = create_app()
-    # from flask_cors import CORS
-    # CORS(app)
     configure_app(app, args.dataset, args.spatial, args.backed, args.markers)
     if not args.no_open:
         import webbrowser, requests
@@ -140,4 +144,6 @@ def main(argsv):
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1:])

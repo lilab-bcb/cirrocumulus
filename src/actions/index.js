@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isArray} from 'lodash';
+import {find, findIndex, isArray, isString} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -25,6 +25,8 @@ import {
     getInterpolator,
     indexSort,
     randomSeq,
+    SERVER_CAPABILITY_ADD_DATASET,
+    SERVER_CAPABILITY_RENAME_CATEGORIES,
     splitSearchTokens,
     TRACE_TYPE_IMAGE,
     TRACE_TYPE_META_IMAGE,
@@ -33,7 +35,6 @@ import {
 } from '../util';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
-
 const authScopes = [
     'email',
     // 'profile',
@@ -53,7 +54,7 @@ export const DEFAULT_DRAG_MODE = 'pan';
 export const DEFAULT_SHOW_LABELS = false;
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = false;
-export const DEFAULT_DARK_MODE = false;
+export const DEFAULT_DARK_MODE = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
@@ -185,7 +186,7 @@ export function initGapi() {
 
         window.setTimeout(loadingAppProgress, 500);
         if (process.env.REACT_APP_STATIC === 'true') {
-            const serverInfo = {clientId: '', dynamic: false};
+            const serverInfo = {clientId: '', capabilities: new Set()};
             serverInfo.api = new StaticServerApi();
             dispatch(setServerInfo(serverInfo));
             dispatch(_setLoadingApp({loading: false}));
@@ -194,25 +195,51 @@ export function initGapi() {
             });
             return Promise.resolve();
         }
-        return fetch(API + '/server').then(result => result.json()).then(serverInfo => {
+        let urlOptions = window.location.search.substring(1);
+        // can be run in server mode by passing url only and no loading datasets or saving to DB
+        let staticDatasetUrl = null;
+        if (urlOptions.length > 0) {
+            let pairs = urlOptions.split('&');
+            pairs.forEach(pair => {
+                let keyVal = pair.split('=');
+                if (keyVal.length === 2 && (keyVal[0] === 'url' || keyVal[0] === 'id')) { // load a dataset by URL or id
+                    staticDatasetUrl = keyVal[1];
+                }
+            });
+        }
+        const getServerInfo = fetch(API + '/server').then(result => result.json())
+        return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
                 serverInfo.clientId = '';
             }
-            if (serverInfo.dynamic == null) {
-                serverInfo.dynamic = true;
+            const capabilities = new Set();
+            for (let key in serverInfo.capabilities) {
+                if (serverInfo.capabilities[key]) {
+                    capabilities.add(key);
+                }
             }
+            serverInfo.capabilities = capabilities;
             dispatch(setServerInfo(serverInfo));
             if (serverInfo.clientId === '' || serverInfo.clientId == null) { // no login required
-
                 dispatch(_setLoadingApp({loading: false}));
-                dispatch(_setEmail(serverInfo.mode === 'server' ? '' : null));
-                if (serverInfo.mode === 'server') {
+                dispatch(_setEmail(capabilities.has(SERVER_CAPABILITY_ADD_DATASET) ? '' : null));
+                if (capabilities.has(SERVER_CAPABILITY_ADD_DATASET)) {
                     dispatch(setUser({importer: true}));
                 }
-                dispatch(listDatasets()).then(() => {
+                if (staticDatasetUrl == null) {
+                    dispatch(listDatasets()).then(() => {
+                        dispatch(_loadSavedView());
+                    });
+                } else {
+                    dispatch(_setDatasetChoices([{
+                        id: staticDatasetUrl,
+                        url: staticDatasetUrl,
+                        name: staticDatasetUrl,
+                        description: ''
+                    }]));
                     dispatch(_loadSavedView());
-                });
+                }
 
             } else {
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
@@ -263,12 +290,12 @@ export function openView(id) {
         dispatch(_setLoading(true));
         getState().serverInfo.api.getViewPromise(id, getState().dataset.id)
             .then(result => {
-                const savedView = JSON.parse(result.value);
+                const savedView = isString(result.value) ? JSON.parse(result.value) : result.value;
                 dispatch(restoreSavedView(savedView));
             }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
-            handleError(dispatch, err, 'Unable to retrieve filter. Please try again.');
+            handleError(dispatch, err, 'Unable to retrieve link. Please try again.');
         });
     };
 }
@@ -378,14 +405,17 @@ export function deleteFeatureSet(id) {
         dispatch(_setLoading(true));
         getState().serverInfo.api.deleteFeatureSet(id, getState().dataset.id)
             .then(result => {
-
                 let markers = getState().markers;
+                let found = false;
                 for (let i = 0; i < markers.length; i++) {
                     if (markers[i].id === id) {
                         markers.splice(i, 1);
-                        // remove from searchTokens
+                        found = true;
                         break;
                     }
+                }
+                if (!found) {
+                    console.log('Unable to find feature set id ' + id)
                 }
                 dispatch(setMarkers(markers.slice()));
                 dispatch(setMessage('Set deleted'));
@@ -794,7 +824,7 @@ function _handleCategoricalNameChange(payload) {
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.dynamic ? getState().serverInfo.api.setCategoryNamePromise({
+        const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
             c: payload.name,
             o: payload.oldValue,
             n: payload.value,
@@ -890,53 +920,59 @@ export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};
 }
 
-function loadDefaultDatasetView() {
-    return function (dispatch, getState) {
-        const dataset = getState().dataset;
-        const embeddingNames = dataset.embeddings.map(e => e.name);
-        if (embeddingNames.length > 0) {
-            let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
-            let embeddingName = null;
-            for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
-                for (let i = 0; i < embeddingNames.length; i++) {
-                    if (embeddingNames[i].toLowerCase().indexOf(embeddingPriorities[priorityIndex]) !== -1) {
-                        embeddingName = embeddingNames[i];
+function getDefaultDatasetView(dataset) {
+    const embeddingNames = dataset.embeddings.map(e => e.name);
+    if (embeddingNames.length > 0) {
+        let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
+        let embeddingName = null;
+        for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
+            for (let i = 0; i < embeddingNames.length; i++) {
+                if (embeddingNames[i].toLowerCase().indexOf(embeddingPriorities[priorityIndex]) !== -1) {
+                    embeddingName = embeddingNames[i];
+                    break;
+                }
+            }
+        }
+
+        if (embeddingName == null) {
+            embeddingName = embeddingNames[0];
+        }
+        const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
+        let obsCat = null;
+        if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
+            let category = dataset.markers_read_only[0].category;
+            const suffix = ' (rank_genes_groups)';
+            if (category.endsWith(suffix)) {
+                category = category.substring(0, category.length - suffix.length);
+            }
+            if (dataset.obsCat.indexOf(category) !== -1) {
+                obsCat = category;
+            }
+        }
+        if (obsCat == null) {
+            let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
+            for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+                for (let i = 0; i < dataset.obsCat.length; i++) {
+                    if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
+                        obsCat = dataset.obsCat[i];
                         break;
                     }
                 }
             }
-
-            if (embeddingName == null) {
-                embeddingName = embeddingNames[0];
-            }
-            const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
-            let obsCat = null;
-            if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
-                let category = dataset.markers_read_only[0].category;
-                const suffix = ' (rank_genes_groups)';
-                if (category.endsWith(suffix)) {
-                    category = category.substring(0, category.length - suffix.length);
-                }
-                if (dataset.obsCat.indexOf(category) !== -1) {
-                    obsCat = category;
-                }
-            }
-            if (obsCat == null) {
-                let catPriorities = ['anno', 'cell_type', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
-                for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
-                    for (let i = 0; i < dataset.obsCat.length; i++) {
-                        if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
-                            obsCat = dataset.obsCat[i];
-                            break;
-                        }
-                    }
-                }
-            }
-            if (obsCat != null) {
-                dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
-            }
-            dispatch(setSelectedEmbedding([selectedEmbedding]));
         }
+
+        return {selectedEmbedding, obsCat};
+    }
+}
+
+function loadDefaultDatasetView() {
+    return function (dispatch, getState) {
+        const dataset = getState().dataset;
+        const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
+        if (obsCat != null) {
+            dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
+        }
+        dispatch(setSelectedEmbedding([selectedEmbedding]));
 
     };
 }
@@ -970,7 +1006,6 @@ function restoreSavedView(savedView) {
         dispatch(_setLoading(true));
         let datasetPromise;
         if (savedView.dataset != null) {
-            console.log('set dataset');
             datasetPromise = dispatch(setDataset(savedView.dataset, false, false));
         } else {
             datasetPromise = Promise.resolve();
@@ -978,7 +1013,7 @@ function restoreSavedView(savedView) {
         datasetPromise
             .then(() => {
                 let dataset = getState().dataset;
-                if (savedView.embeddings) {
+                if (savedView.embeddings && savedView.embeddings.length > 0) {
                     let names = dataset.embeddings.map(e => getEmbeddingKey(e));
                     let embeddings = [];
                     savedView.embeddings.forEach(embedding => {
@@ -991,6 +1026,20 @@ function restoreSavedView(savedView) {
                     if (savedView.camera != null) {
                         savedView.chartOptions.camera = savedView.camera;
                     }
+                } else {
+                    const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
+                    if (selectedEmbedding) {
+                        savedView.embeddings = [selectedEmbedding];
+                        if (obsCat != null) {
+                            savedView.q = [{value: obsCat, type: 'obsCat'}]
+                            savedView.activeFeature = {
+                                name: obsCat,
+                                type: 'obsCat',
+                                embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding)
+                            };
+                        }
+                    }
+
                 }
             })
             .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
@@ -1025,10 +1074,8 @@ function restoreSavedView(savedView) {
 function _loadSavedView() {
     return function (dispatch, getState) {
         let savedView = {dataset: null};
-        let q = window.location.search.substring(3);
-        if (q.length === 0) {
-            q = window.location.hash.substring(3);
-        }
+        // #q=
+        let q = window.location.hash.substring(3);
         if (q.length > 0) {
             try {
                 savedView = JSON.parse(window.decodeURIComponent(q));
@@ -1482,13 +1529,17 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
 
         const initPromise = dataset.api.init(id, dataset.url);
-        const jobsPromise = dataset.api.getJobs(id).then(jobs => {
+        const promises = [initPromise]
+
+        promises.push(dataset.api.getJobs(id).then(jobs => {
             jobResults = jobs;
-        });
+        }));
+
         const schemaPromise = dataset.api.getSchemaPromise().then(result => {
             newDataset = result;
         });
-        const promises = [initPromise, jobsPromise, schemaPromise];
+        promises.push(schemaPromise)
+
         if (!isDirectAccess) {
             const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
                 categoryNameResults = results;

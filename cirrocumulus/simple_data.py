@@ -101,6 +101,21 @@ class SimpleData:
 
     @staticmethod
     def schema(adata):
+        """ Gets dataset schema.
+
+        Returns
+            schema dict. Example:
+            {"version":"1.0.0",
+            "categoryOrder":{
+                "louvain":["0","1","2","3","4","5","6","7"],
+                "leiden":["0","1","2","3","4","5","6","7"]},
+            "var":["TNFRSF4","CPSF3L","ATAD3C"],
+            "obs":["percent_mito","n_counts"],
+            "obsCat":["louvain","leiden"],
+            "shape":[2638,1838],
+            "embeddings":[{"name":"X_pca","dimensions":3},{"name":"X_pca","dimensions":2},{"name":"X_umap","dimensions":2}]
+        }
+        """
         obs_cat = []
         obs = []
         schema_dict = {'version': '1.0.0'}

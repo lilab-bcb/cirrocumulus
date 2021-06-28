@@ -1,57 +1,58 @@
 import Divider from '@material-ui/core/Divider';
-import React from 'react';
+import React, {useRef} from 'react';
 
 import {connect} from 'react-redux';
 import {setPrimaryChartSize} from './actions';
 
 
-class DraggableDivider extends React.PureComponent {
+function DraggableDivider(props) {
+    const dragging = useRef(false);
+    const clientY = useRef(-1);
+    const primaryChartHeight = useRef(-1);
 
-
-    onMouseDown = (event) => {
-        this.dragging = true;
-        this.clientY = event.clientY;
-        this.primaryChartHeight = this.props.primaryChartSize.height;
+    function onMouseDown(event) {
+        dragging.current = true;
+        clientY.current = event.clientY;
+        primaryChartHeight.current = props.primaryChartSize.height;
         document.body.style.cursor = 'ns-resize';
-        window.addEventListener('mousemove', this.onMouseMove);
-        window.addEventListener('mouseup', this.onMouseUp);
-    };
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    }
 
-    onMouseUp = (event) => {
-        if (this.dragging) {
-            window.removeEventListener('mousemove', this.onMouseMove);
-            window.removeEventListener('mouseup', this.onMouseUp);
+    function onMouseUp(event) {
+        if (dragging.current) {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = null;
         }
-        this.dragging = false;
-    };
+        dragging.current = false;
+    }
 
-    onMouseMove = (event) => {
-        if (this.dragging) {
-            const primaryChartSize = this.props.primaryChartSize;
-            const delta = this.clientY - event.clientY;
-            this.props.handlePrimaryChartSize({
+    function onMouseMove(event) {
+        if (dragging.current) {
+            const primaryChartSize = props.primaryChartSize;
+            const delta = clientY.current - event.clientY;
+            props.handlePrimaryChartSize({
                 width: primaryChartSize.width,
-                height: Math.max(50, this.primaryChartHeight - delta)
+                height: Math.max(50, primaryChartHeight.current - delta)
             });
         }
-    };
-
-    render() {
-        const {activeFeature} = this.props;
-
-        return (
-            <>
-                {activeFeature && <div style={{
-                    height: 10, cursor: 'ns-resize', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center'
-                }}
-                                       onMouseDown={this.onMouseDown}>
-                    <Divider style={{width: '100%'}}/>
-                </div>}
-            </>
-        );
     }
+
+
+    const {activeFeature} = props;
+
+    return (
+        <div style={{
+            height: 10, cursor: 'ns-resize',
+            display: activeFeature ? 'flex' : 'none',
+            alignItems: 'center', justifyContent: 'center'
+        }}
+             onMouseDown={onMouseDown}>
+            <Divider style={{width: '100%'}}/>
+        </div>
+    );
+
 }
 
 const mapStateToProps = state => {

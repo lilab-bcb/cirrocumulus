@@ -72,7 +72,7 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
         }
         const isCount = name === '__count';
         return (
-            <div className="cirro-condensed" style={style}>
+            <div data-testid="continuous-legend" className="cirro-condensed" style={style}>
                 {/*ContinuousLegend shows stats table */}
                 <ContinuousLegend name={name}
                                   selected={selected}

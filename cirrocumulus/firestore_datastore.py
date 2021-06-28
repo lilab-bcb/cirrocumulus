@@ -1,9 +1,12 @@
 import datetime
 import json
+import os
 
-from cirrocumulus.util import get_email_domain
 from google.cloud import datastore
 
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain
+from .envir import SERVER_CAPABILITY_JOBS, CIRRO_EMAIL
 from .invalid_usage import InvalidUsage
 
 DATASET = 'Dataset'
@@ -16,10 +19,17 @@ JOB = 'Job'
 JOB_RESULT = 'Job_Result'
 
 
-class FirestoreDatastore:
+class FirestoreDatastore(AbstractDB):
 
     def __init__(self):
+        super().__init__()
         self.datastore_client = datastore.Client()
+        os.environ[CIRRO_EMAIL] = self.datastore_client.project + '@appspot.gserviceaccount.com'
+
+    def capabilities(self):
+        c = super().capabilities()
+        c[SERVER_CAPABILITY_JOBS] = False
+        return c
 
     def __get_key_and_dataset(self, email, dataset_id, ensure_owner=False):
         client = self.datastore_client
@@ -68,7 +78,7 @@ class FirestoreDatastore:
         self.__get_key_and_dataset(email, dataset_id)
         if entity_id is None:
             e = datastore.Entity(client.key(kind),
-                exclude_from_indexes=['value'])
+                                 exclude_from_indexes=['value'])
         else:
             entity_id = int(entity_id)
             key = client.key(kind, entity_id)
@@ -82,10 +92,6 @@ class FirestoreDatastore:
         e.update(entity_update)
         client.put(e)
         return e.id
-
-    def server(self):
-        client = self.datastore_client
-        return dict(mode='server', email=client.project + '@appspot.gserviceaccount.com')
 
     def category_names(self, email, dataset_id):
         dataset_id = int(dataset_id)
@@ -205,7 +211,7 @@ class FirestoreDatastore:
     # feature sets
     def get_feature_sets(self, email, dataset_id):
         return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=FEATURE_SET,
-            keys=['category', 'name', 'features'])
+                                      keys=['category', 'name', 'features'])
 
     def delete_feature_set(self, email, dataset_id, set_id):
         return self.__delete_entity(email=email, kind=FEATURE_SET, entity_id=set_id)
@@ -219,7 +225,7 @@ class FirestoreDatastore:
         if features is not None:
             entity_update['features'] = features
         return self.__upsert_entity(email=email, dataset_id=dataset_id, entity_id=set_id, kind=FEATURE_SET,
-            entity_update=entity_update)
+                                    entity_update=entity_update)
 
     # views
     def dataset_views(self, email, dataset_id):
@@ -240,7 +246,7 @@ class FirestoreDatastore:
         if value is not None:
             entity_update['value'] = json.dumps(value)
         return self.__upsert_entity(email=email, dataset_id=dataset_id, entity_id=view_id, kind=DATASET_VIEW,
-            entity_update=entity_update)
+                                    entity_update=entity_update)
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         dataset_id = int(dataset_id)
@@ -249,7 +255,7 @@ class FirestoreDatastore:
         entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["params"])
         import json
         entity.update(dict(dataset_id=dataset_id, email=email, name=job_name, type=job_type, status='',
-            submitted=datetime.datetime.utcnow(), params=json.dumps(params)))
+                           submitted=datetime.datetime.utcnow(), params=json.dumps(params)))
         client.put(entity)
         job_id = entity.id
 
@@ -280,6 +286,8 @@ class FirestoreDatastore:
         if is_complete:
             key = client.key(JOB_RESULT, job_id)
             entity = client.get(key)
+            from cirrocumulus.util import to_json
+            result = to_json(result)
             entity.update(dict(result=result))
             client.put(entity)
 
@@ -293,7 +301,7 @@ class FirestoreDatastore:
         for result in query.fetch():
             results.append(
                 dict(id=result.id, name=result['name'], type=result['type'], submitted=result.get('submitted'),
-                    status=result.get('status'), email=result.get('email')))
+                     status=result.get('status'), email=result.get('email')))
         return results
 
     def delete_job(self, email, job_id):

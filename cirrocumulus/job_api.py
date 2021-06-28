@@ -133,6 +133,4 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         result_df = pd.DataFrame(
             data={'index': var_names, 'selection:pvals_adj': pvals, 'selection:scores': scores})
         result = dict(groups=['selection'], fields=['pvals_adj', 'scores'], data=result_df.to_dict(orient='records'))
-    result = ujson.dumps(result, double_precision=2, orient='values').encode('UTF-8')
-    result = gzip.compress(result)
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)

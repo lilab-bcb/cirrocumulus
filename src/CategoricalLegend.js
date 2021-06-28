@@ -155,7 +155,7 @@ class CategoricalLegend extends React.PureComponent {
 
         const renamedCategoryValue = renamedCategories[this.state.categoryValue] || this.state.categoryValue;
         return (
-            <div className="cirro-chart-legend" style={style}>
+            <div data-testid="categorical-legend" className="cirro-chart-legend" style={style}>
                 <Dialog open={Boolean(this.state.anchorEl)} onClose={this.handlePopoverClose}
                         aria-labelledby="edit-category-dialog-title">
 
@@ -229,8 +229,11 @@ class CategoricalLegend extends React.PureComponent {
                         const globalTitle = numberFormat(100 * categoryCount / nObs) + '%';
                         let categoryText = category;
                         let renamed = renamedCategories[category];
+                        let categoryTooltip = categoryText;
                         if (renamed !== undefined) {
+                            categoryTooltip = renamed + ' (renamed from ' + categoryTooltip + ')'
                             categoryText = renamed;
+
                         }
                         const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
                         return <tr
@@ -244,7 +247,6 @@ class CategoricalLegend extends React.PureComponent {
                                     height: 10,
                                     background: scale(category)
                                 }}/>
-
                             </td>}
                             <td>
                                 <div style={{
@@ -253,7 +255,7 @@ class CategoricalLegend extends React.PureComponent {
                                     overflow: 'hidden',
                                     display: 'inline-block',
                                     userSelect: 'none'
-                                }} title={'' + categoryText}>{'' + categoryText}</div>
+                                }} title={'' + categoryTooltip}>{'' + categoryText}</div>
                                 <IconButton style={{padding: 0, fontSize: 14}} size="small"
                                             onClick={(e) => this.handleContextmenu(category, e)} aria-label="Menu"
                                             aria-haspopup="true">

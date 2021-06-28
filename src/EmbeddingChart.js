@@ -98,7 +98,7 @@ class EmbeddingChart extends React.PureComponent {
 
         return (
             <div style={{position: 'relative'}}>
-                <Box color="text.primary" style={{
+                <Box data-testid="chart-extra" color="text.primary" style={{
                     marginTop: 3.2,
                     position: 'absolute',
                     textAlign: 'right',
