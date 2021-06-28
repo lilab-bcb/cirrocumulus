@@ -144,4 +144,6 @@ def main(argsv):
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1:])
