@@ -1,7 +1,7 @@
 name: test
 on:
   push:
-    branches: [ $default-branch, develop ]
+    branches: [ $default-branch ]
   pull_request:
     branches: [ $default-branch ]
 
@@ -29,6 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest
           pip install -r requirements.txt
+          pip install tiledb
           python -m pip install .
           yarn global add typescript
           yarn install
