@@ -372,14 +372,17 @@ function ExplorePanel(props) {
                                              options={featureOptions}
                                              value={splitTokens.X}
                                              onChange={onFeaturesChange}
-                                             helperText={<>Enter or paste list <Link
-                                                 style={{
-                                                     float: 'right',
-                                                     display: splitTokens.X.length === 0 ? 'none' : ''
-                                                 }}
-                                                 onClick={onFeatureCopy}>Copy</Link></>}
+                                             helperText={"Enter or paste list"}
 
                     />
+                    <div><Link
+                        style={{
+                            float: 'right',
+                            fontSize: '0.75rem',
+                            transform: 'translateY(-50px)',
+                            display: splitTokens.X.length === 0 ? 'none' : ''
+                        }}
+                        onClick={onFeatureCopy}>Copy</Link></div>
 
                 </FormControl>}
                 {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
@@ -444,13 +447,17 @@ function ExplorePanel(props) {
                                              onChange={onFeatureSetsChange}
                                              getOptionSelected={(option, value) => option.id === value.id}
                                              getChipText={option => option.name}
-                                             helperText={serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) ? <>
-                                                 <Tooltip title={"Save Current Genes/Features"}><Link
-                                                     style={{
-                                                         float: 'right',
-                                                         display: splitTokens.X.length === 0 ? 'none' : ''
-                                                     }}
-                                                     onClick={onSaveFeatureList}>Save</Link></Tooltip></> : null}/>
+                    />
+                    {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) && <div>
+                        <Tooltip title={"Save Current Genes/Features"}>
+                            <Link
+                                style={{
+                                    float: 'right',
+                                    fontSize: '0.75rem',
+                                    transform: 'translateY(-50px)',
+                                    display: splitTokens.X.length === 0 ? 'none' : ''
+                                }}
+                                onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
 
                 </FormControl>}
             </div>
