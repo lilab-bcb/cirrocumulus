@@ -84,7 +84,7 @@ const styles = theme => ({
     formControl: {
         display: 'block',
         minWidth: 200,
-        // maxWidth: 200
+        maxWidth: 200
     },
     select: {
         minWidth: 200,
@@ -596,13 +596,13 @@ class SideBar extends React.PureComponent {
                     <Typography gutterBottom={false} component={"h1"}
                                 className={classes.title}>Links</Typography>
                     <Divider/>
-                    <div></div>
-                    <Tooltip title={"Save Current Visualization State"}><Link
-                        style={{
-                            float: 'right',
-                            fontSize: '0.75rem',
-                        }}
-                        onClick={this.onViewSaved}>Save</Link></Tooltip>
+                    <FormControl className={classes.formControl}>
+                        <Tooltip title={"Save Current Visualization State"}><Link
+                            style={{
+                                float: 'right',
+                                fontSize: '0.75rem',
+                            }}
+                            onClick={this.onViewSaved}>Save</Link></Tooltip></FormControl>
 
                     {datasetViews.length === 0 &&
                     <Box color="text.secondary">No saved links</Box>}
