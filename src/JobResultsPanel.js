@@ -800,7 +800,7 @@ class JobResultsPanel extends React.PureComponent {
                 </DialogActions>
             </Dialog>
             <Dialog onClose={this.onCloseJobs} aria-labelledby="job-results-title"
-                    open={this.state.showDialog}>
+                    open={this.state.showDialog && jobResults.length > 0}>
                 <DialogTitle id="job-results-title" onClose={this.onCloseJobs}>
                     Results
                 </DialogTitle>
@@ -823,6 +823,8 @@ class JobResultsPanel extends React.PureComponent {
                                 const isComplete = isPrecomputed || jobResult.status === 'complete';
                                 const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
                                 const status = isPrecomputed ? 'complete' : jobResult.status;
+                                const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
+
                                 // const date = isPrecomputed ? '' : jobResult.submitted;
                                 return <TableRow key={jobResult.id}
                                                  className={classes.deleteTr}
@@ -834,7 +836,7 @@ class JobResultsPanel extends React.PureComponent {
                                     <TableCell>{text}</TableCell>
                                     <TableCell>{jobType}</TableCell>
                                     {showJobStatus && <TableCell>{status}
-                                        {email == jobResult.email && !isPrecomputed &&
+                                        {isJobOwner && !isPrecomputed &&
                                         <IconButton edge="end" aria-label="delete"
                                                     onClick={(event) => this.onDeleteJob(event, jobResult)}>
                                             <DeleteIcon/>

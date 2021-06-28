@@ -6,12 +6,12 @@ import os
 
 import numpy as np
 import pandas as pd
-import pandas._libs.json as ujson
 import scipy.sparse
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData
+from cirrocumulus.util import to_json
 
 logger = logging.getLogger("cirro")
 
@@ -53,10 +53,6 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
             adata.obsm[new_key] = adata.obsm[key]
             del adata.obsm[key]
     return adata
-
-
-def to_json(data):
-    return ujson.dumps(data, double_precision=2, orient='values')
 
 
 def make_unique(index, join='-1'):

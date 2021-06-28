@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isArray} from 'lodash';
+import {find, findIndex, isArray, isString} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -24,7 +24,8 @@ import {
     getFeatureSets,
     getInterpolator,
     indexSort,
-    randomSeq, SERVER_CAPABILITY_ADD_DATASET,
+    randomSeq,
+    SERVER_CAPABILITY_ADD_DATASET,
     SERVER_CAPABILITY_JOBS,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
     splitSearchTokens,
@@ -300,12 +301,12 @@ export function openView(id) {
         dispatch(_setLoading(true));
         getState().serverInfo.api.getViewPromise(id, getState().dataset.id)
             .then(result => {
-                const savedView = JSON.parse(result.value);
+                const savedView = isString(result.value) ? JSON.parse(result.value) : result.value;
                 dispatch(restoreSavedView(savedView));
             }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
-            handleError(dispatch, err, 'Unable to retrieve filter. Please try again.');
+            handleError(dispatch, err, 'Unable to retrieve link. Please try again.');
         });
     };
 }

@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 
 from google.cloud import datastore
 
@@ -7,7 +8,6 @@ from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain
 from .envir import SERVER_CAPABILITY_JOBS, CIRRO_EMAIL
 from .invalid_usage import InvalidUsage
-import os
 
 DATASET = 'Dataset'
 CAT_NAME = 'Cat_Name'
@@ -286,6 +286,8 @@ class FirestoreDatastore(AbstractDB):
         if is_complete:
             key = client.key(JOB_RESULT, job_id)
             entity = client.get(key)
+            from cirrocumulus.util import to_json
+            result = to_json(result)
             entity.update(dict(result=result))
             client.put(entity)
 

@@ -1,11 +1,11 @@
 import json
-
-from bson import ObjectId
-from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain
-from pymongo import MongoClient
 import os
 
+from bson import ObjectId
+from pymongo import MongoClient
+
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain
 from .envir import CIRRO_DB_URI
 from .invalid_usage import InvalidUsage
 
@@ -244,6 +244,9 @@ class MongoDb(AbstractDB):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
+        if result is not None:
+            from cirrocumulus.util import to_json
+            result = to_json(result)
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
     def delete_job(self, email, job_id):

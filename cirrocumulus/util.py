@@ -5,7 +5,11 @@ from flask import make_response
 from .file_system_adapter import get_scheme
 
 
-def to_json(data, response=200):
+def to_json(data):
+    return ujson.dumps(data, double_precision=2, orient='values')
+
+
+def json_response(data, response=200):
     # response = make_response(simplejson.dumps(data, check_circular=True), response)
     # response = make_response(json.dumps(data), response)
     s = ujson.dumps(data, double_precision=2, orient='values')
