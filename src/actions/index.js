@@ -26,7 +26,6 @@ import {
     indexSort,
     randomSeq,
     SERVER_CAPABILITY_ADD_DATASET,
-    SERVER_CAPABILITY_JOBS,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
     splitSearchTokens,
     TRACE_TYPE_IMAGE,
@@ -203,22 +202,12 @@ export function initGapi() {
             let pairs = urlOptions.split('&');
             pairs.forEach(pair => {
                 let keyVal = pair.split('=');
-                if (keyVal.length === 2 && keyVal[0] === 'url') { // load a dataset by URL
-                    staticDatasetUrl = keyVal[1];
-                } else if (keyVal.length === 2 && keyVal[0] === 'id') { // load a dataset by ID
+                if (keyVal.length === 2 && (keyVal[0] === 'url' || keyVal[0] === 'id')) { // load a dataset by URL or id
                     staticDatasetUrl = keyVal[1];
                 }
             });
         }
-        let getServerInfo;
-        if (staticDatasetUrl == null) {
-            getServerInfo = fetch(API + '/server').then(result => result.json())
-        } else { // no database
-            getServerInfo = Promise.resolve({
-                capabilities: new Set([SERVER_CAPABILITY_JOBS])
-            });
-        }
-
+        const getServerInfo = fetch(API + '/server').then(result => result.json())
         return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
@@ -931,53 +920,59 @@ export function setServerInfo(payload) {
     return {type: SET_SERVER_INFO, payload: payload};
 }
 
-function loadDefaultDatasetView() {
-    return function (dispatch, getState) {
-        const dataset = getState().dataset;
-        const embeddingNames = dataset.embeddings.map(e => e.name);
-        if (embeddingNames.length > 0) {
-            let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
-            let embeddingName = null;
-            for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
-                for (let i = 0; i < embeddingNames.length; i++) {
-                    if (embeddingNames[i].toLowerCase().indexOf(embeddingPriorities[priorityIndex]) !== -1) {
-                        embeddingName = embeddingNames[i];
+function getDefaultDatasetView(dataset) {
+    const embeddingNames = dataset.embeddings.map(e => e.name);
+    if (embeddingNames.length > 0) {
+        let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
+        let embeddingName = null;
+        for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
+            for (let i = 0; i < embeddingNames.length; i++) {
+                if (embeddingNames[i].toLowerCase().indexOf(embeddingPriorities[priorityIndex]) !== -1) {
+                    embeddingName = embeddingNames[i];
+                    break;
+                }
+            }
+        }
+
+        if (embeddingName == null) {
+            embeddingName = embeddingNames[0];
+        }
+        const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
+        let obsCat = null;
+        if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
+            let category = dataset.markers_read_only[0].category;
+            const suffix = ' (rank_genes_groups)';
+            if (category.endsWith(suffix)) {
+                category = category.substring(0, category.length - suffix.length);
+            }
+            if (dataset.obsCat.indexOf(category) !== -1) {
+                obsCat = category;
+            }
+        }
+        if (obsCat == null) {
+            let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
+            for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+                for (let i = 0; i < dataset.obsCat.length; i++) {
+                    if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
+                        obsCat = dataset.obsCat[i];
                         break;
                     }
                 }
             }
-
-            if (embeddingName == null) {
-                embeddingName = embeddingNames[0];
-            }
-            const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
-            let obsCat = null;
-            if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
-                let category = dataset.markers_read_only[0].category;
-                const suffix = ' (rank_genes_groups)';
-                if (category.endsWith(suffix)) {
-                    category = category.substring(0, category.length - suffix.length);
-                }
-                if (dataset.obsCat.indexOf(category) !== -1) {
-                    obsCat = category;
-                }
-            }
-            if (obsCat == null) {
-                let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
-                for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
-                    for (let i = 0; i < dataset.obsCat.length; i++) {
-                        if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
-                            obsCat = dataset.obsCat[i];
-                            break;
-                        }
-                    }
-                }
-            }
-            if (obsCat != null) {
-                dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
-            }
-            dispatch(setSelectedEmbedding([selectedEmbedding]));
         }
+
+        return {selectedEmbedding, obsCat};
+    }
+}
+
+function loadDefaultDatasetView() {
+    return function (dispatch, getState) {
+        const dataset = getState().dataset;
+        const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
+        if (obsCat != null) {
+            dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
+        }
+        dispatch(setSelectedEmbedding([selectedEmbedding]));
 
     };
 }
@@ -1011,7 +1006,6 @@ function restoreSavedView(savedView) {
         dispatch(_setLoading(true));
         let datasetPromise;
         if (savedView.dataset != null) {
-            console.log('set dataset');
             datasetPromise = dispatch(setDataset(savedView.dataset, false, false));
         } else {
             datasetPromise = Promise.resolve();
@@ -1019,7 +1013,7 @@ function restoreSavedView(savedView) {
         datasetPromise
             .then(() => {
                 let dataset = getState().dataset;
-                if (savedView.embeddings) {
+                if (savedView.embeddings && savedView.embeddings.length > 0) {
                     let names = dataset.embeddings.map(e => getEmbeddingKey(e));
                     let embeddings = [];
                     savedView.embeddings.forEach(embedding => {
@@ -1031,6 +1025,14 @@ function restoreSavedView(savedView) {
                     savedView.embeddings = embeddings;
                     if (savedView.camera != null) {
                         savedView.chartOptions.camera = savedView.camera;
+                    }
+                } else {
+                    const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
+                    if (selectedEmbedding) {
+                        savedView.embeddings = [selectedEmbedding];
+                    }
+                    if (obsCat) {
+                        savedView.q = [{value: obsCat, type: 'obsCat'}]
                     }
                 }
             })
