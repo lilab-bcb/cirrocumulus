@@ -1030,10 +1030,16 @@ function restoreSavedView(savedView) {
                     const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
                     if (selectedEmbedding) {
                         savedView.embeddings = [selectedEmbedding];
+                        if (obsCat != null) {
+                            savedView.q = [{value: obsCat, type: 'obsCat'}]
+                            savedView.activeFeature = {
+                                name: obsCat,
+                                type: 'obsCat',
+                                embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding)
+                            };
+                        }
                     }
-                    if (obsCat) {
-                        savedView.q = [{value: obsCat, type: 'obsCat'}]
-                    }
+
                 }
             })
             .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
