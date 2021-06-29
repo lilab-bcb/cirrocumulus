@@ -285,4 +285,6 @@ class AbstractDB:
           """
         job = self.job_id_to_job[job_id]
         job['status'] = status
-        job['result'] = result
+        if result is not None:
+            from cirrocumulus.util import to_json
+            job['result'] = to_json(result)
