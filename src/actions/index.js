@@ -196,14 +196,14 @@ export function initGapi() {
             return Promise.resolve();
         }
         let urlOptions = window.location.search.substring(1);
-        // can be run in server mode by passing url only and no loading datasets or saving to DB
-        let staticDatasetUrl = null;
+        // can be run in server mode by passing url not stored in database
+        let externalDatasetId = null;
         if (urlOptions.length > 0) {
             let pairs = urlOptions.split('&');
             pairs.forEach(pair => {
                 let keyVal = pair.split('=');
                 if (keyVal.length === 2 && (keyVal[0] === 'url' || keyVal[0] === 'id')) { // load a dataset by URL or id
-                    staticDatasetUrl = keyVal[1];
+                    externalDatasetId = keyVal[1];
                 }
             });
         }
@@ -227,15 +227,15 @@ export function initGapi() {
                 if (capabilities.has(SERVER_CAPABILITY_ADD_DATASET)) {
                     dispatch(setUser({importer: true}));
                 }
-                if (staticDatasetUrl == null) {
+                if (externalDatasetId == null) {
                     dispatch(listDatasets()).then(() => {
                         dispatch(_loadSavedView());
                     });
                 } else {
                     dispatch(_setDatasetChoices([{
-                        id: staticDatasetUrl,
-                        url: staticDatasetUrl,
-                        name: staticDatasetUrl,
+                        id: externalDatasetId,
+                        url: externalDatasetId,
+                        name: externalDatasetId,
                         description: ''
                     }]));
                     dispatch(_loadSavedView());
