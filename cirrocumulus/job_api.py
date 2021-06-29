@@ -1,14 +1,10 @@
-import gzip
-
 import numpy as np
 import pandas as pd
-import pandas._libs.json as ujson
 import scipy.stats as ss
 
 from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
-
 
 executor = None
 
@@ -25,7 +21,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
         executor = ThreadPoolExecutor(max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
-        params=params)
+                                     params=params)
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
     return job_id
@@ -58,7 +54,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         avg_log2FC = np.zeros(nfeatures)
         mask2 = get_mask(dataset_api, dataset, params['filter2'])
         v2_size = mask2.sum()
-        
+
     elif job_type == 'corr':
         df = dataset_api.read_dataset(keys=dict(X=[params['ref']]), dataset=dataset)
         df = df[mask1]
@@ -119,7 +115,8 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                     pass
                 index += 1
         database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * index / nfeatures),
-            result=None)
+                                result=None)
+    pvals[np.isnan(pvals)] = 1
     pvals = fdrcorrection(pvals)
     if job_type == 'de':
         result_df = pd.DataFrame(
@@ -127,8 +124,8 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                   'comparison:scores': scores, 'comparison:percent_expressed1': percent_expressed1,
                   'comparison:percent_expressed2': percent_expressed2})
         result = dict(groups=['comparison'],
-            fields=['pvals_adj', 'avg_log2FC', 'scores', 'percent_expressed1', 'percent_expressed2'],
-            data=result_df.to_dict(orient='records'))
+                      fields=['pvals_adj', 'avg_log2FC', 'scores', 'percent_expressed1', 'percent_expressed2'],
+                      data=result_df.to_dict(orient='records'))
     elif job_type == 'corr':
         result_df = pd.DataFrame(
             data={'index': var_names, 'selection:pvals_adj': pvals, 'selection:scores': scores})

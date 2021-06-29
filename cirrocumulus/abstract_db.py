@@ -227,6 +227,7 @@ class AbstractDB:
         Returns:
          job id
       """
+        import datetime
         job_id = unique_id()
         self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
                                           status=None, result=None, submitted=datetime.datetime.utcnow())
@@ -284,4 +285,6 @@ class AbstractDB:
           """
         job = self.job_id_to_job[job_id]
         job['status'] = status
-        job['result'] = result
+        if result is not None:
+            from cirrocumulus.util import to_json
+            job['result'] = to_json(result)
