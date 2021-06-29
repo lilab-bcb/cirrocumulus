@@ -1443,7 +1443,15 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
                 break;
             }
         }
-        if (selectedChoice == null) {
+        if (selectedChoice == null) { // search by name
+            for (let i = 0; i < datasetChoices.length; i++) {
+                if (datasetChoices[i].name === id) {
+                    selectedChoice = datasetChoices[i];
+                    break;
+                }
+            }
+        }
+        if (selectedChoice == null) { //
             dispatch(_setLoading(false));
             dispatch(setMessage('Unable to find dataset'));
             return Promise.reject('Unable to find dataset');
