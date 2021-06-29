@@ -2,11 +2,11 @@ import json
 import os
 
 from bson import ObjectId
-from pymongo import MongoClient
-
 from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain
-from .envir import CIRRO_DB_URI
+from pymongo import MongoClient
+
+from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
 from .invalid_usage import InvalidUsage
 
 
@@ -51,6 +51,18 @@ class MongoDb(AbstractDB):
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         collection = self.db.datasets
+        auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
+
+        if auth_client_id is None:  # allow unregistered URL
+            try:
+                dataset_id.index('://')
+                return {
+                    'id': dataset_id,
+                    'name': dataset_id,
+                    'url': dataset_id
+                }
+            except ValueError:
+                pass
         doc = collection.find_one(dict(_id=ObjectId(dataset_id)))
         if doc is None:
             raise InvalidUsage('Please provide a valid id', 400)
