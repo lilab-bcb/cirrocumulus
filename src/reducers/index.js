@@ -604,8 +604,10 @@ function cachedData(state = {}, action) {
     switch (action.type) {
         case SET_DATASET :
             return {};
+        default:
+            return state;
     }
-    return state;
+
 }
 
 function sortEmbeddingTraces(traces) {

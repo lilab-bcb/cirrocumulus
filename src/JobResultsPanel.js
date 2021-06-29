@@ -1,5 +1,4 @@
 import {
-    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
@@ -39,78 +38,14 @@ import {
     scaleConstantRange
 } from './util';
 
+import DotPlotTable from './DotPlotTable';
+
 const styles = theme => ({
-    dot: {
-        borderRadius: '50%',
-        display: 'inlineBlock',
-        border: '1px solid lightgray'
-    },
     toolbar: {
         '& hr': {
             margin: theme.spacing(0, 0.5),
         }
     },
-    table: {
-        borderCollapse: 'collapse',
-        position: 'relative',
-        width: 'unset'
-    },
-    tr: {
-        cursor: 'pointer',
-    },
-    deleteTr: {
-        cursor: 'pointer',
-        '& span': {
-            display: 'none',
-        },
-        '&:hover span': {
-            display: 'block',
-            position: 'absolute',
-            right: 0,
-            top: 0
-        }
-    },
-    rotateHeader: {
-        top: 0,
-        padding: 1,
-        background: 'transparent',
-        whiteSpace: 'nowrap'
-    },
-    checkbox: {
-        padding: 0
-    },
-    rotateHeaderDiv: {
-        /* place div at bottom left of the th parent */
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        /* Make sure short labels still meet the corner of the parent otherwise you'll get a gap */
-        textAlign: 'left',
-        /* Move the top left corner of the span's bottom-border to line up with the top left corner of the td's border-right border so that the border corners are matched
-         * Rotate 315 (-45) degrees about matched border corners */
-        transform: 'translate(calc(50%),0) rotate(315deg)',
-        transformOrigin: '0% calc(50%)',
-        width: '100%',
-    },
-    rotateHeaderSpan: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    },
-    td: {
-        padding: 1,
-        whiteSpace: 'nowrap',
-        width: 27,
-        minWidth: 27,
-        maxWidth: 27
-    },
-    rowHeader: {
-        padding: 1,
-        whiteSpace: 'nowrap',
-    }
 });
 
 
@@ -470,7 +405,8 @@ class JobResultsPanel extends React.PureComponent {
         }
         this.props.onSearchTokens(searchTokens.slice());
     };
-    handleClick = (event, row) => {
+
+    onRowClick = (event, row) => {
         event.stopPropagation();
         let searchTokens = this.props.searchTokens;
         const jobResult = this.getJobResult();
@@ -545,8 +481,7 @@ class JobResultsPanel extends React.PureComponent {
                 selectedFeatures.add(token.value);
             }
         });
-        // const name = jobResult.name;
-        // const params = jobResult.params;
+
         let data;
         let color;
         let by;
@@ -554,14 +489,12 @@ class JobResultsPanel extends React.PureComponent {
         let groups;
         let rotateHeaders = false;
         let rows;
-        let headerWidth = 0;
-        let headerHeight = 0;
-        let maxSize;
         let valueScale = null;
         let isSizeScaled = true;
         let domains;
         let tooltipFields = null;
-        let selectAllChecked = true;
+        let headerHeight = 0;
+        let headerWidth = 0;
         if (jobResult != null) {
             // const name = jobResult.name;
             // const params = jobResult.params;
@@ -573,7 +506,7 @@ class JobResultsPanel extends React.PureComponent {
             groups = jobResult.groups;
             tooltipFields = [];
             tooltipFields.push(by);
-
+            rows = jobResult.rows;
             if (color !== by) {
                 tooltipFields.push(color);
             }
@@ -587,11 +520,34 @@ class JobResultsPanel extends React.PureComponent {
                 }
             });
 
+            const columns = jobResult.columns;
+            for (let i = 0; i < columns.length; i++) {
+                if (columns[i].length > 2) {
+                    rotateHeaders = true;
+                    break;
+                }
+            }
+            if (rotateHeaders) {
+                const d = document.createElement('span');
+                d.style.position = 'absolute';
+                d.style.left = '-1000000px';
+                d.className = '.MuiTableCell-head .MuiTableCell-root';
+                document.body.append(d);
+                for (let i = 0; i < columns.length; i++) {
+                    d.innerText = columns[i];
+                    headerWidth = Math.max(headerWidth, d.getBoundingClientRect().width);
+                }
+                d.remove();
+                headerWidth += 2; // prevent overflow
+                headerWidth = Math.min(headerWidth, 300);
+                headerHeight = Math.cos(45) * headerWidth;
+            }
             if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
                 valueScale = scaleLinear().range([0, 1]);
                 domains = [];
+                // can scale colors globally, by row, or by column
                 if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
-                    jobResult.rows.forEach(row => {
+                    rows.forEach(row => {
                         let min = Number.MAX_VALUE;
                         let max = -Number.MAX_VALUE;
                         jobResult.columns.forEach(column => {
@@ -609,7 +565,7 @@ class JobResultsPanel extends React.PureComponent {
                     jobResult.columns.forEach(column => {
                         let min = Number.MAX_VALUE;
                         let max = -Number.MAX_VALUE;
-                        jobResult.rows.forEach(row => {
+                        rows.forEach(row => {
                             const group = groups[column];
                             const colorField = group + ':' + color;
                             const colorValue = data[row][colorField];
@@ -622,41 +578,7 @@ class JobResultsPanel extends React.PureComponent {
                     });
                 }
             }
-
-            for (let i = 0; i < groups.length; i++) {
-                if (groups[i].length > 2) {
-                    rotateHeaders = true;
-                    break;
-                }
-            }
-            rows = jobResult.rows;
-
-            for (let i = 0; i < rows.length; i++) {
-                const id = data[rows[i]]['index'];
-                const selected = selectedFeatures.has(id);
-                if (!selected) {
-                    selectAllChecked = false;
-                    break;
-                }
-            }
-            if (rotateHeaders) {
-                const d = document.createElement('span');
-                d.style.position = 'absolute';
-                d.style.left = '-1000000px';
-                d.className = '.MuiTableCell-head .MuiTableCell-root';
-                document.body.append(d);
-                for (let i = 0; i < groups.length; i++) {
-                    d.innerText = groups[i];
-                    headerWidth = Math.max(headerWidth, d.getBoundingClientRect().width);
-                }
-                d.remove();
-                headerWidth += 2; // prevent overflow
-                headerWidth = Math.min(headerWidth, 300);
-                headerHeight = Math.cos(45) * headerWidth;
-            }
-            maxSize = Math.max(jobResult.sizeScale.range()[0], jobResult.sizeScale.range()[1]);
         }
-
 
         let showJobStatus = false;
         for (let i = 0; i < jobResults.length; i++) {
@@ -667,115 +589,34 @@ class JobResultsPanel extends React.PureComponent {
             }
         }
         const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
+        const columns = jobResult ? jobResult.columns.map(column => groups[column]) : null;
+        const isRowSelected = (row) => selectedFeatures.has(data[row].index);
+        const getRowId = (row) => data[row].index;
+        const getTooltip = (row, column) => {
+            let title = [];
+            tooltipFields.forEach(field => {
+                const value = data[row][column + ':' + field];
+                title.push(field + ': ' + value);
+            });
+            title = title.join(', ');
+            return title;
+        };
 
+        const getColor = (row, column) => data[row][column + ':' + color]
+        const getSize = (row, column) => data[row][column + ':' + size]
+
+        const rowStart = (row, rowIndex) => {
+            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                valueScale.domain(domains[rowIndex]);
+            }
+        }
+        const columnStart = (column, columnIndex) => {
+            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                valueScale.domain(domains[columnIndex]);
+            }
+        }
 
         return <>
-            <Box color="text.primary">
-                <Grid container alignItems="center" className={classes.toolbar}>
-                    {showBrowseJobs &&
-                    <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
-                            color="primary">Browse All Results</Button>}
-                    {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
-                    {jobResult && <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
-                                                                        onClick={this.exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>}
-                </Grid>
-
-                {jobResult && <>
-                    <Typography
-                        style={{marginBottom: headerHeight + 8}}
-                        component={"h3"}
-                        color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
-                        <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
-                    <div style={{paddingTop: 6}}>
-                        {jobResult.rows.length > 0 &&
-                        <Table onMouseMove={this.onMouseMove} onMouseOut={this.onMouseOut} stickyHeader={true}
-                               className={classes.table}>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell className={classes.rowHeader} component="th"
-                                               style={{backgroundColor: 'unset', textAlign: 'left'}}
-                                               key={'__id'}><Checkbox
-                                        onClick={(event) => this.toggleAll(event, selectAllChecked)}
-                                        className={classes.checkbox}
-                                        checked={selectAllChecked}/></TableCell>
-                                    {jobResult.columns.map(column => {
-                                        const group = groups[column];
-                                        if (rotateHeaders) {
-                                            return <TableCell
-                                                title={group}
-                                                className={classes.rotateHeader}
-                                                key={group}>
-                                                <div className={classes.rotateHeaderDiv}><span
-                                                    style={{width: headerWidth}}
-                                                    className={classes.rotateHeaderSpan}>{group}</span></div>
-                                            </TableCell>;
-                                        } else {
-                                            return <TableCell style={{backgroundColor: 'unset'}}
-                                                              className={classes.td}
-                                                              key={group}>{group}</TableCell>;
-                                        }
-                                    })}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row, rowIndex) => {
-                                    const id = data[row]['index'];
-                                    const selected = selectedFeatures.has(id);
-                                    if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
-                                        valueScale.domain(domains[rowIndex]);
-                                    }
-                                    return <TableRow
-                                        className={classes.tr}
-                                        hover
-                                        onClick={(event) => this.handleClick(event, row)}
-                                        role="checkbox"
-                                        tabIndex={-1}
-                                        key={row}
-                                    ><TableCell className={classes.rowHeader} component="th"
-                                                key={'id'}><Checkbox className={classes.checkbox}
-                                                                     checked={selected}/>{id}</TableCell>
-                                        {jobResult.columns.map((column, columnIndex) => {
-                                            const group = groups[column];
-                                            const colorField = group + ':' + color;
-                                            const sizeField = group + ':' + size;
-                                            const colorValue = data[row][colorField];
-                                            const sizeValue = data[row][sizeField];
-                                            let title = [];
-                                            tooltipFields.forEach(field => {
-                                                const value = data[row][group + ':' + field];
-                                                title.push(field + ': ' + value);
-                                            });
-                                            title = title.join(', ');
-                                            if (colorValue == null || isNaN(colorValue)) {
-                                                return <TableCell className={classes.td} data-title={title}
-                                                                  key={group}/>;
-                                            }
-                                            const diameter = jobResult.sizeScale(sizeValue);
-                                            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
-                                                valueScale.domain(domains[columnIndex]);
-                                            }
-                                            const colorValueScaled = valueScale ? valueScale(colorValue) : colorValue;
-                                            const backgroundColor = jobResult.colorScale(colorValueScaled);
-                                            return <TableCell className={classes.td} data-title={title}
-                                                              key={group}>
-                                                <div className={classes.dot}
-                                                     style={{
-                                                         pointerEvents: 'none',
-                                                         marginLeft: (maxSize - diameter) / 2,
-                                                         width: diameter,
-                                                         height: diameter,
-                                                         backgroundColor: backgroundColor
-                                                     }}></div>
-                                            </TableCell>;
-                                        })}
-                                    </TableRow>;
-                                })}
-                            </TableBody>
-                        </Table>}
-                    </div>
-                </>
-                }
-            </Box>
             <Dialog
                 open={this.state.browseJob != null}
                 onClose={this.onDeleteJobCancel}
@@ -847,6 +688,47 @@ class JobResultsPanel extends React.PureComponent {
                     </Table>
                 </DialogContent>
             </Dialog>
+            <Box color="text.primary">
+                <Grid container alignItems="center" className={classes.toolbar}>
+                    {showBrowseJobs &&
+                    <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
+                            color="primary">Browse All Results</Button>}
+                    {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
+                    {jobResult && <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
+                                                                        onClick={this.exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>}
+                </Grid>
+
+                {jobResult && <>
+                    <Typography
+                        style={{marginBottom: headerHeight + 8}}
+                        component={"h3"}
+                        color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
+                        <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
+                    <div style={{paddingTop: 6}}>
+                        {rows.length > 0 &&
+                        <DotPlotTable isRowSelected={isRowSelected}
+                                      rows={rows}
+                                      columns={columns}
+                                      onMouseMove={this.onMouseMove}
+                                      onMouseOut={this.onMouseOut}
+                                      getTooltip={getTooltip}
+                                      sizeScale={jobResult.sizeScale}
+                                      valueScale={valueScale}
+                                      rowStart={rowStart}
+                                      getColor={getColor}
+                                      getSize={getSize}
+                                      getRowId={getRowId}
+                                      columnStart={columnStart}
+                                      onRowClick={this.onRowClick}
+                                      colorScale={jobResult.colorScale}
+                                      toggleAll={this.toggleAll}
+                                      rotateHeaders={rotateHeaders}
+                                      headerHeight={headerHeight}
+                                      headerWidth={headerWidth}/>}
+                    </div>
+                </>
+                }
+            </Box>
         </>;
     };
 }
