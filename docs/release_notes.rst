@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.17.post1 `June 29, 2021`
+    * Fixed error computing differential expression results when using `cirro launch`
+
 - 1.1.17 `June 28, 2021`
     * Added TileDB support
 
