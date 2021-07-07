@@ -271,7 +271,7 @@ function ExplorePanel(props) {
         const value = option.text !== undefined ? option.text : option;
         let galleryTraces = props.embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
-            if (galleryTraces[i].name == value) {
+            if (galleryTraces[i].name === value) {
                 if (props.tab !== 'embedding') {
                     props.handleTab('embedding');
                 }
@@ -347,9 +347,9 @@ function ExplorePanel(props) {
         </Menu>
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
             <div className={classes.section}>
+            <Divider/>
                 <Typography gutterBottom={false} component={"h1"}
-                            style={{textTransform: 'uppercase'}}>Explore</Typography>
-                <Divider/>
+                            style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
                 {tab === 'embedding' && embeddingOptions.length > 0 &&
                 <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Embeddings"}
@@ -462,9 +462,9 @@ function ExplorePanel(props) {
                 </FormControl>}
             </div>
             <div className={classes.section} style={{maxHeight: 500}}>
+            <Divider inset='true'/>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Filters</Typography>
-                <Divider/>
                 <Grid component="label" alignContent={"flex-start"} container alignItems="center"
                       spacing={0}>
                     <Grid item><InputLabel shrink={true} variant={"standard"}>Combine</InputLabel></Grid>
@@ -495,13 +495,13 @@ function ExplorePanel(props) {
                             />;
                         })}
                         <Divider/>
-                        <Grid container alignItems="center" className={classes.toolbar}>
+                        <Grid container alignItems="center" className={classes.toolbar}  disabled={datasetFilterKeys.length === 0}>
                             <Tooltip title={"Clear All"}>
-                                <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
+                                    <IconButton size={'small'}
                                             onClick={onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                             </Tooltip>
                             <Tooltip title={"Download Selected IDs"}>
-                                <IconButton size={'small'} disabled={datasetFilterKeys.length === 0}
+                                    <IconButton size={'small'} 
                                             onClick={onDownloadSelectedIds}><CloudDownloadIcon/></IconButton>
                             </Tooltip>
                         </Grid>
