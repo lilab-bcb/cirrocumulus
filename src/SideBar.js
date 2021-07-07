@@ -253,11 +253,6 @@ class SideBar extends React.PureComponent {
         }
     };
 
-    onReversedChange = (event) => {
-        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
-    };
-
-
     openView = (id) => {
         this.props.handleOpenView(id);
     };
@@ -408,17 +403,17 @@ class SideBar extends React.PureComponent {
                         title={"Find differentially expressed features between two groups of cells"}>
                         <Typography
                             component={"h1"} className={classes.title}>Differential
-                            Expression</Typography></Tooltip>
-                    <Divider/>
-                    <ButtonGroup variant="outlined">
+                            Expression</Typography>
+                    </Tooltip>
+                    <ButtonGroup variant="outlined" disabled={selection.size === 0}>
                         <Tooltip
                             title={'Group one' + (this.state.group1Count ? ' (' + intFormat(this.state.group1Count) + ' cells)' : '')}>
-                            <Button size={"small"} disabled={selection.size === 0}
+                            <Button size={"small"}
                                     onClick={event => this.onSetGroup(1)}>1</Button>
                         </Tooltip>
                         <Tooltip
                             title={'Group two' + (this.state.group2Count ? ' (' + intFormat(this.state.group2Count) + ' cells)' : '')}>
-                            <Button size={"small"} disabled={selection.size === 0}
+                            <Button size={"small"}
                                     onClick={event => this.onSetGroup(2)}>2</Button>
                         </Tooltip>
                         <Button startIcon={<CompareIcon/>} size={"small"} variant="outlined"
@@ -435,9 +430,9 @@ class SideBar extends React.PureComponent {
                 </div>}
                 <div
                     style={tab === 'distribution' ? null : {display: 'none'}}>
+                    <Divider/>
                     <Typography gutterBottom={false} component={"h1"}
                                 className={classes.title}>View</Typography>
-                    <Divider/>
                     <div style={{marginTop: 8}}>
                         {chartType === 'violin' && <FormControl className={classes.formControl}>
                             <InputLabel id="violin-scale-label">Scale</InputLabel>
@@ -485,8 +480,8 @@ class SideBar extends React.PureComponent {
                 </div>
 
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
-                    <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>
                     <Divider/>
+                    <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>
                     <InputLabel style={{marginTop: 8}} shrink={true}>Marker
                         Opacity</InputLabel>
                     <Slider
@@ -593,6 +588,7 @@ class SideBar extends React.PureComponent {
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
                 <div
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                    <Divider/>
                     <Typography gutterBottom={false} component={"h1"}
                                 className={classes.title}>Links</Typography>
                     <Divider/>

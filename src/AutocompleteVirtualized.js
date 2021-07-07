@@ -331,7 +331,7 @@ export default function AutocompleteVirtualized(props) {
                     style={{
                         width: 200
                     }}
-                    InputLabelProps={{shrink: true}}
+                    // InputLabelProps={{shrink: false}}
                     margin="dense" {...params.inputProps}
                     label={props.label}
                     helperText={props.helperText}/>
