@@ -1,4 +1,4 @@
-import {IconButton, Snackbar} from '@material-ui/core';
+import {createTheme, IconButton, Snackbar} from '@material-ui/core';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
@@ -35,7 +35,7 @@ import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
 
-const lightTheme = createMuiTheme(
+const lightTheme = createTheme(
     {
         "palette": {
             "type": "light"
@@ -43,7 +43,7 @@ const lightTheme = createMuiTheme(
     }
 );
 
-const darkTheme = createMuiTheme(
+const darkTheme = createTheme(
     {
         "palette": {
             "type": "dark"
