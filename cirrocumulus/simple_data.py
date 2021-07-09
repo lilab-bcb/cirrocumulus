@@ -175,10 +175,11 @@ class SimpleData:
                     de_result_data[c] = de_result_df[c]
 
             de_result = dict(id=cirro_id(),
-                color='logfoldchanges' if 'logfoldchanges' in rank_genes_groups_keys else rank_genes_groups_keys[0],
-                size='pvals_adj' if 'pvals_adj' in rank_genes_groups_keys else rank_genes_groups_keys[0],
-                params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
-                name=category)
+                             color='logfoldchanges' if 'logfoldchanges' in rank_genes_groups_keys else
+                             rank_genes_groups_keys[0],
+                             size='pvals_adj' if 'pvals_adj' in rank_genes_groups_keys else rank_genes_groups_keys[0],
+                             params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
+                             name=category)
             de_result['data'] = de_result_data
             de_results.append(de_result)
 
@@ -206,9 +207,9 @@ class SimpleData:
                     de_result_data[c] = de_result_df[c]
 
             de_result = dict(id=cirro_id(), type='de', name='pegasus_de',
-                color='log2FC' if 'log2FC' in field_names else field_names[0],
-                size='mwu_qval' if 'mwu_qval' in field_names else field_names[0], groups=group_names,
-                fields=field_names)
+                             color='log2FC' if 'log2FC' in field_names else field_names[0],
+                             size='mwu_qval' if 'mwu_qval' in field_names else field_names[0], groups=group_names,
+                             fields=field_names)
             de_result['data'] = de_result_data
             de_results.append(de_result)
 
@@ -225,7 +226,7 @@ class SimpleData:
                         name = '{}:{}'.format(group_name, field_name)
                         idx_up = de_result_df[fc_column] > 0
                         df_up = de_result_df.loc[idx_up].sort_values(by=[name, fc_column],
-                            ascending=[field_ascending, False])
+                                                                     ascending=[field_ascending, False])
                         features = df_up[:n_genes].index.values
                         marker_results.append(dict(category='markers', name=str(group_name), features=features))
 
@@ -242,7 +243,7 @@ class SimpleData:
 
         category_to_order = {}
         for key in adata.obs_keys():
-            if pd.api.types.is_categorical_dtype(adata.obs[key]):
+            if pd.api.types.is_categorical_dtype(adata.obs[key]) and len(adata.obs[key]) < 1000:
                 category_to_order[key] = adata.obs[key].cat.categories
         schema_dict['categoryOrder'] = category_to_order
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
@@ -253,7 +254,7 @@ class SimpleData:
         #         spatial_node = spatial_node[spatial_node_keys[0]]
 
         images_node = adata.uns.get('images',
-            [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
+                                    [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
         image_names = list(map(lambda x: x['name'], images_node))
         schema_dict['var'] = adata.var_names.values
         schema_dict['obs'] = obs
