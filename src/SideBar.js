@@ -603,7 +603,7 @@ class SideBar extends React.PureComponent {
                     {datasetViews.length === 0 &&
                     <Box color="text.secondary">No saved links</Box>}
                     {datasetViews.length > 0 &&
-                    <List dense={true}>
+                    <List dense={true} style={{marginTop: 10}}>
                         {datasetViews.map(item => (
                             <ListItem key={item.id} data-key={item.id} button
                                       onClick={e => this.openView(item.id)}>

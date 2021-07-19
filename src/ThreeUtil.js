@@ -255,7 +255,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     const colors = traceInfo.colors;
     let positions = traceInfo.positions;
 
-    const npoints = traceInfo.npoints;
+    const npoints = traceInfo.x.length;
     const isSelectionEmpty = selection.size === 0;
     const updateZ = !isSelectionEmpty && !is3d;
     if (updateZ) {
@@ -281,7 +281,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
 
     // const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
 
-    const scale = new Float32Array(traceInfo.npoints);
+    const scale = new Float32Array(traceInfo.x.length);
     scale.fill(pointSize);
     scatterPlot.setPointScaleFactors(scale);
 

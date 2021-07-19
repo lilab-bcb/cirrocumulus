@@ -79,8 +79,11 @@ const getAnnotationOptions = memoize(
 const getEmbeddingOptions = memoize(
     (embeddings) => {
         const options = [];
-        embeddings.forEach(item => {
-            options.push({text: item.name + (item.dimensions === 3 ? ' 3d' : ''), id: getEmbeddingKey(item)});
+        embeddings.forEach(embedding => {
+            options.push({
+                text: embedding.name + (embedding.dimensions === 3 ? ' 3d' : (embedding.mode ? ' ' + embedding.mode : '')),
+                id: getEmbeddingKey(embedding)
+            });
         });
 
         options.sort((item1, item2) => {
@@ -172,6 +175,7 @@ function ExplorePanel(props) {
         props.handleDialog(SAVE_FEATURE_SET_DIALOG);
     }
 
+
     function onEmbeddingsChange(event, value) {
         const selection = [];
         const embeddingKeys = props.dataset.embeddings.map(item => getEmbeddingKey(item));
@@ -179,13 +183,6 @@ function ExplorePanel(props) {
             const id = val.id !== undefined ? val.id : val;
             const index = embeddingKeys.indexOf(id);
             let embedding = props.dataset.embeddings[index];
-            if (!embedding.precomputed) {
-                embedding = Object.assign(embedding, {
-                    bin: props.binValues,
-                    nbins: props.numberOfBins,
-                    agg: props.binSummary
-                });
-            }
             selection.push(embedding);
         });
         props.handleEmbeddings(selection);
@@ -347,7 +344,7 @@ function ExplorePanel(props) {
         </Menu>
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
             <div className={classes.section}>
-            <Divider/>
+                <Divider/>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
                 {tab === 'embedding' && embeddingOptions.length > 0 &&
@@ -462,7 +459,7 @@ function ExplorePanel(props) {
                 </FormControl>}
             </div>
             <div className={classes.section} style={{maxHeight: 500}}>
-            <Divider inset='true'/>
+                <Divider inset='true'/>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Filters</Typography>
                 <Grid component="label" alignContent={"flex-start"} container alignItems="center"
@@ -495,13 +492,14 @@ function ExplorePanel(props) {
                             />;
                         })}
                         <Divider/>
-                        <Grid container alignItems="center" className={classes.toolbar}  disabled={datasetFilterKeys.length === 0}>
+                        <Grid container alignItems="center" className={classes.toolbar}
+                              disabled={datasetFilterKeys.length === 0}>
                             <Tooltip title={"Clear All"}>
-                                    <IconButton size={'small'}
+                                <IconButton size={'small'}
                                             onClick={onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
                             </Tooltip>
                             <Tooltip title={"Download Selected IDs"}>
-                                    <IconButton size={'small'} 
+                                <IconButton size={'small'}
                                             onClick={onDownloadSelectedIds}><CloudDownloadIcon/></IconButton>
                             </Tooltip>
                         </Grid>

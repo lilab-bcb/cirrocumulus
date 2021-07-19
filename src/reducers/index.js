@@ -224,7 +224,7 @@ function datasetChoices(state = [], action) {
     }
 }
 
-// set the selected embeddings, each embedding has name (str) e.g X_umap, nbins (int), _nbins (str), agg (str), bin (boolean), dimensions (int), precomputed (bool)
+// set the selected embeddings, each embedding has name (str) e.g X_umap, dimensions (int), mode (str)
 function embeddings(state = [], action) {
     switch (action.type) {
         case SET_SELECTED_EMBEDDING:
@@ -477,6 +477,7 @@ function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
             return state;
     }
 }
+
 
 function jobResult(state = null, action) {
     switch (action.type) {

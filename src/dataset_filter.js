@@ -54,8 +54,7 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             let keep = null;
 
             if (isObject(filterField)) { // selection box or lasso
-                let selected_points_basis = getBasis(filterField['basis'], filterField.nbins,
-                    filterField.agg, filterField.ndim || 2, filterField.precomputed);
+                let selected_points_basis = getBasis(filterField.basis, filterField.ndim || 2, filterField.mode);
                 let coordinate_columns = selected_points_basis.coordinate_columns;
                 if (filterValue.indices) { // Set of passing indices
                     let field = selected_points_basis['nbins'] ? selected_points_basis['full_name'] : 'index';

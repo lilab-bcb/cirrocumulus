@@ -82,19 +82,22 @@ export function getTypeToMeasures(measures) {
     return typeToMeasures;
 }
 
-export function getBasis(basis, nbins = null, agg = null, dimensions = 2, precomputed = false) {
+export function getBasis(basis, dimensions = 2, mode = null) {
     dimensions = parseInt(dimensions);
     let coordinate_columns = [];
     for (let i = 0; i < dimensions; i++) {
         coordinate_columns.push(basis + '_' + i + 1);
     }
     let full_name = basis + '_' + dimensions;
-    if (nbins != null) {
-        full_name = full_name + '_' + nbins + '_' + agg;
+    if (mode != null) {
+        full_name = full_name + '_' + mode
     }
     return {
-        'name': basis, 'dimensions': dimensions, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
-        'agg': agg, 'full_name': full_name, 'precomputed': precomputed
+        name: basis,
+        dimensions: dimensions,
+        coordinate_columns: coordinate_columns,
+        mode: mode,
+        full_name: full_name,
     };
 }
 
