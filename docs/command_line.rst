@@ -30,8 +30,7 @@ Launch
     | no-open                           | Do not open your web browser                                                                                                                                                                                                                                                           |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-The `launch` command opens one or more datasets in h5ad_, loom_, or `STAR-Fusion`_ formats. Seurat objects
-can be loaded after converting to h5ad_ or loom_ formats (see vignette_). Annotations and sets that are
+The `launch` command opens one or more datasets in h5ad_, loom_, Seurat_, TileDB_, or `STAR-Fusion`_ formats. Annotations and sets that are
 created are stored on disk in a JSON format.
 
 
@@ -109,4 +108,5 @@ efficient partial dataset retrieval over a network (e.g. Google or S3 bucket) us
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
-.. _vignette: https://satijalab.org/seurat/v3.2/conversion_vignette.html
+.. _Seurat: https://satijalab.org/seurat/
+.. _TileDB:: https://tiledb.com/

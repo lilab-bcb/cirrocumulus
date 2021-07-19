@@ -16,7 +16,7 @@ Cirrocumulus is an interactive visualization tool for large-scale single-cell ge
 * Explore multiple features and embeddings simultaneously
 * Fast interactive exploration of 2 and 3-d embeddings of millions of cells, including zoom, pan, rotate (3-d), and lasso tools
 * Save publication quality images
-* Visualize datasets in h5ad_, loom_, Seurat_, or `STAR-Fusion`_  formats
+* Visualize datasets in h5ad_, loom_, Seurat_, TileDB_, or `STAR-Fusion`_  formats
 * Highly customizable - for example, set the color map, point size, or whether to use fog for 3-d embeddings to fade distant points
 
 
@@ -57,3 +57,4 @@ Example Data
 .. _Pegasus: http://pegasus.readthedocs.io/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _Scanpy: https://scanpy.readthedocs.io/
+.. _TileDB:: https://tiledb.com/
