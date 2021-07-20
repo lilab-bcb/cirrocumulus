@@ -2,10 +2,10 @@ import json
 import os
 
 from bson import ObjectId
-from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
 from .invalid_usage import InvalidUsage
 
@@ -26,17 +26,17 @@ class MongoDb(AbstractDB):
                             'new': doc['new']})
         return results
 
-    def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+    def upsert_category_name(self, email, category, dataset_id, original_value, new_value, prior_value):
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
-        key = str(dataset_id) + '-' + str(category) + '-' + str(original_name)
+        key = str(dataset_id) + '-' + str(category) + '-' + str(original_value)
 
-        if new_name == '':
+        if new_value == '':
             collection.delete_one(dict(cat_id=key))
         else:
             collection.update_one(dict(cat_id=key),
-                                  {'$set': dict(category=category, dataset_id=dataset_id, original=original_name,
-                                                new=new_name)},
+                                  {'$set': dict(category=category, dataset_id=dataset_id, original=original_value,
+                                                new=new_value)},
                                   upsert=True)
 
     def user(self, email):
@@ -108,13 +108,13 @@ class MongoDb(AbstractDB):
                  'notes': doc.get('notes'), 'email': doc['email']})
         return results
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
         collection.delete_one(dict(_id=ObjectId(view_id)))
 
-    def get_dataset_view(self, email, dataset_id, view_id):
+    def get_dataset_view(self, email, view_id):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
