@@ -7,6 +7,7 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
@@ -22,7 +23,7 @@ categorical_fields_convert = ['seurat_clusters']
 def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
     import anndata
     adata = anndata.read_loom(path) if path.lower().endswith('.loom') else anndata.read(path,
-        backed=backed)
+                                                                                        backed=backed)
     if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
         logger.info('Using adata.raw')
         adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
@@ -122,13 +123,13 @@ def write_grouped_stats(directory, dotplot_results):
         category_name = dotplot_result['name']
         os.makedirs(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X'), exist_ok=True)
         with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'index.json.gz'),
-                'wt') as f:
+                       'wt') as f:
             f.write(to_json(categories))
         values = dotplot_result['values']
         for value in values:
             var_field = value['name']
             with gzip.open(os.path.join(directory, 'grouped_stats', 'obs', category_name, 'X', var_field + '.json.gz'),
-                    'wt') as f:
+                           'wt') as f:
                 f.write(to_json(value))
 
 
@@ -248,7 +249,7 @@ class PrepareData:
                 result = results[i]
                 result_id = result.pop('id')
                 results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
-                    content_type='application/json', content_encoding='gzip')
+                                  content_type='application/json', content_encoding='gzip')
                 with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
                     f.write(to_json(result))
 
@@ -302,7 +303,6 @@ class PrepareData:
             for basis_name in basis_list:
                 self.grid_embedding(basis_name, bin_agg_function, nbins)
 
-
     # def summary_stats(self):
     #     dimensions = self.dimensions
     #     measures = self.measures
@@ -337,7 +337,6 @@ class PrepareData:
     #     dotplot_results = process_results['dotplot']
     #
     #     write_grouped_stats(base_dir, dotplot_results)
-
 
     # def grid_embedding(self, basis_name, summary, nbins):
     #     if nbins <= 0:
@@ -417,11 +416,11 @@ def main(argsv):
     # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
     #  parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
     parser.add_argument('--markers',
-        help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
-        action='append')
+                        help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
+                        action='append')
     parser.add_argument('--groups',
-        help='List of groups to compute markers for (e.g. louvain). Note that markers created with scanpy or cumulus are automatically included.',
-        action='append')
+                        help='List of groups to compute markers for (e.g. louvain). Note that markers created with scanpy or cumulus are automatically included.',
+                        action='append')
     parser.add_argument('--group_nfeatures', help='Number of marker genes/features to include', type=int, default=10)
     parser.add_argument('--spatial', help=SPATIAL_HELP)
     # parser.add_argument('--output_format', help='Output file format', choices=['json', 'parquet'], default='parquet')
@@ -436,11 +435,14 @@ def main(argsv):
     input_basis = []  # check if specified as comma delimited list
     input_X_range = None
     out = args.out
+
     input_dataset = args.dataset
     output_format = 'parquet'  # args.output_format
     if out is None:
         out = os.path.basename(input_dataset)
         out = out[0:out.rindex('.')]
+    if not out.endswith('.cpq'):
+        out += '.cpq'
     tmp_file = None
     use_raw = False
     if input_dataset.lower().endswith('.rds'):
@@ -470,8 +472,8 @@ def main(argsv):
 
     adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
     prepare_data = PrepareData(adata=adata, output=out, dimensions=args.groups, groups=args.groups,
-        group_nfeatures=args.group_nfeatures,
-        markers=args.markers, output_format=output_format)
+                               group_nfeatures=args.group_nfeatures,
+                               markers=args.markers, output_format=output_format)
     prepare_data.execute()
     if tmp_file is not None:
         os.remove(tmp_file)
