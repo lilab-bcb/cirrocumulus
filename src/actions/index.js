@@ -103,6 +103,7 @@ export const SET_DATASET = 'SET_DATASET';
 export const SET_MARKERS = 'SET_MARKERS';
 export const SET_DIALOG = 'SET_DIALOG';
 
+export const OPEN_DATASET_DIALOG = 'OPEN_DATASET_DIALOG';
 export const EDIT_DATASET_DIALOG = 'EDIT_DATASET_DIALOG';
 export const IMPORT_DATASET_DIALOG = 'IMPORT_DATASET_DIALOG';
 export const SAVE_DATASET_FILTER_DIALOG = 'SAVE_DATASET_FILTER_DIALOG';
@@ -278,12 +279,13 @@ export function login() {
 }
 
 
-export function openView(id) {
+export function openView(id, loadDataset = false) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        getState().serverInfo.api.getViewPromise(id, getState().dataset.id)
+        getState().serverInfo.api.getViewPromise(id)
             .then(result => {
                 const savedView = isString(result.value) ? JSON.parse(result.value) : result.value;
+                savedView.dataset = result.dataset_id;
                 dispatch(restoreSavedView(savedView));
             }).finally(() => {
             dispatch(_setLoading(false));
@@ -814,9 +816,10 @@ export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
         const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
-            c: payload.name,
-            o: payload.oldValue,
-            n: payload.value,
+            name: payload.name,
+            originalValue: payload.originalValue,
+            priorValue: payload.priorValue,
+            newValue: payload.newValue,
             id: dataset_id
         }) : Promise.resolve();
         p.then(() => dispatch(_handleCategoricalNameChange(payload)));
@@ -970,6 +973,8 @@ function loadDefaultDataset() {
     return function (dispatch, getState) {
         if (getState().dataset == null && getState().datasetChoices.length === 1) {
             dispatch(setDataset(getState().datasetChoices[0].id));
+        } else {
+            dispatch(setDialog(OPEN_DATASET_DIALOG));
         }
     };
 }
@@ -1069,11 +1074,12 @@ function _loadSavedView() {
             try {
                 savedView = JSON.parse(window.decodeURIComponent(q));
             } catch (err) {
-                return dispatch(setMessage('Unable to restore saved view.'));
+                return dispatch(setMessage('Unable to restore view.'));
             }
         }
-
-        if (savedView.dataset != null) {
+        if (savedView.link != null) {
+            dispatch(openView(savedView.link, true))
+        } else if (savedView.dataset != null) {
             dispatch(restoreSavedView(savedView));
         } else {
             dispatch(loadDefaultDataset());
