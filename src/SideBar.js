@@ -52,12 +52,13 @@ import {
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE,} from './util';
+import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE,} from './util';
 import ExplorePanel from "./ExplorePanel";
 import Link from "@material-ui/core/Link";
 import withStyles from "@material-ui/core/styles/withStyles";
 import {connect} from 'react-redux';
 import Divider from "@material-ui/core/Divider";
+import LinkIcon from "@material-ui/icons/Link";
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -259,6 +260,12 @@ class SideBar extends React.PureComponent {
 
     deleteView = (id) => {
         this.props.handleDeleteView(id);
+    };
+
+    copyView = (id) => {
+        let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        linkText += '#q=' + encodeURIComponent(JSON.stringify({link: id}));
+        copyToClipboard(linkText);
     };
 
     onPointSizeChange = (event) => {
@@ -608,9 +615,11 @@ class SideBar extends React.PureComponent {
                             <ListItem key={item.id} data-key={item.id} button
                                       onClick={e => this.openView(item.id)}>
                                 <ListItemText primary={item.name}/>
-                                <ListItemSecondaryAction
-                                    onClick={e => this.deleteView(item.id)}>
-                                    <IconButton edge="end" aria-label="delete">
+                                <ListItemSecondaryAction>
+                                    <IconButton edge="end" aria-label="copy" onClick={e => this.copyView(item.id)}>
+                                        <LinkIcon/>
+                                    </IconButton>
+                                    <IconButton edge="end" aria-label="delete" onClick={e => this.deleteView(item.id)}>
                                         <DeleteIcon/>
                                     </IconButton>
                                 </ListItemSecondaryAction>
