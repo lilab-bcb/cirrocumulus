@@ -578,6 +578,7 @@ function combineDatasetFilters(state = 'and', action) {
     }
 }
 
+
 // category -> value -> newValue
 function categoricalNames(state = {}, action) {
     switch (action.type) {
@@ -587,10 +588,10 @@ function categoricalNames(state = {}, action) {
                 category = {};
                 state[action.payload.name] = category;
             }
-            if (action.payload.value == null || action.payload.value === '') {
-                delete category[action.payload.oldValue];
+            if (action.payload.newValue == null || action.payload.newValue === '') {
+                delete category[action.payload.originalValue];
             } else {
-                category[action.payload.oldValue] = action.payload.value;
+                category[action.payload.originalValue] = action.payload.newValue;
             }
             return Object.assign({}, state);
         case SET_DATASET:
