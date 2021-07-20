@@ -22,7 +22,8 @@ class CategoricalLegend extends React.PureComponent {
             anchorEl: null,
             color: null,
             name: '',
-            categoryValue: null,
+            originalCategory: null,
+            renamedCategory: null,
             forceUpdate: false,
             menu: null
         };
@@ -42,7 +43,7 @@ class CategoricalLegend extends React.PureComponent {
     handleColorChangeApply = (e) => {
         this.props.handleColorChange({
             name: this.props.name,
-            value: this.state.categoryValue,
+            value: this.state.originalCategory,
             color: this.state.color
         });
         this.setState({forceUpdate: !this.state.forceUpdate});
@@ -51,8 +52,9 @@ class CategoricalLegend extends React.PureComponent {
     handleNameChangeApply = (e) => {
         this.props.handleNameChange({
             name: this.props.name,
-            oldValue: this.state.categoryValue,
-            value: this.state.name
+            originalValue: this.state.originalCategory,
+            priorValue: this.state.renamedCategory,
+            newValue: this.state.name
         });
         this.setState({name: '', contextmenuEl: null, anchorEl: null});
     };
@@ -93,11 +95,16 @@ class CategoricalLegend extends React.PureComponent {
         }
     };
 
-    handleContextmenu = (value, e) => {
+    handleContextmenu = (originalCategory, renamedCategory, e) => {
         if (this.props.clickEnabled) {
             e.preventDefault();
             e.stopPropagation();
-            this.setState({contextmenuEl: e.target, categoryValue: value, color: this.props.scale(value)});
+            this.setState({
+                contextmenuEl: e.target,
+                originalCategory: originalCategory,
+                renamedCategory: renamedCategory,
+                color: this.props.scale(originalCategory)
+            });
         }
     };
 
@@ -214,7 +221,6 @@ class CategoricalLegend extends React.PureComponent {
                         }
                         const opacity = categoricalFilter == null || categoricalFilter.value.indexOf(category) !== -1 ? 1 : 0.4;
                         const categoryCount = globalDimensionSummary.counts[categoryIndex];
-
                         const selectedCategoryCount = selectedDimensionToCount[category] || 0;
 
                         //            not-selected, selected
@@ -238,7 +244,7 @@ class CategoricalLegend extends React.PureComponent {
                         const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
                         return <tr
                             style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
-                            onContextMenu={(e) => this.handleContextmenu(category, e)}
+                            onContextMenu={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
                             onClick={(e) => this.handleClick(category, e)} key={category}>
                             {clickEnabled && <td>
                                 <div style={{
@@ -257,7 +263,8 @@ class CategoricalLegend extends React.PureComponent {
                                     userSelect: 'none'
                                 }} title={'' + categoryTooltip}>{'' + categoryText}</div>
                                 <IconButton style={{padding: 0, fontSize: 14}} size="small"
-                                            onClick={(e) => this.handleContextmenu(category, e)} aria-label="Menu"
+                                            onClick={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
+                                            aria-label="Menu"
                                             aria-haspopup="true">
                                     <ArrowDropDownIcon fontSize={"inherit"}/>
                                 </IconButton>
