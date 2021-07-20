@@ -18,7 +18,7 @@ class ParquetDataset(AbstractDataset):
         self.cached_data = {}
 
     def get_suffixes(self):
-        return ['parquet', 'pq']
+        return ['parquet', 'pq', 'cpq']
 
     def read_summarized(self, file_system, path, obs_keys=[], var_keys=[], index=False, rename=False, dataset=None):
         result_df = pd.DataFrame()
