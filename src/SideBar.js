@@ -15,14 +15,15 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import MenuItem from '@material-ui/core/MenuItem';
+import Menu from '@material-ui/core/Menu';
 import Select from '@material-ui/core/Select';
 import Slider from '@material-ui/core/Slider';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
-import CompareIcon from '@material-ui/icons/Compare';
 import DeleteIcon from '@material-ui/icons/Delete';
 import {debounce, find} from 'lodash';
 import React from 'react';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import {
     datasetFilterToJson,
     deleteFeatureSet,
@@ -52,7 +53,7 @@ import {
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE,} from './util';
+import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE} from './util';
 import ExplorePanel from "./ExplorePanel";
 import Link from "@material-ui/core/Link";
 import withStyles from "@material-ui/core/styles/withStyles";
@@ -88,7 +89,7 @@ const styles = theme => ({
         maxWidth: 200
     },
     select: {
-        minWidth: 200,
+        minWidth: 200
     }
 });
 
@@ -407,10 +408,9 @@ class SideBar extends React.PureComponent {
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Tooltip
-                        title={"Find differentially expressed features between two groups of cells"}>
+                        title={"Compare two groups of cells"}>
                         <Typography
-                            component={"h1"} className={classes.title}>Differential
-                            Expression</Typography>
+                            component={"h1"} className={classes.title}>Compare</Typography>
                     </Tooltip>
                     <ButtonGroup variant="outlined" disabled={selection.size === 0}>
                         <Tooltip
@@ -423,11 +423,29 @@ class SideBar extends React.PureComponent {
                             <Button size={"small"}
                                     onClick={event => this.onSetGroup(2)}>2</Button>
                         </Tooltip>
-                        <Button startIcon={<CompareIcon/>} size={"small"} variant="outlined"
-                                disabled={selection.size === 0 || this.state.group1 == null || this.state.group2 == null}
-                                onClick={event => this.onSubmitJob('de')}>Go</Button>
+
+
                     </ButtonGroup>
 
+                    <Button size={"small"} variant={"outlined"}
+                            endIcon={<ArrowDropDownIcon/>}
+                            disabled={this.state.group1 == null || this.state.group2 == null}
+                            onClick={event => this.setState({compareMenu: event.currentTarget})}>
+                        GO</Button>
+                    <Menu
+                        variant={"menu"}
+                        id="compare-menu"
+                        anchorEl={this.state.compareMenu}
+                        open={Boolean(this.state.compareMenu)}
+                        onClose={event => this.setState({compareMenu: null})}
+                    >
+                        {this.props.compareActions.map(action => <MenuItem title={action.title}
+                                                                           onClick={event => {
+                                                                               this.onSubmitJob(action.jobType);
+                                                                               this.setState({compareMenu: null});
+                                                                           }}>{action.title}</MenuItem>)}
+
+                    </Menu>
                     {/*<Tooltip*/}
                     {/*    title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>*/}
                     {/*<Button style={{minWidth: 40}}*/}
@@ -603,7 +621,7 @@ class SideBar extends React.PureComponent {
                         <Tooltip title={"Save Current Visualization State"}><Link
                             style={{
                                 float: 'right',
-                                fontSize: '0.75rem',
+                                fontSize: '0.75rem'
                             }}
                             onClick={this.onViewSaved}>Save</Link></Tooltip></FormControl>
 
@@ -665,7 +683,7 @@ const mapStateToProps = state => {
             serverInfo: state.serverInfo,
             tab: state.tab,
             textColor: state.textColor,
-            unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+            unselectedMarkerOpacity: state.unselectedMarkerOpacity
         };
     }
 ;
@@ -739,7 +757,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 ;
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(SideBar));
 
 

@@ -4,7 +4,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import {createMuiTheme, withStyles} from '@material-ui/core/styles';
+import {withStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import {ThemeProvider} from '@material-ui/styles';
@@ -18,7 +18,7 @@ import {
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
     setDialog,
-    setMessage,
+    setMessage
 } from './actions';
 import AppHeader from './AppHeader';
 import CompositionPlots from './CompositionPlots';
@@ -56,18 +56,18 @@ export const drawerWidth = 240;
 const styles = (theme) => {
     return {
         root: {
-            display: 'flex',
+            display: 'flex'
         },
         appBar: {
             width: `calc(100% - ${drawerWidth}px)`,
-            marginLeft: drawerWidth,
+            marginLeft: drawerWidth
         },
         drawer: {
             width: drawerWidth,
-            flexShrink: 0,
+            flexShrink: 0
         },
         drawerPaper: {
-            width: drawerWidth,
+            width: drawerWidth
         },
         toolbar: theme.mixins.toolbar,
         content: {
@@ -122,11 +122,15 @@ class App extends PureComponent {
                         className={classes.drawer}
                         variant="permanent"
                         classes={{
-                            paper: classes.drawerPaper,
+                            paper: classes.drawerPaper
                         }}
                         anchor="left"
                     >
-                        {dataset != null && <SideBar key={dataset.id}/>}
+                        {dataset != null && <SideBar key={dataset.id} compareActions={[{
+                            title: 'Differential Expression',
+                            jobType: 'de',
+                            tooltip: 'Find differentially expressed features between two groups of cells'
+                        }]}/>}
                     </Drawer>
 
                     <main style={{backgroundColor: bgcolor, color: color, paddingBottom: 24}}
@@ -188,10 +192,10 @@ class App extends PureComponent {
                     {message != null && <Snackbar
                         anchorOrigin={{
                             vertical: 'bottom',
-                            horizontal: 'left',
+                            horizontal: 'left'
                         }}
                         ContentProps={{
-                            'aria-describedby': 'message-id',
+                            'aria-describedby': 'message-id'
                         }}
                         onClose={this.handleMessageClose}
                         open={true}
@@ -204,7 +208,7 @@ class App extends PureComponent {
                                 onClick={this.handleMessageClose}
                             >
                                 <CloseIcon/>
-                            </IconButton>,
+                            </IconButton>
                         ]}
                         message={<span id="message-id">{message instanceof Error
                             ? message.message
@@ -240,5 +244,5 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(App));
