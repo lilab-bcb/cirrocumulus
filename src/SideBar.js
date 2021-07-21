@@ -314,7 +314,7 @@ class SideBar extends React.PureComponent {
         } else {
             this.setState({
                 jobName: '',
-                jobParams: {type: 'de', params: {filter: this.state.group1, filter2: this.state.group2}}
+                jobParams: {type: jobType, params: {filter: this.state.group1, filter2: this.state.group2}}
             });
         }
     };
