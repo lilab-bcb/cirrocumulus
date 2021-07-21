@@ -1315,6 +1315,7 @@ export function setJobResult(payload) {
             for (let key in result) {
                 jobResult[key] = result[key];
             }
+
             updateJob(jobResult);
             dispatch(_setJobResult(payload));
         }).finally(() => {

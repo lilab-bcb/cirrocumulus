@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
-from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures
+from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures, get_filter_str
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
 
@@ -118,12 +118,17 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                                 result=None)
     pvals[np.isnan(pvals)] = 1
     pvals = fdrcorrection(pvals)
+    # group:field is object entry
     if job_type == 'de':
+        comparison1_name = get_filter_str(params['filter'])
+        comparison2_name = get_filter_str(params['filter2'])
+        comparison = 'comparison' if comparison1_name is None or comparison2_name is None else comparison1_name + '_' + comparison2_name
         result_df = pd.DataFrame(
-            data={'index': var_names, 'comparison:pvals_adj': pvals, 'comparison:avg_log2FC': avg_log2FC,
-                  'comparison:scores': scores, 'comparison:percent_expressed1': percent_expressed1,
-                  'comparison:percent_expressed2': percent_expressed2})
-        result = dict(groups=['comparison'],
+            data={'index': var_names, comparison + ':pvals_adj': pvals, comparison + ':avg_log2FC': avg_log2FC,
+                  comparison + ':scores': scores, comparison + ':percent_expressed1': percent_expressed1,
+                  comparison + ':percent_expressed2': percent_expressed2})
+        result = dict(groups=[comparison],
+                      format='json',
                       fields=['pvals_adj', 'avg_log2FC', 'scores', 'percent_expressed1', 'percent_expressed2'],
                       data=result_df.to_dict(orient='records'))
     elif job_type == 'corr':

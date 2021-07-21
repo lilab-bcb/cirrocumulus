@@ -90,7 +90,8 @@ const styles = theme => ({
     },
     select: {
         minWidth: 200
-    }
+    },
+    slider: {}
 });
 
 
@@ -307,14 +308,17 @@ class SideBar extends React.PureComponent {
         this.setState(d);
     };
 
-    onSubmitJob = (jobType) => {
+    onSubmitJob = (jobType, version) => {
         if (jobType === 'corr') {
             const activeFeature = this.props.activeFeature;
             this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: activeFeature.name}}});
         } else {
             this.setState({
                 jobName: '',
-                jobParams: {type: jobType, params: {filter: this.state.group1, filter2: this.state.group2}}
+                jobParams: {
+                    type: jobType,
+                    params: {version: version, filter: this.state.group1, filter2: this.state.group2}
+                }
             });
         }
     };
@@ -440,8 +444,9 @@ class SideBar extends React.PureComponent {
                         onClose={event => this.setState({compareMenu: null})}
                     >
                         {this.props.compareActions.map(action => <MenuItem title={action.title}
+                                                                           key={action.jobType}
                                                                            onClick={event => {
-                                                                               this.onSubmitJob(action.jobType);
+                                                                               this.onSubmitJob(action.jobType, action.version);
                                                                                this.setState({compareMenu: null});
                                                                            }}>{action.title}</MenuItem>)}
 
@@ -510,6 +515,7 @@ class SideBar extends React.PureComponent {
                     <InputLabel style={{marginTop: 8}} shrink={true}>Marker
                         Opacity</InputLabel>
                     <Slider
+                        className={classes.slider}
                         min={0.0}
                         max={1}
                         step={0.01}
@@ -521,6 +527,7 @@ class SideBar extends React.PureComponent {
                     <InputLabel style={{marginTop: 8}} shrink={true}>Filtered Marker
                         Opacity</InputLabel>
                     <Slider
+                        className={classes.slider}
                         min={0.0}
                         max={1}
                         step={0.01}

@@ -34,6 +34,7 @@ import LandingPage from './LandingPage';
 import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
+import {COMPARE_ACTIONS} from './job_config';
 
 const lightTheme = createTheme(
     {
@@ -126,11 +127,7 @@ class App extends PureComponent {
                         }}
                         anchor="left"
                     >
-                        {dataset != null && <SideBar key={dataset.id} compareActions={[{
-                            title: 'Differential Expression',
-                            jobType: 'de',
-                            tooltip: 'Find differentially expressed features between two groups of cells'
-                        }]}/>}
+                        {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
                     </Drawer>
 
                     <main style={{backgroundColor: bgcolor, color: color, paddingBottom: 24}}
