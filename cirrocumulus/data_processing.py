@@ -42,7 +42,7 @@ def get_filter_str(data_filter):
                 return None
         else:
             return None
-    return ''.join(s)
+    return ''.join(s).replace('/', '-').replace(' ', '-').replace('\\', '-')
 
 
 def get_filter_expr(df, data_filter):
