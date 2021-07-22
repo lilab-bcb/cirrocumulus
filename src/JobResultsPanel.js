@@ -39,6 +39,7 @@ import {
 } from './util';
 
 import DotPlotTable from './DotPlotTable';
+import {COMPARE_ACTIONS} from './job_config';
 
 const styles = theme => ({
     toolbar: {
@@ -635,7 +636,8 @@ class JobResultsPanel extends React.PureComponent {
                 valueScale.domain(domains[columnIndex]);
             }
         };
-
+        const jobTypeToName = {};
+        COMPARE_ACTIONS.forEach(action => jobTypeToName[action.jobType] = action.title);
         return <>
             <Box color="text.primary">
                 <Grid container alignItems="center" className={classes.toolbar}>
@@ -722,10 +724,10 @@ class JobResultsPanel extends React.PureComponent {
                                 }
                                 const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
                                 const isComplete = isPrecomputed || jobResult.status === 'complete';
-                                const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
+
                                 const status = isPrecomputed ? 'complete' : jobResult.status;
                                 const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
-
+                                const jobType = jobTypeToName[jobResult.type];
                                 // const date = isPrecomputed ? '' : jobResult.submitted;
                                 return <TableRow key={jobResult.id}
                                                  className={classes.deleteTr}
