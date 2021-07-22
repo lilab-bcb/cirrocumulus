@@ -36,7 +36,7 @@ def get_filter_str(data_filter):
             if isinstance(value, list):
                 if len(value) >= 10:
                     return None
-                value = ','.join(value)
+                value = '_'.join(value)
                 s.append(field + '-' + value)
             else:
                 return None
