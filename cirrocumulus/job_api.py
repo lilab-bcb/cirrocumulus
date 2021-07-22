@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
-from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures, get_filter_str
+from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
 
@@ -25,15 +25,6 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
     return job_id
-
-
-def get_mask(dataset_api, dataset, data_filter):
-    measures, dimensions, basis_list = data_filter_keys(data_filter)
-    keys = get_type_to_measures(measures)
-    keys['obs'] = list(dimensions)
-    keys['basis'] = basis_list
-    df = dataset_api.read_dataset(keys=keys, dataset=dataset)
-    return get_filter_expr(df, data_filter)
 
 
 def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params):

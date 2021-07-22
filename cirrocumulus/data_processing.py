@@ -8,6 +8,15 @@ from cirrocumulus.ids_aggregator import IdsAggregator
 from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
+def get_mask(dataset_api, dataset, data_filter):
+    measures, dimensions, basis_list = data_filter_keys(data_filter)
+    keys = get_type_to_measures(measures)
+    keys['obs'] = list(dimensions)
+    keys['basis'] = basis_list
+    df = dataset_api.read_dataset(keys=keys, dataset=dataset)
+    return get_filter_expr(df, data_filter)
+
+
 def apply_filter(df, data_filter):
     keep_expr = get_filter_expr(df, data_filter)
     return df[keep_expr] if keep_expr is not None else df
