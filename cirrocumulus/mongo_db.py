@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 
@@ -119,12 +120,12 @@ class MongoDb(AbstractDB):
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
         return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                'email': doc['email']}
+                'created': doc.get('created'), 'email': doc['email']}
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
         self.get_dataset(email, dataset_id)
         collection = self.db.views
-        entity_update = {}
+        entity_update = {'created': datetime.datetime.utcnow()}
         if name is not None:
             entity_update['name'] = name
         if value is not None:
@@ -226,7 +227,7 @@ class MongoDb(AbstractDB):
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         self.get_dataset(email, dataset_id)
-        import datetime
+
         collection = self.db.jobs
         return str(collection.insert_one(
             dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params,
@@ -251,6 +252,12 @@ class MongoDb(AbstractDB):
                 dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email'],
                      submitted=doc.get('submitted')))
         return results
+
+    def annotate_job(self, email, job_id, annotations):
+        collection = self.db.jobs
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(annotations=annotations, last_updated=ddd)})
 
     def update_job(self, email, job_id, status, result):
         collection = self.db.jobs
