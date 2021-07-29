@@ -38,14 +38,17 @@ def configure_app(app):
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
-    except:  # tiledb install is optional
+    except:  # ignore if tiledb is not installed
         pass
     from cirrocumulus.parquet_dataset import ParquetDataset
     dataset_api.add(ParquetDataset())
 
-    from cirrocumulus.anndata_dataset import AnndataDataset
-    anndata_dataset = AnndataDataset('r' if False else None)
-    dataset_api.add(anndata_dataset)
+    try:
+        from cirrocumulus.anndata_dataset import AnndataDataset
+        anndata_dataset = AnndataDataset('r' if False else None)
+        dataset_api.add(anndata_dataset)
+    except:  # ignore is anndata not installed
+        pass
 
 
 def main(argsv):
