@@ -80,7 +80,7 @@ function LandingPage(props) {
         <Box><ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={props.serverInfo.footer}/></Box>}
 
         <Divider/>
-        <p>Version: {process.env.REACT_APP_VERSION}</p>
+        {process.env.REACT_APP_VERSION != null && <p>Version: {process.env.REACT_APP_VERSION}</p>}
     </Paper>;
 }
 
@@ -95,5 +95,5 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(LandingPage));
