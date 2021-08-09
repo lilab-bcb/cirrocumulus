@@ -311,11 +311,9 @@ export default function AutocompleteVirtualized(props) {
                 classes={classes}
                 getOptionSelected={getOptionSelected}
                 value={props.value}
-
                 filterSelectedOptions={true}
                 getOptionLabel={getOptionLabel}
                 groupBy={props.groupBy ? (option) => option.group : null}
-
                 ChipProps={{size: 'small'}}
                 ListboxComponent={ListboxComponent}
                 renderGroup={renderGroup}
@@ -331,9 +329,9 @@ export default function AutocompleteVirtualized(props) {
                     style={{
                         width: 200
                     }}
-                    // InputLabelProps={{shrink: false}}
-                    margin="dense" {...params.inputProps}
+                    margin="dense"
                     label={props.label}
+                    {...params}
                     helperText={props.helperText}/>
                 </div>}
                 renderOption={renderOption}

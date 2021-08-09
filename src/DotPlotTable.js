@@ -92,13 +92,11 @@ function DotPlotTable(props) {
         sizeScale,
         valueScale,
         colorScale,
-        headerHeight,
         headerWidth,
         rotateHeaders
     } = props;
 
     let selectAllChecked = true;
-
     const maxSize = Math.max(sizeScale.range()[0], sizeScale.range()[1]);
     for (let i = 0; i < rows.length; i++) {
         const selected = isRowSelected(rows[i])

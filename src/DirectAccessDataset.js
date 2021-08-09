@@ -144,8 +144,7 @@ export class DirectAccessDataset {
             const embeddings = q.selection.embeddings || [];
             const mappedEmbeddings = [];
             embeddings.forEach(embedding => {
-                let basis = getBasis(embedding.basis, embedding.nbins, embedding.agg,
-                    embedding.ndim || 2, embedding.precomputed);
+                let basis = getBasis(embedding.name, embedding.dimensions || 2, embedding.mode);
                 basisKeys.add(basis.name);
                 mappedEmbeddings.push(basis);
             });
@@ -157,8 +156,7 @@ export class DirectAccessDataset {
         }
         if (q.embedding) {
             q.embedding.forEach(embedding => {
-                let basis = getBasis(embedding.basis, embedding.nbins, embedding.agg,
-                    embedding.ndim || 2, embedding.precomputed);
+                let basis = getBasis(embedding.name, embedding.dimensions || 2, embedding.mode);
                 basisKeys.add(basis.name);
                 embedding.basis = basis;
             });

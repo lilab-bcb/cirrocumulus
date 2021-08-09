@@ -1,11 +1,12 @@
+import datetime
 import json
 import os
 
 from bson import ObjectId
-from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
 
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
 from .invalid_usage import InvalidUsage
 
@@ -26,17 +27,17 @@ class MongoDb(AbstractDB):
                             'new': doc['new']})
         return results
 
-    def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+    def upsert_category_name(self, email, category, dataset_id, original_value, new_value, prior_value):
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
-        key = str(dataset_id) + '-' + str(category) + '-' + str(original_name)
+        key = str(dataset_id) + '-' + str(category) + '-' + str(original_value)
 
-        if new_name == '':
+        if new_value == '':
             collection.delete_one(dict(cat_id=key))
         else:
             collection.update_one(dict(cat_id=key),
-                                  {'$set': dict(category=category, dataset_id=dataset_id, original=original_name,
-                                                new=new_name)},
+                                  {'$set': dict(category=category, dataset_id=dataset_id, original=original_value,
+                                                new=new_value)},
                                   upsert=True)
 
     def user(self, email):
@@ -108,23 +109,23 @@ class MongoDb(AbstractDB):
                  'notes': doc.get('notes'), 'email': doc['email']})
         return results
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
         collection.delete_one(dict(_id=ObjectId(view_id)))
 
-    def get_dataset_view(self, email, dataset_id, view_id):
+    def get_dataset_view(self, email, view_id):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
         return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                'email': doc['email']}
+                'created': doc.get('created'), 'email': doc['email']}
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
         self.get_dataset(email, dataset_id)
         collection = self.db.views
-        entity_update = {}
+        entity_update = {'created': datetime.datetime.utcnow()}
         if name is not None:
             entity_update['name'] = name
         if value is not None:
@@ -226,7 +227,7 @@ class MongoDb(AbstractDB):
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         self.get_dataset(email, dataset_id)
-        import datetime
+
         collection = self.db.jobs
         return str(collection.insert_one(
             dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params,
@@ -251,6 +252,12 @@ class MongoDb(AbstractDB):
                 dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email'],
                      submitted=doc.get('submitted')))
         return results
+
+    def annotate_job(self, email, job_id, annotations):
+        collection = self.db.jobs
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        self.get_dataset(email, doc['dataset_id'])
+        collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(annotations=annotations, last_updated=ddd)})
 
     def update_job(self, email, job_id, status, result):
         collection = self.db.jobs

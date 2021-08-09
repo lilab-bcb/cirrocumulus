@@ -58,7 +58,7 @@ class AbstractDB:
         """
         raise NotImplementedError()
 
-    def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+    def upsert_category_name(self, email, category, dataset_id, original_name, prior_name, new_name):
         """ Upserts a category name.
 
         Args:
@@ -66,7 +66,8 @@ class AbstractDB:
              category: Category in dataset (e.g. louvain)
              dataset_id: Dataset id
              original_name: Original category name (e.g. "1")
-             new_name: New name (e.g. "my cell type")
+             prior_name: Prior name (e.g. "cell type a")
+             new_name: New name (e.g. "cell type b")
         """
         raise NotImplementedError()
 
@@ -110,12 +111,11 @@ class AbstractDB:
         """
         raise NotImplementedError()
 
-    def get_dataset_view(self, email, dataset_id, view_id):
+    def get_dataset_view(self, email, view_id):
         """ Gets detailed information for a saved dataset view
 
         Args:
             email: User email or None
-            dataset_id: Dataset id
             view_id: View id
 
         Returns:

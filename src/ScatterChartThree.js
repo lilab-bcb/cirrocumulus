@@ -1,6 +1,6 @@
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
-import {bind} from 'lodash';
+import {bind, throttle} from 'lodash';
 import React from 'react';
 import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
@@ -65,14 +65,14 @@ const styles = theme => ({
 
     root: {
         '& > *': {
-            margin: theme.spacing(.4),
+            margin: theme.spacing(.4)
         },
         '& > .MuiIconButton-root': {
-            padding: 0,
+            padding: 0
         },
         '& > .cirro-active': {
             fill: 'rgb(220, 0, 78)',
-            color: 'rgb(220, 0, 78)',
+            color: 'rgb(220, 0, 78)'
         },
         '& > .cirro-inactive': {
             fill: 'rgba(0, 0, 0, 0.26)',
@@ -84,7 +84,7 @@ const styles = theme => ({
         display: 'inline-block',
         verticalAlign: 'top',
         whiteSpace: 'nowrap',
-        overflow: 'hidden',
+        overflow: 'hidden'
     }
 });
 
@@ -96,6 +96,7 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
         this.state = {forceUpdate: false};
+        this.cameraCallback = throttle(this.cameraCallback, 250);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -104,6 +105,7 @@ class ScatterChartThree extends React.PureComponent {
         }
         this.init();
         this.draw();
+        this.props.chartOptions.scatterPlot = this.scatterPlot;
     }
 
     componentDidMount() {
@@ -126,7 +128,7 @@ class ScatterChartThree extends React.PureComponent {
 
 
     calculatePointSize(trace) {
-        const n = trace.npoints;
+        const n = trace.x.length;
         const SCALE = 200;
         const LOG_BASE = 8;
         const DIVISOR = 1.5;
@@ -160,12 +162,14 @@ class ScatterChartThree extends React.PureComponent {
         }
         const widthHalf = width / 2;
         const heightHalf = height / 2;
-        const colorScale = scaleLinear().domain([0, 1]).range([0, 255]);
-        const npoints = trace.npoints;
+        const colorScaleConverter = scaleLinear().domain([0, 1]).range([0, 255]);
+        const npoints = trace.x.length;
         const is3d = trace.dimensions === 3;
         let outputPointSize;
         let fog = this.scatterPlot.scene.fog;
         let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
+        // const zoomFactor = getScaleFactor(this.props.chartSize);
+        const zoomFactorSpecified = false;
 
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;
@@ -175,12 +179,17 @@ class ScatterChartThree extends React.PureComponent {
             const maxScale = 15.0;  // maximum scaling factor
             const inSpeed = 0.02;  // enlarge speed when zooming in
             const zoomOffset = 0.3;  // offset zoom pivot
-            let zoom = camera.projectionMatrix.elements[0] + zoomOffset;  // zoom pivot
+            let m = camera.projectionMatrix.elements[0];
+            // if (zoomFactorSpecified) {
+            //     m = zoomFactor;
+            // }
+            let zoom = m + zoomOffset;  // zoom pivot
             let scale = zoom < 1. ? 1. + outNorm * Math.atan(outSpeed * (zoom - 1.)) :
                 1. + 2. / PI * (maxScale - 1.) * Math.atan(inSpeed * (zoom - 1.));
             outputPointSize = pointSize * scale;
         }
-        let gl_PointSize = (outputPointSize * scaleFactor) / 4;
+        let gl_PointSize = (outputPointSize * scaleFactor);
+        gl_PointSize /= 2;
         const pos = new Vector3();
         let cameraSpacePos = new Vector4();
         let object = spriteVisualizer.points;
@@ -234,9 +243,9 @@ class ScatterChartThree extends React.PureComponent {
             pos.x = (pos.x * widthHalf) + widthHalf;
             pos.y = -(pos.y * heightHalf) + heightHalf;
 
-            r = Math.round(colorScale(r));
-            g = Math.round(colorScale(g));
-            b = Math.round(colorScale(b));
+            r = Math.round(colorScaleConverter(r));
+            g = Math.round(colorScaleConverter(g));
+            b = Math.round(colorScaleConverter(b));
 
             context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
             context.beginPath();
@@ -326,8 +335,13 @@ class ScatterChartThree extends React.PureComponent {
             this.props.chartOptions.animating = true;
         }
         this.props.setChartOptions(this.props.chartOptions);
+
     };
 
+    cameraCallback = (eventName) => {
+        const def = this.scatterPlot.getCameraDef();
+        this.props.onCamera(eventName, def);
+    };
 
     init() {
         if (this.scatterPlot == null) {
@@ -374,7 +388,7 @@ class ScatterChartThree extends React.PureComponent {
                     }
 
                     if (selectedIndex === -1) {
-                        for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
+                        for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
                             pos.x = positions[k];
                             pos.y = positions[k + 1];
                             pos.z = positions[k + 2];
@@ -421,7 +435,7 @@ class ScatterChartThree extends React.PureComponent {
                 const pos = new Vector3();
                 const selectedIndices = new Set();
 
-                for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
+                for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
                     pos.y = positions[k + 1];
                     pos.z = positions[k + 2];
@@ -455,7 +469,7 @@ class ScatterChartThree extends React.PureComponent {
                 const pos = new Vector3();
                 const selectedIndices = new Set();
 
-                for (let i = 0, j = 0, k = 0; i < trace.npoints; i++, j += 4, k += 3) {
+                for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
                     pos.x = positions[k];
                     pos.y = positions[k + 1];
                     pos.z = positions[k + 2];
@@ -477,6 +491,14 @@ class ScatterChartThree extends React.PureComponent {
                     });
                 }
             };
+
+            this.scatterPlot.cameraCallback = (eventName) => {
+                if (this.scatterPlot.interactionMode === 'PAN' && this.props.trace.dimensions === 3) {
+                    // repaint gallery charts with same embedding
+                    this.cameraCallback(eventName);
+                }
+            };
+
             const canvas = this.containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
             const webglcontextlost = (e) => {
@@ -536,7 +558,7 @@ class ScatterChartThree extends React.PureComponent {
                 </ChartToolbar>
             </div>
 
-            <div data-testid='scatter-chart-three' style={{
+            <div data-testid="scatter-chart-three" style={{
                 display: 'inline-block',
                 width: this.props.chartSize.width,
                 height: this.props.chartSize.height

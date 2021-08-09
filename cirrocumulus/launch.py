@@ -113,7 +113,7 @@ def main(argsv):
 
     parser = argparse.ArgumentParser(description='Run cirrocumulus')
     parser.add_argument('dataset',
-                        help='Path to dataset in h5ad, loom, or STAR-Fusion format. Separate multiple datasets with '
+                        help='Path to dataset in h5ad, loom, Seurat, TileDB, or STAR-Fusion format. Separate multiple datasets with '
                              'a comma instead of a space in order to join datasets by cell id', nargs='+')
     parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
     parser.add_argument('--markers',

@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, isArray, isString} from 'lodash';
+import {find, findIndex, indexOf, isArray, isString} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -20,6 +20,7 @@ import {
     CATEGORY_20B,
     CATEGORY_20C,
     createColorScale,
+    createEmbeddingDensity,
     FEATURE_TYPE,
     getFeatureSets,
     getInterpolator,
@@ -28,6 +29,7 @@ import {
     SERVER_CAPABILITY_ADD_DATASET,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
     splitSearchTokens,
+    summarizeDensity,
     TRACE_TYPE_IMAGE,
     TRACE_TYPE_META_IMAGE,
     TRACE_TYPE_SCATTER,
@@ -36,22 +38,21 @@ import {
 
 export const API = process.env.REACT_APP_API_URL || 'api';
 const authScopes = [
-    'email',
+    'email'
     // 'profile',
     // 'https://www.googleapis.com/auth/userinfo.profile',
     // 'https://www.googleapis.com/auth/contacts.readonly',
     // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 
-export const DEFAULT_BIN_SUMMARY = 'max';
-export const DEFAULT_NUMBER_BINS = 500;
+
 export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATOR = 'Viridis';
 export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
 export const DEFAULT_DRAG_MODE = 'pan';
-export const DEFAULT_SHOW_LABELS = false;
+
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = false;
 export const DEFAULT_DARK_MODE = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
@@ -64,7 +65,7 @@ export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
-export const SET_UNSELECTED_MARKER_SIZE = 'SET_UNSELECTED_MARKER_SIZE';
+
 
 export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
@@ -83,12 +84,12 @@ export const SET_CATEGORICAL_NAME = 'SET_CATEGORICAL_NAME';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
-export const SET_EMBEDDING_CHART_SIZE = "SET_EMBEDDING_CHART_SIZE";
+
 export const SET_UNSELECTED_MARKER_OPACITY = 'SET_UNSELECTED_MARKER_OPACITY';
 
 export const SET_SELECTION = 'SET_SELECTION';
 export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
-export const SET_SAVED_DATASET_FILTER = 'SET_SAVED_DATASET_FILTER';
+
 export const SET_SEARCH_TOKENS = 'SET_SEARCH_TOKENS';
 
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
@@ -102,7 +103,7 @@ export const SET_DATASET = 'SET_DATASET';
 export const SET_MARKERS = 'SET_MARKERS';
 export const SET_DIALOG = 'SET_DIALOG';
 
-export const MORE_OPTIONS_DIALOG = 'MORE_OPTIONS_DIALOG';
+export const OPEN_DATASET_DIALOG = 'OPEN_DATASET_DIALOG';
 export const EDIT_DATASET_DIALOG = 'EDIT_DATASET_DIALOG';
 export const IMPORT_DATASET_DIALOG = 'IMPORT_DATASET_DIALOG';
 export const SAVE_DATASET_FILTER_DIALOG = 'SAVE_DATASET_FILTER_DIALOG';
@@ -123,25 +124,22 @@ export const SET_LOADING = 'SET_LOADING';
 export const SET_TAB = 'SET_TAB';
 
 export const SET_LOADING_APP = 'LOADING_APP';
-export const SET_CACHED_DATA = 'SET_CACHED_DATA';
 
 export const SET_JOB_RESULTS = 'SET_JOB_RESULTS';
 export const SET_JOB_RESULT = 'SET_JOB_RESULT';
 
-function isEmbeddingBinned(embedding) {
-    return embedding.bin || embedding.precomputed;
-}
 
-export function getEmbeddingKey(embedding) {
+export function getEmbeddingKey(embedding, includeDensity = true) {
     let fullName = embedding.name;
     if (embedding.dimensions) {
         fullName += '_' + embedding.dimensions;
     }
-    if (embedding.bin || embedding.precomputed) {
-        fullName += '_' + embedding.nbins + '_' + embedding.agg;
+    if (embedding.mode != null && includeDensity) {
+        fullName += '_' + embedding.mode;
     }
     return fullName;
 }
+
 
 export function getTraceKey(traceInfo) {
     return traceInfo.name + '_' + getEmbeddingKey(traceInfo.embedding);
@@ -149,12 +147,8 @@ export function getTraceKey(traceInfo) {
 
 function getEmbeddingJson(embedding) {
     let value = {basis: embedding.name, ndim: embedding.dimensions};
-    if (embedding.precomputed) {
-        value.precomputed = true;
-    }
-    if (embedding.bin) {
-        value.nbins = embedding.nbins;
-        value.agg = embedding.agg;
+    if (embedding.mode != null) {
+        value.mode = embedding.mode;
     }
 
     return value;
@@ -171,7 +165,7 @@ export function initGapi() {
     return function (dispatch, getState) {
         dispatch(_setLoadingApp({loading: true, progress: 0}));
         const startTime = new Date().getTime();
-        const approximateColdBootTime = 32;
+        const approximateColdBootTime = 10;
 
         function loadingAppProgress() {
             if (getState().loadingApp.loading) {
@@ -207,7 +201,7 @@ export function initGapi() {
                 }
             });
         }
-        const getServerInfo = fetch(API + '/server').then(result => result.json())
+        const getServerInfo = fetch(API + '/server').then(result => result.json());
         return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
@@ -250,7 +244,7 @@ export function initGapi() {
                     window.gapi.load('client:auth2', () => {
                         window.gapi.client.init({
                             clientId: serverInfo.clientId,
-                            scope: authScopes.join(' '),
+                            scope: authScopes.join(' ')
                         }).then(() => {
                             dispatch(_setLoadingApp({loading: false, progress: 0}));
                             dispatch(initLogin(true));
@@ -285,12 +279,13 @@ export function login() {
 }
 
 
-export function openView(id) {
+export function openView(id, loadDataset = false) {
     return function (dispatch, getState) {
         dispatch(_setLoading(true));
-        getState().serverInfo.api.getViewPromise(id, getState().dataset.id)
+        getState().serverInfo.api.getViewPromise(id)
             .then(result => {
                 const savedView = isString(result.value) ? JSON.parse(result.value) : result.value;
+                savedView.dataset = result.dataset_id;
                 dispatch(restoreSavedView(savedView));
             }).finally(() => {
             dispatch(_setLoading(false));
@@ -415,7 +410,7 @@ export function deleteFeatureSet(id) {
                     }
                 }
                 if (!found) {
-                    console.log('Unable to find feature set id ' + id)
+                    console.log('Unable to find feature set id ' + id);
                 }
                 dispatch(setMarkers(markers.slice()));
                 dispatch(setMessage('Set deleted'));
@@ -722,12 +717,8 @@ export function handleBrushFilterUpdated(payload) {
         const value = payload.value;  // value has basis and indices
         const clear = payload.clear;
         const indices = payload.value != null ? payload.value.indices : null;
-
         let datasetFilter = getState().datasetFilter;
-        // if (value && isEmbeddingBinned(value.basis)) {
-        //     const bins = getState().cachedData[getEmbeddingKey(value.basis)].bins;
-        //     value.points = convertIndicesToBins(value.points, bins);
-        // }
+
         function clearFilters() {
             if (clear) {
                 for (let key in datasetFilter) {
@@ -825,9 +816,10 @@ export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
         const dataset_id = getState().dataset.id;
         const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
-            c: payload.name,
-            o: payload.oldValue,
-            n: payload.value,
+            name: payload.name,
+            originalValue: payload.originalValue,
+            priorValue: payload.priorValue,
+            newValue: payload.newValue,
             id: dataset_id
         }) : Promise.resolve();
         p.then(() => dispatch(_handleCategoricalNameChange(payload)));
@@ -981,6 +973,8 @@ function loadDefaultDataset() {
     return function (dispatch, getState) {
         if (getState().dataset == null && getState().datasetChoices.length === 1) {
             dispatch(setDataset(getState().datasetChoices[0].id));
+        } else {
+            dispatch(setDialog(OPEN_DATASET_DIALOG));
         }
     };
 }
@@ -1024,6 +1018,9 @@ function restoreSavedView(savedView) {
                     });
                     savedView.embeddings = embeddings;
                     if (savedView.camera != null) {
+                        if (savedView.chartOptions == null) {
+                            savedView.chartOptions = {};
+                        }
                         savedView.chartOptions.camera = savedView.camera;
                     }
                 } else {
@@ -1031,7 +1028,7 @@ function restoreSavedView(savedView) {
                     if (selectedEmbedding) {
                         savedView.embeddings = [selectedEmbedding];
                         if (obsCat != null) {
-                            savedView.q = [{value: obsCat, type: 'obsCat'}]
+                            savedView.q = [{value: obsCat, type: 'obsCat'}];
                             savedView.activeFeature = {
                                 name: obsCat,
                                 type: 'obsCat',
@@ -1080,11 +1077,12 @@ function _loadSavedView() {
             try {
                 savedView = JSON.parse(window.decodeURIComponent(q));
             } catch (err) {
-                return dispatch(setMessage('Unable to restore saved view.'));
+                return dispatch(setMessage('Unable to restore view.'));
             }
         }
-
-        if (savedView.dataset != null) {
+        if (savedView.link != null) {
+            dispatch(openView(savedView.link, true));
+        } else if (savedView.dataset != null) {
             dispatch(restoreSavedView(savedView));
         } else {
             dispatch(loadDefaultDataset());
@@ -1320,6 +1318,7 @@ export function setJobResult(payload) {
             for (let key in result) {
                 jobResult[key] = result[key];
             }
+
             updateJob(jobResult);
             dispatch(_setJobResult(payload));
         }).finally(() => {
@@ -1471,19 +1470,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         function onPromisesComplete() {
             newDataset = Object.assign({}, dataset, newDataset);
-            if (newDataset.embeddings) {
-                for (let i = 0; i < newDataset.embeddings.length; i++) {
-                    if (newDataset.embeddings[i].nbins != null) {
-                        newDataset.embeddings[i].bin = true;
-                        newDataset.embeddings[i].precomputed = true;
-                    } else { // set default values
-                        newDataset.embeddings[i].nbins = 500;
-                        newDataset.embeddings[i]._nbins = 500;
-                        newDataset.embeddings[i].bin = false;
-                        newDataset.embeddings[i].agg = 'max';
-                    }
-                }
-            }
             newDataset.api = dataset.api;
             newDataset.features = newDataset.var;
             newDataset.features.sort((a, b) => {
@@ -1537,7 +1523,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
 
         const initPromise = dataset.api.init(id, dataset.url);
-        const promises = [initPromise]
+        const promises = [initPromise];
 
         promises.push(dataset.api.getJobs(id).then(jobs => {
             jobResults = jobs;
@@ -1545,8 +1531,17 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         const schemaPromise = dataset.api.getSchemaPromise().then(result => {
             newDataset = result;
+            const embeddings = [];
+            newDataset.embeddings.forEach(embedding => {
+                const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
+                embeddings.push(embedding);
+                // if (embedding.dimensions === 2 && traceType === TRACE_TYPE_SCATTER) {
+                //     embeddings.push(Object.assign({}, embedding, {mode: 'density'}));
+                // }
+            });
+            newDataset.embeddings = embeddings;
         });
-        promises.push(schemaPromise)
+        promises.push(schemaPromise);
 
         if (!isDirectAccess) {
             const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
@@ -1577,36 +1572,6 @@ function handleSelectionResult(selectionResult, clear) {
     return function (dispatch, getState) {
         const state = getState();
         if (selectionResult) {
-            // const indices = selectionResult.indices;
-            // if (indices != null) {
-            // let chartSelection = {};
-            // for (let key in coordinates) {
-            //     const selectedIndicesOrBins = coordinates[key].indices_or_bins;
-            //     const embedding = state.embeddings[state.embeddings.map(e => getEmbeddingKey(e)).indexOf(key)];
-            //     if (embedding == null) {
-            //         console.log(key + ' missing from coordinates');
-            //         continue;
-            //     }
-            //     let selectedPoints = selectedIndicesOrBins;
-            //     if (isEmbeddingBinned(embedding)) {
-            //         const coords = state.cachedData[getEmbeddingKey(embedding)];
-            //         const bins = coords.bins;
-            //         selectedPoints = convertBinsToIndices(bins, selectedIndicesOrBins);
-            //     }
-            //
-            //     chartSelection[key] = {
-            //         userPoints: new Set(selectedPoints),
-            //         points: selectedIndicesOrBins
-            //     };
-            // }
-
-            // } else {
-            //     const isCurrentSelectionEmpty = state.selection.indices == null || Object.keys(state.selection.chart).length === 0;
-            //     if (clear && !isCurrentSelectionEmpty) {
-            //         dispatch(setSelection({count: selectionResult.count, indices: null}));
-            //     }
-            // }
-
             dispatch(setSelection(selectionResult.indices));
             // userPoints are in chart space, points are in server space, count is total number of cells selected
             if (selectionResult.summary) {
@@ -1675,9 +1640,8 @@ function _updateCharts(onError) {
         let embeddingData = state.embeddingData;
         const globalFeatureSummary = state.globalFeatureSummary;
         const cachedData = state.cachedData;
-        const embeddingCoordinatesToFetch = [];
+        const embeddingsToFetch = [];
         const valuesToFetch = new Set();
-        const binnedEmbeddingValuesToFetch = [];
         const embeddingKeys = new Set();
         const features = new Set();
         const filterJson = getFilterJson(state);
@@ -1691,7 +1655,7 @@ function _updateCharts(onError) {
 
             if (cachedData[embeddingKey] == null) {
                 if (selectedEmbedding.dimensions > 0) {
-                    embeddingCoordinatesToFetch.push(selectedEmbedding);
+                    embeddingsToFetch.push(selectedEmbedding);
                 } else {
                     if (cachedData[selectedEmbedding.attrs.group] == null) {
                         valuesToFetch.add(selectedEmbedding.attrs.group);
@@ -1706,18 +1670,6 @@ function _updateCharts(onError) {
                 }
             }
 
-            if (isEmbeddingBinned(selectedEmbedding)) {
-                const data = {values: [], embedding: selectedEmbedding};
-                features.forEach(feature => {
-                    let key = feature + '_' + embeddingKey;
-                    if (cachedData[key] == null) {
-                        data.values.push(feature);
-                    }
-                });
-                if (data.values.length > 0) {
-                    binnedEmbeddingValuesToFetch.push(data);
-                }
-            }
         });
         const promises = [];
         embeddingImagesToFetch.forEach(embedding => {
@@ -1798,33 +1750,20 @@ function _updateCharts(onError) {
             });
         }
         let q = {};
-        if (embeddingCoordinatesToFetch.length > 0 || binnedEmbeddingValuesToFetch.length > 0) {
+        if (embeddingsToFetch.length > 0) {
             q.embedding = [];
 
-            const embeddingCoordinatesToFetchKeys = embeddingCoordinatesToFetch.map(e => getEmbeddingKey(e));
-            binnedEmbeddingValuesToFetch.forEach(datum => {
-                const embeddingJson = getEmbeddingJson(datum.embedding);
-                embeddingJson.dimensions = [];
-                embeddingJson.measures = [];
-                embeddingJson.coords = embeddingCoordinatesToFetchKeys.indexOf(getEmbeddingKey(datum.embedding)) !== -1;
-                q.embedding.push(embeddingJson);
-                datum.values.forEach(value => {
-                    if (searchTokens.obsCat.indexOf(value) !== -1) {
-                        embeddingJson.dimensions.push(value);
-                    } else if (searchTokens.obs.indexOf(value) !== -1) {
-                        embeddingJson.measures.push('obs/' + value);
-                    } else {
-                        embeddingJson.measures.push(value);
+            embeddingsToFetch.forEach(embedding => {
+                if (embedding.mode != null) {// fetch unbinned coordinates
+                    const key = getEmbeddingKey(embedding, false);
+                    if (indexOf(embeddingsToFetch, (e => getEmbeddingKey(e) === key)) !== -1) {
+                        embeddingsToFetch.push(state.dataset.embeddings[indexOf(state.dataset.embeddings, (e => getEmbeddingKey(e) === key))]);
                     }
-                });
-            });
-            const binnedEmbeddingValuesToFetchKeys = binnedEmbeddingValuesToFetch.map(e => getEmbeddingKey(e.embedding));
-            embeddingCoordinatesToFetch.forEach(embedding => {
-                if (binnedEmbeddingValuesToFetchKeys.indexOf(getEmbeddingKey(embedding)) === -1) {
-                    const embeddingJson = getEmbeddingJson(embedding);
-                    embeddingJson.coords = true;
-                    q.embedding.push(embeddingJson);
                 }
+            });
+            embeddingsToFetch.forEach(embedding => {
+                const embeddingJson = getEmbeddingJson(embedding);
+                q.embedding.push(embeddingJson);
             });
         }
         if (valuesToFetch.size > 0) {
@@ -1928,6 +1867,7 @@ function getFeatureType(dataset, feature) {
     return FEATURE_TYPE.X;
 }
 
+
 // depends on global feature summary
 function updateEmbeddingData(state, features) {
     const embeddings = state.embeddings;
@@ -1936,6 +1876,7 @@ function updateEmbeddingData(state, features) {
     const interpolator = state.interpolator;
     const dataset = state.dataset;
     const cachedData = state.cachedData;
+    const selection = state.selection;
     const existingFeaturePlusEmbeddingKeys = new Set();
     embeddingData.forEach(embeddingDatum => {
         const embeddingKey = getEmbeddingKey(embeddingDatum.embedding);
@@ -1947,32 +1888,38 @@ function updateEmbeddingData(state, features) {
     }
     embeddings.forEach(embedding => {
         const embeddingKey = getEmbeddingKey(embedding);
-        const isBinned = isEmbeddingBinned(embedding);
+
         // type can be image, scatter, or meta_image
         const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
-        const coordinates = traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
+        let coordinates = traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
+
+        if (coordinates == null && embedding.mode != null) {
+            const unbinnedCoords = cachedData[getEmbeddingKey(embedding, false)];
+            const binnedValues = createEmbeddingDensity(unbinnedCoords[embedding.name + '_1'], unbinnedCoords[embedding.name + '_2']);
+            const binnedCoords = {};
+            binnedCoords[embedding.name + '_1'] = binnedValues.x;
+            binnedCoords[embedding.name + '_2'] = binnedValues.y;
+            binnedCoords[embedding.name + '_index'] = binnedValues.index;
+            cachedData[embeddingKey] = binnedCoords; // save binned coords
+            coordinates = binnedCoords;
+        }
         const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
         const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
         const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
 
 
-        const bins = isBinned ? coordinates.bins : null;
         features.forEach(feature => {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
             let featureKey = feature;
             if (!existingFeaturePlusEmbeddingKeys.has(featurePlusEmbeddingKey)) {
 
-                if (isBinned) {
-                    featureKey = featurePlusEmbeddingKey;
-                }
                 let featureSummary = globalFeatureSummary[feature];
                 let values = cachedData[featureKey];
-                if (values == null && feature === '__count' && !isBinned) {
+                if (values == null && feature === '__count') {
                     values = new Int8Array(dataset.shape[0]);
                     values.fill(1);
                 }
                 let purity = null;
-
                 if (values.value !== undefined) {
                     purity = values.purity;
                     values = values.value;
@@ -2079,9 +2026,7 @@ function updateEmbeddingData(state, features) {
                     x: x,
                     y: y,
                     z: z != null ? z : undefined,
-                    bins: bins,
                     dimensions: z != null ? 3 : 2,
-                    npoints: values.length,
                     date: new Date(),
                     active: true,
                     colorScale: colorScale,
@@ -2089,9 +2034,12 @@ function updateEmbeddingData(state, features) {
                     isCategorical: isCategorical,
                     values: values, // for color
                     type: traceType
-                    // purity: purity,
-                    // text: values,
                 };
+                if (chartData.mode != null) {
+                    chartData.index = coordinates[embedding.name + '_index'];
+                    chartData._values = chartData.values;
+                    chartData.values = summarizeDensity(chartData.values, chartData.index, selection, chartData.continuous ? 'max' : 'mode');
+                }
                 if (traceType === TRACE_TYPE_SCATTER) {
                     chartData.positions = getPositions(chartData);
                 }
@@ -2202,21 +2150,13 @@ export function getDatasetStateJson(state) {
 
     let json = {
         dataset: dataset.id,
-        embeddings: embeddings.map(embedding => {
-            if (embedding.bin) {
-                embedding = Object.assign({}, embedding);
-                delete embedding._bin;
-                return embedding;
-            } else {
-                return {name: embedding.name, dimensions: embedding.dimensions};
-            }
-
-        })
+        embeddings: embeddings
     };
 
-    const chartRef = chartOptions.ref;
-    if (json.embeddings.length > 0 && chartRef != null && chartRef.scatterPlot) {
-        json.camera = chartRef.scatterPlot.getCameraDef();
+    const scatterPlot = chartOptions.scatterPlot;
+    console.log(scatterPlot);
+    if (json.embeddings.length > 0 && scatterPlot != null) {
+        json.camera = scatterPlot.getCameraDef();
 
     }
     if (activeFeature != null) {

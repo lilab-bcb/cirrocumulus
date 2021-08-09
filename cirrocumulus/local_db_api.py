@@ -16,9 +16,11 @@ def create_dataset_meta(path):
 
 
 def write_json(json_data, json_path):
-    if os.path.exists(os.path.dirname(json_path)):  # only support writing local files
+    if os.path.exists(os.path.dirname(os.path.abspath(json_path))):  # only support writing local files
         with open(json_path, 'wt') as f:
             json.dump(json_data, f)
+    else:
+        print('Skipping {}'.format(json_path))
 
 
 class LocalDbAPI(AbstractDB):
@@ -77,6 +79,18 @@ class LocalDbAPI(AbstractDB):
             results.append(r)
         return results
 
+    def __find_dataset_id(self, entity_id, kind):
+        for dataset_id in self.dataset_to_info:
+            info = self.dataset_to_info.get(dataset_id)
+            if info is None:
+                continue
+            json_data = info['json_data']
+            filters = json_data[kind]
+            for key in filters:
+                if key == entity_id:
+                    return dataset_id
+        raise ValueError('{} not found'.format(entity_id))
+
     def __upsert_entity(self, dataset_id, entity_id, kind, entity_dict):
         if entity_id is None:
             entity_id = unique_id()
@@ -123,18 +137,18 @@ class LocalDbAPI(AbstractDB):
                 results.append(r)
         return results
 
-    def upsert_category_name(self, email, category, dataset_id, original_name, new_name):
+    def upsert_category_name(self, email, category, dataset_id, original_value, new_value, prior_value):
         json_data = self.dataset_to_info[dataset_id]['json_data']
         category_entity = json_data['categories'].get(category)
         if category_entity is None:
             category_entity = {}
             json_data['categories'][category] = category_entity
-        if new_name == '':
-            if original_name in category_entity:
-                del category_entity[original_name]
+        if new_value == '':  # delete
+            if original_value in category_entity:
+                del category_entity[original_value]
         else:
-            entity = dict(new=new_name)
-            category_entity[original_name] = entity
+            entity = dict(new=new_value)
+            category_entity[original_value] = entity
             if dataset_id is not None:
                 entity['dataset_id'] = dataset_id
             if email is not None:
@@ -174,10 +188,12 @@ class LocalDbAPI(AbstractDB):
     def dataset_views(self, email, dataset_id):
         return self.__get_entity_list(dataset_id=dataset_id, kind='views')
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
+        dataset_id = self.__find_dataset_id(view_id, 'views')
         return self.__delete_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
 
-    def get_dataset_view(self, email, dataset_id, view_id):
+    def get_dataset_view(self, email, view_id):
+        dataset_id = self.__find_dataset_id(view_id, 'views')
         return self.__get_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):

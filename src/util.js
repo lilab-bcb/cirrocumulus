@@ -1,7 +1,7 @@
 import Link from '@material-ui/core/Link';
 import {withStyles} from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
-import {shuffle} from 'd3-array';
+import {extent, shuffle} from 'd3-array';
 import {color} from 'd3-color';
 import {scaleLinear, scaleSequential} from 'd3-scale';
 import * as scaleChromatic from 'd3-scale-chromatic';
@@ -68,6 +68,7 @@ export const SERVER_CAPABILITY_SAVE_LINKS = 'save_links';
 export const SERVER_CAPABILITY_EDIT_DATASET = 'edit_dataset';
 export const SERVER_CAPABILITY_ADD_DATASET = 'add_dataset';
 export const SERVER_CAPABILITY_DELETE_DATASET = 'delete_dataset';
+
 
 export const CATEGORY_20B = [
     '#393b79', '#5254a3', '#6b6ecf',
@@ -147,6 +148,80 @@ export const REACT_MD_OVERRIDES = {
         )),
     }
 };
+
+export function summarizeDensity(values, index, selection, summarizationMethod) {
+    let newValues = [];
+    let summarize;
+
+    if (summarizationMethod === 'max') {
+        summarize = (indices) => {
+            let max = -Number.MAX_VALUE;
+            for (let j = 0, nindices = indices.length; j < nindices; j++) {
+                max = Math.max(values[indices[j]], max);
+            }
+            return max;
+        };
+    } else if (summarizationMethod === 'mode') {
+        summarize = (indices) => {
+            let valueToCount = new Map();
+            for (let j = 0, nindices = indices.length; j < nindices; j++) {
+                const value = values[indices[j]];
+                let prior = valueToCount.get(value);
+                if (prior === undefined) {
+                    prior = 0;
+                }
+                valueToCount.set(value, 1 + prior);
+            }
+            // TODO compute purity
+            let max = -Number.MAX_VALUE;
+            let maxValue = null;
+            valueToCount.forEach((count, value) => {
+                if (count > max) {
+                    max = count;
+                    maxValue = value;
+                }
+            })
+            return maxValue;
+        };
+
+    } else {
+        throw new Error();
+    }
+    const isSelectionEmpty = selection.size === 0;
+    for (let i = 0, n = index.length; i < n; i++) {
+        const indices = index[i];
+        const summarizedValue = summarize(isSelectionEmpty ? indices : indices.filter(item => selection.has(item)));
+        newValues.push(summarizedValue);
+    }
+
+    return newValues;
+}
+
+export function createEmbeddingDensity(xcoords, ycoords, nbins = 500) {
+    const xscale = scaleLinear().domain(extent(xcoords)).range([0, nbins - 1]);
+    const yscale = scaleLinear().domain(extent(ycoords)).range([0, nbins - 1]);
+    const binMap = new Map();
+    for (let i = 0, n = xcoords.length; i < n; i++) {
+        const xcoordNew = Math.floor(xscale(xcoords[i]));
+        const ycoordNew = Math.floor(yscale(ycoords[i]));
+        const bin = xcoordNew * nbins + ycoordNew;
+        let binValue = binMap.get(bin);
+        if (binValue === undefined) {
+            binValue = {indices: [], x: xcoordNew, y: ycoordNew};
+            binMap.set(bin, binValue);
+        }
+        binValue.indices.push(i);
+    }
+    const xvalues = [];
+    const yvalues = [];
+    const newIndexToOriginalIndices = [];
+    binMap.forEach((binValue, bin) => {
+        xvalues.push(binValue.x);
+        yvalues.push(binValue.y);
+        newIndexToOriginalIndices.push(binValue.indices);
+    });
+    return {x: xvalues, y: yvalues, mode: 'density', nbins: nbins, index: newIndexToOriginalIndices};
+}
 
 export function scaleConstantRange(value) {
 
@@ -329,7 +404,7 @@ export function updateTraceColors(traceInfo) {
         let colors = [];
         let colorScale = traceInfo.colorScale;
         const colorMapper = rgb => rgb.formatHex();
-        for (let i = 0, n = traceInfo.npoints; i < n; i++) {
+        for (let i = 0, n = traceInfo.x.length; i < n; i++) {
             let rgb = color(colorScale(traceInfo.values[i]));
             colors.push(colorMapper(rgb));
         }

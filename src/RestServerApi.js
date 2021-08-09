@@ -111,8 +111,8 @@ export class RestServerApi {
             });
     }
 
-    getViewPromise(viewId, datasetId) {
-        return fetch(API + '/view?id=' + viewId + '&ds_id=' + datasetId,
+    getViewPromise(viewId) {
+        return fetch(API + '/view?id=' + viewId,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()},
             }).then(response => response.json());

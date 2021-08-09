@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
-from .data_processing import get_filter_expr, data_filter_keys, get_type_to_measures
+from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
 
@@ -27,37 +27,30 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
     return job_id
 
 
-def get_mask(dataset_api, dataset, data_filter):
-    measures, dimensions, basis_list = data_filter_keys(data_filter)
-    keys = get_type_to_measures(measures)
-    keys['obs'] = list(dimensions)
-    keys['basis'] = basis_list
-    df = dataset_api.read_dataset(keys=keys, dataset=dataset)
-    return get_filter_expr(df, data_filter)
-
-
 def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params):
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
     schema = dataset_api.schema(dataset)
     var_names = schema['var']
     nfeatures = len(var_names)
-    mask1 = get_mask(dataset_api, dataset, params['filter'])
+    filters = [params['filter']]
+    if job_type == 'de':
+        filters.append(params['filter2'])
+    masks, _ = get_mask(dataset_api, dataset, filters)
     batch_size = 1000  # TODO
     percent_expressed1 = np.zeros(nfeatures)
     percent_expressed2 = np.zeros(nfeatures)
     scores = np.zeros(nfeatures)
     pvals = np.ones(nfeatures)
     is_sparse = None
-    v1_size = mask1.sum()
+    v1_size = masks[0].sum()
 
     if job_type == 'de':
         avg_log2FC = np.zeros(nfeatures)
-        mask2 = get_mask(dataset_api, dataset, params['filter2'])
-        v2_size = mask2.sum()
+        v2_size = masks[1].sum()
 
     elif job_type == 'corr':
         df = dataset_api.read_dataset(keys=dict(X=[params['ref']]), dataset=dataset)
-        df = df[mask1]
+        df = df[masks[0]]
         ref = df[params['ref']]
         is_sparse = hasattr(ref, 'sparse')
         if is_sparse:
@@ -72,9 +65,9 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         end = min(nfeatures, start + batch_size)
         features = var_names[start:end]
         df = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
-        df1 = df[mask1]
+        df1 = df[masks[0]]
         if job_type == 'de':
-            df2 = df[mask2]
+            df2 = df[masks[1]]
             for feature in features:
                 v1 = df1[feature]
                 v2 = df2[feature]
@@ -118,12 +111,17 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                                 result=None)
     pvals[np.isnan(pvals)] = 1
     pvals = fdrcorrection(pvals)
+    # group:field is object entry
     if job_type == 'de':
+        comparison1_name = get_filter_str(params['filter'])
+        comparison2_name = get_filter_str(params['filter2'])
+        comparison = 'comparison' if comparison1_name is None or comparison2_name is None else comparison1_name + '_' + comparison2_name
         result_df = pd.DataFrame(
-            data={'index': var_names, 'comparison:pvals_adj': pvals, 'comparison:avg_log2FC': avg_log2FC,
-                  'comparison:scores': scores, 'comparison:percent_expressed1': percent_expressed1,
-                  'comparison:percent_expressed2': percent_expressed2})
-        result = dict(groups=['comparison'],
+            data={'index': var_names, comparison + ':pvals_adj': pvals, comparison + ':avg_log2FC': avg_log2FC,
+                  comparison + ':scores': scores, comparison + ':percent_expressed1': percent_expressed1,
+                  comparison + ':percent_expressed2': percent_expressed2})
+        result = dict(groups=[comparison],
+                      format='json',
                       fields=['pvals_adj', 'avg_log2FC', 'scores', 'percent_expressed1', 'percent_expressed2'],
                       data=result_df.to_dict(orient='records'))
     elif job_type == 'corr':

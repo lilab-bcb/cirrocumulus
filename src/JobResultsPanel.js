@@ -39,13 +39,14 @@ import {
 } from './util';
 
 import DotPlotTable from './DotPlotTable';
+import {COMPARE_ACTIONS} from './job_config';
 
 const styles = theme => ({
     toolbar: {
         '& hr': {
-            margin: theme.spacing(0, 0.5),
+            margin: theme.spacing(0, 0.5)
         }
-    },
+    }
 });
 
 
@@ -495,15 +496,33 @@ class JobResultsPanel extends React.PureComponent {
         let tooltipFields = null;
         let headerHeight = 0;
         let headerWidth = 0;
+        // let isSingleComparison = false;
         if (jobResult != null) {
-            // const name = jobResult.name;
-            // const params = jobResult.params;
+            const columns = jobResult.columns;
+            // isSingleComparison = columns.length === 1;
             isSizeScaled = jobResult.size !== 'none';
             data = jobResult.data;
             color = jobResult.color;
             by = jobResult.by;
             size = jobResult.size;
             groups = jobResult.groups;
+
+            // if (isSingleComparison) {
+            //     // min/max for each field
+            //     jobResult.fields.forEach(field => {
+            //         let min = Number.MAX_VALUE;
+            //         let max = -Number.MAX_VALUE;
+            //         const fieldName = 'comparison:' + field;
+            //         rows.forEach(row => {
+            //             const value = data[row][fieldName];
+            //             if (value != null && !isNaN(value)) {
+            //                 min = value < min ? value : min;
+            //                 max = value > max ? value : max;
+            //             }
+            //         });
+            //         domains.push([min, max]);
+            //     });
+            // }
             tooltipFields = [];
             tooltipFields.push(by);
             rows = jobResult.rows;
@@ -520,7 +539,7 @@ class JobResultsPanel extends React.PureComponent {
                 }
             });
 
-            const columns = jobResult.columns;
+
             for (let i = 0; i < columns.length; i++) {
                 if (columns[i].length > 2) {
                     rotateHeaders = true;
@@ -550,7 +569,7 @@ class JobResultsPanel extends React.PureComponent {
                     rows.forEach(row => {
                         let min = Number.MAX_VALUE;
                         let max = -Number.MAX_VALUE;
-                        jobResult.columns.forEach(column => {
+                        columns.forEach(column => {
                             const group = groups[column];
                             const colorField = group + ':' + color;
                             const colorValue = data[row][colorField];
@@ -562,7 +581,7 @@ class JobResultsPanel extends React.PureComponent {
                         domains.push([min, max]);
                     });
                 } else if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
-                    jobResult.columns.forEach(column => {
+                    columns.forEach(column => {
                         let min = Number.MAX_VALUE;
                         let max = -Number.MAX_VALUE;
                         rows.forEach(row => {
@@ -578,6 +597,7 @@ class JobResultsPanel extends React.PureComponent {
                     });
                 }
             }
+
         }
 
         let showJobStatus = false;
@@ -602,21 +622,63 @@ class JobResultsPanel extends React.PureComponent {
             return title;
         };
 
-        const getColor = (row, column) => data[row][column + ':' + color]
-        const getSize = (row, column) => data[row][column + ':' + size]
+
+        const getColor = (row, column) => data[row][column + ':' + color];
+        const getSize = (row, column) => data[row][column + ':' + size];
 
         const rowStart = (row, rowIndex) => {
             if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
                 valueScale.domain(domains[rowIndex]);
             }
-        }
+        };
         const columnStart = (column, columnIndex) => {
             if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
                 valueScale.domain(domains[columnIndex]);
             }
-        }
-
+        };
+        const jobTypeToName = {};
+        COMPARE_ACTIONS.forEach(action => jobTypeToName[action.jobType] = action.title);
         return <>
+            <Box color="text.primary">
+                <Grid container alignItems="center" className={classes.toolbar}>
+                    {showBrowseJobs &&
+                    <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
+                            color="primary">Browse All Results</Button>}
+                    {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
+                    {jobResult && <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
+                                                                        onClick={this.exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>}
+                </Grid>
+                {jobResult && <>
+                    <Typography
+                        style={{marginBottom: headerHeight + 8}}
+                        component={"h3"}
+                        color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
+                        <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
+                    <div style={{paddingTop: 6}}>
+                        {rows.length > 0 &&
+                        <DotPlotTable isRowSelected={isRowSelected}
+                                      rows={rows}
+                                      columns={columns}
+                                      onMouseMove={this.onMouseMove}
+                                      onMouseOut={this.onMouseOut}
+                                      getTooltip={getTooltip}
+                                      sizeScale={jobResult.sizeScale}
+                                      valueScale={valueScale}
+                                      rowStart={rowStart}
+                                      getColor={getColor}
+                                      getSize={getSize}
+                                      getRowId={getRowId}
+                                      columnStart={columnStart}
+                                      onRowClick={this.onRowClick}
+                                      colorScale={jobResult.colorScale}
+                                      toggleAll={this.toggleAll}
+                                      rotateHeaders={rotateHeaders}
+                                      headerHeight={headerHeight}
+                                      headerWidth={headerWidth}/>}
+                    </div>
+                </>
+                }
+            </Box>
             <Dialog
                 open={this.state.browseJob != null}
                 onClose={this.onDeleteJobCancel}
@@ -662,10 +724,10 @@ class JobResultsPanel extends React.PureComponent {
                                 }
                                 const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
                                 const isComplete = isPrecomputed || jobResult.status === 'complete';
-                                const jobType = jobResult.type === 'de' ? 'Differential Expression' : 'Correlation';
+
                                 const status = isPrecomputed ? 'complete' : jobResult.status;
                                 const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
-
+                                const jobType = jobTypeToName[jobResult.type];
                                 // const date = isPrecomputed ? '' : jobResult.submitted;
                                 return <TableRow key={jobResult.id}
                                                  className={classes.deleteTr}
@@ -688,47 +750,6 @@ class JobResultsPanel extends React.PureComponent {
                     </Table>
                 </DialogContent>
             </Dialog>
-            <Box color="text.primary">
-                <Grid container alignItems="center" className={classes.toolbar}>
-                    {showBrowseJobs &&
-                    <Button size={"small"} onClick={this.onBrowseJobs} variant="outlined"
-                            color="primary">Browse All Results</Button>}
-                    {showBrowseJobs && jobResult && <Divider orientation="vertical" flexItem/>}
-                    {jobResult && <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
-                                                                        onClick={this.exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>}
-                </Grid>
-
-                {jobResult && <>
-                    <Typography
-                        style={{marginBottom: headerHeight + 8}}
-                        component={"h3"}
-                        color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
-                        <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
-                    <div style={{paddingTop: 6}}>
-                        {rows.length > 0 &&
-                        <DotPlotTable isRowSelected={isRowSelected}
-                                      rows={rows}
-                                      columns={columns}
-                                      onMouseMove={this.onMouseMove}
-                                      onMouseOut={this.onMouseOut}
-                                      getTooltip={getTooltip}
-                                      sizeScale={jobResult.sizeScale}
-                                      valueScale={valueScale}
-                                      rowStart={rowStart}
-                                      getColor={getColor}
-                                      getSize={getSize}
-                                      getRowId={getRowId}
-                                      columnStart={columnStart}
-                                      onRowClick={this.onRowClick}
-                                      colorScale={jobResult.colorScale}
-                                      toggleAll={this.toggleAll}
-                                      rotateHeaders={rotateHeaders}
-                                      headerHeight={headerHeight}
-                                      headerWidth={headerWidth}/>}
-                    </div>
-                </>
-                }
-            </Box>
         </>;
     };
 }
@@ -758,12 +779,12 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             setJobResult: (payload) => {
                 dispatch(setJobResult(payload));
-            },
+            }
         };
     }
 ;
 
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(JobResultsPanel));

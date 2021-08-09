@@ -17,22 +17,24 @@ import {groupBy} from 'lodash';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
-import {setDialog} from './actions';
+import {OPEN_DATASET_DIALOG, setDialog} from './actions';
 import {NATSORT, REACT_MD_OVERRIDES} from './util';
 
 export class DatasetSelector extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {open: false, searchText: '', datasetDetailsEl: null, selectedDataset: null};
+        this.state = {searchText: '', datasetDetailsEl: null, selectedDataset: null};
     }
 
     handleClick = (event) => {
-        this.setState({open: true, searchText: ''});
+        this.props.handleDialog(OPEN_DATASET_DIALOG);
+        this.setState({searchText: ''});
     };
 
     handleClose = () => {
-        this.setState({open: false, searchText: ''});
+        this.props.handleDialog(null);
+        this.setState({searchText: ''});
     };
 
     handleCloseDatasetDetails = (event) => {
@@ -52,7 +54,8 @@ export class DatasetSelector extends React.PureComponent {
         if (id !== selectedId) {
             this.props.onChange(id);
         }
-        this.setState({open: false, searchText: ''});
+        this.props.handleDialog(null);
+        this.setState({searchText: ''});
     };
 
     handleClearSearchText = () => {
@@ -64,13 +67,14 @@ export class DatasetSelector extends React.PureComponent {
     };
 
     render() {
-        const {dataset, datasetChoices} = this.props;
+        const {dataset, datasetChoices, dialog} = this.props;
         const selectedId = dataset != null ? dataset.id : null;
 
         if (datasetChoices.length <= 1 && selectedId != null) {
             return null;
         }
-        const {open, searchText, selectedDataset} = this.state;
+        const {searchText, selectedDataset} = this.state;
+        const open = dialog === OPEN_DATASET_DIALOG;
 
         let filteredChoices = datasetChoices;
         const searchTextLower = this.state.searchText.toLowerCase().trim();
@@ -121,7 +125,7 @@ export class DatasetSelector extends React.PureComponent {
                     onClose={this.handleClose}
                     fullWidth={true}
                 >
-                    <DialogContent style={{width: 500, height: 500}}>
+                    <DialogContent style={{width: 500}}>
                         <TextField style={{padding: 6}} type="text" placeholder={"Search"} value={searchText}
                                    onChange={this.onSearchChange}
                                    fullWidth={true}
@@ -137,45 +141,45 @@ export class DatasetSelector extends React.PureComponent {
                                            </InputAdornment>
                                    } : null}
                         />
-
-                        {speciesArray.length === 0 && searchText.trim() !== '' &&
-                        <Typography>No Results</Typography>}
-                        {speciesArray.map(species => {
-
-                            const speciesText = species === '' ? 'Other' : species;
-                            const choices = species2Items[species];
-                            choices.sort((a, b) => NATSORT(a.name, b.name));
-                            return <React.Fragment key={species}>
-                                <Typography component={"h2"}>{speciesText}</Typography>
-                                <List dense disablePadding component="nav">
-                                    {choices.map(choice => {
-                                        let text = choice.name;
-                                        if (choice.title) {
-                                            text += ' - ' + choice.title;
-                                        }
-                                        return <ListItem alignItems="flex-start" selected={choice.id === selectedId}
-                                                         key={choice.id}
-                                                         button
-                                                         onClick={(e) => this.handleListItemClick(choice.id)}>
-                                            <ListItemText
-                                                primary={text}
-                                                style={{
-                                                    textOverflow: 'ellipsis',
-                                                    overflow: 'hidden',
-                                                    whiteSpace: 'nowrap'
-                                                }}/>
-                                            <ListItemSecondaryAction>
-                                                <IconButton
-                                                    onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
-                                                    edge="end"
-                                                    aria-label="summary">
-                                                    <InfoIcon/>
-                                                </IconButton>
-                                            </ListItemSecondaryAction>
-                                        </ListItem>;
-                                    })}
-                                </List></React.Fragment>;
-                        })}
+                        <div style={{height: 500, overflow: 'auto'}}>
+                            {speciesArray.length === 0 && searchText.trim() !== '' &&
+                            <Typography>No Results</Typography>}
+                            {speciesArray.map(species => {
+                                const speciesText = species === '' ? 'Other' : species;
+                                const choices = species2Items[species];
+                                choices.sort((a, b) => NATSORT(a.name, b.name));
+                                return <React.Fragment key={species}>
+                                    <Typography component={"h2"}>{speciesText}</Typography>
+                                    <List dense disablePadding component="nav">
+                                        {choices.map(choice => {
+                                            let text = choice.name;
+                                            if (choice.title) {
+                                                text += ' - ' + choice.title;
+                                            }
+                                            return <ListItem alignItems="flex-start" selected={choice.id === selectedId}
+                                                             key={choice.id}
+                                                             button
+                                                             onClick={(e) => this.handleListItemClick(choice.id)}>
+                                                <ListItemText
+                                                    primary={text}
+                                                    style={{
+                                                        textOverflow: 'ellipsis',
+                                                        overflow: 'hidden',
+                                                        whiteSpace: 'nowrap'
+                                                    }}/>
+                                                <ListItemSecondaryAction>
+                                                    <IconButton
+                                                        onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
+                                                        edge="end"
+                                                        aria-label="summary">
+                                                        <InfoIcon/>
+                                                    </IconButton>
+                                                </ListItemSecondaryAction>
+                                            </ListItem>;
+                                        })}
+                                    </List></React.Fragment>;
+                            })}
+                        </div>
                     </DialogContent>
                 </Dialog>
             </React.Fragment>
@@ -186,14 +190,15 @@ export class DatasetSelector extends React.PureComponent {
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
+        dialog: state.dialog,
         datasetChoices: state.datasetChoices,
         serverInfo: state.serverInfo
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handleClose: value => {
-            dispatch(setDialog(null));
+        handleDialog: value => {
+            dispatch(setDialog(value));
         }
 
     };

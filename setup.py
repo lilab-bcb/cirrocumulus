@@ -29,18 +29,18 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.rst"), encodin
     long_description = f.read()
 
 requires = [
-        "anndata",
-        "CacheControl",
-        "flask",
-        "flask-compress",
-        "fsspec",
-        "gunicorn",
-        "loompy",
-        "numpy",
-        "pandas>=1.0",
-        "pyarrow",
-        "pymongo",
-        "scipy"
+    "anndata",
+    "CacheControl",
+    "flask",
+    "flask-compress",
+    "fsspec",
+    "gunicorn",
+    "loompy",
+    "numpy",
+    "pandas>=1.0",
+    "pyarrow",
+    "pymongo",
+    "scipy"
 ]
 
 setup(
@@ -52,24 +52,25 @@ setup(
     #         'install': PostInstallCommand,
     # },
     # version="2.0.2",
-    description="Single-cell visualization tool",
+    description="Single-cell visualization application",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     url="https://github.com/klarman-cell-observatory/cirrocumulus",
     author="Joshua Gould",
     author_email='jgould@broadinstitute.org',
     classifiers=[
-            "Intended Audience :: Developers",
-            "Intended Audience :: Science/Research",
-            "Natural Language :: English",
-            "Operating System :: MacOS :: MacOS X",
-            "Operating System :: Microsoft :: Windows",
-            "Operating System :: POSIX :: Linux",
-            "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Topic :: Scientific/Engineering :: Bio-Informatics",
-            "Topic :: Scientific/Engineering :: Visualization"
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Natural Language :: English",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
         test=['pytest']

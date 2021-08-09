@@ -224,7 +224,7 @@ function datasetChoices(state = [], action) {
     }
 }
 
-// set the selected embeddings, each embedding has name (str) e.g X_umap, nbins (int), _nbins (str), agg (str), bin (boolean), dimensions (int), precomputed (bool)
+// set the selected embeddings, each embedding has name (str) e.g X_umap, dimensions (int), mode (str)
 function embeddings(state = [], action) {
     switch (action.type) {
         case SET_SELECTED_EMBEDDING:
@@ -478,6 +478,7 @@ function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
     }
 }
 
+
 function jobResult(state = null, action) {
     switch (action.type) {
         case SET_DATASET:
@@ -577,6 +578,7 @@ function combineDatasetFilters(state = 'and', action) {
     }
 }
 
+
 // category -> value -> newValue
 function categoricalNames(state = {}, action) {
     switch (action.type) {
@@ -586,10 +588,10 @@ function categoricalNames(state = {}, action) {
                 category = {};
                 state[action.payload.name] = category;
             }
-            if (action.payload.value == null || action.payload.value === '') {
-                delete category[action.payload.oldValue];
+            if (action.payload.newValue == null || action.payload.newValue === '') {
+                delete category[action.payload.originalValue];
             } else {
-                category[action.payload.oldValue] = action.payload.value;
+                category[action.payload.originalValue] = action.payload.newValue;
             }
             return Object.assign({}, state);
         case SET_DATASET:
@@ -640,7 +642,7 @@ function sortEmbeddingTraces(traces) {
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
-            return sortEmbeddingTraces(action.payload);
+            return action.payload; // sortEmbeddingTraces(action.payload);
         case SET_SELECTION:
             state.forEach(trace => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {
