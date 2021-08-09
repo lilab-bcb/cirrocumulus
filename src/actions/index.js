@@ -38,7 +38,7 @@ import {
 
 export const API = process.env.REACT_APP_API_URL || 'api';
 const authScopes = [
-    'email',
+    'email'
     // 'profile',
     // 'https://www.googleapis.com/auth/userinfo.profile',
     // 'https://www.googleapis.com/auth/contacts.readonly',
@@ -165,7 +165,7 @@ export function initGapi() {
     return function (dispatch, getState) {
         dispatch(_setLoadingApp({loading: true, progress: 0}));
         const startTime = new Date().getTime();
-        const approximateColdBootTime = 32;
+        const approximateColdBootTime = 10;
 
         function loadingAppProgress() {
             if (getState().loadingApp.loading) {
@@ -201,7 +201,7 @@ export function initGapi() {
                 }
             });
         }
-        const getServerInfo = fetch(API + '/server').then(result => result.json())
+        const getServerInfo = fetch(API + '/server').then(result => result.json());
         return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
             if (serverInfo.clientId == null) {
@@ -244,7 +244,7 @@ export function initGapi() {
                     window.gapi.load('client:auth2', () => {
                         window.gapi.client.init({
                             clientId: serverInfo.clientId,
-                            scope: authScopes.join(' '),
+                            scope: authScopes.join(' ')
                         }).then(() => {
                             dispatch(_setLoadingApp({loading: false, progress: 0}));
                             dispatch(initLogin(true));
@@ -410,7 +410,7 @@ export function deleteFeatureSet(id) {
                     }
                 }
                 if (!found) {
-                    console.log('Unable to find feature set id ' + id)
+                    console.log('Unable to find feature set id ' + id);
                 }
                 dispatch(setMarkers(markers.slice()));
                 dispatch(setMessage('Set deleted'));
@@ -1018,6 +1018,9 @@ function restoreSavedView(savedView) {
                     });
                     savedView.embeddings = embeddings;
                     if (savedView.camera != null) {
+                        if (savedView.chartOptions == null) {
+                            savedView.chartOptions = {};
+                        }
                         savedView.chartOptions.camera = savedView.camera;
                     }
                 } else {
@@ -1025,7 +1028,7 @@ function restoreSavedView(savedView) {
                     if (selectedEmbedding) {
                         savedView.embeddings = [selectedEmbedding];
                         if (obsCat != null) {
-                            savedView.q = [{value: obsCat, type: 'obsCat'}]
+                            savedView.q = [{value: obsCat, type: 'obsCat'}];
                             savedView.activeFeature = {
                                 name: obsCat,
                                 type: 'obsCat',
@@ -1078,7 +1081,7 @@ function _loadSavedView() {
             }
         }
         if (savedView.link != null) {
-            dispatch(openView(savedView.link, true))
+            dispatch(openView(savedView.link, true));
         } else if (savedView.dataset != null) {
             dispatch(restoreSavedView(savedView));
         } else {
@@ -1520,7 +1523,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
 
         const initPromise = dataset.api.init(id, dataset.url);
-        const promises = [initPromise]
+        const promises = [initPromise];
 
         promises.push(dataset.api.getJobs(id).then(jobs => {
             jobResults = jobs;
@@ -1538,7 +1541,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             });
             newDataset.embeddings = embeddings;
         });
-        promises.push(schemaPromise)
+        promises.push(schemaPromise);
 
         if (!isDirectAccess) {
             const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
@@ -1893,7 +1896,7 @@ function updateEmbeddingData(state, features) {
         if (coordinates == null && embedding.mode != null) {
             const unbinnedCoords = cachedData[getEmbeddingKey(embedding, false)];
             const binnedValues = createEmbeddingDensity(unbinnedCoords[embedding.name + '_1'], unbinnedCoords[embedding.name + '_2']);
-            const binnedCoords = {}
+            const binnedCoords = {};
             binnedCoords[embedding.name + '_1'] = binnedValues.x;
             binnedCoords[embedding.name + '_2'] = binnedValues.y;
             binnedCoords[embedding.name + '_index'] = binnedValues.index;
@@ -2033,9 +2036,9 @@ function updateEmbeddingData(state, features) {
                     type: traceType
                 };
                 if (chartData.mode != null) {
-                    chartData.index = coordinates[embedding.name + '_index']
-                    chartData._values = chartData.values
-                    chartData.values = summarizeDensity(chartData.values, chartData.index, selection, chartData.continuous ? 'max' : 'mode')
+                    chartData.index = coordinates[embedding.name + '_index'];
+                    chartData._values = chartData.values;
+                    chartData.values = summarizeDensity(chartData.values, chartData.index, selection, chartData.continuous ? 'max' : 'mode');
                 }
                 if (traceType === TRACE_TYPE_SCATTER) {
                     chartData.positions = getPositions(chartData);
@@ -2150,9 +2153,10 @@ export function getDatasetStateJson(state) {
         embeddings: embeddings
     };
 
-    const chartRef = chartOptions.ref;
-    if (json.embeddings.length > 0 && chartRef != null && chartRef.scatterPlot) {
-        json.camera = chartRef.scatterPlot.getCameraDef();
+    const scatterPlot = chartOptions.scatterPlot;
+    console.log(scatterPlot);
+    if (json.embeddings.length > 0 && scatterPlot != null) {
+        json.camera = scatterPlot.getCameraDef();
 
     }
     if (activeFeature != null) {

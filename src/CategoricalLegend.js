@@ -22,6 +22,7 @@ class CategoricalLegend extends React.PureComponent {
             anchorEl: null,
             color: null,
             name: '',
+            sort: null,
             originalCategory: null,
             renamedCategory: null,
             forceUpdate: false,
@@ -122,6 +123,7 @@ class CategoricalLegend extends React.PureComponent {
             nObsSelected,
             categoricalNames
         } = this.props;
+        const {sort} = this.state;
         let clickEnabled = this.props.clickEnabled;
         const categoricalFilter = datasetFilter[name];
         const selectionSummary = featureSummary[name];
@@ -134,14 +136,7 @@ class CategoricalLegend extends React.PureComponent {
         const globalDimensionSummary = globalFeatureSummary[name];
         const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
         const renamedCategories = categoricalNames[name] || {};
-        if (dataset.categoryOrder && dataset.categoryOrder[name]) {
-            const orderedCategories = dataset.categoryOrder[name];
-            const categoryToIndex = new Map();
-            for (let i = 0; i < orderedCategories.length; i++) {
-                categoryToIndex.set(orderedCategories[i], i);
-            }
-            categories.sort((a, b) => categoryToIndex.get(a) - categoryToIndex.get(b));
-        } else {
+        if (sort === 'ascending' || sort === 'descending') {
             categories.sort((a, b) => {
                 let renamed1 = renamedCategories[a];
                 if (renamed1 != null) {
@@ -153,7 +148,20 @@ class CategoricalLegend extends React.PureComponent {
                 }
                 return NATSORT(a, b);
             });
+            if (sort === 'descending') {
+                categories.reverse();
+            }
         }
+        // if (dataset.categoryOrder && dataset.categoryOrder[name]) {
+        //     const orderedCategories = dataset.categoryOrder[name];
+        //     const categoryToIndex = new Map();
+        //     for (let i = 0; i < orderedCategories.length; i++) {
+        //         categoryToIndex.set(orderedCategories[i], i);
+        //     }
+        //     categories.sort((a, b) => categoryToIndex.get(a) - categoryToIndex.get(b));
+        // } else {
+
+        // }
         clickEnabled = clickEnabled && categories.length > 1;
         let style = {maxHeight: maxHeight, display: 'inline-block'};
         if (this.props.style) {
@@ -237,7 +245,7 @@ class CategoricalLegend extends React.PureComponent {
                         let renamed = renamedCategories[category];
                         let categoryTooltip = categoryText;
                         if (renamed !== undefined) {
-                            categoryTooltip = renamed + ' (renamed from ' + categoryTooltip + ')'
+                            categoryTooltip = renamed + ' (renamed from ' + categoryTooltip + ')';
                             categoryText = renamed;
 
                         }

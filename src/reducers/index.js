@@ -642,7 +642,7 @@ function sortEmbeddingTraces(traces) {
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
-            return sortEmbeddingTraces(action.payload);
+            return action.payload; // sortEmbeddingTraces(action.payload);
         case SET_SELECTION:
             state.forEach(trace => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {

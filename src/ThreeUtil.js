@@ -115,7 +115,7 @@ export function getPositions(trace) {
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
     const makeScaleRange = (range, base) => [
         -base * (range / maxRange),
-        base * (range / maxRange),
+        base * (range / maxRange)
     ];
     const xScale = makeScaleRange(xRange, halfCube);
     const yScale = makeScaleRange(yRange, halfCube);
@@ -214,7 +214,7 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
         const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
         const makeScaleRange = (range, base) => [
             -base * (range / maxRange),
-            base * (range / maxRange),
+            base * (range / maxRange)
         ];
         xScale = makeScaleRange(xRange, halfCube);
         yScale = makeScaleRange(yRange, halfCube);
@@ -250,7 +250,7 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     return {labels: labelValues, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData) {
+export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData, cameraDef) {
     const is3d = traceInfo.z != null;
     const colors = traceInfo.colors;
     let positions = traceInfo.positions;
@@ -270,6 +270,9 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
     scatterPlot.setDimensions(traceInfo.dimensions);
+    if (cameraDef) {
+        scatterPlot.updateFromCameraDef(cameraDef);
+    }
     let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
     spriteVisualizer.styles.fog.enabled = chartOptions.showFog;
     const axes = scatterPlot.scene.getObjectByName('axes');

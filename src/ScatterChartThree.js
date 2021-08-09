@@ -1,6 +1,6 @@
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
-import {bind} from 'lodash';
+import {bind, throttle} from 'lodash';
 import React from 'react';
 import {Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
@@ -65,14 +65,14 @@ const styles = theme => ({
 
     root: {
         '& > *': {
-            margin: theme.spacing(.4),
+            margin: theme.spacing(.4)
         },
         '& > .MuiIconButton-root': {
-            padding: 0,
+            padding: 0
         },
         '& > .cirro-active': {
             fill: 'rgb(220, 0, 78)',
-            color: 'rgb(220, 0, 78)',
+            color: 'rgb(220, 0, 78)'
         },
         '& > .cirro-inactive': {
             fill: 'rgba(0, 0, 0, 0.26)',
@@ -84,7 +84,7 @@ const styles = theme => ({
         display: 'inline-block',
         verticalAlign: 'top',
         whiteSpace: 'nowrap',
-        overflow: 'hidden',
+        overflow: 'hidden'
     }
 });
 
@@ -96,6 +96,7 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
         this.state = {forceUpdate: false};
+        this.cameraCallback = throttle(this.cameraCallback, 250);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -104,6 +105,7 @@ class ScatterChartThree extends React.PureComponent {
         }
         this.init();
         this.draw();
+        this.props.chartOptions.scatterPlot = this.scatterPlot;
     }
 
     componentDidMount() {
@@ -333,8 +335,13 @@ class ScatterChartThree extends React.PureComponent {
             this.props.chartOptions.animating = true;
         }
         this.props.setChartOptions(this.props.chartOptions);
+
     };
 
+    cameraCallback = (eventName) => {
+        const def = this.scatterPlot.getCameraDef();
+        this.props.onCamera(eventName, def);
+    };
 
     init() {
         if (this.scatterPlot == null) {
@@ -484,6 +491,14 @@ class ScatterChartThree extends React.PureComponent {
                     });
                 }
             };
+
+            this.scatterPlot.cameraCallback = (eventName) => {
+                if (this.scatterPlot.interactionMode === 'PAN' && this.props.trace.dimensions === 3) {
+                    // repaint gallery charts with same embedding
+                    this.cameraCallback(eventName);
+                }
+            };
+
             const canvas = this.containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
             const webglcontextlost = (e) => {
@@ -543,7 +558,7 @@ class ScatterChartThree extends React.PureComponent {
                 </ChartToolbar>
             </div>
 
-            <div data-testid='scatter-chart-three' style={{
+            <div data-testid="scatter-chart-three" style={{
                 display: 'inline-block',
                 width: this.props.chartSize.width,
                 height: this.props.chartSize.height

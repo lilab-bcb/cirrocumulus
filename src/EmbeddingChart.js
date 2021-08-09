@@ -1,7 +1,7 @@
 import {Tooltip, Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
-import {find} from 'lodash';
+import {find, throttle} from 'lodash';
 import React from 'react';
 
 
@@ -15,6 +15,7 @@ import {
     handleDomainChange,
     handleMeasureFilterUpdated,
     setChartOptions,
+    setEmbeddingData,
     setPrimaryChartSize
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
@@ -44,7 +45,6 @@ class EmbeddingChart extends React.PureComponent {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-
         if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
             this.setState({showDetails: true});
         }
@@ -54,6 +54,18 @@ class EmbeddingChart extends React.PureComponent {
         e.preventDefault();
         this.setState({showDetails: !this.state.showDetails});
     };
+
+    onCamera = (eventName, cameraDef) => {
+        const {embeddingData, activeFeature} = this.props;
+        const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
+        for (let i = 0, n = embeddingData.length; i < n; i++) {
+            if (primaryTrace.embedding.name === embeddingData[i].embedding.name) {
+                embeddingData[i].camera = cameraDef;
+            }
+        }
+        this.props.handleEmbeddingData(this.props.embeddingData.slice());
+    };
+
 
     render() {
         const {
@@ -124,7 +136,7 @@ class EmbeddingChart extends React.PureComponent {
                             showColorScheme={false}
                             height={30}
                             style={{
-                                display: this.state.showDetails ? 'block' : 'none',
+                                display: this.state.showDetails ? 'block' : 'none'
                             }}
                             handleUpdate={onMeasureFilterUpdated}
                             datasetFilter={datasetFilter}
@@ -139,7 +151,7 @@ class EmbeddingChart extends React.PureComponent {
                         <CategoricalLegend
                             key={primaryTrace.name}
                             style={{
-                                display: this.state.showDetails ? 'block' : 'none',
+                                display: this.state.showDetails ? 'block' : 'none'
                             }}
                             dataset={dataset}
                             datasetFilter={datasetFilter}
@@ -172,6 +184,7 @@ class EmbeddingChart extends React.PureComponent {
                                    unselectedMarkerOpacity={unselectedMarkerOpacity}
                                    color={primaryTrace.colors}
                                    onGallery={onGallery}
+                                   onCamera={this.onCamera}
                                    setTooltip={setTooltip}
 
                 />}
@@ -233,7 +246,7 @@ const mapStateToProps = state => {
         primaryChartSize: state.primaryChartSize,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity
     };
 };
 const mapDispatchToProps = dispatch => {
@@ -261,11 +274,14 @@ const mapDispatchToProps = dispatch => {
         },
         handlePrimaryChartSize: value => {
             dispatch(setPrimaryChartSize(value));
+        },
+        handleEmbeddingData: (value) => {
+            dispatch(setEmbeddingData(value));
         }
     };
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(EmbeddingChart));
 

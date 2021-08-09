@@ -64,7 +64,6 @@ class GalleryCharts extends React.PureComponent {
         }
         const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
-        // const DragHandle = sortableHandle(() => <span>::</span>);
         const SortableItem = sortableElement(({trace}) => <GalleryImage
             traceInfo={trace}
             obsCat={obsCat}
