@@ -7,6 +7,7 @@ import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {splitSearchTokens} from './util';
 import {findIndex} from 'lodash';
+import {setAxesColors} from './ScatterChartThree';
 
 function createContainer(chartSize) {
     const containerElement = document.createElement('div');
@@ -68,6 +69,7 @@ class GalleryCharts extends React.PureComponent {
             document.body.appendChild(this.containerElement);
             this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         }
+
         const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         const SortableItem = sortableElement(({trace}) => <GalleryImage

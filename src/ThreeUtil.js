@@ -1,7 +1,7 @@
 import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisualizerSvgLabels} from 'scatter-gl';
 import {Color, OrthographicCamera, Vector3} from 'three';
 import {getEmbeddingKey} from './actions';
-import {getVisualizer} from './ScatterChartThree';
+import {getVisualizer, setAxesColors} from './ScatterChartThree';
 import {indexSort, randomSeq, rankIndexArray} from './util';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
@@ -261,6 +261,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     if (updateZ) {
         positions = positions.slice();
     }
+
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
         colors[j] = isSelected ? markerOpacity : unselectedMarkerOpacity;
@@ -277,15 +278,22 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     spriteVisualizer.styles.fog.enabled = chartOptions.showFog;
     const axes = scatterPlot.scene.getObjectByName('axes');
     if (axes) {
+        setAxesColors(scatterPlot, chartOptions.darkMode);
         axes.visible = chartOptions.showAxis;
     }
     scatterPlot.setPointColors(colors);
     scatterPlot.setPointPositions(positions);
 
-    // const {scaleDefault, scaleSelected, scaleHover} = scatterPlot.styles.point;
-
     const scale = new Float32Array(traceInfo.x.length);
     scale.fill(pointSize);
+    if (!isSelectionEmpty && is3d && unselectedMarkerOpacity === 0) { // hide filtered points so they don't obscure non-filtered points
+        for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
+            if (colors[j] === 0) {
+                scale[i] = 0;
+            }
+        }
+
+    }
     scatterPlot.setPointScaleFactors(scale);
 
     const showLabels = obsCatKeys.length > 0;

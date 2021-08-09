@@ -4,7 +4,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import React from 'react';
 import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
-import {drawLabels, getVisualizer} from './ScatterChartThree';
+import {drawLabels, getVisualizer, setAxesColors} from './ScatterChartThree';
 import {
     getCategoryLabelsPositions,
     getLabels,
@@ -40,8 +40,10 @@ class GalleryImage extends React.PureComponent {
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
+
             updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
                 categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
+
             const canvas = containerElement.querySelector('canvas');
             const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
             let overlayUrl = null;
