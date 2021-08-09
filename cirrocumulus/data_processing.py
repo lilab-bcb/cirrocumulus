@@ -8,13 +8,23 @@ from cirrocumulus.ids_aggregator import IdsAggregator
 from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
-def get_mask(dataset_api, dataset, data_filter):
-    measures, dimensions, basis_list = data_filter_keys(data_filter)
+def get_mask(dataset_api, dataset, data_filters):
+    measures = set()
+    dimensions = set()
+    basis = set()
+    for data_filter in data_filters:
+        _measures, _dimensions, _basis = data_filter_keys(data_filter)
+        measures.update(_measures)
+        dimensions.update(_dimensions)
+        basis.update(_basis)
     keys = get_type_to_measures(measures)
     keys['obs'] = list(dimensions)
-    keys['basis'] = basis_list
+    keys['basis'] = list(basis)
     df = dataset_api.read_dataset(keys=keys, dataset=dataset)
-    return get_filter_expr(df, data_filter)
+    result = []
+    for data_filter in data_filters:
+        result.append(get_filter_expr(df, data_filter))
+    return result, df
 
 
 def apply_filter(df, data_filter):

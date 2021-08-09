@@ -32,23 +32,25 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     schema = dataset_api.schema(dataset)
     var_names = schema['var']
     nfeatures = len(var_names)
-    mask1 = get_mask(dataset_api, dataset, params['filter'])
+    filters = [params['filter']]
+    if job_type == 'de':
+        filters.append(params['filter2'])
+    masks, _ = get_mask(dataset_api, dataset, filters)
     batch_size = 1000  # TODO
     percent_expressed1 = np.zeros(nfeatures)
     percent_expressed2 = np.zeros(nfeatures)
     scores = np.zeros(nfeatures)
     pvals = np.ones(nfeatures)
     is_sparse = None
-    v1_size = mask1.sum()
+    v1_size = masks[0].sum()
 
     if job_type == 'de':
         avg_log2FC = np.zeros(nfeatures)
-        mask2 = get_mask(dataset_api, dataset, params['filter2'])
-        v2_size = mask2.sum()
+        v2_size = masks[1].sum()
 
     elif job_type == 'corr':
         df = dataset_api.read_dataset(keys=dict(X=[params['ref']]), dataset=dataset)
-        df = df[mask1]
+        df = df[masks[0]]
         ref = df[params['ref']]
         is_sparse = hasattr(ref, 'sparse')
         if is_sparse:
@@ -63,9 +65,9 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         end = min(nfeatures, start + batch_size)
         features = var_names[start:end]
         df = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
-        df1 = df[mask1]
+        df1 = df[masks[0]]
         if job_type == 'de':
-            df2 = df[mask2]
+            df2 = df[masks[1]]
             for feature in features:
                 v1 = df1[feature]
                 v2 = df2[feature]
