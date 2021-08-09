@@ -290,6 +290,9 @@ class ScatterChartThree extends React.PureComponent {
 
     resetCamera = () => {
         this.scatterPlot.resetZoom();
+        if (this.scatterPlot.interactionMode === 'PAN' && this.props.trace.dimensions === 3) {
+            this.props.onCamera('change', this.scatterPlot.getCameraDef());
+        }
     };
 
 
@@ -339,8 +342,7 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     cameraCallback = (eventName) => {
-        const def = this.scatterPlot.getCameraDef();
-        this.props.onCamera(eventName, def);
+        this.props.onCamera(eventName, this.scatterPlot.getCameraDef());
     };
 
     init() {

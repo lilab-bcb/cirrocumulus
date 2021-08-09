@@ -1,7 +1,7 @@
 import {Tooltip, Typography} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
-import {find, throttle} from 'lodash';
+import {find} from 'lodash';
 import React from 'react';
 
 

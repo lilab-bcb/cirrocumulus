@@ -1835,9 +1835,11 @@ function _updateCharts(onError) {
                 globalFeatureSummary[key] = newSummary[key];
             }
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
-            updateEmbeddingData(state, features);
+            const newEmbeddingData = getNewEmbeddingData(state, features);
+            embeddingData = embeddingData.concat(newEmbeddingData);
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
-            dispatch(setEmbeddingData(embeddingData.slice()));
+            dispatch(setEmbeddingData(embeddingData));
+            dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection, false));
             } else { // clear selection
@@ -1856,6 +1858,16 @@ function _updateCharts(onError) {
 }
 
 
+function getNewActiveFeature(embeddingData) {
+    let traces = embeddingData.filter(trace => trace.active);
+    if (traces.length === 0) {
+        return null;
+    }
+    const trace = traces[traces.length - 1];
+    const embeddingKey = getTraceKey(trace); // last feature becomes primary
+    return {name: trace.name, type: trace.featureType, embeddingKey: embeddingKey};
+}
+
 function getFeatureType(dataset, feature) {
     if (feature === '__count') {
         return FEATURE_TYPE.COUNT;
@@ -1869,9 +1881,10 @@ function getFeatureType(dataset, feature) {
 
 
 // depends on global feature summary
-function updateEmbeddingData(state, features) {
+function getNewEmbeddingData(state, features) {
     const embeddings = state.embeddings;
-    let embeddingData = state.embeddingData;
+    const embeddingData = state.embeddingData;
+    const newEmbeddingData = [];
     const globalFeatureSummary = state.globalFeatureSummary;
     const interpolator = state.interpolator;
     const dataset = state.dataset;
@@ -2093,10 +2106,11 @@ function updateEmbeddingData(state, features) {
                     });
                 }
 
-                embeddingData.push(chartData);
+                newEmbeddingData.push(chartData);
             }
         });
     });
+    return newEmbeddingData;
 
 }
 
