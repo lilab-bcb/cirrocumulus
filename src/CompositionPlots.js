@@ -40,8 +40,9 @@ function createSorter(name, categoryOrder, categoricalNames) {
 
 function getComposition(dataset, obsCat, cachedData, categoricalNames, selection) {
     const ncategories = obsCat.length;
-
+    const maxCategories = 100;
     if (ncategories >= 2) {
+        let nseries = 0;
         let categoryValues = [];
         let nObs = dataset.shape[0];
         const renamedDimensions = [];
@@ -77,6 +78,10 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
                 valueToCounts = {};
                 seriesToSeriesArray[seriesKey] = seriesArray;
                 seriesToValueToCounts[seriesKey] = valueToCounts;
+                nseries++;
+                if (nseries > maxCategories) {
+                    return null;
+                }
             }
             let category = categoryValues[dimensionIndex][i];
             const nameMap = renamedDimensions[dimensionIndex];
@@ -131,18 +136,16 @@ function CompositionPlots(props) {
         const dimension = obsCat[obsCat.length - 1];
         const colorScale = getColorScale(embeddingData, dimension);
         const composition = getComposition(dataset, obsCat, cachedData, categoricalNames);
-        if (composition == null) {
-            return null;
-        }
+
         const textColor = chartOptions.darkMode ? 'white' : 'black';
         const selectedComposition = selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
         const title = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
-        return <><CompositionPlot seriesToValueToCounts={composition.seriesToValueToCounts}
-                                  dimension={dimension}
-                                  title={title}
-                                  colorScale={colorScale} series={composition.series}
-                                  uniqueValues={composition.uniqueValues}
-                                  textColor={textColor}/>
+        return <>{composition && <CompositionPlot seriesToValueToCounts={composition.seriesToValueToCounts}
+                                                  dimension={dimension}
+                                                  title={title}
+                                                  colorScale={colorScale} series={composition.series}
+                                                  uniqueValues={composition.uniqueValues}
+                                                  textColor={textColor}/>}
 
             {selectedComposition &&
             <CompositionPlot seriesToValueToCounts={selectedComposition.seriesToValueToCounts}
@@ -151,7 +154,8 @@ function CompositionPlots(props) {
                              subtitle="selection"
                              colorScale={colorScale} series={selectedComposition.series}
                              uniqueValues={selectedComposition.uniqueValues}
-                             textColor={textColor}/>}</>;
+                             textColor={textColor}/>}
+        </>;
     }
     return null;
 }
@@ -172,6 +176,6 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(CompositionPlots));
 
