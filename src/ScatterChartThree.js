@@ -2,7 +2,7 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import {bind, throttle} from 'lodash';
 import React from 'react';
-import {Vector3, Vector4} from 'three';
+import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
@@ -88,6 +88,13 @@ const styles = theme => ({
     }
 });
 
+export function setAxesColors(scatterPlot, darkMode) {
+    const axes = scatterPlot.scene.getObjectByName('axes');
+    if (axes) {
+        axes.setColors(darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
+    }
+}
+
 class ScatterChartThree extends React.PureComponent {
 
     constructor(props) {
@@ -105,6 +112,7 @@ class ScatterChartThree extends React.PureComponent {
         }
         this.init();
         this.draw();
+        setAxesColors(this.scatterPlot, this.props.chartOptions.darkMode);
         this.props.chartOptions.scatterPlot = this.scatterPlot;
     }
 
@@ -290,6 +298,9 @@ class ScatterChartThree extends React.PureComponent {
 
     resetCamera = () => {
         this.scatterPlot.resetZoom();
+        if (this.scatterPlot.interactionMode === 'PAN' && this.props.trace.dimensions === 3) {
+            this.props.onCamera('change', this.scatterPlot.getCameraDef());
+        }
     };
 
 
@@ -339,8 +350,7 @@ class ScatterChartThree extends React.PureComponent {
     };
 
     cameraCallback = (eventName) => {
-        const def = this.scatterPlot.getCameraDef();
-        this.props.onCamera(eventName, def);
+        this.props.onCamera(eventName, this.scatterPlot.getCameraDef());
     };
 
     init() {
@@ -360,6 +370,7 @@ class ScatterChartThree extends React.PureComponent {
             const axes = this.scatterPlot.scene.getObjectByName('axes');
             if (axes) {
                 axes.visible = this.props.chartOptions.showAxis;
+                axes.setColors(this.props.chartOptions.darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
             }
             let spriteVisualizer = getVisualizer(this.scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.styles.fog.enabled = this.props.chartOptions.showFog;
@@ -528,9 +539,10 @@ class ScatterChartThree extends React.PureComponent {
             selection,
             pointSize,
             chartOptions,
-            categoricalNames
+            categoricalNames,
+            unselectedPointSize
         } = this.props;
-        updateScatterChart(this.scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
+        updateScatterChart(this.scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }
 

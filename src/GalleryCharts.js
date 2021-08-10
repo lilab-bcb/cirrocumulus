@@ -6,6 +6,7 @@ import {getTraceKey, setActiveFeature, setEmbeddingData} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {splitSearchTokens} from './util';
+import {findIndex} from 'lodash';
 
 function createContainer(chartSize) {
     const containerElement = document.createElement('div');
@@ -35,9 +36,14 @@ class GalleryCharts extends React.PureComponent {
     };
 
     onSortEnd = (galleryTraces, e) => {
-        galleryTraces[e.oldIndex].sortIndex = e.newIndex;
-        galleryTraces[e.newIndex].sortIndex = e.oldIndex;
-        this.props.handleEmbeddingData(this.props.embeddingData.slice());
+        const oldTrace = galleryTraces[e.oldIndex];
+        const newTrace = galleryTraces[e.newIndex];
+        const embeddingData = this.props.embeddingData;
+        const oldIndex = findIndex(embeddingData, oldTrace);
+        const newIndex = findIndex(embeddingData, newTrace);
+        embeddingData.splice(oldIndex, 1);
+        embeddingData.splice(newIndex, 0, oldTrace);
+        this.props.handleEmbeddingData(embeddingData.slice());
     };
 
 
@@ -54,7 +60,8 @@ class GalleryCharts extends React.PureComponent {
             primaryChartSize,
             searchTokens,
             selection,
-            unselectedMarkerOpacity
+            unselectedMarkerOpacity,
+            unselectedPointSize
         } = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
@@ -62,6 +69,7 @@ class GalleryCharts extends React.PureComponent {
             document.body.appendChild(this.containerElement);
             this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
         }
+
         const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
         const SortableItem = sortableElement(({trace}) => <GalleryImage
@@ -72,6 +80,7 @@ class GalleryCharts extends React.PureComponent {
             markerOpacity={markerOpacity}
             chartOptions={chartOptions}
             pointSize={pointSize}
+            unselectedPointSize={unselectedPointSize}
             primaryChartSize={primaryChartSize}
             chartSize={chartSize}
             categoricalNames={categoricalNames}
@@ -92,10 +101,10 @@ class GalleryCharts extends React.PureComponent {
         });
 
         return (
-                <SortableList
-                    distance={2}
-                    axis="xy" items={galleryTraces}
-                    onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>
+            <SortableList
+                distance={2}
+                axis="xy" items={galleryTraces}
+                onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>
         );
     }
 }
@@ -114,6 +123,7 @@ const mapStateToProps = state => {
         searchTokens: state.searchTokens,
         selection: state.selection,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        unselectedPointSize: state.unselectedPointSize
     };
 };
 const mapDispatchToProps = dispatch => {
@@ -128,6 +138,6 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(GalleryCharts));
 

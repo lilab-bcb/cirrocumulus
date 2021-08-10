@@ -96,6 +96,7 @@ export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
 export const SET_POINT_SIZE = 'SET_POINT_SIZE';
+export const SET_UNSELECTED_POINT_SIZE = 'SET_UNSELECTED_POINT_SIZE';
 
 export const SET_EMAIL = 'SET_EMAIL';
 export const SET_USER = 'SET_USER';
@@ -896,6 +897,10 @@ export function restoreView(payload) {
 
 export function setPointSize(payload) {
     return {type: SET_POINT_SIZE, payload: payload};
+}
+
+export function setUnselectedPointSize(payload) {
+    return {type: SET_UNSELECTED_POINT_SIZE, payload: payload};
 }
 
 export function setMarkerSize(payload) {
@@ -1835,9 +1840,11 @@ function _updateCharts(onError) {
                 globalFeatureSummary[key] = newSummary[key];
             }
             dispatch(setGlobalFeatureSummary(globalFeatureSummary));
-            updateEmbeddingData(state, features);
+            const newEmbeddingData = getNewEmbeddingData(state, features);
+            embeddingData = embeddingData.concat(newEmbeddingData);
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
-            dispatch(setEmbeddingData(embeddingData.slice()));
+            dispatch(setEmbeddingData(embeddingData));
+            dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection, false));
             } else { // clear selection
@@ -1856,6 +1863,16 @@ function _updateCharts(onError) {
 }
 
 
+function getNewActiveFeature(embeddingData) {
+    let traces = embeddingData.filter(trace => trace.active);
+    if (traces.length === 0) {
+        return null;
+    }
+    const trace = traces[traces.length - 1];
+    const embeddingKey = getTraceKey(trace); // last feature becomes primary
+    return {name: trace.name, type: trace.featureType, embeddingKey: embeddingKey};
+}
+
 function getFeatureType(dataset, feature) {
     if (feature === '__count') {
         return FEATURE_TYPE.COUNT;
@@ -1869,9 +1886,10 @@ function getFeatureType(dataset, feature) {
 
 
 // depends on global feature summary
-function updateEmbeddingData(state, features) {
+function getNewEmbeddingData(state, features) {
     const embeddings = state.embeddings;
-    let embeddingData = state.embeddingData;
+    const embeddingData = state.embeddingData;
+    const newEmbeddingData = [];
     const globalFeatureSummary = state.globalFeatureSummary;
     const interpolator = state.interpolator;
     const dataset = state.dataset;
@@ -2093,10 +2111,11 @@ function updateEmbeddingData(state, features) {
                     });
                 }
 
-                embeddingData.push(chartData);
+                newEmbeddingData.push(chartData);
             }
         });
     });
+    return newEmbeddingData;
 
 }
 

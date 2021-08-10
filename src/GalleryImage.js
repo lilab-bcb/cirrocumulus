@@ -34,14 +34,17 @@ class GalleryImage extends React.PureComponent {
             scatterPlot,
             selection,
             traceInfo,
-            unselectedMarkerOpacity
+            unselectedMarkerOpacity,
+            unselectedPointSize
         } = this.props;
 
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = this.zoomFactor;
-            updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
+
+            updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
                 categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
+
             const canvas = containerElement.querySelector('canvas');
             const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
             let overlayUrl = null;

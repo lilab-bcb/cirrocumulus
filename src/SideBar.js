@@ -46,7 +46,7 @@ import {
     setSearchTokens,
     setSelectedEmbedding,
     setTab,
-    setUnselectedMarkerOpacity,
+    setUnselectedMarkerOpacity, setUnselectedPointSize,
     submitJob,
     toggleEmbeddingLabel
 } from './actions';
@@ -67,7 +67,7 @@ const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'
 }, {value: 1, label: '100%'}, {value: 1.5, label: '150%'}, {value: 2, label: '200%'}, {
     value: 3,
     label: '300%'
-}, {value: 4, label: '400%'}];
+}, {value: 4, label: '400%'}, {value: 5, label: '500%'}];
 const gallerySizeOptions = [{value: 200, label: 'Extra Small'}, {value: 300, label: 'Small'}, {
     value: 500,
     label: 'Medium'
@@ -245,6 +245,8 @@ class SideBar extends React.PureComponent {
     };
 
     onUnselectedMarkerOpacityChange = (event, value) => {
+        value = 0.01;
+        console.log(value);
         this.setState({unselectedOpacity: value});
         this.updateUnselectedMarkerOpacity(value);
     };
@@ -272,6 +274,10 @@ class SideBar extends React.PureComponent {
 
     onPointSizeChange = (event) => {
         this.props.handlePointSize(event.target.value);
+    };
+
+    onUnselectedPointSizeChange = (event) => {
+        this.props.handleUnselectedPointSize(event.target.value);
     };
 
 
@@ -360,7 +366,8 @@ class SideBar extends React.PureComponent {
             selection,
             serverInfo,
             tab,
-            textColor
+            textColor,
+            unselectedPointSize
         } = this.props;
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         const chartType = distributionPlotOptions.chartType;
@@ -555,6 +562,22 @@ class SideBar extends React.PureComponent {
                     </FormControl>
 
                     <FormControl className={classes.formControl}>
+                        <InputLabel htmlFor="filtered_point_size">Filtered Marker Size</InputLabel>
+                        <Select
+                            className={classes.select}
+                            input={<Input id="filtered_point_size"/>}
+                            onChange={this.onUnselectedPointSizeChange}
+                            value={unselectedPointSize}
+                            multiple={false}>
+                            {pointSizeOptions.map(item => (
+                                <MenuItem key={item.label} value={item.value}>
+                                    <ListItemText primary={item.label}/>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl className={classes.formControl}>
                         <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
                         <Select
                             className={classes.select}
@@ -690,6 +713,7 @@ const mapStateToProps = state => {
             serverInfo: state.serverInfo,
             tab: state.tab,
             textColor: state.textColor,
+            unselectedPointSize: state.unselectedPointSize,
             unselectedMarkerOpacity: state.unselectedMarkerOpacity
         };
     }
@@ -720,9 +744,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             handleCombineDatasetFilters: (value) => {
                 dispatch(setCombineDatasetFilters(value));
             },
-            downloadSelectedIds: () => {
-                dispatch(downloadSelectedIds());
-            },
             removeDatasetFilter: (filter) => {
                 dispatch(removeDatasetFilter(filter));
             },
@@ -731,6 +752,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             },
             handlePointSize: value => {
                 dispatch(setPointSize(value));
+            },
+            handleUnselectedPointSize: value => {
+                dispatch(setUnselectedPointSize(value));
             },
             handleMarkerOpacity: value => {
                 dispatch(setMarkerOpacity(value));

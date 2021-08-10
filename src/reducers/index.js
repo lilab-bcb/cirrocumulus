@@ -14,7 +14,6 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY,
     DELETE_DATASET,
-    getTraceKey,
     RESTORE_VIEW,
     SET_ACTIVE_FEATURE,
     SET_CATEGORICAL_COLOR,
@@ -55,8 +54,9 @@ import {
     SET_SERVER_INFO,
     SET_TAB,
     SET_UNSELECTED_MARKER_OPACITY,
+    SET_UNSELECTED_POINT_SIZE,
     SET_USER,
-    UPDATE_DATASET,
+    UPDATE_DATASET
 } from '../actions';
 import {createCategoryToStats} from '../MetaEmbedding';
 import {
@@ -534,7 +534,6 @@ function datasetFilters(state = [], action) {
         case SET_DATASET:
             return [];
         case SET_DATASET_FILTERS:
-            //action.payload.sort()
             return action.payload;
         default:
             return state;
@@ -612,37 +611,12 @@ function cachedData(state = {}, action) {
 
 }
 
-function sortEmbeddingTraces(traces) {
-    // sort by feature insertion order, then embedding
-    const featureToMinIndex = {};
-    for (let i = 0; i < traces.length; i++) {
-        let prior = featureToMinIndex[traces[i].name];
-        let index = i;
-        if (prior !== undefined) {
-            index = Math.min(index, prior);
-        }
-        featureToMinIndex[traces[i].name] = index;
-    }
-    traces.sort((a, b) => {
-        if (a.name === b.name) {
-            const val = NATSORT(a.embedding.name, b.embedding.name);
-            if (val !== 0) {
-                return val;
-            }
-        }
-        // sortIndex added if user drags and drops gallery chart
-        const index1 = a.sortIndex !== undefined ? a.sortIndex : featureToMinIndex[a.name];
-        const index2 = b.sortIndex !== undefined ? b.sortIndex : featureToMinIndex[b.name];
-        return index1 - index2;
-    });
-    return traces;
-}
 
 // each item has  data (list of traces, each trace has x, y, etc.), layout
 function embeddingData(state = [], action) {
     switch (action.type) {
         case SET_EMBEDDING_DATA :
-            return action.payload; // sortEmbeddingTraces(action.payload);
+            return action.payload;
         case SET_SELECTION:
             state.forEach(trace => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {
@@ -718,6 +692,17 @@ export function pointSize(state = DEFAULT_POINT_SIZE, action) {
     }
 }
 
+export function unselectedPointSize(state = DEFAULT_POINT_SIZE, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_POINT_SIZE:
+            return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.unselectedPointSize != null ? action.payload.unselectedPointSize : state;
+        default:
+            return state;
+    }
+}
+
 
 // used to restore state when toggling datasets
 export function savedDatasetState(state = {}, action) {
@@ -736,14 +721,6 @@ export function activeFeature(state = {}, action) {
             return null;
         case SET_ACTIVE_FEATURE:
             return action.payload;
-        case SET_EMBEDDING_DATA:
-            let traces = action.payload.filter(trace => trace.active);
-            if (traces.length === 0) {
-                return null;
-            }
-            const trace = traces[traces.length - 1];
-            const embeddingKey = getTraceKey(trace); // last feature becomes primary
-            return {name: trace.name, type: trace.featureType, embeddingKey: embeddingKey};
         default:
             return state;
     }
@@ -809,5 +786,6 @@ export default combineReducers({
     serverInfo,
     tab,
     unselectedMarkerOpacity,
+    unselectedPointSize,
     user
 });
