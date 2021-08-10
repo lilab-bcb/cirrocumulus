@@ -54,6 +54,7 @@ import {
     SET_SERVER_INFO,
     SET_TAB,
     SET_UNSELECTED_MARKER_OPACITY,
+    SET_UNSELECTED_POINT_SIZE,
     SET_USER,
     UPDATE_DATASET
 } from '../actions';
@@ -691,6 +692,17 @@ export function pointSize(state = DEFAULT_POINT_SIZE, action) {
     }
 }
 
+export function unselectedPointSize(state = DEFAULT_POINT_SIZE, action) {
+    switch (action.type) {
+        case SET_UNSELECTED_POINT_SIZE:
+            return action.payload;
+        case RESTORE_VIEW:
+            return action.payload.unselectedPointSize != null ? action.payload.unselectedPointSize : state;
+        default:
+            return state;
+    }
+}
+
 
 // used to restore state when toggling datasets
 export function savedDatasetState(state = {}, action) {
@@ -774,5 +786,6 @@ export default combineReducers({
     serverInfo,
     tab,
     unselectedMarkerOpacity,
+    unselectedPointSize,
     user
 });

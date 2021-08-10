@@ -539,9 +539,10 @@ class ScatterChartThree extends React.PureComponent {
             selection,
             pointSize,
             chartOptions,
-            categoricalNames
+            categoricalNames,
+            unselectedPointSize
         } = this.props;
-        updateScatterChart(this.scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize,
+        updateScatterChart(this.scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }
 

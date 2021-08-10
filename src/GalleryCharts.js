@@ -7,7 +7,6 @@ import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {splitSearchTokens} from './util';
 import {findIndex} from 'lodash';
-import {setAxesColors} from './ScatterChartThree';
 
 function createContainer(chartSize) {
     const containerElement = document.createElement('div');
@@ -61,7 +60,8 @@ class GalleryCharts extends React.PureComponent {
             primaryChartSize,
             searchTokens,
             selection,
-            unselectedMarkerOpacity
+            unselectedMarkerOpacity,
+            unselectedPointSize
         } = this.props;
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
@@ -80,6 +80,7 @@ class GalleryCharts extends React.PureComponent {
             markerOpacity={markerOpacity}
             chartOptions={chartOptions}
             pointSize={pointSize}
+            unselectedPointSize={unselectedPointSize}
             primaryChartSize={primaryChartSize}
             chartSize={chartSize}
             categoricalNames={categoricalNames}
@@ -121,7 +122,8 @@ const mapStateToProps = state => {
         primaryChartSize: state.primaryChartSize,
         searchTokens: state.searchTokens,
         selection: state.selection,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        unselectedPointSize: state.unselectedPointSize
     };
 };
 const mapDispatchToProps = dispatch => {

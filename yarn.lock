@@ -2075,11 +2075,6 @@
   dependencies:
     "@types/jest" "*"
 
-"@types/three@^0.128.0":
-  version "0.128.0"
-  resolved "https://registry.yarnpkg.com/@types/three/-/three-0.128.0.tgz#e5ce4c42d138a64dd90e83dbdb9919cf0d424d8e"
-  integrity sha512-Jwq5XYUkzAcPTo34hlGAQGUyAI0b2F3aCCFWG/v7ZhJBEG5HGcusMSr70GhDlT8Gs0f02QnSPZ2RCA1MrCOa/w==
-
 "@types/uglify-js@*":
   version "3.13.0"
   resolved "https://registry.yarnpkg.com/@types/uglify-js/-/uglify-js-3.13.0.tgz#1cad8df1fb0b143c5aba08de5712ea9d1ff71124"
@@ -10574,14 +10569,6 @@ saxes@^5.0.1:
   integrity sha512-5LBh1Tls8c9xgGjw3QrMwETmTMVk0oFgvrFSvWx62llR2hcEInrKNZ2GZCCuuy2lvWrdl5jhbpeqc5hRYKFOcw==
   dependencies:
     xmlchars "^2.2.0"
-
-"scatter-gl@git+https://github.com/joshua-gould/scatter-gl.git#1.0.2":
-  version "0.0.4"
-  resolved "git+https://github.com/joshua-gould/scatter-gl.git#d91b14a0e95f577ac0c6c4106405a132a516159f"
-  dependencies:
-    "@types/three" "^0.128.0"
-    simplify-js "^1.2.4"
-    three "^0.131.3"
 
 scheduler@^0.20.2:
   version "0.20.2"

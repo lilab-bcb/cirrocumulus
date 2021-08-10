@@ -96,6 +96,7 @@ export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
 export const SET_POINT_SIZE = 'SET_POINT_SIZE';
+export const SET_UNSELECTED_POINT_SIZE = 'SET_UNSELECTED_POINT_SIZE';
 
 export const SET_EMAIL = 'SET_EMAIL';
 export const SET_USER = 'SET_USER';
@@ -896,6 +897,10 @@ export function restoreView(payload) {
 
 export function setPointSize(payload) {
     return {type: SET_POINT_SIZE, payload: payload};
+}
+
+export function setUnselectedPointSize(payload) {
+    return {type: SET_UNSELECTED_POINT_SIZE, payload: payload};
 }
 
 export function setMarkerSize(payload) {

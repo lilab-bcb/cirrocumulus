@@ -94,7 +94,8 @@ class EmbeddingChart extends React.PureComponent {
             selection,
             setTooltip,
             shape,
-            unselectedMarkerOpacity
+            unselectedMarkerOpacity,
+            unselectedPointSize
         } = this.props;
 
         if (activeFeature == null) {
@@ -180,6 +181,7 @@ class EmbeddingChart extends React.PureComponent {
                                    selection={selection}
                                    onSelected={onSelect}
                                    pointSize={pointSize}
+                                   unselectedPointSize={unselectedPointSize}
                                    markerOpacity={markerOpacity}
                                    unselectedMarkerOpacity={unselectedMarkerOpacity}
                                    color={primaryTrace.colors}
@@ -246,7 +248,8 @@ const mapStateToProps = state => {
         primaryChartSize: state.primaryChartSize,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
-        unselectedMarkerOpacity: state.unselectedMarkerOpacity
+        unselectedMarkerOpacity: state.unselectedMarkerOpacity,
+        unselectedPointSize: state.unselectedPointSize
     };
 };
 const mapDispatchToProps = dispatch => {

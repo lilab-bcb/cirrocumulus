@@ -37,7 +37,6 @@
     "react-window": "^1.8.6",
     "redux": "^4.1.1",
     "redux-thunk": "^2.3.0",
-    "scatter-gl": "git+https://github.com/joshua-gould/scatter-gl.git#1.0.2",
     "simplify-js": "^1.2.4",
     "three": "^0.131.3",
     "web-vitals": "^2.0.1"

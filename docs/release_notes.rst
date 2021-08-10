@@ -1,5 +1,9 @@
 Release Notes
 -------------
+- 1.1.17.post2 `June 29, 2021`
+    * Preserve category order only when < 1000 categories
+    * Synchronize gallery chart rotation with primary view
+
 - 1.1.17.post1 `June 29, 2021`
     * Fixed error computing differential expression results when using `cirro launch`
 
