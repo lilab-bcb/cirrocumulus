@@ -1,6 +1,6 @@
 import withStyles from '@material-ui/core/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
-import {bind, throttle} from 'lodash';
+import {bind} from 'lodash';
 import React from 'react';
 import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
@@ -103,7 +103,6 @@ class ScatterChartThree extends React.PureComponent {
         this.scatterPlot = null;
         this.lastHoverIndex = -1;
         this.state = {forceUpdate: false};
-        this.cameraCallback = throttle(this.cameraCallback, 250);
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -506,7 +505,9 @@ class ScatterChartThree extends React.PureComponent {
             this.scatterPlot.cameraCallback = (eventName) => {
                 if (this.scatterPlot.interactionMode === 'PAN' && this.props.trace.dimensions === 3) {
                     // repaint gallery charts with same embedding
-                    this.cameraCallback(eventName);
+                    if (eventName === 'end') {
+                        this.cameraCallback(eventName);
+                    }
                 }
             };
 
