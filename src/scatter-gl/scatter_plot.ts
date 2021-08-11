@@ -104,7 +104,7 @@ export class ScatterPlot {
     private lassoCallback: (points: Point[], appendToSelection: boolean) => void = () => {
     };
 
-    private cameraCallback: ( eventName:string, cameraPosition: Vector3, cameraTarget: Vector3) => void = () => {
+    private cameraCallback: (eventName: string, cameraPosition: Vector3, cameraTarget: Vector3) => void = () => {
     };
     // Array of visualizers
     private visualizers: ScatterPlotVisualizer[] = [];
@@ -174,11 +174,11 @@ export class ScatterPlot {
     }
 
     private addInteractionListeners() {
-        this.container.addEventListener('pointerout', this.onMouseOut.bind(this));
-        this.container.addEventListener('pointerenter', this.onMouseOut.bind(this));
-        this.container.addEventListener('pointermove', this.onMouseMove.bind(this));
-        this.container.addEventListener('pointerdown', this.onMouseDown.bind(this));
-        this.container.addEventListener('pointerup', this.onMouseUp.bind(this));
+        this.container.addEventListener('pointerout', this.onPointerOut.bind(this));
+        this.container.addEventListener('pointerenter', this.onPointerOut.bind(this));
+        this.container.addEventListener('pointermove', this.onPointerMove.bind(this));
+        this.container.addEventListener('pointerdown', this.onPointerDown.bind(this));
+        this.container.addEventListener('pointerup', this.onPointerUp.bind(this));
         // this.container.addEventListener('click', this.onClick.bind(this));
         window.addEventListener('keydown', this.onKeyDown.bind(this), false);
         window.addEventListener('keyup', this.onKeyUp.bind(this), false);
@@ -369,6 +369,7 @@ export class ScatterPlot {
             this.selecting = false;
             this.container.style.cursor = 'default';
         }
+        this.orbitCameraControls.enabled = !this.selecting;
     }
 
     // private onClick(e: MouseEvent | null, notify = true) {
@@ -385,7 +386,7 @@ export class ScatterPlot {
     //     this.render();
     // }
 
-    private onMouseDown(e: MouseEvent) {
+    private onPointerDown(e: PointerEvent) {
         this.isDragSequence = false;
         this.mouseIsDown = true;
         if (this.selecting) {
@@ -414,11 +415,9 @@ export class ScatterPlot {
     }
 
     /** When we stop dragging/zooming, return to normal behavior. */
-    private onMouseUp(e: any) {
+    private onPointerUp(e: PointerEvent) {
         if (this.selecting) {
-            this.orbitCameraControls.enabled = true;
             this.rectangleSelector.onMouseUp();
-            // this.render();
         }
         this.mouseIsDown = false;
     }
@@ -428,7 +427,7 @@ export class ScatterPlot {
      * When the mouse moves, find the nearest point (if any) and send it to the
      * hoverlisteners (usually called from embedding.ts)
      */
-    private onMouseMove(e: MouseEvent) {
+    private onPointerMove(e: PointerEvent) {
         this.isDragSequence = this.mouseIsDown;
         // Depending if we're selecting or just navigating, handle accordingly.
         if (this.selecting && this.mouseIsDown) {
@@ -439,11 +438,10 @@ export class ScatterPlot {
             this.hoverPoint.x = e.offsetX;
             this.hoverPoint.y = e.offsetY;
             this.hoverCallback(this.hoverPoint);
-
         }
     }
 
-    private onMouseOut(e: MouseEvent) {
+    private onPointerOut(e: PointerEvent) {
         if (!this.selecting) {
             this.hoverCallback(null);
         }
@@ -739,19 +737,19 @@ export class ScatterPlot {
     }
 
     updateFromCameraDef(cameraDef: any) {
-        if(cameraDef.position) {
+        if (cameraDef.position) {
             this.camera.position.set(
-              cameraDef.position[0],
-              cameraDef.position[1],
-              cameraDef.position[2]
+                cameraDef.position[0],
+                cameraDef.position[1],
+                cameraDef.position[2]
             );
         }
 
-        if( cameraDef.target) {
+        if (cameraDef.target) {
             const at = new Vector3(
-              cameraDef.target[0],
-              cameraDef.target[1],
-              cameraDef.target[2]
+                cameraDef.target[0],
+                cameraDef.target[1],
+                cameraDef.target[2]
             );
             this.camera.lookAt(at);
         }

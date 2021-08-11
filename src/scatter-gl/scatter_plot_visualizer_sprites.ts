@@ -184,8 +184,8 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
             fragmentShader: FRAGMENT_SHADER,
             transparent: true,
             fog: true,
-            depthTest: false,
-            depthWrite: false,
+            depthTest: true,
+            depthWrite: true,
             blending: NormalBlending,
         });
     }
