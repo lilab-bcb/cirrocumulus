@@ -13,10 +13,10 @@ logger = logging.getLogger("cirro")
 def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
     os.makedirs(output_dir, exist_ok=True)
     pq.write_table(pa.Table.from_pydict(d), output_dir + os.path.sep + name + '.parquet',
-        write_statistics=write_statistics, row_group_size=row_group_size)
+                   write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata_pq(adata, schema, output_directory):
+def save_adata_pq(datasets, schema, output_directory):
     import pandas._libs.json as ujson
     logger.info('Save adata')
     X_dir = os.path.join(output_directory, 'X')
@@ -28,10 +28,10 @@ def save_adata_pq(adata, schema, output_directory):
     with gzip.open(os.path.join(output_directory, 'index.json.gz'), 'wt') as f:
         # json.dump(result, f)
         f.write(ujson.dumps(schema, double_precision=2, orient='values'))
-
-    save_adata_X(adata, X_dir)
-    save_data_obs(adata, obs_dir)
-    save_data_obsm(adata, obsm_dir)
+    for dataset in datasets:
+        save_adata_X(dataset, X_dir)
+        save_data_obs(dataset, obs_dir)
+        save_data_obsm(dataset, obsm_dir)
 
 
 def save_adata_X(adata, X_dir):
@@ -45,10 +45,13 @@ def save_adata_X(adata, X_dir):
         X = adata_X[:, j]
         if is_sparse:
             X = X.toarray().flatten()
-        indices = np.where(X != 0)[0]
-        values = X[indices]
         name = names[j]
-        write_pq(dict(index=indices, value=values), X_dir, name)
+        if is_sparse:
+            indices = np.where(X != 0)[0]
+            values = X[indices]
+            write_pq(dict(index=indices, value=values), X_dir, name)
+        else:
+            write_pq(dict(value=X), X_dir, name)
         if j > 0 and (j + 1) % 1000 == 0:
             logger.info('Wrote adata X {}/{}'.format(j + 1, adata_X.shape[1]))
 

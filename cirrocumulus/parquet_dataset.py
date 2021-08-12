@@ -47,25 +47,38 @@ class ParquetDataset(AbstractDataset):
         basis = keys.pop('basis', [])
 
         if len(var_keys) > 0:
+
+            node_path = os.path.join(path, 'X')
+            shape = schema['shape']
             data = []
             row = []
             col = []
-            node_path = os.path.join(path, 'X')
-            shape = schema['shape']
+            sparse_var_keys = []
+            dense_var_keys = []
+            dense_X = []
             for i in range(len(var_keys)):
                 key = var_keys[i]
                 df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
-                data.append(df['value'])
-                row.append(df['index'])
-                col.append(np.repeat(i, len(df)))
-
-            data = np.concatenate(data)
-            row = np.concatenate(row)
-            col = np.concatenate(col)
-            # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
-            X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
-            result_df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
-
+                if 'index' in df.columns:
+                    data.append(df['value'])
+                    row.append(df['index'])
+                    col.append(np.repeat(i, len(df)))
+                    sparse_var_keys.append(key)
+                else:
+                    dense_var_keys.append(key)
+                    dense_X.append(df['value'])
+            if len(data) > 0:
+                data = np.concatenate(data)
+                row = np.concatenate(row)
+                col = np.concatenate(col)
+                # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+                X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+                result_df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
+            if len(dense_X) > 0:
+                if result_df is None:
+                    result_df = pd.DataFrame()
+                for i in range(len(dense_X)):
+                    result_df[dense_var_keys[i]] = dense_X[i]
         for node in keys.keys():
             if result_df is None:
                 result_df = pd.DataFrame()
@@ -84,7 +97,7 @@ class ParquetDataset(AbstractDataset):
                 cached_value = self.cached_data.get(cache_key)
                 if cached_value is None:
                     df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system,
-                        columns=['value']).to_pandas()
+                                       columns=['value']).to_pandas()
                     # ignore index in obs for now
                     cached_value = df['value']
                 result_df[key] = cached_value
