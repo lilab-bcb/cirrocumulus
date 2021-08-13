@@ -1,5 +1,9 @@
 Release Notes
 -------------
+
+- 1.1.17.post3 `August 13, 2021`
+    * Compute complete differential expression results in `cirro prepare_data` using `Scanpy`_ or `Pegasus`_/`Cumulus`_
+
 - 1.1.17.post2 `August 11, 2021`
     * Preserve category order only when < 1000 categories
     * Synchronize 3-d gallery chart rotation with primary view

@@ -7,7 +7,7 @@ import pandas as pd
 import scipy.sparse
 
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
-from cirrocumulus.simple_data import SimpleData
+from cirrocumulus.simple_data import SimpleData, get_scanpy_marker_keys
 from cirrocumulus.util import to_json
 
 logger = logging.getLogger("cirro")
@@ -129,10 +129,51 @@ class PrepareData:
         return os.path.join(self.base_output_dir, path)
 
     def execute(self):
-        group_nfeatures = self.group_nfeatures
         output_format = self.output_format
         if not os.path.exists(self.base_output_dir):
             os.makedirs(self.base_output_dir, exist_ok=True)
+        if self.groups is None:
+            groups = []
+            for dataset in self.datasets:
+                existing_fields = set()
+                scanpy_marker_keys = get_scanpy_marker_keys(dataset)
+                for key in scanpy_marker_keys:
+                    existing_fields.add(dataset.uns[key]['params']['groupby'])
+                for field in dataset.obs.columns:
+                    field_lc = field.lower()
+                    for cluster_field in cluster_fields:
+                        if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
+                            groups.append(field)
+                            break
+            self.groups = groups
+        if self.groups is not None and len(self.groups) > 0:
+            use_pegasus = False
+            use_scanpy = False
+            try:
+                import pegasus as pg
+                use_pegasus = True
+            except:
+                pass
+            if not use_pegasus:
+                try:
+                    import scanpy as sc
+                    use_scanpy = True
+                except:
+                    pass
+            if not use_pegasus and not use_scanpy:
+                raise ValueError('Please install pegasuspy or scanpy to compute markers')
+            for dataset in self.datasets:
+                for field in self.groups:
+                    if field in dataset.obs:
+                        if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
+                            dataset.obs[field] = dataset.obs[field].astype('category')
+                        if len(dataset.obs[field].cat.categories) > 1:
+                            print('Computing markers for {}'.format(field))
+                            key_added = 'rank_genes_' + str(field)
+                            if use_pegasus:
+                                pg.de_analysis(dataset, cluster=field, de_key=key_added)
+                            else:
+                                sc.tl.rank_genes_groups(dataset, field, key_added=key_added)
         schema = self.get_schema()
         results = schema.get('results', [])
         if len(results) > 0:
@@ -145,28 +186,6 @@ class PrepareData:
                                   content_type='application/json', content_encoding='gzip')
                 with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
                     f.write(to_json(result))
-
-        markers = schema.get('markers', [])
-
-        if len(markers) == 0 and self.groups is None:
-            groups = []
-            for dataset in self.datasets:
-                for field in dataset.obs.columns:
-                    field_lc = field.lower()
-                    for cluster_field in cluster_fields:
-                        if field_lc.find(cluster_field) != -1:
-                            groups.append(field)
-                            break
-            self.groups = groups
-        if self.groups is not None:
-            for dataset in self.datasets:
-                for field in self.groups:
-                    if field in dataset.obs:
-                        if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
-                            dataset.obs[field] = dataset.obs[field].astype('category')
-                        if len(dataset.obs[field].cat.categories) > 1:
-                            markers += SimpleData.find_markers(dataset, field, group_nfeatures)
-            schema['markers'] = markers
 
         for dataset in self.datasets:
             images = dataset.uns.get('images')
@@ -196,9 +215,9 @@ class PrepareData:
         result = SimpleData.schema(self.datasets)
         markers = result.get('markers', [])
 
-        if self.markers is not None:  # add from file
+        if self.markers is not None:  # add results specified from file
             markers += get_markers(self.markers)
-            markers = filter_markers(self.datasets[0], markers)  # FIXME
+            markers = filter_markers(self.datasets[0], markers)  # TODO check if markers are in union of all features
 
         for marker in markers:
             if marker.get('id') is None:
