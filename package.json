@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.17.post2",
+  "version": "1.1.17.post3",
   "private": true,
   "homepage": ".",
   "proxy": "http://localhost:5000",
@@ -12,8 +12,8 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^12.0.0",
     "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^27.0.0",
-    "@types/node": "^16.6.0",
+    "@types/jest": "^27.0.1",
+    "@types/node": "^16.6.1",
     "@types/react": "^17.0.17",
     "@types/react-dom": "^17.0.9",
     "@types/three": "^0.131.0",
