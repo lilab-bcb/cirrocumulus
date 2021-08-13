@@ -5,6 +5,29 @@ import scipy.sparse
 from cirrocumulus.io_util import cirro_id
 
 
+def get_scanpy_marker_keys(dataset):
+    scanpy_marker_keys = []
+    for key in dataset.uns.keys():
+        rank_genes_groups = dataset.uns[key]
+        if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and (
+                'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
+            scanpy_marker_keys.append(key)
+    return scanpy_marker_keys
+
+
+def get_pegasus_marker_keys(dataset):
+    marker_keys = []
+    for key in dataset.varm.keys():
+        d = dataset.varm[key]
+        if isinstance(d, np.recarray):
+            try:
+                ''.join(d.dtype.names).index('log2Mean')
+                marker_keys.append(key)
+            except ValueError:
+                pass
+    return marker_keys
+
+
 class SimpleData:
 
     def __init__(self, X, obs, var):
@@ -130,23 +153,17 @@ class SimpleData:
         marker_results += prior_marker_results
 
         n_genes = 10
-
         de_results = []  # array of dicts containing params logfoldchanges, pvals_adj, scores, names
         category_to_order = {}
         embeddings = []
         field_to_value_to_color = dict()  # field -> value -> color
         for i in range(len(datasets)):
             dataset = datasets[i]
-            scanpy_marker_keys = []
-            for key in dataset.uns.keys():
-                rank_genes_groups = dataset.uns[key]
-                if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and (
-                        'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
-                    scanpy_marker_keys.append(key)
-
-            for scanpy_marker_key in scanpy_marker_keys:
+            for scanpy_marker_key in get_scanpy_marker_keys(dataset):
                 rank_genes_groups = dataset.uns[scanpy_marker_key]
                 params = rank_genes_groups['params']
+                prefix = None if i == 0 else dataset.uns.get('name')
+
                 # pts and pts_rest in later scanpy versions
 
                 rank_genes_groups_keys = list(rank_genes_groups.keys())
@@ -156,6 +173,7 @@ class SimpleData:
                 if 'pvals' in rank_genes_groups_keys and 'pvals_adj' in rank_genes_groups_keys:
                     rank_genes_groups_keys.remove('pvals')
                 category = '{} ({})'.format(params['groupby'], scanpy_marker_key)
+                de_result_name = category if prefix is None else prefix + '-' + category
                 de_result_df = None
                 group_names = rank_genes_groups['names'].dtype.names
                 for group_name in group_names:
@@ -172,7 +190,7 @@ class SimpleData:
                         de_result_df = de_result_df.join(group_df, how='outer')
                     if n_genes > 0:
                         marker_results.append(
-                            dict(category=category, name=str(group_name), features=group_df.index[:n_genes]))
+                            dict(category=de_result_name, name=str(group_name), features=group_df.index[:n_genes]))
 
                 if de_results_format == 'records':
                     de_result_data = de_result_df.reset_index().to_dict(orient='records')
@@ -180,8 +198,6 @@ class SimpleData:
                     de_result_data = dict(index=de_result_df.index)
                     for c in de_result_df:
                         de_result_data[c] = de_result_df[c]
-                prefix = None if i == 0 else dataset.uns.get('name')
-                de_result_name = category if prefix is None else prefix + '-' + category
 
                 de_result = dict(id=cirro_id(),
                                  color='logfoldchanges' if 'logfoldchanges' in rank_genes_groups_keys else
@@ -192,9 +208,8 @@ class SimpleData:
                                  name=de_result_name)
                 de_result['data'] = de_result_data
                 de_results.append(de_result)
-
-            if 'de_res' in dataset.varm:  # pegasus
-                de_res = dataset.varm['de_res']
+            for varm_field in get_pegasus_marker_keys(dataset):
+                de_res = dataset.varm[varm_field]
                 names = de_res.dtype.names
                 field_names = set()  # e.g. 1:auroc
                 group_names = set()
@@ -218,7 +233,8 @@ class SimpleData:
 
                 de_result = dict(id=cirro_id(), type='de', name='pegasus_de',
                                  color='log2FC' if 'log2FC' in field_names else field_names[0],
-                                 size='mwu_qval' if 'mwu_qval' in field_names else field_names[0], groups=group_names,
+                                 size='mwu_qval' if 'mwu_qval' in field_names else field_names[0],
+                                 groups=group_names,
                                  fields=field_names)
                 de_result['data'] = de_result_data
                 de_results.append(de_result)
