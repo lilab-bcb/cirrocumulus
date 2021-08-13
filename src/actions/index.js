@@ -978,7 +978,7 @@ function loadDefaultDataset() {
     return function (dispatch, getState) {
         if (getState().dataset == null && getState().datasetChoices.length === 1) {
             dispatch(setDataset(getState().datasetChoices[0].id));
-        } else {
+        } else if (getState().datasetChoices.length > 0) {
             dispatch(setDialog(OPEN_DATASET_DIALOG));
         }
     };
