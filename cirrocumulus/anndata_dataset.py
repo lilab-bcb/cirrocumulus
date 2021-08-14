@@ -71,7 +71,7 @@ class AnndataDataset(AbstractDataset):
         return adata
 
     def schema(self, file_system, path):
-        return SimpleData.schema(self.get_data(path))
+        return SimpleData.schema([self.get_data(path)])
 
     def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
         adata = self.get_data(path)
