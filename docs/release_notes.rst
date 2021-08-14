@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.17.post4 `August 13, 2021`
+    * Fixed error in `cirro launch` that prevented h5ad files from loading
+
 - 1.1.17.post3 `August 13, 2021`
     * Compute complete differential expression results in `cirro prepare_data` using `Scanpy`_ or `Pegasus`_/`Cumulus`_
 
