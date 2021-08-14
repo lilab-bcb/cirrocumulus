@@ -3,6 +3,7 @@ import os
 import fsspec
 import pandas as pd
 import scipy
+
 from cirrocumulus.embedding_aggregator import get_basis
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
@@ -16,10 +17,11 @@ def read_and_diff(ds_reader, path, test_data, measures, dimensions, continuous_o
                                          keys=dict(X=measures, obs=dimensions + continuous_obs,
                                                    basis=[get_basis(basis, -1, '')]))
 
-    if not scipy.sparse.issparse(test_data.X):
+    if not scipy.sparse.issparse(test_data.X) and hasattr(prepared_df[measures[0]], 'sparse'):
         test_data.X = scipy.sparse.csr_matrix(test_data.X)
-    df = pd.DataFrame.sparse.from_spmatrix(test_data.X, columns=measures)
-
+        df = pd.DataFrame.sparse.from_spmatrix(test_data.X, columns=measures)
+    else:
+        df = pd.DataFrame(test_data.X, columns=measures)
     for f in dimensions:
         df[f] = test_data.obs[f].values
         df[f] = df[f].astype('category')
@@ -30,7 +32,7 @@ def read_and_diff(ds_reader, path, test_data, measures, dimensions, continuous_o
     for i in range(embedding_data.shape[1]):
         df["{}_{}".format(basis, i + 1)] = embedding_data[:, i]
     prepared_df = prepared_df[df.columns]
-    pd.testing.assert_frame_equal(df, prepared_df, check_names=False)
+    pd.testing.assert_frame_equal(prepared_df, df, check_names=False)
 
 
 def test_prepare_cxg(test_data, measures, dimensions, continuous_obs, basis, tmp_path):
