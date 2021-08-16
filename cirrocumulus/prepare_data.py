@@ -6,7 +6,6 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.sparse
-
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.simple_data import SimpleData, get_scanpy_marker_keys
 from cirrocumulus.util import to_json
@@ -264,7 +263,7 @@ class PrepareData:
 def main(argsv):
     parser = argparse.ArgumentParser(
         description='Prepare a dataset for cirrocumulus server.')
-    parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', action='append')
+    parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
     # parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
