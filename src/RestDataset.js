@@ -54,7 +54,7 @@ export class RestDataset {
                 {
                     body: JSON.stringify(q),
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()}
                 }).then(result => result.json());
         }
     }
@@ -63,8 +63,14 @@ export class RestDataset {
         return API + '/file?id=' + this.id + '&file=' + file + '&access_token=' + getIdToken();
     }
 
-    getJob(id, returnResults) {
-        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id + (!returnResults ? '&status=1' : ''), {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+    getJob(id) {
+        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            return response.json();
+        });
+    }
+
+    getJobStatus(id) {
+        return fetch(API + '/job_status?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         });
     }
@@ -81,7 +87,7 @@ export class RestDataset {
                 body: JSON.stringify(
                     {id: id}),
                 method: 'DELETE',
-                headers: {'Authorization': 'Bearer ' + getIdToken()},
+                headers: {'Authorization': 'Bearer ' + getIdToken()}
             });
     }
 
@@ -104,7 +110,7 @@ export class RestDataset {
             {
                 body: jsonData,
                 method: 'POST',
-                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()},
+                headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getIdToken()}
             }).then(r => r.json()).then(result => {
             // convert sparse to dense
             if (result.values) {
