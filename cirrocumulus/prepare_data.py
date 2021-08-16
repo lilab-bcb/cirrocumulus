@@ -3,6 +3,7 @@ import gzip
 import logging
 import os
 
+import numpy as np
 import pandas as pd
 import scipy.sparse
 
@@ -81,16 +82,29 @@ class PrepareData:
         self.group_nfeatures = group_nfeatures
         self.markers = markers
         self.output_format = output_format
+        primary_dataset = datasets[0]
         for i in range(1, len(datasets)):
             dataset = datasets[i]
             name = dataset.uns['name']
             prefix = name + '-'
             dataset.var.index = prefix + dataset.var.index.astype(str)
-            dataset.obs.index = prefix + dataset.obs.index
-            obsm_delete = []
+            # add prefix, check for duplicates
+            obs_exclude = []
+            dataset.uns['cirro_obs_exclude'] = obs_exclude
+            for key in list(dataset.obs.keys()):
+                if key in primary_dataset.obs.columns and dataset.obs[key].equals(primary_dataset.obs[key]):
+                    obs_exclude.append(key)
+                    continue
+                dataset.obs[prefix + key] = dataset.obs[key]
+                del dataset.obs[key]
+
+            obsm_exclude = []
+            dataset.uns['cirro_obsm_exclude'] = obsm_exclude
             for key in list(dataset.obsm.keys()):
+                if key in primary_dataset.obsm and np.array_equals(dataset.obsm[key], primary_dataset.obsm[key]):
+                    obsm_exclude.append(key)
+                    continue
                 dataset.obsm[prefix + key] = dataset.obsm[key]
-                obsm_delete.append(key)
                 del dataset.obsm[key]
 
         for dataset in datasets:
@@ -152,18 +166,31 @@ class PrepareData:
             try:
                 import pegasus as pg
                 use_pegasus = True
-            except:
+            except ModuleNotFoundError:
                 pass
             if not use_pegasus:
                 try:
                     import scanpy as sc
                     use_scanpy = True
-                except:
+                except ModuleNotFoundError:
                     pass
             if not use_pegasus and not use_scanpy:
                 raise ValueError('Please install pegasuspy or scanpy to compute markers')
             for dataset in self.datasets:
-                for field in self.groups:
+                for group in self.groups:
+                    field = group
+                    if group not in dataset.obs:  # test if multiple comma separated fields
+                        split_groups = group.split(',')
+                        if len(split_groups) > 1:
+                            use_split_groups = True
+                            for split_group in split_groups:
+                                if split_group not in dataset.obs:
+                                    use_split_groups = False
+                                    break
+                            if use_split_groups:
+                                dataset.obs[field] = dataset.obs[split_groups[0]].str.cat(dataset.obs[split_groups[1:]],
+                                                                                          sep=',')
+
                     if field in dataset.obs:
                         if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
                             dataset.obs[field] = dataset.obs[field].astype('category')
@@ -174,6 +201,12 @@ class PrepareData:
                                 pg.de_analysis(dataset, cluster=field, de_key=key_added)
                             else:
                                 sc.tl.rank_genes_groups(dataset, field, key_added=key_added)
+
+        for i in range(1, len(self.datasets)):
+            for key in dataset.uns.get('cirro_obs_exclude', []):
+                del dataset.obs[key]
+            for key in dataset.uns.get('cirro_obsm_exclude', []):
+                del dataset.obsm[key]
         schema = self.get_schema()
         results = schema.get('results', [])
         if len(results) > 0:
@@ -231,7 +264,7 @@ class PrepareData:
 def main(argsv):
     parser = argparse.ArgumentParser(
         description='Prepare a dataset for cirrocumulus server.')
-    parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file')
+    parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', action='append')
     parser.add_argument('--out', help='Path to output directory')
     # parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
@@ -255,13 +288,17 @@ def main(argsv):
     logger.addHandler(logging.StreamHandler())
     out = args.out
 
-    input_datasets = args.dataset.split(',')  # multimodal
-
+    input_datasets = args.dataset  # multimodal
+    if len(input_datasets) == 0:
+        raise ValueError('Please provide a dataset')
     output_format = 'parquet'  # args.output_format
     if out is None:
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
+    if out.endswith('/'):
+        out = out[:len(out) - 1]
     if not out.endswith('.cpq'):
         out += '.cpq'
+
     datasets = []
 
     for input_dataset in input_datasets:
