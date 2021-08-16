@@ -350,7 +350,7 @@ export function submitJob(jobData) {
         let jobId;
         let timeout = 5 * 1000; // TODO
         function getJobStatus() {
-            getState().dataset.api.getJob(jobId, false)
+            getState().dataset.api.getJobStatus(jobId)
                 .then(result => {
                     const jobResult = find(getState().jobResults, item => item.id === jobId);
                     const statusUpdated = jobResult.status !== result.status;
@@ -919,6 +919,8 @@ export function setServerInfo(payload) {
 
 function getDefaultDatasetView(dataset) {
     const embeddingNames = dataset.embeddings.map(e => e.name);
+    let selectedEmbedding = null;
+    let obsCat = null;
     if (embeddingNames.length > 0) {
         let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
         let embeddingName = null;
@@ -934,32 +936,32 @@ function getDefaultDatasetView(dataset) {
         if (embeddingName == null) {
             embeddingName = embeddingNames[0];
         }
-        const selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
-        let obsCat = null;
-        if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
-            let category = dataset.markers_read_only[0].category;
-            const suffix = ' (rank_genes_groups)';
-            if (category.endsWith(suffix)) {
-                category = category.substring(0, category.length - suffix.length);
-            }
-            if (dataset.obsCat.indexOf(category) !== -1) {
-                obsCat = category;
-            }
+        selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
+    }
+
+    if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
+        let category = dataset.markers_read_only[0].category;
+        const suffix = ' (rank_genes_groups)';
+        if (category.endsWith(suffix)) {
+            category = category.substring(0, category.length - suffix.length);
         }
-        if (obsCat == null) {
-            let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
-            for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
-                for (let i = 0; i < dataset.obsCat.length; i++) {
-                    if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
-                        obsCat = dataset.obsCat[i];
-                        break;
-                    }
+        if (dataset.obsCat.indexOf(category) !== -1) {
+            obsCat = category;
+        }
+    }
+    if (obsCat == null) {
+        let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
+        for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+            for (let i = 0; i < dataset.obsCat.length; i++) {
+                if (dataset.obsCat[i].toLowerCase().indexOf(catPriorities[priorityIndex]) !== -1) {
+                    obsCat = dataset.obsCat[i];
+                    break;
                 }
             }
         }
-
-        return {selectedEmbedding, obsCat};
     }
+
+    return {selectedEmbedding, obsCat};
 }
 
 function loadDefaultDatasetView() {
@@ -969,7 +971,9 @@ function loadDefaultDatasetView() {
         if (obsCat != null) {
             dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
         }
-        dispatch(setSelectedEmbedding([selectedEmbedding]));
+        if (selectedEmbedding != null) {
+            dispatch(setSelectedEmbedding([selectedEmbedding]));
+        }
 
     };
 }

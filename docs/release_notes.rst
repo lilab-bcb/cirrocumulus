@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.18 `August 16, 2021`
+    * `cirro prepare_data` accepts multiple input datasets to better support multimodal data
+
 - 1.1.17.post4 `August 13, 2021`
     * Fixed error in `cirro launch` that prevented h5ad files from loading
 

@@ -367,6 +367,13 @@ def handle_dataset():
         return json_response(database_api.get_dataset(email, dataset_id, True))
 
 
+@blueprint.route('/job_status', methods=['GET'])
+def handle_job_status():
+    email = get_auth().auth()['email']
+    database_api = get_database()
+    job_id = request.args.get('id', '')
+    return  database_api.get_job(email=email, job_id=job_id, return_result=False)
+
 @blueprint.route('/job', methods=['GET', 'DELETE'])
 def handle_job():
     email = get_auth().auth()['email']
@@ -378,15 +385,16 @@ def handle_job():
         return json_response('', 204)
     else:
         job_id = request.args.get('id', '')
-        job_status = request.args.get('status', '0')
-        return_result = job_status == '0'
         if job_id.startswith('cirro-'):  # precomputed result
             dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
             dataset = database_api.get_dataset(email, dataset_id)
             file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
             return send_file(file_path)
-        return database_api.get_job(email=email, job_id=job_id, return_result=return_result)
+        job = database_api.get_job(email=email, job_id=job_id, return_result=True)
+        if 'format'in job and job['format']=='zarr':
+            xx
+
 
 
 @blueprint.route('/jobs', methods=['GET'])
