@@ -81,7 +81,7 @@ const getEmbeddingOptions = memoize(
         const options = [];
         embeddings.forEach(embedding => {
             options.push({
-                text: embedding.name + (embedding.dimensions === 3 ? ' 3d' : (embedding.mode ? ' ' + embedding.mode : '')),
+                text: embedding.name + (embedding.mode ? ' ' + embedding.mode : ''),
                 id: getEmbeddingKey(embedding)
             });
         });
