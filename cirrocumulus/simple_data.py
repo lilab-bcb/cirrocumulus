@@ -283,22 +283,16 @@ class SimpleData:
             image_names = list(map(lambda x: x['name'], images_node))
 
             for key in dataset.obsm_keys():
-                dim = min(3, dataset.obsm[key].shape[1])
-                if dim < 2:
-                    continue
-                embedding = dict(name=key, dimensions=dim)
-                try:
-                    image_index = image_names.index(key)
-                    embedding['spatial'] = images_node[image_index]
-                except ValueError:
-                    pass
+                dim = dataset.obsm[key].shape[1]
+                if 1 < dim <= 3:
+                    embedding = dict(name=key, dimensions=dim)
+                    if dim == 2:
+                        try:
+                            image_index = image_names.index(key)
+                            embedding['spatial'] = images_node[image_index]
+                        except ValueError:
+                            pass
 
-                if dim == 3:
-                    embeddings.append(embedding)
-                    embedding = embedding.copy()
-                    embedding['dimensions'] = 2
-                    embeddings.append(embedding)
-                else:
                     embeddings.append(embedding)
             meta_images = dataset.uns.get('meta_images', [])
             for meta_image in meta_images:
