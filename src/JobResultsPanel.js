@@ -540,21 +540,22 @@ class JobResultsPanel extends React.PureComponent {
             });
 
 
-            for (let i = 0; i < columns.length; i++) {
-                if (columns[i].length > 2) {
+            for (let i = 0; i < groups.length; i++) {
+                if (groups[i].length > 2) {
                     rotateHeaders = true;
                     break;
                 }
             }
+
             if (rotateHeaders) {
                 const d = document.createElement('span');
                 d.style.position = 'absolute';
                 d.style.left = '-1000000px';
                 d.className = '.MuiTableCell-head .MuiTableCell-root';
                 document.body.append(d);
-                for (let i = 0; i < columns.length; i++) {
-                    d.innerText = columns[i];
-                    headerWidth = Math.max(headerWidth, d.getBoundingClientRect().width);
+                for (let i = 0; i < groups.length; i++) {
+                    d.innerText = groups[i];
+                    headerWidth = Math.max(headerWidth, 2 + d.getBoundingClientRect().width);
                 }
                 d.remove();
                 headerWidth += 2; // prevent overflow
