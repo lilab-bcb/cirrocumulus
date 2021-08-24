@@ -147,7 +147,6 @@ export function computeDerivedStats(result, q, cachedData) {
         if (dimensions.length > 0) {
             // TODO, currently we only handle dimensions[0]
             const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions[0]));
-            // && typeToMeasures.X.length > 0
             const distribution = {};
             for (const key in typeToMeasures) {
                 const measures = typeToMeasures[key];
@@ -166,8 +165,16 @@ export function computeDerivedStats(result, q, cachedData) {
         result.selection = {};
         result.selection.indices = getPassingFilterIndices(cachedData, q.selection.filter);
         const selectedIndices = Array.from(result.selection.indices);
-        if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
-            result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.X, selectedIndices));
+        if (dimensions.length > 0) {
+            const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions, selectedIndices));
+            const distribution = {};
+            for (const key in typeToMeasures) {
+                const measures = typeToMeasures[key];
+                if (measures.length > 0) {
+                    distribution[key] = groupedStats(groupDimensionInfo, getVectors(cachedData, measures, selectedIndices));
+                }
+            }
+            result.selection.distribution = distribution;
         }
         result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, result.selection.indices),
             getVectors(cachedData, typeToMeasures.X, selectedIndices));
