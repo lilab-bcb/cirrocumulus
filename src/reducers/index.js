@@ -70,12 +70,17 @@ import {
 } from '../util';
 
 
-const DEFAULT_DIST_PLOT_OPTIONS = {
+const DIST_PLOT_OPTIONS = {
     chartType: 'dotplot',
     violinScale: 'width',
     violinHeight: 100,
     violinWidth: 80,
     violinShowBoxplot: true
+};
+const DEFAULT_DIST_PLOT_OPTIONS = {
+    X: DIST_PLOT_OPTIONS,
+    modules: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'heatmap'}),
+    obs: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'violin'})
 };
 
 const DEFAULT_INTERPOLATOR_OBJ = {
@@ -84,14 +89,18 @@ const DEFAULT_INTERPOLATOR_OBJ = {
     reversed: false
 };
 
-const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
+const DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
     name: DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
     value: getInterpolator(DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR),
     reversed: false,
     scale: INTERPOLATOR_SCALING_NONE
 };
 
-
+const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
+    X: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
+    modules: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
+    obs: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ
+};
 const DEFAULT_PRIMARY_CHART_SIZE = {
     width: window.innerWidth - 280,
     height: Math.max(300, window.innerHeight - 370)
@@ -502,27 +511,27 @@ function jobResults(state = [], action) {
     }
 }
 
-function distributionData(state = [], action) {
+function distributionData(state = {}, action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
-            return state.slice();
+            return Object.assign({}, state);
         case SET_DISTRIBUTION_DATA:
             return action.payload;
         case SET_DATASET:
-            return [];
+            return {};
         default:
             return state;
     }
 }
 
-function selectedDistributionData(state = [], action) {
+function selectedDistributionData(state = {}, action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
-            return state.slice();
+            return Object.assign({}, state);
         case SET_SELECTED_DISTRIBUTION_DATA:
             return action.payload;
         case SET_DATASET:
-            return [];
+            return {};
         default:
             return state;
     }
