@@ -2,20 +2,24 @@ import os
 
 import anndata
 import pytest
+import scipy.sparse
 
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.dataset_api import DatasetAPI
 
 
-@pytest.fixture(scope='module', autouse=True)
-def test_data():
-    return anndata.read('test-data/pbmc3k_no_raw.h5ad')
+@pytest.fixture(scope='module', autouse=True, params=[True, False])
+def test_data(request):
+    adata = anndata.read('test-data/pbmc3k_no_raw.h5ad')
+    if request.param:
+        adata.X = scipy.sparse.csr_matrix(adata.X)
+    return adata
 
 
 @pytest.fixture(scope='module', autouse=True, params=['small', 'large'])
 def measures(request):
     return ['DSCR3', 'TNFRSF4', 'SUMO3'] if request.param == 'small' else list(
-        anndata.read('test-data/pbmc3k_no_raw.h5ad').var.index[0:20])
+        anndata.read('test-data/pbmc3k_no_raw.h5ad').var.index[0:50])
 
 
 @pytest.fixture(scope='module', autouse=True)
