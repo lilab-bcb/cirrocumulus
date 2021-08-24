@@ -6,8 +6,9 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
+from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, DataType
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
-from cirrocumulus.simple_data import SimpleData, get_scanpy_marker_keys
 from cirrocumulus.util import to_json
 
 logger = logging.getLogger("cirro")
@@ -107,6 +108,8 @@ class PrepareData:
                 del dataset.obsm[key]
 
         for dataset in datasets:
+            if dataset.uns.get('name', '').lower().startswith('module'):  # TODO hack
+                dataset.uns['data_type'] = DataType.MODULE
             index = make_unique(dataset.var.index.append(pd.Index(dataset.obs.columns)))
             dataset.var.index = index[0:len(dataset.var.index)]
             dataset.obs.columns = index[len(dataset.var.index):]
@@ -199,7 +202,7 @@ class PrepareData:
                             if use_pegasus:
                                 pg.de_analysis(dataset, cluster=field, de_key=key_added)
                             else:
-                                sc.tl.rank_genes_groups(dataset, field, key_added=key_added)
+                                sc.tl.rank_genes_groups(dataset, field, key_added=key_added, method='t-test')
 
         for i in range(1, len(self.datasets)):
             for key in dataset.uns.get('cirro_obs_exclude', []):
@@ -244,7 +247,7 @@ class PrepareData:
             raise ValueError("Unknown format")
 
     def get_schema(self):
-        result = SimpleData.schema(self.datasets)
+        result = datasets_schema(self.datasets)
         markers = result.get('markers', [])
 
         if self.markers is not None:  # add results specified from file
@@ -265,10 +268,7 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
-    # parser.add_argument('--stats', dest="stats", help='Generate precomputed stats', action='store_true')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
-    # parser.add_argument('--basis', help='List of embeddings to precompute', action='append')
-    #  parser.add_argument('--groups', help='List of groups to precompute summary statistics', action='append')
     parser.add_argument('--markers',
                         help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
                         action='append')
@@ -277,11 +277,6 @@ def main(argsv):
                         action='append')
     parser.add_argument('--group_nfeatures', help='Number of marker genes/features to include', type=int, default=10)
     parser.add_argument('--spatial', help=SPATIAL_HELP)
-    # parser.add_argument('--output_format', help='Output file format', choices=['json', 'parquet'], default='parquet')
-    # parser.add_argument('--nbins', help='Number of bins. Set to 0 to disable binning', default=500, type=int)
-    # parser.add_argument('--summary', help='Bin summary statistic for numeric values', default='max')
-    # parser.add_argument('--X_range', help='Start and end position of data matrix (e.g. 0-5000)', type=str)
-
     args = parser.parse_args(argsv)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
@@ -299,9 +294,8 @@ def main(argsv):
         out += '.cpq'
 
     datasets = []
-
+    tmp_files = []
     for input_dataset in input_datasets:
-        tmp_file = None
         use_raw = False
         if input_dataset.lower().endswith('.rds'):
             import subprocess
@@ -315,6 +309,7 @@ def main(argsv):
             input_dataset = h5_file
             tmp_file = h5_file
             use_raw = True
+            tmp_files.append(tmp_file)
 
         adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
@@ -323,7 +318,7 @@ def main(argsv):
                                group_nfeatures=args.group_nfeatures,
                                markers=args.markers, output_format=output_format)
     prepare_data.execute()
-    if tmp_file is not None:
+    for tmp_file in tmp_files:
         os.remove(tmp_file)
 
 

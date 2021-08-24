@@ -2,7 +2,7 @@ import pandas as pd
 import scipy.sparse
 
 from cirrocumulus.dotplot_aggregator import DotPlotAggregator
-from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirrocumulus.embedding_aggregator import get_basis
 from cirrocumulus.feature_aggregator import FeatureAggregator
 from cirrocumulus.ids_aggregator import IdsAggregator
 from cirrocumulus.unique_aggregator import UniqueAggregator
@@ -20,16 +20,16 @@ def get_mask(dataset_api, dataset, data_filters):
     keys = get_type_to_measures(measures)
     keys['obs'] = list(dimensions)
     keys['basis'] = list(basis)
-    df = dataset_api.read_dataset(keys=keys, dataset=dataset)
+    adata = dataset_api.read_dataset(keys=keys, dataset=dataset)
     result = []
     for data_filter in data_filters:
-        result.append(get_filter_expr(df, data_filter))
-    return result, df
+        result.append(get_filter_expr(adata, data_filter))
+    return result, adata
 
 
-def apply_filter(df, data_filter):
-    keep_expr = get_filter_expr(df, data_filter)
-    return df[keep_expr] if keep_expr is not None else df
+def apply_filter(adata, data_filter):
+    keep_expr = get_filter_expr(adata, data_filter)
+    return adata[keep_expr] if keep_expr is not None else adata
 
 
 def get_filter_str(data_filter):
@@ -55,10 +55,7 @@ def get_filter_str(data_filter):
     return ''.join(s).replace('/', '-').replace(' ', '-').replace('\\', '-')
 
 
-def get_filter_expr(df, data_filter):
-    if df is None:
-        raise ValueError('df is None')
-
+def get_filter_expr(adata, data_filter):
     keep_expr = None
     if data_filter is not None:
         user_filters = data_filter.get('filters', [])
@@ -68,45 +65,42 @@ def get_filter_expr(df, data_filter):
             op = filter_obj[1]
             value = filter_obj[2]
             if isinstance(field, dict):  # selection box
-                selected_points_basis = get_basis(field['basis'], field.get('nbins'),
-                                                  field.get('agg'), field.get('ndim', '2'),
-                                                  field.get('precomputed', False))
+                # selected_points_basis = get_basis(field['basis'], field.get('nbins'),
+                #                                   field.get('agg'), field.get('ndim', '2'),
+                #                                   field.get('precomputed', False))
 
                 if 'points' in value:
                     p = value['points']
-                    field = selected_points_basis['full_name'] if selected_points_basis[
-                                                                      'nbins'] is not None else 'index'
-                    if field == 'index':
-                        keep = df.index.isin(p)
-                    else:
-                        keep = df[field].isin(p)
-                else:
-                    keep = None
-                    for p in value['path']:
-                        if 'z' in p:  # 3d
-                            selection_keep = \
-                                (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
-                                (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
-                                (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
-                                (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
-                                    'height']) & \
-                                (df[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
-                                (df[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
-                        else:
-                            selection_keep = \
-                                (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
-                                (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
-                                (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
-                                (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
+                    # list of indices
+                    keep = pd.RangeIndex(adata.shape[0]).isin(p)
 
-                    keep = selection_keep | keep if keep is not None else selection_keep
+                # else:
+                #     keep = None
+                #     for p in value['path']:
+                #         if 'z' in p:  # 3d
+                #             selection_keep = \
+                #                 (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p[
+                #                     'height']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][2]] >= p['z']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][2]] <= p['z'] + p['depth'])
+                #         else:
+                #             selection_keep = \
+                #                 (df[selected_points_basis['coordinate_columns'][0]] >= p['x']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][0]] <= p['x'] + p['width']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][1]] >= p['y']) & \
+                #                 (df[selected_points_basis['coordinate_columns'][1]] <= p['y'] + p['height'])
+
+                # keep = selection_keep | keep if keep is not None else selection_keep
 
             elif field == '__index':
                 import numpy as np
-                keep = np.zeros(len(df), dtype=bool)
+                keep = np.zeros(adata.shape[0], dtype=bool)
                 keep[value] = True
             else:
-                series = df[field]
+                series = adata.obs[field] if field in adata.obs else adata[:, adata.var.index == field].X[:, 0]
                 if op == 'in':
                     keep = (series.isin(value)).values
                 elif op == '>':
@@ -203,7 +197,7 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         filter_names.append(data_filter_obj['name'])
         reformatted_filters.append(filter_value)
 
-    df = get_df(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
+    df = get_adata(dataset_api, dataset, measures=['obs/index'], data_filters=reformatted_filters)
     result_df = pd.DataFrame(index=df['index'])
     for i in range(len(reformatted_filters)):
         data_filter = reformatted_filters[i]
@@ -280,69 +274,57 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
     keys = get_type_to_measures(measures)
     keys['obs'] += list(dimensions)
     keys['basis'] = basis_list
-    df = dataset_api.read_dataset(dataset=dataset, keys=keys)
-    for basis_obj in basis_list:
-        if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
-            EmbeddingAggregator.convert_coords_to_bin(df=df,
-                                                      nbins=basis_obj['nbins'],
-                                                      bin_name=basis_obj['full_name'],
-                                                      coordinate_columns=basis_obj['coordinate_columns'])
+    adata = dataset_api.read_dataset(dataset=dataset, keys=keys)
     results = {}
     if values is not None:
         dimensions = values.get('dimensions', [])
         measures = values.get('measures', [])
         type2measures = get_type_to_measures(measures)
-        measures = []
-        for v in type2measures.values():
-            measures += v
-
-        result = EmbeddingAggregator(
-            measures=measures,
-            dimensions=dimensions,
-            nbins=None,
-            basis=None,
-            coords=False,
-            agg_function=None,
-            quick=True).execute(df)
-        results['values'] = result['values']
-
-    if embedding_list is not None:
-        results['embeddings'] = []
-        for embedding in embedding_list:
-            dimensions = embedding.get('dimensions', [])
-            measures = embedding.get('measures', [])
-            type2measures = get_type_to_measures(measures)
-            basis = embedding['basis']
-            if basis['precomputed']:
-                result = precomputed_embedding(dataset_api, dataset, basis, type2measures['obs'],
-                                               type2measures['X'], dimensions)
+        results['values'] = {}
+        for key in type2measures['obs'] + dimensions:
+            series = adata.obs[key]
+            results['values'][key] = series
+            if pd.api.types.is_categorical_dtype(series):
+                results['values'][key] = dict(values=series.values.codes, categories=series.cat.categories.values)
             else:
-                result = EmbeddingAggregator(
-                    measures=type2measures['obs'] + type2measures['X'],
-                    dimensions=dimensions,
-                    nbins=basis['nbins'],
-                    basis=basis,
-                    coords=basis['coords'],
-                    agg_function=basis['agg'],
-                    quick=True).execute(df)
-            results['embeddings'].append(result)
+                results['values'][key] = series
+
+        if adata.uns.get('X_module') is not None:
+            adata_modules = adata.uns['X_module']
+            for i in range(len(adata_modules.var.index)):
+                x = adata_modules.X[:, i]
+                results['values'][adata_modules.var.index[i]] = x
+        if adata.X is not None:
+            is_sparse = scipy.sparse.issparse(adata.X)
+            for i in range(len(adata.var.index)):
+                x = adata.X[:, i]
+                if is_sparse:
+                    indices = x.indices
+                    data = x.data
+                    results['values'][adata.var.index[i]] = dict(indices=indices, values=data)
+                else:
+                    results['values'][adata.var.index[i]] = x
+
+    if embedding_list is not None and len(embedding_list) > 0:
+        results['embeddings'] = []
+        for key in adata.obsm.keys():
+            m = adata.obsm[key]
+            ndim = m.shape[1]
+            coordinates = dict()
+            embedding = dict(name='{}_{}'.format(key, ndim), dimensions=ndim, coordinates=coordinates)
+            results['embeddings'].append(embedding)
+            for i in range(ndim):
+                coordinates['{}_{}'.format(key, i + 1)] = m[:, i]
+
     if grouped_stats is not None:
-        if dataset_api.has_precomputed_stats(dataset):
-            results['distribution'] = precomputed_grouped_stats(dataset_api, dataset, grouped_stats.get('measures', []),
-                                                                grouped_stats.get('dimensions', []))
-        else:
-            results['distribution'] = DotPlotAggregator(var_measures=grouped_stats.get('measures', []),
-                                                        dimensions=grouped_stats.get('dimensions', [])).execute(df)
+        results['distribution'] = DotPlotAggregator(var_measures=grouped_stats.get('measures', []),
+                                                    dimensions=grouped_stats.get('dimensions', [])).execute(adata)
     if stats is not None:
         dimensions = stats.get('dimensions', [])
         measures = stats.get('measures', [])
         type2measures = get_type_to_measures(measures)
-        if dataset_api.has_precomputed_stats(dataset):
-            result['summary'] = precomputed_summary(dataset_api, dataset, type2measures['obs'],
-                                                    type2measures['X'], dimensions)
-        else:
-            results['summary'] = FeatureAggregator(type2measures['obs'], type2measures['X'],
-                                                   dimensions).execute(df)
+        results['summary'] = FeatureAggregator(type2measures['obs'], type2measures['X'],
+                                               dimensions).execute(adata)
     if selection is not None:
         results['selection'] = {}
         dimensions = selection.get('dimensions', [])
@@ -350,7 +332,7 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
         type2measures = get_type_to_measures(measures)
         # basis_list = selection.get('basis', [])
         selection_embeddings = selection.get('embeddings', [])
-        df = apply_filter(df, data_filter)
+        df = apply_filter(adata, data_filter)
         if len(selection_embeddings) > 0:
             results['selection']['coordinates'] = {}
             for embedding in selection_embeddings:
@@ -372,7 +354,7 @@ def handle_selection_ids(dataset_api, dataset, data_filter):
     return {'ids': IdsAggregator().execute(df)}
 
 
-def get_df(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
+def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
     type2measures = get_type_to_measures(measures)
     var_keys_filter = []
     obs_keys_filter = []
@@ -396,19 +378,19 @@ def get_df(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data
         if basis_obj['full_name'] not in basis_keys:
             basis_objs.append(basis_obj)
             basis_keys.add(basis_obj['full_name'])
-    df = dataset_api.read_dataset(dataset=dataset, keys=dict(obs=obs_keys, X=var_keys, basis=basis_objs))
-    for basis_obj in basis_objs:
-        if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
-            EmbeddingAggregator.convert_coords_to_bin(df=df,
-                                                      nbins=basis_obj['nbins'],
-                                                      bin_name=basis_obj['full_name'],
-                                                      coordinate_columns=basis_obj['coordinate_columns'])
-    return df
+    adata = dataset_api.read_dataset(dataset=dataset, keys=dict(obs=obs_keys, X=var_keys, basis=basis_objs))
+    # for basis_obj in basis_objs:
+    #     if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
+    #         EmbeddingAggregator.convert_coords_to_bin(df=df,
+    #                                                   nbins=basis_obj['nbins'],
+    #                                                   bin_name=basis_obj['full_name'],
+    #                                                   coordinate_columns=basis_obj['coordinate_columns'])
+    return adata
 
 
 def get_selected_data(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None):
-    df = get_df(dataset_api, dataset, embeddings, measures, dimensions,
-                [data_filter] if data_filter is not None else [])
+    df = get_adata(dataset_api, dataset, embeddings, measures, dimensions,
+                   [data_filter] if data_filter is not None else [])
     df = apply_filter(df, data_filter)
     return df
 

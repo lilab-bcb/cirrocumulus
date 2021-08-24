@@ -1,12 +1,12 @@
 import anndata
-import numpy as np
 import pandas as pd
 import scipy.sparse
+from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 # only works with local files
+from cirrocumulus.anndata_util import datasets_schema
 from cirrocumulus.io_util import read_star_fusion_file
-from cirrocumulus.simple_data import SimpleData
 
 
 class AnndataDataset(AbstractDataset):
@@ -70,57 +70,47 @@ class AnndataDataset(AbstractDataset):
             self.add_data(path, adata)
         return adata
 
-    def schema(self, file_system, path):
-        return SimpleData.schema([self.get_data(path)])
+    def schema(self, filesystem, path):
+        return datasets_schema([self.get_data(path)])
 
-    def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
+    def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):
         adata = self.get_data(path)
-        force_sparse = self.force_sparse
-        df = None
         if keys is None:
             keys = {}
         keys = keys.copy()
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis = keys.pop('basis', [])
-
+        X = None
+        obs = None
+        var = None
+        obsm = {}
         if len(var_keys) > 0:
             X = adata[:, var_keys].X
-            if len(X.shape) == 1:
-                X = np.array([X]).T
-            if force_sparse and not scipy.sparse.issparse(X):
-                X = scipy.sparse.csr_matrix(X)
-            if scipy.sparse.issparse(X):
-                df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
-            else:
-                df = pd.DataFrame(data=X, columns=var_keys)
-        for key in keys.keys():
-            if df is None:
-                df = pd.DataFrame()
-            d = adata.uns[key]
-            features = keys[key]
-            X = d['X'][:, d['var'].index.get_indexer_for(features)]
-            for i in range(len(features)):
-                df[features[i]] = X[:, i]
+            if not scipy.sparse.issparse(X):
+                X = scipy.sparse.csc_matrix(X)
+            var = pd.DataFrame(index=var_keys)
+        # for key in keys.keys():
+        #     if df is None:
+        #         df = pd.DataFrame()
+        #     d = adata.uns[key]
+        #     features = keys[key]
+        #     X = d['X'][:, d['var'].index.get_indexer_for(features)]
+        #     for i in range(len(features)):
+        #         df[features[i]] = X[:, i]
+
         if len(obs_keys) > 0:
-            if df is None:
-                df = pd.DataFrame()
+            obs = pd.DataFrame()
             for key in obs_keys:
                 if key == 'index':
                     values = adata.obs.index.values
                 else:
                     values = adata.obs[key].values
-                df[key] = values
-
+                obs[key] = values
         if basis is not None and len(basis) > 0:
-            if df is None:
-                df = pd.DataFrame()
             for b in basis:
                 embedding_name = b['name']
                 embedding_data = adata.obsm[embedding_name]
-                dimensions = b['dimensions']
-                for i in range(dimensions):
-                    df[b['coordinate_columns'][i]] = embedding_data[:, i]
-        if df is None:
-            df = pd.DataFrame(index=adata.obs.index)
-        return df
+                obsm[embedding_name] = embedding_data
+
+        return AnnData(X=X, obs=obs, var=var, obsm=obsm)

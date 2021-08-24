@@ -1,169 +1,171 @@
+import concurrent.futures
 import json
 import os
 
+import anndata
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
+from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
+
+max_workers = min(12, pa.cpu_count())
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
+
+
+def read_table(path, filesystem, columns=None):
+    return pq.read_table(path, filesystem=filesystem, columns=columns, use_threads=False)
+
+
+def read_df(path, filesystem, columns=None):
+    return read_table(path, filesystem=filesystem, columns=columns)
+
+
+def read_tables(paths, filesystem, columns=None):
+    futures = []
+    for path in paths:
+        future = executor.submit(read_table, path, filesystem=filesystem, columns=columns)
+        futures.append(future)
+    concurrent.futures.wait(futures)
+    return futures
+
+
+def read_dfs(paths, filesystem, columns=None):
+    futures = []
+    for path in paths:
+        future = executor.submit(read_df, path, filesystem=filesystem, columns=columns)
+        futures.append(future)
+    concurrent.futures.wait(futures)
+    return futures
+
+
+def get_matrix(futures, shape=None):
+    data = []
+    row = []
+    col = []
+    is_sparse = None
+    for i in range(len(futures)):
+        t = futures[i].result()
+        if i == 0:
+            is_sparse = 'index' in t.column_names
+        if is_sparse:
+            row.append(t.column('index').to_numpy())
+            col.append(np.repeat(i, len(t)))
+        data.append(t.column('value').to_numpy())
+    if len(data) == 0:
+        raise ValueError('No data')
+    if len(row) > 0:  # sparse
+        data = np.concatenate(data)
+        row = np.concatenate(row)
+        col = np.concatenate(col)
+        # X = scipy.sparse.coo_matrix((data, (row, col)), shape=(shape[0], len(keys))).to_csc()
+        # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
+        X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(futures)))
+    else:
+        X = np.array(data).T
+    return X
 
 
 class ParquetDataset(AbstractDataset):
 
     def __init__(self):
         super().__init__()
-        self.cached_dataset_id = None
-        self.cached_data = {}
 
     def get_suffixes(self):
         return ['parquet', 'pq', 'cpq']
 
-    def read_summarized(self, file_system, path, obs_keys=[], var_keys=[], index=False, rename=False, dataset=None):
-        result_df = pd.DataFrame()
-        if index:
-            df = pq.read_table(path + '/index.parquet', filesystem=file_system).to_pandas()
+    def read_data_sparse(self, filesystem, path, keys, dataset=None, schema=None):
+        shape = schema['shape']
+        schema_version = schema.get('version', '1.0.0')
 
-            for column in df:
-                result_df[column] = df[column]
-
-        for key in var_keys + obs_keys:
-            df = pq.read_table(path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
-            if rename:
-                for column in df:
-                    result_df['{}_{}'.format(key, column)] = df[column]
-            else:
-                for column in df:
-                    result_df[column] = df[column]
-        return result_df
-
-    def read_data_sparse(self, file_system, path, keys, dataset=None, schema=None):
-        dataset_id = dataset['id']
-        # if basis, read index to get bins, x, and y
-        result_df = None
+        X = None
+        adata_modules = None
+        obs = None
+        var = None
+        obsm = {}
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis = keys.pop('basis', [])
-
+        module_keys = keys.pop('module', [])
         if len(var_keys) > 0:
-
             node_path = os.path.join(path, 'X')
-            shape = schema['shape']
-            data = []
-            row = []
-            col = []
-            sparse_var_keys = []
-            dense_var_keys = []
-            dense_X = []
-            for i in range(len(var_keys)):
-                key = var_keys[i]
-                df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
-                if 'index' in df.columns:
-                    data.append(df['value'])
-                    row.append(df['index'])
-                    col.append(np.repeat(i, len(df)))
-                    sparse_var_keys.append(key)
-                else:
-                    dense_var_keys.append(key)
-                    dense_X.append(df['value'])
-            if len(data) > 0:
-                data = np.concatenate(data)
-                row = np.concatenate(row)
-                col = np.concatenate(col)
-                # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
-                X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
-                result_df = pd.DataFrame.sparse.from_spmatrix(X, columns=var_keys)
-            if len(dense_X) > 0:
-                if result_df is None:
-                    result_df = pd.DataFrame()
-                for i in range(len(dense_X)):
-                    result_df[dense_var_keys[i]] = dense_X[i]
-        for node in keys.keys():
-            if result_df is None:
-                result_df = pd.DataFrame()
-            features = keys[node]
-            node_path = os.path.join(path, node)
-            for i in range(len(features)):
-                key = features[i]
-                df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system).to_pandas()
-                result_df[key] = df['value']
+            paths = [node_path + '/' + key + '.parquet' for key in var_keys]
+            X = get_matrix(read_tables(paths, filesystem), shape)
+            var = pd.DataFrame(index=var_keys)
+        if len(module_keys) > 0:
+            node_path = os.path.join(path, 'X_module')
+            paths = [node_path + '/' + key + '.parquet' for key in module_keys]
+            module_X = get_matrix(read_tables(paths, filesystem))
+            adata_modules = anndata.AnnData(X=module_X, var=pd.DataFrame(index=module_keys))
         if len(obs_keys) > 0:
-            if result_df is None:
-                result_df = pd.DataFrame()
-            for key in obs_keys:
-                node_path = os.path.join(path, 'obs')
-                cache_key = str(dataset_id) + '-' + key
-                cached_value = self.cached_data.get(cache_key)
-                if cached_value is None:
-                    df = pq.read_table(node_path + '/' + key + '.parquet', filesystem=file_system,
-                                       columns=['value']).to_pandas()
-                    # ignore index in obs for now
-                    cached_value = df['value']
-                result_df[key] = cached_value
-                self.cached_data[cache_key] = cached_value
+            obs = pd.DataFrame()
+            node_path = os.path.join(path, 'obs')
+            paths = [node_path + '/' + key + '.parquet' for key in obs_keys]
+            futures = read_tables(paths, filesystem, columns=['value'])
+            for i in range(len(futures)):
+                df = futures[i].result().to_pandas()
+                obs[obs_keys[i]] = df['value']
 
         if basis is not None and len(basis) > 0:
-            if result_df is None:
-                result_df = pd.DataFrame()
-            obsm_path = os.path.join(path, 'obsm')
-            for b in basis:
-                cache_key = str(dataset_id) + '-' + b['full_name']
-                is_precomputed = b['precomputed']
-                if is_precomputed:
-                    columns_to_fetch = [b['full_name']]
-                else:  # need coordinates
-                    columns_to_fetch = b['coordinate_columns']
-                cached_value = self.cached_data.get(cache_key)
-                if cached_value is None:
-                    basis_path = (obsm_path + '/') + (b['full_name' if is_precomputed else 'name']) + '.parquet'
-                    df = pq.read_table(basis_path, filesystem=file_system, columns=columns_to_fetch).to_pandas()
-                    cached_value = df
-                    self.cached_data[cache_key] = cached_value
-
+            node_path = os.path.join(path, 'obsm')
+            paths = [node_path + '/' + b['name'] + '.parquet' for b in basis]
+            futures = read_tables(paths, filesystem)
+            for i in range(len(futures)):
+                table = futures[i].result()
+                b = basis[i]
+                vals = []
+                columns_to_fetch = b['coordinate_columns']
                 for c in columns_to_fetch:
-                    result_df[c] = cached_value[c]
-        if result_df is None:
-            shape = schema['shape']
-            result_df = pd.DataFrame(index=pd.RangeIndex(shape[0]))
-        return result_df
+                    vals.append(table.column(c))
+                obsm[b['name']] = np.array(vals).T
+        adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
+        if adata_modules is not None:
+            adata.uns['X_module'] = adata_modules
+        return adata
 
-    def read_data_dense(self, file_system, path, keys=None, dataset=None, schema=None):
-        # dense parquet file
+    def read_data_dense(self, filesystem, path, keys=None, dataset=None, schema=None):
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis = keys.pop('basis', [])
         all_keys = obs_keys + var_keys
+        X = None
+        obs = None
+        var = None
+        obsm = {}
         for key in keys.keys():
             all_keys += keys[key]
 
-        if basis is not None and len(basis) > 0:
+        if len(basis) > 0:
             for b in basis:
                 all_keys += b['coordinate_columns']
-        if len(all_keys) == 0:
-            return pq.read_table(path, filesystem=file_system, columns=['index']).to_pandas()
-        return pq.read_table(path, filesystem=file_system, columns=all_keys).to_pandas()
+        df = read_table(path, filesystem=filesystem, columns=all_keys)
+        if len(var_keys) > 0:
+            X = df[var_keys]
+        if len(obs_keys) > 0:
+            obs = df[obs_keys]
+        if len(basis) > 0:
+            for b in basis:
+                obsm[b['name']] = df[b['coordinate_columns']]
+        return AnnData(X=X, obs=obs, var=var, obsm=obsm)
 
-    def read_dataset(self, file_system, path, keys=None, dataset=None, schema=None):
-        dataset_id = dataset['id']
-        if self.cached_dataset_id != dataset_id:
-            self.cached_dataset_id = dataset_id
-            self.cached_data = {}
+    def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):
         if keys is None:
             keys = {}
         # path is directory
         keys = keys.copy()
         if not path.endswith('.parquet'):
-            return self.read_data_sparse(file_system, path, keys, dataset, schema)
+            return self.read_data_sparse(filesystem, path, keys, dataset, schema)
+        return self.read_data_dense(filesystem, path, keys, dataset, schema)
 
-        return self.read_data_dense(file_system, path, keys, dataset, schema)
-
-    def schema(self, file_system, path):
+    def schema(self, filesystem, path):
         if path.endswith('.json') or path.endswith('.json.gz'):
-            return super().schema(file_system, path)
+            return super().schema(filesystem, path)
         elif path.endswith('.parquet'):
             metadata = None
-            with file_system.open(path, 'rb') as s:
+            with filesystem.open(path, 'rb') as s:
                 parquet_file = pq.ParquetFile(s)
                 schema = parquet_file.schema.to_arrow_schema()
                 result = {'version': '1'}
@@ -218,4 +220,4 @@ class ParquetDataset(AbstractDataset):
                 result['shape'] = (parquet_file.metadata.num_rows, len(result['var']))
                 return result
         else:  # directory
-            return super().schema(file_system, os.path.join(path, 'index.json.gz'))
+            return super().schema(filesystem, os.path.join(path, 'index.json.gz'))

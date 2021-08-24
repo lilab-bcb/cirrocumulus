@@ -1602,10 +1602,24 @@ function handleSelectionResult(selectionResult, clear) {
     };
 }
 
-function updateDistributionData(newDistributionData, distributionData, searchTokens) {
+function updateDistributionData(newDistributionData, existingDistributionData, searchTokens) {
+    let keys = new Set(Object.keys(existingDistributionData));
+    if (newDistributionData) {
+        for (const key in newDistributionData) {
+            keys.add(key);
+        }
+    }
+    keys.forEach(key => {
+        existingDistributionData[key] = _updateDistributionData(newDistributionData ? newDistributionData[key] : null, existingDistributionData[key] || [], searchTokens);
+    });
+    return existingDistributionData;
+}
+
+function _updateDistributionData(newDistributionData, existingDistributionData, searchTokens) {
     let dimensionKeys = [searchTokens.obsCat.join('-')];
     // keep active dimensions and features only
-    distributionData = distributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 && searchTokens.X.indexOf(entry.feature) !== -1);
+    let distributionData = existingDistributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 &&
+        (searchTokens.X.indexOf(entry.feature) !== -1 || searchTokens.obs.indexOf(entry.feature) !== -1 || searchTokens.modules.indexOf(entry.feature) !== -1));
 
     if (newDistributionData) {
         // remove old data that is also in new data
@@ -1622,7 +1636,7 @@ function updateDistributionData(newDistributionData, distributionData, searchTok
 
     // sort features matching X entry order
     let featureSortOrder = {};
-    searchTokens.X.forEach((name, index) => {
+    searchTokens.X.concat(searchTokens.obs).concat(searchTokens.modules).forEach((name, index) => {
         featureSortOrder[name] = index;
     });
     distributionData.sort((a, b) => {
@@ -1642,7 +1656,7 @@ function _updateCharts(onError) {
         dispatch(_setLoading(true));
         const searchTokens = splitSearchTokens(state.searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-        let distribution = (searchTokens.X.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
+        let distribution = (searchTokens.X.length > 0 || searchTokens.modules.length > 0 || searchTokens.obs.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
         const embeddings = state.embeddings;
         let distributionData = state.distributionData;
         let selectedDistributionData = state.selectedDistributionData;
@@ -1654,7 +1668,7 @@ function _updateCharts(onError) {
         const embeddingKeys = new Set();
         const features = new Set();
         const filterJson = getFilterJson(state);
-        searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).concat(searchTokens.metafeatures).forEach(feature => {
+        searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).concat(searchTokens.modules).forEach(feature => {
             features.add(feature);
         });
         const embeddingImagesToFetch = [];
@@ -1744,11 +1758,13 @@ function _updateCharts(onError) {
         let distributionCategories = searchTokens.obsCat.slice();
         let distributionCategoryKeys = [distributionCategories.join('-')];
         let distributionMeasuresToFetch = new Set();
-        if (distribution) {
+        if (distribution) { // TODO cleanup this code
             let cachedDistributionKeys = {}; // category-feature
-            distributionData.forEach(distributionDataItem => {
-                cachedDistributionKeys[distributionDataItem.name + '-' + distributionDataItem.feature] = true;
-            });
+            for (const key in distributionData) {
+                distributionData[key].forEach(distributionDataItem => {
+                    cachedDistributionKeys[distributionDataItem.name + '-' + distributionDataItem.feature] = true;
+                });
+            }
             distributionCategoryKeys.forEach(category => {
                 searchTokens.X.forEach(feature => {
                     let key = category + '-' + feature;
@@ -1756,7 +1772,20 @@ function _updateCharts(onError) {
                         distributionMeasuresToFetch.add(feature);
                     }
                 });
+                searchTokens.obs.forEach(feature => {
+                    let key = category + '-' + feature;
+                    if (cachedDistributionKeys[key] == null) {
+                        distributionMeasuresToFetch.add('obs/' + feature);
+                    }
+                });
+                searchTokens.modules.forEach(feature => {
+                    let key = category + '-' + feature;
+                    if (cachedDistributionKeys[key] == null) {
+                        distributionMeasuresToFetch.add('modules/' + feature);
+                    }
+                });
             });
+
         }
         let q = {};
         if (embeddingsToFetch.length > 0) {
@@ -1783,8 +1812,8 @@ function _updateCharts(onError) {
                     q.values.dimensions.push(value);
                 } else if (dataset.obs.indexOf(value) !== -1) {
                     q.values.measures.push('obs/' + value);
-                } else if (searchTokens.metafeatures.indexOf(value) !== -1) {
-                    q.values.measures.push('metagenes/' + value);
+                } else if (searchTokens.modules.indexOf(value) !== -1) {
+                    q.values.measures.push('module/' + value);
                 } else {
                     q.values.measures.push(value);
                 }

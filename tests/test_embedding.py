@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import pytest
+import scipy.sparse
 
 from cirrocumulus.data_processing import handle_data
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
@@ -47,37 +47,47 @@ def diff_binning(grouped_df, measures, dimensions, continuous_obs, basis, result
 
 
 def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis):
+    obsm_field = basis
     embedding_list = [dict(ndim=2, basis=basis)]
     basis = get_basis(basis)
     values = dict(dimensions=dimensions, measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)))
     results = handle_data(dataset_api=dataset_api, dataset=input_dataset, values=values, embedding_list=embedding_list)
-    df = create_df(test_data, measures, dimensions + continuous_obs, basis)
-
     for key in measures:
         v = results['values'][key]  # dict of indices, values
         if isinstance(v, dict):
-            values = np.zeros(len(df))
+            values = np.zeros(test_data.shape[0])
             values[v['indices']] = v['values']
         else:
             values = v
-        np.testing.assert_array_equal(values, df[key].values, err_msg=key)
+        X = test_data[:, key].X
+        if scipy.sparse.issparse(X):
+            X = X.toarray()
+        X = X.flatten()
+        np.testing.assert_array_equal(values, X, err_msg=key)
     for key in dimensions:
-        np.testing.assert_array_equal(results['values'][key], test_data.obs[key], err_msg=key)
-    for key in basis['coordinate_columns']:
-        np.testing.assert_array_equal(results['embeddings'][0]['coordinates'][key], df[key].values, err_msg=key)
+        val = results['values'][key]
+        if pd.api.types.is_categorical_dtype(test_data.obs[key]):
+            val = pd.Categorical.from_codes(val['values'], val['categories'])
+        np.testing.assert_array_equal(val, test_data.obs[key].values, err_msg="obs field {}".format(key))
+    obsm = test_data.obsm[obsm_field]
+    coords = results['embeddings'][0]['coordinates']
+    for i in range(len(basis['coordinate_columns'])):
+        key = basis['coordinate_columns'][i]
+        np.testing.assert_array_equal(coords[key], obsm[:, i],
+                                      err_msg="obsm {}".format(key))
 
-
-@pytest.fixture(autouse=True, params=['sum', 'mean', 'max'])
-def agg_function(request):
-    return request.param
-
-
-def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis,
-                 agg_function):
-    nbins = 100
-    basis_dict = get_basis(basis, nbins, agg_function)
-    grouped_df = group_df(test_data, measures, dimensions, continuous_obs, basis_dict)
-    embedding_list = [dict(nbins=nbins, ndim=2, basis=basis, dimensions=dimensions, agg=agg_function)]
-    embedding_list[0]['measures'] = measures + list(map(lambda x: 'obs/' + x, continuous_obs))
-    results = handle_data(dataset_api=dataset_api, dataset=input_dataset, embedding_list=embedding_list)
-    diff_binning(grouped_df, measures, dimensions, continuous_obs, basis_dict, results['embeddings'][0])
+#
+# @pytest.fixture(autouse=True, params=['sum', 'mean', 'max'])
+# def agg_function(request):
+#     return request.param
+#
+#
+# def test_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis,
+#                  agg_function):
+#     nbins = 100
+#     basis_dict = get_basis(basis, nbins, agg_function)
+#     grouped_df = group_df(test_data, measures, dimensions, continuous_obs, basis_dict)
+#     embedding_list = [dict(nbins=nbins, ndim=2, basis=basis, dimensions=dimensions, agg=agg_function)]
+#     embedding_list[0]['measures'] = measures + list(map(lambda x: 'obs/' + x, continuous_obs))
+#     results = handle_data(dataset_api=dataset_api, dataset=input_dataset, embedding_list=embedding_list)
+#     diff_binning(grouped_df, measures, dimensions, continuous_obs, basis_dict, results['embeddings'][0])
