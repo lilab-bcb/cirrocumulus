@@ -339,17 +339,7 @@ class SideBar extends React.PureComponent {
     };
 
 
-    onChartTypeChange = (event) => {
-        this.props.onDistributionPlotOptions({chartType: event.target.value});
-    };
 
-    onViolinScaleChange = (event) => {
-        this.props.onDistributionPlotOptions({violinScale: event.target.value});
-    };
-
-    onViolinShowBoxplot = (event) => {
-        this.props.onDistributionPlotOptions({violinShowBoxplot: event.target.checked});
-    };
 
 
     render() {
@@ -359,7 +349,6 @@ class SideBar extends React.PureComponent {
             chartSize,
             classes,
             datasetViews,
-            distributionPlotOptions,
             embeddingData,
             interpolator,
             pointSize,
@@ -370,7 +359,7 @@ class SideBar extends React.PureComponent {
             unselectedPointSize
         } = this.props;
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
-        const chartType = distributionPlotOptions.chartType;
+
 
         const {
             unselectedOpacity,
@@ -465,56 +454,14 @@ class SideBar extends React.PureComponent {
                     {/*        size={"small"} variant="outlined"*/}
                     {/*        onClick={event => this.onSubmitJob('corr')}>Go</Button>*/}
                 </div>}
-                <div
-                    style={tab === 'distribution' ? null : {display: 'none'}}>
-                    <Divider/>
-                    <Typography gutterBottom={false} component={"h1"}
-                                className={classes.title}>View</Typography>
-                    <div style={{marginTop: 8}}>
-                        {chartType === 'violin' && <FormControl className={classes.formControl}>
-                            <InputLabel id="violin-scale-label">Scale</InputLabel>
-                            <Select
-                                className={classes.select}
-                                labelId="violin-scale-label"
-                                value={distributionPlotOptions.violinScale}
-                                onChange={this.onViolinScaleChange}
-                            >
-                                <MenuItem value={'area'}>Area</MenuItem>
-                                <MenuItem value={'width'}>Width</MenuItem>
-                            </Select>
-                            <FormHelperText>If "area", violins have the same area. If "width", violins have the
-                                same
-                                maximum
-                                width.</FormHelperText>
-                        </FormControl>}
+                {/*<div*/}
+                {/*    style={tab === 'distribution' ? null : {display: 'none'}}>*/}
+                {/*    <Divider/>*/}
+                {/*    <Typography gutterBottom={false} component={"h1"}*/}
+                {/*                className={classes.title}>View</Typography>*/}
 
-                        {chartType === 'violin' && <div><FormControlLabel
-                            control={
-                                <Switch
-                                    value={"violinShowBoxplot"}
-                                    checked={distributionPlotOptions.violinShowBoxplot}
-                                    onChange={this.onViolinShowBoxplot}
-                                />
-                            }
-                            label="Show Box Plot"
-                        /></div>}
 
-                        <FormControl className={classes.formControl}>
-                            <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>
-                            <Select
-                                className={classes.select}
-                                labelId="dist-chart-type-label"
-                                value={chartType}
-                                onChange={this.onChartTypeChange}
-                            >
-                                <MenuItem value={'dotplot'}>Dot Plot</MenuItem>
-                                <MenuItem value={'heatmap'}>Heatmap</MenuItem>
-                                <MenuItem value={'violin'}>Violin</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </div>
-
-                </div>
+                {/*</div>*/}
 
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Divider/>

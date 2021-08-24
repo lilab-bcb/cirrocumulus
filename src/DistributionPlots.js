@@ -1,50 +1,62 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
-import {groupBy} from 'lodash';
+import {groupBy, partial} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
 import {setDistributionPlotInterpolator, setDistributionPlotOptions} from './actions';
 import DistributionGroup from './DistributionGroup';
+import Typography from '@material-ui/core/Typography';
 
 
-class DistributionPlots extends React.PureComponent {
+function DistributionPlots(props) {
 
-    onInterpolator = (value) => {
-        const scale = this.props.distributionPlotInterpolator.scale;
-        value.scale = scale;
-        this.props.onInterpolator(value);
+
+    function onInterpolator(dataType, value) {
+        const existingInterpolator = props.distributionPlotInterpolator[dataType];
+        value.scale = existingInterpolator.scale;
+        props.distributionPlotInterpolator[dataType] = value;
+        props.onInterpolator(Object.assign({}, props.distributionPlotInterpolator));
+    }
+
+    function onColorScalingChange(dataType, value) {
+        const existingInterpolator = props.distributionPlotInterpolator[dataType];
+        existingInterpolator.scale = value;
+        props.onInterpolator(Object.assign({}, props.distributionPlotInterpolator));
+    }
+
+    function onDistributionPlotOptionsDataType(dataType, value) {
+        props.distributionPlotOptions[dataType] = Object.assign({}, props.distributionPlotOptions[dataType], value);
+        onDistributionPlotOptions(Object.assign({}, props.distributionPlotOptions));
+    }
+    
+    const {
+        cachedData,
+        categoricalNames,
+        chartOptions,
+        dataset,
+        distributionData,
+        distributionPlotOptions,
+        distributionPlotInterpolator,
+        embeddingData,
+        globalFeatureSummary,
+        onDistributionPlotOptions,
+        selectedDistributionData,
+        setTooltip
+    } = props;
+    const textColor = chartOptions.darkMode ? 'white' : 'black';
+    const keys = Object.keys(distributionData);
+    const typeToInfo = {
+        X: {order: 0, name: 'Features'},
+        modules: {order: 1, name: 'Modules'},
+        obs: {order: 2, name: 'Observations'}
     };
-
-    onColorScalingChange = (value) => {
-        const distributionPlotInterpolator = this.props.distributionPlotInterpolator;
-        distributionPlotInterpolator.scale = value;
-        this.props.onInterpolator(Object.assign({}, distributionPlotInterpolator));
-    };
-
-    render() {
-        const {
-            cachedData,
-            categoricalNames,
-            chartOptions,
-            dataset,
-            distributionData,
-            distributionPlotOptions,
-            distributionPlotInterpolator,
-            embeddingData,
-            globalFeatureSummary,
-            onDistributionPlotOptions,
-            selectedDistributionData,
-            setTooltip
-        } = this.props;
-
-        if (distributionData.length === 0) {
-            return null;
-        }
-        const textColor = chartOptions.darkMode ? 'white' : 'black';
-        let dimension2data = groupBy(distributionData, 'dimension');
-        let dimension2selecteddata = groupBy(selectedDistributionData, 'dimension');
-
-        return <>{Object.keys(dimension2data).map(dimension => {
+    keys.sort((a, b) => typeToInfo[a].order - typeToInfo[b].order);
+    return keys.map(key => {
+        const name = typeToInfo[key].name;
+        let dimension2data = groupBy(distributionData[key], 'dimension');
+        let dimension2selecteddata = groupBy(selectedDistributionData[key], 'dimension');
+        return <div key={key}><Typography color="textPrimary"
+                                          variant={"h5"}>{name}</Typography>{Object.keys(dimension2data).map(dimension => {
             const data = dimension2data[dimension];
             const categoryColorScales = [];
             data[0].dimensions.forEach(dimension => {
@@ -59,8 +71,8 @@ class DistributionPlots extends React.PureComponent {
                 if (!found) {
                     categoryColorScales.push(scaleOrdinal(schemeCategory10)); // TODO make color scale independent of embedding
                 }
-
             });
+
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
                                       setTooltip={setTooltip}
@@ -69,15 +81,15 @@ class DistributionPlots extends React.PureComponent {
                                       distributionData={data}
                                       globalFeatureSummary={globalFeatureSummary}
                                       selectedData={dimension2selecteddata[dimension]}
-                                      interpolator={distributionPlotInterpolator}
-                                      distributionPlotOptions={distributionPlotOptions}
+                                      interpolator={distributionPlotInterpolator[key]}
+                                      distributionPlotOptions={distributionPlotOptions[key]}
                                       categoricalNames={categoricalNames}
                                       textColor={textColor}
-                                      handleInterpolator={this.onInterpolator}
-                                      onColorScalingChange={this.onColorScalingChange}
-                                      onDistributionPlotOptions={onDistributionPlotOptions}/>;
-        })}</>;
-    }
+                                      handleInterpolator={partial(onInterpolator, key)}
+                                      onColorScalingChange={partial(onColorScalingChange, key)}
+                                      onDistributionPlotOptions={partial(onDistributionPlotOptionsDataType, key)}/>;
+        })}</div>;
+    });
 
 
 }
@@ -103,11 +115,11 @@ const mapDispatchToProps = dispatch => {
         },
         onInterpolator: value => {
             dispatch(setDistributionPlotInterpolator(value));
-        },
+        }
     };
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(DistributionPlots));
 
