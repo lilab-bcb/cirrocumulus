@@ -51,8 +51,8 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         end = min(nfeatures, start + batch_size)
         features = var_names[start:end]
         adata = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
-        database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * end / nfeatures),
-                                result=None)
+        # database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * end / nfeatures),
+        #                         result=None)
         return adata
 
     obs = pd.DataFrame(index=pd.RangeIndex(schema['shape'][0]))
@@ -73,8 +73,8 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         data={'index': var_names, '{}:pvals_adj'.format(comparison): pvals, '{}:scores'.format(comparison): de.scores,
               '{}:lfc'.format(comparison): de.logfoldchanges})
     if de.frac_expressed is not None:
-        result_df['{}:pts_1'] = de.frac_expressed.iloc[0]
-        result_df['{}:pts_2'] = de.frac_expressed.iloc[1]
+        result_df['{}:pts_1'.format(comparison)] = de.frac_expressed.iloc[0]
+        result_df['{}:pts_2'.format(comparison)] = de.frac_expressed.iloc[1]
     result = dict(groups=[comparison],
                   format='json',
                   fields=['pvals_adj', 'scores', 'lfc'] + (['pts_1', 'pts_2'] if de.frac_expressed is not None else []),
