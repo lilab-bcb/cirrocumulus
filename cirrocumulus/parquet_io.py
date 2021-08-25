@@ -20,8 +20,6 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
 
 
 def save_adata_pq(datasets, schema, output_directory):
-    if not output_directory.lower().endswith('.cpq'):
-        output_directory += '.cpq'
     X_dir = os.path.join(output_directory, 'X')
     module_dir = os.path.join(output_directory, 'X_module')
     obs_dir = os.path.join(output_directory, 'obs')
@@ -81,7 +79,6 @@ def save_data_obsm(adata, obsm_dir):
 def save_data_obs(adata, obs_dir):
     logger.info('writing adata obs')
     for name in adata.obs:
-        # TODO sort?
         value = adata.obs[name]
         write_pq(dict(value=value), obs_dir, name)
     write_pq(dict(value=adata.obs.index.values), obs_dir, 'index')

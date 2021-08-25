@@ -63,9 +63,6 @@ def save_adata_jsonl(datasets, schema, output_path):
     compress = False
     index = {}  # key to byte start-end
 
-    if not output_path.lower().endswith('.jsonl'):
-        output_path += '.jsonl'
-
     with open(output_path, 'wb') as f:
         for dataset in datasets:
             save_adata_X(dataset, f, index, compress)
@@ -115,6 +112,9 @@ def save_data_obsm(adata, f, index, compress):
 def save_data_obs(adata, f, index, compress):
     logger.info('writing adata obs')
     for name in adata.obs:
-        value = adata.obs[name]
+        series = adata.obs[name]
+        value = series
+        if pd.api.types.is_categorical_dtype(series):
+            value = dict(values=series.values.codes, categories=series.cat.categories.values)
         write_jsonl(value, f, name, index, compress)
     write_jsonl(adata.obs.index.values, f, 'index', index, compress)
