@@ -20,7 +20,8 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
 
 
 def save_adata_pq(datasets, schema, output_directory):
-    logger.info('Save adata')
+    if not output_directory.lower().endswith('.cpq'):
+        output_directory += '.cpq'
     X_dir = os.path.join(output_directory, 'X')
     module_dir = os.path.join(output_directory, 'X_module')
     obs_dir = os.path.join(output_directory, 'obs')
@@ -70,11 +71,12 @@ def save_data_obsm(adata, obsm_dir):
 
     for name in adata.obsm.keys():
         m = adata.obsm[name]
-        dimensions = 3 if m.shape[1] > 2 else 2
-        d = {}
-        for i in range(dimensions):
-            d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
-        write_pq(d, obsm_dir, name)
+        dim = m.shape[1]
+        if 1 < dim <= 3:
+            d = {}
+            for i in range(dim):
+                d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
+            write_pq(d, obsm_dir, name)
 
 
 def save_data_obs(adata, obs_dir):
