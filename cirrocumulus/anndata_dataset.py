@@ -112,5 +112,6 @@ class AnndataDataset(AbstractDataset):
                 embedding_name = b['name']
                 embedding_data = adata.obsm[embedding_name]
                 obsm[embedding_name] = embedding_data
-
+                if X is None:
+                    X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)
