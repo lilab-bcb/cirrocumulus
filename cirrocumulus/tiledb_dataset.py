@@ -120,4 +120,6 @@ class TileDBDataset:
                 embedding_name = b['name']
                 with tiledb.open(os.path.join(path, 'emb', embedding_name), mode="r") as array:
                     obsm[embedding_name] = array
+                    if X is None:
+                        X = scipy.sparse.coo_matrix(([], ([], [])), shape=(array.shape[0], 0))
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)
