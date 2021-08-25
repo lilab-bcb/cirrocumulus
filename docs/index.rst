@@ -9,5 +9,6 @@
    command_line
    release_notes
    contact
+   source
 
 
