@@ -17,7 +17,7 @@ import scipy.sparse
 from scipy.sparse import coo_matrix, dia_matrix
 
 
-class CountMeanVarFrac(TypedDict):
+class CountMeanVarFrac(dict):
     count: pd.Series
     mean: pd.DataFrame
     var: pd.DataFrame
