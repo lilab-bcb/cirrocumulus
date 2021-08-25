@@ -73,7 +73,7 @@ setup(
         "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
-        test=['pytest']
+        test=['pytest', 'scanpy']
     ),
     keywords="single cell/nucleus genomics visualization",
     packages=find_packages(),
