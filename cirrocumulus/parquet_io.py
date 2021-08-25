@@ -42,19 +42,18 @@ def save_adata_pq(datasets, schema, output_directory):
         save_data_obsm(dataset, obsm_dir)
 
 
-def save_adata_X(adata, X_dir, partition=False):
+def save_adata_X(adata, X_dir):
     adata_X = adata.X
     names = adata.var.index
     is_sparse = scipy.sparse.issparse(adata_X)
     if is_sparse and scipy.sparse.isspmatrix_csr(adata_X):
         adata_X = adata_X.tocsc()
-
+    output_dir = X_dir
     for j in range(adata_X.shape[1]):
         X = adata_X[:, j]
         if is_sparse:
             X = X.toarray().flatten()
-        filename = names[j] if not partition else 'data'
-        output_dir = X_dir if not partition else os.path.join(X_dir, 'id={}'.format(names[j]))
+        filename = names[j]
 
         if is_sparse:
             indices = np.where(X != 0)[0]
