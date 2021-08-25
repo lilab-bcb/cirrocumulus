@@ -1,4 +1,4 @@
-from cirrocumulus.simple_data import SimpleData
+from cirrocumulus.anndata_util import X_stats, obs_stats
 
 
 class FeatureAggregator:
@@ -22,15 +22,15 @@ class FeatureAggregator:
                     feature_result['numExpressed'] = int(values.loc['numExpressed'])
                 result[feature] = feature_result
 
-    def execute(self, df):
+    def execute(self, adata):
         result = {}
         for column in self.dimensions:
-            df_counts = df.agg({column: lambda x: x.value_counts(sort=False)})
+            df_counts = adata.obs.agg({column: lambda x: x.value_counts(sort=False)})
             dimension_summary = {'categories': df_counts.index,
                                  'counts': df_counts[column]}
             result[column] = dimension_summary
         if len(self.var_measures) > 0:
-            FeatureAggregator.add_to_result(SimpleData.X_stats(df, self.var_measures), result)
+            FeatureAggregator.add_to_result(X_stats(adata), result)
         if len(self.obs_measures) > 0:
-            FeatureAggregator.add_to_result(SimpleData.obs_stats(df, self.obs_measures), result)
+            FeatureAggregator.add_to_result(obs_stats(adata, self.obs_measures), result)
         return result

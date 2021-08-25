@@ -86,7 +86,7 @@ export const FEATURE_TYPE = {
     OBS_CAT: 'obsCat',
     X: 'X',
     FEATURE_SET: 'featureSet',
-    METAFEATURE: 'metafeature',
+    MODULE: 'module',
     COUNT: 'count'
 };
 
@@ -111,8 +111,8 @@ export function isMac() {
 
 const reactMarkdownStyles = (theme) => ({
     listItem: {
-        marginTop: theme.spacing(1),
-    },
+        marginTop: theme.spacing(1)
+    }
 });
 
 
@@ -121,22 +121,22 @@ export const REACT_MD_OVERRIDES = {
         component: Typography,
         props: {
             gutterBottom: true,
-            variant: 'h5',
-        },
+            variant: 'h5'
+        }
     },
     h2: {component: Typography, props: {gutterBottom: true, variant: 'h6'}},
     h3: {component: Typography, props: {gutterBottom: true, variant: 'subtitle1'}},
     h4: {
         component: Typography,
-        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+        props: {gutterBottom: true, variant: 'caption', paragraph: true}
     },
     h5: {
         component: Typography,
-        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+        props: {gutterBottom: true, variant: 'caption', paragraph: true}
     },
     h6: {
         component: Typography,
-        props: {gutterBottom: true, variant: 'caption', paragraph: true},
+        props: {gutterBottom: true, variant: 'caption', paragraph: true}
     },
     p: {component: Typography, props: {paragraph: true}},
     a: {component: Link, props: {target: '_blank'}},
@@ -145,7 +145,7 @@ export const REACT_MD_OVERRIDES = {
             <li className={classes.listItem}>
                 <Typography component="span" {...props} />
             </li>
-        )),
+        ))
     }
 };
 
@@ -180,7 +180,7 @@ export function summarizeDensity(values, index, selection, summarizationMethod) 
                     max = count;
                     maxValue = value;
                 }
-            })
+            });
             return maxValue;
         };
 
@@ -758,7 +758,7 @@ export function splitSearchTokens(tokens) {
     let obs = [];
     let obsCat = [];
     let featureSets = [];
-    let metafeatures = [];
+    let modules = [];
     tokens.forEach(token => {
         if (token.type === FEATURE_TYPE.X) {
             X.push(token.value);
@@ -768,11 +768,11 @@ export function splitSearchTokens(tokens) {
             obsCat.push(token.value);
         } else if (token.type === FEATURE_TYPE.FEATURE_SET) {
             featureSets.push(token.value);
-        } else if (token.type === FEATURE_TYPE.METAFEATURE) {
-            metafeatures.push(token.value);
+        } else if (token.type === FEATURE_TYPE.MODULE) {
+            modules.push(token.value);
         } else {
             console.log('Unknown type: ' + token);
         }
     });
-    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, metafeatures: metafeatures, featureSetsAdd: []};
+    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, modules: modules, featureSetsAdd: []};
 }

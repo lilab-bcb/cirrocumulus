@@ -5,10 +5,9 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
-from .file_system_adapter import get_scheme
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import json_response
+from .util import json_response, get_scheme
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -58,7 +57,6 @@ def handle_category_name():
         if dataset_id == '':
             return 'Please provide an id', 400
         return json_response(database_api.category_names(email, dataset_id))
-
 
     if request.method == 'PUT':
         content = request.get_json(force=True, cache=False)
@@ -372,7 +370,17 @@ def handle_job_status():
     email = get_auth().auth()['email']
     database_api = get_database()
     job_id = request.args.get('id', '')
-    return  database_api.get_job(email=email, job_id=job_id, return_result=False)
+    return database_api.get_job(email=email, job_id=job_id, return_result=False)
+
+
+@blueprint.route('/module', methods=['POST'])
+def handle_module_score():
+    content = request.get_json(cache=False)
+    email, dataset = get_email_and_dataset(content)
+    features = content.get('features')
+    adata = dataset_api.read_dataset(dataset, keys=dict(X=features))
+    return json_response(adata.X.mean(axis=1))
+
 
 @blueprint.route('/job', methods=['GET', 'DELETE'])
 def handle_job():
@@ -392,9 +400,7 @@ def handle_job():
             file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
             return send_file(file_path)
         job = database_api.get_job(email=email, job_id=job_id, return_result=True)
-        if 'format'in job and job['format']=='zarr':
-            xx
-
+        return job
 
 
 @blueprint.route('/jobs', methods=['GET'])

@@ -1,6 +1,6 @@
 import os
 
-from .file_system_adapter import FileSystemAdapter
+from cirrocumulus.util import get_fs
 
 
 def get_path(dataset, dataset_path):
@@ -16,7 +16,6 @@ def get_path(dataset, dataset_path):
 class DatasetAPI:
     def __init__(self):
         self.suffix_to_provider = {}
-        self.fs_adapter = FileSystemAdapter()
         self.default_provider = None
         self.cached_schema = None
         self.cached_dataset_id = None
@@ -43,7 +42,7 @@ class DatasetAPI:
             return self.cached_schema
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        schema_dict = provider.schema(self.fs_adapter.get_fs(path), path)
+        schema_dict = provider.schema(get_fs(path), path)
         if 'summary' in dataset:
             schema_dict['summary'] = dataset['summary']
         if 'markers' in schema_dict:
@@ -55,27 +54,27 @@ class DatasetAPI:
     def has_precomputed_stats(self, dataset):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.has_precomputed_stats(self.fs_adapter.get_fs(path), path, dataset)
+        return provider.has_precomputed_stats(get_fs(path), path, dataset)
 
     def read_precomputed_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.read_precomputed_stats(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys)
+        return provider.read_precomputed_stats(get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys)
 
     def read_precomputed_grouped_stats(self, dataset, obs_keys=[], var_keys=[]):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.read_precomputed_grouped_stats(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys,
-            var_keys=var_keys)
+        return provider.read_precomputed_grouped_stats(get_fs(path), path, obs_keys=obs_keys,
+                                                       var_keys=var_keys)
 
     def read_precomputed_basis(self, dataset, obs_keys=[], var_keys=[], basis=None):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.read_precomputed_basis(self.fs_adapter.get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys,
-            basis=basis)
+        return provider.read_precomputed_basis(get_fs(path), path, obs_keys=obs_keys, var_keys=var_keys,
+                                               basis=basis)
 
     def read_dataset(self, dataset, keys=[]):
         path = dataset['url']
         provider = self.get_dataset_provider(path)
-        return provider.read_dataset(self.fs_adapter.get_fs(path), path, keys=keys, dataset=dataset,
-            schema=self.schema(dataset))
+        return provider.read_dataset(get_fs(path), path, keys=keys, dataset=dataset,
+                                     schema=self.schema(dataset))

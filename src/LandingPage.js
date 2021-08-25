@@ -6,8 +6,10 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
 import {REACT_MD_OVERRIDES} from './util';
+import preval from 'preval.macro';
 
 function LandingPage(props) {
+    const buildDate = preval`module.exports = new Date().toDateString()`;
     return <Paper elevation={0}>
 
         <p>Cirrocumulus is an interactive visualization tool for large-scale single-cell genomics
@@ -80,7 +82,9 @@ function LandingPage(props) {
         <Box><ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={props.serverInfo.footer}/></Box>}
 
         <Divider/>
-        {process.env.REACT_APP_VERSION != null && <p>Version: {process.env.REACT_APP_VERSION}</p>}
+        {process.env.REACT_APP_VERSION != null && <p>Version: {process.env.REACT_APP_VERSION} <br /><small>{buildDate}</small></p>}
+
+
     </Paper>;
 }
 

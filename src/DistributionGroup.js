@@ -1,4 +1,4 @@
-import {InputLabel, MenuItem, Select} from '@material-ui/core';
+import {InputLabel, MenuItem, Select, Switch} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import FormControl from '@material-ui/core/FormControl';
 import Input from '@material-ui/core/Input';
@@ -21,11 +21,13 @@ import {
 import {Vector} from './Vector';
 import {stats} from './VectorUtil';
 import ViolinPlot from './ViolinPlot';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 
 const styles = theme => ({
     formControl: {
         display: 'block',
-        margin: theme.spacing(1),
+        margin: theme.spacing(1)
     }
 });
 
@@ -185,6 +187,17 @@ class DistributionGroup extends React.PureComponent {
         };
     }
 
+    onChartTypeChange = (event) => {
+        this.props.onDistributionPlotOptions({chartType: event.target.value});
+    };
+
+    onViolinScaleChange = (event) => {
+        this.props.onDistributionPlotOptions({violinScale: event.target.value});
+    };
+
+    onViolinShowBoxplot = (event) => {
+        this.props.onDistributionPlotOptions({violinShowBoxplot: event.target.checked});
+    };
     onSortOrderChanged = (event) => {
         this.props.onDistributionPlotOptions({sortBy: event.target.value});
     };
@@ -218,6 +231,7 @@ class DistributionGroup extends React.PureComponent {
         if (distributionData == null || distributionData.length === 0) {
             return null;
         }
+        const chartType = distributionPlotOptions.chartType;
         const meanAndPercentRange = getMeanAndPercentRange(distributionData);
         const meanRange = interpolator.scale !== INTERPOLATOR_SCALING_NONE ? [0, 1] : meanAndPercentRange.mean;
         const percentRange = meanAndPercentRange.percent;
@@ -259,7 +273,7 @@ class DistributionGroup extends React.PureComponent {
                 distributionPlotOptions.sortBy = distributionData[0].dimension;
             }
         }
-        const chartType = distributionPlotOptions.chartType;
+
         const maxRadius = 9;
         const minRadius = 1;
         const colorScale = createColorScale(interpolator).domain(meanRange);
@@ -274,6 +288,8 @@ class DistributionGroup extends React.PureComponent {
             return null;
         }
         const features = (data2d ? data2d[0] : selectedData2d[0]).map(item => item.feature);
+
+
         if (chartType === 'violin') {
             const allData = selectedData ? distributionData.concat(selectedData) : distributionData;
             features.forEach((feature) => {
@@ -382,6 +398,50 @@ class DistributionGroup extends React.PureComponent {
                         ))}
                     </Select>
                 </FormControl>
+
+
+                {chartType === 'violin' && <FormControl className={this.props.classes.formControl}>
+                    <InputLabel id="violin-scale-label">Scale</InputLabel>
+                    <Select
+                        className={this.props.classes.select}
+                        labelId="violin-scale-label"
+                        value={distributionPlotOptions.violinScale}
+                        onChange={this.onViolinScaleChange}
+                    >
+                        <MenuItem value={'area'}>Area</MenuItem>
+                        <MenuItem value={'width'}>Width</MenuItem>
+                    </Select>
+                    <FormHelperText>If "area", violins have the same area. If "width", violins have the
+                        same
+                        maximum
+                        width.</FormHelperText>
+                </FormControl>}
+
+                {chartType === 'violin' && <div><FormControlLabel
+                    control={
+                        <Switch
+                            value={"violinShowBoxplot"}
+                            checked={distributionPlotOptions.violinShowBoxplot}
+                            onChange={this.onViolinShowBoxplot}
+                        />
+                    }
+                    label="Show Box Plot"
+                /></div>}
+
+                <FormControl className={this.props.classes.formControl}>
+                    <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>
+                    <Select
+                        className={this.props.classes.select}
+                        labelId="dist-chart-type-label"
+                        value={chartType}
+                        onChange={this.onChartTypeChange}
+                    >
+                        {this.props.showDotPlotOption && <MenuItem value={'dotplot'}>Dot Plot</MenuItem>}
+                        <MenuItem value={'heatmap'}>Heatmap</MenuItem>
+                        <MenuItem value={'violin'}>Violin</MenuItem>
+                    </Select>
+                </FormControl>
+
             </Box>
         );
     }

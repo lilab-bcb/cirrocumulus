@@ -90,14 +90,14 @@ export function getBasis(basis, dimensions = 2, mode = null) {
     }
     let full_name = basis + '_' + dimensions;
     if (mode != null) {
-        full_name = full_name + '_' + mode
+        full_name = full_name + '_' + mode;
     }
     return {
         name: basis,
         dimensions: dimensions,
         coordinate_columns: coordinate_columns,
         mode: mode,
-        full_name: full_name,
+        full_name: full_name
     };
 }
 
@@ -141,33 +141,40 @@ export function computeDerivedStats(result, q, cachedData) {
     }
 
     if (q.groupedStats) {
-        const dimensions = q.groupedStats.dimensions || []; // array of arrays
+        const dimensions = q.groupedStats.dimensions || []; // array of arrays to support multiple groupings in the future
         const measures = q.groupedStats.measures || [];
         const typeToMeasures = getTypeToMeasures(measures);
-        if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
+        if (dimensions.length > 0) {
             // TODO, currently we only handle dimensions[0]
-            result.distribution = groupedStats(getVectors(cachedData, dimensions[0]), getVectors(cachedData, typeToMeasures.X));
+            const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions[0]));
+            const distribution = {};
+            for (const key in typeToMeasures) {
+                const measures = typeToMeasures[key];
+                if (measures.length > 0) {
+                    distribution[key] = groupedStats(groupDimensionInfo, getVectors(cachedData, measures));
+                }
+            }
+            result.distribution = distribution;
         }
     }
 
     if (q.selection) {
         const dimensions = q.selection.dimensions || [];
         const measures = q.selection.measures || [];
-        // const embeddings = q.selection.embeddings || [];
         const typeToMeasures = getTypeToMeasures(measures);
         result.selection = {};
         result.selection.indices = getPassingFilterIndices(cachedData, q.selection.filter);
         const selectedIndices = Array.from(result.selection.indices);
-        // if (embeddings.length > 0) {
-        //     result.selection.coordinates = {};
-        //     embeddings.forEach(embedding => {
-        //         let basis = getBasis(embedding.basis, embedding.nbins,
-        //             embedding.agg, embedding.ndim || 2, embedding.precomputed);
-        //         result.selection.coordinates[basis.full_name] = {'indices_or_bins': selectedIndices};
-        //     });
-        // }
-        if (dimensions.length > 0 && typeToMeasures.X.length > 0) {
-            result.selection.distribution = groupedStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.X, selectedIndices));
+        if (dimensions.length > 0) {
+            const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions, selectedIndices));
+            const distribution = {};
+            for (const key in typeToMeasures) {
+                const measures = typeToMeasures[key];
+                if (measures.length > 0) {
+                    distribution[key] = groupedStats(groupDimensionInfo, getVectors(cachedData, measures, selectedIndices));
+                }
+            }
+            result.selection.distribution = distribution;
         }
         result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, result.selection.indices),
             getVectors(cachedData, typeToMeasures.X, selectedIndices));
@@ -189,8 +196,8 @@ export function valueCounts(v) {
 }
 
 
-export function groupedStats(dimensions, varMeasures) {
-    const categoryMap = {};
+export function groupDimensions(dimensions) {
+    const keyToIndices = {};
     const ndim = dimensions.length;
     const size = dimensions[0].size();
     const tmp = [];
@@ -199,42 +206,32 @@ export function groupedStats(dimensions, varMeasures) {
             tmp[j] = dimensions[j].get(i);
         }
         const key = tmp.join(', ');
-        let value = categoryMap[key];
+        let value = keyToIndices[key];
         if (value === undefined) {
             value = {key: tmp.slice(), indices: []};
-            categoryMap[key] = value;
+            keyToIndices[key] = value;
         }
         value.indices.push(i);
     }
-    let categories = Object.keys(categoryMap);
+    let categories = Object.keys(keyToIndices);
     const dimensionNames = [];
     for (let j = 0; j < ndim; j++) {
         dimensionNames[j] = dimensions[j].getName();
     }
     const dimensionName = dimensionNames.join('-');
-    // each entry {dimension:dimensionName, name:category, feature:'', mean:0, percentExpressed:xx}
-    let result = [];
-    categories.forEach(category => {
-        const value = categoryMap[category];
-        varMeasures.forEach((v) => {
+    return {categories, keyToIndices, dimensionName, dimensionNames};
+}
 
-            // let otherIndices = [];
-            // categories.forEach(otherCategory => {
-            //     if (category !== otherCategory) {
-            //         otherIndices = otherIndices.concat(categoryToIndices[otherCategory]);
-            //     }
-            // });
-            // const restVector = new SlicedVector(v, otherIndices);
-            // const restStats = stats(restVector);
-            // results.values[index].restMean.push(restStats.mean);
-            // results.values[index].restFractionExpressed.push(restStats.numExpressed / restVector.size());
+export function groupedStats(groupDimensionInfo, vectors) {
+    let result = [];
+    groupDimensionInfo.categories.forEach(category => {
+        const value = groupDimensionInfo.keyToIndices[category];
+        vectors.forEach((v) => {
             const categoryVector = new SlicedVector(v, value.indices);
             const categoryStats = stats(categoryVector);
-            // results.values[index].mean.push(categoryStats.mean);
-            // results.values[index].percentExpressed.push(categoryStats.numExpressed / categoryVector.size());
             const entry = {
-                dimension: dimensionName,
-                dimensions: dimensionNames,
+                dimension: groupDimensionInfo.dimensionName,
+                dimensions: groupDimensionInfo.dimensionNames,
                 categories: value.key,
                 feature: v.getName(),
                 mean: categoryStats.mean,
@@ -242,7 +239,6 @@ export function groupedStats(dimensions, varMeasures) {
                 percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
                 vector: categoryVector
             };
-
             result.push(entry);
         });
     });

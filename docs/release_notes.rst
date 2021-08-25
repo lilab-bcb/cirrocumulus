@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.19 `August 25, 2021`
+    * Show distributions for numerical cell metadata
+    * Improve interactive differential expression performance
+
 - 1.1.18 `August 16, 2021`
     * `cirro prepare_data` accepts multiple input datasets to better support multimodal data
 

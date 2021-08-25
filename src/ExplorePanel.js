@@ -15,7 +15,7 @@ import Link from '@material-ui/core/Link';
 import Tooltip from '@material-ui/core/Tooltip';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
-import {findIndex} from 'lodash';
+import {findIndex, isArray, isObject} from 'lodash';
 import memoize from "memoize-one";
 import React, {useState} from 'react';
 import withStyles from '@material-ui/core/styles/withStyles';
@@ -53,9 +53,9 @@ import {connect} from 'react-redux';
 const styles = theme => ({
     toolbar: {
         '& hr': {
-            margin: theme.spacing(0, 0.5),
+            margin: theme.spacing(0, 0.5)
         }
-    },
+    }
 });
 const getAnnotationOptions = memoize(
     (obs, obsCat) => {
@@ -92,12 +92,15 @@ const getEmbeddingOptions = memoize(
         return options;
     }
 );
-const getMetafeaturesOptions = memoize((items) => {
+const getModulesOptions = memoize((items) => {
         if (items) {
             const options = items.slice();
-            options.sort(NATSORT);
-            return options;
+            options.sort((item1, item2) => {
+                return NATSORT(item1.id.toLowerCase(), item2.id.toLowerCase());
+            });
+            return options.map(option => option.id);
         }
+        return [];
     }
 );
 const getFeatureSetOptions = memoize((items, categoricalNames) => {
@@ -127,12 +130,36 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
 );
 
 
+function getModuleView(item) {
+    const keys = Object.keys(item);
+    const index = keys.indexOf('id');
+    if (index !== -1) {
+        keys.splice(index, 1);
+    }
+    keys.sort(NATSORT);
+    return keys.map(key => {
+        let value = item[key];
+        if (isArray(value)) {
+            value = value.join(', ');
+        } else if (isObject(value)) {
+            value = JSON.stringify(value);
+        } else {
+            value = '' + value;
+        }
+        return <div key={key}><Typography color="textSecondary">
+            {key}
+        </Typography>
+            <Typography variant="h6" component="h3">
+                {value}
+            </Typography>
+        </div>;
+    });
+}
+
 function ExplorePanel(props) {
-
-
-    const [featureSetAnchorEl, setFeatureSetAnchorEl] = useState(null);
-    const [featureSet, setFeatureSet] = useState(null);
-    const [featureSetView, setFeatureSetView] = useState(null);
+    const [selectedPopupMenuItem, setSelectedPopupMenuItem] = useState(null);
+    const [popupAnchorEl, setPopupAnchorEl] = useState(null);
+    const [selectedItem, setSelectedItem] = useState({});
 
     function onDatasetFilterChipDeleted(name) {
         props.removeDatasetFilter(name);
@@ -150,8 +177,8 @@ function ExplorePanel(props) {
         props.handleSearchTokens(value, FEATURE_TYPE.X);
     }
 
-    function onMetafeaturesChange(event, value) {
-        props.handleSearchTokens(value, FEATURE_TYPE.METAFEATURE);
+    function onModulesChange(event, value) {
+        props.handleSearchTokens(value, FEATURE_TYPE.MODULE);
     }
 
     function onObservationsIconClick(event, option) {
@@ -215,36 +242,58 @@ function ExplorePanel(props) {
         if (newFeatureSet == null) {
             console.log(id + ' not found');
         }
-        setFeatureSetAnchorEl(target);
-        setFeatureSet(newFeatureSet);
+        setPopupAnchorEl(target);
+        setSelectedItem({value: newFeatureSet, type: FEATURE_TYPE.FEATURE_SET});
     }
 
-    function onFeatureSetMenuClose(event) {
-        setFeatureSetAnchorEl(null);
-        setFeatureSet(null);
+    function onModulesClick(event, option) {
+        event.stopPropagation();
+        const target = event.target.closest(".MuiFormControl-root");
+
+        const modules = props.dataset.modules;
+        let selectedItem;
+        for (let i = 0, n = modules.length; i < n; i++) {
+            if (modules[i].id == option) {
+                selectedItem = modules[i];
+                break;
+            }
+        }
+        setPopupAnchorEl(target);
+        setSelectedItem({value: selectedItem, type: FEATURE_TYPE.MODULE});
+    }
+
+    function onMenuClose(event) {
+        setPopupAnchorEl(null);
+        setSelectedItem({});
     }
 
     function onViewFeatureSet(event) {
         event.stopPropagation();
-        setFeatureSetAnchorEl(null);
-        setFeatureSetView(true);
+        setPopupAnchorEl(null);
+        setSelectedPopupMenuItem('feature set view');
     }
 
-    function onCloseViewFeatureSetDialog(event) {
+    function onViewModule(event) {
         event.stopPropagation();
-        setFeatureSet(null)
-        setFeatureSetView(null)
+        setPopupAnchorEl(null);
+        setSelectedPopupMenuItem('module view');
+    }
+
+    function onCloseDialog(event) {
+        event.stopPropagation();
+        setSelectedItem({});
+        setSelectedPopupMenuItem(null);
     }
 
     function onDeleteFeatureSet(event) {
         event.stopPropagation();
         let searchTokens = props.searchTokens;
-        const featureSetId = featureSet.id;
+        const featureSetId = selectedItem.value.id;
         let value = searchTokens.filter(token => token.type === FEATURE_TYPE.FEATURE_SET && token.value.id !== featureSetId);
         props.handleSearchTokens(value, FEATURE_TYPE.FEATURE_SET);
         props.handleDeleteFeatureSet(featureSetId);
-        setFeatureSet(null)
-        setFeatureSetAnchorEl(null);
+        setSelectedItem({});
+        setPopupAnchorEl(null);
     }
 
     function onFilterChipClicked(event) {
@@ -294,7 +343,7 @@ function ExplorePanel(props) {
         searchTokens,
         selection,
         serverInfo,
-        tab,
+        tab
     } = props;
 
     const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
@@ -302,7 +351,7 @@ function ExplorePanel(props) {
     const splitTokens = splitSearchTokens(searchTokens);
     const featureSets = getFeatureSets(markers, splitTokens.featureSets);
     const featureOptions = dataset.features;
-    const metafeatureOptions = getMetafeaturesOptions(dataset.metafeatures);
+    const moduleOptions = getModulesOptions(dataset.modules);
     const obsCat = dataset.obsCat;
     const obs = dataset.obs;
     const annotationOptions = getAnnotationOptions(obs, obsCat);
@@ -311,17 +360,17 @@ function ExplorePanel(props) {
     const selectedEmbeddings = getEmbeddingOptions(embeddings);
     return <>
 
-        <Dialog
-            open={Boolean(featureSetView)}
-            onClose={onCloseViewFeatureSetDialog}
-            aria-labelledby="view-set-dialog-title"
+        {'feature set view' === selectedPopupMenuItem && <Dialog
+            open={true}
+            onClose={onCloseDialog}
+            aria-labelledby="view-dialog-title"
             fullWidth={true}
             maxWidth={'lg'}
         >
-            <DialogTitle id="view-set-dialog-title">{featureSet ? featureSet.name : ''}</DialogTitle>
+            <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.name : ''}</DialogTitle>
             <DialogContent>
                 <TextField
-                    value={featureSet ? featureSet.features.join('\n') : ''}
+                    value={selectedItem ? selectedItem.value.features.join('\n') : ''}
                     margin="dense"
                     fullWidth
                     readOnly={true}
@@ -329,19 +378,49 @@ function ExplorePanel(props) {
                     multiline={true}
                 />
             </DialogContent>
-        </Dialog>
-        <Menu
+        </Dialog>}
+        {selectedItem.type === FEATURE_TYPE.FEATURE_SET && <Menu
             id="feature-set-menu"
-            anchorEl={featureSetAnchorEl}
-            open={Boolean(featureSetAnchorEl)}
-            onClose={onFeatureSetMenuClose}
+            anchorEl={popupAnchorEl}
+            open={Boolean(popupAnchorEl)}
+            onClose={onMenuClose}
         >
             <MenuItem onClick={onViewFeatureSet}>View</MenuItem>
             <MenuItem divider={true}/>
-            <MenuItem disabled={featureSet && featureSet.readonly}
+            <MenuItem disabled={selectedItem.value.readonly}
                       onClick={onDeleteFeatureSet}>Delete</MenuItem>
+        </Menu>}
 
-        </Menu>
+        {'module view' === selectedPopupMenuItem && <Dialog
+            open={true}
+            onClose={onCloseDialog}
+            aria-labelledby="view-dialog-title"
+            fullWidth={true}
+            maxWidth={'lg'}
+        >
+            <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.id : ''}</DialogTitle>
+            <DialogContent>
+
+                {getModuleView(selectedItem.value)}
+                {/*<DataGrid*/}
+                {/*    rows={rows}*/}
+                {/*    columns={columns}*/}
+                {/*    pageSize={5}*/}
+                {/*    rowsPerPageOptions={[5]}*/}
+                {/*    checkboxSelection*/}
+                {/*    disableSelectionOnClick*/}
+                {/*/>*/}
+            </DialogContent>
+        </Dialog>}
+
+        {selectedItem.type === FEATURE_TYPE.MODULE && <Menu
+            id="module-menu"
+            anchorEl={popupAnchorEl}
+            open={Boolean(popupAnchorEl)}
+            onClose={onMenuClose}
+        >
+            <MenuItem onClick={onViewModule}>View</MenuItem>
+        </Menu>}
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
             <div className={classes.section}>
                 <Divider/>
@@ -417,13 +496,21 @@ function ExplorePanel(props) {
                                              getOptionSelected={(option, value) => option.id === value}
                                              onChange={onObservationsChange}/>
                 </FormControl>}
-                {metafeatureOptions && metafeatureOptions.length > 0 &&
-                <FormControl className={classes.formControl}>
+
+                {moduleOptions.length > 0 && <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized
-                        label={"Metagenes/Features"}
-                        options={metafeatureOptions}
-                        value={splitTokens.metafeatures}
-                        onChange={onMetafeaturesChange}
+                        label={"Modules"}
+                        testId={'modules-input'}
+                        options={moduleOptions}
+                        value={splitTokens.modules}
+                        onChange={onModulesChange}
+                        onChipClick={onModulesClick}
+
+                        getChipIcon={(option) => {
+                            return <ArrowDropDownIcon onClick={(event) => {
+                                onModulesClick(event, option);
+                            }}/>;
+                        }}
                     />
                 </FormControl>}
                 {<FormControl className={classes.formControl}>
@@ -431,10 +518,10 @@ function ExplorePanel(props) {
                                              testId={'sets-input'}
                                              options={featureSetOptions}
                                              value={featureSets}
-                                             onChipClick={onFeatureSetClick}
                                              getChipTitle={(option) => {
                                                  return option.category + ', ' + option.name;
                                              }}
+                                             onChipClick={onFeatureSetClick}
                                              getChipIcon={(option) => {
                                                  return <ArrowDropDownIcon onClick={(event) => {
                                                      onFeatureSetClick(event, option);
@@ -459,7 +546,7 @@ function ExplorePanel(props) {
                 </FormControl>}
             </div>
             <div className={classes.section} style={{maxHeight: 500}}>
-                <Divider inset='true'/>
+                <Divider inset="true"/>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase'}}>Filters</Typography>
                 <Grid component="label" alignContent={"flex-start"} container alignItems="center"
@@ -508,13 +595,14 @@ function ExplorePanel(props) {
                 }
             </div>
         </div>
-    </>
+    </>;
 }
 
 
 const mapStateToProps = state => {
         return {
             activeFeature: state.activeFeature,
+
             categoricalNames: state.categoricalNames,
             combineDatasetFilters: state.combineDatasetFilters,
             dataset: state.dataset,
@@ -568,8 +656,8 @@ const mapDispatchToProps = (dispatch, ownProps) => {
             dispatch(deleteFeatureSet(value));
         }
     };
-}
+};
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(ExplorePanel));

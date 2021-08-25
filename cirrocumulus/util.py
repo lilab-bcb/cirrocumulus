@@ -1,8 +1,29 @@
 # import pandas.io.json as json
+from urllib.parse import urlparse
+
+import fsspec
 import pandas._libs.json as ujson
 from flask import make_response
 
-from .file_system_adapter import get_scheme
+
+def get_scheme(path):
+    pr = urlparse(path)
+    if len(pr.scheme) <= 1:  # for file paths: /foo/bar/test.h5ad or C:/foo/bar/test.h5ad
+        return 'file'
+    return pr.scheme
+
+
+scheme_to_fs = {}
+
+
+def get_fs(path):
+    scheme = get_scheme(path)
+    fs = scheme_to_fs.get(scheme, None)
+    if fs is not None:
+        return fs
+    fs = fsspec.filesystem(scheme)
+    scheme_to_fs[scheme] = fs
+    return fs
 
 
 def to_json(data):
