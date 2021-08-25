@@ -76,6 +76,7 @@ function DistributionPlots(props) {
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
                                       setTooltip={setTooltip}
+                                      showDotPlotOption={key==='X'}
                                       categoryColorScales={categoryColorScales}
                                       dataset={dataset}
                                       distributionData={data}

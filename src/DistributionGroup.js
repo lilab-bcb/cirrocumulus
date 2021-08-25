@@ -288,6 +288,8 @@ class DistributionGroup extends React.PureComponent {
             return null;
         }
         const features = (data2d ? data2d[0] : selectedData2d[0]).map(item => item.feature);
+
+
         if (chartType === 'violin') {
             const allData = selectedData ? distributionData.concat(selectedData) : distributionData;
             features.forEach((feature) => {
@@ -434,7 +436,7 @@ class DistributionGroup extends React.PureComponent {
                         value={chartType}
                         onChange={this.onChartTypeChange}
                     >
-                        <MenuItem value={'dotplot'}>Dot Plot</MenuItem>
+                        {this.props.showDotPlotOption && <MenuItem value={'dotplot'}>Dot Plot</MenuItem>}
                         <MenuItem value={'heatmap'}>Heatmap</MenuItem>
                         <MenuItem value={'violin'}>Violin</MenuItem>
                     </Select>
