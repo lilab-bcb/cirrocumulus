@@ -100,6 +100,7 @@ const getModulesOptions = memoize((items) => {
             });
             return options.map(option => option.id);
         }
+        return [];
     }
 );
 const getFeatureSetOptions = memoize((items, categoricalNames) => {
@@ -496,7 +497,7 @@ function ExplorePanel(props) {
                                              onChange={onObservationsChange}/>
                 </FormControl>}
 
-                <FormControl className={classes.formControl}>
+                {moduleOptions.length > 0 && <FormControl className={classes.formControl}>
                     <AutocompleteVirtualized
                         label={"Modules"}
                         testId={'modules-input'}
@@ -511,7 +512,7 @@ function ExplorePanel(props) {
                             }}/>;
                         }}
                     />
-                </FormControl>
+                </FormControl>}
                 {<FormControl className={classes.formControl}>
                     <AutocompleteVirtualized label={"Sets"}
                                              testId={'sets-input'}
