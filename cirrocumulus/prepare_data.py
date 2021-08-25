@@ -268,6 +268,7 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
+    # parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl'], default='parquet')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--markers',
                         help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
@@ -283,16 +284,14 @@ def main(argsv):
     out = args.out
 
     input_datasets = args.dataset  # multimodal
-    if len(input_datasets) == 0:
-        raise ValueError('Please provide a dataset')
-    output_format = 'parquet'  # args.output_format
+    output_format = 'parquet'  # args.format
     if out is None:
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
     if out.endswith('/'):
         out = out[:len(out) - 1]
-    if not out.endswith('.cpq'):
-        out += '.cpq'
-
+    output_format2extension = dict(parquet='.cpq', jsonl='.jsonl')
+    if not out.lower().endswith(output_format2extension[output_format]):
+        out += output_format2extension[output_format]
     datasets = []
     tmp_files = []
     for input_dataset in input_datasets:
@@ -314,6 +313,7 @@ def main(argsv):
         adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
         adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset))[0]
+
     prepare_data = PrepareData(datasets=datasets, output=out, dimensions=args.groups, groups=args.groups,
                                group_nfeatures=args.group_nfeatures,
                                markers=args.markers, output_format=output_format)

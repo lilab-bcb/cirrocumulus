@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.19.post1 `August 25, 2021`
+    * Fixed error getting precomputed results
+
 - 1.1.19 `August 25, 2021`
     * Show distributions for numerical cell metadata
     * Improve interactive differential expression performance

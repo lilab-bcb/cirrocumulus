@@ -20,7 +20,6 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
 
 
 def save_adata_pq(datasets, schema, output_directory):
-    logger.info('Save adata')
     X_dir = os.path.join(output_directory, 'X')
     module_dir = os.path.join(output_directory, 'X_module')
     obs_dir = os.path.join(output_directory, 'obs')
@@ -41,19 +40,18 @@ def save_adata_pq(datasets, schema, output_directory):
         save_data_obsm(dataset, obsm_dir)
 
 
-def save_adata_X(adata, X_dir, partition=False):
+def save_adata_X(adata, X_dir):
     adata_X = adata.X
     names = adata.var.index
     is_sparse = scipy.sparse.issparse(adata_X)
     if is_sparse and scipy.sparse.isspmatrix_csr(adata_X):
         adata_X = adata_X.tocsc()
-
+    output_dir = X_dir
     for j in range(adata_X.shape[1]):
         X = adata_X[:, j]
         if is_sparse:
             X = X.toarray().flatten()
-        filename = names[j] if not partition else 'data'
-        output_dir = X_dir if not partition else os.path.join(X_dir, 'id={}'.format(names[j]))
+        filename = names[j]
 
         if is_sparse:
             indices = np.where(X != 0)[0]
@@ -70,17 +68,17 @@ def save_data_obsm(adata, obsm_dir):
 
     for name in adata.obsm.keys():
         m = adata.obsm[name]
-        dimensions = 3 if m.shape[1] > 2 else 2
-        d = {}
-        for i in range(dimensions):
-            d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
-        write_pq(d, obsm_dir, name)
+        dim = m.shape[1]
+        if 1 < dim <= 3:
+            d = {}
+            for i in range(dim):
+                d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
+            write_pq(d, obsm_dir, name)
 
 
 def save_data_obs(adata, obs_dir):
     logger.info('writing adata obs')
     for name in adata.obs:
-        # TODO sort?
         value = adata.obs[name]
         write_pq(dict(value=value), obs_dir, name)
     write_pq(dict(value=adata.obs.index.values), obs_dir, 'index')

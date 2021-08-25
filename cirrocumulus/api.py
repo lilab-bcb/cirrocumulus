@@ -7,7 +7,7 @@ from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import json_response, get_scheme
+from .util import json_response, get_scheme, get_fs
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -197,7 +197,7 @@ def send_file(file_path):
     #     bytes = f.read()
     # return Response(bytes, mimetype=mimetype[0])
     chunk_size = 4096
-    f = dataset_api.fs_adapter.get_fs(file_path).open(file_path)
+    f = get_fs(file_path).open(file_path)
 
     def generate():
         while True:
@@ -287,7 +287,7 @@ def upload_file(file):
     from werkzeug.utils import secure_filename
     filename = secure_filename(file.filename)
     dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
-    dest_fs = dataset_api.fs_adapter.get_fs(dest).open(dest, mode='wb')
+    dest_fs = get_fs(dest).open(dest, mode='wb')
     file.save(dest_fs)
     dest_fs.close()
     return dest
