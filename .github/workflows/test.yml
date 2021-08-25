@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt-get install graphicsmagick libxss1
           python -m pip install --upgrade pip
-          python -m pip install pytest
+          python -m pip install pytest scanpy
           pip install -r requirements.txt
           pip install tiledb
           python -m pip install .
