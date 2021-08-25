@@ -120,7 +120,11 @@ class ParquetDataset(AbstractDataset):
                 columns_to_fetch = b['coordinate_columns']
                 for c in columns_to_fetch:
                     vals.append(table.column(c))
-                obsm[b['name']] = np.array(vals).T
+                vals = np.array(vals).T
+                obsm[b['name']] = vals
+                if X is None:
+                    X = scipy.sparse.coo_matrix(([], ([], [])), shape=(vals.shape[0], 0))
+
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns['X_module'] = adata_modules
