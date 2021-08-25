@@ -5,7 +5,6 @@ from typing import (
     Iterable,
     AbstractSet,
     Sequence,
-    TypedDict,
     Literal,
     Tuple,
 )
