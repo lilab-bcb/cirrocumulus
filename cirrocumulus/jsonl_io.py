@@ -59,8 +59,7 @@ def read_adata_jsonl(path, keys):
     return df
 
 
-def save_adata_jsonl(adata, schema, output_path):
-    logger.info('Save adata')
+def save_adata_jsonl(datasets, schema, output_path):
     compress = False
     index = {}  # key to byte start-end
 
@@ -68,9 +67,10 @@ def save_adata_jsonl(adata, schema, output_path):
         output_path += '.jsonl'
 
     with open(output_path, 'wb') as f:
-        save_adata_X(adata, f, index, compress)
-        save_data_obs(adata, f, index, compress)
-        save_data_obsm(adata, f, index, compress)
+        for dataset in datasets:
+            save_adata_X(dataset, f, index, compress)
+            save_data_obs(dataset, f, index, compress)
+            save_data_obsm(dataset, f, index, compress)
         write_jsonl(schema, f, 'schema', index)
 
     with open(output_path + '.idx.json', 'wt') as f:
@@ -91,9 +91,11 @@ def save_adata_X(adata, f, index, compress):
         X = adata_X[:, j]
         if is_sparse:
             X = X.toarray().flatten()
-        indices = np.where(X != 0)[0]
-        values = X[indices]
-        write_jsonl(dict(index=indices, value=values), f, names[j], index, compress)
+            indices = np.where(X != 0)[0]
+            values = X[indices]
+            write_jsonl(dict(index=indices, value=values), f, names[j], index, compress)
+        else:
+            write_jsonl(dict(value=X), f, names[j], index, compress)
         if j > 0 and (j + 1) % 1000 == 0:
             logger.info('Wrote adata X {}/{}'.format(j + 1, adata_X.shape[1]))
 
@@ -103,11 +105,11 @@ def save_data_obsm(adata, f, index, compress):
 
     for name in adata.obsm.keys():
         m = adata.obsm[name]
-        dimensions = 3 if m.shape[1] > 2 else 2
-        d = {}
-        for i in range(dimensions):
-            d[name + '_' + str(i + 1)] = m[:, i].astype('float32')
-        write_jsonl(d, f, name, index, compress)
+        dim = m.shape[1]
+        if 1 < dim <= 3:
+            d = {}
+            d[name] = m
+            write_jsonl(d, f, name, index, compress)
 
 
 def save_data_obs(adata, f, index, compress):
