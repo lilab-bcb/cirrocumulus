@@ -5,7 +5,6 @@ from typing import (
     Iterable,
     AbstractSet,
     Sequence,
-    Literal,
     Tuple,
 )
 
@@ -21,11 +20,6 @@ class CountMeanVarFrac(dict):
     mean: pd.DataFrame
     var: pd.DataFrame
     frac_expressed: pd.DataFrame
-
-
-Score = Literal[
-    "diff-score", "fold-score", "t-score", "v-score", "t-score-pooled", "v-score-pooled"
-]
 
 
 def asarray(x):
