@@ -1943,7 +1943,6 @@ function getNewEmbeddingData(state, features) {
         const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
         const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
         const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
-        console.log(coordinates);
 
         features.forEach(feature => {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
