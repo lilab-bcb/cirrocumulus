@@ -201,7 +201,7 @@ Static Website
     ]
 ```
 
-- Move datasets files to build::
+- Move your dataset files to build::
 
     mv pbmc3k build
 
