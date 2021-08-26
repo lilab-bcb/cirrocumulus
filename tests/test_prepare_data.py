@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirrocumulus.embedding_aggregator import get_basis
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
 
@@ -16,7 +15,7 @@ def read_and_diff(ds_reader, path, test_data, measures, dimensions, continuous_o
     prepared_adata = ds_reader.read_dataset(filesystem=fs, path=path, dataset=dataset,
                                             schema=ds_reader.schema(filesystem=fs, path=path),
                                             keys=dict(X=measures, obs=dimensions + continuous_obs,
-                                                      basis=[get_basis(basis, -1, '')]))
+                                                      basis=[basis]))
     assert scipy.sparse.issparse(test_data.X) == scipy.sparse.issparse(prepared_adata.X)
     if scipy.sparse.issparse(test_data.X):
         test_data.X = test_data.X.toarray()

@@ -131,28 +131,16 @@ export const SET_JOB_RESULT = 'SET_JOB_RESULT';
 
 
 export function getEmbeddingKey(embedding, includeDensity = true) {
-    let fullName = embedding.name;
-    if (embedding.dimensions) {
-        fullName += '_' + embedding.dimensions;
-    }
+    let key = embedding.name;
     if (embedding.mode != null && includeDensity) {
-        fullName += '_' + embedding.mode;
+        key += '_' + embedding.mode;
     }
-    return fullName;
+    return key;
 }
 
 
 export function getTraceKey(traceInfo) {
     return traceInfo.name + '_' + getEmbeddingKey(traceInfo.embedding);
-}
-
-function getEmbeddingJson(embedding) {
-    let value = {basis: embedding.name, ndim: embedding.dimensions};
-    if (embedding.mode != null) {
-        value.mode = embedding.mode;
-    }
-
-    return value;
 }
 
 
@@ -1524,7 +1512,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             }
         }
 
-        const isDirectAccess = dataset.access === 'direct';
+        const isDirectAccess = dataset.access === 'direct' || process.env.REACT_APP_STATIC === 'true';
         if (isDirectAccess) {
             dataset.api = new DirectAccessDataset();
         } else {
@@ -1672,27 +1660,24 @@ function _updateCharts(onError) {
             features.add(feature);
         });
         const embeddingImagesToFetch = [];
-        embeddings.forEach(selectedEmbedding => {
-            const embeddingKey = getEmbeddingKey(selectedEmbedding);
-            embeddingKeys.add(embeddingKey);
-
+        embeddings.forEach(embedding => {
+            const embeddingKey = getEmbeddingKey(embedding);
             if (cachedData[embeddingKey] == null) {
-                if (selectedEmbedding.dimensions > 0) {
-                    embeddingsToFetch.push(selectedEmbedding);
+                if (embedding.dimensions > 0) {
+                    embeddingsToFetch.push(embedding);
                 } else {
-                    if (cachedData[selectedEmbedding.attrs.group] == null) {
-                        valuesToFetch.add(selectedEmbedding.attrs.group);
+                    if (cachedData[embedding.attrs.group] == null) {
+                        valuesToFetch.add(embedding.attrs.group);
                     }
 
-                    selectedEmbedding.attrs.selection.forEach(selection => {
+                    embedding.attrs.selection.forEach(selection => {
                         if (cachedData[selection[0]] == null) {
                             valuesToFetch.add(selection[0]);
                         }
                     });
-                    embeddingImagesToFetch.push(selectedEmbedding);
+                    embeddingImagesToFetch.push(embedding);
                 }
             }
-
         });
         const promises = [];
         embeddingImagesToFetch.forEach(embedding => {
@@ -1790,18 +1775,20 @@ function _updateCharts(onError) {
         let q = {};
         if (embeddingsToFetch.length > 0) {
             q.embedding = [];
-
             embeddingsToFetch.forEach(embedding => {
                 if (embedding.mode != null) {// fetch unbinned coordinates
                     const key = getEmbeddingKey(embedding, false);
                     if (indexOf(embeddingsToFetch, (e => getEmbeddingKey(e) === key)) !== -1) {
-                        embeddingsToFetch.push(state.dataset.embeddings[indexOf(state.dataset.embeddings, (e => getEmbeddingKey(e) === key))]);
+                        const index = indexOf(state.dataset.embeddings, (e => getEmbeddingKey(e, false) === key));
+                        if (index === -1) {
+                            throw new Error(key + ' not found in ' + state.dataset.embeddings);
+                        }
+                        embeddingsToFetch.push(state.dataset.embeddings[index]);
                     }
                 }
             });
             embeddingsToFetch.forEach(embedding => {
-                const embeddingJson = getEmbeddingJson(embedding);
-                q.embedding.push(embeddingJson);
+                q.embedding.push(embedding);
             });
         }
         if (valuesToFetch.size > 0) {
@@ -1863,7 +1850,6 @@ function _updateCharts(onError) {
                 dimensions: searchTokens.obsCat
             };
         }
-
         let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
         const allPromises = [dataPromise].concat(promises);
         return Promise.all(allPromises).then(values => {
@@ -1937,13 +1923,13 @@ function getNewEmbeddingData(state, features) {
     if (features.size === 0) {
         features.add('__count');
     }
+    console.log(features);
+    console.log(existingFeaturePlusEmbeddingKeys);
     embeddings.forEach(embedding => {
         const embeddingKey = getEmbeddingKey(embedding);
-
         // type can be image, scatter, or meta_image
         const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
         let coordinates = traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
-
         if (coordinates == null && embedding.mode != null) {
             const unbinnedCoords = cachedData[getEmbeddingKey(embedding, false)];
             const binnedValues = createEmbeddingDensity(unbinnedCoords[embedding.name + '_1'], unbinnedCoords[embedding.name + '_2']);
@@ -1963,13 +1949,13 @@ function getNewEmbeddingData(state, features) {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
             let featureKey = feature;
             if (!existingFeaturePlusEmbeddingKeys.has(featurePlusEmbeddingKey)) {
-
                 let featureSummary = globalFeatureSummary[feature];
                 let values = cachedData[featureKey];
                 if (values == null && feature === '__count') {
                     values = new Int8Array(dataset.shape[0]);
                     values.fill(1);
                 }
+                console.log(values, featureKey);
                 let purity = null;
                 if (values.value !== undefined) {
                     purity = values.purity;
@@ -2206,7 +2192,6 @@ export function getDatasetStateJson(state) {
     };
 
     const scatterPlot = chartOptions.scatterPlot;
-    console.log(scatterPlot);
     if (json.embeddings.length > 0 && scatterPlot != null) {
         json.camera = scatterPlot.getCameraDef();
 

@@ -2,7 +2,7 @@ import {isArray} from 'lodash';
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
 import {Vector} from './Vector';
-import {cacheValues, computeDerivedStats, getBasis, getTypeToMeasures, splitDataFilter} from './VectorUtil';
+import {cacheValues, computeDerivedStats, getTypeToMeasures, splitDataFilter} from './VectorUtil';
 
 
 export class DirectAccessDataset {
@@ -52,10 +52,12 @@ export class DirectAccessDataset {
                     if (isArray(data)) { // continuous value
                         this.key2data[key] = data;
                     } else {
-                        if (data.indices) {  // sparse
+                        if (data.indices || data.index) {  // sparse
+                            const indices = data.indices || data.index;
+                            const sparseValues = data.values || data.value;
                             let values = new Float32Array(this.schema.shape[0]);
-                            for (let i = 0, n = data.indices.length; i < n; i++) {
-                                values[data.indices[i]] = data.values[i];
+                            for (let i = 0, n = sparseValues.length; i < n; i++) {
+                                values[indices[i]] = sparseValues[i];
                             }
                             this.key2data[key] = values;
                         } else if (data.categories) {  // category
@@ -64,6 +66,8 @@ export class DirectAccessDataset {
                                 values[i] = data.categories[data.values[i]];
                             }
                             this.key2data[key] = values;
+                        } else if (data.values) {
+                            this.key2data[key] = data.values;
                         } else {
                             this.key2data[key] = data; // object for coordinates
                         }
@@ -104,30 +108,29 @@ export class DirectAccessDataset {
     }
 
     getDataPromise(q, cachedData) {
-
         const queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
         const results = {};
         let dimensions = [];
         let measures = [];
         queryKeys.forEach(key => {
             if (key in q) {
-                let obj = q[key];
-                if (!isArray(obj)) {
-                    obj = [obj];
+                let values = q[key];
+                if (!isArray(values)) {
+                    values = [values];
                 }
-                obj.forEach(value => {
-                    if (value.dimensions) {
+                values.forEach(item => {
+                    if (item.dimensions) {
                         // groupedStats dimensions is array of arrays
-                        if (isArray(value.dimensions)) {
-                            value.dimensions.forEach(dim => {
+                        if (isArray(item.dimensions)) {
+                            item.dimensions.forEach(dim => {
                                 dimensions = dimensions.concat(dim);
                             });
                         } else {
-                            dimensions = dimensions.concat(value.dimensions);
+                            dimensions = dimensions.concat(item.dimensions);
                         }
                     }
-                    if (value.measures) {
-                        measures = measures.concat(value.measures);
+                    if (item.measures) {
+                        measures = measures.concat(item.measures);
                     }
                 });
             }
@@ -135,41 +138,33 @@ export class DirectAccessDataset {
 
         const typeToMeasures = getTypeToMeasures(measures);
         let basisKeys = new Set();
-
-        if (q.selection) { // get any embeddings
+        if (q.selection) { // get any embeddings that we're filtering on
             const dataFilter = q.selection.filter;
             const {basis, X, obs} = splitDataFilter(dataFilter);
             dimensions = dimensions.concat(obs);
             measures = measures.concat(X);
             const embeddings = q.selection.embeddings || [];
-            const mappedEmbeddings = [];
             embeddings.forEach(embedding => {
-                let basis = getBasis(embedding.name, embedding.dimensions || 2, embedding.mode);
-                basisKeys.add(basis.name);
-                mappedEmbeddings.push(basis);
+                const key = embedding.basis;
+                basisKeys.add(key);
             });
-            q.selection.embeddings = mappedEmbeddings;
-            basis.forEach(embedding => {
-                basisKeys.add(embedding.name);
-            });
-
         }
         if (q.embedding) {
-            q.embedding.forEach(embedding => {
-                let basis = getBasis(embedding.name, embedding.dimensions || 2, embedding.mode);
-                basisKeys.add(basis.name);
-                embedding.basis = basis;
+            q.embedding.forEach(embedding => { // has basis and ndim, and mode
+                const key = embedding.basis;
+                basisKeys.add(key);
+                embedding.basis = key;
             });
         }
-
         return new Promise(resolve => {
 
             this.fetchData(dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).concat(Array.from(basisKeys))).then(() => {
                 if (q.embedding) {
                     results.embeddings = [];
                     q.embedding.forEach(embedding => {
-                        let coordinates = this.getVector(embedding.basis.name).asArray();
-                        results.embeddings.push({name: embedding.basis.full_name, coordinates: coordinates});
+                        const key = embedding.basis;
+                        let coordinates = this.getVector(key).asArray();
+                        results.embeddings.push({name: key, coordinates: coordinates});
                     });
                 }
                 if (q.values) {

@@ -87,7 +87,7 @@ class TileDBDataset:
         keys = keys.copy()
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
-        basis = keys.pop('basis', [])
+        basis_keys = keys.pop('basis', [])
         X = None
         obs = None
         var = None
@@ -115,11 +115,10 @@ class TileDBDataset:
             for key in ordered_dict:
                 obs[key] = ordered_dict[key]
 
-        if basis is not None and len(basis) > 0:
-            for b in basis:
-                embedding_name = b['name']
-                with tiledb.open(os.path.join(path, 'emb', embedding_name), mode="r") as array:
-                    obsm[embedding_name] = array
+        if len(basis_keys) > 0:
+            for key in basis_keys:
+                with tiledb.open(os.path.join(path, 'emb', key), mode="r") as array:
+                    obsm[key] = array
                     if X is None:
                         X = scipy.sparse.coo_matrix(([], ([], [])), shape=(array.shape[0], 0))
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)

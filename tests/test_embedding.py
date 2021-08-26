@@ -3,7 +3,7 @@ import pandas as pd
 import scipy.sparse
 
 from cirrocumulus.data_processing import handle_data
-from cirrocumulus.embedding_aggregator import EmbeddingAggregator, get_basis
+from cirrocumulus.embedding_aggregator import EmbeddingAggregator
 
 
 def create_df(test_data, measures, dimensions, basis):
@@ -48,8 +48,7 @@ def diff_binning(grouped_df, measures, dimensions, continuous_obs, basis, result
 
 def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions, continuous_obs, basis):
     obsm_field = basis
-    embedding_list = [dict(ndim=2, basis=basis)]
-    basis = get_basis(basis)
+    embedding_list = [dict(dimensions=2, name=basis)]
     values = dict(dimensions=dimensions, measures=measures + list(map(lambda x: 'obs/' + x, continuous_obs)))
     results = handle_data(dataset_api=dataset_api, dataset=input_dataset, values=values, embedding_list=embedding_list)
     for key in measures:
@@ -71,9 +70,8 @@ def test_no_binning(dataset_api, input_dataset, test_data, measures, dimensions,
         np.testing.assert_array_equal(val, test_data.obs[key].values, err_msg="obs field {}".format(key))
     obsm = test_data.obsm[obsm_field]
     coords = results['embeddings'][0]['coordinates']
-    for i in range(len(basis['coordinate_columns'])):
-        key = basis['coordinate_columns'][i]
-        np.testing.assert_array_equal(coords[key], obsm[:, i],
+    for i in range(obsm.shape[1]):
+        np.testing.assert_array_equal(coords['{}_{}'.format(basis, i + 1)], obsm[:, i],
                                       err_msg="obsm {}".format(key))
 
 #
