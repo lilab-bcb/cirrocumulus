@@ -111,13 +111,9 @@ export function splitDataFilter(data_filter) {
             let user_filter = user_filters[i];
             let key = user_filter[0];
             if (isObject(key)) {
-                let basis = getBasis(key.basis, key.nbins, key.agg,
-                    key.ndim || 2, key.precomputed);
-                basis_list.push(basis);
+                basis_list.push(key);
             } else {
-
                 const {name, type} = getVarNameType(key);
-
                 user_filter[0] = name;
                 if (type === 'X') {
                     var_keys.add(name);

@@ -161,6 +161,57 @@ Google App Engine
 - Read more about App Engine in the `App Engine`_ documentation.
 
 
+Static Website
+^^^^^^^^^^^^^^^^
+
+- Clone the cirrocumulus repository::
+
+    git clone https://github.com/klarman-cell-observatory/cirrocumulus.git
+
+- Change to cirrocumulus directory::
+
+    cd cirrocumulus
+
+
+- Install typescript::
+
+    yarn global add typescript
+
+- Install JavaScript dependencies::
+
+    yarn install
+
+- Prepare dataset(s) in jsonl format::
+
+    cirro prepare_data pbmc3k.h5ad --format jsonl
+
+- Build JavaScript::
+
+    REACT_APP_STATIC=true yarn build
+
+- Create the file datasets.json in the build directory::
+
+```json
+    [
+        {
+            "id": "pbmc3k",
+            "name": "pbmc3k",
+            "url": "pbmc3k/pbmc3k.jsonl"
+        }
+    ]
+```
+
+- Move datasets files to build::
+
+    mv pbmc3k build
+
+- Test locally::
+
+    cd build ; npx http-server .
+
+- Host the build directory on your static website hosting service (e.g. GitHub Pages)
+
+
 Developer Instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -1662,6 +1662,7 @@ function _updateCharts(onError) {
         const embeddingImagesToFetch = [];
         embeddings.forEach(embedding => {
             const embeddingKey = getEmbeddingKey(embedding);
+            embeddingKeys.add(embeddingKey);
             if (cachedData[embeddingKey] == null) {
                 if (embedding.dimensions > 0) {
                     embeddingsToFetch.push(embedding);
@@ -1923,8 +1924,7 @@ function getNewEmbeddingData(state, features) {
     if (features.size === 0) {
         features.add('__count');
     }
-    console.log(features);
-    console.log(existingFeaturePlusEmbeddingKeys);
+
     embeddings.forEach(embedding => {
         const embeddingKey = getEmbeddingKey(embedding);
         // type can be image, scatter, or meta_image
@@ -1943,7 +1943,7 @@ function getNewEmbeddingData(state, features) {
         const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
         const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
         const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
-
+        console.log(coordinates);
 
         features.forEach(feature => {
             const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
@@ -1951,11 +1951,14 @@ function getNewEmbeddingData(state, features) {
             if (!existingFeaturePlusEmbeddingKeys.has(featurePlusEmbeddingKey)) {
                 let featureSummary = globalFeatureSummary[feature];
                 let values = cachedData[featureKey];
-                if (values == null && feature === '__count') {
-                    values = new Int8Array(dataset.shape[0]);
-                    values.fill(1);
+                if (values == null) {
+                    if (feature === '__count') {
+                        values = new Int8Array(dataset.shape[0]);
+                        values.fill(1);
+                    } else {
+                        console.log(featureKey + ' not found');
+                    }
                 }
-                console.log(values, featureKey);
                 let purity = null;
                 if (values.value !== undefined) {
                     purity = values.purity;

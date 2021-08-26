@@ -108,10 +108,18 @@ export class DirectAccessDataset {
     }
 
     getDataPromise(q, cachedData) {
-        const queryKeys = ['stats', 'groupedStats', 'embedding', 'selection', 'values'];
+        const queryKeys = ['stats', 'groupedStats', 'selection', 'values'];
         const results = {};
         let dimensions = [];
         let measures = [];
+        let basisKeys = new Set();
+        if (q.embedding) {
+            q.embedding.forEach(embedding => {
+                const key = embedding.name;
+                basisKeys.add(key);
+                embedding.name = key;
+            });
+        }
         queryKeys.forEach(key => {
             if (key in q) {
                 let values = q[key];
@@ -137,7 +145,7 @@ export class DirectAccessDataset {
         });
 
         const typeToMeasures = getTypeToMeasures(measures);
-        let basisKeys = new Set();
+
         if (q.selection) { // get any embeddings that we're filtering on
             const dataFilter = q.selection.filter;
             const {basis, X, obs} = splitDataFilter(dataFilter);
@@ -145,24 +153,18 @@ export class DirectAccessDataset {
             measures = measures.concat(X);
             const embeddings = q.selection.embeddings || [];
             embeddings.forEach(embedding => {
-                const key = embedding.basis;
+                const key = embedding.name;
                 basisKeys.add(key);
             });
         }
-        if (q.embedding) {
-            q.embedding.forEach(embedding => { // has basis and ndim, and mode
-                const key = embedding.basis;
-                basisKeys.add(key);
-                embedding.basis = key;
-            });
-        }
+
         return new Promise(resolve => {
 
             this.fetchData(dimensions.concat(typeToMeasures.obs).concat(typeToMeasures.X).concat(Array.from(basisKeys))).then(() => {
                 if (q.embedding) {
                     results.embeddings = [];
                     q.embedding.forEach(embedding => {
-                        const key = embedding.basis;
+                        const key = embedding.name;
                         let coordinates = this.getVector(key).asArray();
                         results.embeddings.push({name: key, coordinates: coordinates});
                     });
