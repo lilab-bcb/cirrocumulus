@@ -59,21 +59,20 @@ def read_adata_jsonl(path, keys):
     return df
 
 
-def save_adata_jsonl(datasets, schema, output_path):
+def save_adata_jsonl(datasets, schema, output_dir, base_name):
     compress = False
     index = {}  # key to byte start-end
-
-    with open(output_path, 'wb') as f:
+    jsonl_path = os.path.join(output_dir, base_name)
+    with open(jsonl_path, 'wb') as f:
         for dataset in datasets:
             save_adata_X(dataset, f, index, compress)
             save_data_obs(dataset, f, index, compress)
             save_data_obsm(dataset, f, index, compress)
         write_jsonl(schema, f, 'schema', index)
 
-    with open(output_path + '.idx.json', 'wt') as f:
+    with open(os.path.join(output_dir, base_name + '.idx.json'), 'wt') as f:  # save index
         # json.dump(result, f)
-
-        result = dict(index=index, file=os.path.basename(output_path))
+        result = dict(index=index, file=os.path.basename(jsonl_path))
         f.write(ujson.dumps(result, double_precision=2, orient='values'))
 
 
@@ -101,11 +100,13 @@ def save_data_obsm(adata, f, index, compress):
     logger.info('writing adata obsm')
 
     for name in adata.obsm.keys():
-        m = adata.obsm[name]
-        dim = m.shape[1]
+        value = adata.obsm[name]
+        dim = value.shape[1]
         if 1 < dim <= 3:
             d = {}
-            d[name] = m
+
+            for i in range(dim):
+                d[name + '_' + str(i + 1)] = value[:, i]
             write_jsonl(d, f, name, index, compress)
 
 

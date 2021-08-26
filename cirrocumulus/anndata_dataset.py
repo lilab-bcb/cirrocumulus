@@ -80,7 +80,7 @@ class AnndataDataset(AbstractDataset):
         keys = keys.copy()
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
-        basis = keys.pop('basis', [])
+        basis_keys = keys.pop('basis', [])
         X = None
         obs = None
         var = None
@@ -107,11 +107,10 @@ class AnndataDataset(AbstractDataset):
                 else:
                     values = adata.obs[key].values
                 obs[key] = values
-        if basis is not None and len(basis) > 0:
-            for b in basis:
-                embedding_name = b['name']
-                embedding_data = adata.obsm[embedding_name]
-                obsm[embedding_name] = embedding_data
+        if len(basis_keys) > 0:
+            for key in basis_keys:
+                embedding_data = adata.obsm[key]
+                obsm[key] = embedding_data
                 if X is None:
                     X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)

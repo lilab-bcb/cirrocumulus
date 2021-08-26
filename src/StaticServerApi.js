@@ -11,4 +11,11 @@ export class StaticServerApi {
             });
     }
 
+    getCategoryNamesPromise() {
+        return Promise.resolve([]);
+    }
+
+    getViewsPromise() {
+        return Promise.resolve([]);
+    }
 }

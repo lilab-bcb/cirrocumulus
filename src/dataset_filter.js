@@ -1,6 +1,6 @@
 import {isObject} from 'lodash';
 
-import {getBasis, getVarNameType} from './VectorUtil';
+import {getVarNameType} from './VectorUtil';
 
 function combine(a, b, op) {
     return op === 'or' ? new Set([...a, ...b]) : new Set(
@@ -54,26 +54,19 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             let keep = null;
 
             if (isObject(filterField)) { // selection box or lasso
-                let selected_points_basis = getBasis(filterField.basis, filterField.ndim || 2, filterField.mode);
-                let coordinate_columns = selected_points_basis.coordinate_columns;
                 if (filterValue.indices) { // Set of passing indices
-                    let field = selected_points_basis['nbins'] ? selected_points_basis['full_name'] : 'index';
-                    if (field == '__index') {
-                        keep = filterValue.indices;
-                    } else { // binning
-                        throw new Error('Not implemented');
-                    }
-                    // keep = getIndices(cachedData[field], (val) => p.has(val));
+                    keep = filterValue.indices;
                 } else {
                     let selection_keep;
                     let path = filterValue.path;
+                    const coords = cachedData[filterField.name];
                     for (let j = 0; j < path.length; j++) {
                         let p = path[j];
-                        let xKeep = getIndices(cachedData[coordinate_columns[0]], (val) => val >= p.x && val <= p.x + p.width);
-                        let yKeep = getIndices(cachedData[coordinate_columns[1]], (val) => val >= p.y && val <= p.y + p.height);
+                        let xKeep = getIndices(cachedData[coords[0]], (val) => val >= p.x && val <= p.x + p.width);
+                        let yKeep = getIndices(cachedData[coords[1]], (val) => val >= p.y && val <= p.y + p.height);
                         selection_keep = combine(xKeep, yKeep, 'and');
                         if (p.z) {  // 3d
-                            let zKeep = getIndices(cachedData[coordinate_columns[2]], (val) => val >= p.z && val <= p.z + p.depth);
+                            let zKeep = getIndices(cachedData[coords[2]], (val) => val >= p.z && val <= p.z + p.depth);
                             selection_keep = combine(selection_keep, zKeep, 'and');
                         }
                     }

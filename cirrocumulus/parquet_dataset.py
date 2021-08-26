@@ -80,7 +80,6 @@ class ParquetDataset(AbstractDataset):
     def read_data_sparse(self, filesystem, path, keys, dataset=None, schema=None):
         shape = schema['shape']
         schema_version = schema.get('version', '1.0.0')
-
         X = None
         adata_modules = None
         obs = None
@@ -88,7 +87,7 @@ class ParquetDataset(AbstractDataset):
         obsm = {}
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
-        basis = keys.pop('basis', [])
+        basis_keys = keys.pop('basis', [])
         module_keys = keys.pop('module', [])
         if len(var_keys) > 0:
             node_path = os.path.join(path, 'X')
@@ -109,19 +108,17 @@ class ParquetDataset(AbstractDataset):
                 df = futures[i].result().to_pandas()
                 obs[obs_keys[i]] = df['value']
 
-        if basis is not None and len(basis) > 0:
+        if len(basis_keys) > 0:
             node_path = os.path.join(path, 'obsm')
-            paths = [node_path + '/' + b['name'] + '.parquet' for b in basis]
+            paths = [node_path + '/' + key + '.parquet' for key in basis_keys]
             futures = read_tables(paths, filesystem)
             for i in range(len(futures)):
                 table = futures[i].result()
-                b = basis[i]
                 vals = []
-                columns_to_fetch = b['coordinate_columns']
-                for c in columns_to_fetch:
+                for c in table.column_names:
                     vals.append(table.column(c))
                 vals = np.array(vals).T
-                obsm[b['name']] = vals
+                obsm[basis_keys[i]] = vals
                 if X is None:
                     X = scipy.sparse.coo_matrix(([], ([], [])), shape=(vals.shape[0], 0))
 
@@ -143,16 +140,17 @@ class ParquetDataset(AbstractDataset):
             all_keys += keys[key]
 
         if len(basis) > 0:
-            for b in basis:
-                all_keys += b['coordinate_columns']
+            for key in basis:
+                # 2d only
+                all_keys += ['{}_{}'.format(key, 1), '{}_{}'.format(key, 2)]
         df = read_table(path, filesystem=filesystem, columns=all_keys)
         if len(var_keys) > 0:
             X = df[var_keys]
         if len(obs_keys) > 0:
             obs = df[obs_keys]
         if len(basis) > 0:
-            for b in basis:
-                obsm[b['name']] = df[b['coordinate_columns']]
+            for key in basis:
+                obsm[key] = df[['{}_{}'.format(key, 1), '{}_{}'.format(key, 2)]]
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):

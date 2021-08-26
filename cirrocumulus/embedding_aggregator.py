@@ -24,19 +24,6 @@ def mode_agg(x):
     return x.mode()[0]
 
 
-def get_basis(basis, nbins=None, agg=None, dimensions=2, precomputed=False, coords=True):
-    if isinstance(dimensions, str):
-        dimensions = int(dimensions)
-    coordinate_columns = []
-    for i in range(dimensions):
-        coordinate_columns.append(basis + '_' + str(i + 1))
-    full_name = basis + '_' + str(dimensions)
-    if nbins is not None:
-        full_name = full_name + '_' + str(nbins) + '_' + str(agg)
-    return {'name': basis, 'dimensions': dimensions, 'coordinate_columns': coordinate_columns, 'nbins': nbins,
-            'agg': agg, 'full_name': full_name, 'precomputed': precomputed, 'coords': coords}
-
-
 class EmbeddingAggregator:
 
     def __init__(self, measures, dimensions, nbins, basis, agg_function='max', quick=True,
@@ -76,14 +63,15 @@ class EmbeddingAggregator:
         add_count = self.add_count
         basis = self.basis
         if basis is not None:
-            result['name'] = basis['full_name']
+            result['name'] = basis['name']
         nbins = self.nbins
         agg_function = self.agg_function
         compute_purity = not self.quick and nbins is not None
         if nbins is not None:
             if basis['full_name'] not in df:
                 EmbeddingAggregator.convert_coords_to_bin(df=df, nbins=nbins,
-                    coordinate_columns=basis['coordinate_columns'], bin_name=basis['full_name'])
+                                                          coordinate_columns=basis['coordinate_columns'],
+                                                          bin_name=basis['full_name'])
 
             if add_count:
                 df['__count'] = 1.0

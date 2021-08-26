@@ -76,12 +76,14 @@ def make_unique(index, join='-1'):
 class PrepareData:
 
     def __init__(self, datasets, output, dimensions=None, groups=[], group_nfeatures=10, markers=[],
-                 output_format='parquet'):
+                 output_format='parquet', no_auto_groups=False, save_whitelist=None):
         self.datasets = datasets
         self.groups = groups
         self.group_nfeatures = group_nfeatures
         self.markers = markers
         self.output_format = output_format
+        self.no_auto_groups = no_auto_groups
+        self.save_whitelist = save_whitelist
         primary_dataset = datasets[0]
         for i in range(1, len(datasets)):
             dataset = datasets[i]
@@ -114,7 +116,7 @@ class PrepareData:
             dataset.var.index = index[0:len(dataset.var.index)]
             dataset.obs.columns = index[len(dataset.var.index):]
 
-        self.base_output_dir = output
+        self.base_output = output
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
         self.dimensions = [] if not dimensions_supplied else dimensions
         self.measures = []
@@ -142,13 +144,11 @@ class PrepareData:
                     self.others.append(name)
 
     def get_path(self, path):
-        return os.path.join(self.base_output_dir, path)
+        return os.path.join(self.base_output, path)
 
     def execute(self):
         output_format = self.output_format
-        if not os.path.exists(self.base_output_dir):
-            os.makedirs(self.base_output_dir, exist_ok=True)
-        if self.groups is None:
+        if self.groups is None and not self.no_auto_groups:
             groups = []
             for dataset in self.datasets:
                 existing_fields = set()
@@ -210,9 +210,14 @@ class PrepareData:
             for key in dataset.uns.get('cirro_obsm_exclude', []):
                 del dataset.obsm[key]
         schema = self.get_schema()
+        if output_format == 'parquet':
+            output_dir = self.base_output
+        else:
+            output_dir = os.path.splitext(self.base_output)[0]
+        os.makedirs(output_dir, exist_ok=True)
         results = schema.get('results', [])
         if len(results) > 0:
-            uns_dir = os.path.join(self.base_output_dir, 'uns')
+            uns_dir = os.path.join(output_dir, 'uns')
             os.makedirs(uns_dir, exist_ok=True)
             for i in range(len(results)):  # keep id, name, type in schema, store rest in file
                 result = results[i]
@@ -225,7 +230,7 @@ class PrepareData:
         for dataset in self.datasets:
             images = dataset.uns.get('images')
             if images is not None:
-                image_dir = os.path.join(self.base_output_dir, 'images')
+                image_dir = os.path.join(output_dir, 'images')
                 if not os.path.exists(image_dir):
                     os.mkdir(image_dir)
                 for image in images:
@@ -236,13 +241,13 @@ class PrepareData:
 
         if output_format == 'parquet':
             from cirrocumulus.parquet_io import save_adata_pq
-            save_adata_pq(self.datasets, schema, self.base_output_dir)
+            save_adata_pq(self.datasets, schema, self.base_output, self.save_whitelist)
         elif output_format == 'json':
             from cirrocumulus.json_io import save_adata_json
-            save_adata_json(self.datasets, schema, self.base_output_dir)
+            save_adata_json(self.datasets, schema, self.base_output)
         elif output_format == 'jsonl':
             from cirrocumulus.jsonl_io import save_adata_jsonl
-            save_adata_jsonl(self.datasets, schema, self.base_output_dir)
+            save_adata_jsonl(self.datasets, schema, output_dir, self.base_output)
         else:
             raise ValueError("Unknown format")
 
@@ -268,11 +273,18 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
-    # parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl'], default='parquet')
+    parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl'], default='parquet')
+    parser.add_argument('--whitelist',
+                        help='Optional whitelist of fields to save. Only applies when output format is parquet',
+                        choices=['obs', 'obsm', 'X'],
+                        action='append')
     parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--markers',
                         help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
                         action='append')
+    parser.add_argument('--no-auto-groups', dest='no_auto_groups',
+                        help='Disable automatic cluster field detection to compute differential expression results for',
+                        action='store_true')
     parser.add_argument('--groups',
                         help='List of groups to compute markers for (e.g. louvain). Note that markers created with scanpy or cumulus are automatically included.',
                         action='append')
@@ -282,9 +294,10 @@ def main(argsv):
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
     out = args.out
-
+    no_auto_groups = args.no_auto_groups
+    save_whitelist = args.whitelist
     input_datasets = args.dataset  # multimodal
-    output_format = 'parquet'  # args.format
+    output_format = args.format
     if out is None:
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
     if out.endswith('/'):
@@ -292,6 +305,8 @@ def main(argsv):
     output_format2extension = dict(parquet='.cpq', jsonl='.jsonl')
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
+    if output_format == 'parquet':
+        os.makedirs(out, exist_ok=True)
     datasets = []
     tmp_files = []
     for input_dataset in input_datasets:
@@ -316,7 +331,8 @@ def main(argsv):
 
     prepare_data = PrepareData(datasets=datasets, output=out, dimensions=args.groups, groups=args.groups,
                                group_nfeatures=args.group_nfeatures,
-                               markers=args.markers, output_format=output_format)
+                               markers=args.markers, output_format=output_format, no_auto_groups=no_auto_groups,
+                               save_whitelist=save_whitelist)
     prepare_data.execute()
     for tmp_file in tmp_files:
         os.remove(tmp_file)

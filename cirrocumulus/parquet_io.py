@@ -19,7 +19,7 @@ def write_pq(d, output_dir, name, write_statistics=True, row_group_size=None):
                    write_statistics=write_statistics, row_group_size=row_group_size)
 
 
-def save_adata_pq(datasets, schema, output_directory):
+def save_adata_pq(datasets, schema, output_directory, whitelist):
     X_dir = os.path.join(output_directory, 'X')
     module_dir = os.path.join(output_directory, 'X_module')
     obs_dir = os.path.join(output_directory, 'obs')
@@ -33,11 +33,14 @@ def save_adata_pq(datasets, schema, output_directory):
     for dataset in datasets:
         if dataset.uns.get('data_type') == DataType.MODULE:
             os.makedirs(module_dir, exist_ok=True)
-            save_adata_X(dataset, module_dir)
-        else:
+            if whitelist is None or 'X' in whitelist:
+                save_adata_X(dataset, module_dir)
+        elif whitelist is None or 'X' in whitelist:
             save_adata_X(dataset, X_dir)
-        save_data_obs(dataset, obs_dir)
-        save_data_obsm(dataset, obsm_dir)
+        if whitelist is None or 'obs' in whitelist:
+            save_data_obs(dataset, obs_dir)
+        if whitelist is None or 'obsm' in whitelist:
+            save_data_obsm(dataset, obsm_dir)
 
 
 def save_adata_X(adata, X_dir):
