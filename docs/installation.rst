@@ -191,7 +191,7 @@ Static Website
 
 - Create the file datasets.json in the build directory::
 
-```json
+
     [
         {
             "id": "pbmc3k",
@@ -199,7 +199,7 @@ Static Website
             "url": "pbmc3k/pbmc3k.jsonl"
         }
     ]
-```
+
 
 - Move your dataset files to build::
 
