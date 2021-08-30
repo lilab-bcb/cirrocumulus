@@ -218,14 +218,19 @@ class PrepareData:
         results = schema.get('results', [])
         if len(results) > 0:
             uns_dir = os.path.join(output_dir, 'uns')
+            is_gzip = output_format == 'parquet'
             os.makedirs(uns_dir, exist_ok=True)
             for i in range(len(results)):  # keep id, name, type in schema, store rest in file
                 result = results[i]
                 result_id = result.pop('id')
                 results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
-                                  content_type='application/json', content_encoding='gzip')
-                with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
-                    f.write(to_json(result))
+                                  content_type='application/json', content_encoding='gzip' if is_gzip else None)
+                if is_gzip:
+                    with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
+                        f.write(to_json(result))
+                else:
+                    with open(os.path.join(uns_dir, result_id + '.json'), 'wt') as f:
+                        f.write(to_json(result))
 
         for dataset in self.datasets:
             images = dataset.uns.get('images')
