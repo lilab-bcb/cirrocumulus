@@ -29,7 +29,7 @@ import {
     setDialog,
     setMessage,
     setSavedDatasetState,
-    setTab,
+    setTab
 } from './actions';
 import {drawerWidth} from './App';
 import CirroIcon from './CirroIcon';
@@ -49,12 +49,12 @@ const styles = theme => ({
     root: {
         display: 'flex',
         flexWrap: 'wrap',
-        'flex-direction': 'column',
+        'flex-direction': 'column'
     },
     appBar: {
         width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: drawerWidth,
-    },
+        marginLeft: drawerWidth
+    }
 });
 const AntTab = withStyles(theme => ({
     root: {
@@ -64,17 +64,17 @@ const AntTab = withStyles(theme => ({
         marginRight: theme.spacing(0),
         '&:hover': {
             color: '#40a9ff',
-            opacity: 1,
+            opacity: 1
         },
         '&$selected': {
             color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium,
+            fontWeight: theme.typography.fontWeightMedium
         },
         '&:focus': {
-            color: '#40a9ff',
-        },
+            color: '#40a9ff'
+        }
     },
-    selected: {},
+    selected: {}
 }))(props => <Tab disableRipple {...props} />);
 
 class AppHeader extends React.PureComponent {
@@ -85,7 +85,7 @@ class AppHeader extends React.PureComponent {
             userMenuOpen: false,
             userMenuAnchorEl: null,
             moreMenuOpen: false,
-            moreMenuAnchorEl: null,
+            moreMenuAnchorEl: null
         };
 
     }
@@ -214,7 +214,7 @@ class AppHeader extends React.PureComponent {
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
         const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
-        const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET)
+        const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
         const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
         const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
 
@@ -230,11 +230,11 @@ class AppHeader extends React.PureComponent {
                         onClose={this.handleCloseDatasetDetails}
                         anchorOrigin={{
                             vertical: 'bottom',
-                            horizontal: 'center',
+                            horizontal: 'center'
                         }}
                         transformOrigin={{
                             vertical: 'top',
-                            horizontal: 'center',
+                            horizontal: 'center'
                         }}
                     >
 
@@ -292,10 +292,12 @@ class AppHeader extends React.PureComponent {
                         textColor="primary"
                         onChange={this.handleTabChange}
                     >
-                        <AntTab value="embedding" label="Embeddings"/>
-                        <AntTab value="distribution" label="Distributions" disabled={distributionData.length === 0}/>
-                        <AntTab value="composition" label="Composition" disabled={obsCat.length < 2}/>
-                        {jobResults.length > 0 && <AntTab value="results" label="Results"/>}
+                        <AntTab data-testid="embedding-tab" value="embedding" label="Embeddings"/>
+                        <AntTab data-testid="distributions-tab" value="distribution" label="Distributions"
+                                disabled={distributionData.length === 0}/>
+                        <AntTab data-testid="composition-tab" value="composition" label="Composition"
+                                disabled={obsCat.length < 2}/>
+                        {jobResults.length > 0 && <AntTab data-testid="results-tab" value="results" label="Results"/>}
                     </Tabs>}
 
 
@@ -330,12 +332,12 @@ class AppHeader extends React.PureComponent {
                                                anchorEl={this.state.moreMenuAnchorEl}
                                                anchorOrigin={{
                                                    vertical: 'top',
-                                                   horizontal: 'right',
+                                                   horizontal: 'right'
                                                }}
 
                                                transformOrigin={{
                                                    vertical: 'top',
-                                                   horizontal: 'right',
+                                                   horizontal: 'right'
                                                }} open={this.state.moreMenuOpen}
                                                onClose={this.handleMoreMenuClose}>
                             {showAddDataset && <MenuItem onClick={this.handleImportDataset}>
@@ -372,12 +374,12 @@ class AppHeader extends React.PureComponent {
                               anchorEl={this.state.userMenuAnchorEl}
                               anchorOrigin={{
                                   vertical: 'top',
-                                  horizontal: 'right',
+                                  horizontal: 'right'
                               }}
 
                               transformOrigin={{
                                   vertical: 'top',
-                                  horizontal: 'right',
+                                  horizontal: 'right'
                               }} open={this.state.userMenuOpen}
                               onClose={this.handleUserMenuClose}>
                             <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
@@ -456,7 +458,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 };
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(AppHeader));
 
 
