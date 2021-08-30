@@ -209,7 +209,7 @@ Static Website
 
     cd build ; npx http-server .
 
-- Host the build directory on your static website hosting service (e.g. GitHub Pages)
+- Host the build directory on your static website hosting service (e.g. `Amazon S3`_, `Google Cloud Storage`_)
 
 
 Developer Instructions
@@ -270,5 +270,7 @@ Developer Instructions
 .. _Terra: https://app.terra.bio/
 .. _MongoDB: https://www.mongodb.com/
 .. _Google API Console: https://console.developers.google.com/
-.. _gcsfuse: _https://github.com/GoogleCloudPlatform/gcsfuse/
-.. _MongoDB Compass: _https://www.mongodb.com/products/compass
+.. _gcsfuse: https://github.com/GoogleCloudPlatform/gcsfuse/
+.. _MongoDB Compass: https://www.mongodb.com/products/compass
+.. _Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html
+.. _Google Cloud Storage: https://cloud.google.com/storage/docs/hosting-static-website-http
