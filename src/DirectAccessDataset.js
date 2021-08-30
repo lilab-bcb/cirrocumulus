@@ -66,13 +66,12 @@ export class DirectAccessDataset {
                                 values[i] = data.categories[data.values[i]];
                             }
                             this.key2data[key] = values;
-                        } else if (data.values) {
-                            this.key2data[key] = data.values;
+                        } else if (data.value) {
+                            this.key2data[key] = data.value;
                         } else {
                             this.key2data[key] = data; // object for coordinates
                         }
                     }
-
                 });
                 promises.push(p);
             }
