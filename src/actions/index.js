@@ -672,12 +672,8 @@ function handleFilterUpdated() {
         if (filter) {
             q.selection.filter = filter;
         }
-        // const isCurrentSelectionEmpty = state.selection.chart == null || Object.keys(state.selection.chart).length === 0;
 
         if (filter == null) {
-            // if (!isCurrentSelectionEmpty) {
-            //     dispatch(setSelection({chart: {}}));
-            // }
             if (state.selection.size !== 0) {
                 dispatch(setSelection(new Set()));
             }
@@ -686,10 +682,7 @@ function handleFilterUpdated() {
             dispatch(_setLoading(false));
             return;
         }
-        // let selectedEmbeddings = state.embeddings;
-        // q.selection.embeddings = selectedEmbeddings.map(e => {
-        //     return getEmbeddingJson(e);
-        // });
+
         const cachedData = state.cachedData;
         getState().dataset.api.getDataPromise(q, cachedData).then(result => {
             dispatch(handleSelectionResult(result.selection, true));
@@ -788,33 +781,6 @@ export function handleMeasureFilterUpdated(payload) {
     };
 }
 
-export function handleColorChange(payload) {
-    return {type: SET_CATEGORICAL_COLOR, payload: payload};
-}
-
-export function handleDomainChange(payload) {
-    return {type: SET_DOMAIN, payload: payload};
-}
-
-function _handleCategoricalNameChange(payload) {
-    return {type: SET_CATEGORICAL_NAME, payload: payload};
-
-}
-
-export function handleCategoricalNameChange(payload) {
-    return function (dispatch, getState) {
-        const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
-            name: payload.name,
-            originalValue: payload.originalValue,
-            priorValue: payload.priorValue,
-            newValue: payload.newValue,
-            id: dataset_id
-        }) : Promise.resolve();
-        p.then(() => dispatch(_handleCategoricalNameChange(payload)));
-    };
-}
-
 export function handleDimensionFilterUpdated(payload) {
     return function (dispatch, getState) {
         let name = payload.name;
@@ -876,6 +842,35 @@ export function handleDimensionFilterUpdated(payload) {
         dispatch(handleFilterUpdated());
     };
 }
+
+export function handleColorChange(payload) {
+    return {type: SET_CATEGORICAL_COLOR, payload: payload};
+}
+
+export function handleDomainChange(payload) {
+    return {type: SET_DOMAIN, payload: payload};
+}
+
+function _handleCategoricalNameChange(payload) {
+    return {type: SET_CATEGORICAL_NAME, payload: payload};
+
+}
+
+export function handleCategoricalNameChange(payload) {
+    return function (dispatch, getState) {
+        const dataset_id = getState().dataset.id;
+        const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
+            name: payload.name,
+            originalValue: payload.originalValue,
+            priorValue: payload.priorValue,
+            newValue: payload.newValue,
+            id: dataset_id
+        }) : Promise.resolve();
+        p.then(() => dispatch(_handleCategoricalNameChange(payload)));
+    };
+}
+
+
 
 
 export function restoreView(payload) {
