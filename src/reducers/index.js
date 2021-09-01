@@ -64,10 +64,11 @@ import {
     FEATURE_TYPE,
     getInterpolator,
     INTERPOLATOR_SCALING_NONE,
-    NATSORT,
+    NATSORT, splitSearchTokens,
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
+import memoize from 'memoize-one';
 
 
 const DIST_PLOT_OPTIONS = {
@@ -167,6 +168,7 @@ function embeddingLabels(state = [], action) {
             return state;
     }
 }
+
 
 function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
     switch (action.type) {

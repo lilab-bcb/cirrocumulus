@@ -2,7 +2,7 @@ import {Tooltip} from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
 import {
@@ -14,14 +14,20 @@ import {
 } from './ThreeUtil';
 
 
-class GalleryImage extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {url: null, overlayUrl: null, loading: false, forceUpdate: false};
-        this.elementRef = React.createRef();
-    }
+export default function GalleryImage(props) {
+    const [url, setUrl] = useState(null);
+    const [overlayUrl, setOverlayUrl] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const elementRef = useRef();
 
-    draw() {
+
+    function onSelect(event) {
+        event.preventDefault();
+        props.onSelect(props.traceInfo);
+    };
+
+
+    useEffect(() => {
         const {
             cachedData,
             categoricalNames,
@@ -36,11 +42,11 @@ class GalleryImage extends React.PureComponent {
             traceInfo,
             unselectedMarkerOpacity,
             unselectedPointSize
-        } = this.props;
-
+        } = props;
+        
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-            spriteVisualizer.zoomFactor = this.zoomFactor;
+            spriteVisualizer.zoomFactor = getScaleFactor(props.primaryChartSize);
 
             updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
                 categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
@@ -62,13 +68,17 @@ class GalleryImage extends React.PureComponent {
                 }, scatterPlot.camera);
                 overlayUrl = labelCanvas.toDataURL();
             }
-
-            this.setState({url: canvas.toDataURL(), overlayUrl: overlayUrl, loading: false, element: null});
+            setUrl(canvas.toDataURL());
+            setOverlayUrl(overlayUrl);
+            setLoading(false);
         } else if (traceInfo.type === 'image') {
             if (!traceInfo.tileSource.ready) {
-                this.setState({url: null, overlayUrl: null, loading: true, element: null});
+                setUrl(null);
+                setOverlayUrl(null);
+                setLoading(true);
+
                 traceInfo.tileSource.addOnceHandler('ready', () => {
-                    this.setState({loading: false});
+                    setLoading(false);
                 });
             } else {
                 let canvas = document.createElement('canvas');
@@ -80,17 +90,21 @@ class GalleryImage extends React.PureComponent {
                     width: chartSize,
                     height: chartSize
                 }, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
-                this.setState({url: canvas.toDataURL(), overlayUrl: null, loading: false, element: null});
+                setUrl(canvas.toDataURL());
+                setOverlayUrl(null);
+                setLoading(false);
                 canvas = null;
             }
         } else {
-            const containerElement = this.elementRef.current;
+            const containerElement = elementRef.current;
             containerElement.innerHTML = '';
             const svg = traceInfo.gallerySource;
             svg.setAttribute('width', chartSize);
             svg.setAttribute('height', chartSize);
             containerElement.append(svg);
-            this.setState({url: null, overlayUrl: null, loading: false});
+            setUrl(null);
+            setOverlayUrl(null);
+            setLoading(false);
         }
 
         // canvas.toBlob(function (blob) {
@@ -106,86 +120,63 @@ class GalleryImage extends React.PureComponent {
         //     // document.body.appendChild(newImg);
         // });
 
+    });
+
+
+    let name = props.traceInfo.name;
+    if (name === '__count') {
+        name = '';
     }
+    return (
+        <Box borderColor="text.primary" border={1}
+             data-testid="gallery-image"
+             style={{display: 'inline-block', margin: 2}}>
+            <div style={{
+                position: 'relative',
+                width: props.chartSize,
+                height: props.chartSize,
+                cursor: 'pointer'
+            }}>
+                <Tooltip title={"Embedding: " + props.traceInfo.embedding.name}>
+                    <Typography color="textPrimary" variant={"caption"}
+                                onClick={onSelect}
+                                style={{
+                                    marginTop: 3.2,
+                                    position: 'absolute',
+                                    right: 4,
+                                    zIndex: 1000
+                                }}>{name}</Typography>
+                </Tooltip>
+                {loading && <CircularProgress
+                    style={{position: 'absolute', left: props.chartSize / 2, top: props.chartSize / 2}}
+                    size={20}/>}
+                <div onClick={onSelect} ref={elementRef}
+                     style={{position: 'absolute', left: 0, top: 0}}></div>
+                {url &&
+                <div style={{position: 'absolute', left: 0, top: 0}}>
+                    <img alt="" src={url}
+                         width={props.chartSize * window.devicePixelRatio}
+                         height={props.chartSize * window.devicePixelRatio}
+                         onClick={onSelect}
+                         style={{
+                             width: props.chartSize,
+                             height: props.chartSize
+                         }}/>
+                </div>}
+                {overlayUrl &&
+                <div style={{position: 'absolute', left: 0, top: 0}}>
+                    <img alt="" src={overlayUrl}
+                         onClick={onSelect}
+                         style={{
+                             width: props.chartSize,
+                             height: props.chartSize
+                         }}/></div>}
 
 
-    componentDidMount() {
-        this.zoomFactor = getScaleFactor(this.props.primaryChartSize);
-        this.draw();
-    }
+            </div>
+        </Box>
+    );
 
 
-    componentDidUpdate(prevProps, prevState) {
-        if (prevProps.primaryChartSize !== this.props.primaryChartSize) {
-            this.zoomFactor = getScaleFactor(this.props.primaryChartSize);
-        }
-        this.draw();
-    }
-
-
-    onSelect = (event) => {
-        event.preventDefault();
-        this.props.onSelect(this.props.traceInfo);
-    };
-
-    render() {
-
-        let name = this.props.traceInfo.name;
-        if (name === '__count') {
-            name = '';
-        }
-        return (
-            <Box borderColor="text.primary" border={1}
-                 data-testid="gallery-image"
-                 style={{display: 'inline-block', margin: 2}}>
-                <div style={{
-                    position: 'relative',
-                    width: this.props.chartSize,
-                    height: this.props.chartSize,
-                    cursor: 'pointer'
-                }}>
-                    <Tooltip title={"Embedding: " + this.props.traceInfo.embedding.name}>
-                        <Typography color="textPrimary" variant={"caption"}
-                                    onClick={this.onSelect}
-                                    style={{
-                                        marginTop: 3.2,
-                                        position: 'absolute',
-                                        right: 4,
-                                        zIndex: 1000
-                                    }}>{name}</Typography>
-                    </Tooltip>
-                    {this.state.loading && <CircularProgress
-                        style={{position: 'absolute', left: this.props.chartSize / 2, top: this.props.chartSize / 2}}
-                        size={20}/>}
-                    <div onClick={this.onSelect} ref={this.elementRef}
-                         style={{position: 'absolute', left: 0, top: 0}}></div>
-                    {this.state.url &&
-                    <div style={{position: 'absolute', left: 0, top: 0}}>
-                        <img alt="" src={this.state.url}
-                             width={this.props.chartSize * window.devicePixelRatio}
-                             height={this.props.chartSize * window.devicePixelRatio}
-                             onClick={this.onSelect}
-                             style={{
-                                 width: this.props.chartSize,
-                                 height: this.props.chartSize
-                             }}/>
-                    </div>}
-                    {this.state.overlayUrl &&
-                    <div style={{position: 'absolute', left: 0, top: 0}}>
-                        <img alt="" src={this.state.overlayUrl}
-                             onClick={this.onSelect}
-                             style={{
-                                 width: this.props.chartSize,
-                                 height: this.props.chartSize
-                             }}/></div>}
-
-
-                </div>
-            </Box>
-        );
-
-    }
 }
-
-export default GalleryImage;
 

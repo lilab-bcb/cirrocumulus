@@ -287,16 +287,6 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     }
     scatterPlot.setPointColors(colors);
     scatterPlot.setPointPositions(positions);
-
-
-    // if (!isSelectionEmpty && is3d && unselectedMarkerOpacity === 0) { // hide filtered points so they don't obscure non-filtered points
-    //     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
-    //         if (colors[j] === 0) {
-    //             scale[i] = 0;
-    //         }
-    //     }
-    //
-    // }
     scatterPlot.setPointScaleFactors(scale);
 
     const showLabels = obsCatKeys.length > 0;

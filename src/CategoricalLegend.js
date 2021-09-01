@@ -12,6 +12,11 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import React from 'react';
 import {intFormat, numberFormat} from './formatters';
 import {NATSORT} from './util';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
 
 class CategoricalLegend extends React.PureComponent {
 
@@ -113,7 +118,6 @@ class CategoricalLegend extends React.PureComponent {
     render() {
         const {
             scale,
-            dataset,
             datasetFilter,
             name,
             featureSummary,
@@ -212,88 +216,90 @@ class CategoricalLegend extends React.PureComponent {
                     <MenuItem onClick={this.handleEditName}>Edit Name</MenuItem>
                     <MenuItem onClick={this.handleEditColor}>Edit Color</MenuItem>
                 </Menu>
-                <table style={{textAlign: 'left', userSelect: 'none'}}>
-                    <thead>
-                    <tr>
-                        {clickEnabled && <td></td>}
-                        <td></td>
-                        <td><small>{'all'}</small></td>
-                        <td><small>{selectionSummary != null ? 'selection' : null}</small></td>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {categories.map((category) => {
-                        const categoryIndex = globalDimensionSummary.categories.indexOf(category);
-                        if (categoryIndex === -1) {
-                            throw new Error(category + ' not found');
-                        }
-                        const opacity = categoricalFilter == null || categoricalFilter.value.indexOf(category) !== -1 ? 1 : 0.4;
-                        const categoryCount = globalDimensionSummary.counts[categoryIndex];
-                        const selectedCategoryCount = selectedDimensionToCount[category] || 0;
+                <Table size="small" stickyHeader={true} padding="checkbox" style={{userSelect: 'none'}}>
+                    <TableHead>
+                        <TableRow>
+                            {clickEnabled && <TableCell padding={"none"}></TableCell>}
+                            <TableCell></TableCell>
+                            <TableCell><small>{'all'}</small></TableCell>
+                            <TableCell><small>{selectionSummary != null ? 'selection' : null}</small></TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {categories.map((category) => {
+                            const categoryIndex = globalDimensionSummary.categories.indexOf(category);
+                            if (categoryIndex === -1) {
+                                throw new Error(category + ' not found');
+                            }
 
-                        //            not-selected, selected
-                        // in category      a       b
-                        // not in category  c       d
-                        // const a = categoryCount - selectedCategoryCount;
-                        // const b = selectedCategoryCount;
-                        // const c = nObs - nObsSelected - selectedCategoryCount;
-                        // const d = nObsSelected - selectedCategoryCount;
+                            const isSelected = categoricalFilter != null && categoricalFilter.value.indexOf(category) !== -1;
+                            const opacity = categoricalFilter == null || isSelected ? 1 : 0.4;
 
-                        const fractionSelected = selectionSummary == null ? 0 : selectedCategoryCount / nObsSelected;
-                        const globalTitle = numberFormat(100 * categoryCount / nObs) + '%';
-                        let categoryText = category;
-                        let renamed = renamedCategories[category];
-                        let categoryTooltip = categoryText;
-                        if (renamed !== undefined) {
-                            categoryTooltip = renamed + ' (renamed from ' + categoryTooltip + ')';
-                            categoryText = renamed;
+                            const categoryCount = globalDimensionSummary.counts[categoryIndex];
+                            const selectedCategoryCount = selectedDimensionToCount[category] || 0;
 
-                        }
-                        const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
-                        return <tr
-                            style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
-                            onContextMenu={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
-                            onClick={(e) => this.handleClick(category, e)} key={category}>
-                            {clickEnabled && <td>
-                                <div style={{
-                                    display: 'inline-block',
-                                    width: 10,
-                                    height: 10,
-                                    background: scale(category)
-                                }}/>
-                            </td>}
-                            <td>
-                                <div style={{
-                                    maxWidth: 140,
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    display: 'inline-block',
-                                    userSelect: 'none'
-                                }} title={'' + categoryTooltip}>{'' + categoryText}</div>
-                                <IconButton style={{padding: 0, fontSize: 14}} size="small"
-                                            onClick={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
-                                            aria-label="Menu"
-                                            aria-haspopup="true">
-                                    <ArrowDropDownIcon fontSize={"inherit"}/>
-                                </IconButton>
-                            </td>
+                            //            not-selected, selected
+                            // in category      a       b
+                            // not in category  c       d
+                            // const a = categoryCount - selectedCategoryCount;
+                            // const b = selectedCategoryCount;
+                            // const c = nObs - nObsSelected - selectedCategoryCount;
+                            // const d = nObsSelected - selectedCategoryCount;
 
-                            <td>
-                                <Tooltip title={globalTitle}>
-                                    <span>{intFormat(categoryCount)}</span>
-                                </Tooltip>
+                            const fractionSelected = selectionSummary == null ? 0 : selectedCategoryCount / nObsSelected;
+                            const globalTitle = numberFormat(100 * categoryCount / nObs) + '%';
+                            let categoryText = category;
+                            let renamed = renamedCategories[category];
+                            let categoryTooltip = categoryText;
+                            if (renamed !== undefined) {
+                                categoryTooltip = renamed + ' (renamed from ' + categoryTooltip + ')';
+                                categoryText = renamed;
 
-                            </td>
-                            {selectionSummary && <td>
-                                <Tooltip title={selectionTitle}>
-                                    <div>{intFormat(selectedCategoryCount)}</div>
-                                </Tooltip>
-                            </td>}
-                        </tr>;
-                    })
-                    }</tbody>
-
-                </table>
+                            }
+                            const selectionTitle = selectionSummary == null ? null : numberFormat(100 * fractionSelected) + '%';
+                            return <TableRow
+                                selected={isSelected}
+                                hover={clickEnabled}
+                                style={{cursor: clickEnabled ? 'pointer' : null, opacity: opacity}}
+                                onContextMenu={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
+                                onClick={(e) => this.handleClick(category, e)} key={category}>
+                                {clickEnabled && <TableCell padding={"none"}>
+                                    <div style={{
+                                        display: 'inline-block',
+                                        width: 11,
+                                        height: 11,
+                                        background: scale(category)
+                                    }}/>
+                                </TableCell>}
+                                <TableCell>
+                                    <div style={{
+                                        maxWidth: 140,
+                                        textOverflow: 'ellipsis',
+                                        overflow: 'hidden',
+                                        display: 'inline-block',
+                                        userSelect: 'none'
+                                    }} title={'' + categoryTooltip}>{'' + categoryText}</div>
+                                    <IconButton style={{padding: 0, fontSize: 14}} size="small"
+                                                onClick={(e) => this.handleContextmenu(category, renamedCategories[category], e)}
+                                                aria-label="Menu"
+                                                aria-haspopup="true">
+                                        <ArrowDropDownIcon fontSize={"inherit"}/>
+                                    </IconButton>
+                                </TableCell>
+                                <TableCell>
+                                    <Tooltip title={globalTitle}>
+                                        <span>{intFormat(categoryCount)}</span>
+                                    </Tooltip>
+                                </TableCell>
+                                {selectionSummary && <TableCell>
+                                    <Tooltip title={selectionTitle}>
+                                        <div>{intFormat(selectedCategoryCount)}</div>
+                                    </Tooltip>
+                                </TableCell>}
+                            </TableRow>;
+                        })
+                        }</TableBody>
+                </Table>
             </div>
         );
     }

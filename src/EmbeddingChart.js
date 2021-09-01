@@ -24,6 +24,14 @@ import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
 import {splitSearchTokens, TRACE_TYPE_META_IMAGE} from './util';
+import memoize from 'memoize-one';
+
+// TODO-this causes an unnecessary redraw when obsCat is updated
+const getActiveEmbeddingLabels = memoize(
+    (searchTokens, embeddingLabels) => {
+        return splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+    }
+);
 
 class EmbeddingChart extends React.PureComponent {
 
@@ -106,7 +114,7 @@ class EmbeddingChart extends React.PureComponent {
             return null;
         }
         const nObsSelected = selection.size;
-        const activeEmbeddingLabels = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+        const activeEmbeddingLabels = getActiveEmbeddingLabels(searchTokens, embeddingLabels);
         const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
 
         return (
@@ -238,7 +246,6 @@ const mapStateToProps = state => {
         chartOptions: state.chartOptions,
         dataset: state.dataset,
         datasetFilter: state.datasetFilter,
-        embeddingChartSize: state.embeddingChartSize,
         embeddingLabels: state.embeddingLabels,
         featureSummary: state.featureSummary,
         globalFeatureSummary: state.globalFeatureSummary,

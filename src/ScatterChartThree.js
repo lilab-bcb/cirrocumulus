@@ -117,13 +117,11 @@ class ScatterChartThree extends React.PureComponent {
 
     componentDidMount() {
         this.init();
-        this.draw(); // TODO fix 2x draw
-        this.draw();
         if (this.props.chartOptions.camera) {
             this.scatterPlot.updateFromCameraDef(this.props.chartOptions.camera);
             this.props.chartOptions.camera = null;
-            this.draw();
         }
+        this.draw();
     }
 
 

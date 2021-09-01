@@ -63,6 +63,7 @@ class GalleryCharts extends React.PureComponent {
             unselectedMarkerOpacity,
             unselectedPointSize
         } = this.props;
+
         if (this.containerElement.style.width !== this.props.chartSize + 'px') {
             document.body.removeChild(this.containerElement);
             this.containerElement = createContainer(this.props.chartSize);
