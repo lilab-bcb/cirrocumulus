@@ -87,7 +87,7 @@ class PrepareData:
         primary_dataset = datasets[0]
         for i in range(1, len(datasets)):
             dataset = datasets[i]
-            name = dataset.uns['name']
+            name = dataset.uns.get('name', 'dataset {}'.format(i + 1))
             prefix = name + '-'
             dataset.var.index = prefix + dataset.var.index.astype(str)
             # add prefix, check for duplicates
