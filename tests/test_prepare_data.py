@@ -3,6 +3,7 @@ import os
 import fsspec
 import numpy as np
 import pandas as pd
+import pytest
 import scipy.sparse
 
 from cirrocumulus.parquet_dataset import ParquetDataset
@@ -42,6 +43,14 @@ def test_prepare_cxg_tile_db(test_data, measures, dimensions, continuous_obs, ba
         read_and_diff(TileDBDataset(), output_cxg, test_data, measures, dimensions, continuous_obs, basis)
     except ModuleNotFoundError:
         print('Skipping TileDB tests')
+
+
+def test_prepare_join_obs_index(test_data, tmp_path):
+    output_dir = str(tmp_path)
+    test_data2 = test_data.copy()
+    test_data2 = test_data2[[0, 1, 2]]
+    with pytest.raises(ValueError):
+        PrepareData(datasets=[test_data, test_data2], output=output_dir)
 
 
 def test_prepare_parquet(test_data, measures, dimensions, continuous_obs, basis, tmp_path):

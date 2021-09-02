@@ -26,24 +26,23 @@ export default function GalleryImage(props) {
         props.onSelect(props.traceInfo);
     };
 
+    const {
+        cachedData,
+        categoricalNames,
+        chartOptions,
+        chartSize,
+        containerElement,
+        markerOpacity,
+        obsCat,
+        pointSize,
+        scatterPlot,
+        selection,
+        traceInfo,
+        unselectedMarkerOpacity,
+        unselectedPointSize
+    } = props;
 
     useEffect(() => {
-        const {
-            cachedData,
-            categoricalNames,
-            chartOptions,
-            chartSize,
-            containerElement,
-            markerOpacity,
-            obsCat,
-            pointSize,
-            scatterPlot,
-            selection,
-            traceInfo,
-            unselectedMarkerOpacity,
-            unselectedPointSize
-        } = props;
-        
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = getScaleFactor(props.primaryChartSize);
@@ -107,20 +106,7 @@ export default function GalleryImage(props) {
             setLoading(false);
         }
 
-        // canvas.toBlob(function (blob) {
-        //     // let newImg = document.createElement('img');
-        //     let url = URL.createObjectURL(blob);
-        //     _this.setState({url: url});
-        //     // newImg.onload = function () {
-        //     //     // no longer need to read the blob so it's revoked
-        //     //     URL.revokeObjectURL(url);
-        //     // };
-        //     //
-        //     // newImg.src = url;
-        //     // document.body.appendChild(newImg);
-        // });
-
-    });
+    }, [cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
 
 
     let name = props.traceInfo.name;

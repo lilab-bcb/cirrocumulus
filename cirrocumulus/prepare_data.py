@@ -87,12 +87,14 @@ class PrepareData:
         primary_dataset = datasets[0]
         for i in range(1, len(datasets)):
             dataset = datasets[i]
-            name = dataset.uns['name']
+            name = dataset.uns.get('name', 'dataset {}'.format(i + 1))
             prefix = name + '-'
             dataset.var.index = prefix + dataset.var.index.astype(str)
             # add prefix, check for duplicates
             obs_exclude = []
             dataset.uns['cirro_obs_exclude'] = obs_exclude
+            if not np.array_equal(primary_dataset.obs.index, dataset.obs.index):
+                raise ValueError('{} obs ids are not equal'.format(name))
             for key in list(dataset.obs.keys()):
                 if key in primary_dataset.obs.columns and dataset.obs[key].equals(primary_dataset.obs[key]):
                     obs_exclude.append(key)
@@ -103,7 +105,7 @@ class PrepareData:
             obsm_exclude = []
             dataset.uns['cirro_obsm_exclude'] = obsm_exclude
             for key in list(dataset.obsm.keys()):
-                if key in primary_dataset.obsm and np.array_equals(dataset.obsm[key], primary_dataset.obsm[key]):
+                if key in primary_dataset.obsm and np.array_equal(dataset.obsm[key], primary_dataset.obsm[key]):
                     obsm_exclude.append(key)
                     continue
                 dataset.obsm[prefix + key] = dataset.obsm[key]
