@@ -118,7 +118,7 @@ class TileDBDataset:
         if len(basis_keys) > 0:
             for key in basis_keys:
                 with tiledb.open(os.path.join(path, 'emb', key), mode="r") as array:
-                    obsm[key] = array
+                    obsm[key] = array[:]
                     if X is None:
                         X = scipy.sparse.coo_matrix(([], ([], [])), shape=(array.shape[0], 0))
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)
