@@ -24,7 +24,7 @@ export default function GalleryImage(props) {
     function onSelect(event) {
         event.preventDefault();
         props.onSelect(props.traceInfo);
-    };
+    }
 
     const {
         cachedData,
@@ -32,6 +32,7 @@ export default function GalleryImage(props) {
         chartOptions,
         chartSize,
         containerElement,
+        primaryChartSize,
         markerOpacity,
         obsCat,
         pointSize,
@@ -106,7 +107,7 @@ export default function GalleryImage(props) {
             setLoading(false);
         }
 
-    }, [cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
+    }, [containerElement, primaryChartSize, cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
 
 
     let name = props.traceInfo.name;
