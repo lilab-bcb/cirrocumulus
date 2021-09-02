@@ -46,7 +46,7 @@ export default function GalleryImage(props) {
     useEffect(() => {
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-            spriteVisualizer.zoomFactor = getScaleFactor(props.primaryChartSize);
+            spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
 
             updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
                 categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
