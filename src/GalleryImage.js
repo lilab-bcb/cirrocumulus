@@ -24,7 +24,7 @@ export default function GalleryImage(props) {
     function onSelect(event) {
         event.preventDefault();
         props.onSelect(props.traceInfo);
-    };
+    }
 
     const {
         cachedData,
@@ -32,6 +32,7 @@ export default function GalleryImage(props) {
         chartOptions,
         chartSize,
         containerElement,
+        primaryChartSize,
         markerOpacity,
         obsCat,
         pointSize,
@@ -45,7 +46,7 @@ export default function GalleryImage(props) {
     useEffect(() => {
         if (traceInfo.type === 'scatter') {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-            spriteVisualizer.zoomFactor = getScaleFactor(props.primaryChartSize);
+            spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
 
             updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
                 categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
@@ -106,7 +107,7 @@ export default function GalleryImage(props) {
             setLoading(false);
         }
 
-    }, [cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
+    }, [containerElement, primaryChartSize, cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
 
 
     let name = props.traceInfo.name;
