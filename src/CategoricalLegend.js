@@ -210,13 +210,11 @@ export default function CategoricalLegend(props) {
                     background: scale(category)
                 }}></div>
 
-                <ListItemText primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
+                <ListItemText title={renamedCategory} primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
                               secondary={(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[categoryIndex])}/>
-                {/*<ListItemSecondaryAction>*/}
                 <IconButton onClick={event => onContextmenu(event, category)} edge="end" aria-label="menu">
                     <MenuIcon></MenuIcon>
                 </IconButton>
-                {/*</ListItemSecondaryAction>*/}
             </ListItem>
         );
     }
@@ -229,19 +227,6 @@ export default function CategoricalLegend(props) {
 
     return (
         <>
-            <Menu
-                anchorReference="anchorPosition"
-                anchorPosition={
-                    contextMenu != null
-                        ? {top: contextMenu.mouseY, left: contextMenu.mouseX}
-                        : undefined
-                }
-                open={Boolean(contextMenu)}
-                onClose={handleContextmenuClose}
-            >
-                <MenuItem onClick={handleEditName}>Edit Name</MenuItem>
-                <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
-            </Menu>
             <div data-testid="categorical-legend">
                 <FixedSizeList height={height} width={250} itemSize={40}
                                itemCount={categories.length}>
@@ -281,6 +266,19 @@ export default function CategoricalLegend(props) {
                     </DialogActions>
                 </>}
             </Dialog>
+            <Menu
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu != null
+                        ? {top: contextMenu.mouseY, left: contextMenu.mouseX}
+                        : undefined
+                }
+                open={Boolean(contextMenu)}
+                onClose={handleContextmenuClose}
+            >
+                <MenuItem onClick={handleEditName}>Edit Name</MenuItem>
+                <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
+            </Menu>
         </>
     );
 
