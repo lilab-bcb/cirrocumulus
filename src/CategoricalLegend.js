@@ -21,10 +21,7 @@ export default function CategoricalLegend(props) {
     const [color, setColor] = useState(null);
     const [sort, setSort] = useState(null);
     const [originalCategory, setOriginalCategory] = useState(null);
-    const [renamedCategory, setRenamedCategory] = useState(null);
-
     const [forceUpdate, setForceUpdate] = useState(false);
-
 
     function handleDialogClose(e) {
         setMenu(null);
@@ -51,7 +48,6 @@ export default function CategoricalLegend(props) {
         props.handleNameChange({
             name: props.name,
             originalValue: originalCategory,
-            priorValue: renamedCategory,
             newValue: tmpName
         });
         setMenu(null);

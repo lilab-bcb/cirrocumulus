@@ -64,11 +64,10 @@ import {
     FEATURE_TYPE,
     getInterpolator,
     INTERPOLATOR_SCALING_NONE,
-    NATSORT, splitSearchTokens,
+    NATSORT,
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
-import memoize from 'memoize-one';
 
 
 const DIST_PLOT_OPTIONS = {
