@@ -159,9 +159,8 @@ class EmbeddingChart extends React.PureComponent {
                         /> :
                         <CategoricalLegend
                             key={primaryTrace.name}
-                            style={{
-                                display: this.state.showDetails ? 'block' : 'none'
-                            }}
+                            visible={this.state.showDetails}
+                            height={primaryChartSize.height - 40}
                             dataset={dataset}
                             datasetFilter={datasetFilter}
                             handleClick={onDimensionFilterUpdated}
@@ -170,8 +169,6 @@ class EmbeddingChart extends React.PureComponent {
                             categoricalNames={categoricalNames}
                             name={primaryTrace.name}
                             scale={primaryTrace.colorScale}
-                            maxHeight={primaryChartSize.height - 40}
-                            clickEnabled={true}
                             nObs={shape[0]}
                             nObsSelected={nObsSelected}
                             globalFeatureSummary={globalFeatureSummary}

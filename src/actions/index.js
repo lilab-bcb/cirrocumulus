@@ -871,8 +871,6 @@ export function handleCategoricalNameChange(payload) {
 }
 
 
-
-
 export function restoreView(payload) {
     return {type: RESTORE_VIEW, payload: payload};
 }

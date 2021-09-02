@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.20 `September 2, 2021`
+    * Added static website hosting capabilities
+    * Performance improvements
+
 - 1.1.19.post1 `August 25, 2021`
     * Fixed error getting precomputed results
 
