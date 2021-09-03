@@ -38,7 +38,7 @@ class EmbeddingChart extends React.PureComponent {
 
     constructor(props) {
         super(props);
-        this.state = {showDetails: true};
+        this.state = {showLegend: true};
         this.resizeListener = () => {
             let width = window.innerWidth - 280;
             let height = Math.max(300, window.innerHeight - 370);
@@ -54,13 +54,13 @@ class EmbeddingChart extends React.PureComponent {
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
-            this.setState({showDetails: true});
+            this.setState({showLegend: true});
         }
     }
 
     handleToggleLegend = (e) => {
         e.preventDefault();
-        this.setState({showDetails: !this.state.showDetails});
+        this.setState({showLegend: !this.state.showLegend});
     };
 
     onCamera = (eventName, cameraDef) => {
@@ -145,7 +145,7 @@ class EmbeddingChart extends React.PureComponent {
                             showColorScheme={false}
                             height={30}
                             style={{
-                                display: this.state.showDetails ? 'block' : 'none'
+                                display: this.state.showLegend ? 'block' : 'none'
                             }}
                             handleUpdate={onMeasureFilterUpdated}
                             datasetFilter={datasetFilter}
@@ -159,9 +159,9 @@ class EmbeddingChart extends React.PureComponent {
                         /> :
                         <CategoricalLegend
                             key={primaryTrace.name}
-                            visible={this.state.showDetails}
+                            visible={this.state.showLegend}
                             height={primaryChartSize.height - 40}
-                            dataset={dataset}
+                            features={dataset.features}
                             datasetFilter={datasetFilter}
                             handleClick={onDimensionFilterUpdated}
                             handleColorChange={onColorChange}
@@ -175,6 +175,7 @@ class EmbeddingChart extends React.PureComponent {
                             featureSummary={featureSummary}/>
                     }
                 </Box>
+
                 {primaryTrace.type === 'scatter' &&
                 <ScatterChartThree trace={primaryTrace}
                                    cachedData={cachedData}

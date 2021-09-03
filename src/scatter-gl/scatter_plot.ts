@@ -600,7 +600,7 @@ export class ScatterPlot {
     }
 
     /** Disposes all visualizers attached to this scatter plot. */
-    disposeAllVisualizers() {
+    dispose() {
         this.visualizers.forEach(v => v.dispose());
         this.visualizers = [];
     }

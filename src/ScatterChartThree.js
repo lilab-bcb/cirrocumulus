@@ -117,6 +117,10 @@ function ScatterChartThree(props) {
         previousChartSizeRef.current = props.chartSize;
     });
 
+    useEffect(() => {
+        return () => scatterPlotRef.current.dispose();
+    }, []);
+
     function calculatePointSize(trace) {
         const n = trace.x.length;
         const SCALE = 200;
@@ -507,7 +511,9 @@ function ScatterChartThree(props) {
             };
             canvas.addEventListener('webglcontextlost', webglcontextlost);
             canvas.addEventListener('webglcontextrestored', webglcontextrestored);
+            return true;
         }
+        return false;
 
     }
 
