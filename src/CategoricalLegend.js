@@ -7,21 +7,23 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import TextField from '@material-ui/core/TextField';
 import React, {useState} from 'react';
-import {NATSORT} from './util';
 import {IconButton, ListItem, ListItemText} from '@material-ui/core';
 import {intFormat} from './formatters';
 import {FixedSizeList} from 'react-window';
 import MenuIcon from '@material-ui/icons/Menu';
+import AutocompleteVirtualized from './AutocompleteVirtualized';
+import FormControl from '@material-ui/core/FormControl';
+import {getCategoryValue} from './util';
 
 
 export default function CategoricalLegend(props) {
     const [contextMenu, setContextMenu] = useState(null);
     const [tmpName, setTmpName] = useState('');
+    const [positiveMarkers, setPositiveMarkers] = useState([]);
+    const [negativeMarkers, setNegativeMarkers] = useState([]);
     const [menu, setMenu] = useState(null);
     const [color, setColor] = useState(null);
-    const [sort, setSort] = useState(null);
     const [originalCategory, setOriginalCategory] = useState(null);
-    const [forceUpdate, setForceUpdate] = useState(false);
 
     function handleDialogClose(e) {
         setMenu(null);
@@ -38,20 +40,21 @@ export default function CategoricalLegend(props) {
     function handleColorChangeApply(e) {
         props.handleColorChange({
             name: props.name,
-            value: originalCategory,
+            originalValue: originalCategory,
             color: color
         });
-        setForceUpdate(!forceUpdate);
     }
 
     function handleNameChangeApply(e) {
+        const name = tmpName.trim();
         props.handleNameChange({
             name: props.name,
             originalValue: originalCategory,
-            newValue: tmpName
+            newValue: name === '' ? null : name,
+            positiveMarkers: positiveMarkers,
+            negativeMarkers: negativeMarkers
         });
         setMenu(null);
-        setTmpName('');
     }
 
     function handleEditColor(e) {
@@ -61,7 +64,6 @@ export default function CategoricalLegend(props) {
 
     function handleEditName(e) {
         setContextMenu(null);
-        setTmpName('');
         setMenu('name');
 
     }
@@ -88,6 +90,13 @@ export default function CategoricalLegend(props) {
             mouseX: event.clientX - 2,
             mouseY: event.clientY - 4
         });
+        let cat = renamedCategories[originalCategory];
+        if (cat == null) {
+            cat = {};
+        }
+        setTmpName(cat.newValue != null ? cat.newValue : originalCategory);
+        setNegativeMarkers(cat.negativeMarkers != null ? cat.negativeMarkers : []);
+        setPositiveMarkers(cat.positiveMarkers != null ? cat.positiveMarkers : []);
         setOriginalCategory(originalCategory);
         setColor(props.scale(originalCategory));
     }
@@ -98,11 +107,13 @@ export default function CategoricalLegend(props) {
         datasetFilter,
         name,
         height,
+        features,
         featureSummary,
         globalFeatureSummary,
         nObs,
         nObsSelected,
-        categoricalNames
+        categoricalNames,
+        visible
     } = props;
 
     const categoricalFilter = datasetFilter[name];
@@ -116,80 +127,38 @@ export default function CategoricalLegend(props) {
     const globalDimensionSummary = globalFeatureSummary[name];
     const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
     const renamedCategories = categoricalNames[name] || {};
-    if (sort === 'ascending' || sort === 'descending') {
-        categories.sort((a, b) => {
-            let renamed1 = renamedCategories[a];
-            if (renamed1 != null) {
-                a = renamed1;
-            }
-            let renamed2 = renamedCategories[b];
-            if (renamed2 != null) {
-                b = renamed2;
-            }
-            return NATSORT(a, b);
-        });
-        if (sort === 'descending') {
-            categories.reverse();
-        }
-    }
-
-    //
-    // function cellRenderer({
-    //                           cellData,
-    //                           columnData,
-    //                           columnIndex,
-    //                           dataKey,
-    //                           isScrolling,
-    //                           rowData,
-    //                           rowIndex
-    //                       }) {
-    //     return (
-    //         <TableCell
-    //             component="div"
-    //             className={clsx(classes.tableCell, classes.flexContainer, {
-    //                 [classes.noClick]: onRowClick == null
-    //             })}
-    //             variant="body"
-    //             style={{height: rowHeight}}
-    //             align={'left'}
-    //         >
-    //             {columnIndex === 0 && <div style={{
-    //                 display: 'inline-block',
-    //                 width: 11,
-    //                 height: 11,
-    //                 background: scale(rowData.category)
-    //             }}></div>}
-    //             {columnIndex === 1 && <div>
-    //                 <div style={{
-    //                     maxWidth: maxCategoryWidth,
-    //                     textOverflow: 'ellipsis',
-    //                     overflow: 'hidden',
-    //                     display: 'inline-block',
-    //                     userSelect: 'none'
-    //                 }} title={'' + rowData.renamedCategory}>{'' + rowData.renamedCategory}</div>
-    //                 <IconButton style={{padding: 0, fontSize: 14}} size="small"
-    //                             onClick={(e) => handleContextmenu(rowData.category, rowData.renamedCategory, e)}
-    //                             aria-label="Menu"
-    //                             aria-haspopup="true">
-    //                     <ArrowDropDownIcon fontSize={"inherit"}/>
-    //                 </IconButton></div>}
-    //
-    //             {columnIndex === 2 &&
-    //             <span>{(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[rowData.category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[rowData.categoryIndex])}</span>}
-    //         </TableCell>
-    //     );
+    // if (sort === 'ascending' || sort === 'descending') {
+    //     categories.sort((a, b) => {
+    //         let renamed1 = renamedCategories[a];
+    //         if (renamed1 != null) {
+    //             a = renamed1;
+    //         }
+    //         let renamed2 = renamedCategories[b];
+    //         if (renamed2 != null) {
+    //             b = renamed2;
+    //         }
+    //         return NATSORT(a, b);
+    //     });
+    //     if (sort === 'descending') {
+    //         categories.reverse();
+    //     }
     // }
 
+    function onNegativeMarkers(event, value) {
+        setNegativeMarkers(value);
+    }
+
+    function onPositiveMarkers(event, value) {
+        setPositiveMarkers(value);
+    }
 
     function renderRow(props) {
         const {index, style} = props;
         const category = categories[index];
         const categoryIndex = globalDimensionSummary.categories.indexOf(category);
         const isSelected = categoricalFilter != null && categoricalFilter.value.indexOf(category) !== -1;
-        let renamedCategory = renamedCategories[category];
-        if (renamedCategory == null) {
-            renamedCategory = category;
-        }
+        let renamedCategory = getCategoryValue(renamedCategories, category);
+
         return (
             <ListItem disableGutters={true} divider={true} dense={true}
                       onContextMenu={event => onContextmenu(event, category)}
@@ -208,7 +177,7 @@ export default function CategoricalLegend(props) {
 
                 <ListItemText title={renamedCategory} primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
                               secondary={(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[categoryIndex])}/>
-                <IconButton onClick={event => onContextmenu(event, category)} edge="end" aria-label="menu">
+                <IconButton onClick={event => onContextmenu(event, category)} aria-label="menu">
                     <MenuIcon></MenuIcon>
                 </IconButton>
             </ListItem>
@@ -216,11 +185,9 @@ export default function CategoricalLegend(props) {
     }
 
 
-    const renamedCategoryValue = renamedCategories[originalCategory] || originalCategory;
-    if (!props.visible) {
+    if (!visible) {
         return null;
     }
-
     return (
         <>
             <div data-testid="categorical-legend">
@@ -231,9 +198,10 @@ export default function CategoricalLegend(props) {
             </div>
 
             <Dialog open={Boolean(menu)} onClose={handleDialogClose}
-                    aria-labelledby="edit-category-dialog-title">
+                    aria-labelledby="edit-category-dialog-title" fullWidth={true}>
                 {menu == 'color' && <>
-                    <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Color</DialogTitle>
+                    <DialogTitle
+                        id="edit-category-dialog-title">Edit {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory} Color</DialogTitle>
                     <DialogContent>
                         <input type="color" value={color}
                                onChange={handleColorChange} style={{width: 100}}/>
@@ -248,9 +216,43 @@ export default function CategoricalLegend(props) {
                     </DialogActions>
                 </>}
                 {menu == 'name' && <>
-                    <DialogTitle id="edit-category-dialog-title">Edit {renamedCategoryValue} Name</DialogTitle>
+                    <DialogTitle
+                        id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
                     <DialogContent>
-                        <TextField type="text" onChange={handleNameChange} value={tmpName}/>
+                        <div>
+                            <TextField
+                                inputProps={{maxLength: 1000}}
+                                fullWidth={true}
+                                type="text"
+                                required={false}
+                                autoComplete="off"
+                                value={tmpName}
+                                onChange={handleNameChange}
+                                margin="dense"
+                                label={"Category Name"}
+                                helperText={"Enter cell type or other annotation"}
+                            />
+                        </div>
+                        <div>
+                            <FormControl>
+                                <AutocompleteVirtualized
+                                    label={"Positive Genes/Features"}
+                                    options={features}
+                                    value={positiveMarkers}
+                                    onChange={onPositiveMarkers}
+                                />
+                            </FormControl>
+                        </div>
+                        <div>
+                            <FormControl>
+                                <AutocompleteVirtualized
+                                    label={"Negative Genes/Features"}
+                                    options={features}
+                                    value={negativeMarkers}
+                                    onChange={onNegativeMarkers}
+                                />
+                            </FormControl>
+                        </div>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={handleDialogClose} color="primary">
@@ -272,7 +274,7 @@ export default function CategoricalLegend(props) {
                 open={Boolean(contextMenu)}
                 onClose={handleContextmenuClose}
             >
-                <MenuItem onClick={handleEditName}>Edit Name</MenuItem>
+                <MenuItem onClick={handleEditName}>Annotate</MenuItem>
                 <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
             </Menu>
         </>

@@ -1,7 +1,7 @@
 import AutocompleteVirtualized from "./AutocompleteVirtualized";
 import {
     copyToClipboard,
-    FEATURE_TYPE,
+    FEATURE_TYPE, getCategoryValue,
     getFeatureSets,
     NATSORT,
     SERVER_CAPABILITY_SAVE_FEATURE_SETS,
@@ -112,11 +112,9 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
             if (index !== -1) {
                 group = group.substring(0, index);
             }
-            let map = categoricalNames[group] || {};
-            let newName = map[item.text];
-            if (newName != null) {
-                item.text = newName;
-            }
+            let nameMap = categoricalNames[group] || {};
+            item.text = getCategoryValue(nameMap, item.text);
+
         });
         options.sort((item1, item2) => {
             const c = NATSORT(item1.group, item2.group);
@@ -422,12 +420,12 @@ function ExplorePanel(props) {
             <MenuItem onClick={onViewModule}>View</MenuItem>
         </Menu>}
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-            <div className={classes.section}>
+            <div>
                 <Divider/>
                 <Typography gutterBottom={false} component={"h1"}
                             style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
                 {tab === 'embedding' && embeddingOptions.length > 0 &&
-                <FormControl className={classes.formControl}>
+                <FormControl>
                     <AutocompleteVirtualized label={"Embeddings"}
                                              testId={'embeddings-input'}
                                              options={embeddingOptions}
@@ -441,7 +439,7 @@ function ExplorePanel(props) {
                                              onChange={onEmbeddingsChange}
                     />
                 </FormControl>}
-                {featureOptions.length > 0 && <FormControl className={classes.formControl}>
+                {featureOptions.length > 0 && <FormControl>
                     <AutocompleteVirtualized onChipClick={onFeatureClick}
                                              label={"Genes/Features"}
                                              testId={'genes-input'}
@@ -461,7 +459,7 @@ function ExplorePanel(props) {
                         onClick={onFeatureCopy}>Copy</Link></div>
 
                 </FormControl>}
-                {annotationOptions.length > 0 && <FormControl className={classes.formControl}>
+                {annotationOptions.length > 0 && <FormControl>
                     <AutocompleteVirtualized label={"Cell Metadata"}
                                              testId={'cell-meta-input'}
                                              options={annotationOptions}
@@ -497,7 +495,7 @@ function ExplorePanel(props) {
                                              onChange={onObservationsChange}/>
                 </FormControl>}
 
-                {moduleOptions.length > 0 && <FormControl className={classes.formControl}>
+                {moduleOptions.length > 0 && <FormControl>
                     <AutocompleteVirtualized
                         label={"Modules"}
                         testId={'modules-input'}
@@ -513,7 +511,7 @@ function ExplorePanel(props) {
                         }}
                     />
                 </FormControl>}
-                {<FormControl className={classes.formControl}>
+                {<FormControl>
                     <AutocompleteVirtualized label={"Sets"}
                                              testId={'sets-input'}
                                              options={featureSetOptions}

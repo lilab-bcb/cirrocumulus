@@ -21,24 +21,29 @@ class MongoDb(AbstractDB):
     def category_names(self, email, dataset_id):
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
-        results = []
+        results = {}
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append({'category': doc['category'], 'dataset_id': doc['dataset_id'], 'original': doc['original'],
-                            'new': doc['new']})
+            category = doc['category']
+            cat_results = results.get(category)
+            if cat_results is None:
+                cat_results = {}
+                results[category] = cat_results
+            cat_results[doc['original']] = {'newValue': doc.get('new'),
+                                            'negativeMarkers': doc.get('negativeMarkers'),
+                                            'positiveMarkers': doc.get('positiveMarkers'),
+                                            'color': doc.get('color')}
         return results
 
-    def upsert_category_name(self, email, category, dataset_id, original_value, new_value, prior_value):
+    def upsert_category_name(self, email, dataset_id, category, original_value, update):
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
         key = str(dataset_id) + '-' + str(category) + '-' + str(original_value)
-
-        if new_value == '':
-            collection.delete_one(dict(cat_id=key))
-        else:
-            collection.update_one(dict(cat_id=key),
-                                  {'$set': dict(category=category, dataset_id=dataset_id, original=original_value,
-                                                new=new_value)},
-                                  upsert=True)
+        update['category'] = category
+        update['dataset_id'] = dataset_id
+        update['original'] = original_value
+        if 'newValue' in update:  # backwards compatibility
+            update['new'] = update.pop('newValue')
+        collection.update_one(dict(cat_id=key), {'$set': update}, upsert=True)
 
     def user(self, email):
         collection = self.db.users

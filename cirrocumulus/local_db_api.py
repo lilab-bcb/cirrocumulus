@@ -124,35 +124,41 @@ class LocalDbAPI(AbstractDB):
         return result
 
     def category_names(self, email, dataset_id):
-        results = []
         info = self.dataset_to_info.get(dataset_id)
         if info is None:
-            return results
+            return {}
         json_data = info['json_data']
         categories = json_data['categories']
+        results = {}
         for category_name in categories:
             category = categories[category_name]
-            for category_key in category:
-                r = dict(category=category_name, original=category_key, new=category[category_key]['new'])
-                results.append(r)
+            cat_results = {}
+            results[category_name] = cat_results
+            for original_value in category:
+                val = category[original_value]
+                cat_results[original_value] = dict(originalValue=original_value, newValue=val.get('new'),
+                                                   positiveMarkers=val.get('positiveMarkers'),
+                                                   negativeMarkers=val.get('negativeMarkers'),
+                                                   color=val.get('color'))
         return results
 
-    def upsert_category_name(self, email, category, dataset_id, original_value, new_value, prior_value):
+    def upsert_category_name(self, email, dataset_id, category, original_value, update):
         json_data = self.dataset_to_info[dataset_id]['json_data']
         category_entity = json_data['categories'].get(category)
         if category_entity is None:
             category_entity = {}
             json_data['categories'][category] = category_entity
-        if new_value == '':  # delete
-            if original_value in category_entity:
-                del category_entity[original_value]
-        else:
-            entity = dict(new=new_value)
-            category_entity[original_value] = entity
-            if dataset_id is not None:
-                entity['dataset_id'] = dataset_id
-            if email is not None:
-                entity['email'] = email
+        if 'newValue' in update:
+            update['new'] = update.pop('newValue')
+        entity = category_entity.get(original_value)
+        if entity is None:
+            entity = {}
+        entity.update(update)
+        category_entity[original_value] = entity
+        if dataset_id is not None:
+            entity['dataset_id'] = dataset_id
+        if email is not None:
+            entity['email'] = email
         write_json(json_data, self.dataset_to_info[dataset_id]['json_path'])
 
     def get_feature_sets(self, email, dataset_id):

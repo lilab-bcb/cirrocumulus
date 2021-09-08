@@ -42,32 +42,28 @@ class AbstractDB:
         raise NotImplementedError()
 
     def category_names(self, email, dataset_id):
-        """Gets a list of renamed category names for a dataset
+        """Gets a dict of renamed categories for a dataset
 
         Args:
               email: User email or None
               dataset_id: Dataset id
 
         Returns:
-            A list of dicts representing renamed categories. Example:
+            A dict that maps category->category_value->{}. Example:
 
-            {"category":"louvain",
-            "dataset_id":"1",
-            "original":"1",
-            "new":"my cell type"}
+            {"louvain":{"1":{"color":"red"}}
         """
         raise NotImplementedError()
 
-    def upsert_category_name(self, email, category, dataset_id, original_name, prior_name, new_name):
+    def upsert_category_name(self, email, dataset_id, category, original_value, update):
         """ Upserts a category name.
 
         Args:
              email: User email or None
              category: Category in dataset (e.g. louvain)
              dataset_id: Dataset id
-             original_name: Original category name (e.g. "1")
-             prior_name: Prior name (e.g. "cell type a")
-             new_name: New name (e.g. "cell type b")
+             original_value: Original category value (e.g. "1")
+             update: Update object optionally containing color, positiveMarkers, negativeMarkers, newValue
         """
         raise NotImplementedError()
 

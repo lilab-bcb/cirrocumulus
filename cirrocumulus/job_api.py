@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-
 from cirrocumulus.de import DE
+
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
@@ -41,9 +41,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     if job_type == 'de':
         filters.append(params['filter2'])
     masks, _ = get_mask(dataset_api, dataset, filters)
-    batch_size = nfeatures
-    if schema['shape'][0] >= 500000:
-        batch_size = 10000  # TODO more intelligent batches
+    batch_size = 5000  # TODO more intelligent batches
     obs_field = 'tmp'
 
     def get_batch_fn(i):
@@ -51,8 +49,9 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         end = min(nfeatures, start + batch_size)
         features = var_names[start:end]
         adata = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
-        # database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * end / nfeatures),
-        #                         result=None)
+        if batch_size != nfeatures:
+            database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * end / nfeatures),
+                                    result=None)
         return adata
 
     obs = pd.DataFrame(index=pd.RangeIndex(schema['shape'][0]))

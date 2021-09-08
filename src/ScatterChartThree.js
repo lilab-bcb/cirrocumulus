@@ -117,6 +117,10 @@ function ScatterChartThree(props) {
         previousChartSizeRef.current = props.chartSize;
     });
 
+    useEffect(() => {
+        return () => scatterPlotRef.current.dispose();
+    }, []);
+
     function calculatePointSize(trace) {
         const n = trace.x.length;
         const SCALE = 200;
@@ -399,13 +403,13 @@ function ScatterChartThree(props) {
                     lastHoverIndexRef.current = selectedIndex;
                     if (selectedIndex !== -1) {
                         let value = trace.values[selectedIndex];
-                        let categoryObject = props.categoricalNames[trace.name];
-                        if (categoryObject) {
-                            let renamedValue = categoryObject[value];
-                            if (renamedValue != null) {
-                                value = renamedValue;
-                            }
+                        let categoryObject = props.categoricalNames[trace.name] || {};
+
+                        let renamedValue = categoryObject[value];
+                        if (renamedValue != null && renamedValue.newValue != null) {
+                            value = renamedValue.newValue;
                         }
+
 
                         if (typeof value === 'number') {
                             value = numberFormat2f(value);
@@ -507,7 +511,9 @@ function ScatterChartThree(props) {
             };
             canvas.addEventListener('webglcontextlost', webglcontextlost);
             canvas.addEventListener('webglcontextrestored', webglcontextrestored);
+            return true;
         }
+        return false;
 
     }
 

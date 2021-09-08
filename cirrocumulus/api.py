@@ -63,15 +63,21 @@ def handle_category_name():
         category = content['name']
         dataset_id = content['id']
         original_value = content.get('originalValue')
-        new_value = content['newValue']
-        prior_value = content.get('priorValue')
+        update = {}
+        if 'newValue' in content:
+            update['newValue'] = content['newValue']
+        if 'positiveMarkers' in content:
+            update['positiveMarkers'] = content['positiveMarkers']
+        if 'negativeMarkers' in content:
+            update['negativeMarkers'] = content['negativeMarkers']
+        if 'color' in content:
+            update['color'] = content['color']
         database_api.upsert_category_name(
             email=email,
             category=category,
             dataset_id=dataset_id,
             original_value=original_value,
-            new_value=new_value,
-            prior_value=prior_value)
+            update=update)
         return '', 200
 
 

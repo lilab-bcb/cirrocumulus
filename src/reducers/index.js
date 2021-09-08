@@ -16,7 +16,6 @@ import {
     DELETE_DATASET,
     RESTORE_VIEW,
     SET_ACTIVE_FEATURE,
-    SET_CATEGORICAL_COLOR,
     SET_CATEGORICAL_NAME,
     SET_CHART_OPTIONS,
     SET_CHART_SIZE,
@@ -56,6 +55,8 @@ import {
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_POINT_SIZE,
     SET_USER,
+    UPDATE_CATEGORICAL_COLOR,
+    UPDATE_CATEGORICAL_NAME,
     UPDATE_DATASET
 } from '../actions';
 import {createCategoryToStats} from '../MetaEmbedding';
@@ -588,20 +589,18 @@ function combineDatasetFilters(state = 'and', action) {
 }
 
 
-// category -> value -> newValue
+// category -> originalValue -> {newValue, positiveMarkers, negativeMarkers, color}
 function categoricalNames(state = {}, action) {
     switch (action.type) {
         case SET_CATEGORICAL_NAME:
+            return action.payload;
+        case UPDATE_CATEGORICAL_NAME:
             let category = state[action.payload.name];
             if (category === undefined) {
                 category = {};
                 state[action.payload.name] = category;
             }
-            if (action.payload.newValue == null || action.payload.newValue === '') {
-                delete category[action.payload.originalValue];
-            } else {
-                category[action.payload.originalValue] = action.payload.newValue;
-            }
+            category[action.payload.originalValue] = action.payload;
             return Object.assign({}, state);
         case SET_DATASET:
             return {};
@@ -662,12 +661,11 @@ function embeddingData(state = [], action) {
                 }
             });
             return state.slice();
-        case SET_CATEGORICAL_COLOR:
+        case UPDATE_CATEGORICAL_COLOR:
             state.forEach((trace) => {
                 if (!trace.continuous && trace.name === action.payload.name) {
-                    let index = trace.colorScale.domain().indexOf(action.payload.value);
-                    let range = trace.colorScale.range();
-                    range[index] = action.payload.color;
+                    const range = trace.colorScale.range();
+                    range[trace.colorScale.domain().indexOf(action.payload.originalValue)] = action.payload.color;
                     trace.colorScale.range(range);
                     updateTraceColors(trace);
                 }

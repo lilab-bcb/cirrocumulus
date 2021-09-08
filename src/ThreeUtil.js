@@ -321,7 +321,7 @@ export function getLabels(obsCat, labels, categoricalNames) {
         let value = [];
         for (let j = 0; j < array.length; j++) {
             let renamedValue = renamedCategories[j][array[j]];
-            value.push(renamedValue != null ? renamedValue : array[j]);
+            value.push(renamedValue != null && renamedValue.newValue != null ? renamedValue : array[j]);
         }
         labelStrings.push(value.join(','));
     }

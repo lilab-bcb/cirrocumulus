@@ -105,6 +105,14 @@ export const INTERPOLATOR_SCALING_MIN_MAX_FEATURE = 'min_max_feature';
 export const INTERPOLATOR_SCALING_MIN_MAX_CATEGORY = 'min_max_category';
 export const INTERPOLATOR_SCALING_NONE = 'none';
 
+export function getCategoryValue(renamedCategories, category) {
+    let renamedCategoryValue = renamedCategories[category];
+    if (renamedCategoryValue != null && renamedCategoryValue.newValue != null) {
+        return renamedCategoryValue.newValue;
+    }
+    return category;
+}
+
 export function isMac() {
     return window.navigator.platform.toLowerCase().indexOf('mac') !== -1;
 }
