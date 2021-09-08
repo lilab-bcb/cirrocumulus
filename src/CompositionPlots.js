@@ -3,7 +3,7 @@ import {schemeCategory10} from 'd3-scale-chromatic';
 import React from 'react';
 import {connect} from 'react-redux';
 import CompositionPlot from './CompositionPlot';
-import {FEATURE_TYPE, NATSORT} from './util';
+import {FEATURE_TYPE, getCategoryValue, NATSORT} from './util';
 
 function getColorScale(embeddingData, dimension) {
     let categoryColorScale = null;
@@ -26,10 +26,7 @@ function createSorter(name, categoryOrder, categoricalNames) {
         const nameMap = categoricalNames[name] || {};
         for (let i = 0; i < orderedCategories.length; i++) {
             let value = orderedCategories[i];
-            let newValue = nameMap[value];
-            if (newValue !== undefined) {
-                value = newValue;
-            }
+            value = getCategoryValue(nameMap, value);
             categoryToIndex.set(value, i);
         }
         return (a, b) => categoryToIndex.get(a) - categoryToIndex.get(b);
@@ -66,10 +63,7 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
             for (let categoryIndex = 0; categoryIndex < ncategories - 1; categoryIndex++) {
                 let value = categoryValues[categoryIndex][i];
                 const nameMap = renamedDimensions[categoryIndex];
-                let newValue = nameMap[value];
-                if (newValue !== undefined) {
-                    value = newValue;
-                }
+                value = getCategoryValue(nameMap, value);
                 seriesArray.push(value);
             }
             const seriesKey = seriesArray.join(',');

@@ -31,7 +31,7 @@ const styles = theme => ({
         marginTop: theme.spacing(1)
     },
     select: {
-        minWidth: 200,
+        minWidth: 200
     }
 });
 
@@ -88,7 +88,7 @@ class EditNewDatasetDialog extends React.PureComponent {
             title: this.props.title != null ? (this.props.dataset.title != null ? this.props.dataset.title : '') : '',
             description: this.props.dataset != null ? (this.props.dataset.description != null ? this.props.dataset.description : '') : '',
             readers: '',
-            loading: this.props.dataset != null,
+            loading: this.props.dataset != null
         };
     }
 
@@ -145,7 +145,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                 title: this.props.dataset.title != null ? this.props.dataset.title : '',
                 loading: false,
                 url: this.props.dataset.url,
-                readers: readers,
+                readers: readers
             });
         }
     }
@@ -363,7 +363,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                         fullWidth
                         variant="outlined"
                         rows={8}
-                        rowsMax={8}
+                        maxRows={8}
                         multiline={true}
                         inputProps={{maxLength: 1000}}
                     />
@@ -402,7 +402,7 @@ const mapStateToProps = state => {
     return {
         dataset: state.dialog === EDIT_DATASET_DIALOG ? state.dataset : null,
         email: state.email,
-        serverInfo: state.serverInfo,
+        serverInfo: state.serverInfo
     };
 };
 const mapDispatchToProps = dispatch => {
@@ -415,12 +415,12 @@ const mapDispatchToProps = dispatch => {
         },
         handleError: value => {
             dispatch(setMessage(value));
-        },
+        }
 
     };
 };
 
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(EditNewDatasetDialog));

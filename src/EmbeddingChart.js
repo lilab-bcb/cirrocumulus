@@ -94,7 +94,7 @@ class EmbeddingChart extends React.PureComponent {
             onDomain,
             onGallery,
             onMeasureFilterUpdated,
-            onNameChange,
+            onCategoricalNameChange,
             onSelect,
             pointSize,
             primaryChartSize,
@@ -124,7 +124,7 @@ class EmbeddingChart extends React.PureComponent {
                     position: 'absolute',
                     textAlign: 'right',
                     overflow: 'hidden',
-                    whiteSpace: 'nowrap',
+                    // whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
                     maxWidth: 300,
                     right: 8,
@@ -165,7 +165,7 @@ class EmbeddingChart extends React.PureComponent {
                             datasetFilter={datasetFilter}
                             handleClick={onDimensionFilterUpdated}
                             handleColorChange={onColorChange}
-                            handleNameChange={onNameChange}
+                            handleNameChange={onCategoricalNameChange}
                             categoricalNames={categoricalNames}
                             name={primaryTrace.name}
                             scale={primaryTrace.colorScale}
@@ -271,7 +271,7 @@ const mapDispatchToProps = dispatch => {
         onColorChange: (e) => {
             dispatch(handleColorChange(e));
         },
-        onNameChange: (e) => {
+        onCategoricalNameChange: (e) => {
             dispatch(handleCategoricalNameChange(e));
         },
         onMeasureFilterUpdated: (e) => {

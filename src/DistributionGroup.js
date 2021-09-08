@@ -12,7 +12,7 @@ import {boxplotStats, density, nrd0} from './kde';
 import {mannWhitney} from './MannWhitneyUTest';
 import {
     createColorScale,
-    fdr,
+    fdr, getCategoryValue,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
     INTERPOLATOR_SCALING_NONE,
@@ -41,10 +41,7 @@ function updateNames(data, categoricalNames) {
         renamedDimensions.forEach((dimension, index) => {
             const nameMap = renamedDimensions[index];
             let name = item.categories[index];
-            let newName = nameMap[name];
-            if (newName !== undefined) {
-                name = newName;
-            }
+            name = getCategoryValue(nameMap, name);
             names[index] = name;
             item.name = names;
         });

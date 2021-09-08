@@ -79,8 +79,9 @@ export const SET_GLOBAL_FEATURE_SUMMARY = 'SET_GLOBAL_FEATURE_SUMMARY';
 export const SET_SAVED_DATASET_STATE = 'SET_SAVED_DATASET_STATE';
 
 export const SET_DOMAIN = 'SET_DOMAIN';
-export const SET_CATEGORICAL_COLOR = 'SET_CATEGORICAL_COLOR';
+export const UPDATE_CATEGORICAL_COLOR = 'UPDATE_CATEGORICAL_COLOR';
 export const SET_CATEGORICAL_NAME = 'SET_CATEGORICAL_NAME';
+export const UPDATE_CATEGORICAL_NAME = 'UPDATE_CATEGORICAL_NAME';
 export const SET_MARKER_SIZE = 'SET_MARKER_SIZE';
 export const SET_MARKER_OPACITY = 'SET_MARKER_OPACITY';
 
@@ -843,9 +844,6 @@ export function handleDimensionFilterUpdated(payload) {
     };
 }
 
-export function handleColorChange(payload) {
-    return {type: SET_CATEGORICAL_COLOR, payload: payload};
-}
 
 export function handleDomainChange(payload) {
     return {type: SET_DOMAIN, payload: payload};
@@ -853,20 +851,35 @@ export function handleDomainChange(payload) {
 
 function _handleCategoricalNameChange(payload) {
     return {type: SET_CATEGORICAL_NAME, payload: payload};
+}
 
+function handleUpdateCategoricalName(payload) {
+    return {type: UPDATE_CATEGORICAL_NAME, payload: payload};
+}
+
+export function _handleColorChange(payload) {
+    return {type: UPDATE_CATEGORICAL_COLOR, payload: payload};
+}
+
+export function handleColorChange(payload) {
+    return function (dispatch, getState) {
+        const value = Object.assign({id: getState().dataset.id}, payload);
+        if (getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES)) {
+            getState().serverInfo.api.setCategoryNamePromise(value).then(() => {
+                dispatch(_handleColorChange(payload));
+            });
+        }
+    };
 }
 
 export function handleCategoricalNameChange(payload) {
     return function (dispatch, getState) {
-        const dataset_id = getState().dataset.id;
-        const p = getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES) ? getState().serverInfo.api.setCategoryNamePromise({
-            name: payload.name,
-            originalValue: payload.originalValue,
-            priorValue: payload.priorValue,
-            newValue: payload.newValue,
-            id: dataset_id
-        }) : Promise.resolve();
-        p.then(() => dispatch(_handleCategoricalNameChange(payload)));
+        const value = Object.assign({id: getState().dataset.id}, payload);
+        if (getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES)) {
+            getState().serverInfo.api.setCategoryNamePromise(value).then(() => {
+                dispatch(handleUpdateCategoricalName(payload));
+            });
+        }
     };
 }
 
@@ -1488,13 +1501,7 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             // }
 
             if (categoryNameResults != null) {
-                categoryNameResults.forEach(result => {
-                    dispatch(_handleCategoricalNameChange({
-                        name: result.category,
-                        oldValue: result.original,
-                        value: result.new
-                    }));
-                });
+                dispatch(_handleCategoricalNameChange(categoryNameResults));
             }
             dispatch(setDatasetViews(datasetViews));
             // dispatch(setDatasetFilters(datasetFilters));
@@ -1908,6 +1915,7 @@ function getNewEmbeddingData(state, features) {
     const dataset = state.dataset;
     const cachedData = state.cachedData;
     const selection = state.selection;
+    const categoricalNames = state.categoricalNames;
     const existingFeaturePlusEmbeddingKeys = new Set();
     embeddingData.forEach(embeddingDatum => {
         const embeddingKey = getEmbeddingKey(embeddingDatum.embedding);
@@ -2027,7 +2035,22 @@ function getNewEmbeddingData(state, features) {
                         }
                     }
 
-
+                    // load saved colors from database
+                    // category -> originalValue -> {newValue, positiveMarkers, negativeMarkers, color}
+                    const originalValueToData = categoricalNames[feature];
+                    if (originalValueToData) {
+                        for (const originalValue in originalValueToData) {
+                            for (const originalValue in originalValueToData) {
+                                const value = originalValueToData[originalValue];
+                                if (value.color != null) {
+                                    const index = traceUniqueValues.indexOf(originalValue);
+                                    if (index !== -1) {
+                                        colors[index] = value.color;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
                     colorScale.summary = featureSummary;
                 }
