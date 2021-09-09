@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.20.post2 `September 9, 2021`
+    * `cirro prepare_data` can output directly to S3 or GCP bucket
+
 - 1.1.20.post1 `September 8, 2021`
     * Save categorical colors to database
     * Save cluster positive and negative markers to database
