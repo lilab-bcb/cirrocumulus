@@ -1,14 +1,14 @@
 import argparse
-import gzip
 import logging
 import os
 
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, DataType
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
-from cirrocumulus.util import to_json
+from cirrocumulus.util import to_json, get_fs
 
 logger = logging.getLogger("cirro")
 
@@ -145,9 +145,6 @@ class PrepareData:
                 else:
                     self.others.append(name)
 
-    def get_path(self, path):
-        return os.path.join(self.base_output, path)
-
     def execute(self):
         output_format = self.output_format
         if self.groups is None and not self.no_auto_groups:
@@ -216,45 +213,42 @@ class PrepareData:
             output_dir = self.base_output
         else:
             output_dir = os.path.splitext(self.base_output)[0]
-        os.makedirs(output_dir, exist_ok=True)
+        filesystem = get_fs(output_dir)
+        filesystem.makedirs(output_dir, exist_ok=True)
         results = schema.get('results', [])
+
         if len(results) > 0:
             uns_dir = os.path.join(output_dir, 'uns')
             is_gzip = output_format == 'parquet'
-            os.makedirs(uns_dir, exist_ok=True)
+            filesystem.makedirs(uns_dir, exist_ok=True)
             for i in range(len(results)):  # keep id, name, type in schema, store rest in file
                 result = results[i]
                 result_id = result.pop('id')
                 results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
                                   content_type='application/json', content_encoding='gzip' if is_gzip else None)
-                if is_gzip:
-                    with gzip.open(os.path.join(uns_dir, result_id + '.json.gz'), 'wt') as f:
-                        f.write(to_json(result))
-                else:
-                    with open(os.path.join(uns_dir, result_id + '.json'), 'wt') as f:
-                        f.write(to_json(result))
+
+                result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
+                                                                                                         result_id + '.json')
+                with filesystem.open(result_path, 'wt', compression='gzip' if is_gzip else None) as f:
+                    f.write(to_json(result))
 
         for dataset in self.datasets:
             images = dataset.uns.get('images')
             if images is not None:
                 image_dir = os.path.join(output_dir, 'images')
-                if not os.path.exists(image_dir):
-                    os.mkdir(image_dir)
+                filesystem.makedirs(image_dir, exist_ok=True)
                 for image in images:
-                    path = image['image']
-                    import shutil
-                    shutil.copy(path, os.path.join(image_dir, os.path.basename(path)))
-                    image['image'] = 'images/' + os.path.basename(path)
+                    src = image['image']
+                    dest = os.path.join(image_dir, os.path.basename(src))
+                    filesystem.copy(src, dest)
+                    image['image'] = 'images/' + os.path.basename(src)
 
         if output_format == 'parquet':
             from cirrocumulus.parquet_io import save_adata_pq
-            save_adata_pq(self.datasets, schema, self.base_output, self.save_whitelist)
-        elif output_format == 'json':
-            from cirrocumulus.json_io import save_adata_json
-            save_adata_json(self.datasets, schema, self.base_output)
+            save_adata_pq(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
         elif output_format == 'jsonl':
             from cirrocumulus.jsonl_io import save_adata_jsonl
-            save_adata_jsonl(self.datasets, schema, output_dir, self.base_output)
+            save_adata_jsonl(self.datasets, schema, output_dir, self.base_output, filesystem)
         else:
             raise ValueError("Unknown format")
 
@@ -312,8 +306,7 @@ def main(argsv):
     output_format2extension = dict(parquet='.cpq', jsonl='.jsonl')
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
-    if output_format == 'parquet':
-        os.makedirs(out, exist_ok=True)
+
     datasets = []
     tmp_files = []
     for input_dataset in input_datasets:

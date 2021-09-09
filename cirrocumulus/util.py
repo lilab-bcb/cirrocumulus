@@ -78,3 +78,82 @@ def load_dataset_schema(url):
             with fs.open(url) as f:
                 json_schema = json.load(f)
     return json_schema
+
+
+def write_top_half_gct(f, row_metadata_df, col_metadata_df, metadata_null, filler_null):
+    """ Write the top half of the gct file: top-left filler values, row metadata
+    headers, and top-right column metadata.
+    Args:
+        f (file handle): handle for output file
+        row_metadata_df (pandas df)
+        col_metadata_df (pandas df)
+        metadata_null (string): how to represent missing values in the metadata
+        filler_null (string): what value to fill the top-left filler block with
+    Returns:
+        None
+    """
+    # Initialize the top half of the gct including the third line
+    size_of_top_half_df = (1 + col_metadata_df.shape[1],
+                           1 + row_metadata_df.shape[1] + col_metadata_df.shape[0])
+
+    top_half_df = pd.DataFrame(np.full(size_of_top_half_df, filler_null, dtype=object))
+
+    # Assemble the third line of the gct: "id", then rhds, then cids
+    top_half_df.iloc[0, :] = np.hstack(("id", row_metadata_df.columns.values, col_metadata_df.index.values))
+
+    # Insert the chds
+    top_half_df.iloc[range(1, top_half_df.shape[0]), 0] = col_metadata_df.columns.values
+
+    # Insert the column metadata, but first convert to strings and replace NaNs
+    col_metadata_indices = (range(1, top_half_df.shape[0]),
+                            range(1 + row_metadata_df.shape[1], top_half_df.shape[1]))
+    # pd.DataFrame.at to insert into dataframe(python3)
+    top_half_df.at[col_metadata_indices[0], col_metadata_indices[1]] = (
+        col_metadata_df.astype(str).replace("nan", value=metadata_null).T.values)
+
+    # Write top_half_df to file
+    top_half_df.to_csv(f, header=False, index=False, sep="\t")
+
+
+def write_bottom_half_gct(f, row_metadata_df, data_df, data_null, data_float_format, metadata_null):
+    """ Write the bottom half of the gct file: row metadata and data.
+    Args:
+        f (file handle): handle for output file
+        row_metadata_df (pandas df)
+        data_df (pandas df)
+        data_null (string): how to represent missing values in the data
+        metadata_null (string): how to represent missing values in the metadata
+        data_float_format (string): how many decimal points to keep in representing data
+    Returns:
+        None
+    """
+    # create the left side of the bottom half of the gct (for the row metadata)
+    size_of_left_bottom_half_df = (row_metadata_df.shape[0],
+                                   1 + row_metadata_df.shape[1])
+    left_bottom_half_df = pd.DataFrame(np.full(size_of_left_bottom_half_df, metadata_null, dtype=object))
+
+    # create the full bottom half by combining with the above with the matrix data
+    bottom_half_df = pd.concat([left_bottom_half_df, data_df.reset_index(drop=True)], axis=1)
+    bottom_half_df.columns = range(bottom_half_df.shape[1])
+
+    # Insert the rids
+    bottom_half_df.iloc[:, 0] = row_metadata_df.index.values
+
+    # Insert the row metadata, but first convert to strings and replace NaNs
+    row_metadata_col_indices = range(1, 1 + row_metadata_df.shape[1])
+    bottom_half_df.iloc[:, row_metadata_col_indices] = (
+        row_metadata_df.astype(str).replace("nan", value=metadata_null).values)
+
+    # Write bottom_half_df to file
+    bottom_half_df.to_csv(f, header=False, index=False, sep="\t",
+                          na_rep=data_null,
+                          float_format=data_float_format)
+
+
+def adata2gct(adata, f):
+    data_float_format = "%.4f"
+    f.write("#1.3\n")
+    f.write(str(adata.shape[0]) + "\t" + str(adata.shape[1]) + "\t" + str(adata.obs.shape[1]) + "\t" + str(
+        adata.var.shape[1]) + "\n")
+    write_top_half_gct(f, adata.obs, adata.var, '', '')
+    write_bottom_half_gct(f, adata.obs, pd.DataFrame(adata.X), '', data_float_format, '')
