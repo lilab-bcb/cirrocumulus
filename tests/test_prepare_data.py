@@ -60,3 +60,12 @@ def test_prepare_parquet(test_data, measures, dimensions, continuous_obs, basis,
     prepare_data = PrepareData(datasets=[test_data], output=output_dir)
     prepare_data.execute()
     read_and_diff(ParquetDataset(), output_dir, test_data, measures, dimensions, continuous_obs, basis)
+
+
+def test_prepare_jsonl(test_data, measures, dimensions, continuous_obs, basis, tmp_path):
+    output_dir = str(tmp_path)
+    test_data = test_data[:, measures]
+    test_data.obs = test_data.obs[dimensions + continuous_obs]
+    prepare_data = PrepareData(datasets=[test_data],
+                               output=os.path.join(output_dir, 'test.jsonl'), output_format='jsonl')
+    prepare_data.execute()
