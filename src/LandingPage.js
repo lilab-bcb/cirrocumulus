@@ -82,9 +82,9 @@ function LandingPage(props) {
         <Box><ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={props.serverInfo.footer}/></Box>}
 
         <Divider/>
-        {process.env.REACT_APP_VERSION != null && <p>Version: {process.env.REACT_APP_VERSION} <br /><small>{buildDate}</small></p>}
-
-
+        {process.env.REACT_APP_VERSION != null &&
+        <Typography variant="body2">Version: {process.env.REACT_APP_VERSION}</Typography>}
+        <Typography variant="caption" display="block">{buildDate}</Typography>
     </Paper>;
 }
 
