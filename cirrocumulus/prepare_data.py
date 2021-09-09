@@ -6,7 +6,6 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.sparse
-
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, DataType
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json
@@ -112,7 +111,8 @@ class PrepareData:
                 del dataset.obsm[key]
 
         for dataset in datasets:
-            if dataset.uns.get('name', '').lower().startswith('module'):  # TODO hack
+            if dataset.uns.get('data_type') is None and dataset.uns.get('name', '').lower().startswith(
+                    'module'):  # TODO hack
                 dataset.uns['data_type'] = DataType.MODULE
             index = make_unique(dataset.var.index.append(pd.Index(dataset.obs.columns)))
             dataset.var.index = index[0:len(dataset.var.index)]
