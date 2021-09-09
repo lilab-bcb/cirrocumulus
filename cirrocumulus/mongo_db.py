@@ -3,10 +3,10 @@ import json
 import os
 
 from bson import ObjectId
-from pymongo import MongoClient
-
 from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain
+from pymongo import MongoClient
+
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
 from .invalid_usage import InvalidUsage
 
@@ -255,7 +255,7 @@ class MongoDb(AbstractDB):
         for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1, type=1, submitted=1)):
             results.append(
                 dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email'],
-                     submitted=doc.get('submitted')))
+                     submitted=doc.get('submitted'), readonly=doc.get('readonly', False)))
         return results
 
     def annotate_job(self, email, job_id, annotations):
@@ -268,15 +268,18 @@ class MongoDb(AbstractDB):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
+        if doc.get('readonly', False):
+            raise InvalidUsage('Not authorized', 403)
         if result is not None:
             from cirrocumulus.util import to_json
             result = to_json(result)
+
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
     def delete_job(self, email, job_id):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)), dict(email=1))
-        if doc['email'] == email:
+        if doc['email'] == email and not doc.get('readonly', False):
             collection.delete_one(dict(_id=ObjectId(job_id)))
         else:
             raise InvalidUsage('Not authorized', 403)
