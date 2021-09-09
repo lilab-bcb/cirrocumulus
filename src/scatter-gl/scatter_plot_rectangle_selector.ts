@@ -78,7 +78,7 @@ export class ScatterPlotRectangleSelector {
         this.svgElement.style.height = '100%';
         this.svgElement.style.width = '100%';
         this.svgElement.style.position = 'absolute';
-
+        this.svgElement.dataset.testid = 'svg-selection'
         container.insertAdjacentElement('afterbegin', this.svgElement);
 
         this.rectElement = document.createElementNS(
