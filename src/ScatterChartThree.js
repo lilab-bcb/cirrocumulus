@@ -103,22 +103,155 @@ function ScatterChartThree(props) {
     const previousChartSizeRef = useRef();
     useEffect(() => {
         init();
-        const scatterPlot = scatterPlotRef.current;
         if (previousChartSizeRef.current !== props.chartSize) {
-            scatterPlot.resize();
+            scatterPlotRef.current.resize();
         }
         draw();
-        setAxesColors(scatterPlot, props.chartOptions.darkMode);
-        props.chartOptions.scatterPlot = scatterPlot;
+        setAxesColors(scatterPlotRef.current, props.chartOptions.darkMode);
+        props.chartOptions.scatterPlot = scatterPlotRef.current;
         if (props.chartOptions.camera) {
-            scatterPlot.updateFromCameraDef(props.chartOptions.camera);
+            scatterPlotRef.current.updateFromCameraDef(props.chartOptions.camera);
             props.chartOptions.camera = null;
         }
         previousChartSizeRef.current = props.chartSize;
+        scatterPlotRef.current.hoverCallback = (point) => {
+            if (point == null) {
+                props.setTooltip('');
+            } else {
+                const trace = props.trace;
+                const positions = trace.positions;
+                const camera = scatterPlotRef.current.camera;
+                const widthHalf = props.chartSize.width / 2;
+                const heightHalf = props.chartSize.height / 2;
+                const pos = new Vector3();
+                let selectedIndex = -1;
+                const tolerance = 2;
+                if (lastHoverIndexRef.current !== -1) {
+                    pos.x = positions[lastHoverIndexRef.current * 3];
+                    pos.y = positions[lastHoverIndexRef.current * 3 + 1];
+                    pos.z = positions[lastHoverIndexRef.current * 3 + 2];
+                    pos.project(camera);
+                    pos.x = (pos.x * widthHalf) + widthHalf;
+                    pos.y = -(pos.y * heightHalf) + heightHalf;
+                    if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                        selectedIndex = lastHoverIndexRef.current;
+                    }
+                }
+
+                if (selectedIndex === -1) {
+                    // TODO get all hover points
+                    for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
+                        pos.x = positions[k];
+                        pos.y = positions[k + 1];
+                        pos.z = positions[k + 2];
+                        pos.project(camera);
+                        pos.x = (pos.x * widthHalf) + widthHalf;
+                        pos.y = -(pos.y * heightHalf) + heightHalf;
+                        if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                            selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                lastHoverIndexRef.current = selectedIndex;
+                if (selectedIndex !== -1) {
+                    let value = trace.values[selectedIndex];
+                    let categoryObject = props.categoricalNames[trace.name] || {};
+                    let renamedValue = categoryObject[value];
+                    if (renamedValue != null && renamedValue.newValue != null) {
+                        value = renamedValue.newValue;
+                    }
+
+                    if (typeof value === 'number') {
+                        value = numberFormat2f(value);
+                        if (value.endsWith('.00')) {
+                            value = value.substring(0, value.lastIndexOf('.'));
+                        }
+                    }
+                    props.setTooltip('' + value);
+                } else {
+                    props.setTooltip('');
+                }
+            }
+        };
+        scatterPlotRef.current.lassoCallback = (points, appendToSelection) => {
+            const trace = props.trace;
+            const positions = trace.positions;
+            const camera = scatterPlotRef.current.camera;
+            const widthHalf = props.chartSize.width / 2;
+            const heightHalf = props.chartSize.height / 2;
+            const pos = new Vector3();
+            const selectedIndices = new Set();
+
+            for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
+                pos.x = positions[k];
+                pos.y = positions[k + 1];
+                pos.z = positions[k + 2];
+                pos.project(camera);
+                pos.x = (pos.x * widthHalf) + widthHalf;
+                pos.y = -(pos.y * heightHalf) + heightHalf;
+                if (isPointInside(pos, points)) {
+                    selectedIndices.add(i);
+                }
+            }
+            if (selectedIndices.size === 0) {
+                props.onSelected({name: getEmbeddingKey(trace.embedding)});
+            } else {
+                props.onSelected({
+                    name: getEmbeddingKey(trace.embedding),
+                    clear: !appendToSelection,
+                    value: {basis: trace.embedding, indices: selectedIndices}
+                });
+            }
+        };
+        scatterPlotRef.current.boxCallback = (rect, appendToSelection) => {
+            if (scatterPlotRef.current.interactionMode === 'PAN') {
+                return;
+            }
+            const trace = props.trace;
+            const positions = trace.positions;
+            const camera = scatterPlotRef.current.camera;
+            const widthHalf = props.chartSize.width / 2;
+            const heightHalf = props.chartSize.height / 2;
+            const pos = new Vector3();
+            const selectedIndices = new Set();
+
+            for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
+                pos.x = positions[k];
+                pos.y = positions[k + 1];
+                pos.z = positions[k + 2];
+                pos.project(camera);
+                pos.x = (pos.x * widthHalf) + widthHalf;
+                pos.y = -(pos.y * heightHalf) + heightHalf;
+                if (pos.x >= rect.x && pos.x <= (rect.x + rect.width) && pos.y >= rect.y && pos.y <= (rect.y + rect.height)) {
+                    selectedIndices.add(i);
+                }
+            }
+
+            if (selectedIndices.size === 0) {
+                props.onSelected({name: getEmbeddingKey(trace.embedding)});
+            } else {
+                props.onSelected({
+                    name: getEmbeddingKey(trace.embedding),
+                    clear: !appendToSelection,
+                    value: {basis: trace.embedding, indices: selectedIndices}
+                });
+            }
+        };
+        scatterPlotRef.current.cameraCallback = (eventName) => {
+            if (scatterPlotRef.current.interactionMode === 'PAN' && props.trace.dimensions === 3) {
+                // repaint gallery charts with same embedding
+                if (eventName === 'end') {
+                    cameraCallback(eventName);
+                }
+            }
+        };
     });
 
     useEffect(() => {
-        return () => scatterPlotRef.current.dispose();
+        return () => {
+            scatterPlotRef.current.dispose();
+        };
     }, []);
 
     function calculatePointSize(trace) {
@@ -335,168 +468,27 @@ function ScatterChartThree(props) {
     }
 
     function cameraCallback(eventName) {
-        const scatterPlot = scatterPlotRef.current;
-        props.onCamera(eventName, scatterPlot.getCameraDef());
+        props.onCamera(eventName, scatterPlotRef.current.getCameraDef());
     }
 
     function init() {
-
         if (scatterPlotRef.current == null) {
-            const containerElement = containerElementRef.current;
-            scatterPlotRef.current = createScatterPlot(containerElement, window.ApplePaySession, true);
-            const scatterPlot = scatterPlotRef.current;
+            scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, true);
             if (props.chartOptions.dragmode === 'pan') {
-                scatterPlot.setInteractionMode('PAN');
+                scatterPlotRef.current.setInteractionMode('PAN');
             } else if (props.chartOptions.dragmode === 'select') {
-                scatterPlot.setInteractionMode('SELECT');
-                scatterPlot.rectangleSelector.setSelectionMode('BOX');
+                scatterPlotRef.current.setInteractionMode('SELECT');
+                scatterPlotRef.current.rectangleSelector.setSelectionMode('BOX');
             } else if (props.chartOptions.dragmode === 'lasso') {
-                scatterPlot.setInteractionMode('SELECT');
-                scatterPlot.rectangleSelector.setSelectionMode('LASSO');
-
+                scatterPlotRef.current.setInteractionMode('SELECT');
+                scatterPlotRef.current.rectangleSelector.setSelectionMode('LASSO');
             }
-            const axes = scatterPlot.scene.getObjectByName('axes');
+            const axes = scatterPlotRef.current.scene.getObjectByName('axes');
             if (axes) {
                 axes.visible = props.chartOptions.showAxis;
                 axes.setColors(props.chartOptions.darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
             }
-            let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-            spriteVisualizer.styles.fog.enabled = props.chartOptions.showFog;
-            scatterPlot.hoverCallback = (point) => {
-                if (point == null) {
-                    props.setTooltip('');
-                } else {
-                    const trace = props.trace;
-                    const positions = trace.positions;
-                    const camera = scatterPlot.camera;
-                    const widthHalf = props.chartSize.width / 2;
-                    const heightHalf = props.chartSize.height / 2;
-                    const pos = new Vector3();
-                    let selectedIndex = -1;
-                    const tolerance = 2;
-                    if (lastHoverIndexRef.current !== -1) {
-                        pos.x = positions[lastHoverIndexRef.current * 3];
-                        pos.y = positions[lastHoverIndexRef.current * 3 + 1];
-                        pos.z = positions[lastHoverIndexRef.current * 3 + 2];
-                        pos.project(camera);
-                        pos.x = (pos.x * widthHalf) + widthHalf;
-                        pos.y = -(pos.y * heightHalf) + heightHalf;
-                        if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                            selectedIndex = lastHoverIndexRef.current;
-                        }
-                    }
-
-                    if (selectedIndex === -1) {
-                        for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
-                            pos.x = positions[k];
-                            pos.y = positions[k + 1];
-                            pos.z = positions[k + 2];
-                            pos.project(camera);
-                            pos.x = (pos.x * widthHalf) + widthHalf;
-                            pos.y = -(pos.y * heightHalf) + heightHalf;
-                            if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                                selectedIndex = i;
-                                break;
-                            }
-                        }
-                    }
-                    lastHoverIndexRef.current = selectedIndex;
-                    if (selectedIndex !== -1) {
-                        let value = trace.values[selectedIndex];
-                        let categoryObject = props.categoricalNames[trace.name] || {};
-
-                        let renamedValue = categoryObject[value];
-                        if (renamedValue != null && renamedValue.newValue != null) {
-                            value = renamedValue.newValue;
-                        }
-
-
-                        if (typeof value === 'number') {
-                            value = numberFormat2f(value);
-                            if (value.endsWith('.00')) {
-                                value = value.substring(0, value.lastIndexOf('.'));
-                            }
-                        }
-                        props.setTooltip('' + value);
-                    } else {
-                        props.setTooltip('');
-                    }
-                }
-            };
-            scatterPlot.lassoCallback = (points, appendToSelection) => {
-                const trace = props.trace;
-                const positions = trace.positions;
-                const camera = scatterPlot.camera;
-                const widthHalf = props.chartSize.width / 2;
-                const heightHalf = props.chartSize.height / 2;
-                const pos = new Vector3();
-                const selectedIndices = new Set();
-
-                for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
-                    pos.x = positions[k];
-                    pos.y = positions[k + 1];
-                    pos.z = positions[k + 2];
-                    pos.project(camera);
-                    pos.x = (pos.x * widthHalf) + widthHalf;
-                    pos.y = -(pos.y * heightHalf) + heightHalf;
-                    if (isPointInside(pos, points)) {
-                        selectedIndices.add(i);
-                    }
-                }
-                if (selectedIndices.size === 0) {
-                    props.onSelected({name: getEmbeddingKey(trace.embedding)});
-                } else {
-                    props.onSelected({
-                        name: getEmbeddingKey(trace.embedding),
-                        clear: !appendToSelection,
-                        value: {basis: trace.embedding, indices: selectedIndices}
-                    });
-                }
-            };
-            scatterPlot.boxCallback = (rect, appendToSelection) => {
-                if (scatterPlot.interactionMode === 'PAN') {
-                    return;
-                }
-                const trace = props.trace;
-                const positions = trace.positions;
-                const camera = scatterPlot.camera;
-                const widthHalf = props.chartSize.width / 2;
-                const heightHalf = props.chartSize.height / 2;
-                const pos = new Vector3();
-                const selectedIndices = new Set();
-
-                for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
-                    pos.x = positions[k];
-                    pos.y = positions[k + 1];
-                    pos.z = positions[k + 2];
-                    pos.project(camera);
-                    pos.x = (pos.x * widthHalf) + widthHalf;
-                    pos.y = -(pos.y * heightHalf) + heightHalf;
-                    if (pos.x >= rect.x && pos.x <= (rect.x + rect.width) && pos.y >= rect.y && pos.y <= (rect.y + rect.height)) {
-                        selectedIndices.add(i);
-                    }
-                }
-
-                if (selectedIndices.size === 0) {
-                    props.onSelected({name: getEmbeddingKey(trace.embedding)});
-                } else {
-                    props.onSelected({
-                        name: getEmbeddingKey(trace.embedding),
-                        clear: !appendToSelection,
-                        value: {basis: trace.embedding, indices: selectedIndices}
-                    });
-                }
-            };
-
-            scatterPlot.cameraCallback = (eventName) => {
-                if (scatterPlot.interactionMode === 'PAN' && props.trace.dimensions === 3) {
-                    // repaint gallery charts with same embedding
-                    if (eventName === 'end') {
-                        cameraCallback(eventName);
-                    }
-                }
-            };
-
+            getVisualizer(scatterPlotRef.current, POINT_VISUALIZER_ID).styles.fog.enabled = props.chartOptions.showFog;
             const canvas = containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
             const webglcontextlost = (e) => {
