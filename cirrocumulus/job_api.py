@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 from anndata import AnnData
@@ -23,7 +25,6 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         executor = ThreadPoolExecutor(max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
-    # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
     return job_id
 
@@ -41,7 +42,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     if job_type == 'de':
         filters.append(params['filter2'])
     masks, _ = get_mask(dataset_api, dataset, filters)
-    batch_size = 5000  # TODO more intelligent batches
+    batch_size = 5000 if os.environ.get(CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
     obs_field = 'tmp'
 
     def get_batch_fn(i):
@@ -50,7 +51,9 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         features = var_names[start:end]
         adata = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
         if batch_size != nfeatures:
-            database_api.update_job(email=email, job_id=job_id, status='running {:.0f}%'.format(100 * end / nfeatures),
+            frac = end / nfeatures
+            database_api.update_job(email=email, job_id=job_id,
+                                    status='running {:.0f}%'.format(100 * frac) if frac < 1 else 'saving results',
                                     result=None)
         return adata
 
