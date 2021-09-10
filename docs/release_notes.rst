@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.20.post3 `September 10, 2021`
+    * Fixed error computing differential expression in `cirro prepare_data` using `Pegasus`_/`Cumulus`_ when categories contain the : character
+
 - 1.1.20.post2 `September 9, 2021`
     * `cirro prepare_data` can output directly to S3 or GCP bucket
 
