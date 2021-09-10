@@ -2,7 +2,6 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
-
 from cirrocumulus.io_util import cirro_id
 
 
@@ -146,7 +145,7 @@ def datasets_schema(datasets):
             field_names = set()  # e.g. 1:auroc
             group_names = set()
             for name in names:
-                index = name.index(':')
+                index = name.rindex(':')
                 field_name = name[index + 1:]
                 group_name = name[:index]
                 field_names.add(field_name)
@@ -182,6 +181,7 @@ def datasets_schema(datasets):
                     for group_name in group_names:
                         fc_column = '{}:log2FC'.format(group_name)
                         name = '{}:{}'.format(group_name, field_name)
+
                         idx_up = de_result_df[fc_column] > 0
                         df_up = de_result_df.loc[idx_up].sort_values(by=[name, fc_column],
                                                                      ascending=[field_ascending, False])
