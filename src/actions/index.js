@@ -1929,6 +1929,7 @@ function getNewEmbeddingData(state, features) {
             binnedCoords[embedding.name + '_1'] = binnedValues.x;
             binnedCoords[embedding.name + '_2'] = binnedValues.y;
             binnedCoords[embedding.name + '_index'] = binnedValues.index;
+            binnedCoords[embedding.name + '_3'] = binnedValues.index;
             cachedData[embeddingKey] = binnedCoords; // save binned coords
             coordinates = binnedCoords;
         }
