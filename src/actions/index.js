@@ -1528,15 +1528,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         const schemaPromise = dataset.api.getSchemaPromise().then(result => {
             newDataset = result;
-            const embeddings = [];
-            newDataset.embeddings.forEach(embedding => {
-                const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
-                embeddings.push(embedding);
-                // if (embedding.dimensions === 2 && traceType === TRACE_TYPE_SCATTER) {
-                //     embeddings.push(Object.assign({}, embedding, {mode: 'density'}));
-                // }
-            });
-            newDataset.embeddings = embeddings;
         });
         promises.push(schemaPromise);
 
