@@ -176,7 +176,7 @@ class EmbeddingChart extends React.PureComponent {
                     }
                 </Box>
 
-                {primaryTrace.type === 'scatter' &&
+                {primaryTrace.type === 'scatter' && primaryTrace.embedding.mode == null &&
                 <ScatterChartThree trace={primaryTrace}
                                    cachedData={cachedData}
                                    obsCat={activeEmbeddingLabels}

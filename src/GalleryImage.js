@@ -44,7 +44,7 @@ export default function GalleryImage(props) {
     } = props;
 
     useEffect(() => {
-        if (traceInfo.type === 'scatter') {
+        if (traceInfo.type === 'scatter' && traceInfo.embedding.mode == null) {
             let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
             spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
 

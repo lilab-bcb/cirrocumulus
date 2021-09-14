@@ -1528,15 +1528,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
 
         const schemaPromise = dataset.api.getSchemaPromise().then(result => {
             newDataset = result;
-            const embeddings = [];
-            newDataset.embeddings.forEach(embedding => {
-                const traceType = embedding.spatial != null ? embedding.spatial.type : (embedding.type ? embedding.type : TRACE_TYPE_SCATTER);
-                embeddings.push(embedding);
-                // if (embedding.dimensions === 2 && traceType === TRACE_TYPE_SCATTER) {
-                //     embeddings.push(Object.assign({}, embedding, {mode: 'density'}));
-                // }
-            });
-            newDataset.embeddings = embeddings;
         });
         promises.push(schemaPromise);
 
@@ -1938,6 +1929,7 @@ function getNewEmbeddingData(state, features) {
             binnedCoords[embedding.name + '_1'] = binnedValues.x;
             binnedCoords[embedding.name + '_2'] = binnedValues.y;
             binnedCoords[embedding.name + '_index'] = binnedValues.index;
+            binnedCoords[embedding.name + '_3'] = binnedValues.index;
             cachedData[embeddingKey] = binnedCoords; // save binned coords
             coordinates = binnedCoords;
         }
