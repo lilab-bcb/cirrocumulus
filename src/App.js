@@ -93,7 +93,6 @@ class App extends PureComponent {
                             boxSizing: 'border-box'
                         }
                     }}
-                    anchor="left"
                 >
                     {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
                 </Drawer>

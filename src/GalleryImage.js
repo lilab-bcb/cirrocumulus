@@ -13,19 +13,16 @@ import {
     updateScatterChart
 } from './ThreeUtil';
 
-function getImageUrl(props) {
-    const {
-        cachedData,
-        categoricalNames,
-        chartOptions,
-        chartSize,
-        markerOpacity,
-        obsCat,
-        pointSize,
-        selection,
-        traceInfo,
-        unselectedMarkerOpacity
-    } = props;
+function getImageUrl(cachedData,
+                     categoricalNames,
+                     chartOptions,
+                     chartSize,
+                     markerOpacity,
+                     obsCat,
+                     pointSize,
+                     selection,
+                     traceInfo,
+                     unselectedMarkerOpacity) {
     let canvas = document.createElement('canvas');
     canvas.width = chartSize * window.devicePixelRatio;
     canvas.height = chartSize * window.devicePixelRatio;
@@ -102,10 +99,28 @@ export default function GalleryImage(props) {
                 setLoading(true);
                 traceInfo.tileSource.addOnceHandler('ready', () => {
                     setLoading(false);
-                    setUrl(getImageUrl(props));
+                    setUrl(getImageUrl(cachedData,
+                        categoricalNames,
+                        chartOptions,
+                        chartSize,
+                        markerOpacity,
+                        obsCat,
+                        pointSize,
+                        selection,
+                        traceInfo,
+                        unselectedMarkerOpacity));
                 });
             } else {
-                setUrl(getImageUrl(props));
+                setUrl(getImageUrl(cachedData,
+                    categoricalNames,
+                    chartOptions,
+                    chartSize,
+                    markerOpacity,
+                    obsCat,
+                    pointSize,
+                    selection,
+                    traceInfo,
+                    unselectedMarkerOpacity));
                 setOverlayUrl(null);
                 setLoading(false);
             }

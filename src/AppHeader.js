@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
-import withStyles from '@mui/styles/withStyles';
 import Tab from '@mui/material/Tab';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -45,27 +44,6 @@ import {
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 
-
-const AntTab = withStyles(theme => ({
-    root: {
-        minWidth: 50,
-        textTransform: 'none',
-        fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing(0),
-        '&:hover': {
-            color: '#40a9ff',
-            opacity: 1
-        },
-        '&$selected': {
-            color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium
-        },
-        '&:focus': {
-            color: '#40a9ff'
-        }
-    },
-    selected: {}
-}))(props => <Tab disableRipple {...props} />);
 
 class AppHeader extends React.PureComponent {
 
