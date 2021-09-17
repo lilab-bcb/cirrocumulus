@@ -1,8 +1,7 @@
-import {InputLabel, MenuItem, Select, Switch} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import FormControl from '@material-ui/core/FormControl';
-import Input from '@material-ui/core/Input';
-import withStyles from '@material-ui/core/styles/withStyles';
+import {InputLabel, MenuItem, Select, Switch} from '@mui/material';
+import Box from '@mui/material/Box';
+import FormControl from '@mui/material/FormControl';
+import withStyles from '@mui/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import DotPlotCanvas from './DotPlotCanvas';
@@ -12,7 +11,8 @@ import {boxplotStats, density, nrd0} from './kde';
 import {mannWhitney} from './MannWhitneyUTest';
 import {
     createColorScale,
-    fdr, getCategoryValue,
+    fdr,
+    getCategoryValue,
     INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
     INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
     INTERPOLATOR_SCALING_NONE,
@@ -21,8 +21,8 @@ import {
 import {Vector} from './Vector';
 import {stats} from './VectorUtil';
 import ViolinPlot from './ViolinPlot';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 const styles = theme => ({
     formControl: {
@@ -365,9 +365,10 @@ class DistributionGroup extends React.PureComponent {
                                      onMaxUIChange={this.onMaxUIChange}
                 />}
                 {chartType !== 'violin' && <FormControl className={this.props.classes.formControl}>
-                    <InputLabel shrink={true}>Standardize</InputLabel>
+                    <InputLabel>Standardize</InputLabel>
                     <Select
-                        input={<Input size={"small"}/>}
+                        label={"Standardize"}
+                        size={"small"}
                         onChange={event => this.props.onColorScalingChange(event.target.value)}
                         value={interpolator.scale}
                     >
@@ -386,7 +387,8 @@ class DistributionGroup extends React.PureComponent {
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel shrink={true}>Sort By</InputLabel>
                     <Select
-                        input={<Input size={"small"}/>}
+                        label={"Sort By"}
+                        size={"small"}
                         onChange={this.onSortOrderChanged}
                         value={distributionPlotOptions.sortBy}
                     >
@@ -400,6 +402,8 @@ class DistributionGroup extends React.PureComponent {
                 {chartType === 'violin' && <FormControl className={this.props.classes.formControl}>
                     <InputLabel id="violin-scale-label">Scale</InputLabel>
                     <Select
+                        label={"Scale"}
+                        size={"small"}
                         className={this.props.classes.select}
                         labelId="violin-scale-label"
                         value={distributionPlotOptions.violinScale}
@@ -428,6 +432,8 @@ class DistributionGroup extends React.PureComponent {
                 <FormControl className={this.props.classes.formControl}>
                     <InputLabel id="dist-chart-type-label">Chart Type</InputLabel>
                     <Select
+                        label={"Chart Type"}
+                        size={"small"}
                         className={this.props.classes.select}
                         labelId="dist-chart-type-label"
                         value={chartType}

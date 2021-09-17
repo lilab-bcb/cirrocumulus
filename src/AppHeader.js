@@ -1,18 +1,16 @@
-import {Divider, IconButton, Menu, Tooltip} from '@material-ui/core';
-import AppBar from '@material-ui/core/AppBar';
-import Button from '@material-ui/core/Button';
-import Link from '@material-ui/core/Link';
-import MenuItem from '@material-ui/core/MenuItem';
-import Popover from '@material-ui/core/Popover';
-import {withStyles} from '@material-ui/core/styles';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import AccountCircle from '@material-ui/icons/AccountCircle';
-import Brightness2Icon from '@material-ui/icons/Brightness3';
-import HelpIcon from '@material-ui/icons/Help';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
+import {Divider, IconButton, Menu, Tooltip} from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Button from '@mui/material/Button';
+import Link from '@mui/material/Link';
+import MenuItem from '@mui/material/MenuItem';
+import Popover from '@mui/material/Popover';
+import Tab from '@mui/material/Tab';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Brightness2Icon from '@mui/icons-material/Brightness3';
+import HelpIcon from '@mui/icons-material/Help';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -43,39 +41,9 @@ import {
     SERVER_CAPABILITY_DELETE_DATASET,
     SERVER_CAPABILITY_EDIT_DATASET
 } from './util';
+import Box from '@mui/material/Box';
+import Tabs from '@mui/material/Tabs';
 
-
-const styles = theme => ({
-    root: {
-        display: 'flex',
-        flexWrap: 'wrap',
-        'flex-direction': 'column'
-    },
-    appBar: {
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: drawerWidth
-    }
-});
-const AntTab = withStyles(theme => ({
-    root: {
-        minWidth: 50,
-        textTransform: 'none',
-        fontWeight: theme.typography.fontWeightRegular,
-        marginRight: theme.spacing(0),
-        '&:hover': {
-            color: '#40a9ff',
-            opacity: 1
-        },
-        '&$selected': {
-            color: '#1890ff',
-            fontWeight: theme.typography.fontWeightMedium
-        },
-        '&:focus': {
-            color: '#40a9ff'
-        }
-    },
-    selected: {}
-}))(props => <Tab disableRipple {...props} />);
 
 class AppHeader extends React.PureComponent {
 
@@ -202,7 +170,6 @@ class AppHeader extends React.PureComponent {
             jobResults,
             email,
             selection,
-            classes,
             searchTokens,
             serverInfo,
             tab,
@@ -221,7 +188,7 @@ class AppHeader extends React.PureComponent {
         const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
         const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
         return (
-            <AppBar position="fixed" color="default" className={classes.appBar}>
+            <AppBar position="fixed" sx={{width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`}}>
                 <Toolbar variant="dense" style={{paddingLeft: 6}}>
                     {dataset != null && <Popover
                         id={"dataset-details"}
@@ -238,25 +205,25 @@ class AppHeader extends React.PureComponent {
                         }}
                     >
 
-                        <div style={{width: 500, padding: '1em'}}>
-                            <Typography className={classes.typography}>
+                        <Box style={{width: 500, padding: '1em'}}>
+                            <Typography>
                                 {dataset.name}
                             </Typography>
                             <Divider/>
-                            {dataset.species && <Typography className={classes.typography}>
+                            {dataset.species && <Typography>
                                 Species: {dataset.species}
                             </Typography>}
 
-                            {dataset.title && <Typography className={classes.typography}>
+                            {dataset.title && <Typography>
                                 Title: {dataset.title}
                             </Typography>}
                             {dataset.description &&
                             <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
                                                           children={dataset.description}/></>}
-                            {!process.env.REACT_APP_STATIC === 'true' && <Typography className={classes.typography}>
+                            {!process.env.REACT_APP_STATIC === 'true' && <Typography>
                                 URL: {dataset.url}
                             </Typography>}
-                        </div>
+                        </Box>
                     </Popover>
                     }
                     {dataset == null && <Typography variant="h5">
@@ -265,6 +232,7 @@ class AppHeader extends React.PureComponent {
                     {dataset && <CirroIcon/>}
                     {dataset &&
                     <Link
+                        color="inherit"
                         style={{
                             paddingLeft: 6,
                             whiteSpace: 'nowrap',
@@ -286,20 +254,18 @@ class AppHeader extends React.PureComponent {
                         {shape != null && intFormat(shape[0]) + ' cells'}
                     </small>}
 
-                    {dataset != null && <Tabs
-                        value={tab}
-                        indicatorColor="primary"
-                        textColor="primary"
-                        onChange={this.handleTabChange}
-                    >
-                        <AntTab data-testid="embedding-tab" value="embedding" label="Embeddings"/>
-                        <AntTab data-testid="distributions-tab" value="distribution" label="Distributions"
-                                disabled={distributionData.length === 0}/>
-                        <AntTab data-testid="composition-tab" value="composition" label="Composition"
-                                disabled={obsCat.length < 2}/>
-                        {jobResults.length > 0 && <AntTab data-testid="results-tab" value="results" label="Results"/>}
-                    </Tabs>}
 
+                    {dataset != null &&
+                    <Tabs textColor="inherit"
+                          indicatorColor="secondary"
+                          value={tab} onChange={this.handleTabChange}>
+                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"/>
+                        <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
+                             disabled={distributionData.length === 0}/>
+                        <Tab data-testid="composition-tab" value="composition" label="Composition"
+                             disabled={obsCat.length < 2}/>
+                        {jobResults.length > 0 && <Tab data-testid="results-tab" value="results" label="Results"/>}
+                    </Tabs>}
 
                     <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
                         {/*{serverInfo.brand && <Typography variant="h5"*/}
@@ -323,8 +289,11 @@ class AppHeader extends React.PureComponent {
 
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
                         {showMoreMenu && <Tooltip title={'More'}>
-                            <IconButton aria-label="Menu" aria-haspopup="true"
-                                        onClick={this.handleMoreMenuOpen}>
+                            <IconButton
+                                aria-label="Menu"
+                                aria-haspopup="true"
+                                onClick={this.handleMoreMenuOpen}
+                                size="large">
                                 <MoreVertIcon/>
                             </IconButton>
                         </Tooltip>}
@@ -351,21 +320,27 @@ class AppHeader extends React.PureComponent {
                         </Menu>}
 
                         {<Tooltip title={"Toggle Light/Dark Theme"}>
-                            <IconButton edge={false} className={this.props.chartOptions.darkMode ? 'cirro-active' : ''}
-                                        aria-label="Toggle Theme" onClick={() => this.onDarkMode()}>
+                            <IconButton
+                                edge={false}
+                                className={this.props.chartOptions.darkMode ? 'cirro-active' : ''}
+                                aria-label="Toggle Theme"
+                                onClick={() => this.onDarkMode()}
+                                size="large">
                                 <Brightness2Icon/>
                             </IconButton>
                         </Tooltip>}
                         {dataset != null && <Tooltip title={'Help'}>
-                            <IconButton aria-label="Help"
-                                        onClick={this.handleHelp}>
+                            <IconButton aria-label="Help" onClick={this.handleHelp} size="large">
                                 <HelpIcon/>
                             </IconButton>
                         </Tooltip>}
                         {email != null && email !== '' &&
                         <Tooltip title={email}>
-                            <IconButton aria-label="Menu" aria-haspopup="true"
-                                        onClick={this.handleUserMenuOpen}>
+                            <IconButton
+                                aria-label="Menu"
+                                aria-haspopup="true"
+                                onClick={this.handleUserMenuOpen}
+                                size="large">
                                 <AccountCircle/>
                             </IconButton>
                         </Tooltip>}
@@ -389,7 +364,6 @@ class AppHeader extends React.PureComponent {
                     </div>
                 </Toolbar>
             </AppBar>
-
         );
     }
 }
@@ -457,7 +431,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     };
 };
 
-export default withStyles(styles)(connect(
+export default (connect(
     mapStateToProps, mapDispatchToProps
 )(AppHeader));
 

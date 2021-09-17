@@ -1,7 +1,7 @@
-import {Divider, Paper} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import Link from '@material-ui/core/Link';
-import Typography from '@material-ui/core/Typography';
+import {Divider, Paper} from '@mui/material';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';

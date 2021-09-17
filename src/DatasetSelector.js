@@ -1,18 +1,18 @@
-import {Tooltip, Typography} from '@material-ui/core';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import IconButton from '@material-ui/core/IconButton';
-import InputAdornment from '@material-ui/core/InputAdornment';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
-import Popover from '@material-ui/core/Popover';
-import TextField from '@material-ui/core/TextField';
-import ClearIcon from '@material-ui/icons/Clear';
-import FolderOpenIcon from '@material-ui/icons/FolderOpen';
-import InfoIcon from '@material-ui/icons/Info';
+import {Tooltip, Typography} from '@mui/material';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+import ListItemText from '@mui/material/ListItemText';
+import Popover from '@mui/material/Popover';
+import TextField from '@mui/material/TextField';
+import ClearIcon from '@mui/icons-material/Clear';
+import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import InfoIcon from '@mui/icons-material/Info';
 import {groupBy} from 'lodash';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
@@ -100,11 +100,11 @@ export class DatasetSelector extends React.PureComponent {
                     onClose={this.handleCloseDatasetDetails}
                     anchorOrigin={{
                         vertical: 'bottom',
-                        horizontal: 'center',
+                        horizontal: 'center'
                     }}
                     transformOrigin={{
                         vertical: 'top',
-                        horizontal: 'center',
+                        horizontal: 'center'
                     }}
                 >
                     <div style={{width: 500}}>
@@ -118,7 +118,8 @@ export class DatasetSelector extends React.PureComponent {
                 {selectedId == null && <Button variant="contained" onClick={this.handleClick}
                                                color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
                 {selectedId != null &&
-                <Tooltip title={'Open'}><IconButton onClick={this.handleClick}><FolderOpenIcon/></IconButton></Tooltip>}
+                <Tooltip title={'Open'}><IconButton onClick={this.handleClick}
+                                                    size="large"><FolderOpenIcon/></IconButton></Tooltip>}
 
                 <Dialog
                     open={open}
@@ -126,16 +127,15 @@ export class DatasetSelector extends React.PureComponent {
                     fullWidth={true}
                 >
                     <DialogContent style={{width: 500}}>
-                        <TextField style={{padding: 6}} type="text" placeholder={"Search"} value={searchText}
+                        <TextField size="small" style={{padding: 6}} type="text" placeholder={"Search"}
+                                   value={searchText}
                                    onChange={this.onSearchChange}
                                    fullWidth={true}
                                    InputProps={searchText.trim() !== '' ? {
                                        endAdornment:
                                            <InputAdornment position="end">
-                                               <IconButton
-                                                   aria-label="clear"
-                                                   onClick={this.handleClearSearchText}
-                                               >
+                                               <IconButton aria-label="clear" onClick={this.handleClearSearchText}
+                                                           size="large">
                                                    <ClearIcon/>
                                                </IconButton>
                                            </InputAdornment>
@@ -148,36 +148,42 @@ export class DatasetSelector extends React.PureComponent {
                                 const speciesText = species === '' ? 'Other' : species;
                                 const choices = species2Items[species];
                                 choices.sort((a, b) => NATSORT(a.name, b.name));
-                                return <React.Fragment key={species}>
-                                    <Typography component={"h2"}>{speciesText}</Typography>
-                                    <List dense disablePadding component="nav">
-                                        {choices.map(choice => {
-                                            let text = choice.name;
-                                            if (choice.title) {
-                                                text += ' - ' + choice.title;
-                                            }
-                                            return <ListItem alignItems="flex-start" selected={choice.id === selectedId}
-                                                             key={choice.id}
-                                                             button
-                                                             onClick={(e) => this.handleListItemClick(choice.id)}>
-                                                <ListItemText
-                                                    primary={text}
-                                                    style={{
-                                                        textOverflow: 'ellipsis',
-                                                        overflow: 'hidden',
-                                                        whiteSpace: 'nowrap'
-                                                    }}/>
-                                                <ListItemSecondaryAction>
-                                                    <IconButton
-                                                        onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
-                                                        edge="end"
-                                                        aria-label="summary">
-                                                        <InfoIcon/>
-                                                    </IconButton>
-                                                </ListItemSecondaryAction>
-                                            </ListItem>;
-                                        })}
-                                    </List></React.Fragment>;
+                                return (
+                                    <React.Fragment key={species}>
+                                        <Typography component={"h2"}>{speciesText}</Typography>
+                                        <List dense disablePadding component="nav">
+                                            {choices.map(choice => {
+                                                let text = choice.name;
+                                                if (choice.title) {
+                                                    text += ' - ' + choice.title;
+                                                }
+                                                return (
+                                                    <ListItem alignItems="flex-start"
+                                                              selected={choice.id === selectedId}
+                                                              key={choice.id}
+                                                              button
+                                                              onClick={(e) => this.handleListItemClick(choice.id)}>
+                                                        <ListItemText
+                                                            primary={text}
+                                                            style={{
+                                                                textOverflow: 'ellipsis',
+                                                                overflow: 'hidden',
+                                                                whiteSpace: 'nowrap'
+                                                            }}/>
+                                                        <ListItemSecondaryAction>
+                                                            <IconButton
+                                                                onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
+                                                                edge="end"
+                                                                aria-label="summary"
+                                                                size="large">
+                                                                <InfoIcon/>
+                                                            </IconButton>
+                                                        </ListItemSecondaryAction>
+                                                    </ListItem>
+                                                );
+                                            })}
+                                        </List></React.Fragment>
+                                );
                             })}
                         </div>
                     </DialogContent>
@@ -205,6 +211,6 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(DatasetSelector));
 

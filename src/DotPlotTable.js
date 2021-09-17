@@ -1,6 +1,6 @@
-import {Checkbox, Table, TableBody, TableCell, TableHead, TableRow} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import withStyles from '@material-ui/core/styles/withStyles';
+import {Checkbox, Table, TableBody, TableCell, TableHead, TableRow} from '@mui/material';
+import Box from '@mui/material/Box';
+import withStyles from '@mui/styles/withStyles';
 import React from 'react';
 
 const styles = theme => ({

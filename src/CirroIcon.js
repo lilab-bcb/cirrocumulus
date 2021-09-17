@@ -1,4 +1,4 @@
-import {SvgIcon} from '@material-ui/core';
+import {SvgIcon} from '@mui/material';
 import React from 'react';
 
 export default function CirroIcon() {

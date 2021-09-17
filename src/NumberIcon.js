@@ -1,4 +1,4 @@
-import {SvgIcon} from '@material-ui/core';
+import {SvgIcon} from '@mui/material';
 
 export default function NumberIcon(props) {
     return (

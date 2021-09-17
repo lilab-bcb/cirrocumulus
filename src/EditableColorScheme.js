@@ -1,7 +1,7 @@
-import {InputLabel, Switch, Tooltip} from '@material-ui/core';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
+import {InputLabel, Switch, Tooltip} from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import {debounce} from 'lodash';
 import React from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';

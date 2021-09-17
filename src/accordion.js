@@ -1,7 +1,7 @@
-import Accordion from '@material-ui/core/Accordion';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import withStyles from '@material-ui/core/styles/withStyles';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import withStyles from '@mui/styles/withStyles';
 
 export const AccordionStyled = withStyles({
     root: {

@@ -1,6 +1,6 @@
-import {InputLabel, Switch} from '@material-ui/core';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import TextField from '@material-ui/core/TextField';
+import {InputLabel, Switch} from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import TextField from '@mui/material/TextField';
 import {debounce} from 'lodash';
 import React from 'react';
 import SizeLegend from './SizeLegend';

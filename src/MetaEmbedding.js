@@ -1,4 +1,4 @@
-import withStyles from '@material-ui/core/styles/withStyles';
+import withStyles from '@mui/styles/withStyles';
 import {select} from 'd3-selection';
 import {zoom, zoomIdentity} from 'd3-zoom';
 import React from 'react';

@@ -1,9 +1,9 @@
-import {InputLabel} from '@material-ui/core';
-import Input from '@material-ui/core/Input';
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
+import {InputLabel} from '@mui/material';
+import Input from '@mui/material/Input';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 
-import withStyles from '@material-ui/core/styles/withStyles';
+import withStyles from '@mui/styles/withStyles';
 import * as scaleChromatic from 'd3-scale-chromatic';
 import React from 'react';
 import ColorSchemeLegend from './ColorSchemeLegend';

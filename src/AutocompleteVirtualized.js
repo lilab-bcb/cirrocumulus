@@ -1,26 +1,62 @@
-import {Typography} from '@material-ui/core';
-import Chip from '@material-ui/core/Chip';
-import ListSubheader from '@material-ui/core/ListSubheader';
-import {makeStyles, useTheme} from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
-import Autocomplete from '@material-ui/lab/Autocomplete';
+import {Typography} from '@mui/material';
+import Chip from '@mui/material/Chip';
+import ListSubheader from '@mui/material/ListSubheader';
+import {styled, useTheme} from '@mui/material/styles';
+import TextField from '@mui/material/TextField';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Autocomplete, {autocompleteClasses} from '@mui/material/Autocomplete';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {VariableSizeList} from 'react-window';
+import Popper from '@mui/material/Popper';
 
 
 const LISTBOX_PADDING = 0; // px
 
+function getTextMatch(text, inputValue) {
+    inputValue = inputValue.toLowerCase();
+    if (inputValue !== '') {
+        const index = text.toLowerCase().indexOf(inputValue);
+        if (index !== -1) { // bold the matching text when searching
+            const inputLength = inputValue.length;
+            const before = text.substring(0, index);
+            const match = text.substring(index, index + inputLength);
+            const after = text.substring(index + inputLength);
+            return [before, match, after];
+        }
+    }
+}
+
 function renderRow(props) {
     const {data, index, style} = props;
-    return React.cloneElement(data[index], {
-        style: {
-            ...style,
-            top: style.top + LISTBOX_PADDING,
-        },
-    });
+    const dataSet = data[index];
+    const inlineStyle = {
+        ...style,
+        top: style.top + LISTBOX_PADDING
+    };
+
+    if (dataSet.hasOwnProperty('group')) {
+        return (
+            <ListSubheader key={dataSet.key} component="div" style={inlineStyle}>
+                {dataSet.group}
+            </ListSubheader>
+        );
+    }
+    const item = dataSet[1];
+    const text = item.text != null ? item.text : item;
+    const icon = item.icon != null ? item.icon : null;
+    const inputValue = dataSet[2];
+    const textMatch = getTextMatch(text, inputValue);
+    if (textMatch) {
+        return <Typography component="li" {...dataSet[0]} title={text} noWrap style={inlineStyle}>
+            {icon}{textMatch[0]}<b>{textMatch[1]}</b>{textMatch[2]}
+        </Typography>;
+    }
+    return <Typography component="li" {...dataSet[0]} title={text} noWrap style={inlineStyle}>
+        {icon}{text}
+    </Typography>;
+
 }
 
 const OuterElementContext = React.createContext({});
@@ -30,19 +66,37 @@ const OuterElementType = React.forwardRef((props, ref) => {
     return <div ref={ref} {...props} {...outerProps} />;
 });
 
+function useResetCache(data) {
+    const ref = React.useRef(null);
+    React.useEffect(() => {
+        if (ref.current != null) {
+            ref.current.resetAfterIndex(0, true);
+        }
+    }, [data]);
+    return ref;
+}
+
 // Adapter for react-window
 const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) {
     const {children, ...other} = props;
-    const itemData = React.Children.toArray(children);
+    const itemData = [];
+    children.forEach((item) => {
+        itemData.push(item);
+        itemData.push(...(item.children || []));
+    });
+
     const theme = useTheme();
-    const smUp = useMediaQuery(theme.breakpoints.up('sm'), {noSsr: true});
+    const smUp = useMediaQuery(theme.breakpoints.up('sm'), {
+        noSsr: true
+    });
+
     const itemCount = itemData.length;
     const itemSize = smUp ? 24 : 36;
 
     const getChildSize = (child) => {
-        // if (React.isValidElement(child) && child.type === ListSubheader) {
-        //     return 48;
-        // }
+        if (child.hasOwnProperty('group')) {
+            return 36;
+        }
 
         return itemSize;
     };
@@ -54,14 +108,16 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
         return itemData.map(getChildSize).reduce((a, b) => a + b, 0);
     };
 
+    const gridRef = useResetCache(itemCount);
+
     return (
         <div ref={ref}>
             <OuterElementContext.Provider value={other}>
                 <VariableSizeList
                     itemData={itemData}
-                    height={getHeight() + LISTBOX_PADDING}
+                    height={getHeight() + 2 * LISTBOX_PADDING}
                     width="100%"
-                    key={itemCount}
+                    ref={gridRef}
                     outerElementType={OuterElementType}
                     innerElementType="ul"
                     itemSize={(index) => getChildSize(itemData[index])}
@@ -76,31 +132,28 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
 });
 
 ListboxComponent.propTypes = {
-    children: PropTypes.node,
+    children: PropTypes.node
 };
 
-
-const useStyles = makeStyles({
-    paper: {width: 230},
-    listbox: {
+const StyledPopper = styled(Popper)({
+    [`& .${autocompleteClasses.listbox}`]: {
+        boxSizing: 'border-box',
         '& ul': {
             padding: 0,
-            margin: 0,
-        },
-    },
+            margin: 0
+        }
+    }
 });
-
 
 const renderGroup = (params) => [
     <ListSubheader disableGutters component="div">
         <Typography noWrap>{params.group}</Typography>
     </ListSubheader>,
-    params.children,
+    params.children
 ];
 
 
 export default function AutocompleteVirtualized(props) {
-    const classes = useStyles();
     const ref = React.createRef();
 
     function onDrop(event) {
@@ -196,10 +249,7 @@ export default function AutocompleteVirtualized(props) {
     if (getChipIcon == null) {
         getChipIcon = (option) => null;
     }
-    let getOptionIcon = props.getOptionIcon;
-    if (getOptionIcon == null) {
-        getOptionIcon = (option) => null;
-    }
+
 
     let getChipTitle = props.getChipTitle;
     if (getChipTitle == null) {
@@ -210,28 +260,6 @@ export default function AutocompleteVirtualized(props) {
         getOptionLabel = props.groupBy ? (option) => option.text : (option) => option;
     }
 
-    const renderOption = (option, {inputValue}) => {
-        inputValue = inputValue.toLowerCase();
-        const text = getOptionLabel(option);
-        const icon = getOptionIcon(option);
-        if (inputValue !== '') {
-            const index = text.toLowerCase().indexOf(inputValue);
-            if (index !== -1) { // bold the matching text when searching
-                const inputLength = inputValue.length;
-                const before = text.substring(0, index);
-                const match = text.substring(index, index + inputLength);
-                const after = text.substring(index + inputLength);
-                return <>{icon}<Typography title={text} noWrap>
-                    {before}<b>{match}</b>{after}
-                </Typography></>;
-            }
-        }
-        return <>{icon}<Typography title={text} noWrap>{text}</Typography></>;
-    };
-    // const renderOption = props.groupBy ? (option) => {
-    //  const text = getOptionLabel(option);
-    //    return <Typography title={text}  noWrap>{text}</Typography>;
-    // };
 
     const filterOptions = (options, {inputValue}) => {
         inputValue = inputValue.trim().toLowerCase();
@@ -273,23 +301,23 @@ export default function AutocompleteVirtualized(props) {
     };
 
     const SortableItem = sortableElement(({option, sortIndex}) => {
-        return <Chip
-            variant="default"
-            tabIndex="-1"
-            key={sortIndex}
-            style={{zIndex: 1000000}}
-            onDelete={event => handleTagDelete(event, sortIndex)}
-            onClick={onChipClick ? event => onChipClick(event, option) : null}
-            label={getChipText(option)}
-            title={getChipTitle(option)}
-            size="small"
-            icon={getChipIcon(option)}
-        />;
+        return (
+            <Chip
+                tabIndex="-1"
+                key={sortIndex}
+                style={{zIndex: 1000000}}
+                onDelete={event => handleTagDelete(event, sortIndex)}
+                onClick={onChipClick ? event => onChipClick(event, option) : null}
+                label={getChipText(option)}
+                title={getChipTitle(option)}
+                size="small"
+                icon={getChipIcon(option)}/>
+        );
     });
 
     const SortableList = sortableContainer(({items}) => {
         return (
-            <ul style={{padding: 0, marginTop: 0, marginBottom: 0}}>
+            <ul style={{padding: 0, marginTop: 0, marginBottom: 0, maxWidth: 240, overflow: 'hidden'}}>
                 {items.map((option, index) => {
                         return <SortableItem key={index} option={option} index={index} sortIndex={index}/>;
                     }
@@ -299,52 +327,45 @@ export default function AutocompleteVirtualized(props) {
     });
 
 
-    return (
-        <>
-            <Autocomplete
-                data-testid={props.testId}
-                multiple
-                ref={ref}
-                size={"small"}
-                filterOptions={filterOptions}
-                disableListWrap
-                classes={classes}
-                getOptionSelected={getOptionSelected}
-                value={props.value}
-                filterSelectedOptions={true}
-                getOptionLabel={getOptionLabel}
-                groupBy={props.groupBy ? (option) => option.group : null}
-                ChipProps={{size: 'small'}}
-                ListboxComponent={ListboxComponent}
-                renderGroup={renderGroup}
-                options={props.options}
-                blurOnSelect={true}
-                openOnFocus={false}
-                autoHighlight={true}
-                onChange={props.onChange}
-                renderTags={(value, getTagProps) =>
-                    null
-                }
-                renderInput={(params) => <div ref={params.InputProps.ref}><TextField
-                    style={{
-                        width: 200
-                    }}
-                    margin="dense"
-                    label={props.label}
-                    {...params}
-                    helperText={props.helperText}/>
-                </div>}
-                renderOption={renderOption}
-                onPaste={onPaste}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                onDragEnd={onDragEnd}
-                onDragLeave={onDragEnd}
-            />
-            <SortableList
-                distance={2}
-                onSortEnd={onSortEnd}
-                axis="xy" items={props.value}
-            /></>
-    );
+    return <>
+        <Autocomplete
+            data-testid={props.testId}
+            multiple={true}
+            ref={ref}
+            size={"small"}
+            disableListWrap
+            blurOnSelect={true}
+            openOnFocus={false}
+            autoHighlight={true}
+            filterOptions={filterOptions}
+            isOptionEqualToValue={getOptionSelected}
+            value={props.value}
+            filterSelectedOptions={true}
+            getOptionLabel={getOptionLabel}
+            groupBy={props.groupBy ? (option) => option.group : null}
+            ChipProps={{size: 'small'}}
+            ListboxComponent={ListboxComponent}
+            PopperComponent={StyledPopper}
+            renderGroup={renderGroup}
+            options={props.options}
+            onChange={props.onChange}
+            renderTags={(value, getTagProps) =>
+                null
+            }
+            renderInput={(params) => (
+                <TextField {...params} label={props.label} helperText={props.helperText} sx={{width: 200}}
+                           margin={"dense"}/>
+            )}
+            renderOption={(props, option, {inputValue}) => [props, option, inputValue]}
+            onPaste={onPaste}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            onDragLeave={onDragEnd}
+        />
+        <SortableList
+            distance={2}
+            onSortEnd={onSortEnd}
+            axis="xy" items={props.value}
+        /></>;
 }

@@ -1,18 +1,18 @@
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import TextField from '@material-ui/core/TextField';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import React, {useState} from 'react';
-import {IconButton, ListItem, ListItemText} from '@material-ui/core';
+import {IconButton, ListItem, ListItemText} from '@mui/material';
 import {intFormat} from './formatters';
 import {FixedSizeList} from 'react-window';
-import MenuIcon from '@material-ui/icons/Menu';
+import MenuIcon from '@mui/icons-material/Menu';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
-import FormControl from '@material-ui/core/FormControl';
+import FormControl from '@mui/material/FormControl';
 import {getCategoryValue} from './util';
 
 
@@ -177,7 +177,10 @@ export default function CategoricalLegend(props) {
 
                 <ListItemText title={renamedCategory} primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
                               secondary={(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[categoryIndex])}/>
-                <IconButton onClick={event => onContextmenu(event, category)} aria-label="menu">
+                <IconButton
+                    onClick={event => onContextmenu(event, category)}
+                    aria-label="menu"
+                    size="large">
                     <MenuIcon></MenuIcon>
                 </IconButton>
             </ListItem>
@@ -221,6 +224,7 @@ export default function CategoricalLegend(props) {
                     <DialogContent>
                         <div>
                             <TextField
+                                size={"small"}
                                 inputProps={{maxLength: 1000}}
                                 fullWidth={true}
                                 type="text"

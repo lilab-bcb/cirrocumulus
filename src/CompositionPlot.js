@@ -1,10 +1,10 @@
-import {Table, TableBody, TableCell, TableHead, TableRow, Tooltip} from '@material-ui/core';
-import IconButton from '@material-ui/core/IconButton';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import {withStyles} from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import {Table, TableBody, TableCell, TableHead, TableRow, Tooltip} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import withStyles from '@mui/styles/withStyles';
+import Typography from '@mui/material/Typography';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import {scaleLinear} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';

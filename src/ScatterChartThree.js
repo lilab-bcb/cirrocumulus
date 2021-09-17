@@ -1,6 +1,5 @@
-import withStyles from '@material-ui/core/styles/withStyles';
+import withStyles from '@mui/styles/withStyles';
 import {scaleLinear} from 'd3-scale';
-import {bind} from 'lodash';
 import React, {useEffect, useRef, useState} from 'react';
 import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
@@ -389,24 +388,9 @@ function ScatterChartThree(props) {
         }
     }
 
-    // onCopyImage = (event) => {
-    //     const size = chartSize;
-    //     const canvas = document.createElement('canvas');
-    //     canvas.width = size.width; // * window.devicePixelRatio;
-    //     canvas.height = size.height; // * window.devicePixelRatio;
-    //     const context = canvas.getContext('2d');
-    //     drawContext(context, chartSize);
-    //     const url = canvas.toDataURL();
-    //     setClipboardData([{
-    //         format: 'image/png',
-    //         data: '<img src="' + url + '">'
-    //     }]);
-    // };
-
-
     function onSaveImage(format) {
         const {trace, chartSize} = props;
-        saveImage(trace, chartSize, bind(drawContext, this), format);
+        saveImage(trace, chartSize, drawContext, format);
     }
 
 
@@ -432,8 +416,8 @@ function ScatterChartThree(props) {
 
     function onShowFog() {
         const scatterPlot = scatterPlotRef.current;
-        let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
         props.chartOptions.showFog = !props.chartOptions.showFog;
+        const spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
         spriteVisualizer.styles.fog.enabled = props.chartOptions.showFog;
         props.setChartOptions(props.chartOptions);
     }
@@ -545,11 +529,8 @@ function ScatterChartThree(props) {
                 // onEditSelection={onEditSelection}
                 onShowAxis={onShowAxis}
                 onHome={resetCamera}
-                showAxis={props.chartOptions.showAxis}
-            >
-            </ChartToolbar>
+                showAxis={props.chartOptions.showAxis}/>
         </div>
-
         <div data-testid="scatter-chart-three" style={{
             display: 'inline-block',
             width: props.chartSize.width,

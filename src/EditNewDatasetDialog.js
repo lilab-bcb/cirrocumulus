@@ -1,23 +1,23 @@
-import {CircularProgress, InputLabel, Typography} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
+import {CircularProgress, InputLabel, Typography} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Divider from '@material-ui/core/Divider';
-import FormControl from '@material-ui/core/FormControl';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import Link from '@material-ui/core/Link';
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-import withStyles from '@material-ui/core/styles/withStyles';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
-import TextField from '@material-ui/core/TextField';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
-import LinkIcon from '@material-ui/icons/Link';
+import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import Link from '@mui/material/Link';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import withStyles from '@mui/styles/withStyles';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import TextField from '@mui/material/TextField';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import LinkIcon from '@mui/icons-material/Link';
 import ReactMarkdown from 'markdown-to-jsx';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -238,163 +238,166 @@ class EditNewDatasetDialog extends React.PureComponent {
                 saveEnabled = saveEnabled && this.state.file != null;
             }
         }
-        return <Dialog
-            onEntered={e => this.initDragDrop()}
-            open={true}
-            ref={this.fileDropRef}
-            onClose={this.handleClose}
-            aria-labelledby="edit-dataset-dialog-title"
-            fullWidth={true}
-            maxWidth={'lg'}
-        >
-            <DialogTitle id="edit-dataset-dialog-title">{isNew
-                ? 'New'
-                : 'Edit'} Dataset</DialogTitle>
-            <DialogContent>
-                {this.state.loading && <CircularProgress/>}
-                <TextField
-                    disabled={this.state.loading}
-                    autoComplete="off"
-                    required={true}
-                    value={this.state.name}
-                    onChange={this.onNameChanged}
-                    margin="dense"
-                    label="Name"
-                    fullWidth
-                />
+        return (
+            <Dialog
+                open={true}
+                ref={this.fileDropRef}
+                onClose={this.handleClose}
+                aria-labelledby="edit-dataset-dialog-title"
+                fullWidth={true}
+                maxWidth={'lg'}
+                TransitionProps={{
+                    onEntered: e => this.initDragDrop()
+                }}>
+                <DialogTitle id="edit-dataset-dialog-title">{isNew
+                    ? 'New'
+                    : 'Edit'} Dataset</DialogTitle>
+                <DialogContent>
+                    {this.state.loading && <CircularProgress/>}
+                    <TextField
+                        disabled={this.state.loading}
+                        autoComplete="off"
+                        required={true}
+                        value={this.state.name}
+                        onChange={this.onNameChanged}
+                        margin="dense"
+                        label="Name"
+                        fullWidth
+                    />
 
-                <div style={{display: isNew && canUpload ? '' : 'none'}}>
+                    <div style={{display: isNew && canUpload ? '' : 'none'}}>
+                        <FormControl className={this.props.classes.formControl}>
+                            <InputLabel shrink required>Source</InputLabel>
+                        </FormControl>
+                        <Tabs value={this.state.uploadTabValue} onChange={this.onUploadTabChanged}
+                              aria-label="upload">
+                            <Tab label="My Computer" icon={<CloudUploadIcon/>}/>
+                            <Tab label="URL" icon={<LinkIcon/>}/>
+                        </Tabs>
+                        <TabPanel value={this.state.uploadTabValue} index={0}>
+                            <div ref={this.dragIndicator}>
+                                <Button size="small" variant="outlined" disabled={this.state.loading}
+                                        onClick={e => this.fileInputRef.current.click()}>Select File</Button>
+                                <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
+                                    And Drop</Typography>
+                                <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
+                                <Typography style={{display: 'block'}} color="textPrimary"
+                                            variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
+                            </div>
+                            <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
+                        </TabPanel>
+                        <TabPanel value={this.state.uploadTabValue} index={1}>
+                            <TextField
+                                required={true}
+                                disabled={this.state.loading}
+                                autoComplete="off"
+                                value={this.state.url}
+                                onChange={this.onUrlChanged}
+                                margin="dense"
+                                helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
+                                label={"URL"}
+                                fullWidth
+                            />
+                        </TabPanel>
+                    </div>
+
+                    <TextField
+                        style={{display: isNew && canUpload ? 'none' : ''}}
+                        required={true}
+                        disabled={this.state.loading || !isNew}
+                        autoComplete="off"
+                        value={this.state.url}
+                        onChange={this.onUrlChanged}
+                        margin="dense"
+                        helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
+                        label={"URL"}
+                        fullWidth
+                    />
+
                     <FormControl className={this.props.classes.formControl}>
-                        <InputLabel shrink required>Source</InputLabel>
+                        <InputLabel shrink={true} id="species-label">Species</InputLabel>
+                        <Select
+                            labelId="species-label"
+                            value={this.state.species}
+                            onChange={this.onSpeciesChange}
+                        >
+                            {favoriteSpecies.map(species => <MenuItem key={species}
+                                                                      value={species}>{species}</MenuItem>)}
+                            <MenuItem divider={true}/>
+                            {otherSpecies.map(species => <MenuItem key={species} value={species}>{species}</MenuItem>)}
+                        </Select>
                     </FormControl>
-                    <Tabs value={this.state.uploadTabValue} onChange={this.onUploadTabChanged}
-                          aria-label="upload">
-                        <Tab label="My Computer" icon={<CloudUploadIcon/>}/>
-                        <Tab label="URL" icon={<LinkIcon/>}/>
-                    </Tabs>
-                    <TabPanel value={this.state.uploadTabValue} index={0}>
-                        <div ref={this.dragIndicator}>
-                            <Button size="small" variant="outlined" disabled={this.state.loading}
-                                    onClick={e => this.fileInputRef.current.click()}>Select File</Button>
-                            <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
-                                And Drop</Typography>
-                            <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
-                            <Typography style={{display: 'block'}} color="textPrimary"
-                                        variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
-                        </div>
-                        <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
-                    </TabPanel>
-                    <TabPanel value={this.state.uploadTabValue} index={1}>
-                        <TextField
-                            required={true}
-                            disabled={this.state.loading}
-                            autoComplete="off"
-                            value={this.state.url}
-                            onChange={this.onUrlChanged}
-                            margin="dense"
-                            helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
-                            label={"URL"}
-                            fullWidth
-                        />
-                    </TabPanel>
-                </div>
-
-                <TextField
-                    style={{display: isNew && canUpload ? 'none' : ''}}
-                    required={true}
-                    disabled={this.state.loading || !isNew}
-                    autoComplete="off"
-                    value={this.state.url}
-                    onChange={this.onUrlChanged}
-                    margin="dense"
-                    helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
-                    label={"URL"}
-                    fullWidth
-                />
-
-                <FormControl className={this.props.classes.formControl}>
-                    <InputLabel shrink={true} id="species-label">Species</InputLabel>
-                    <Select
-                        labelId="species-label"
-                        value={this.state.species}
-                        onChange={this.onSpeciesChange}
-                    >
-                        {favoriteSpecies.map(species => <MenuItem key={species}
-                                                                  value={species}>{species}</MenuItem>)}
-                        <MenuItem divider={true}/>
-                        {otherSpecies.map(species => <MenuItem key={species} value={species}>{species}</MenuItem>)}
-                    </Select>
-                </FormControl>
 
 
-                <TextField
-                    disabled={this.state.loading}
-                    autoComplete="off"
-                    required={false}
-                    value={this.state.title}
-                    onChange={this.onTitleChanged}
-                    margin="dense"
-                    label="Title"
-                    fullWidth
-                    inputProps={{maxLength: 255}}
-                />
-                <FormControl className={this.props.classes.formControl}>
-                    <InputLabel shrink>Summary</InputLabel>
-                    <FormHelperText style={{marginTop: 14}}><Link
-                        href={"https://www.markdownguide.org/cheat-sheet/"}
-                        target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
-                </FormControl>
-
-
-                <Tabs value={this.state.writePreviewTabValue} onChange={this.onWritePreviewTabChanged}
-                      aria-label="description-editor">
-                    <Tab label="Write"/>
-                    <Tab label="Preview"/>
-                </Tabs>
-
-                <TabPanel value={this.state.writePreviewTabValue} index={0}>
                     <TextField
                         disabled={this.state.loading}
                         autoComplete="off"
                         required={false}
-                        value={this.state.description}
-                        onChange={this.onDescriptionChanged}
+                        value={this.state.title}
+                        onChange={this.onTitleChanged}
                         margin="dense"
+                        label="Title"
                         fullWidth
-                        variant="outlined"
-                        rows={8}
-                        maxRows={8}
-                        multiline={true}
-                        inputProps={{maxLength: 1000}}
+                        inputProps={{maxLength: 255}}
                     />
-                </TabPanel>
-                <TabPanel value={this.state.writePreviewTabValue} index={1}>
-                    {this.state.description !== '' && <Box border={1}>
-                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={this.state.description}/>
-                    </Box>}
-                </TabPanel>
+                    <FormControl className={this.props.classes.formControl}>
+                        <InputLabel shrink>Summary</InputLabel>
+                        <FormHelperText style={{marginTop: 14}}><Link
+                            href={"https://www.markdownguide.org/cheat-sheet/"}
+                            target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
+                    </FormControl>
 
-                <TextField
-                    value={this.state.readers}
-                    onChange={this.onEmailChanged}
-                    margin="dense"
-                    label="Readers"
-                    helperText={isAuthEnabled ? "Enter comma separated list of emails" : "Enable authentication to permit sharing"}
-                    disabled={this.state.loading || !isAuthEnabled}
-                    fullWidth
-                    multiline
-                />
-            </DialogContent>
-            <DialogActions>
-                <Button disabled={this.state.loading} onClick={this.handleClose}>
-                    Cancel
-                </Button>
-                <Button disabled={!saveEnabled} onClick={this.handleSave}
-                        variant="contained" color="primary">
-                    Save
-                </Button>
-            </DialogActions>
-        </Dialog>;
+
+                    <Tabs value={this.state.writePreviewTabValue} onChange={this.onWritePreviewTabChanged}
+                          aria-label="description-editor">
+                        <Tab label="Write"/>
+                        <Tab label="Preview"/>
+                    </Tabs>
+
+                    <TabPanel value={this.state.writePreviewTabValue} index={0}>
+                        <TextField
+                            disabled={this.state.loading}
+                            autoComplete="off"
+                            required={false}
+                            value={this.state.description}
+                            onChange={this.onDescriptionChanged}
+                            margin="dense"
+                            fullWidth
+                            variant="outlined"
+                            rows={8}
+                            maxRows={8}
+                            multiline={true}
+                            inputProps={{maxLength: 1000}}
+                        />
+                    </TabPanel>
+                    <TabPanel value={this.state.writePreviewTabValue} index={1}>
+                        {this.state.description !== '' && <Box border={1}>
+                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}} children={this.state.description}/>
+                        </Box>}
+                    </TabPanel>
+
+                    <TextField
+                        value={this.state.readers}
+                        onChange={this.onEmailChanged}
+                        margin="dense"
+                        label="Readers"
+                        helperText={isAuthEnabled ? "Enter comma separated list of emails" : "Enable authentication to permit sharing"}
+                        disabled={this.state.loading || !isAuthEnabled}
+                        fullWidth
+                        multiline
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button disabled={this.state.loading} onClick={this.handleClose}>
+                        Cancel
+                    </Button>
+                    <Button disabled={!saveEnabled} onClick={this.handleSave}
+                            variant="contained" color="primary">
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
     }
 }
 

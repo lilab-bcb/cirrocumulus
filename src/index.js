@@ -4,8 +4,8 @@ import {Provider} from 'react-redux';
 import {applyMiddleware, createStore} from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import {initGapi} from './actions';
-import App from './App';
 import rootReducer from './reducers';
+import AppWrapper from './AppWrapper';
 // import * as serviceWorker from './serviceWorker';
 
 
@@ -18,17 +18,19 @@ const store = createStore(
     rootReducer,
     applyMiddleware(
         thunkMiddleware
-    ),
+    )
 );
 
 function main() {
     render(
         <Provider store={store}>
             {/*<React.StrictMode>*/}
-            <App/>
+
+            <AppWrapper/>
+
             {/*</React.StrictMode>*/}
         </Provider>,
-        document.getElementById('root'),
+        document.getElementById('root')
     );
 }
 

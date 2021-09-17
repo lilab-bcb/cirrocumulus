@@ -1,7 +1,7 @@
-import {Tooltip} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import Typography from '@material-ui/core/Typography';
+import {Tooltip} from '@mui/material';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 import React, {useEffect, useRef, useState} from 'react';
 import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
@@ -13,6 +13,27 @@ import {
     updateScatterChart
 } from './ThreeUtil';
 
+function getImageUrl(cachedData,
+                     categoricalNames,
+                     chartOptions,
+                     chartSize,
+                     markerOpacity,
+                     obsCat,
+                     pointSize,
+                     selection,
+                     traceInfo,
+                     unselectedMarkerOpacity) {
+    let canvas = document.createElement('canvas');
+    canvas.width = chartSize * window.devicePixelRatio;
+    canvas.height = chartSize * window.devicePixelRatio;
+    const context = canvas.getContext('2d');
+    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    drawEmbeddingImage(context, {
+        width: chartSize,
+        height: chartSize
+    }, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
+    return canvas.toDataURL();
+}
 
 export default function GalleryImage(props) {
     const [url, setUrl] = useState(null);
@@ -76,24 +97,32 @@ export default function GalleryImage(props) {
                 setUrl(null);
                 setOverlayUrl(null);
                 setLoading(true);
-
                 traceInfo.tileSource.addOnceHandler('ready', () => {
                     setLoading(false);
+                    setUrl(getImageUrl(cachedData,
+                        categoricalNames,
+                        chartOptions,
+                        chartSize,
+                        markerOpacity,
+                        obsCat,
+                        pointSize,
+                        selection,
+                        traceInfo,
+                        unselectedMarkerOpacity));
                 });
             } else {
-                let canvas = document.createElement('canvas');
-                canvas.width = chartSize * window.devicePixelRatio;
-                canvas.height = chartSize * window.devicePixelRatio;
-                const context = canvas.getContext('2d');
-                context.scale(window.devicePixelRatio, window.devicePixelRatio);
-                drawEmbeddingImage(context, {
-                    width: chartSize,
-                    height: chartSize
-                }, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
-                setUrl(canvas.toDataURL());
+                setUrl(getImageUrl(cachedData,
+                    categoricalNames,
+                    chartOptions,
+                    chartSize,
+                    markerOpacity,
+                    obsCat,
+                    pointSize,
+                    selection,
+                    traceInfo,
+                    unselectedMarkerOpacity));
                 setOverlayUrl(null);
                 setLoading(false);
-                canvas = null;
             }
         } else {
             const containerElement = elementRef.current;
