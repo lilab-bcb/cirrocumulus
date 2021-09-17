@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.20.post4 `September 17, 2021`
+    * Style updates
+
 - 1.1.20.post3 `September 10, 2021`
     * Fixed error computing differential expression in `cirro prepare_data` using `Pegasus`_/`Cumulus`_ when categories contain the : character
 
