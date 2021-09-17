@@ -1,11 +1,10 @@
-import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@material-ui/core';
-import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Input from '@material-ui/core/Input';
-import Slider from '@material-ui/core/Slider';
-import withStyles from '@material-ui/core/styles/withStyles';
-import TextField from '@material-ui/core/TextField';
-import Typography from '@material-ui/core/Typography';
+import {InputLabel, MenuItem, Select, Switch, Tooltip} from '@mui/material';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Slider from '@mui/material/Slider';
+import withStyles from '@mui/styles/withStyles';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import {debounce, find} from 'lodash';
 import React from 'react';
 import {connect} from 'react-redux';
@@ -218,9 +217,10 @@ class JobResultOptions extends React.PureComponent {
                 <Typography
                     component={"h2"}>Rank Features</Typography>
                 <FormControl style={{display: 'block'}} className={classes.formControl}>
-                    <InputLabel shrink={true}>By</InputLabel>
+                    <InputLabel>By</InputLabel>
                     <Select
-                        input={<Input size={"small"}/>}
+                        label={"By"}
+                        size={"small"}
                         onChange={this.onByChanged}
                         value={by}
                     >
@@ -239,7 +239,7 @@ class JobResultOptions extends React.PureComponent {
                     }
                     label="Ascending"
                 /></div>
-                <InputLabel style={{marginLeft: 8, marginTop: 8}} shrink={true}>Number of Features</InputLabel>
+                <InputLabel style={{marginLeft: 8, marginTop: 8}}>Number of Features</InputLabel>
                 <Slider
                     min={5}
                     max={Math.min(100, jobResult.data.length)}
@@ -249,9 +249,10 @@ class JobResultOptions extends React.PureComponent {
                     value={ntopUI}
                     onChange={this.onNtopChange}/>
                 {jobResult.groups.length > 1 && <FormControl style={{display: 'block'}} className={classes.formControl}>
-                    <InputLabel shrink={true}>Sort Features</InputLabel>
+                    <InputLabel>Sort Features</InputLabel>
                     <Select
-                        input={<Input size={"small"}/>}
+                        label={"Sort Features"}
+                        size={"small"}
                         onChange={this.onSortChange}
                         value={jobResult.sortByGroup}
                     >
@@ -273,6 +274,8 @@ class JobResultOptions extends React.PureComponent {
                     <FormControl className={classes.formControlInline}>
                         <InputLabel>{filter[0]}</InputLabel>
                         <Select
+                            label={filter[0]}
+                            size={"small"}
                             labelId={id + '_label'}
                             id={id}
                             style={{marginRight: 6}}
@@ -288,9 +291,9 @@ class JobResultOptions extends React.PureComponent {
                             <MenuItem value={"!="}>{"!="}</MenuItem>
                         </Select>
                     </FormControl>
-                    <TextField
-                        onChange={event => this.onValueChange(filter, event.target.value)} value={filter[3]}
-                        style={{maxWidth: 60, verticalAlign: 'bottom'}}/>
+                    <TextField size={"small"}
+                               onChange={event => this.onValueChange(filter, event.target.value)} value={filter[3]}
+                               style={{maxWidth: 60, verticalAlign: 'bottom'}}/>
                 </div>;
             })}
 
@@ -299,9 +302,10 @@ class JobResultOptions extends React.PureComponent {
                         component={"h2"}>View Options</Typography>
 
             <FormControl className={classes.formControl}>
-                <InputLabel shrink={true}>Color</InputLabel>
+                <InputLabel>Color</InputLabel>
                 <Select
-                    input={<Input size={"small"}/>}
+                    label={"Color"}
+                    size={"small"}
                     onChange={this.onColorChanged}
                     value={color}
                 >
@@ -323,9 +327,10 @@ class JobResultOptions extends React.PureComponent {
                                  onInterpolator={this.onInterpolator}/>
 
             {jobResult.groups.length > 1 && <FormControl className={this.props.classes.formControl}>
-                <InputLabel shrink={true}>Standardize</InputLabel>
+                <InputLabel>Standardize</InputLabel>
                 <Select
-                    input={<Input size={"small"}/>}
+                    label={"Standardize"}
+                    size={"small"}
                     onChange={event => this.onColorScalingChange(event.target.value)}
                     value={interpolator.scale}
                 >
@@ -339,9 +344,10 @@ class JobResultOptions extends React.PureComponent {
             </FormControl>}
 
             <FormControl style={{marginTop: 16}} className={classes.formControl}>
-                <InputLabel shrink={true}>Size</InputLabel>
+                <InputLabel>Size</InputLabel>
                 <Select
-                    input={<Input size={"small"}/>}
+                    label={"Size"}
+                    size={"small"}
                     onChange={this.onSizeChanged}
                     value={size}
                 >
@@ -365,7 +371,7 @@ const mapStateToProps = state => {
         return {
             textColor: state.chartOptions.darkMode ? 'white' : 'black',
             jobResults: state.jobResults,
-            jobResultId: state.jobResult,
+            jobResultId: state.jobResult
         };
     }
 ;
@@ -373,13 +379,13 @@ const mapDispatchToProps = (dispatch, ownProps) => {
         return {
             handleJobResults: (payload) => {
                 dispatch(setJobResults(payload));
-            },
+            }
         };
     }
 ;
 
 
 export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(JobResultOptions));
 

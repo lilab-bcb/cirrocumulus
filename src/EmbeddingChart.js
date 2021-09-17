@@ -1,6 +1,6 @@
-import {Tooltip, Typography} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import Link from '@material-ui/core/Link';
+import {Tooltip, Typography} from '@mui/material';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
 import {find} from 'lodash';
 import React from 'react';
 
@@ -118,8 +118,8 @@ class EmbeddingChart extends React.PureComponent {
         const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
 
         return (
-            <div style={{position: 'relative'}}>
-                <Box data-testid="chart-extra" color="text.primary" style={{
+            <Box bgcolor={"inherit"} color="inherit" style={{position: 'relative'}}>
+                <Box data-testid="chart-extra" color="text.primary" sx={{
                     marginTop: 3.2,
                     position: 'absolute',
                     textAlign: 'right',
@@ -230,7 +230,7 @@ class EmbeddingChart extends React.PureComponent {
                     onGallery={onGallery}
                     setTooltip={setTooltip}
                 />}
-            </div>);
+            </Box>);
 
     }
 }

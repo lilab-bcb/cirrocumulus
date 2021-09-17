@@ -1,34 +1,31 @@
-import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import FormControl from '@material-ui/core/FormControl';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import IconButton from '@material-ui/core/IconButton';
-import Input from '@material-ui/core/Input';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
-import MenuItem from '@material-ui/core/MenuItem';
-import Menu from '@material-ui/core/Menu';
-import Select from '@material-ui/core/Select';
-import Slider from '@material-ui/core/Slider';
-import TextField from '@material-ui/core/TextField';
-import Tooltip from '@material-ui/core/Tooltip';
-import DeleteIcon from '@material-ui/icons/Delete';
+import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
+import ListItemText from '@mui/material/ListItemText';
+import MenuItem from '@mui/material/MenuItem';
+import Menu from '@mui/material/Menu';
+import Select from '@mui/material/Select';
+import Slider from '@mui/material/Slider';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {debounce, find} from 'lodash';
 import React from 'react';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import {
     datasetFilterToJson,
     deleteFeatureSet,
     deleteView,
-    downloadSelectedIds,
     getTraceKey,
     handleDomainChange,
     openView,
@@ -46,7 +43,8 @@ import {
     setSearchTokens,
     setSelectedEmbedding,
     setTab,
-    setUnselectedMarkerOpacity, setUnselectedPointSize,
+    setUnselectedMarkerOpacity,
+    setUnselectedPointSize,
     submitJob,
     toggleEmbeddingLabel
 } from './actions';
@@ -55,11 +53,11 @@ import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
 import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE} from './util';
 import ExplorePanel from "./ExplorePanel";
-import Link from "@material-ui/core/Link";
-import withStyles from "@material-ui/core/styles/withStyles";
+import Link from "@mui/material/Link";
+import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
-import Divider from "@material-ui/core/Divider";
-import LinkIcon from "@material-ui/icons/Link";
+import Divider from "@mui/material/Divider";
+import LinkIcon from "@mui/icons-material/Link";
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -86,12 +84,12 @@ const styles = theme => ({
     formControl: {
         display: 'block',
         minWidth: 200,
-        maxWidth: 200
+        maxWidth: 200,
+        marginBottom: theme.spacing(1)
     },
     select: {
         minWidth: 200
-    },
-    slider: {}
+    }
 });
 
 
@@ -245,8 +243,6 @@ class SideBar extends React.PureComponent {
     };
 
     onUnselectedMarkerOpacityChange = (event, value) => {
-        value = 0.01;
-        console.log(value);
         this.setState({unselectedOpacity: value});
         this.updateUnselectedMarkerOpacity(value);
     };
@@ -289,7 +285,7 @@ class SideBar extends React.PureComponent {
     onShowGalleryLabelsChange = (event) => {
         const {chartOptions} = this.props;
         chartOptions.showGalleryLabels = event.target.checked;
-        this.props.handleChartOptions(Object.assign({}, chartOptions));
+        this.props.handleChartOptions(chartOptions);
     };
 
 
@@ -337,9 +333,6 @@ class SideBar extends React.PureComponent {
     onDatasetViewSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
-
-
-
 
 
     render() {
@@ -423,8 +416,6 @@ class SideBar extends React.PureComponent {
                             <Button size={"small"}
                                     onClick={event => this.onSetGroup(2)}>2</Button>
                         </Tooltip>
-
-
                     </ButtonGroup>
 
                     <Button size={"small"} variant={"outlined"}
@@ -469,11 +460,10 @@ class SideBar extends React.PureComponent {
                     <InputLabel style={{marginTop: 8}} shrink={true}>Marker
                         Opacity</InputLabel>
                     <Slider
-                        className={classes.slider}
                         min={0.0}
                         max={1}
                         step={0.01}
-                        style={{width: 200}}
+                        sx={{width: 190, marginLeft: 0.5}}
                         valueLabelDisplay="auto"
                         value={opacity}
                         onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
@@ -481,11 +471,10 @@ class SideBar extends React.PureComponent {
                     <InputLabel style={{marginTop: 8}} shrink={true}>Filtered Marker
                         Opacity</InputLabel>
                     <Slider
-                        className={classes.slider}
                         min={0.0}
                         max={1}
                         step={0.01}
-                        style={{width: 200}}
+                        sx={{width: 190, marginLeft: 0.5}}
                         valueLabelDisplay="auto"
                         value={unselectedOpacity}
                         onChange={this.onUnselectedMarkerOpacityChange}
@@ -495,8 +484,10 @@ class SideBar extends React.PureComponent {
                     <FormControl className={classes.formControl}>
                         <InputLabel htmlFor="point_size">Marker Size</InputLabel>
                         <Select
+                            label={"Marker Size"}
+                            labelId={"point_size"}
+                            size={"small"}
                             className={classes.select}
-                            input={<Input id="point_size"/>}
                             onChange={this.onPointSizeChange}
                             value={pointSize}
                             multiple={false}>
@@ -511,8 +502,10 @@ class SideBar extends React.PureComponent {
                     <FormControl className={classes.formControl}>
                         <InputLabel htmlFor="filtered_point_size">Filtered Marker Size</InputLabel>
                         <Select
+                            label={"Filtered Marker Size"}
+                            labelId={"filtered_point_size"}
+                            size={"small"}
                             className={classes.select}
-                            input={<Input id="filtered_point_size"/>}
                             onChange={this.onUnselectedPointSizeChange}
                             value={unselectedPointSize}
                             multiple={false}>
@@ -527,8 +520,10 @@ class SideBar extends React.PureComponent {
                     <FormControl className={classes.formControl}>
                         <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
                         <Select
+                            label={"Gallery Chart Size"}
+                            labelId={"chart_size"}
+                            size={"small"}
                             className={classes.select}
-                            input={<Input id="chart_size"/>}
                             onChange={this.onChartSizeChange}
                             value={chartSize}
                             multiple={false}>
@@ -611,10 +606,18 @@ class SideBar extends React.PureComponent {
                                       onClick={e => this.openView(item.id)}>
                                 <ListItemText primary={item.name}/>
                                 <ListItemSecondaryAction>
-                                    <IconButton edge="end" aria-label="copy" onClick={e => this.copyView(item.id)}>
+                                    <IconButton
+                                        edge="end"
+                                        aria-label="copy"
+                                        onClick={e => this.copyView(item.id)}
+                                        size="large">
                                         <LinkIcon/>
                                     </IconButton>
-                                    <IconButton edge="end" aria-label="delete" onClick={e => this.deleteView(item.id)}>
+                                    <IconButton
+                                        edge="end"
+                                        aria-label="delete"
+                                        onClick={e => this.deleteView(item.id)}
+                                        size="large">
                                         <DeleteIcon/>
                                     </IconButton>
                                 </ListItemSecondaryAction>

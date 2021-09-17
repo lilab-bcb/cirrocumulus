@@ -5,7 +5,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {setDistributionPlotInterpolator, setDistributionPlotOptions} from './actions';
 import DistributionGroup from './DistributionGroup';
-import Typography from '@material-ui/core/Typography';
+import Typography from '@mui/material/Typography';
 
 
 function DistributionPlots(props) {

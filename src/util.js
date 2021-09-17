@@ -1,6 +1,6 @@
-import Link from '@material-ui/core/Link';
-import {withStyles} from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
+import Link from '@mui/material/Link';
+import withStyles from '@mui/styles/withStyles';
+import Typography from '@mui/material/Typography';
 import {extent, shuffle} from 'd3-array';
 import {color} from 'd3-color';
 import {scaleLinear, scaleSequential} from 'd3-scale';

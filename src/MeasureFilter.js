@@ -1,7 +1,7 @@
-import {InputLabel} from '@material-ui/core';
-import MenuItem from '@material-ui/core/MenuItem';
-import Select from '@material-ui/core/Select';
-import TextField from '@material-ui/core/TextField';
+import {InputLabel} from '@mui/material';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
 import {debounce} from 'lodash';
 import React from 'react';
 
@@ -54,8 +54,10 @@ class MeasureFilter extends React.PureComponent {
         return (
 
             <div style={{display: 'flex'}}>
-                <InputLabel shrink={true} id={id + '_label'}>Filter</InputLabel>
+                <InputLabel id={id + '_label'}>Filter</InputLabel>
                 <Select
+                    label={"Filter"}
+                    size={"small"}
                     labelId={id + '_label'}
                     id={id}
                     style={{marginRight: 6}}
@@ -71,8 +73,8 @@ class MeasureFilter extends React.PureComponent {
                     <MenuItem value={"!="}>{"!="}</MenuItem>
                 </Select>
 
-                <TextField
-                    onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 60}}/>
+                <TextField size={"small"}
+                           onChange={this.handleValueChange} value={filter.uiValue} style={{maxWidth: 60}}/>
 
             </div>
         );

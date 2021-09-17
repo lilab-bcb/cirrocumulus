@@ -1,9 +1,9 @@
-import {Tooltip} from '@material-ui/core';
-import IconButton from '@material-ui/core/IconButton';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import Typography from '@material-ui/core/Typography';
-import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
+import {Tooltip} from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import React from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {getNameWidth} from './DotPlotCanvas';

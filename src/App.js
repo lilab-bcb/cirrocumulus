@@ -1,13 +1,13 @@
-import {createTheme, IconButton, Snackbar} from '@material-ui/core';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import Dialog from '@material-ui/core/Dialog';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Drawer from '@material-ui/core/Drawer';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import {withStyles} from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import CloseIcon from '@material-ui/icons/Close';
-import {ThemeProvider} from '@material-ui/styles';
+import {IconButton, Snackbar} from '@mui/material';
+import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import Drawer from '@mui/material/Drawer';
+import LinearProgress from '@mui/material/LinearProgress';
+
+import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
+
 import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
@@ -35,49 +35,13 @@ import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
 import {COMPARE_ACTIONS} from './job_config';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import {withTheme} from '@emotion/react';
 
-const lightTheme = createTheme(
-    {
-        "palette": {
-            "type": "light"
-        }
-    }
-);
 
-const darkTheme = createTheme(
-    {
-        "palette": {
-            "type": "dark"
-        }
-    }
-);
 export const drawerWidth = 240;
 
-
-const styles = (theme) => {
-    return {
-        root: {
-            display: 'flex'
-        },
-        appBar: {
-            width: `calc(100% - ${drawerWidth}px)`,
-            marginLeft: drawerWidth
-        },
-        drawer: {
-            width: drawerWidth,
-            flexShrink: 0
-        },
-        drawerPaper: {
-            width: drawerWidth
-        },
-        toolbar: theme.mixins.toolbar,
-        content: {
-            flexGrow: 1,
-            paddingTop: theme.spacing(6.5),
-            paddingLeft: theme.spacing(1)
-        }
-    };
-};
 
 class App extends PureComponent {
 
@@ -105,114 +69,120 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {classes, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
-        const theme = !chartOptions.darkMode ? lightTheme : darkTheme;
+        const {theme, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
         const color = theme.palette.primary.main;
-        const bgcolor = chartOptions.darkMode ? 'black' : 'white';
-        const footerBackground = chartOptions.darkMode ? '#212121' : '#f5f5f5';
-        return (<ThemeProvider theme={theme}>
-                <div className={classes.root}>
-                    {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
-                    <EditNewDatasetDialog/>}
-                    {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
-                    {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
-                    {dialog === HELP_DIALOG && <HelpDialog/>}
-                    {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
-                    <AppHeader/>
-                    <Drawer
-                        className={classes.drawer}
-                        variant="permanent"
-                        classes={{
-                            paper: classes.drawerPaper
-                        }}
-                        anchor="left"
-                    >
-                        {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
-                    </Drawer>
 
-                    <main style={{backgroundColor: bgcolor, color: color, paddingBottom: 24}}
-                          className={classes.content}>
-                        {loadingApp.loading &&
-                        <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
-                                                        value={loadingApp.progress}/></h2>
-                        </div>}
+        const footerBackground = theme.palette.background.paper;
+        return (
+            <Box sx={{display: 'flex'}}>
+                {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
+                <EditNewDatasetDialog/>}
+                {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
+                {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
+                {dialog === HELP_DIALOG && <HelpDialog/>}
+                {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
+                <AppHeader/>
+                <Drawer
+                    variant="permanent"
+                    anchor="left"
+                    sx={{
+                        width: drawerWidth,
+                        flexShrink: 0,
+                        '& .MuiDrawer-paper': {
+                            width: drawerWidth,
+                            boxSizing: 'border-box'
+                        }
+                    }}
+                    anchor="left"
+                >
+                    {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
+                </Drawer>
 
-                        {dataset == null && !loading && !loadingApp.loading && <div><LandingPage/></div>}
-                        {dataset != null && <>
-                            <div
-                                role="tabpanel"
-                                hidden={tab !== 'embedding'}
-                            >
-                                <EmbeddingChart onGallery={this.onGallery} setTooltip={this.setTooltip}/>
-                                <DraggableDivider/>
-                                <div ref={this.galleryRef}>
-                                    <GalleryCharts/>
-                                </div>
+
+                <Box scomponent="main"
+                     sx={{flexGrow: 1, paddingBottom: 24, color: color, backgroundColor: footerBackground}}>
+                    <Toolbar/>
+                    {loadingApp.loading &&
+                    <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
+                                                    value={loadingApp.progress}/></h2>
+                    </div>}
+
+                    {dataset == null && !loading && !loadingApp.loading && <div><LandingPage/></div>}
+                    {dataset != null && <>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'embedding'}
+                        >
+                            {<EmbeddingChart onGallery={this.onGallery} setTooltip={this.setTooltip}/>}
+                            <DraggableDivider/>
+                            <div ref={this.galleryRef}>
+                                {<GalleryCharts/>}
                             </div>
-                            <div
-                                role="tabpanel"
-                                hidden={tab !== 'distribution'}
-                            >
-                                <DistributionPlots setTooltip={this.setTooltip}/>
-                            </div>
-                            <div
-                                role="tabpanel"
-                                hidden={tab !== 'composition'}
-                            >
-                                <CompositionPlots/>
-                            </div>
-                            <div
-                                role="tabpanel"
-                                hidden={tab !== 'results'}
-                            >
-                                <JobResultsPanel setTooltip={this.setTooltip}/>
-                            </div>
-                            <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
-                                        style={{
-                                            position: 'fixed',
-                                            background: footerBackground,
-                                            width: '100%',
-                                            bottom: 0,
-                                            top: 'auto',
-                                            marginBottom: 0,
-                                            whiteSpace: 'nowrap',
-                                            textOverflow: 'ellipsis'
-                                        }}>&nbsp;</Typography>
-                        </>}
-                    </main>
+                        </div>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'distribution'}
+                        >
+                            {<DistributionPlots setTooltip={this.setTooltip}/>}
+                        </div>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'composition'}
+                        >
+                            {<CompositionPlots/>}
+                        </div>
+                        <div
+                            role="tabpanel"
+                            hidden={tab !== 'results'}
+                        >
+                            {<JobResultsPanel setTooltip={this.setTooltip}/>}
+                        </div>
+                        <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
+                                    style={{
+                                        position: 'fixed',
+                                        background: footerBackground,
+                                        width: '100%',
+                                        bottom: 0,
+                                        top: 'auto',
+                                        marginBottom: 0,
+                                        whiteSpace: 'nowrap',
+                                        textOverflow: 'ellipsis'
+                                    }}>&nbsp;</Typography>
+                    </>}
+                </Box>
 
-                    {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
-                        <DialogTitle id="loading-dialog-title"><CircularProgress size={20}/> Loading...</DialogTitle>
-                    </Dialog>}
+                {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
+                    <DialogTitle id="loading-dialog-title"><CircularProgress
+                        size={20}/> Loading...</DialogTitle>
+                </Dialog>}
 
 
-                    {message != null && <Snackbar
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'left'
-                        }}
-                        ContentProps={{
-                            'aria-describedby': 'message-id'
-                        }}
-                        onClose={this.handleMessageClose}
-                        open={true}
-                        autoHideDuration={6000}
-                        action={[
-                            <IconButton
-                                key="close"
-                                aria-label="Close"
-                                color="inherit"
-                                onClick={this.handleMessageClose}
-                            >
-                                <CloseIcon/>
-                            </IconButton>
-                        ]}
-                        message={<span id="message-id">{message instanceof Error
-                            ? message.message
-                            : message}</span>}
-                    />}
-                </div>
-            </ThemeProvider>
+                {message != null && <Snackbar
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left'
+                    }}
+                    ContentProps={{
+                        'aria-describedby': 'message-id'
+                    }}
+                    onClose={this.handleMessageClose}
+                    open={true}
+                    autoHideDuration={6000}
+                    action={[
+                        <IconButton
+                            key="close"
+                            aria-label="Close"
+                            color="inherit"
+                            onClick={this.handleMessageClose}
+                            size="large">
+                            <CloseIcon/>
+                        </IconButton>
+                    ]}
+                    message={<span id="message-id">{message instanceof Error
+                        ? message.message
+                        : message}</span>}
+                />}
+            </Box>
         );
     }
 }
@@ -240,6 +210,6 @@ const mapDispatchToProps = dispatch => {
     };
 };
 
-export default withStyles(styles)(connect(
+export default withTheme(connect(
     mapStateToProps, mapDispatchToProps
 )(App));

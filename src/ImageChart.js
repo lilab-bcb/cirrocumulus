@@ -1,5 +1,5 @@
-import CircularProgress from '@material-ui/core/CircularProgress';
-import withStyles from '@material-ui/core/styles/withStyles';
+import CircularProgress from '@mui/material/CircularProgress';
+import withStyles from '@mui/styles/withStyles';
 import {bind, uniqueId} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import React from 'react';

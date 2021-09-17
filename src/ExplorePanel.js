@@ -1,24 +1,25 @@
 import AutocompleteVirtualized from "./AutocompleteVirtualized";
 import {
     copyToClipboard,
-    FEATURE_TYPE, getCategoryValue,
+    FEATURE_TYPE,
+    getCategoryValue,
     getFeatureSets,
     NATSORT,
     SERVER_CAPABILITY_SAVE_FEATURE_SETS,
     splitSearchTokens
 } from "./util";
 import NumberIcon from "./NumberIcon";
-import {InputLabel, Switch, Typography} from '@material-ui/core';
-import FormControl from '@material-ui/core/FormControl';
-import IconButton from '@material-ui/core/IconButton';
-import Link from '@material-ui/core/Link';
-import Tooltip from '@material-ui/core/Tooltip';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import FontDownloadRoundedIcon from '@material-ui/icons/FontDownloadRounded';
+import {InputLabel, Switch, Typography} from '@mui/material';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
+import Tooltip from '@mui/material/Tooltip';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import FontDownloadRoundedIcon from '@mui/icons-material/FontDownloadRounded';
 import {findIndex, isArray, isObject} from 'lodash';
 import memoize from "memoize-one";
 import React, {useState} from 'react';
-import withStyles from '@material-ui/core/styles/withStyles';
+import withStyles from '@mui/styles/withStyles';
 import {
     deleteFeatureSet,
     deleteView,
@@ -37,17 +38,17 @@ import {
     toggleEmbeddingLabel
 } from './actions';
 import {intFormat} from "./formatters";
-import Chip from '@material-ui/core/Chip';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Divider from '@material-ui/core/Divider';
-import Grid from '@material-ui/core/Grid';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import TextField from '@material-ui/core/TextField';
-import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import HighlightOffIcon from '@material-ui/icons/HighlightOff';
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import {connect} from 'react-redux';
 
 const styles = theme => ({
@@ -61,10 +62,21 @@ const getAnnotationOptions = memoize(
     (obs, obsCat) => {
         const options = [];
         obs.forEach(item => {
-            options.push({group: 'Continuous', text: item, id: item});
+            options.push({
+                group: 'Continuous', text: item, id: item, icon: <NumberIcon style={{
+                    marginRight: 2,
+                    fontSize: '0.9rem'
+                }}/>
+            });
         });
         obsCat.forEach(item => {
-            options.push({group: 'Categorical', text: item, id: item});
+            options.push({
+                group: 'Categorical', text: item, id: item, icon: <FontDownloadRoundedIcon style={{
+                    marginRight: 2,
+                    fontSize: '0.9rem'
+
+                }}/>
+            });
         });
         options.sort((item1, item2) => {
             // const c = NATSORT(item1.group, item2.group);
@@ -176,6 +188,7 @@ function ExplorePanel(props) {
     }
 
     function onModulesChange(event, value) {
+        console.log(value);
         props.handleSearchTokens(value, FEATURE_TYPE.MODULE);
     }
 
@@ -432,19 +445,20 @@ function ExplorePanel(props) {
                                              getChipTitle={(option) => {
                                                  return option.text;
                                              }}
+                                             getOptionLabel={(option) => option.text}
                                              value={selectedEmbeddings}
                                              getChipText={(option) => option.text}
-                                             getOptionLabel={(option) => option.text}
                                              getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
                                              onChange={onEmbeddingsChange}
                     />
                 </FormControl>}
-                {featureOptions.length > 0 && <FormControl>
+                {featureOptions.length > 0 && <FormControl sx={{display: 'block'}}>
                     <AutocompleteVirtualized onChipClick={onFeatureClick}
                                              label={"Genes/Features"}
                                              testId={'genes-input'}
                                              options={featureOptions}
                                              value={splitTokens.X}
+                                             getOptionLabel={(option) => option}
                                              onChange={onFeaturesChange}
                                              helperText={"Enter or paste list"}
 
@@ -452,6 +466,7 @@ function ExplorePanel(props) {
                     <div><Link
                         style={{
                             float: 'right',
+                            marginRight: 20,
                             fontSize: '0.75rem',
                             transform: 'translateY(-50px)',
                             display: splitTokens.X.length === 0 ? 'none' : ''
@@ -459,23 +474,13 @@ function ExplorePanel(props) {
                         onClick={onFeatureCopy}>Copy</Link></div>
 
                 </FormControl>}
-                {annotationOptions.length > 0 && <FormControl>
+                {annotationOptions.length > 0 && <FormControl sx={{display: 'block'}}>
                     <AutocompleteVirtualized label={"Cell Metadata"}
                                              testId={'cell-meta-input'}
                                              options={annotationOptions}
                                              value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
                                              onChipClick={onFeatureClick}
-                                             groupBy={false}
                                              getOptionLabel={(option) => option.text}
-                                             getOptionIcon={(option) => option.group === 'Categorical' ?
-                                                 <FontDownloadRoundedIcon style={{
-                                                     marginRight: 2,
-                                                     fontSize: '0.9rem'
-
-                                                 }}/> : <NumberIcon style={{
-                                                     marginRight: 2,
-                                                     fontSize: '0.9rem'
-                                                 }}/>}
                                              getChipIcon={(option) => {
                                                  return splitTokens.obsCat.indexOf(option) !== -1 ?
                                                      <FontDownloadRoundedIcon
@@ -495,7 +500,7 @@ function ExplorePanel(props) {
                                              onChange={onObservationsChange}/>
                 </FormControl>}
 
-                {moduleOptions.length > 0 && <FormControl>
+                {moduleOptions.length > 0 && <FormControl sx={{display: 'block'}}>
                     <AutocompleteVirtualized
                         label={"Modules"}
                         testId={'modules-input'}
@@ -503,7 +508,6 @@ function ExplorePanel(props) {
                         value={splitTokens.modules}
                         onChange={onModulesChange}
                         onChipClick={onModulesClick}
-
                         getChipIcon={(option) => {
                             return <ArrowDropDownIcon onClick={(event) => {
                                 onModulesClick(event, option);
@@ -537,6 +541,7 @@ function ExplorePanel(props) {
                                     float: 'right',
                                     fontSize: '0.75rem',
                                     transform: 'translateY(-50px)',
+                                    marginRight: 20,
                                     display: splitTokens.X.length === 0 ? 'none' : ''
                                 }}
                                 onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
@@ -565,16 +570,17 @@ function ExplorePanel(props) {
                     <div style={{marginBottom: 2}}>
                         {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}
                         {datasetFilterKeys.map(key => {
-                            return <Chip
-                                onDelete={() => {
-                                    onDatasetFilterChipDeleted(key);
-                                }}
-                                onClick={onFilterChipClicked} size={"small"} variant={"default"}
-                                style={{marginRight: 2, verticalAlign: 'bottom'}}
-                                key={key}
-                                label={key}
-
-                            />;
+                            return (
+                                <Chip
+                                    onDelete={() => {
+                                        onDatasetFilterChipDeleted(key);
+                                    }}
+                                    onClick={onFilterChipClicked}
+                                    size={"small"}
+                                    style={{marginRight: 2, verticalAlign: 'bottom'}}
+                                    key={key}
+                                    label={key}/>
+                            );
                         })}
                         <Divider/>
                         <Grid container alignItems="center" className={classes.toolbar}

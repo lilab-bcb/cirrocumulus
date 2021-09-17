@@ -10,16 +10,16 @@ import {
     TableHead,
     TableRow,
     Tooltip
-} from '@material-ui/core';
-import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
-import Divider from '@material-ui/core/Divider';
-import Grid from '@material-ui/core/Grid';
-import IconButton from '@material-ui/core/IconButton';
-import withStyles from '@material-ui/core/styles/withStyles';
-import Typography from '@material-ui/core/Typography';
-import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import DeleteIcon from '@material-ui/icons/Delete';
+} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import withStyles from '@mui/styles/withStyles';
+import Typography from '@mui/material/Typography';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {scaleLinear} from 'd3-scale';
 import {find} from 'lodash';
 import React from 'react';
@@ -730,22 +730,27 @@ class JobResultsPanel extends React.PureComponent {
                                 const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
                                 const jobType = jobTypeToName[jobResult.type];
                                 // const date = isPrecomputed ? '' : jobResult.submitted;
-                                return <TableRow key={jobResult.id}
-                                                 className={classes.deleteTr}
-                                                 hover
-                                                 selected={jobResult.id === jobResultId}
-                                                 onClick={isComplete ? (event) => this.onSelectJob(jobResult.id) : null}
-                                                 role="checkbox"
-                                                 tabIndex={-1}>
-                                    <TableCell>{text}</TableCell>
-                                    <TableCell>{jobType}</TableCell>
-                                    {showJobStatus && <TableCell>{status}
-                                        {isJobOwner && !isPrecomputed &&
-                                        <IconButton edge="end" aria-label="delete"
-                                                    onClick={(event) => this.onDeleteJob(event, jobResult)}>
-                                            <DeleteIcon/>
-                                        </IconButton>}</TableCell>}
-                                </TableRow>;
+                                return (
+                                    <TableRow key={jobResult.id}
+                                                     className={classes.deleteTr}
+                                                     hover
+                                                     selected={jobResult.id === jobResultId}
+                                                     onClick={isComplete ? (event) => this.onSelectJob(jobResult.id) : null}
+                                                     role="checkbox"
+                                                     tabIndex={-1}>
+                                        <TableCell>{text}</TableCell>
+                                        <TableCell>{jobType}</TableCell>
+                                        {showJobStatus && <TableCell>{status}
+                                            {isJobOwner && !isPrecomputed &&
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="delete"
+                                                onClick={(event) => this.onDeleteJob(event, jobResult)}
+                                                size="large">
+                                                <DeleteIcon/>
+                                            </IconButton>}</TableCell>}
+                                    </TableRow>
+                                );
                             })}
                         </TableBody>
                     </Table>

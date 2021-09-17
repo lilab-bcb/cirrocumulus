@@ -868,6 +868,8 @@ export function handleColorChange(payload) {
             getState().serverInfo.api.setCategoryNamePromise(value).then(() => {
                 dispatch(_handleColorChange(payload));
             });
+        } else { // save, but do not persist
+            dispatch(_handleColorChange(payload));
         }
     };
 }
@@ -879,6 +881,8 @@ export function handleCategoricalNameChange(payload) {
             getState().serverInfo.api.setCategoryNamePromise(value).then(() => {
                 dispatch(handleUpdateCategoricalName(payload));
             });
+        } else { // save, but do not persist
+            dispatch(handleUpdateCategoricalName(payload));
         }
     };
 }
