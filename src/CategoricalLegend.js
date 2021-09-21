@@ -110,8 +110,6 @@ export default function CategoricalLegend(props) {
         features,
         featureSummary,
         globalFeatureSummary,
-        nObs,
-        nObsSelected,
         categoricalNames,
         visible
     } = props;

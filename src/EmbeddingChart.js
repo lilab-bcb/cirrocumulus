@@ -194,6 +194,7 @@ class EmbeddingChart extends React.PureComponent {
                                    onGallery={onGallery}
                                    onCamera={this.onCamera}
                                    setTooltip={setTooltip}
+                                   handleClick={onDimensionFilterUpdated}
 
                 />}
 

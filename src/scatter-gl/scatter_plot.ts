@@ -99,6 +99,8 @@ export class ScatterPlot {
     private hoverPoint: Point = {x: 0, y: 0};
     private hoverCallback: (point: Point | null) => void = () => {
     };
+    private clickCallback: (point: Point | null, appendToSelection: boolean) => void = () => {
+    };
     private boxCallback: (boundingBox: ScatterBoundingBox, appendToSelection: boolean) => void = () => {
     };
     private lassoCallback: (points: Point[], appendToSelection: boolean) => void = () => {
@@ -372,19 +374,6 @@ export class ScatterPlot {
         this.orbitCameraControls.enabled = !this.selecting;
     }
 
-    // private onClick(e: MouseEvent | null, notify = true) {
-    //     if (e && this.selecting) {
-    //         return;
-    //     }
-    //     // Only call event handlers if the click originated from the scatter plot.
-    //     if (!this.isDragSequence && notify) {
-    //         const selection = this.nearestPoint != null ? [this.nearestPoint] : [];
-    //         this.selectCallback(selection);
-    //         this.clickCallback(this.nearestPoint);
-    //     }
-    //     this.isDragSequence = false;
-    //     this.render();
-    // }
 
     private onPointerDown(e: PointerEvent) {
         this.isDragSequence = false;
@@ -418,6 +407,10 @@ export class ScatterPlot {
     private onPointerUp(e: PointerEvent) {
         if (this.selecting) {
             this.rectangleSelector.onMouseUp();
+        } else {
+            this.hoverPoint.x = e.offsetX;
+            this.hoverPoint.y = e.offsetY;
+            this.clickCallback(this.hoverPoint, e.metaKey || e.ctrlKey);
         }
         this.mouseIsDown = false;
     }
