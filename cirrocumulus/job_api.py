@@ -1,15 +1,20 @@
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 from anndata import AnnData
-from cirrocumulus.de import DE
 
+from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
 
 executor = None
+
+logger = logging.getLogger('cirro')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
@@ -25,6 +30,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         executor = ThreadPoolExecutor(max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
+    # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
     executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
     return job_id
 
@@ -35,8 +41,8 @@ def _power(X, power):
 
 def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params):
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
-    schema = dataset_api.schema(dataset)
-    var_names = schema['var']
+    dataset_info = dataset_api.get_dataset_info(dataset)
+    var_names = dataset_info['var']
     nfeatures = len(var_names)
     filters = [params['filter']]
     if job_type == 'de':
@@ -49,6 +55,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         start = i
         end = min(nfeatures, start + batch_size)
         features = var_names[start:end]
+        logger.info('batch {}'.format(i))
         adata = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
         if batch_size != nfeatures:
             frac = end / nfeatures
@@ -57,7 +64,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
                                     result=None)
         return adata
 
-    obs = pd.DataFrame(index=pd.RangeIndex(schema['shape'][0]))
+    obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
     obs[obs_field] = ''
     for i in range(len(masks)):
         obs.loc[masks[i], obs_field] = str(i)
@@ -78,7 +85,7 @@ def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
         result_df['{}:pts_1'.format(comparison)] = de.frac_expressed.iloc[0]
         result_df['{}:pts_2'.format(comparison)] = de.frac_expressed.iloc[1]
     result = dict(groups=[comparison],
-                  format='json',
                   fields=['pvals_adj', 'scores', 'lfc'] + (['pts_1', 'pts_2'] if de.frac_expressed is not None else []),
                   data=result_df.to_dict(orient='records'))
+    result['content-type'] = 'application/json'
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)
