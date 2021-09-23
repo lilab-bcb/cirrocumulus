@@ -2,13 +2,19 @@ import datetime
 import json
 import os
 
+import pandas._libs.json as ujson
 from bson import ObjectId
 from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain
+from cirrocumulus.util import get_email_domain, get_fs
 from pymongo import MongoClient
 
-from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
+from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS
 from .invalid_usage import InvalidUsage
+
+
+def format_doc(d):
+    d['id'] = str(d.pop('_id'))
+    return d
 
 
 class MongoDb(AbstractDB):
@@ -78,15 +84,9 @@ class MongoDb(AbstractDB):
             raise InvalidUsage('Not authorized', 403)
         if ensure_owner and email not in doc['owners']:
             raise InvalidUsage('Not authorized', 403)
-        return {
-            'id': str(doc['_id']),
-            'name': doc['name'],
-            'readers': doc.get('readers'),
-            'species': doc.get('species'),
-            'description': doc.get('description'),
-            'title': doc.get('title'),
-            'url': doc['url'],
-            'owner': 'owners' in doc and email in doc['owners']}
+        doc['owner'] = 'owners' in doc and email in doc.pop('owners')
+        doc['id'] = str(doc.pop('_id'))
+        return doc
 
     def datasets(self, email):
         collection = self.db.datasets
@@ -97,9 +97,9 @@ class MongoDb(AbstractDB):
         else:
             query = dict(readers={'$in': [email, domain]})
         for doc in collection.find(query):
-            results.append({'id': str(doc['_id']), 'name': doc['name'], 'title': doc.get('title'),
-                            'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url'],
-                            'species': doc.get('species')})
+            doc['owner'] = 'owners' in doc and email in doc.pop('owners')
+            doc['id'] = str(doc.pop('_id'))
+            results.append(doc)
         return results
 
     # views
@@ -109,9 +109,7 @@ class MongoDb(AbstractDB):
         results = []
 
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(
-                {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                 'notes': doc.get('notes'), 'email': doc['email']})
+            results.append(format_doc(doc))
         return results
 
     def delete_dataset_view(self, email, view_id):
@@ -124,13 +122,12 @@ class MongoDb(AbstractDB):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
-        return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                'created': doc.get('created'), 'email': doc['email']}
+        return format_doc(doc)
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
         self.get_dataset(email, dataset_id)
         collection = self.db.views
-        entity_update = {'created': datetime.datetime.utcnow()}
+        entity_update = {'last_updated': datetime.datetime.utcnow()}
         if name is not None:
             entity_update['name'] = name
         if value is not None:
@@ -200,8 +197,7 @@ class MongoDb(AbstractDB):
         collection = self.db.feature_sets
         results = []
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(
-                dict(id=str(doc['_id']), category=doc['category'], name=doc['name'], features=doc['features']))
+            results.append(format_doc(doc))
         return results
 
     def delete_feature_set(self, email, dataset_id, set_id):
@@ -262,7 +258,8 @@ class MongoDb(AbstractDB):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
-        collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(annotations=annotations, last_updated=ddd)})
+        collection.update_one(dict(_id=ObjectId(job_id)),
+                              {'$set': dict(annotations=annotations, last_updated=datetime.datetime.utcnow())})
 
     def update_job(self, email, job_id, status, result):
         collection = self.db.jobs
@@ -271,9 +268,18 @@ class MongoDb(AbstractDB):
         if doc.get('readonly', False):
             raise InvalidUsage('Not authorized', 403)
         if result is not None:
-            from cirrocumulus.util import to_json
-            result = to_json(result)
 
+            if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
+                url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.json.gz')
+                new_result = dict(url=url)
+                new_result['content-type'] = result.pop('content-type')
+                new_result['content-encoding'] = 'gzip'
+
+                with get_fs(url).open(url, 'wt', compression='gzip') as out:
+                    out.write(ujson.dumps(result, double_precision=2, orient='values'))
+                result = new_result
+            else:
+                result = ujson.dumps(result, double_precision=2, orient='values')
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
     def delete_job(self, email, job_id):
@@ -281,5 +287,8 @@ class MongoDb(AbstractDB):
         doc = collection.find_one(dict(_id=ObjectId(job_id)), dict(email=1))
         if doc['email'] == email and not doc.get('readonly', False):
             collection.delete_one(dict(_id=ObjectId(job_id)))
+            url = doc.get('url')
+            if url is not None:
+                get_fs(url).rm(url)
         else:
             raise InvalidUsage('Not authorized', 403)

@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
-    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS
+    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS
 from cirrocumulus.launch import create_app
 
 app = None
@@ -38,16 +38,25 @@ def configure_app(app):
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
-    except:  # ignore if tiledb is not installed
+    except ModuleNotFoundError:  # ignore if tiledb is not installed
         pass
-    from cirrocumulus.parquet_dataset import ParquetDataset
-    dataset_api.add(ParquetDataset())
 
     try:
-        from cirrocumulus.anndata_dataset import AnndataDataset
-        anndata_dataset = AnndataDataset('r' if False else None)
-        dataset_api.add(anndata_dataset)
-    except:  # ignore is anndata not installed
+        from cirrocumulus.zarr_dataset import ZarrDataset
+        dataset_api.add(ZarrDataset())
+    except ModuleNotFoundError:  # ignore if zarr is not installed
+        pass
+
+    try:
+        from cirrocumulus.parquet_dataset import ParquetDataset
+        dataset_api.add(ParquetDataset())
+    except ModuleNotFoundError:  # ignore if pyarrow is not installed
+        pass
+
+    try:
+        from cirrocumulus.h5ad_dataset import H5ADDataset
+        dataset_api.add(H5ADDataset())
+    except ModuleNotFoundError:  # ignore if h5py is not installed
         pass
 
 
@@ -57,7 +66,7 @@ def main(argsv):
     parser = argparse.ArgumentParser(description='Run cirrocumulus server')
     parser.add_argument('--db_uri', help='Database connection URI', default=DEFAULT_DB_URI)
     parser.add_argument('--email',
-                        help='Email address that server runs as which. Used to info user in GUI to share uploaded datasets with "email"')
+                        help='Email address that server runs as. Used for informational purposes to display in user interface.')
     parser.add_argument('--auth_client_id', help='OAuth client id')
     parser.add_argument('-w', '--workers', dest='workers', help='The number of worker processes', type=int)
     parser.add_argument('-t', '--timeout', dest='timeout',
@@ -69,6 +78,7 @@ def main(argsv):
     parser.add_argument('--footer', help='Markdown file to customize the application footer')
     parser.add_argument('--header', help='Markdown file to customize the application header')
     parser.add_argument('--upload', help='URL to allow users to upload files')
+    parser.add_argument('--results', help='URL to save user computed results (e.g. differential expression) to')
 
     args = parser.parse_args(argsv)
 
@@ -93,6 +103,8 @@ def main(argsv):
         workers = 2 * os.cpu_count()
     if args.upload is not None:
         os.environ[CIRRO_UPLOAD] = args.upload
+    if args.results is not None:
+        os.environ[CIRRO_JOB_RESULTS] = args.results
 
     run_args = [
         'gunicorn',
@@ -102,6 +114,8 @@ def main(argsv):
         '-n', 'cirrocumulus-webserver',
         'cirrocumulus.serve:cached_app()'
     ]
+    # if args.gunicorn is not None:
+    #     run_args += args.gunicorn.split(' ')
     import subprocess
     subprocess.check_call(run_args)
 
