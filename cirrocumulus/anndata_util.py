@@ -1,8 +1,8 @@
 from enum import Enum
 
+import anndata
 import numpy as np
 import pandas as pd
-from cirrocumulus.io_util import cirro_id
 
 
 class DataType(Enum):
@@ -11,17 +11,26 @@ class DataType(Enum):
 
 
 def get_scanpy_marker_keys(dataset):
-    scanpy_marker_keys = []
+    marker_keys = []
+    try:
+        dataset.uns  # dataset can be AnnData or zarr group
+    except AttributeError:
+        return marker_keys
+    from collections.abc import Mapping
     for key in dataset.uns.keys():
         rank_genes_groups = dataset.uns[key]
-        if isinstance(rank_genes_groups, dict) and 'names' in rank_genes_groups and (
+        if isinstance(rank_genes_groups, Mapping) and 'names' in rank_genes_groups and (
                 'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
-            scanpy_marker_keys.append(key)
-    return scanpy_marker_keys
+            marker_keys.append(key)
+    return marker_keys
 
 
 def get_pegasus_marker_keys(dataset):
     marker_keys = []
+    try:
+        dataset.varm  # dataset can be AnnData or zarr group
+    except AttributeError:
+        return marker_keys
     for key in dataset.varm.keys():
         d = dataset.varm[key]
         if isinstance(d, np.recarray):
@@ -49,7 +58,7 @@ def X_stats(adata):
               'mean': X.mean(axis=0)}, index=adata.var.index)
 
 
-def datasets_schema(datasets):
+def datasets_schema(datasets, n_genes=10):
     """ Gets dataset schema.
 
     Returns
@@ -67,29 +76,31 @@ def datasets_schema(datasets):
     """
     obs_cat = []
     obs = []
-
     marker_results = []
     de_results_format = 'records'
     for dataset in datasets:
         prior_marker_results = dataset.uns.get('markers', [])
-
         if isinstance(prior_marker_results, str):
             import json
             prior_marker_results = json.loads(prior_marker_results)
     marker_results += prior_marker_results
 
-    n_genes = 10
     de_results = []  # array of dicts containing params logfoldchanges, pvals_adj, scores, names
     category_to_order = {}
     embeddings = []
     field_to_value_to_color = dict()  # field -> value -> color
+
     for i in range(len(datasets)):
         dataset = datasets[i]
+
         for scanpy_marker_key in get_scanpy_marker_keys(dataset):
             rank_genes_groups = dataset.uns[scanpy_marker_key]
             has_fc = 'logfoldchanges' in rank_genes_groups
             min_fold_change = 1
             params = rank_genes_groups['params']
+            if not isinstance(params, dict):
+                from anndata._io.zarr import read_attribute
+                params = {k: read_attribute(params[k]) for k in params.keys()}
             prefix = None if i == 0 else dataset.uns.get('name')
 
             # pts and pts_rest in later scanpy versions
@@ -103,11 +114,17 @@ def datasets_schema(datasets):
             de_result_name = category if prefix is None else prefix + '-' + category
             de_result_df = None
             group_names = rank_genes_groups['names'].dtype.names
+            de_result = dict(id='cirro-{}-{}'.format(scanpy_marker_key, i),
+                             type='de',
+                             readonly=True,
+                             groups=group_names,
+                             fields=rank_genes_groups_keys,
+                             name=de_result_name)
             for group_name in group_names:
-                group_df = pd.DataFrame(index=rank_genes_groups['names'][group_name])
+                group_df = pd.DataFrame(index=rank_genes_groups['names'][group_name][...])
                 group_df = group_df[group_df.index != 'nan']
                 for rank_genes_groups_key in rank_genes_groups_keys:
-                    values = rank_genes_groups[rank_genes_groups_key][group_name]
+                    values = rank_genes_groups[rank_genes_groups_key][group_name][...]
                     column_name = '{}:{}'.format(group_name, rank_genes_groups_key)
                     group_df[column_name] = values
 
@@ -121,22 +138,17 @@ def datasets_schema(datasets):
                         markers_df = group_df[group_df['{}:logfoldchanges'.format(group_name)] > min_fold_change]
                     if len(markers_df) > 0:
                         marker_results.append(
-                            dict(category=de_result_name, name=str(group_name), features=markers_df.index[:n_genes]))
+                            dict(category=de_result_name, name=str(group_name),
+                                 features=markers_df.index[:n_genes]))
 
             if de_results_format == 'records':
                 de_result_data = de_result_df.reset_index().to_dict(orient='records')
             else:
-                de_result_data = dict(index=de_result_df.index)
+                de_result_data = dict(index=de_result_df.index[...])
                 for c in de_result_df:
                     de_result_data[c] = de_result_df[c]
 
-            de_result = dict(id=cirro_id(),
-                             color='logfoldchanges' if 'logfoldchanges' in rank_genes_groups_keys else
-                             rank_genes_groups_keys[0],
-                             size='pvals_adj' if 'pvals_adj' in rank_genes_groups_keys else rank_genes_groups_keys[
-                                 0],
-                             params=params, groups=group_names, fields=rank_genes_groups_keys, type='de',
-                             name=de_result_name)
+            de_result['params'] = params
             de_result['data'] = de_result_data
             de_results.append(de_result)
         for varm_field in get_pegasus_marker_keys(dataset):
@@ -162,7 +174,7 @@ def datasets_schema(datasets):
                 for c in de_res:
                     de_result_data[c] = de_result_df[c]
 
-            de_result = dict(id=cirro_id(), type='de', name='pegasus_de',
+            de_result = dict(id='cirro-{}'.format(varm_field), type='de', name='pegasus_de',
                              color='log2FC' if 'log2FC' in field_names else field_names[0],
                              size='mwu_qval' if 'mwu_qval' in field_names else field_names[0],
                              groups=group_names,
@@ -188,20 +200,32 @@ def datasets_schema(datasets):
                         features = df_up[:n_genes].index.values
                         marker_results.append(dict(category='markers', name=str(group_name), features=features))
 
-        for key in dataset.obs_keys():
-            if pd.api.types.is_categorical_dtype(dataset.obs[key]) or pd.api.types.is_bool_dtype(
-                    dataset.obs[key]) or pd.api.types.is_object_dtype(dataset.obs[key]):
+        categories_node = dataset.obs['__categories'] if '__categories' in dataset.obs else None
+        for key in dataset.obs.keys():
+            if categories_node is not None and (key == '__categories' or key == 'index'):
+                continue
+            val = dataset.obs[key]
+            if categories_node is not None and key in categories_node:
+                categories = categories_node[key][...]
+                ordered = categories_node[key].attrs.get('ordered', False)
+                val = pd.Categorical.from_codes(val[...], categories, ordered=ordered)
+
+            if pd.api.types.is_categorical_dtype(val) or pd.api.types.is_bool_dtype(
+                    val) or pd.api.types.is_object_dtype(val):
                 obs_cat.append(key)
             else:
                 obs.append(key)
-
-        # if 'metagenes' in dataset.uns:
-        #     metagenes = dataset.uns['metagenes']
-        #     schema_dict['metafeatures'] = metagenes['var'].index
-
-        for key in dataset.obs_keys():
-            if pd.api.types.is_categorical_dtype(dataset.obs[key]) and len(dataset.obs[key]) < 1000:
+            if pd.api.types.is_categorical_dtype(val) and len(val) < 1000:
                 category_to_order[key] = dataset.obs[key].cat.categories
+                categories = val.cat.categories
+                color_field = key + '_colors'
+                if color_field in dataset.uns:
+                    colors = dataset.uns[color_field][...]
+                    if len(categories) == len(colors):
+                        color_map = dict()
+                        for j in range(len(categories)):
+                            color_map[str(categories[j])] = colors[j]
+                        field_to_value_to_color[field] = color_map
 
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
         #
@@ -214,7 +238,7 @@ def datasets_schema(datasets):
                                       [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
         image_names = list(map(lambda x: x['name'], images_node))
 
-        for key in dataset.obsm_keys():
+        for key in dataset.obsm.keys():
             dim = dataset.obsm[key].shape[1]
             if 1 < dim <= 3:
                 embedding = dict(name=key, dimensions=dim)
@@ -229,21 +253,6 @@ def datasets_schema(datasets):
         meta_images = dataset.uns.get('meta_images', [])
         for meta_image in meta_images:
             embeddings.append(meta_image)
-
-        for key in dataset.uns.keys():
-            if key.endswith('_colors'):
-                field = key[0:len(key) - len('_colors')]
-                if field in dataset.obs:
-                    colors = dataset.uns[key]
-                    if pd.api.types.is_categorical_dtype(dataset.obs[field]):
-                        categories = dataset.obs[field].cat.categories
-                        if len(categories) == len(colors):
-                            color_map = dict()
-                            for i in range(len(categories)):
-                                color_map[str(categories[i])] = colors[i]
-                            field_to_value_to_color[field] = color_map
-                    else:
-                        print("Skipping colors for {}".format(key))
     schema_dict = {'version': '1.0.0'}
     schema_dict['results'] = de_results
     schema_dict['colors'] = field_to_value_to_color
@@ -251,18 +260,28 @@ def datasets_schema(datasets):
     schema_dict['embeddings'] = embeddings
     schema_dict['categoryOrder'] = category_to_order
     var_ids = []
-    modules = None
+    modules_df = None
     for dataset in datasets:
         if dataset.uns.get('data_type', '') == DataType.MODULE:
-            modules = dataset.var if modules is None else pd.concat((modules, dataset.var))
+            module_var = dataset.var
+            if not isinstance(module_var, pd.DataFrame):
+                from anndata._io.zarr import read_attribute
+                module_var = read_attribute(module_var)
+
+            modules_df = module_var if modules_df is None else pd.concat((modules_df, module_var))
         else:
-            var_ids += dataset.var.index.to_list()
-    if modules is not None:
-        modules.index.name = 'id'
-        schema_dict['modules'] = modules.reset_index().to_dict(orient='records')
+            ids = dataset.var.index[...]
+            if isinstance(ids, np.ndarray):
+                ids = ids.tolist()
+            else:  # pd.Index
+                ids = ids.to_list()
+            var_ids += ids
+    if modules_df is not None:
+        modules_df.index.name = 'id'
+        schema_dict['modules'] = modules_df.reset_index().to_dict(orient='records')
     schema_dict['var'] = var_ids
     schema_dict['obs'] = obs
     schema_dict['obsCat'] = obs_cat
-
-    schema_dict['shape'] = [datasets[0].shape[0], len(var_ids)]
+    shape = datasets[0].shape if isinstance(datasets[0], anndata.AnnData) else datasets[0].X.attrs.shape
+    schema_dict['shape'] = shape
     return schema_dict

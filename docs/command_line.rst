@@ -13,7 +13,7 @@ Launch
     +----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | Positional Arguments                                                                                                                                                                                                                                                                                                       |
     +===================================+========================================================================================================================================================================================================================================================================================+
-    | dataset                           | Path to dataset in h5ad, loom, or STAR-Fusion format. Separate multiple datasets with a comma instead of a space in order to join datasets by cell id                                                                                                                                 |
+    | dataset                           | Path to dataset in h5ad, loom, Seurat, TileDB, or STAR-Fusion format. Separate multiple datasets with a comma instead of a space in order to join datasets by cell id                                                                                                                  |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | **Optional Arguments**                                                                                                                                                                                                                                                                                                     |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -30,15 +30,14 @@ Launch
     | no-open                           | Do not open your web browser                                                                                                                                                                                                                                                           |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-The `launch` command opens one or more datasets in h5ad_, loom_, Seurat_, TileDB_, or `STAR-Fusion`_ formats. Annotations and sets that are
-created are stored on disk in a JSON format.
+The `launch` command opens one or more datasets in h5ad_, loom_, Seurat_, TileDB_, or `STAR-Fusion`_ formats. Results are stored on disk in JSON format.
 
 
 Serve
 ^^^^^^^^^^^^^
 ::
 
-    cirro serve [--database DATABASE] [--db_uri DB_URI] [--email EMAIL] [--auth_client_id AUTH_CLIENT_ID] [-w WORKERS] [-t TIMEOUT] [-b BIND] [--footer FOOTER] [--header HEADER] [--upload UPLOAD]
+    cirro serve [--database DATABASE] [--db_uri DB_URI] [--email EMAIL] [--auth_client_id AUTH_CLIENT_ID] [-w WORKERS] [-t TIMEOUT] [-b BIND] [--footer FOOTER] [--header HEADER] [--upload UPLOAD] [--results RESULTS]
 
 
 .. table::
@@ -47,11 +46,9 @@ Serve
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | Optional Arguments                                                                                                                                                                                 |
     +===================================+================================================================================================================================================================+
-    | db_uri                            | MongoDB database connection URI (default mongodb://localhost:27017/)                                                                                           |
+    | db_uri                            | Database connection URI                                                                                                                                        |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | database                          | MongoDB database (default cirrocumulus)                                                                                                                        |
-    +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
-    | email                             | Email address that server runs as                                                                                                                              |
+    | email                             | Email address that server runs as. Used for informational purposes to display in user interface                                                                |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | auth_client_id                    | OAuth client id                                                                                                                                                |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -63,13 +60,15 @@ Serve
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | upload                            | URL to allow users to upload files                                                                                                                             |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+    | results                           | URL to save user computed results (e.g. differential expression) to                                                                                            |
+    +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
     | header                            | Markdown file to customize the application header                                                                                                              |
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
 The `serve` command starts the cirrocumulus server for use in a shared server environment which can handle concurrent requests from multiple users.
 The server can optionally enforce permissions at the dataset level, in order to securely share datasets with collaborators.
-Additionally, annotations and sets are created collaboratively among all users authorized to view a dataset and are stored in a database.
+Additionally, annotations and sets are shared among all users authorized to view a dataset and are stored in a database.
 The server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine. When deployed in App Engine, the server can be configured
 to be use Google Cloud Firestore as a database. Please note that no datasets are available until you import a dataset into cirrocumulus.
 
@@ -102,11 +101,11 @@ Prepare Data
     +-----------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-The `prepare_data` command is used to freeze an h5ad_, loom_, or Seurat file in cirrocumulus format. The cirrocumulus format allows
+The `prepare_data` command is used to freeze an h5ad_, loom_, or Seurat_ file in cirrocumulus format. The cirrocumulus format allows
 efficient partial dataset retrieval over a network (e.g. Google or S3 bucket) using limited memory.
 
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _Seurat: https://satijalab.org/seurat/
-.. _TileDB:: https://tiledb.com/
+.. _TileDB: https://tiledb.com/

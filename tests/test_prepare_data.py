@@ -6,25 +6,27 @@ import pandas as pd
 import pytest
 import scipy.sparse
 
+from cirrocumulus.h5ad_dataset import H5ADDataset
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
+from cirrocumulus.zarr_dataset import ZarrDataset
 
 
 def read_and_diff(ds_reader, path, test_data, measures, dimensions, continuous_obs, basis):
     dataset = dict(id='')
     fs = fsspec.filesystem('file')
     prepared_adata = ds_reader.read_dataset(filesystem=fs, path=path, dataset=dataset,
-                                            schema=ds_reader.schema(filesystem=fs, path=path),
                                             keys=dict(X=measures, obs=dimensions + continuous_obs,
                                                       basis=[basis]))
+
     assert scipy.sparse.issparse(test_data.X) == scipy.sparse.issparse(prepared_adata.X)
     if scipy.sparse.issparse(test_data.X):
         test_data.X = test_data.X.toarray()
         prepared_adata.X = prepared_adata.X.toarray()
     np.testing.assert_equal(test_data.X, prepared_adata.X)
-
     for key in dimensions + continuous_obs:
-        pd.testing.assert_series_equal(test_data.obs[key], prepared_adata.obs[key], check_index=False)
+        pd.testing.assert_series_equal(test_data.obs[key], prepared_adata.obs[key], check_index=False,
+                                       check_flags=False)
 
     np.testing.assert_equal(prepared_adata.obsm[basis], test_data.obsm[basis])
 
@@ -53,13 +55,22 @@ def test_prepare_join_obs_index(test_data, tmp_path):
         PrepareData(datasets=[test_data, test_data2], output=output_dir)
 
 
-def test_prepare_parquet(test_data, measures, dimensions, continuous_obs, basis, tmp_path):
-    output_dir = str(tmp_path)
+@pytest.mark.parametrize("file_format", ['h5ad', 'zarr', 'parquet'])
+def test_prepare(test_data, measures, dimensions, continuous_obs, basis, file_format, tmp_path):
+    file_format2ext = dict(parquet='.cpq', zarr='.zarr', h5ad='.h5adx')
+    output_dir = str(tmp_path / 'test.{}'.format(file_format2ext[file_format]))
     test_data = test_data[:, measures]
     test_data.obs = test_data.obs[dimensions + continuous_obs]
-    prepare_data = PrepareData(datasets=[test_data], output=output_dir)
+    prepare_data = PrepareData(datasets=[test_data], output=output_dir, output_format=file_format)
     prepare_data.execute()
-    read_and_diff(ParquetDataset(), output_dir, test_data, measures, dimensions, continuous_obs, basis)
+    if file_format == 'parquet':
+        reader = ParquetDataset()
+    elif file_format == 'zarr':
+        reader = ZarrDataset()
+    elif file_format == 'h5ad':
+        reader = H5ADDataset()
+    read_and_diff(reader, output_dir, test_data, measures,
+                  dimensions, continuous_obs, basis)
 
 
 def test_prepare_jsonl(test_data, measures, dimensions, continuous_obs, basis, tmp_path):

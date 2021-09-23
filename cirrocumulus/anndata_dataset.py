@@ -4,14 +4,13 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-# only works with local files
 from cirrocumulus.anndata_util import datasets_schema
 from cirrocumulus.io_util import read_star_fusion_file
 
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'zarr', 'rds']):
+    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'rds']):
         super().__init__()
         self.path_to_data = {}
         self.backed = backed
@@ -21,14 +20,14 @@ class AnndataDataset(AbstractDataset):
     def get_suffixes(self):
         return self.extensions
 
-    def read_adata(self, path):
+    def read_adata(self, filesystem, path):
         path_lc = path.lower()
         if path_lc.endswith('.loom'):
-            return anndata.read_loom(path)
+            return anndata.read_loom(filesystem.open(path))
         elif path_lc.endswith('.zarr'):
-            return anndata.read_zarr(path)
+            return anndata.read_zarr(filesystem.open(path))
         elif path_lc.endswith('.tsv'):
-            return read_star_fusion_file(path)
+            return read_star_fusion_file(filesystem.open(path))
         elif path_lc.endswith('.rds'):  # Seurat, convert to h5ad
             h5_file = path + '.h5ad'
             import os
@@ -47,7 +46,7 @@ class AnndataDataset(AbstractDataset):
                 print('Using adata.raw')
                 adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
             return adata
-        return anndata.read_h5ad(path, backed='r' if self.backed else None)
+        return anndata.read_h5ad(filesystem.open(path), backed='r' if self.backed else None)
         # elif path.endswith('.mtx'):
         #
         #     return anndata.read_mtx(path, backed=self.backed)
@@ -61,20 +60,20 @@ class AnndataDataset(AbstractDataset):
     def add_data(self, path, data):
         self.path_to_data[path] = data
 
-    def get_data(self, path):
+    def get_data(self, filesystem, path):
         adata = self.path_to_data.get(path)
         if adata is None:
-            adata = self.read_adata(path)
+            adata = self.read_adata(filesystem, path)
             if scipy.sparse.isspmatrix_csr(adata.X) and adata.X.shape[1] > 1:
                 adata.X = adata.X.tocsc()
             self.add_data(path, adata)
         return adata
 
-    def schema(self, filesystem, path):
-        return datasets_schema([self.get_data(path)])
+    def get_schema(self, filesystem, path):
+        return datasets_schema([self.get_data(filesystem, path)])
 
-    def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):
-        adata = self.get_data(path)
+    def read_dataset(self, filesystem, path, keys=None, dataset=None):
+        adata = self.get_data(filesystem, path)
         if keys is None:
             keys = {}
         keys = keys.copy()

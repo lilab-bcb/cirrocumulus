@@ -3,6 +3,7 @@ import os
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.parquet_dataset import ParquetDataset
+from cirrocumulus.util import get_fs
 
 
 def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marker_paths):
@@ -14,7 +15,13 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
     try:
         from cirrocumulus.tiledb_dataset import TileDBDataset
         dataset_api.add(TileDBDataset())
-    except:  # tiledb install is optional
+    except ModuleNotFoundError:  # tiledb install is optional
+        pass
+
+    try:
+        from cirrocumulus.zarr_dataset import ZarrDataset
+        dataset_api.add(ZarrDataset())
+    except ModuleNotFoundError:  # ignore if zarr is not installed
         pass
     dataset_api.add(ParquetDataset())
     anndata_dataset = AnndataDataset('r' if backed else None)
@@ -27,7 +34,7 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
             to_concat = []
             all_ids = None
             for path in dataset_paths:
-                d = anndata_dataset.get_data(path)
+                d = anndata_dataset.get_data(get_fs(path), path)
                 all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
                 to_concat.append(d)
             for i in range(len(to_concat)):
@@ -77,14 +84,14 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
         for i in range(len(spatial_directories)):
             spatial_directory = spatial_directories[i]
             if spatial_directory != '':
-                adata = anndata_dataset.get_data(dataset_ids[i])
+                adata = anndata_dataset.get_data(get_fs(dataset_ids[i]), dataset_ids[i])
                 if not add_spatial(adata, spatial_directory):
                     print('No spatial data found in {}'.format(spatial_directory))
 
     if marker_paths is not None and len(marker_paths) > 0:
         markers = get_markers(marker_paths)
         for dataset_id in dataset_ids:
-            d = anndata_dataset.get_data(dataset_id)
+            d = anndata_dataset.get_data(get_fs(dataset_id), dataset_id)
             existing_markers = d.uns.get('markers', [])
             markers += existing_markers
             # remove genes in dict that are not in dataset

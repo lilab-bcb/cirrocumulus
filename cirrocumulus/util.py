@@ -14,6 +14,7 @@ def get_scheme(path):
 
 
 scheme_to_fs = {}
+scheme_to_fs_args = dict(s3=dict(s3_additional_kwargs=dict(ACL='bucket-owner-full-control')))
 
 
 def get_fs(path):
@@ -21,7 +22,8 @@ def get_fs(path):
     fs = scheme_to_fs.get(scheme, None)
     if fs is not None:
         return fs
-    fs = fsspec.filesystem(scheme)
+    fs_args = scheme_to_fs_args.get(scheme, {})
+    fs = fsspec.filesystem(scheme, **fs_args)
     scheme_to_fs[scheme] = fs
     return fs
 
@@ -51,7 +53,6 @@ def get_email_domain(email):
 def load_dataset_schema(url):
     import os
 
-    import fsspec
     import json
 
     def get_extension(path):
@@ -66,7 +67,7 @@ def load_dataset_schema(url):
     json_schema = None
     if extension in ['.json', '.json.gz', '']:
         scheme = get_scheme(url)
-        fs = fsspec.filesystem(scheme)
+        fs = get_fs(scheme)
         if extension == '':
             url = os.path.join(url, 'index.json.gz')
             extension = get_extension(url)

@@ -7,7 +7,7 @@ from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import json_response, get_scheme, get_fs
+from .util import json_response, get_scheme, get_fs, adata2gct
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -175,7 +175,7 @@ def handle_schema():
     database_api = get_database()
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.schema(dataset)
+    schema = dataset_api.get_schema(dataset)
     schema.update(dataset)  # add title, etc from database to schema
     schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
     return json_response(schema)
@@ -251,7 +251,8 @@ def handle_data():
     json_request = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(json_request)
     return json_response(
-        data_processing.handle_data(dataset_api=dataset_api, dataset=dataset,
+        data_processing.handle_data(dataset_api=dataset_api,
+                                    dataset=dataset,
                                     embedding_list=json_request.get('embedding'),
                                     values=json_request.get('values'),
                                     stats=json_request.get('stats'),
@@ -300,7 +301,6 @@ def upload_file(file):
 
 
 def copy_url(url):
-    import fsspec
     from werkzeug.utils import secure_filename
     upload = os.environ.get(CIRRO_UPLOAD)
 
@@ -310,11 +310,11 @@ def copy_url(url):
     if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
         return url
     src_scheme = get_scheme(url)
-    src_fs = fsspec.filesystem(src_scheme)
+    src_fs = get_fs(src_scheme)
     filename = secure_filename(os.path.basename(url))
     dest = os.path.join(upload, filename)
     dest_scheme = get_scheme(dest)
-    dest_fs = fsspec.filesystem(dest_scheme)
+    dest_fs = get_fs(dest_scheme)
     out = dest_fs.open(dest, 'wb')
     n = 1024 * 1024
     with src_fs.open(url, mode='rb') as r:
@@ -403,9 +403,32 @@ def handle_job():
             dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
             dataset = database_api.get_dataset(email, dataset_id)
-            file_path = get_file_path(os.path.join('uns', job_id + '.json.gz'), dataset['url'])
-            return send_file(file_path)
+            result = dataset_api.get_result(dataset, job_id)
+            return send_file(result)
         job = database_api.get_job(email=email, job_id=job_id, return_result=True)
+        if isinstance(job, dict) and 'url' in job:
+            url = job['url']
+            content_type = job['content-type']
+            if content_type == 'application/h5ad':
+                # URL to an h5ad
+                import anndata
+                block_size = 50 * 2 ** 20
+                with get_fs(url).open(url, mode='rb', block_size=block_size) as f:
+                    adata = anndata.read(f)
+                try:
+                    from cStringIO import StringIO
+                except:
+                    from StringIO import StringIO
+
+                output = StringIO()
+                adata2gct(adata, output)
+                r = Response(output.getvalue(), mimetype='text/plain')
+                output.close()
+                # r.headers["Content-Encoding"] = 'gzip'
+                return r
+            else:
+                # URL to JSON or text
+                return send_file(url)
         return job
 
 
