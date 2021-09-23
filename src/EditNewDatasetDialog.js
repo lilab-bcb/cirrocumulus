@@ -255,6 +255,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                 <DialogContent>
                     {this.state.loading && <CircularProgress/>}
                     <TextField
+                        size={"small"}
                         disabled={this.state.loading}
                         autoComplete="off"
                         required={true}
@@ -278,7 +279,8 @@ class EditNewDatasetDialog extends React.PureComponent {
                             <div ref={this.dragIndicator}>
                                 <Button size="small" variant="outlined" disabled={this.state.loading}
                                         onClick={e => this.fileInputRef.current.click()}>Select File</Button>
-                                <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or Drag
+                                <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or
+                                    Drag
                                     And Drop</Typography>
                                 <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
                                 <Typography style={{display: 'block'}} color="textPrimary"
@@ -288,6 +290,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                         </TabPanel>
                         <TabPanel value={this.state.uploadTabValue} index={1}>
                             <TextField
+                                size={"small"}
                                 required={true}
                                 disabled={this.state.loading}
                                 autoComplete="off"
@@ -302,6 +305,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                     </div>
 
                     <TextField
+                        size={"small"}
                         style={{display: isNew && canUpload ? 'none' : ''}}
                         required={true}
                         disabled={this.state.loading || !isNew}
@@ -315,8 +319,10 @@ class EditNewDatasetDialog extends React.PureComponent {
                     />
 
                     <FormControl className={this.props.classes.formControl}>
-                        <InputLabel shrink={true} id="species-label">Species</InputLabel>
+                        <InputLabel id="species-label">Species</InputLabel>
                         <Select
+                            label={"Species"}
+                            size={"small"}
                             labelId="species-label"
                             value={this.state.species}
                             onChange={this.onSpeciesChange}
@@ -330,6 +336,7 @@ class EditNewDatasetDialog extends React.PureComponent {
 
 
                     <TextField
+                        size={"small"}
                         disabled={this.state.loading}
                         autoComplete="off"
                         required={false}
@@ -356,6 +363,7 @@ class EditNewDatasetDialog extends React.PureComponent {
 
                     <TabPanel value={this.state.writePreviewTabValue} index={0}>
                         <TextField
+                            size={"small"}
                             disabled={this.state.loading}
                             autoComplete="off"
                             required={false}
@@ -377,6 +385,7 @@ class EditNewDatasetDialog extends React.PureComponent {
                     </TabPanel>
 
                     <TextField
+                        size={"small"}
                         value={this.state.readers}
                         onChange={this.onEmailChanged}
                         margin="dense"
