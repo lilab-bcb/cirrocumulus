@@ -515,7 +515,7 @@ function ExplorePanel(props) {
                         }}
                     />
                 </FormControl>}
-                {<FormControl>
+                {<FormControl sx={{display: 'block'}}>
                     <AutocompleteVirtualized label={"Sets"}
                                              testId={'sets-input'}
                                              options={featureSetOptions}
@@ -529,7 +529,7 @@ function ExplorePanel(props) {
                                                      onFeatureSetClick(event, option);
                                                  }}/>;
                                              }}
-                                             groupBy={true}
+                                             groupBy={(option) => option.group}
                                              onChange={onFeatureSetsChange}
                                              getOptionSelected={(option, value) => option.id === value.id}
                                              getChipText={option => option.name}
@@ -540,12 +540,10 @@ function ExplorePanel(props) {
                                 style={{
                                     float: 'right',
                                     fontSize: '0.75rem',
-                                    transform: 'translateY(-50px)',
                                     marginRight: 20,
                                     display: splitTokens.X.length === 0 ? 'none' : ''
                                 }}
                                 onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
-
                 </FormControl>}
             </div>
             <div className={classes.section} style={{maxHeight: 500}}>
