@@ -36,9 +36,11 @@ function renderRow(props) {
         top: style.top + LISTBOX_PADDING
     };
 
+
     if (dataSet.hasOwnProperty('group')) {
+        inlineStyle.whiteSpace = 'nowrap';
         return (
-            <ListSubheader key={dataSet.key} component="div" style={inlineStyle}>
+            <ListSubheader disableGutters={true} key={dataSet.key} component="div" style={inlineStyle}>
                 {dataSet.group}
             </ListSubheader>
         );
@@ -144,13 +146,6 @@ const StyledPopper = styled(Popper)({
         }
     }
 });
-
-const renderGroup = (params) => [
-    <ListSubheader disableGutters component="div">
-        <Typography noWrap>{params.group}</Typography>
-    </ListSubheader>,
-    params.children
-];
 
 
 export default function AutocompleteVirtualized(props) {
@@ -342,11 +337,10 @@ export default function AutocompleteVirtualized(props) {
             value={props.value}
             filterSelectedOptions={true}
             getOptionLabel={getOptionLabel}
-            groupBy={props.groupBy ? (option) => option.group : null}
+            groupBy={props.groupBy}
             ChipProps={{size: 'small'}}
             ListboxComponent={ListboxComponent}
             PopperComponent={StyledPopper}
-            renderGroup={renderGroup}
             options={props.options}
             onChange={props.onChange}
             renderTags={(value, getTagProps) =>
@@ -356,6 +350,7 @@ export default function AutocompleteVirtualized(props) {
                 <TextField {...params} label={props.label} helperText={props.helperText} sx={{width: 200}}
                            margin={"dense"}/>
             )}
+            renderGroup={(params) => params}
             renderOption={(props, option, {inputValue}) => [props, option, inputValue]}
             onPaste={onPaste}
             onDrop={onDrop}
