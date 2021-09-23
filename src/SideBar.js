@@ -377,6 +377,7 @@ class SideBar extends React.PureComponent {
                             Job Details
                         </DialogContentText>
                         <TextField
+                            size={"small"}
                             onChange={this.onJobNameChange}
                             value={jobName}
                             autoFocus
