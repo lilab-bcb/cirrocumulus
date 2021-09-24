@@ -1,9 +1,34 @@
 # import pandas.io.json as json
+import os
 from urllib.parse import urlparse
 
 import fsspec
 import pandas._libs.json as ujson
 from flask import make_response
+
+from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
+
+
+def add_dataset_providers():
+    from cirrocumulus.api import dataset_api
+    dataset_providers = []
+
+    for p in os.environ[CIRRO_DATASET_PROVIDERS].split(','):
+        print(p)
+        try:
+            dataset_api.add(create_instance(p))
+            dataset_providers.append(p)
+        except ModuleNotFoundError:  # ignore if required libraries are not installed
+            pass
+
+    os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(dataset_providers)
+
+
+def create_instance(class_name):
+    import importlib
+    dot_index = class_name.rfind('.')
+    c = getattr(importlib.import_module(class_name[0:dot_index]), class_name[dot_index + 1:])
+    return c()
 
 
 def get_scheme(path):

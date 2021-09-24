@@ -1,30 +1,19 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
+from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
+from cirrocumulus.local_db_api import LocalDbAPI
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.util import get_fs
 
 
-def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marker_paths):
+def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths):
     from cirrocumulus.api import dataset_api
-    from cirrocumulus.local_db_api import LocalDbAPI
     from cirrocumulus.no_auth import NoAuth
-
-    app.config['AUTH'] = NoAuth()
-    try:
-        from cirrocumulus.tiledb_dataset import TileDBDataset
-        dataset_api.add(TileDBDataset())
-    except ModuleNotFoundError:  # tiledb install is optional
-        pass
-
-    try:
-        from cirrocumulus.zarr_dataset import ZarrDataset
-        dataset_api.add(ZarrDataset())
-    except ModuleNotFoundError:  # ignore if zarr is not installed
-        pass
     dataset_api.add(ParquetDataset())
-    anndata_dataset = AnndataDataset('r' if backed else None)
+    app.config[CIRRO_AUTH] = NoAuth()
+    anndata_dataset = AnndataDataset()
     dataset_ids = []
     for dataset_paths in list_of_dataset_paths:
         dataset_paths = dataset_paths.split(',')
@@ -78,7 +67,7 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, backed, marke
             anndata_dataset.add_data(dataset_id, adata)
         dataset_api.add(anndata_dataset)
 
-    app.config['DATABASE'] = LocalDbAPI(dataset_ids)
+    app.config[CIRRO_DATABASE] = LocalDbAPI(dataset_ids)
 
     if spatial_directories is not None and len(spatial_directories) > 0:
         for i in range(len(spatial_directories)):
@@ -126,7 +115,6 @@ def main(argsv):
     parser.add_argument('--markers',
                         help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
                         nargs='*')
-    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--host',
                         help='Host IP address')  # set to 0.0.0.0 to make it accessible from other computers WITHOUT SECURITY.
 
@@ -135,7 +123,7 @@ def main(argsv):
 
     args = parser.parse_args(argsv)
     app = create_app()
-    configure_app(app, args.dataset, args.spatial, args.backed, args.markers)
+    configure_app(app, args.dataset, args.spatial, args.markers)
     if not args.no_open:
         import webbrowser, requests
         host = args.host if args.host is not None else 'http://127.0.0.1'

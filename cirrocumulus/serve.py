@@ -1,8 +1,10 @@
 import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
-    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS
+    CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
+    CIRRO_DATASET_PROVIDERS
 from cirrocumulus.launch import create_app
+from cirrocumulus.util import create_instance, add_dataset_providers
 
 app = None
 
@@ -18,46 +20,25 @@ def cached_app():
 
 
 def configure_app(app):
-    from cirrocumulus.api import dataset_api
     from cirrocumulus.no_auth import NoAuth
     auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
     os.environ[CIRRO_SERVE] = 'true'
     if auth_client_id is None:
-        app.config['AUTH'] = NoAuth()
+        app.config[CIRRO_AUTH] = NoAuth()
     else:
         from cirrocumulus.google_auth import GoogleAuth
-        app.config['AUTH'] = GoogleAuth(auth_client_id)
-    import importlib
-    database_class_name = os.environ.get(CIRRO_DATABASE_CLASS, 'cirrocumulus.mongo_db.MongoDb')
+        app.config[CIRRO_AUTH] = GoogleAuth(auth_client_id)
+    if os.environ.get(CIRRO_DATABASE_CLASS) is None:
+        os.environ[CIRRO_DATABASE_CLASS] = 'cirrocumulus.mongo_db.MongoDb'
     if os.environ[CIRRO_DB_URI] == '':
         os.environ[CIRRO_DATABASE_CLASS] = 'cirrocumulus.local_db_api.LocalDbAPI'
-    dot_index = database_class_name.rfind('.')
-    db_class = getattr(importlib.import_module(database_class_name[0:dot_index]), database_class_name[dot_index + 1:])
-    app.config['DATABASE'] = db_class()
 
-    try:
-        from cirrocumulus.tiledb_dataset import TileDBDataset
-        dataset_api.add(TileDBDataset())
-    except ModuleNotFoundError:  # ignore if tiledb is not installed
-        pass
-
-    try:
-        from cirrocumulus.zarr_dataset import ZarrDataset
-        dataset_api.add(ZarrDataset())
-    except ModuleNotFoundError:  # ignore if zarr is not installed
-        pass
-
-    try:
-        from cirrocumulus.parquet_dataset import ParquetDataset
-        dataset_api.add(ParquetDataset())
-    except ModuleNotFoundError:  # ignore if pyarrow is not installed
-        pass
-
-    try:
-        from cirrocumulus.h5ad_dataset import H5ADDataset
-        dataset_api.add(H5ADDataset())
-    except ModuleNotFoundError:  # ignore if h5py is not installed
-        pass
+    app.config[CIRRO_DATABASE] = create_instance(os.environ[CIRRO_DATABASE_CLASS])
+    os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(['cirrocumulus.tiledb_dataset.TileDBDataset',
+                                                    'cirrocumulus.zarr_dataset.ZarrDataset',
+                                                    'cirrocumulus.parquet_dataset.ParquetDataset',
+                                                    'cirrocumulus.h5ad_dataset.H5ADDataset'])
+    add_dataset_providers()
 
 
 def main(argsv):

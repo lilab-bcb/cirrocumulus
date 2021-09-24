@@ -24,7 +24,8 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
         out.write(ujson.dumps(schema, double_precision=2, orient='values'))
     dataset_kwargs = {}
     chunks = None
-    group = zarr.open_group(filesystem.get_mapper(output_directory), mode='a')
+    store = zarr.LMDBStore('example.zarr')
+    group = zarr.open_group(store=store, mode='a')
     if whitelist is None or 'X' in whitelist:
         if chunks is not None and not scipy.sparse.issparse(adata.X):
             write_attribute(group, "X", adata.X, dict(chunks=chunks, **dataset_kwargs))
@@ -64,3 +65,4 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
     for key in list(adata.uns.keys()):
         # need to write individual groups so don't overwrite uns
         write_attribute(group, "uns/{}".format(key), adata.uns[key], dataset_kwargs)
+    store.close()

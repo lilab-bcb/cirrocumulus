@@ -4,7 +4,7 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
 from .util import json_response, get_scheme, get_fs, adata2gct
@@ -20,11 +20,11 @@ def handle_invalid_usage(error):
 
 
 def get_database():
-    return current_app.config['DATABASE']
+    return current_app.config[CIRRO_DATABASE]
 
 
 def get_auth():
-    return current_app.config['AUTH']
+    return current_app.config[CIRRO_AUTH]
 
 
 @blueprint.route('/server', methods=['GET'])

@@ -8,7 +8,8 @@ from anndata import AnnData
 from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
-from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS
+from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS
+from .util import create_instance, add_dataset_providers
 
 executor = None
 
@@ -19,19 +20,23 @@ logger.addHandler(logging.StreamHandler())
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
+    from concurrent.futures.process import ProcessPoolExecutor
+    from concurrent.futures.thread import ThreadPoolExecutor
+    import os
+    is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
-        from concurrent.futures.thread import ThreadPoolExecutor
-        import os
 
-        if os.environ.get(CIRRO_SERVE) != 'true':
+        if not is_serve:
             max_workers = 1
         else:
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
-        executor = ThreadPoolExecutor(max_workers=max_workers)
+        executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
+            max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
     # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
-    executor.submit(run_job, database_api, dataset_api, email, job_id, job_type, dataset, params)
+    executor.submit(run_job, email, job_id, job_type, dataset, params, database_api if not is_serve else None,
+                    dataset_api if not is_serve else None)
     return job_id
 
 
@@ -39,7 +44,12 @@ def _power(X, power):
     return X ** power if isinstance(X, np.ndarray) else X.power(power)
 
 
-def run_job(database_api, dataset_api, email, job_id, job_type, dataset, params):
+def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api):
+    if database_api is None:
+        database_api = create_instance(os.environ[CIRRO_DATABASE_CLASS])
+    if dataset_api is None:
+        from cirrocumulus.api import dataset_api
+        add_dataset_providers()
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info['var']
