@@ -1,5 +1,7 @@
 # Abstract database class supporting datasets, categories, views, feature sets, users, jobs, and job results
 # Only methods server and datasets must be supported in 'client' mode
+import os
+
 from cirrocumulus.envir import *
 from cirrocumulus.io_util import unique_id
 
@@ -14,13 +16,13 @@ class AbstractDB:
 
     def capabilities(self):  # allow everything
         c = {}
-        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = True
-        c[SERVER_CAPABILITY_JOBS] = True
-        c[SERVER_CAPABILITY_SAVE_FEATURE_SETS] = True
-        c[SERVER_CAPABILITY_SAVE_LINKS] = True
-        c[SERVER_CAPABILITY_EDIT_DATASET] = True
-        c[SERVER_CAPABILITY_ADD_DATASET] = True
-        c[SERVER_CAPABILITY_DELETE_DATASET] = True
+        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = bool(os.environ.get(SERVER_CAPABILITY_RENAME_CATEGORIES, 'True'))
+        c[SERVER_CAPABILITY_JOBS] = bool(os.environ.get(SERVER_CAPABILITY_JOBS, 'True'))
+        c[SERVER_CAPABILITY_FEATURE_SETS] = bool(os.environ.get(SERVER_CAPABILITY_FEATURE_SETS, 'True'))
+        c[SERVER_CAPABILITY_LINKS] = bool(os.environ.get(SERVER_CAPABILITY_LINKS, 'True'))
+        c[SERVER_CAPABILITY_EDIT_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_EDIT_DATASET, 'True'))
+        c[SERVER_CAPABILITY_ADD_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_ADD_DATASET, 'True'))
+        c[SERVER_CAPABILITY_DELETE_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_DELETE_DATASET, 'True'))
         return c
 
     def datasets(self, email):

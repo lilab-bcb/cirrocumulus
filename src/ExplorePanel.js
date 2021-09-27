@@ -5,7 +5,7 @@ import {
     getCategoryValue,
     getFeatureSets,
     NATSORT,
-    SERVER_CAPABILITY_SAVE_FEATURE_SETS,
+    SERVER_CAPABILITY_FEATURE_SETS,
     splitSearchTokens
 } from "./util";
 import NumberIcon from "./NumberIcon";
@@ -534,7 +534,7 @@ function ExplorePanel(props) {
                                              getOptionSelected={(option, value) => option.id === value.id}
                                              getChipText={option => option.name}
                     />
-                    {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_FEATURE_SETS) && <div>
+                    {serverInfo.capabilities.has(SERVER_CAPABILITY_FEATURE_SETS) && <div>
                         <Tooltip title={"Save Current Genes/Features"}>
                             <Link
                                 style={{
