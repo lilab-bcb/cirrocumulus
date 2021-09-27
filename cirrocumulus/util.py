@@ -4,9 +4,8 @@ from urllib.parse import urlparse
 
 import fsspec
 import pandas._libs.json as ujson
-from flask import make_response
-
 from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
+from flask import make_response
 
 
 def add_dataset_providers():
@@ -14,7 +13,6 @@ def add_dataset_providers():
     dataset_providers = []
 
     for p in os.environ[CIRRO_DATASET_PROVIDERS].split(','):
-        print(p)
         try:
             dataset_api.add(create_instance(p))
             dataset_providers.append(p)
