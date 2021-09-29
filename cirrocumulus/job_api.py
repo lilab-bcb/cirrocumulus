@@ -25,7 +25,6 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
     import os
     is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
-
         if not is_serve:
             max_workers = 1
         else:
@@ -62,11 +61,9 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
     obs_field = 'tmp'
 
     def get_batch_fn(i):
-        start = i
-        end = min(nfeatures, start + batch_size)
-        features = var_names[start:end]
         logger.info('batch {}'.format(i))
-        adata = dataset_api.read_dataset(keys=dict(X=features), dataset=dataset)
+        end = min(nfeatures, i + batch_size)
+        adata = dataset_api.read_dataset(keys=dict(X=[slice(i, end)]), dataset=dataset)
         if batch_size != nfeatures:
             frac = end / nfeatures
             database_api.update_job(email=email, job_id=job_id,

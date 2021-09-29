@@ -72,15 +72,18 @@ class ParquetDataset(AbstractDataset):
         obs = None
         var = None
         obsm = {}
-        var_keys = keys.pop('X', [])
+        X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
         module_keys = keys.pop('module', [])
-        if len(var_keys) > 0:
+        if len(X_keys) > 0:
+            if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified for performance
+                get_item_x = X_keys[0]
+                X_keys = dataset_info['var'][get_item_x]
             node_path = os.path.join(path, 'X')
-            paths = [node_path + '/' + key + '.parquet' for key in var_keys]
+            paths = [node_path + '/' + key + '.parquet' for key in X_keys]
             X = get_matrix(read_tables(paths, filesystem), shape)
-            var = pd.DataFrame(index=var_keys)
+            var = pd.DataFrame(index=X_keys)
         if len(module_keys) > 0:
             node_path = os.path.join(path, 'X_module')
             paths = [node_path + '/' + key + '.parquet' for key in module_keys]

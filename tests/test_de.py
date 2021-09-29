@@ -1,4 +1,5 @@
 import anndata
+import fsspec
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,6 +8,9 @@ from numpy.random import negative_binomial, binomial, seed
 from scipy import sparse as sp
 
 from cirrocumulus.de import DE
+from cirrocumulus.parquet_dataset import ParquetDataset
+from cirrocumulus.prepare_data import PrepareData
+from cirrocumulus.zarr_dataset import ZarrDataset
 
 
 def get_example_data(sparse=False):
@@ -42,15 +46,7 @@ def sparse(request):
     return request.param
 
 
-def test_de(sparse):
-    adata = get_example_data(sparse)
-
-    batch_size = 3
-    obs_field = 'sc_groups'
-    nfeatures = adata.shape[1]
-    get_batch_fn = lambda i: adata[:, i:min(nfeatures, i + batch_size)]
-    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn)
-
+def diff_results(sparse, adata, obs_field, de):
     sc.tl.rank_genes_groups(adata, obs_field, method='t-test', pts=True)
     rank_genes_groups = adata.uns['rank_genes_groups']
     sc_scores = rank_genes_groups['scores']['0']
@@ -72,3 +68,36 @@ def test_de(sparse):
     else:
         assert de.frac_expressed is None
 
+
+@pytest.mark.parametrize("file_format", ['zarr', 'parquet'])
+def test_de_backed(sparse, file_format, tmp_path):
+    fs = fsspec.filesystem('file')
+    adata = get_example_data(sparse)
+    output_dir = str(tmp_path)
+    prepare_data = PrepareData(datasets=[adata], output=output_dir, output_format=file_format)
+    prepare_data.execute()
+    if file_format == 'parquet':
+        reader = ParquetDataset()
+    elif file_format == 'zarr':
+        reader = ZarrDataset()
+    batch_size = 30
+    obs_field = 'sc_groups'
+    nfeatures = adata.shape[1]
+
+    def get_batch_fn(i):
+        end = min(nfeatures, i + batch_size)
+        return reader.read_dataset(filesystem=fs, path=output_dir, dataset=dict(id=''),
+                                   keys=dict(X=[slice(i, end)]))
+
+    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn)
+    diff_results(sparse, adata, obs_field, de)
+
+
+def test_de(sparse):
+    adata = get_example_data(sparse)
+    batch_size = 3
+    obs_field = 'sc_groups'
+    nfeatures = adata.shape[1]
+    get_batch_fn = lambda i: adata[:, i:min(nfeatures, i + batch_size)]
+    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn)
+    diff_results(sparse, adata, obs_field, de)

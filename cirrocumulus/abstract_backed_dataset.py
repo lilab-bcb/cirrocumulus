@@ -60,7 +60,7 @@ class AbstractBackedDataset(AbstractDataset):
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
         keys = keys.copy()
-        var_keys = keys.pop('X', [])
+        X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
         module_keys = keys.pop('module', [])
@@ -70,17 +70,21 @@ class AbstractBackedDataset(AbstractDataset):
         obsm = {}
         adata_modules = None
         with self.open_group(filesystem, path) as root:
-            dataset_info = self.get_dataset_info(path, root) if len(var_keys) > 0 or len(module_keys) > 0 else None
-            if len(var_keys) > 0:
+            dataset_info = self.get_dataset_info(path, root) if len(X_keys) > 0 or len(module_keys) > 0 else None
+            if len(X_keys) > 0:
                 var_ids = dataset_info['var']
                 X_node = root['X']
-                indices = var_ids.get_indexer_for(var_keys)
+                if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified for performance
+                    get_item_x = X_keys[0]
+                    X_keys = var_ids[get_item_x]
+                else:
+                    get_item_x = var_ids.get_indexer_for(X_keys)
                 if self.is_group(X_node):
                     X_node = SparseDataset(X_node)  # sparse
-                    X = X_node[:, indices]
-                else:
-                    X = self.slice_dense_array(X_node, indices)
-                var = pd.DataFrame(index=var_keys)
+                    X = X_node[:, get_item_x]
+                else:  # dense
+                    X = self.slice_dense_array(X_node, get_item_x)
+                var = pd.DataFrame(index=X_keys)
             if len(module_keys) > 0:
                 # stored as dense in modules/X, modules/var
                 module_ids = dataset_info['modules']
