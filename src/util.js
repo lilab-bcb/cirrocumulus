@@ -205,7 +205,8 @@ export function summarizeDensity(values, index, selection, summarizationMethod) 
     return newValues;
 }
 
-export function createEmbeddingDensity(xcoords, ycoords, nbins = 150) {
+export function createEmbeddingDensity(xcoords, ycoords) {
+    const nbins = xcoords.length > 18367 ? Math.floor(Math.sqrt(xcoords.length / 1000)) * 14 : 60;
     const xscale = scaleLinear().domain(extent(xcoords)).range([0, nbins - 1]);
     const yscale = scaleLinear().domain(extent(ycoords)).range([0, nbins - 1]);
     const binMap = new Map();
