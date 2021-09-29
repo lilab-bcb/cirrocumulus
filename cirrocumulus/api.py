@@ -1,10 +1,12 @@
+import json
 import os
 
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
+    CIRRO_DATASET_SELECTOR_COLUMNS
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
 from .util import json_response, get_scheme, get_fs, adata2gct
@@ -34,6 +36,15 @@ def handle_server():
     d['email'] = os.environ.get(CIRRO_EMAIL)
     d['capabilities'] = get_database().capabilities()
     d['clientId'] = get_auth().client_id
+
+    if os.environ.get(CIRRO_DATASET_SELECTOR_COLUMNS) is not None:
+
+        if os.path.exists(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS]):
+
+            with open(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS], 'rt') as f:
+                d['datasetSelectorColumns'] = json.loads(f.read())
+        else:
+            d['datasetSelectorColumns'] = json.loads(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS])
     if os.environ.get(CIRRO_FOOTER) is not None:
         with open(os.environ.get(CIRRO_FOOTER), 'rt') as f:
             d['footer'] = f.read()
@@ -335,12 +346,9 @@ def handle_dataset():
     if request.method == 'PUT' or request.method == 'POST':
         dataset_id = request.form.get('id')
         dataset_name = request.form.get('name')
-        description = request.form.get('description')
-        species = request.form.get('species')
-        title = request.form.get('title')
         url = request.form.get('url')  # e.g. gs://foo/a/b/
-        file = request.files.get('file')
         readers = request.form.get('readers')
+        file = request.files.get('file')  # file upload
         if readers is not None:
             import json
             readers = json.loads(readers)
@@ -348,18 +356,22 @@ def handle_dataset():
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_name == '':  # new
             return 'Must supply dataset name', 400
-
+        d = request.form.copy()
         if url is not None and os.environ.get(CIRRO_UPLOAD) is not None:
             url = copy_url(url)
+            d['url'] = url
 
         if file is not None:
             if os.environ.get(CIRRO_UPLOAD) is None:
                 return 'Upload not supported', 400
             url = upload_file(file)
-        dataset_id = database_api.upsert_dataset(email=email,
-                                                 dataset_id=dataset_id if request.method == 'PUT' else None,
-                                                 dataset_name=dataset_name, url=url, readers=readers,
-                                                 description=description, title=title, species=species)
+            d['url'] = url
+        dataset = dict(id=dataset_id if request.method == 'PUT' else None)
+        blacklist = set(['id', 'readers', 'file'])
+        for key in d:
+            if key not in blacklist:
+                dataset[key] = d[key]
+        dataset_id = database_api.upsert_dataset(email=email, readers=readers, dataset=dataset)
         return json_response({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)

@@ -101,6 +101,7 @@ class MongoDb(AbstractDB):
             query = dict(readers=email)
         else:
             query = dict(readers={'$in': [email, domain]})
+
         for doc in collection.find(query):
             doc['owner'] = 'owners' in doc and email in doc.pop('owners')
             doc['id'] = str(doc.pop('_id'))
@@ -168,44 +169,34 @@ class MongoDb(AbstractDB):
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
 
-    def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
-                       species=None):
-        if dataset_id is None and not self.capabilities()[SERVER_CAPABILITY_ADD_DATASET]:
+    def upsert_dataset(self, email, readers, dataset):
+
+        if dataset.get('id') is None and not self.capabilities()[SERVER_CAPABILITY_ADD_DATASET]:
             return
-        if dataset_id is not None and not self.capabilities()[SERVER_CAPABILITY_EDIT_DATASET]:
+        if dataset.get('id') is not None and not self.capabilities()[SERVER_CAPABILITY_EDIT_DATASET]:
             return
         collection = self.db.datasets
-        update_dict = {}
-        if dataset_name is not None:
-            update_dict['name'] = dataset_name
-        if url is not None:
-            update_dict['url'] = url
 
         if readers is not None:
             readers = set(readers)
             if email in readers:
                 readers.remove(email)
             readers.add(email)
-            update_dict['readers'] = list(readers)
-        if description is not None:
-            update_dict['description'] = description
-        if title is not None:
-            update_dict['title'] = title
-        if species is not None:
-            update_dict['species'] = species
+            dataset['readers'] = list(readers)
 
-        if dataset_id is None:  # new dataset
+        if dataset.get('id') is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))
                 if 'importer' not in user or not user['importer']:
                     raise InvalidUsage('Not authorized', 403)
-            update_dict['owners'] = [email]
-            if 'readers' not in update_dict:
-                update_dict['readers'] = [email]
-            return str(collection.insert_one(update_dict).inserted_id)
-        else:
-            self.get_dataset(email, dataset_id, True)
-            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': update_dict})
+            dataset['owners'] = [email]
+            if 'readers' not in dataset:
+                dataset['readers'] = [email]
+            return str(collection.insert_one(dataset).inserted_id)
+        else:  # update
+            self.get_dataset(email, dataset['id'], True)
+            dataset_id = dataset.pop('id')
+            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': dataset})
             return dataset_id
 
     def get_feature_sets(self, email, dataset_id):
