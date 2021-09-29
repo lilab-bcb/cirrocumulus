@@ -16,7 +16,8 @@ import {
     handleMeasureFilterUpdated,
     setChartOptions,
     setEmbeddingData,
-    setPrimaryChartSize
+    setPrimaryChartSize,
+    setSearchTokens
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
@@ -83,18 +84,19 @@ class EmbeddingChart extends React.PureComponent {
             chartOptions,
             dataset,
             datasetFilter,
-            embeddingLabels,
             embeddingData,
+            embeddingLabels,
             featureSummary,
             globalFeatureSummary,
+            handleSearchTokens,
             markerOpacity,
+            onCategoricalNameChange,
             onChartOptions,
             onColorChange,
             onDimensionFilterUpdated,
             onDomain,
             onGallery,
             onMeasureFilterUpdated,
-            onCategoricalNameChange,
             onSelect,
             pointSize,
             primaryChartSize,
@@ -166,6 +168,7 @@ class EmbeddingChart extends React.PureComponent {
                             handleClick={onDimensionFilterUpdated}
                             handleColorChange={onColorChange}
                             handleNameChange={onCategoricalNameChange}
+                            handleSearchTokens={handleSearchTokens}
                             categoricalNames={categoricalNames}
                             name={primaryTrace.name}
                             scale={primaryTrace.colorScale}
@@ -286,6 +289,9 @@ const mapDispatchToProps = dispatch => {
         },
         handleEmbeddingData: (value) => {
             dispatch(setEmbeddingData(value));
+        },
+        handleSearchTokens: (value, type, updateActiveFeatures, clear) => {
+            dispatch(setSearchTokens(value == null ? [] : value, type, updateActiveFeatures, clear));
         }
     };
 };

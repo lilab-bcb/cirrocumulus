@@ -188,7 +188,6 @@ function ExplorePanel(props) {
     }
 
     function onModulesChange(event, value) {
-        console.log(value);
         props.handleSearchTokens(value, FEATURE_TYPE.MODULE);
     }
 
@@ -433,169 +432,168 @@ function ExplorePanel(props) {
             <MenuItem onClick={onViewModule}>View</MenuItem>
         </Menu>}
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-            <div>
-                <Divider/>
-                <Typography gutterBottom={false} component={"h1"}
-                            style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
-                {tab === 'embedding' && embeddingOptions.length > 0 &&
-                <FormControl>
-                    <AutocompleteVirtualized label={"Embeddings"}
-                                             testId={'embeddings-input'}
-                                             options={embeddingOptions}
-                                             getChipTitle={(option) => {
-                                                 return option.text;
-                                             }}
-                                             getOptionLabel={(option) => option.text}
-                                             value={selectedEmbeddings}
-                                             getChipText={(option) => option.text}
-                                             getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
-                                             onChange={onEmbeddingsChange}
-                    />
-                </FormControl>}
-                {featureOptions.length > 0 && <FormControl sx={{display: 'block'}}>
-                    <AutocompleteVirtualized onChipClick={onFeatureClick}
-                                             label={"Genes/Features"}
-                                             testId={'genes-input'}
-                                             options={featureOptions}
-                                             value={splitTokens.X}
-                                             getOptionLabel={(option) => option}
-                                             onChange={onFeaturesChange}
-                                             helperText={"Enter or paste list"}
 
-                    />
-                    <div><Link
-                        style={{
-                            float: 'right',
-                            marginRight: 20,
-                            fontSize: '0.75rem',
-                            transform: 'translateY(-50px)',
-                            display: splitTokens.X.length === 0 ? 'none' : ''
-                        }}
-                        onClick={onFeatureCopy}>Copy</Link></div>
+            <Typography gutterBottom={false} component={"h1"}
+                        style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
+            {tab === 'embedding' && embeddingOptions.length > 0 &&
+            <FormControl sx={{display: 'block'}}>
+                <AutocompleteVirtualized label={"Embeddings"}
+                                         testId={'embeddings-input'}
+                                         options={embeddingOptions}
+                                         getChipTitle={(option) => {
+                                             return option.text;
+                                         }}
+                                         getOptionLabel={(option) => option.text}
+                                         value={selectedEmbeddings}
+                                         getChipText={(option) => option.text}
+                                         getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
+                                         onChange={onEmbeddingsChange}
+                />
+            </FormControl>}
+            {featureOptions.length > 0 && <FormControl sx={{display: 'block'}}>
+                <AutocompleteVirtualized onChipClick={onFeatureClick}
+                                         label={"Genes/Features"}
+                                         testId={'genes-input'}
+                                         options={featureOptions}
+                                         value={splitTokens.X}
+                                         getOptionLabel={(option) => option}
+                                         onChange={onFeaturesChange}
+                                         helperText={"Enter or paste list"}
 
-                </FormControl>}
-                {annotationOptions.length > 0 && <FormControl sx={{display: 'block'}}>
-                    <AutocompleteVirtualized label={"Cell Metadata"}
-                                             testId={'cell-meta-input'}
-                                             options={annotationOptions}
-                                             value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
-                                             onChipClick={onFeatureClick}
-                                             getOptionLabel={(option) => option.text}
-                                             getChipIcon={(option) => {
-                                                 return splitTokens.obsCat.indexOf(option) !== -1 ?
-                                                     <FontDownloadRoundedIcon
-                                                         onClick={(event) => {
-                                                             onObservationsIconClick(event, option);
-                                                         }}
-                                                         title={"Toggle Show/Hide Labels"}
-                                                         style={{
-                                                             marginLeft: 4,
-                                                             marginTop: 0,
-                                                             marginRight: 0,
-                                                             marginBottom: 0
-                                                         }}
-                                                         className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
-                                             }}
-                                             getOptionSelected={(option, value) => option.id === value}
-                                             onChange={onObservationsChange}/>
-                </FormControl>}
+                />
+                <div><Link
+                    style={{
+                        float: 'right',
+                        marginRight: 4,
+                        fontSize: '0.75rem',
+                        transform: 'translateY(-50px)',
+                        display: splitTokens.X.length === 0 ? 'none' : ''
+                    }}
+                    onClick={onFeatureCopy}>Copy</Link></div>
 
-                {moduleOptions.length > 0 && <FormControl sx={{display: 'block'}}>
-                    <AutocompleteVirtualized
-                        label={"Modules"}
-                        testId={'modules-input'}
-                        options={moduleOptions}
-                        value={splitTokens.modules}
-                        onChange={onModulesChange}
-                        onChipClick={onModulesClick}
-                        getChipIcon={(option) => {
-                            return <ArrowDropDownIcon onClick={(event) => {
-                                onModulesClick(event, option);
-                            }}/>;
-                        }}
+            </FormControl>}
+            {annotationOptions.length > 0 && <FormControl sx={{display: 'block'}}>
+                <AutocompleteVirtualized label={"Cell Metadata"}
+                                         testId={'cell-meta-input'}
+                                         options={annotationOptions}
+                                         value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
+                                         onChipClick={onFeatureClick}
+                                         getOptionLabel={(option) => option.text}
+                                         getChipIcon={(option) => {
+                                             return splitTokens.obsCat.indexOf(option) !== -1 ?
+                                                 <FontDownloadRoundedIcon
+                                                     onClick={(event) => {
+                                                         onObservationsIconClick(event, option);
+                                                     }}
+                                                     title={"Toggle Show/Hide Labels"}
+                                                     style={{
+                                                         marginLeft: 4,
+                                                         marginTop: 0,
+                                                         marginRight: 0,
+                                                         marginBottom: 0
+                                                     }}
+                                                     className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
+                                         }}
+                                         getOptionSelected={(option, value) => option.id === value}
+                                         onChange={onObservationsChange}/>
+            </FormControl>}
+
+            {moduleOptions.length > 0 && <FormControl sx={{display: 'block'}}>
+                <AutocompleteVirtualized
+                    label={"Modules"}
+                    testId={'modules-input'}
+                    options={moduleOptions}
+                    value={splitTokens.modules}
+                    onChange={onModulesChange}
+                    onChipClick={onModulesClick}
+                    getChipIcon={(option) => {
+                        return <ArrowDropDownIcon onClick={(event) => {
+                            onModulesClick(event, option);
+                        }}/>;
+                    }}
+                />
+            </FormControl>}
+            {<FormControl sx={{display: 'block'}}>
+                <AutocompleteVirtualized label={"Sets"}
+                                         testId={'sets-input'}
+                                         options={featureSetOptions}
+                                         value={featureSets}
+                                         getChipTitle={(option) => {
+                                             return option.category + ', ' + option.name;
+                                         }}
+                                         onChipClick={onFeatureSetClick}
+                                         getChipIcon={(option) => {
+                                             return <ArrowDropDownIcon onClick={(event) => {
+                                                 onFeatureSetClick(event, option);
+                                             }}/>;
+                                         }}
+                                         groupBy={(option) => option.group}
+                                         onChange={onFeatureSetsChange}
+                                         getOptionSelected={(option, value) => option.id === value.id}
+                                         getChipText={option => option.name}
+                />
+                {serverInfo.capabilities.has(SERVER_CAPABILITY_FEATURE_SETS) && <div>
+                    <Tooltip title={"Save Current Genes/Features"}>
+                        <Link
+                            style={{
+                                float: 'right',
+                                fontSize: '0.75rem',
+                                marginRight: 4,
+                                display: splitTokens.X.length === 0 ? 'none' : ''
+                            }}
+                            onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
+            </FormControl>}
+        </div>
+        <div className={classes.section} style={{maxHeight: 500}}>
+            <Divider inset="true"/>
+            <Typography gutterBottom={false} component={"h1"}
+                        style={{textTransform: 'uppercase'}}>Filters</Typography>
+            <Grid component="label" alignContent={"flex-start"} container alignItems="center"
+                  spacing={0}>
+                <Grid item><InputLabel shrink={true} variant={"standard"}>Combine</InputLabel></Grid>
+                <Grid item>AND</Grid>
+                <Grid item>
+                    <Switch
+                        size="small"
+                        checked={combineDatasetFilters === 'or'}
+                        onChange={handleCombineDatasetFilters}
                     />
-                </FormControl>}
-                {<FormControl sx={{display: 'block'}}>
-                    <AutocompleteVirtualized label={"Sets"}
-                                             testId={'sets-input'}
-                                             options={featureSetOptions}
-                                             value={featureSets}
-                                             getChipTitle={(option) => {
-                                                 return option.category + ', ' + option.name;
-                                             }}
-                                             onChipClick={onFeatureSetClick}
-                                             getChipIcon={(option) => {
-                                                 return <ArrowDropDownIcon onClick={(event) => {
-                                                     onFeatureSetClick(event, option);
-                                                 }}/>;
-                                             }}
-                                             groupBy={(option) => option.group}
-                                             onChange={onFeatureSetsChange}
-                                             getOptionSelected={(option, value) => option.id === value.id}
-                                             getChipText={option => option.name}
-                    />
-                    {serverInfo.capabilities.has(SERVER_CAPABILITY_FEATURE_SETS) && <div>
-                        <Tooltip title={"Save Current Genes/Features"}>
-                            <Link
-                                style={{
-                                    float: 'right',
-                                    fontSize: '0.75rem',
-                                    marginRight: 20,
-                                    display: splitTokens.X.length === 0 ? 'none' : ''
-                                }}
-                                onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
-                </FormControl>}
-            </div>
-            <div className={classes.section} style={{maxHeight: 500}}>
-                <Divider inset="true"/>
-                <Typography gutterBottom={false} component={"h1"}
-                            style={{textTransform: 'uppercase'}}>Filters</Typography>
-                <Grid component="label" alignContent={"flex-start"} container alignItems="center"
-                      spacing={0}>
-                    <Grid item><InputLabel shrink={true} variant={"standard"}>Combine</InputLabel></Grid>
-                    <Grid item>AND</Grid>
-                    <Grid item>
-                        <Switch
-                            size="small"
-                            checked={combineDatasetFilters === 'or'}
-                            onChange={handleCombineDatasetFilters}
-                        />
-                    </Grid>
-                    <Grid item>OR</Grid>
                 </Grid>
-                {datasetFilterKeys.length > 0 && selection.size > 0 &&
-                <>
-                    <div style={{marginBottom: 2}}>
-                        {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}
-                        {datasetFilterKeys.map(key => {
-                            return (
-                                <Chip
-                                    onDelete={() => {
-                                        onDatasetFilterChipDeleted(key);
-                                    }}
-                                    onClick={onFilterChipClicked}
-                                    size={"small"}
-                                    style={{marginRight: 2, verticalAlign: 'bottom'}}
-                                    key={key}
-                                    label={key}/>
-                            );
-                        })}
-                        <Divider/>
-                        <Grid container alignItems="center" className={classes.toolbar}
-                              disabled={datasetFilterKeys.length === 0}>
-                            <Tooltip title={"Clear All"}>
-                                <IconButton size={'small'}
-                                            onClick={onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
-                            </Tooltip>
-                            <Tooltip title={"Download Selected IDs"}>
-                                <IconButton size={'small'}
-                                            onClick={onDownloadSelectedIds}><CloudDownloadIcon/></IconButton>
-                            </Tooltip>
-                        </Grid>
-                    </div>
-                </>
-                }
-            </div>
+                <Grid item>OR</Grid>
+            </Grid>
+            {datasetFilterKeys.length > 0 && selection.size > 0 &&
+            <>
+                <div style={{marginBottom: 2}}>
+                    {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}
+                    {datasetFilterKeys.map(key => {
+                        return (
+                            <Chip
+                                onDelete={() => {
+                                    onDatasetFilterChipDeleted(key);
+                                }}
+                                onClick={onFilterChipClicked}
+                                size={"small"}
+                                style={{marginRight: 2, verticalAlign: 'bottom'}}
+                                key={key}
+                                label={key}/>
+                        );
+                    })}
+                    <Divider/>
+                    <Grid container alignItems="center" className={classes.toolbar}
+                          disabled={datasetFilterKeys.length === 0}>
+                        <Tooltip title={"Clear All"}>
+                            <IconButton size={'small'}
+                                        onClick={onDatasetFilterCleared}><HighlightOffIcon/></IconButton>
+                        </Tooltip>
+                        <Tooltip title={"Download Selected IDs"}>
+                            <IconButton size={'small'}
+                                        onClick={onDownloadSelectedIds}><CloudDownloadIcon/></IconButton>
+                        </Tooltip>
+                    </Grid>
+                </div>
+            </>
+            }
+
         </div>
     </>;
 }
