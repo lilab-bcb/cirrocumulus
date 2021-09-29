@@ -151,19 +151,13 @@ class AbstractDB:
         """
         raise NotImplementedError()
 
-    def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
-                       species=None):
-        """ Upserts a dataset
-
+    def upsert_dataset(self, email, readers, dataset):
+        """ Upserts a dataset. If dataset.id is None then a new dataset is inserted.
+        Dataset should have name, url, description, title, species, and any other additional fields to store
         Args:
               email: User email or None
-              dataset_id: Dataset id
-              dataset_name: Name
-              url: URL
               readers: List of allowed readers
-              description: Description
-              title: Title
-              species: Species
+              dataset: Dataset to upsert
 
          Returns:
             Upserted dataset id
