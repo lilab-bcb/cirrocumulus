@@ -1,5 +1,3 @@
-import logging
-
 import anndata as ad
 import h5py
 import numpy as np
@@ -11,8 +9,6 @@ from scipy import sparse
 from cirrocumulus.sparse_dataset import SparseDataset
 
 subset_func2 = subset_func
-
-logger = logging.getLogger('cirro')
 
 
 @pytest.fixture(scope="function")

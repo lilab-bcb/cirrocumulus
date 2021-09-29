@@ -1,3 +1,5 @@
+import json
+
 import zarr
 
 from cirrocumulus.abstract_backed_dataset import AbstractBackedDataset
@@ -16,3 +18,7 @@ class ZarrDataset(AbstractBackedDataset):
 
     def slice_dense_array(self, X, indices):
         return X.get_orthogonal_selection((slice(None), indices))
+
+    def get_schema(self, filesystem, path):
+        with zarr.open_group(filesystem.get_mapper(path), mode='r') as g:
+            return json.loads(str(g['uns']['cirro-schema'][...]))

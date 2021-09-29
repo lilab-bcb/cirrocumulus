@@ -112,11 +112,13 @@ class BackedSparseMatrix(_cs_matrix):
 
 class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
     def _get_intXslice(self, row: int, col: slice) -> ss.csr_matrix:
+
         return ss.csr_matrix(
             get_compressed_vector(self, row), shape=(1, self.shape[1])
         )[:, col]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csr_matrix:
+
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),
@@ -138,11 +140,13 @@ class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
 
 class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
     def _get_sliceXint(self, row: slice, col: int) -> ss.csc_matrix:
+        print('_get_sliceXint')
         return ss.csc_matrix(
             get_compressed_vector(self, col), shape=(self.shape[0], 1)
         )[row, :]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csc_matrix:
+
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),
@@ -150,7 +154,22 @@ class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
         if out_shape[1] == 1:
             return self._get_sliceXint(row, slice_as_int(col, self.shape[1]))
         elif out_shape[0] == self.shape[0] and out_shape[1] < self.shape[1]:
-            return self._get_sliceXarray(row, np.arange(*col.indices(self.shape[1])))
+            if col.step is not None:
+                return self._get_sliceXarray(row, np.arange(*col.indices(self.shape[1])))
+            start = col.start
+            stop = col.stop
+            if stop is not None and stop > 0:
+                stop += 1
+            if start is not None and start < 0:
+                start -= 1
+            indptr_slice = slice(start, stop)
+            indptr = self.group['indptr'][indptr_slice]
+            data = self.group['data'][indptr[0]:indptr[-1]]
+            indices = self.group['indices'][indptr[0]:indptr[-1]]
+            indptr -= indptr[0]
+            shape = (self.shape[0], indptr.size - 1)
+            return ss.csc_matrix((data, indices, indptr), shape=shape)  # much faster
+            # return self._get_sliceXarray(row, np.arange(*col.indices(self.shape[1])))
         return super()._get_sliceXslice(row, col)
 
     def _get_sliceXarray(self, row: slice, col: Sequence[int]) -> ss.csc_matrix:

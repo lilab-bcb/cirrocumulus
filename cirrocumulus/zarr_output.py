@@ -1,5 +1,3 @@
-import os
-
 import pandas._libs.json as ujson
 import scipy.sparse
 import zarr
@@ -20,12 +18,11 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
 
-    with filesystem.open(os.path.join(output_directory, 'index.json.gz'), 'wt', compression='gzip') as out:
-        out.write(ujson.dumps(schema, double_precision=2, orient='values'))
+    uns_whitelist = set(['modules', 'cirro-schema'])
+    adata.uns['cirro-schema'] = ujson.dumps(schema, double_precision=2, orient='values')
     dataset_kwargs = {}
     chunks = None
-    store = zarr.LMDBStore('example.zarr')
-    group = zarr.open_group(store=store, mode='a')
+    group = zarr.open_group(filesystem.get_mapper(output_directory), mode='a')
     if whitelist is None or 'X' in whitelist:
         if chunks is not None and not scipy.sparse.issparse(adata.X):
             write_attribute(group, "X", adata.X, dict(chunks=chunks, **dataset_kwargs))
@@ -52,6 +49,8 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
     # keep DE results and colors
     sc_marker_keys = get_scanpy_marker_keys(adata)
     for key in list(adata.uns.keys()):
+        if key in uns_whitelist:
+            continue
         keep = False
         if key in sc_marker_keys:
             keep = True
@@ -65,4 +64,3 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
     for key in list(adata.uns.keys()):
         # need to write individual groups so don't overwrite uns
         write_attribute(group, "uns/{}".format(key), adata.uns[key], dataset_kwargs)
-    store.close()
