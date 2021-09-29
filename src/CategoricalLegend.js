@@ -13,8 +13,8 @@ import {FixedSizeList} from 'react-window';
 import MenuIcon from '@mui/icons-material/Menu';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
-import {getCategoryValue} from './util';
-
+import {FEATURE_TYPE, getCategoryValue} from './util';
+import Link from '@mui/material/Link';
 
 export default function CategoricalLegend(props) {
     const [contextMenu, setContextMenu] = useState(null);
@@ -150,6 +150,10 @@ export default function CategoricalLegend(props) {
         setPositiveMarkers(value);
     }
 
+    function addFeatures(event, features) {
+        props.handleSearchTokens(features, FEATURE_TYPE.X, false, false);
+    }
+
     function renderRow(props) {
         const {index, style} = props;
         const category = categories[index];
@@ -220,41 +224,60 @@ export default function CategoricalLegend(props) {
                     <DialogTitle
                         id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
                     <DialogContent>
-                        <div>
-                            <TextField
-                                size={"small"}
-                                inputProps={{maxLength: 1000}}
-                                fullWidth={true}
-                                type="text"
-                                required={false}
-                                autoComplete="off"
-                                value={tmpName}
-                                onChange={handleNameChange}
-                                margin="dense"
-                                label={"Category Name"}
-                                helperText={"Enter cell type or other annotation"}
+
+                        <TextField
+                            size={"small"}
+                            inputProps={{maxLength: 1000}}
+                            fullWidth={true}
+                            type="text"
+                            required={false}
+                            autoComplete="off"
+                            value={tmpName}
+                            onChange={handleNameChange}
+                            margin="dense"
+                            label={"Category Name"}
+                            helperText={"Enter cell type or other annotation"}
+                        />
+
+
+                        <FormControl sx={{display: 'block'}}>
+                            <AutocompleteVirtualized
+                                textFieldSx={{width: '90%'}}
+                                label={"Positive Genes/Features"}
+                                options={features}
+                                value={positiveMarkers}
+                                onChange={onPositiveMarkers}
                             />
-                        </div>
-                        <div>
-                            <FormControl>
-                                <AutocompleteVirtualized
-                                    label={"Positive Genes/Features"}
-                                    options={features}
-                                    value={positiveMarkers}
-                                    onChange={onPositiveMarkers}
-                                />
-                            </FormControl>
-                        </div>
-                        <div>
-                            <FormControl>
-                                <AutocompleteVirtualized
-                                    label={"Negative Genes/Features"}
-                                    options={features}
-                                    value={negativeMarkers}
-                                    onChange={onNegativeMarkers}
-                                />
-                            </FormControl>
-                        </div>
+                            <div><Link
+                                style={{
+                                    float: 'right',
+                                    marginRight: 4,
+                                    fontSize: '0.75rem',
+                                    transform: 'translateY(-20px)',
+                                    display: positiveMarkers.length === 0 ? 'none' : ''
+                                }}
+                                onClick={e => addFeatures(e, positiveMarkers)}>View All</Link></div>
+                        </FormControl>
+
+
+                        <FormControl sx={{display: 'block'}}>
+                            <AutocompleteVirtualized
+                                label={"Negative Genes/Features"}
+                                options={features}
+                                value={negativeMarkers}
+                                onChange={onNegativeMarkers}
+                            />
+                            <div><Link
+                                style={{
+                                    float: 'right',
+                                    marginRight: 4,
+                                    fontSize: '0.75rem',
+                                    transform: 'translateY(-20px)',
+                                    display: negativeMarkers.length === 0 ? 'none' : ''
+                                }}
+                                onClick={e => addFeatures(e, negativeMarkers)}>View All</Link></div>
+                        </FormControl>
+
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={handleDialogClose} color="primary">
