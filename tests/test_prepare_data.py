@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 import scipy.sparse
 
-from cirrocumulus.h5ad_dataset import H5ADDataset
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
 from cirrocumulus.zarr_dataset import ZarrDataset
@@ -55,9 +54,9 @@ def test_prepare_join_obs_index(test_data, tmp_path):
         PrepareData(datasets=[test_data, test_data2], output=output_dir)
 
 
-@pytest.mark.parametrize("file_format", ['h5ad', 'zarr', 'parquet'])
+@pytest.mark.parametrize("file_format", ['zarr', 'parquet'])
 def test_prepare(test_data, measures, dimensions, continuous_obs, basis, file_format, tmp_path):
-    file_format2ext = dict(parquet='.cpq', zarr='.zarr', h5ad='.h5adx')
+    file_format2ext = dict(parquet='.cpq', zarr='.zarr')
     output_dir = str(tmp_path / 'test.{}'.format(file_format2ext[file_format]))
     test_data = test_data[:, measures]
     test_data.obs = test_data.obs[dimensions + continuous_obs]
@@ -67,8 +66,6 @@ def test_prepare(test_data, measures, dimensions, continuous_obs, basis, file_fo
         reader = ParquetDataset()
     elif file_format == 'zarr':
         reader = ZarrDataset()
-    elif file_format == 'h5ad':
-        reader = H5ADDataset()
     read_and_diff(reader, output_dir, test_data, measures,
                   dimensions, continuous_obs, basis)
 
