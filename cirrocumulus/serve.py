@@ -36,8 +36,7 @@ def configure_app(app):
     app.config[CIRRO_DATABASE] = create_instance(os.environ[CIRRO_DATABASE_CLASS])
     os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(['cirrocumulus.tiledb_dataset.TileDBDataset',
                                                     'cirrocumulus.zarr_dataset.ZarrDataset',
-                                                    'cirrocumulus.parquet_dataset.ParquetDataset',
-                                                    'cirrocumulus.h5ad_dataset.H5ADDataset'])
+                                                    'cirrocumulus.parquet_dataset.ParquetDataset'])
     add_dataset_providers()
 
 

@@ -4,14 +4,22 @@ from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.local_db_api import LocalDbAPI
-from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.util import get_fs
 
 
 def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths):
     from cirrocumulus.api import dataset_api
     from cirrocumulus.no_auth import NoAuth
-    dataset_api.add(ParquetDataset())
+    try:
+        from cirrocumulus.parquet_dataset import ParquetDataset
+        dataset_api.add(ParquetDataset())
+    except ModuleNotFoundError:
+        pass
+    try:
+        from cirrocumulus.zarr_dataset import ZarrDataset
+        dataset_api.add(ZarrDataset())
+    except ModuleNotFoundError:
+        pass
     app.config[CIRRO_AUTH] = NoAuth()
     anndata_dataset = AnndataDataset()
     dataset_ids = []
@@ -109,7 +117,7 @@ def main(argsv):
 
     parser = argparse.ArgumentParser(description='Run cirrocumulus')
     parser.add_argument('dataset',
-                        help='Path to dataset in h5ad, loom, Seurat, TileDB, or STAR-Fusion format. Separate multiple datasets with '
+                        help='Path to dataset in h5ad, loom, Seurat, TileDB, zarr, or STAR-Fusion format. Separate multiple datasets with '
                              'a comma instead of a space in order to join datasets by cell id', nargs='+')
     parser.add_argument('--spatial', help=SPATIAL_HELP, nargs='*')
     parser.add_argument('--markers',

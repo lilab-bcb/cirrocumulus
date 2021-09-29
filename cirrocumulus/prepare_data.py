@@ -235,7 +235,7 @@ class PrepareData:
 
         schema = self.get_schema()
         schema['format'] = output_format
-        if output_format != 'jsonl':
+        if output_format in ['parquet', 'zarr']:
             output_dir = self.base_output
         else:
             output_dir = os.path.splitext(self.base_output)[0]
@@ -308,7 +308,7 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
-    parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl'],
+    parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl', 'zarr'],
                         default='parquet')
     parser.add_argument('--whitelist',
                         help='Optional whitelist of fields to save. Only applies when output format is parquet',
@@ -338,7 +338,7 @@ def main(argsv):
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
     if out.endswith('/'):
         out = out[:len(out) - 1]
-    output_format2extension = dict(parquet='.cpq', jsonl='.jsonl', zarr='.zarr', h5ad='.h5adx')
+    output_format2extension = dict(parquet='.cpq', jsonl='.jsonl', zarr='.zarr', h5ad='.h5ad')
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
 
