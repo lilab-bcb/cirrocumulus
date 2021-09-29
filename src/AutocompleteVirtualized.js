@@ -321,7 +321,6 @@ export default function AutocompleteVirtualized(props) {
         );
     });
 
-
     return <>
         <Autocomplete
             data-testid={props.testId}
@@ -347,7 +346,7 @@ export default function AutocompleteVirtualized(props) {
                 null
             }
             renderInput={(params) => (
-                <TextField {...params} label={props.label} helperText={props.helperText} sx={{width: 200}}
+                <TextField {...params} label={props.label} helperText={props.helperText} fullWidth={true}
                            margin={"dense"}/>
             )}
             renderGroup={(params) => params}
