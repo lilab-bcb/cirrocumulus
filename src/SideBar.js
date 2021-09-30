@@ -373,9 +373,9 @@ class SideBar extends React.PureComponent {
                 >
                     <DialogTitle id="submit-job-dialog-title">Submit Job</DialogTitle>
                     <DialogContent>
-                        <DialogContentText id="submit-job-dialog-description">
-                            Job Details
-                        </DialogContentText>
+                        {/*<DialogContentText id="submit-job-dialog-description">*/}
+                        {/*    Job Details*/}
+                        {/*</DialogContentText>*/}
                         <TextField
                             size={"small"}
                             onChange={this.onJobNameChange}
