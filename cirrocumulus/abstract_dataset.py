@@ -9,12 +9,15 @@ from cirrocumulus.api import get_file_path
 
 class AbstractDataset(ABC):
 
-    def __init__(self, suffixes):
+    def __init__(self):
         super().__init__()
-        self.suffixes = suffixes
 
     @abstractmethod
     def read_dataset(self, filesystem, path, keys, dataset):
+        pass
+
+    @abstractmethod
+    def get_suffixes(self):
         pass
 
     def get_result(self, filesystem, path, dataset, result_id):
@@ -28,9 +31,6 @@ class AbstractDataset(ABC):
         d['var'] = pd.Index(s['var'])
         d['shape'] = s['shape']
         return d
-
-    def get_suffixes(self):
-        return self.suffixes
 
     def get_schema(self, filesystem, path):
         if path.endswith('.gz'):

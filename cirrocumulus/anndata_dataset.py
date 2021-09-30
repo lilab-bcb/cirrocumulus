@@ -10,11 +10,14 @@ from cirrocumulus.io_util import read_star_fusion_file
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'rds', 'zarr']):
-        super().__init__(extensions)
+    def __init__(self, backed=None, force_sparse=True):
+        super().__init__()
         self.path_to_data = {}
         self.backed = backed
         self.force_sparse = force_sparse
+
+    def get_suffixes(self):
+        return ['h5ad', 'loom', 'rds', 'zarr']
 
     def read_adata(self, filesystem, path):
         path_lc = path.lower()

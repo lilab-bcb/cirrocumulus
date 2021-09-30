@@ -59,7 +59,10 @@ def get_matrix(futures, shape=None):
 class ParquetDataset(AbstractDataset):
 
     def __init__(self):
-        super().__init__(['parquet', 'pq', 'cpq'])
+        super().__init__()
+
+    def get_suffixes(self):
+        return ['parquet', 'pq', 'cpq']
 
     def read_data_sparse(self, filesystem, path, keys, dataset=None):
         dataset_info = self.get_dataset_info(filesystem, path)

@@ -15,8 +15,8 @@ from cirrocumulus.sparse_dataset import SparseDataset
 
 class AbstractBackedDataset(AbstractDataset):
 
-    def __init__(self, suffixes):
-        super().__init__(suffixes)
+    def __init__(self):
+        super().__init__()
 
     @abstractmethod
     def is_group(self, node):

@@ -9,7 +9,10 @@ from cirrocumulus.abstract_backed_dataset import AbstractBackedDataset
 class H5ADDataset(AbstractBackedDataset):
 
     def __init__(self):
-        super().__init__(['h5ad'])
+        super().__init__()
+
+    def get_suffixes(self):
+        return ['h5ad']
 
     def is_group(self, node):
         return isinstance(node, h5py.Group)

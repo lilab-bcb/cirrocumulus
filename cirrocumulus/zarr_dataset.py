@@ -8,7 +8,10 @@ from cirrocumulus.abstract_backed_dataset import AbstractBackedDataset
 class ZarrDataset(AbstractBackedDataset):
 
     def __init__(self):
-        super().__init__(['zarr'])
+        super().__init__()
+
+    def get_suffixes(self):
+        return ['zarr']
 
     def is_group(self, node):
         return isinstance(node, zarr.hierarchy.Group)
