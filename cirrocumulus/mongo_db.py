@@ -244,7 +244,7 @@ class MongoDb(AbstractDB):
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         return str(collection.insert_one(
-            dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params,
+            dict(dataset_id=dataset_id, status='pending', name=job_name, email=email, type=job_type, params=params,
                  submitted=datetime.datetime.utcnow())).inserted_id)
 
     def get_job(self, email, job_id, return_result):
