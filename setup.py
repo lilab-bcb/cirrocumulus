@@ -40,7 +40,8 @@ requires = [
     "pandas>=1.0",
     "pyarrow",
     "pymongo",
-    "scipy"
+    "scipy",
+    "zarr"
 ]
 
 setup(

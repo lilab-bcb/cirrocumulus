@@ -36,11 +36,11 @@ class DatasetAPI:
             self.suffix_to_provider[suffix.lower()] = provider
 
     def get_dataset_info(self, dataset):
-        path = dataset['url']
         dataset_id = dataset['id']
         if self.cached_dataset_id == dataset_id:
             dataset_info = self.cached_dataset_info
         else:
+            path = dataset['url']
             provider = self.get_dataset_provider(path)
             dataset_info = provider.get_dataset_info(get_fs(path), path)
             self.cached_dataset_info = dataset_info

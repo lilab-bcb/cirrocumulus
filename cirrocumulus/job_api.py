@@ -14,8 +14,7 @@ from .util import create_instance, add_dataset_providers
 executor = None
 
 logger = logging.getLogger('cirro')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
+job_type_to_func = dict()
 
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
@@ -33,7 +32,8 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
             max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
-    # run_job(database_api, dataset_api, email, job_id, job_type, dataset, params)
+    # run_job(email, job_id, job_type, dataset, params, database_api if not is_serve else None,
+    #         dataset_api if not is_serve else None)
     executor.submit(run_job, email, job_id, job_type, dataset, params, database_api if not is_serve else None,
                     dataset_api if not is_serve else None)
     return job_id
@@ -50,6 +50,11 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
         from cirrocumulus.api import dataset_api
         add_dataset_providers()
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
+    f = job_type_to_func[job_type]
+    f(email, job_id, job_type, dataset, params, database_api, dataset_api)
+
+
+def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info['var']
     nfeatures = len(var_names)
@@ -96,3 +101,6 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
                   data=result_df.to_dict(orient='records'))
     result['content-type'] = 'application/json'
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)
+
+
+job_type_to_func['de'] = run_de
