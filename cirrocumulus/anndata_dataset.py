@@ -10,7 +10,7 @@ from cirrocumulus.io_util import read_star_fusion_file
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'rds']):
+    def __init__(self, backed=None, force_sparse=True, extensions=['h5ad', 'loom', 'rds', 'zarr']):
         super().__init__()
         self.path_to_data = {}
         self.backed = backed
