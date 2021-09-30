@@ -12,6 +12,7 @@ from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS, SERVER
     SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_JOBS, \
     SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES
 from .invalid_usage import InvalidUsage
+from .job_api import save_job_result_to_file
 
 
 def format_doc(d):
@@ -282,16 +283,8 @@ class MongoDb(AbstractDB):
         if doc.get('readonly', False):
             raise InvalidUsage('Not authorized', 403)
         if result is not None:
-
             if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
-                url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.json.gz')
-                new_result = dict(url=url)
-                new_result['content-type'] = result.pop('content-type')
-                new_result['content-encoding'] = 'gzip'
-
-                with get_fs(url).open(url, 'wt', compression='gzip') as out:
-                    out.write(ujson.dumps(result, double_precision=2, orient='values'))
-                result = new_result
+                result = save_job_result_to_file(result, job_id)
             else:
                 result = ujson.dumps(result, double_precision=2, orient='values')
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})

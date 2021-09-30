@@ -3,18 +3,46 @@ import os
 
 import numpy as np
 import pandas as pd
+import pandas._libs.json as ujson
 from anndata import AnnData
 
 from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
-from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS
-from .util import create_instance, add_dataset_providers
+from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS
+from .util import create_instance, add_dataset_providers, get_fs
 
 executor = None
 
 logger = logging.getLogger('cirro')
 job_type_to_func = dict()
+
+
+def save_job_result_to_file(result, job_id):
+    new_result = dict()
+    new_result['content-type'] = result.pop('content-type')
+    if new_result['content-type'] == 'application/json':
+        compression = 'gzip'
+        new_result['content-encoding'] = compression
+        url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.json.gz')
+        with get_fs(url).open(url, 'wt', compression=compression) as out:
+            out.write(ujson.dumps(result, double_precision=2, orient='values'))
+    elif new_result['content-type'] == 'application/h5ad':
+        url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.h5ad')
+        with get_fs(url).open(url, 'wb') as out:
+            result['data'].write(out)
+    elif new_result['content-type'] == 'application/zarr':
+        url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.zarr')
+        result['data'].write_zarr(get_fs(url).get_mapper(url))
+    elif new_result['content-type'] == 'application/parquet':
+        import pyarrow.parquet as pq
+        import pyarrow as pa
+        url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.parquet')
+        pq.write_table(pa.Table.from_pandas(result['data']), url, filesystem=get_fs(url))
+    else:
+        raise ValueError('Unknown content-type {}'.format(new_result['content-type']))
+    new_result['url'] = url
+    return new_result
 
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
