@@ -39,7 +39,7 @@ export function DatasetSelector(props) {
     const [page, setPage] = useState(0);
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState(null);
-
+    const {dataset, datasetChoices, dialog} = props;
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -68,9 +68,12 @@ export function DatasetSelector(props) {
     function handleListItemDetailsClick(event, id) {
         event.stopPropagation();
         setDatasetDetailsEl(event.currentTarget);
-        props.serverInfo.api.getDatasetPromise(id).then(result => {
-            setSelectedDataset(result);
-        });
+        for (let i = 0, n = datasetChoices.length; i < n; i++) {
+            if (id === datasetChoices[i].id) {
+                setSelectedDataset(datasetChoices[i]);
+                break;
+            }
+        }
     }
 
     function handleListItemClick(id) {
@@ -93,7 +96,6 @@ export function DatasetSelector(props) {
     }
 
 
-    const {dataset, datasetChoices, dialog} = props;
     const selectedId = dataset != null ? dataset.id : null;
 
     if (datasetChoices.length <= 1 && selectedId != null) {
