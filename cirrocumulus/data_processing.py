@@ -43,8 +43,6 @@ def get_filter_str(data_filter):
             op = ''
         if not isinstance(field, dict) and not field == '__index':
             if isinstance(value, list):
-                if len(value) >= 10:
-                    return None
                 value = '_'.join(value)
                 s.append(field + '-' + value)
             else:
