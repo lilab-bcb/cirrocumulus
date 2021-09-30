@@ -224,18 +224,17 @@ export function DatasetSelector(props) {
                                                         const value = row[column.id];
                                                         return (
                                                             <TableCell key={column.id} align={column.align}>
-                                                                {columnIndex === 0 && <IconButton
-                                                                    disabled={row.description == null || row.description === ''}
-                                                                    onClick={(e) => handleListItemDetailsClick(e, row.id)}
-                                                                    edge="end"
-                                                                    aria-label="summary"
-                                                                    size="small">
-                                                                    <InfoIcon/>
-                                                                </IconButton>}
                                                                 {column.format && typeof value === 'number'
                                                                     ? column.format(value)
                                                                     : value}
-
+                                                                {columnIndex === 0 && row.description != null && row.description !== '' &&
+                                                                <IconButton
+                                                                    onClick={(e) => handleListItemDetailsClick(e, row.id)}
+                                                                    edge="end"
+                                                                    aria-label="description"
+                                                                    size="small">
+                                                                    <InfoIcon/>
+                                                                </IconButton>}
                                                             </TableCell>
                                                         );
                                                     })}
