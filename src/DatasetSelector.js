@@ -103,9 +103,25 @@ export function DatasetSelector(props) {
 
     let filteredChoices = datasetChoices;
     const searchTextLower = searchText.toLowerCase().trim();
+    const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
+        id: 'species',
+        label: 'Species'
+    }, {
+        id: 'title',
+        label: 'Title'
+    }];
+
     if (searchTextLower != '') {
-        filteredChoices = filteredChoices.filter(choice => choice.name.toLowerCase().indexOf(searchTextLower) !== -1 ||
-            (choice.description != null && choice.description.toLowerCase().indexOf(searchTextLower) !== -1));
+        const ncolumns = columns.length;
+        filteredChoices = filteredChoices.filter(choice => {
+            for (let i = 0; i < ncolumns; i++) {
+                const value = choice[columns[i].id];
+                if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        });
     }
     if (orderBy != null) {
         filteredChoices.sort((item1, item2) => {
@@ -123,13 +139,6 @@ export function DatasetSelector(props) {
     // if (otherIndex !== -1) { // move Other (empty string) to end
     //     groups.push(groups.splice(otherIndex, 1)[0]);
     // }
-    const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
-        id: 'species',
-        label: 'Species'
-    }, {
-        id: 'title',
-        label: 'Title'
-    }];
 
     return (
         <React.Fragment>
@@ -162,11 +171,10 @@ export function DatasetSelector(props) {
             <Dialog
                 fullWidth={true}
                 open={open}
-                sx={{height: '100vh'}}
                 onClose={handleClose}
                 maxWidth={"xl"}
             >
-                <DialogContent>
+                <DialogContent sx={{height: '100vh'}}>
                     <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
                                value={searchText}
                                onChange={onSearchChange}
