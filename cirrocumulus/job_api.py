@@ -86,9 +86,7 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info['var']
     nfeatures = len(var_names)
-    filters = [params['filter']]
-    if job_type == 'de':
-        filters.append(params['filter2'])
+    filters = [params['filter'], params['filter2']]
     masks, _ = get_mask(dataset_api, dataset, filters)
     batch_size = 5000 if os.environ.get(CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
     obs_field = 'tmp'
@@ -113,10 +111,9 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
             key_set=[str(i) for i in range(len(masks))])
     pvals = fdrcorrection(de.pvals)
     # group:field is object entry
-    if job_type == 'de':
-        comparison1_name = get_filter_str(params['filter'])
-    comparison2_name = get_filter_str(params['filter2'])
-    comparison = 'comparison' if comparison1_name is None or comparison2_name is None else comparison1_name + '_' + comparison2_name
+    comparison_names = [get_filter_str(params['filter']), get_filter_str(params['filter2'])]
+    comparison = 'comparison' if comparison_names[0] is None or comparison_names[1] is None else '_'.join(
+        comparison_names)
 
     result_df = pd.DataFrame(
         data={'index': var_names, '{}:pvals_adj'.format(comparison): pvals, '{}:scores'.format(comparison): de.scores,
