@@ -344,19 +344,26 @@ def handle_dataset():
     database_api = get_database()
     # POST=new dataset, PUT=update dataset, DELETE=delete, GET=get dataset info
     if request.method == 'PUT' or request.method == 'POST':
-        dataset_id = request.form.get('id')
-        dataset_name = request.form.get('name')
-        url = request.form.get('url')  # e.g. gs://foo/a/b/
-        readers = request.form.get('readers')
-        file = request.files.get('file')  # file upload
-        if readers is not None:
+        if request.content_type == 'application/json':
+            d = request.get_json(force=True, cache=False)
+        else:
+            d = request.form.copy()
+
+        dataset_id = d.get('id')
+        dataset_name = d.get('name')
+        url = d.get('url')  # e.g. gs://foo/a/b/
+        readers = d.pop('readers') if 'readers' in d else None
+        file = None
+        if request.content_type != 'application/json':
+            file = request.files.get('file')  # file upload
+        if readers is not None and not isinstance(readers, list):
             import json
             readers = json.loads(readers)
         if request.method == 'PUT' and dataset_id is None:  # update
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_name == '':  # new
             return 'Must supply dataset name', 400
-        d = request.form.copy()
+
         if url is not None and os.environ.get(CIRRO_UPLOAD) is not None:
             url = copy_url(url)
             d['url'] = url
@@ -366,15 +373,9 @@ def handle_dataset():
                 return 'Upload not supported', 400
             url = upload_file(file)
             d['url'] = url
-
-        dataset = dict()
-        if request.method == 'PUT':
-            dataset['id'] = dataset_id
-        blacklist = set(['id', 'readers', 'file'])
-        for key in d:
-            if key not in blacklist:
-                dataset[key] = d[key]
-        dataset_id = database_api.upsert_dataset(email=email, readers=readers, dataset=dataset)
+        if request.method == 'POST' and url is None:  # new
+            return 'Must supply dataset URL', 400
+        dataset_id = database_api.upsert_dataset(email=email, readers=readers, dataset=d)
         return json_response({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
