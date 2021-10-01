@@ -1,9 +1,9 @@
 import json
 import os
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
-import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS
@@ -366,7 +366,10 @@ def handle_dataset():
                 return 'Upload not supported', 400
             url = upload_file(file)
             d['url'] = url
-        dataset = dict(id=dataset_id if request.method == 'PUT' else None)
+
+        dataset = dict()
+        if request.method == 'PUT':
+            dataset['id'] = dataset_id
         blacklist = set(['id', 'readers', 'file'])
         for key in d:
             if key not in blacklist:
