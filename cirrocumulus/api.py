@@ -347,7 +347,9 @@ def handle_dataset():
         if request.content_type == 'application/json':
             d = request.get_json(force=True, cache=False)
         else:
-            d = request.form.copy()
+            d = dict()
+            for key in request.form:
+                d[key] = request.form[key]
 
         dataset_id = d.get('id')
         dataset_name = d.get('name')
