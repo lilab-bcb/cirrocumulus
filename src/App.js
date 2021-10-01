@@ -69,7 +69,7 @@ class App extends PureComponent {
 
         // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
         // need to add filter, selection
-        const {theme, chartOptions, dataset, dialog, loading, loadingApp, message, tab} = this.props;
+        const {theme, dataset, dialog, loading, loadingApp, message, tab} = this.props;
         const color = theme.palette.primary.main;
 
         const footerBackground = theme.palette.background.paper;
@@ -188,7 +188,6 @@ class App extends PureComponent {
 
 const mapStateToProps = state => {
     return {
-        chartOptions: state.chartOptions,
         dataset: state.dataset,
         dialog: state.dialog,
         loading: state.loading,

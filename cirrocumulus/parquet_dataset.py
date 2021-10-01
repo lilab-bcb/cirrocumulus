@@ -20,23 +20,10 @@ def read_table(path, filesystem, columns=None):
     return pq.read_table(path, filesystem=filesystem, columns=columns, use_threads=False)
 
 
-def read_df(path, filesystem, columns=None):
-    return read_table(path, filesystem=filesystem, columns=columns)
-
-
 def read_tables(paths, filesystem, columns=None):
     futures = []
     for path in paths:
         future = executor.submit(read_table, path, filesystem=filesystem, columns=columns)
-        futures.append(future)
-    concurrent.futures.wait(futures)
-    return futures
-
-
-def read_dfs(paths, filesystem, columns=None):
-    futures = []
-    for path in paths:
-        future = executor.submit(read_df, path, filesystem=filesystem, columns=columns)
         futures.append(future)
     concurrent.futures.wait(futures)
     return futures
@@ -77,23 +64,26 @@ class ParquetDataset(AbstractDataset):
     def get_suffixes(self):
         return ['parquet', 'pq', 'cpq']
 
-    def read_data_sparse(self, filesystem, path, keys, dataset=None, schema=None):
-        shape = schema['shape']
-        schema_version = schema.get('version', '1.0.0')
+    def read_data_sparse(self, filesystem, path, keys, dataset=None):
+        dataset_info = self.get_dataset_info(filesystem, path)
+        shape = dataset_info['shape']
         X = None
         adata_modules = None
         obs = None
         var = None
         obsm = {}
-        var_keys = keys.pop('X', [])
+        X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
         module_keys = keys.pop('module', [])
-        if len(var_keys) > 0:
+        if len(X_keys) > 0:
+            if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified for performance
+                get_item_x = X_keys[0]
+                X_keys = dataset_info['var'][get_item_x]
             node_path = os.path.join(path, 'X')
-            paths = [node_path + '/' + key + '.parquet' for key in var_keys]
+            paths = [node_path + '/' + key + '.parquet' for key in X_keys]
             X = get_matrix(read_tables(paths, filesystem), shape)
-            var = pd.DataFrame(index=var_keys)
+            var = pd.DataFrame(index=X_keys)
         if len(module_keys) > 0:
             node_path = os.path.join(path, 'X_module')
             paths = [node_path + '/' + key + '.parquet' for key in module_keys]
@@ -127,7 +117,7 @@ class ParquetDataset(AbstractDataset):
             adata.uns['X_module'] = adata_modules
         return adata
 
-    def read_data_dense(self, filesystem, path, keys=None, dataset=None, schema=None):
+    def read_data_dense(self, filesystem, path, keys=None, dataset=None):
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis = keys.pop('basis', [])
@@ -153,18 +143,18 @@ class ParquetDataset(AbstractDataset):
                 obsm[key] = df[['{}_{}'.format(key, 1), '{}_{}'.format(key, 2)]]
         return AnnData(X=X, obs=obs, var=var, obsm=obsm)
 
-    def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):
+    def read_dataset(self, filesystem, path, keys=None, dataset=None):
         if keys is None:
             keys = {}
         # path is directory
         keys = keys.copy()
         if not path.endswith('.parquet'):
-            return self.read_data_sparse(filesystem, path, keys, dataset, schema)
-        return self.read_data_dense(filesystem, path, keys, dataset, schema)
+            return self.read_data_sparse(filesystem, path, keys, dataset)
+        return self.read_data_dense(filesystem, path, keys, dataset)
 
-    def schema(self, filesystem, path):
+    def get_schema(self, filesystem, path):
         if path.endswith('.json') or path.endswith('.json.gz'):
-            return super().schema(filesystem, path)
+            return super().get_schema(filesystem, path)
         elif path.endswith('.parquet'):
             metadata = None
             with filesystem.open(path, 'rb') as s:
@@ -222,4 +212,4 @@ class ParquetDataset(AbstractDataset):
                 result['shape'] = (parquet_file.metadata.num_rows, len(result['var']))
                 return result
         else:  # directory
-            return super().schema(filesystem, os.path.join(path, 'index.json.gz'))
+            return super().get_schema(filesystem, os.path.join(path, 'index.json.gz'))

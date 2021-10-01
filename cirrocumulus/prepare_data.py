@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 
+import anndata
 import numpy as np
 import pandas as pd
 import scipy.sparse
@@ -17,19 +18,20 @@ categorical_fields_convert = ['seurat_clusters']
 
 
 def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
-    import anndata
-    adata = anndata.read_loom(path) if path.lower().endswith('.loom') else anndata.read(path,
-                                                                                        backed=backed)
+    if path.lower().endswith('.loom'):
+        adata = anndata.read_loom(path)
+    elif path.lower().endswith('.zarr'):
+        adata = anndata.read_zarr(path)
+    else:
+        adata = anndata.read(path, backed=backed)
+
     if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
         logger.info('Using adata.raw')
         adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
 
     if spatial_directory is not None:
         if not add_spatial(adata, spatial_directory):
-            print('No spatial data found in {}'.format(spatial_directory))
-    if not backed:
-        if scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
-            adata.X = adata.X.tocsc()
+            logger.info('No spatial data found in {}'.format(spatial_directory))
 
     def fix_column_names(df):
         rename = {}
@@ -49,27 +51,30 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
             new_key = key.replace(' ', '_')
             adata.obsm[new_key] = adata.obsm[key]
             del adata.obsm[key]
+    if not backed and scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
+        adata.X = adata.X.tocsc()
     return adata
 
 
-def make_unique(index, join='-1'):
-    index = index.str.replace('/', '_')
-    lower_index = index.str.lower()
-    if lower_index.is_unique:
-        return index
-    from collections import defaultdict
-
-    indices_dup = lower_index.duplicated(keep="first")
-    values_dup_lc = lower_index.values[indices_dup]
-    values_dup = index.values[indices_dup]
-    counter = defaultdict(lambda: 0)
-    for i, v in enumerate(values_dup_lc):
-        counter[v] += 1
-        values_dup[i] += join + str(counter[v])
-    values = index.values
-    values[indices_dup] = values_dup
-    index = pd.Index(values)
-    return index
+#
+# def make_unique(index, join='-1'):
+#     index = index.str.replace('/', '_')
+#     lower_index = index.str.lower()
+#     if lower_index.is_unique:
+#         return index
+#     from collections import defaultdict
+#
+#     indices_dup = lower_index.duplicated(keep="first")
+#     values_dup_lc = lower_index.values[indices_dup]
+#     values_dup = index.values[indices_dup]
+#     counter = defaultdict(lambda: 0)
+#     for i, v in enumerate(values_dup_lc):
+#         counter[v] += 1
+#         values_dup[i] += join + str(counter[v])
+#     values = index.values
+#     values[indices_dup] = values_dup
+#     index = pd.Index(values)
+#     return index
 
 
 class PrepareData:
@@ -83,40 +88,60 @@ class PrepareData:
         self.output_format = output_format
         self.no_auto_groups = no_auto_groups
         self.save_whitelist = save_whitelist
-        primary_dataset = datasets[0]
-        for i in range(1, len(datasets)):
-            dataset = datasets[i]
-            name = dataset.uns.get('name', 'dataset {}'.format(i + 1))
-            prefix = name + '-'
-            dataset.var.index = prefix + dataset.var.index.astype(str)
-            # add prefix, check for duplicates
-            obs_exclude = []
-            dataset.uns['cirro_obs_exclude'] = obs_exclude
-            if not np.array_equal(primary_dataset.obs.index, dataset.obs.index):
-                raise ValueError('{} obs ids are not equal'.format(name))
-            for key in list(dataset.obs.keys()):
-                if key in primary_dataset.obs.columns and dataset.obs[key].equals(primary_dataset.obs[key]):
-                    obs_exclude.append(key)
-                    continue
-                dataset.obs[prefix + key] = dataset.obs[key]
-                del dataset.obs[key]
-
-            obsm_exclude = []
-            dataset.uns['cirro_obsm_exclude'] = obsm_exclude
-            for key in list(dataset.obsm.keys()):
-                if key in primary_dataset.obsm and np.array_equal(dataset.obsm[key], primary_dataset.obsm[key]):
-                    obsm_exclude.append(key)
-                    continue
-                dataset.obsm[prefix + key] = dataset.obsm[key]
-                del dataset.obsm[key]
 
         for dataset in datasets:
+            for key in list(dataset.obsm.keys()):
+                m = dataset.obsm[key]
+                dim = m.shape[1]
+                if not (1 < dim <= 3):
+                    del dataset.obsm[key]
+        data_type2_datasets = {}
+        for i in range(len(datasets)):
+            dataset = datasets[i]
+            if i > 0:
+                name = dataset.uns.get('name', 'dataset {}'.format(i + 1))
+                prefix = name + '-'
+                dataset.var.index = prefix + dataset.var.index.astype(str)
+                # ensure cell ids are the same
+                if not np.array_equal(datasets[0].obs.index, dataset.obs.index):
+                    raise ValueError('{} obs ids are not equal'.format(name))
             if dataset.uns.get('data_type') is None and dataset.uns.get('name', '').lower().startswith(
                     'module'):  # TODO hack
                 dataset.uns['data_type'] = DataType.MODULE
-            index = make_unique(dataset.var.index.append(pd.Index(dataset.obs.columns)))
-            dataset.var.index = index[0:len(dataset.var.index)]
-            dataset.obs.columns = index[len(dataset.var.index):]
+            data_type = dataset.uns.get('data_type')
+            dataset_list = data_type2_datasets.get(data_type)
+            if dataset_list is None:
+                dataset_list = []
+                data_type2_datasets[data_type] = dataset_list
+            dataset_list.append(dataset)
+        datasets = []
+        for data_type in data_type2_datasets:
+            dataset_list = data_type2_datasets[data_type]
+            dataset = anndata.concat(dataset_list, axis=1) if len(dataset_list) > 1 else dataset_list[0]
+            dataset.var.index = dataset.var.index.str.replace('/', '_')
+            dataset.var_names_make_unique()
+            dataset.obs.index.name = 'index'
+            dataset.var.index.name = 'index'
+            datasets.append(dataset)
+        primary_dataset = datasets[0]
+        for i in range(1, len(datasets)):
+            dataset = datasets[i]
+            # mark duplicate in obs, then delete after computing DE
+            obs_duplicates = []
+            dataset.uns['cirro_obs_delete'] = obs_duplicates
+            for key in list(dataset.obs.keys()):
+                if key in primary_dataset.obs.columns and dataset.obs[key].equals(primary_dataset.obs[key]):
+                    obs_duplicates.append(key)
+                else:
+                    dataset.obs[prefix + key] = dataset.obs[key]
+                    del dataset.obs[key]
+
+            for key in list(dataset.obsm.keys()):
+                if key in primary_dataset.obsm and np.array_equal(dataset.obsm[key], primary_dataset.obsm[key]):
+                    del dataset.obsm[key]
+                else:
+                    dataset.obsm[prefix + key] = dataset.obsm[key]  # rename
+                    del dataset.obsm[key]
 
         self.base_output = output
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
@@ -202,14 +227,15 @@ class PrepareData:
                                 pg.de_analysis(dataset, cluster=field, de_key=key_added)
                             else:
                                 sc.tl.rank_genes_groups(dataset, field, key_added=key_added, method='t-test')
-
-        for i in range(1, len(self.datasets)):
-            for key in dataset.uns.get('cirro_obs_exclude', []):
+        # remove duplicate obs fields after DE
+        for dataset in self.datasets:
+            obs_duplicates = dataset.uns.get('cirro_obs_delete', [])
+            for key in obs_duplicates:
                 del dataset.obs[key]
-            for key in dataset.uns.get('cirro_obsm_exclude', []):
-                del dataset.obsm[key]
+
         schema = self.get_schema()
-        if output_format == 'parquet':
+        schema['format'] = output_format
+        if output_format in ['parquet', 'zarr']:
             output_dir = self.base_output
         else:
             output_dir = os.path.splitext(self.base_output)[0]
@@ -219,18 +245,20 @@ class PrepareData:
 
         if len(results) > 0:
             uns_dir = os.path.join(output_dir, 'uns')
-            is_gzip = output_format == 'parquet'
+            is_gzip = output_format != 'jsonl'
             filesystem.makedirs(uns_dir, exist_ok=True)
-            for i in range(len(results)):  # keep id, name, type in schema, store rest in file
-                result = results[i]
-                result_id = result.pop('id')
-                results[i] = dict(id=result_id, name=result.pop('name'), type=result.pop('type'),
+
+            for i in range(len(results)):
+                full_result = results[i]
+                result_id = full_result.pop('id')
+                # keep id, name, type in schema, store rest in file
+                results[i] = dict(id=result_id, name=full_result.pop('name'), type=full_result.pop('type'),
                                   content_type='application/json', content_encoding='gzip' if is_gzip else None)
 
                 result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
                                                                                                          result_id + '.json')
-                with filesystem.open(result_path, 'wt', compression='gzip' if is_gzip else None) as f:
-                    f.write(to_json(result))
+                with filesystem.open(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
+                    out.write(to_json(full_result))
 
         for dataset in self.datasets:
             images = dataset.uns.get('images')
@@ -244,11 +272,17 @@ class PrepareData:
                     image['image'] = 'images/' + os.path.basename(src)
 
         if output_format == 'parquet':
-            from cirrocumulus.parquet_io import save_adata_pq
-            save_adata_pq(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
+            from cirrocumulus.parquet_output import save_datasets_pq
+            save_datasets_pq(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
         elif output_format == 'jsonl':
-            from cirrocumulus.jsonl_io import save_adata_jsonl
-            save_adata_jsonl(self.datasets, schema, output_dir, self.base_output, filesystem)
+            from cirrocumulus.jsonl_io import save_datasets_jsonl
+            save_datasets_jsonl(self.datasets, schema, output_dir, self.base_output, filesystem)
+        elif output_format == 'zarr':
+            from cirrocumulus.zarr_output import save_datasets_zarr
+            save_datasets_zarr(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
+        elif output_format == 'h5ad':
+            from cirrocumulus.h5ad_output import save_datasets_h5ad
+            save_datasets_h5ad(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
         else:
             raise ValueError("Unknown format")
 
@@ -274,7 +308,8 @@ def main(argsv):
         description='Prepare a dataset for cirrocumulus server.')
     parser.add_argument('dataset', help='Path to a h5ad, loom, or Seurat file', nargs='+')
     parser.add_argument('--out', help='Path to output directory')
-    parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl'], default='parquet')
+    parser.add_argument('--format', help='Output format', choices=['parquet', 'jsonl', 'zarr'],
+                        default='parquet')
     parser.add_argument('--whitelist',
                         help='Optional whitelist of fields to save. Only applies when output format is parquet',
                         choices=['obs', 'obsm', 'X'],
@@ -292,7 +327,7 @@ def main(argsv):
     parser.add_argument('--group_nfeatures', help='Number of marker genes/features to include', type=int, default=10)
     parser.add_argument('--spatial', help=SPATIAL_HELP)
     args = parser.parse_args(argsv)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler())
     out = args.out
     no_auto_groups = args.no_auto_groups
@@ -303,7 +338,7 @@ def main(argsv):
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
     if out.endswith('/'):
         out = out[:len(out) - 1]
-    output_format2extension = dict(parquet='.cpq', jsonl='.jsonl')
+    output_format2extension = dict(parquet='.cpq', jsonl='.jsonl', zarr='.zarr', h5ad='.h5ad')
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
 
@@ -324,7 +359,6 @@ def main(argsv):
             tmp_file = h5_file
             use_raw = True
             tmp_files.append(tmp_file)
-
         adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
         adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset))[0]

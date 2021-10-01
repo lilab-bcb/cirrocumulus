@@ -51,7 +51,7 @@ import {
 import {EditableColorScheme} from './EditableColorScheme';
 import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_SAVE_LINKS, TRACE_TYPE_META_IMAGE} from './util';
+import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_LINKS, TRACE_TYPE_META_IMAGE} from './util';
 import ExplorePanel from "./ExplorePanel";
 import Link from "@mui/material/Link";
 import withStyles from '@mui/styles/withStyles';
@@ -373,10 +373,11 @@ class SideBar extends React.PureComponent {
                 >
                     <DialogTitle id="submit-job-dialog-title">Submit Job</DialogTitle>
                     <DialogContent>
-                        <DialogContentText id="submit-job-dialog-description">
-                            Job Details
-                        </DialogContentText>
+                        {/*<DialogContentText id="submit-job-dialog-description">*/}
+                        {/*    Job Details*/}
+                        {/*</DialogContentText>*/}
                         <TextField
+                            size={"small"}
                             onChange={this.onJobNameChange}
                             value={jobName}
                             autoFocus
@@ -582,7 +583,7 @@ class SideBar extends React.PureComponent {
 
                 </div>
 
-                {serverInfo.capabilities.has(SERVER_CAPABILITY_SAVE_LINKS) &&
+                {serverInfo.capabilities.has(SERVER_CAPABILITY_LINKS) &&
                 <div
                     style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
                     <Divider/>

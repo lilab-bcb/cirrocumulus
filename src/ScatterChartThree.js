@@ -100,6 +100,47 @@ function ScatterChartThree(props) {
     const lastHoverIndexRef = useRef();
     const [forceUpdate, setForceUpdate] = useState(false);
     const previousChartSizeRef = useRef();
+
+    function getSelectedIndex(point) {
+        const trace = props.trace;
+        const positions = trace.positions;
+        const camera = scatterPlotRef.current.camera;
+        const widthHalf = props.chartSize.width / 2;
+        const heightHalf = props.chartSize.height / 2;
+        const pos = new Vector3();
+        let selectedIndex = -1;
+        const tolerance = 2;
+        if (lastHoverIndexRef.current !== -1) {
+            pos.x = positions[lastHoverIndexRef.current * 3];
+            pos.y = positions[lastHoverIndexRef.current * 3 + 1];
+            pos.z = positions[lastHoverIndexRef.current * 3 + 2];
+            pos.project(camera);
+            pos.x = (pos.x * widthHalf) + widthHalf;
+            pos.y = -(pos.y * heightHalf) + heightHalf;
+            if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                selectedIndex = lastHoverIndexRef.current;
+            }
+        }
+
+        if (selectedIndex === -1) {
+            // TODO get all hover points
+            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
+                pos.x = positions[k];
+                pos.y = positions[k + 1];
+                pos.z = positions[k + 2];
+                pos.project(camera);
+                pos.x = (pos.x * widthHalf) + widthHalf;
+                pos.y = -(pos.y * heightHalf) + heightHalf;
+                if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        lastHoverIndexRef.current = selectedIndex;
+        return selectedIndex;
+    }
+
     useEffect(() => {
         init();
         if (previousChartSizeRef.current !== props.chartSize) {
@@ -113,47 +154,28 @@ function ScatterChartThree(props) {
             props.chartOptions.camera = null;
         }
         previousChartSizeRef.current = props.chartSize;
+        scatterPlotRef.current.clickCallback = (point, append) => {
+            if (!props.trace.continuous) {
+                const selectedIndex = getSelectedIndex(point);
+                if (selectedIndex !== -1) {
+                    props.handleClick({
+                        name: props.trace.name,
+                        value: props.trace.values[selectedIndex],
+                        shiftKey: false,
+                        metaKey: append
+                    });
+                }
+                lastHoverIndexRef.current = selectedIndex;
+            }
+
+        };
         scatterPlotRef.current.hoverCallback = (point) => {
             if (point == null) {
                 props.setTooltip('');
             } else {
-                const trace = props.trace;
-                const positions = trace.positions;
-                const camera = scatterPlotRef.current.camera;
-                const widthHalf = props.chartSize.width / 2;
-                const heightHalf = props.chartSize.height / 2;
-                const pos = new Vector3();
-                let selectedIndex = -1;
-                const tolerance = 2;
-                if (lastHoverIndexRef.current !== -1) {
-                    pos.x = positions[lastHoverIndexRef.current * 3];
-                    pos.y = positions[lastHoverIndexRef.current * 3 + 1];
-                    pos.z = positions[lastHoverIndexRef.current * 3 + 2];
-                    pos.project(camera);
-                    pos.x = (pos.x * widthHalf) + widthHalf;
-                    pos.y = -(pos.y * heightHalf) + heightHalf;
-                    if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                        selectedIndex = lastHoverIndexRef.current;
-                    }
-                }
-
-                if (selectedIndex === -1) {
-                    // TODO get all hover points
-                    for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
-                        pos.x = positions[k];
-                        pos.y = positions[k + 1];
-                        pos.z = positions[k + 2];
-                        pos.project(camera);
-                        pos.x = (pos.x * widthHalf) + widthHalf;
-                        pos.y = -(pos.y * heightHalf) + heightHalf;
-                        if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                            selectedIndex = i;
-                            break;
-                        }
-                    }
-                }
-                lastHoverIndexRef.current = selectedIndex;
+                const selectedIndex = getSelectedIndex(point);
                 if (selectedIndex !== -1) {
+                    const {trace} = props;
                     let value = trace.values[selectedIndex];
                     let categoryObject = props.categoricalNames[trace.name] || {};
                     let renamedValue = categoryObject[value];
@@ -182,7 +204,7 @@ function ScatterChartThree(props) {
             const pos = new Vector3();
             const selectedIndices = new Set();
 
-            for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
+            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
                 pos.x = positions[k];
                 pos.y = positions[k + 1];
                 pos.z = positions[k + 2];
@@ -215,7 +237,7 @@ function ScatterChartThree(props) {
             const pos = new Vector3();
             const selectedIndices = new Set();
 
-            for (let i = 0, j = 0, k = 0, npoints = trace.x.length; i < npoints; i++, j += 4, k += 3) {
+            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
                 pos.x = positions[k];
                 pos.y = positions[k + 1];
                 pos.z = positions[k + 2];
@@ -296,7 +318,7 @@ function ScatterChartThree(props) {
         let fog = scatterPlot.scene.fog;
         let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
         // const zoomFactor = getScaleFactor(props.chartSize);
-        const zoomFactorSpecified = false;
+        // const zoomFactorSpecified = false;
 
         if (!is3d) {
             const PI = 3.1415926535897932384626433832795;

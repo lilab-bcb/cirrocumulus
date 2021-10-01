@@ -59,7 +59,7 @@ def read_adata_jsonl(path, keys):
     return df
 
 
-def save_adata_jsonl(datasets, schema, output_dir, base_name, filesystem):
+def save_datasets_jsonl(datasets, schema, output_dir, base_name, filesystem):
     compress = False
     index = {}  # key to byte start-end
     filesystem.makedirs(output_dir, exist_ok=True)
@@ -103,12 +103,10 @@ def save_data_obsm(adata, f, index, compress):
     for name in adata.obsm.keys():
         value = adata.obsm[name]
         dim = value.shape[1]
-        if 1 < dim <= 3:
-            d = {}
-
-            for i in range(dim):
-                d[name + '_' + str(i + 1)] = value[:, i]
-            write_jsonl(d, f, name, index, compress)
+        d = {}
+        for i in range(dim):
+            d[name + '_' + str(i + 1)] = value[:, i]
+        write_jsonl(d, f, name, index, compress)
 
 
 def save_data_obs(adata, f, index, compress):

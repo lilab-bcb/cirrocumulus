@@ -6,13 +6,15 @@ import scipy.sparse
 import tiledb
 from anndata import AnnData
 
+from cirrocumulus.abstract_dataset import AbstractDataset
 
-class TileDBDataset:
+
+class TileDBDataset(AbstractDataset):
 
     def get_suffixes(self):
         return ['cxg']
 
-    def schema(self, filesystem, path):
+    def get_schema(self, filesystem, path):
         # path is to directory
         schema_dict = {'version': '1.0.0'}
         schema_dict['markers'] = []
@@ -83,11 +85,12 @@ class TileDBDataset:
             schema_dict['var'] = pd.Index(array.query(attrs=['name_0'])[:]['name_0'])
         return schema_dict
 
-    def read_dataset(self, filesystem, path, keys=None, dataset=None, schema=None):
+    def read_dataset(self, filesystem, path, keys=None, dataset=None):
         keys = keys.copy()
         var_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
+        dataset_info = self.get_dataset_info(filesystem, path)
         X = None
         obs = None
         var = None
@@ -96,7 +99,7 @@ class TileDBDataset:
             with tiledb.open(os.path.join(path, 'X'), mode="r") as array:
                 if array.schema.sparse:
                     raise ValueError('Sparse data not supported')
-                var_names = schema['var']
+                var_names = dataset_info['var']
                 indices = var_names.get_indexer_for(var_keys).tolist()
                 X = array.multi_index[:, indices]['']
                 X = scipy.sparse.csc_matrix(X)
@@ -107,7 +110,7 @@ class TileDBDataset:
 
             for key in obs_keys:
                 if key == 'index':
-                    _obs_keys.append(schema.get('obsIndex', 'name_0'))
+                    _obs_keys.append(dataset_info.get('obsIndex', 'name_0'))
                 else:
                     _obs_keys.append(key)
             with tiledb.open(os.path.join(path, 'obs'), mode="r") as array:

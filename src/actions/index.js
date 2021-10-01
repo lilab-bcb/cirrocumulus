@@ -1125,22 +1125,11 @@ export function getIdToken() {
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
-        const name = payload.name;
-        const url = payload.url;
-        const file = payload.file;
         const readers = payload.readers;
-        const description = payload.description;
-        const title = payload.title;
-        const species = payload.species;
         let existingDataset = payload.dataset;
         const isEdit = existingDataset != null;
-        if (existingDataset == null) {
-            existingDataset = {};
-        }
-        const data = {};
-        if (existingDataset.readers == null) {
-            data.readers = readers;
-        } else {
+        const formData = {};
+        if (existingDataset != null) {
             const existingReaders = new Set(existingDataset.readers);
             let setsEqual = existingReaders.size === readers.length;
             if (setsEqual) {
@@ -1152,37 +1141,33 @@ export function saveDataset(payload) {
                 }
             }
             if (!setsEqual) {
-                data.readers = readers;
+                formData.readers = readers;
             }
         }
-        if (name != null && name !== existingDataset.name) {
-            data.name = name;
+        if (existingDataset == null) {
+            existingDataset = {};
         }
-        if (description != null && description !== existingDataset.description) {
-            data.description = description;
+        const blacklist = new Set(['readers', 'dataset']);
+        for (let key in payload) {
+            if (!blacklist.has(key)) {
+                const value = payload[key];
+                if (value != null && value !== existingDataset[key]) {
+                    formData[key] = value;
+                }
+            }
         }
-        if (title != null && title !== existingDataset.title) {
-            data.title = title;
-        }
-        if (species != null && species !== existingDataset.species) {
-            data.species = species;
-        }
-        if (url != null && url !== existingDataset.url) {
-            data.url = url;
-        }
-        if (file != null) {
-            data.file = file;
-        }
-        if (Object.keys(data).length === 0) {
+
+
+        if (Object.keys(formData).length === 0) {
             return;
         }
         if (isEdit) {
-            data.id = payload.dataset.id;
+            formData.id = payload.dataset.id;
         }
         dispatch(_setLoading(true));
-        const request = getState().serverInfo.api.upsertDatasetPromise(data);
+        const request = getState().serverInfo.api.upsertDatasetPromise(formData);
         request.upload.addEventListener('progress', function (e) {
-            if (file) {
+            if (formData['file'] != null) {
                 let percent = (e.loaded / e.total) * 100;
                 dispatch(setMessage('Percent ' + percent));
             }
@@ -1194,16 +1179,17 @@ export function saveDataset(payload) {
             if (status != 200) {
                 return dispatch(setMessage('Unable to save dataset. Please try again.'));
             }
-            // request.response holds response from the server
+
             const resp = JSON.parse(request.response);
-            data.id = resp.id;
-            data.owner = true;
+            delete formData['file'];
+            existingDataset = Object.assign({}, existingDataset, formData, resp);
+            existingDataset.owner = true;
 
             if (isEdit) {
-                dispatch(updateDataset(data));
+                dispatch(updateDataset(existingDataset));
                 dispatch(setMessage('Dataset updated'));
             } else {
-                dispatch(_addDataset(data));
+                dispatch(_addDataset(existingDataset));
                 dispatch(setMessage('Dataset added'));
             }
         });
@@ -1377,7 +1363,7 @@ function _setEmail(payload) {
  * @param value
  * @param type one of X, obs, featureSet
  */
-export function setSearchTokens(values, type) {
+export function setSearchTokens(values, type, updateActiveFeature = true, clear = true) {
     return function (dispatch, getState) {
         const state = getState();
         let searchTokens = state.searchTokens;
@@ -1386,27 +1372,37 @@ export function setSearchTokens(values, type) {
         if (type === FEATURE_TYPE.OBS) {
             removeType.push(FEATURE_TYPE.OBS_CAT);
         }
-        searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
+        if (clear) {
+            searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
+        }
+        const existingKeys = new Set();
+        searchTokens.forEach(token => existingKeys.add(token.value));
         if (type === FEATURE_TYPE.OBS) {
             const obsCat = state.dataset.obsCat;
             values.forEach(val => {
                 const type = obsCat.indexOf(val) !== -1 ? FEATURE_TYPE.OBS_CAT : FEATURE_TYPE.OBS;
-                searchTokens.push({value: val, type: type});
+                if (!existingKeys.has(val)) {
+                    existingKeys.add(val);
+                    searchTokens.push({value: val, type: type});
+                }
             });
         } else {
-            searchTokens = searchTokens.concat(values.map(item => {
-                return {value: item, type: type};
-            }));
+            values.forEach(val => {
+                if (!existingKeys.has(val)) {
+                    existingKeys.add(val);
+                    searchTokens.push({value: val, type: type});
+                }
+            });
         }
         dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
-        dispatch(_updateCharts());
+        dispatch(_updateCharts(null, updateActiveFeature));
     };
 }
 
-export function setSearchTokensDirectly(tokens) {
+export function setSearchTokensDirectly(tokens, updateActiveFeature = true) {
     return function (dispatch, getState) {
         dispatch({type: SET_SEARCH_TOKENS, payload: tokens});
-        dispatch(_updateCharts());
+        dispatch(_updateCharts(null, updateActiveFeature));
     };
 }
 
@@ -1630,7 +1626,7 @@ function _updateDistributionData(newDistributionData, existingDistributionData, 
     return distributionData;
 }
 
-function _updateCharts(onError) {
+function _updateCharts(onError, updateActiveFeature = true) {
     return function (dispatch, getState) {
         const state = getState();
         if (state.dataset == null) {
@@ -1859,7 +1855,9 @@ function _updateCharts(onError) {
             embeddingData = embeddingData.concat(newEmbeddingData);
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
             dispatch(setEmbeddingData(embeddingData));
-            dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
+            if (updateActiveFeature) {
+                dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
+            }
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection, false));
             } else { // clear selection

@@ -1,196 +1,315 @@
-import {Tooltip, Typography} from '@mui/material';
+import {
+    Divider,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    Tooltip,
+    Typography
+} from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
-import ListItemText from '@mui/material/ListItemText';
 import Popover from '@mui/material/Popover';
 import TextField from '@mui/material/TextField';
 import ClearIcon from '@mui/icons-material/Clear';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import InfoIcon from '@mui/icons-material/Info';
-import {groupBy} from 'lodash';
 import ReactMarkdown from 'markdown-to-jsx';
-import React from 'react';
+import React, {useState} from 'react';
 import {connect} from 'react-redux';
 import {OPEN_DATASET_DIALOG, setDialog} from './actions';
 import {NATSORT, REACT_MD_OVERRIDES} from './util';
+import {intFormat} from './formatters';
+import {visuallyHidden} from '@mui/utils';
+import Box from '@mui/material/Box';
 
-export class DatasetSelector extends React.PureComponent {
 
-    constructor(props) {
-        super(props);
-        this.state = {searchText: '', datasetDetailsEl: null, selectedDataset: null};
+export function DatasetSelector(props) {
+    const [searchText, setSearchText] = useState('');
+    const [datasetDetailsEl, setDatasetDetailsEl] = useState(null);
+    const [selectedDataset, setSelectedDataset] = useState(null);
+    const [rowsPerPage, setRowsPerPage] = useState(30);
+    const [page, setPage] = useState(0);
+    const [order, setOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState(null);
+    const {dataset, datasetChoices, dialog} = props;
+    const handleRequestSort = (event, property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+    };
+
+    function handleClick(event) {
+        props.handleDialog(OPEN_DATASET_DIALOG);
+        setSearchText('');
     }
 
-    handleClick = (event) => {
-        this.props.handleDialog(OPEN_DATASET_DIALOG);
-        this.setState({searchText: ''});
-    };
+    function handleClose() {
+        props.handleDialog(null);
+        setSearchText('');
+    }
 
-    handleClose = () => {
-        this.props.handleDialog(null);
-        this.setState({searchText: ''});
-    };
+    function handleCloseDatasetDetails(event) {
+        setDatasetDetailsEl(null);
+        setSelectedDataset(null);
+    }
 
-    handleCloseDatasetDetails = (event) => {
-        this.setState({datasetDetailsEl: null, selectedDataset: null});
-    };
+    function handleListItemDetailsClick(event, id) {
+        event.stopPropagation();
+        setDatasetDetailsEl(event.currentTarget);
+        for (let i = 0, n = datasetChoices.length; i < n; i++) {
+            if (id === datasetChoices[i].id) {
+                setSelectedDataset(datasetChoices[i]);
+                break;
+            }
+        }
+    }
 
-    handleListItemDetailsClick = (event, id) => {
-        this.setState({datasetDetailsEl: event.currentTarget});
-        this.props.serverInfo.api.getDatasetPromise(id).then(result => {
-            this.setState({selectedDataset: result});
-        });
-
-    };
-
-    handleListItemClick = (id) => {
-        const selectedId = this.props.dataset != null ? this.props.dataset.id : null;
+    function handleListItemClick(id) {
+        const selectedId = props.dataset != null ? props.dataset.id : null;
         if (id !== selectedId) {
-            this.props.onChange(id);
+            props.onChange(id);
         }
-        this.props.handleDialog(null);
-        this.setState({searchText: ''});
-    };
-
-    handleClearSearchText = () => {
-        this.setState({searchText: ''});
-    };
-
-    onSearchChange = (event) => {
-        this.setState({searchText: event.target.value});
-    };
-
-    render() {
-        const {dataset, datasetChoices, dialog} = this.props;
-        const selectedId = dataset != null ? dataset.id : null;
-
-        if (datasetChoices.length <= 1 && selectedId != null) {
-            return null;
-        }
-        const {searchText, selectedDataset} = this.state;
-        const open = dialog === OPEN_DATASET_DIALOG;
-
-        let filteredChoices = datasetChoices;
-        const searchTextLower = this.state.searchText.toLowerCase().trim();
-        if (searchTextLower != '') {
-            filteredChoices = filteredChoices.filter(choice => choice.name.toLowerCase().indexOf(searchTextLower) !== -1 ||
-                (choice.description != null && choice.description.toLowerCase().indexOf(searchTextLower) !== -1));
-        }
-        const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
-        const hasMoreInfo = selectedDataset && (selectedDataset.title || selectedDataset.description);
-        const species2Items = groupBy(filteredChoices, item => item.species || '');
-        const speciesArray = Object.keys(species2Items);
-        speciesArray.sort(NATSORT);
-        const otherIndex = speciesArray.indexOf("");
-        if (otherIndex !== -1) { // move Other (empty string) to end
-            speciesArray.push(speciesArray.splice(otherIndex, 1)[0]);
-        }
-        return (
-            <React.Fragment>
-                <Popover
-                    id={"dataset-details-selector"}
-                    open={datasetDetailsOpen}
-                    anchorEl={this.state.datasetDetailsEl}
-                    onClose={this.handleCloseDatasetDetails}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center'
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center'
-                    }}
-                >
-                    <div style={{width: 500}}>
-                        {!hasMoreInfo && <div>No description available</div>}
-                        {selectedDataset && selectedDataset.title && <div>{selectedDataset.title}</div>}
-                        {selectedDataset && selectedDataset.description &&
-                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                       children={selectedDataset.description}/>}
-                    </div>
-                </Popover>
-                {selectedId == null && <Button variant="contained" onClick={this.handleClick}
-                                               color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
-                {selectedId != null &&
-                <Tooltip title={'Open'}><IconButton onClick={this.handleClick}
-                                                    size="large"><FolderOpenIcon/></IconButton></Tooltip>}
-
-                <Dialog
-                    open={open}
-                    onClose={this.handleClose}
-                    fullWidth={true}
-                >
-                    <DialogContent style={{width: 500}}>
-                        <TextField size="small" style={{padding: 6}} type="text" placeholder={"Search"}
-                                   value={searchText}
-                                   onChange={this.onSearchChange}
-                                   fullWidth={true}
-                                   InputProps={searchText.trim() !== '' ? {
-                                       endAdornment:
-                                           <InputAdornment position="end">
-                                               <IconButton aria-label="clear" onClick={this.handleClearSearchText}
-                                                           size="large">
-                                                   <ClearIcon/>
-                                               </IconButton>
-                                           </InputAdornment>
-                                   } : null}
-                        />
-                        <div style={{height: 500, overflow: 'auto'}}>
-                            {speciesArray.length === 0 && searchText.trim() !== '' &&
-                            <Typography>No Results</Typography>}
-                            {speciesArray.map(species => {
-                                const speciesText = species === '' ? 'Other' : species;
-                                const choices = species2Items[species];
-                                choices.sort((a, b) => NATSORT(a.name, b.name));
-                                return (
-                                    <React.Fragment key={species}>
-                                        <Typography component={"h2"}>{speciesText}</Typography>
-                                        <List dense disablePadding component="nav">
-                                            {choices.map(choice => {
-                                                let text = choice.name;
-                                                if (choice.title) {
-                                                    text += ' - ' + choice.title;
-                                                }
-                                                return (
-                                                    <ListItem alignItems="flex-start"
-                                                              selected={choice.id === selectedId}
-                                                              key={choice.id}
-                                                              button
-                                                              onClick={(e) => this.handleListItemClick(choice.id)}>
-                                                        <ListItemText
-                                                            primary={text}
-                                                            style={{
-                                                                textOverflow: 'ellipsis',
-                                                                overflow: 'hidden',
-                                                                whiteSpace: 'nowrap'
-                                                            }}/>
-                                                        <ListItemSecondaryAction>
-                                                            <IconButton
-                                                                onClick={(e) => this.handleListItemDetailsClick(e, choice.id)}
-                                                                edge="end"
-                                                                aria-label="summary"
-                                                                size="large">
-                                                                <InfoIcon/>
-                                                            </IconButton>
-                                                        </ListItemSecondaryAction>
-                                                    </ListItem>
-                                                );
-                                            })}
-                                        </List></React.Fragment>
-                                );
-                            })}
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            </React.Fragment>
-        );
+        props.handleDialog(null);
+        setSearchText('');
     }
+
+    function handleClearSearchText() {
+        setPage(0);
+        setSearchText('');
+    }
+
+    function onSearchChange(event) {
+        setPage(0);
+        setSearchText(event.target.value);
+    }
+
+
+    const selectedId = dataset != null ? dataset.id : null;
+
+    if (datasetChoices.length <= 1 && selectedId != null) {
+        return null;
+    }
+    const open = dialog === OPEN_DATASET_DIALOG;
+
+    let filteredChoices = datasetChoices;
+    const searchTextLower = searchText.toLowerCase().trim();
+    const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
+        id: 'species',
+        label: 'Species'
+    }, {
+        id: 'title',
+        label: 'Title'
+    }];
+
+    if (searchTextLower != '') {
+        const ncolumns = columns.length;
+        filteredChoices = filteredChoices.filter(choice => {
+            for (let i = 0; i < ncolumns; i++) {
+                const value = choice[columns[i].id];
+                if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+    if (orderBy != null) {
+        filteredChoices.sort((item1, item2) => {
+            return NATSORT(item1[orderBy], item2[orderBy]);
+        });
+        if (order == 'desc') {
+            filteredChoices.reverse();
+        }
+    }
+    const datasetDetailsOpen = Boolean(datasetDetailsEl);
+    // const group2Items = groupBy(filteredChoices, item => item[datasetSelectorGroupBy] || '');
+    // const groups = Object.keys(group2Items);
+    // groups.sort(NATSORT);
+    // const otherIndex = groups.indexOf("");
+    // if (otherIndex !== -1) { // move Other (empty string) to end
+    //     groups.push(groups.splice(otherIndex, 1)[0]);
+    // }
+
+    return (
+        <React.Fragment>
+            <Popover
+                id={"dataset-details-selector"}
+                open={datasetDetailsOpen}
+                anchorEl={datasetDetailsEl}
+                onClose={handleCloseDatasetDetails}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center'
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center'
+                }}
+            >
+                <div style={{width: 500}}>
+                    {selectedDataset && selectedDataset.description &&
+                    <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                   children={selectedDataset.description}/>}
+                </div>
+            </Popover>
+            {selectedId == null && <Button variant="contained" onClick={handleClick}
+                                           color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
+            {selectedId != null &&
+            <Tooltip title={'Open'}><IconButton onClick={handleClick}
+                                                size="large"><FolderOpenIcon/></IconButton></Tooltip>}
+
+            <Dialog
+                fullWidth={true}
+                open={open}
+                onClose={handleClose}
+                maxWidth={"xl"}
+            >
+                <DialogContent sx={{height: '100vh'}}>
+                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
+                               value={searchText}
+                               onChange={onSearchChange}
+                               fullWidth={true}
+                               InputProps={searchText.trim() !== '' ? {
+                                   endAdornment:
+                                       <InputAdornment position="end">
+                                           <IconButton aria-label="clear" onClick={handleClearSearchText}
+                                                       size="large">
+                                               <ClearIcon/>
+                                           </IconButton>
+                                       </InputAdornment>
+                               } : null}
+                    />
+                    <div>
+                        <Typography
+                            variant="subtitle1">{(filteredChoices.length != datasetChoices.length ? (intFormat(filteredChoices.length) + ' / ') : '') + intFormat(datasetChoices.length) + ' Datasets'}</Typography>
+                        <Divider/>
+                        <TableContainer>
+                            <Table stickyHeader size={"small"} padding={"normal"}>
+                                <TableHead>
+                                    <TableRow>
+                                        {columns.map((column) => (
+                                            <TableCell
+                                                key={column.id}
+                                                align={column.numeric ? 'right' : 'left'}
+                                                padding={column.disablePadding ? 'none' : 'normal'}
+                                                sortDirection={orderBy === column.id ? order : false}
+                                            >
+                                                <TableSortLabel
+                                                    active={orderBy === column.id}
+                                                    direction={orderBy === column.id ? order : 'asc'}
+                                                    onClick={event => handleRequestSort(event, column.id)}
+                                                >
+                                                    {column.label}
+                                                    {orderBy === column.id ? (
+                                                        <Box component="span" sx={visuallyHidden}>
+                                                            {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
+                                                        </Box>
+                                                    ) : null}
+                                                </TableSortLabel>
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredChoices
+                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                        .map((row) => {
+                                            return (
+                                                <TableRow selected={row.id === selectedId} hover role="checkbox"
+                                                          tabIndex={-1} key={row.id}
+                                                          onClick={(e) => handleListItemClick(row.id)}>
+                                                    {columns.map((column, columnIndex) => {
+                                                        const value = row[column.id];
+                                                        return (
+                                                            <TableCell key={column.id} align={column.align}>
+                                                                {column.format && typeof value === 'number'
+                                                                    ? column.format(value)
+                                                                    : value}
+                                                                {columnIndex === 0 && row.description != null && row.description !== '' &&
+                                                                <IconButton
+                                                                    onClick={(e) => handleListItemDetailsClick(e, row.id)}
+                                                                    edge="end"
+                                                                    aria-label="description"
+                                                                    size="small">
+                                                                    <InfoIcon/>
+                                                                </IconButton>}
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            );
+                                        })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <TablePagination
+                            rowsPerPageOptions={[30]}
+                            component="div"
+                            count={filteredChoices.length}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+
+                        />
+                        {/*{groups.map(species => {*/}
+                        {/*    const speciesText = species === '' ? 'Other' : species;*/}
+                        {/*    const choices = group2Items[species];*/}
+                        {/*    choices.sort((a, b) => NATSORT(a.name, b.name));*/}
+                        {/*    return (*/}
+                        {/*        <React.Fragment key={species}>*/}
+                        {/*            <Typography component={"h2"}>{speciesText}</Typography>*/}
+                        {/*            <List dense disablePadding component="nav">*/}
+                        {/*                {choices.map(choice => {*/}
+                        {/*                    let text = choice.name;*/}
+                        {/*                    if (choice.title) {*/}
+                        {/*                        text += ' - ' + choice.title;*/}
+                        {/*                    }*/}
+                        {/*                    return (*/}
+                        {/*                        <ListItem alignItems="flex-start"*/}
+                        {/*                                  selected={choice.id === selectedId}*/}
+                        {/*                                  key={choice.id}*/}
+                        {/*                                  button*/}
+                        {/*                                  onClick={(e) => handleListItemClick(choice.id)}>*/}
+                        {/*                            <ListItemText*/}
+                        {/*                                primary={text}*/}
+                        {/*                                style={{*/}
+                        {/*                                    textOverflow: 'ellipsis',*/}
+                        {/*                                    overflow: 'hidden',*/}
+                        {/*                                    whiteSpace: 'nowrap'*/}
+                        {/*                                }}/>*/}
+                        {/*                            <ListItemSecondaryAction>*/}
+                        {/*                                <IconButton*/}
+                        {/*                                    onClick={(e) => handleListItemDetailsClick(e, choice.id)}*/}
+                        {/*                                    edge="end"*/}
+                        {/*                                    aria-label="summary"*/}
+                        {/*                                    size="large">*/}
+                        {/*                                    <InfoIcon/>*/}
+                        {/*                                </IconButton>*/}
+                        {/*                            </ListItemSecondaryAction>*/}
+                        {/*                        </ListItem>*/}
+                        {/*                    );*/}
+                        {/*                })}*/}
+                        {/*            </List></React.Fragment>*/}
+                        {/*    );*/}
+                        {/*})}*/}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </React.Fragment>
+    );
+
 }
 
 const mapStateToProps = state => {

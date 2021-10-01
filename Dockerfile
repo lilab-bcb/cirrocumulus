@@ -11,7 +11,6 @@ RUN yarn build
 RUN python -m pip install --upgrade pip
 RUN python -m pip install setuptools
 RUN python -m pip install .
-RUN python -m pip install tiledb s3fs requests
 
 EXPOSE 3000
 CMD ["cirro", "serve", "--db_uri", "", "--bind", "0.0.0.0:3000"]

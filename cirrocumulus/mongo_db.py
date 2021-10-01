@@ -2,13 +2,22 @@ import datetime
 import json
 import os
 
+import pandas._libs.json as ujson
 from bson import ObjectId
-from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain
 from pymongo import MongoClient
 
-from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain, get_fs
+from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS, SERVER_CAPABILITY_EDIT_DATASET, \
+    SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_JOBS, \
+    SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES
 from .invalid_usage import InvalidUsage
+from .job_api import save_job_result_to_file
+
+
+def format_doc(d):
+    d['id'] = str(d.pop('_id'))
+    return d
 
 
 class MongoDb(AbstractDB):
@@ -19,6 +28,7 @@ class MongoDb(AbstractDB):
         self.db = self.client.get_default_database()
 
     def category_names(self, email, dataset_id):
+
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
         results = {}
@@ -35,6 +45,8 @@ class MongoDb(AbstractDB):
         return results
 
     def upsert_category_name(self, email, dataset_id, category, original_value, update):
+        if not self.capabilities()[SERVER_CAPABILITY_RENAME_CATEGORIES]:
+            return
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
         key = str(dataset_id) + '-' + str(category) + '-' + str(original_value)
@@ -78,15 +90,9 @@ class MongoDb(AbstractDB):
             raise InvalidUsage('Not authorized', 403)
         if ensure_owner and email not in doc['owners']:
             raise InvalidUsage('Not authorized', 403)
-        return {
-            'id': str(doc['_id']),
-            'name': doc['name'],
-            'readers': doc.get('readers'),
-            'species': doc.get('species'),
-            'description': doc.get('description'),
-            'title': doc.get('title'),
-            'url': doc['url'],
-            'owner': 'owners' in doc and email in doc['owners']}
+        doc['owner'] = 'owners' in doc and email in doc.pop('owners')
+        doc['id'] = str(doc.pop('_id'))
+        return doc
 
     def datasets(self, email):
         collection = self.db.datasets
@@ -96,10 +102,11 @@ class MongoDb(AbstractDB):
             query = dict(readers=email)
         else:
             query = dict(readers={'$in': [email, domain]})
+
         for doc in collection.find(query):
-            results.append({'id': str(doc['_id']), 'name': doc['name'], 'title': doc.get('title'),
-                            'owner': 'owners' in doc and email in doc['owners'], 'url': doc['url'],
-                            'species': doc.get('species')})
+            doc['owner'] = 'owners' in doc and email in doc.pop('owners')
+            doc['id'] = str(doc.pop('_id'))
+            results.append(doc)
         return results
 
     # views
@@ -109,12 +116,12 @@ class MongoDb(AbstractDB):
         results = []
 
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(
-                {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                 'notes': doc.get('notes'), 'email': doc['email']})
+            results.append(format_doc(doc))
         return results
 
     def delete_dataset_view(self, email, view_id):
+        if not self.capabilities()[SERVER_CAPABILITY_LINKS]:
+            return
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
@@ -124,13 +131,14 @@ class MongoDb(AbstractDB):
         collection = self.db.views
         doc = collection.find_one(dict(_id=ObjectId(view_id)))
         self.get_dataset(email, doc['dataset_id'])
-        return {'id': str(doc['_id']), 'dataset_id': doc['dataset_id'], 'name': doc['name'], 'value': doc['value'],
-                'created': doc.get('created'), 'email': doc['email']}
+        return format_doc(doc)
 
     def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
+        if not self.capabilities()[SERVER_CAPABILITY_LINKS]:
+            return
         self.get_dataset(email, dataset_id)
         collection = self.db.views
-        entity_update = {'created': datetime.datetime.utcnow()}
+        entity_update = {'last_updated': datetime.datetime.utcnow()}
         if name is not None:
             entity_update['name'] = name
         if value is not None:
@@ -145,13 +153,6 @@ class MongoDb(AbstractDB):
             collection.update_one(dict(_id=ObjectId(view_id)), {'$set': entity_update})
             return view_id
 
-    def delete_dataset(self, email, dataset_id):
-        self.get_dataset(email, dataset_id, True)
-        collection = self.db.datasets
-        collection.delete_one(dict(_id=ObjectId(dataset_id)))
-        self.db.filters.delete_many(dict(dataset_id=dataset_id))
-        self.db.categories.delete_many(dict(dataset_id=dataset_id))
-
     def is_importer(self, email):
         # TODO check if user can modify dataset
         user = self.db.users.find_one(dict(email=email))
@@ -159,40 +160,44 @@ class MongoDb(AbstractDB):
             raise False
         return user['importer']
 
-    def upsert_dataset(self, email, dataset_id, dataset_name=None, url=None, readers=None, description=None, title=None,
-                       species=None):
+    def delete_dataset(self, email, dataset_id):
+        if not self.capabilities()[SERVER_CAPABILITY_DELETE_DATASET]:
+            return
+
+        self.get_dataset(email, dataset_id, True)
         collection = self.db.datasets
-        update_dict = {}
-        if dataset_name is not None:
-            update_dict['name'] = dataset_name
-        if url is not None:
-            update_dict['url'] = url
+        collection.delete_one(dict(_id=ObjectId(dataset_id)))
+        self.db.filters.delete_many(dict(dataset_id=dataset_id))
+        self.db.categories.delete_many(dict(dataset_id=dataset_id))
+
+    def upsert_dataset(self, email, readers, dataset):
+
+        if dataset.get('id') is None and not self.capabilities()[SERVER_CAPABILITY_ADD_DATASET]:
+            return
+        if dataset.get('id') is not None and not self.capabilities()[SERVER_CAPABILITY_EDIT_DATASET]:
+            return
+        collection = self.db.datasets
 
         if readers is not None:
             readers = set(readers)
             if email in readers:
                 readers.remove(email)
             readers.add(email)
-            update_dict['readers'] = list(readers)
-        if description is not None:
-            update_dict['description'] = description
-        if title is not None:
-            update_dict['title'] = title
-        if species is not None:
-            update_dict['species'] = species
+            dataset['readers'] = list(readers)
 
-        if dataset_id is None:  # new dataset
+        if dataset.get('id') is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))
                 if 'importer' not in user or not user['importer']:
                     raise InvalidUsage('Not authorized', 403)
-            update_dict['owners'] = [email]
-            if 'readers' not in update_dict:
-                update_dict['readers'] = [email]
-            return str(collection.insert_one(update_dict).inserted_id)
-        else:
-            self.get_dataset(email, dataset_id, True)
-            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': update_dict})
+            dataset['owners'] = [email]
+            if 'readers' not in dataset:
+                dataset['readers'] = [email]
+            return str(collection.insert_one(dataset).inserted_id)
+        else:  # update
+            self.get_dataset(email, dataset['id'], True)
+            dataset_id = dataset.pop('id')
+            collection.update_one(dict(_id=ObjectId(dataset_id)), {'$set': dataset})
             return dataset_id
 
     def get_feature_sets(self, email, dataset_id):
@@ -200,17 +205,20 @@ class MongoDb(AbstractDB):
         collection = self.db.feature_sets
         results = []
         for doc in collection.find(dict(dataset_id=dataset_id)):
-            results.append(
-                dict(id=str(doc['_id']), category=doc['category'], name=doc['name'], features=doc['features']))
+            results.append(format_doc(doc))
         return results
 
     def delete_feature_set(self, email, dataset_id, set_id):
+        if not self.capabilities()[SERVER_CAPABILITY_FEATURE_SETS]:
+            return
         collection = self.db.feature_sets
         doc = collection.find_one(dict(_id=ObjectId(set_id)))
         self.get_dataset(email, doc['dataset_id'])
         collection.delete_one(dict(_id=ObjectId(set_id)))
 
     def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
+        if not self.capabilities()[SERVER_CAPABILITY_FEATURE_SETS]:
+            return
         self.get_dataset(email, dataset_id)
         collection = self.db.feature_sets
         entity_update = {}
@@ -231,11 +239,12 @@ class MongoDb(AbstractDB):
             return set_id
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
+        if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
+            return
         self.get_dataset(email, dataset_id)
-
         collection = self.db.jobs
         return str(collection.insert_one(
-            dict(dataset_id=dataset_id, name=job_name, email=email, type=job_type, params=params,
+            dict(dataset_id=dataset_id, status='pending', name=job_name, email=email, type=job_type, params=params,
                  submitted=datetime.datetime.utcnow())).inserted_id)
 
     def get_job(self, email, job_id, return_result):
@@ -262,24 +271,33 @@ class MongoDb(AbstractDB):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
-        collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(annotations=annotations, last_updated=ddd)})
+        collection.update_one(dict(_id=ObjectId(job_id)),
+                              {'$set': dict(annotations=annotations, last_updated=datetime.datetime.utcnow())})
 
     def update_job(self, email, job_id, status, result):
+        if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
+            return
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
         if doc.get('readonly', False):
             raise InvalidUsage('Not authorized', 403)
         if result is not None:
-            from cirrocumulus.util import to_json
-            result = to_json(result)
-
+            if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
+                result = save_job_result_to_file(result, job_id)
+            else:
+                result = ujson.dumps(result, double_precision=2, orient='values')
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
     def delete_job(self, email, job_id):
+        if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
+            return
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)), dict(email=1))
         if doc['email'] == email and not doc.get('readonly', False):
             collection.delete_one(dict(_id=ObjectId(job_id)))
+            url = doc.get('url')
+            if url is not None:
+                get_fs(url).rm(url)
         else:
             raise InvalidUsage('Not authorized', 403)

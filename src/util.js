@@ -61,14 +61,14 @@ interpolators['Cyclical'] = ['interpolateRainbow', 'interpolateSinebow'];
 //     '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
 //     '#c7c7c7', '#bcbd22', '#dbdb8d', '#17becf', '#9edae5'];
 
-export const SERVER_CAPABILITY_RENAME_CATEGORIES = 'rename_categories';
-export const SERVER_CAPABILITY_JOBS = 'jobs';
-export const SERVER_CAPABILITY_SAVE_FEATURE_SETS = 'save_feature_sets';
-export const SERVER_CAPABILITY_SAVE_LINKS = 'save_links';
-export const SERVER_CAPABILITY_EDIT_DATASET = 'edit_dataset';
-export const SERVER_CAPABILITY_ADD_DATASET = 'add_dataset';
-export const SERVER_CAPABILITY_DELETE_DATASET = 'delete_dataset';
 
+export const SERVER_CAPABILITY_RENAME_CATEGORIES = 'SERVER_CAPABILITY_RENAME_CATEGORIES';
+export const SERVER_CAPABILITY_JOBS = 'SERVER_CAPABILITY_JOBS';
+export const SERVER_CAPABILITY_FEATURE_SETS = 'SERVER_CAPABILITY_FEATURE_SETS';
+export const SERVER_CAPABILITY_LINKS = 'SERVER_CAPABILITY_LINKS';
+export const SERVER_CAPABILITY_EDIT_DATASET = 'SERVER_CAPABILITY_EDIT_DATASET';
+export const SERVER_CAPABILITY_ADD_DATASET = 'SERVER_CAPABILITY_ADD_DATASET';
+export const SERVER_CAPABILITY_DELETE_DATASET = 'SERVER_CAPABILITY_DELETE_DATASET';
 
 export const CATEGORY_20B = [
     '#393b79', '#5254a3', '#6b6ecf',
@@ -205,7 +205,8 @@ export function summarizeDensity(values, index, selection, summarizationMethod) 
     return newValues;
 }
 
-export function createEmbeddingDensity(xcoords, ycoords, nbins = 150) {
+export function createEmbeddingDensity(xcoords, ycoords) {
+    const nbins = xcoords.length > 18367 ? Math.floor(Math.sqrt(xcoords.length / 1000)) * 14 : 60;
     const xscale = scaleLinear().domain(extent(xcoords)).range([0, nbins - 1]);
     const yscale = scaleLinear().domain(extent(ycoords)).range([0, nbins - 1]);
     const binMap = new Map();

@@ -1,9 +1,32 @@
 # import pandas.io.json as json
+import os
 from urllib.parse import urlparse
 
 import fsspec
 import pandas._libs.json as ujson
+from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
 from flask import make_response
+
+
+def add_dataset_providers():
+    from cirrocumulus.api import dataset_api
+    dataset_providers = []
+
+    for p in os.environ[CIRRO_DATASET_PROVIDERS].split(','):
+        try:
+            dataset_api.add(create_instance(p))
+            dataset_providers.append(p)
+        except ModuleNotFoundError:  # ignore if required libraries are not installed
+            pass
+
+    os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(dataset_providers)
+
+
+def create_instance(class_name):
+    import importlib
+    dot_index = class_name.rfind('.')
+    c = getattr(importlib.import_module(class_name[0:dot_index]), class_name[dot_index + 1:])
+    return c()
 
 
 def get_scheme(path):
@@ -14,6 +37,7 @@ def get_scheme(path):
 
 
 scheme_to_fs = {}
+scheme_to_fs_args = dict(s3=dict(s3_additional_kwargs=dict(ACL='bucket-owner-full-control')))
 
 
 def get_fs(path):
@@ -21,7 +45,8 @@ def get_fs(path):
     fs = scheme_to_fs.get(scheme, None)
     if fs is not None:
         return fs
-    fs = fsspec.filesystem(scheme)
+    fs_args = scheme_to_fs_args.get(scheme, {})
+    fs = fsspec.filesystem(scheme, **fs_args)
     scheme_to_fs[scheme] = fs
     return fs
 
@@ -51,7 +76,6 @@ def get_email_domain(email):
 def load_dataset_schema(url):
     import os
 
-    import fsspec
     import json
 
     def get_extension(path):
@@ -66,7 +90,7 @@ def load_dataset_schema(url):
     json_schema = None
     if extension in ['.json', '.json.gz', '']:
         scheme = get_scheme(url)
-        fs = fsspec.filesystem(scheme)
+        fs = get_fs(scheme)
         if extension == '':
             url = os.path.join(url, 'index.json.gz')
             extension = get_extension(url)
