@@ -3,6 +3,8 @@ import os
 from urllib.parse import urlparse
 
 import fsspec
+import numpy as np
+import pandas as pd
 import pandas._libs.json as ujson
 from flask import make_response
 

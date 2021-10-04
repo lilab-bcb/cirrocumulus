@@ -1,9 +1,9 @@
 import json
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS
@@ -434,11 +434,8 @@ def handle_job():
                         adata = anndata.read(f)
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
-                try:
-                    from cStringIO import StringIO
-                except:
-                    from StringIO import StringIO
 
+                from io import StringIO
                 output = StringIO()
                 adata2gct(adata, output)
                 output.close()
