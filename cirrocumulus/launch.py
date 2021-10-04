@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
-from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH
+from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH, CIRRO_JOB_TYPE
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.local_db_api import LocalDbAPI
 from cirrocumulus.util import get_fs
@@ -21,6 +21,7 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths)
     except ModuleNotFoundError:
         pass
     app.config[CIRRO_AUTH] = NoAuth()
+    os.environ[CIRRO_JOB_TYPE + 'de'] = 'cirrocumulus.job_api.run_de'
     anndata_dataset = AnndataDataset()
     dataset_ids = []
     for dataset_paths in list_of_dataset_paths:

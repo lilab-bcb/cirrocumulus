@@ -9,13 +9,12 @@ from anndata import AnnData
 from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
-from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS
-from .util import create_instance, add_dataset_providers, get_fs
+from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
+from .util import create_instance, add_dataset_providers, get_fs, import_path
 
 executor = None
 
 logger = logging.getLogger('cirro')
-job_type_to_func = dict()
 
 
 def save_job_result_to_file(result, job_id):
@@ -78,8 +77,11 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
         from cirrocumulus.api import dataset_api
         add_dataset_providers()
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
-    f = job_type_to_func[job_type]
-    f(email, job_id, job_type, dataset, params, database_api, dataset_api)
+    f = os.environ[CIRRO_JOB_TYPE + job_type]
+    if f is None:
+        database_api.update_job(email=email, job_id=job_id, status='error', result=None)
+        raise ValueError('No function to handle {}'.format(job_type))
+    import_path(f)(email, job_id, job_type, dataset, params, database_api, dataset_api)
 
 
 def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
@@ -126,6 +128,3 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
                   data=result_df.to_dict(orient='records'))
     result['content-type'] = 'application/json'
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)
-
-
-job_type_to_func['de'] = run_de
