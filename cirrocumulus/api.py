@@ -427,12 +427,13 @@ def handle_job():
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
             content_type = job['content-type']
-            if content_type == 'application/h5ad':
-                # URL to an h5ad
+            if content_type == 'application/h5ad' or content_type == 'application/zarr':
                 import anndata
-                block_size = 50 * 2 ** 20
-                with get_fs(url).open(url, mode='rb', block_size=block_size) as f:
-                    adata = anndata.read(f)
+                if content_type == 'application/h5ad':
+                    with get_fs(url).open(url, mode='rb') as f:
+                        adata = anndata.read(f)
+                else:
+                    adata = anndata.read_zarr(get_fs(url).get_mapper(url))
                 try:
                     from cStringIO import StringIO
                 except:
@@ -440,8 +441,9 @@ def handle_job():
 
                 output = StringIO()
                 adata2gct(adata, output)
-                r = Response(output.getvalue(), mimetype='text/plain')
                 output.close()
+                r = Response(output.getvalue(), mimetype='text/plain')
+
                 # r.headers["Content-Encoding"] = 'gzip'
                 return r
             else:
