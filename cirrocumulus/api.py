@@ -438,9 +438,8 @@ def handle_job():
                 from io import StringIO
                 output = StringIO()
                 adata2gct(adata, output)
-                output.close()
                 r = Response(output.getvalue(), mimetype='text/plain')
-
+                output.close()
                 # r.headers["Content-Encoding"] = 'gzip'
                 return r
             else:
