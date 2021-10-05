@@ -2,7 +2,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import TextField from '@mui/material/TextField';
-import {DialogActions, Switch, Typography} from '@mui/material';
+import {DialogActions, Divider, Switch, Typography} from '@mui/material';
 import Button from '@mui/material/Button';
 import {SERVER_CAPABILITY_JOBS} from './util';
 import Tooltip from '@mui/material/Tooltip';
@@ -17,13 +17,11 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import React, {useEffect, useState} from 'react';
 import {datasetFilterToJson, setDialog, setTab, submitJob} from './actions';
-import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import {getAnnotationOptions} from './ExplorePanel';
 
 function JobPanel(props) {
     const {
-        classes,
         compareActions,
         combineDatasetFilters,
         dataset,
@@ -119,7 +117,7 @@ function JobPanel(props) {
     }
 
 
-    return <div className={classes.root}>
+    return <>
         <Dialog
             open={jobParams != null}
             onClose={onSubmitJobCancel}
@@ -155,16 +153,15 @@ function JobPanel(props) {
 
         {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
         <div style={tab === 'embedding' ? null : {display: 'none'}}>
-            <Tooltip
-                title={"Compare groups"}>
-                <Typography
-                    component={"h1"} className={classes.title}>Compare</Typography>
-            </Tooltip>
+            <Divider/>
+            <Typography gutterBottom={false} component={"h1"}
+                        style={{textTransform: 'uppercase'}}>Compare</Typography>
+
             <Grid alignContent={"flex-start"} container alignItems="center"
                   spacing={0}>
                 {/*<Grid item><InputLabel shrink={true}>Combine</InputLabel></Grid>*/}
                 <Tooltip
-                    title={"Compare all pairs in a category"}><Grid item>ALL</Grid></Tooltip>
+                    title={"Compare all pairs in a category"}><Grid item>ALL PAIRS</Grid></Tooltip>
                 <Grid item>
                     <Switch
                         size="small"
@@ -173,7 +170,7 @@ function JobPanel(props) {
                     />
                 </Grid>
                 <Tooltip
-                    title={"Choose a specific pair"}><Grid item>SELECTION</Grid></Tooltip>
+                    title={"Choose a specific pair"}><Grid item>SELECTED</Grid></Tooltip>
             </Grid>
             {compareGroups === 'selected' &&
             <ButtonGroup variant="outlined" disabled={selection.size === 0}>
@@ -229,26 +226,8 @@ function JobPanel(props) {
 
             </Menu>
         </div>}
-    </div>;
+    </>;
 }
-
-const styles = theme => ({
-    root: {
-        display: 'flex',
-        flexDirection: 'column',
-        margin: theme.spacing(0, 0.5)
-    },
-    title: {textTransform: 'uppercase'},
-    formControl: {
-        display: 'block',
-        minWidth: 200,
-        maxWidth: 200,
-        marginBottom: theme.spacing(1)
-    },
-    select: {
-        minWidth: 200
-    }
-});
 
 
 const mapStateToProps = state => {
@@ -277,6 +256,6 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     }
 ;
 
-export default withStyles(styles)(connect(
+export default (connect(
     mapStateToProps, mapDispatchToProps
 )(JobPanel));

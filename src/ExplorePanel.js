@@ -543,7 +543,7 @@ function ExplorePanel(props) {
                             onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
             </FormControl>}
         </div>
-        <div className={classes.section} style={{maxHeight: 500}}>
+        <div style={{maxHeight: 500}}>
             <Divider inset="true"/>
             <Typography gutterBottom={false} component={"h1"}
                         style={{textTransform: 'uppercase'}}>Filters</Typography>
