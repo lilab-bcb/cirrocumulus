@@ -76,18 +76,21 @@ class AnndataDataset(AbstractDataset):
         if keys is None:
             keys = {}
         keys = keys.copy()
-        var_keys = keys.pop('X', [])
+        X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
         X = None
         obs = None
         var = None
         obsm = {}
-        if len(var_keys) > 0:
-            X = adata[:, var_keys].X
-            if not scipy.sparse.issparse(X):
-                X = scipy.sparse.csc_matrix(X)
-            var = pd.DataFrame(index=var_keys)
+        if len(X_keys) > 0:
+            if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified
+                X_keys = X_keys[0]
+            d = adata[:, X_keys]
+            if not scipy.sparse.issparse(d.X):
+                d.X = scipy.sparse.csc_matrix(d.X)
+            X = d.X
+            var = pd.DataFrame(index=d.var.index)
         # for key in keys.keys():
         #     if df is None:
         #         df = pd.DataFrame()
