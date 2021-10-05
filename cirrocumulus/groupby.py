@@ -97,7 +97,7 @@ class GroupBy:
         self.key_set = None if key_set is None else dict.fromkeys(key_set).keys()
         self._key_index = None
 
-    def count_mean_var(self, A, keys, dof: int = 1) -> CountMeanVarFrac:
+    def count_mean_var_frac(self, A, keys, dof: int = 1) -> CountMeanVarFrac:
         """
         Compute the count, as well as mean and variance per feature, per group of observations.
 
@@ -145,6 +145,8 @@ class GroupBy:
         frac_expressed_ = None
         if scipy.sparse.issparse(X):
             frac_expressed_ = asarray(A @ (X != 0))
+        else:
+            print('Skipping')
         index = pd.Index(keys, name=self.key, tupleize_cols=False)
         count_sr = pd.Series(index=index, data=count_, name="count")
         mean_df = pd.DataFrame(

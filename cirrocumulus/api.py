@@ -426,7 +426,7 @@ def handle_job():
         job = database_api.get_job(email=email, job_id=job_id, return_result=True)
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
-            content_type = job['content-type']
+            content_type = job.get('content-type')
             if content_type == 'application/h5ad' or content_type == 'application/zarr':
                 import anndata
                 if content_type == 'application/h5ad':

@@ -59,14 +59,14 @@ def diff_results(sparse, adata, obs_field, de):
                          data={'pvals': sc_pvals, 'scores': sc_scores, 'pts': sc_pts['0'], 'pts_rest': sc_pts['1'],
                                'lfc': sc_lfc})
     sc_df = sc_df.loc[adata.var.index]
-    np.testing.assert_allclose(sc_df['scores'], de.scores)
-    np.testing.assert_allclose(sc_df['pvals'], de.pvals)
-    np.testing.assert_allclose(sc_df['lfc'], de.logfoldchanges)
+    np.testing.assert_allclose(sc_df['scores'], de['scores'])
+    np.testing.assert_allclose(sc_df['lfc'], de['logfoldchanges'])
+    np.testing.assert_allclose(sc_df['pvals'], de['pvals'])
     if sparse:
-        np.testing.assert_allclose(sc_df['pts'], de.frac_expressed.iloc[0])
-        np.testing.assert_allclose(sc_df['pts_rest'], de.frac_expressed.iloc[1])
+        np.testing.assert_allclose(sc_df['pts'], de['frac_expressed1'])
+        np.testing.assert_allclose(sc_df['pts_rest'], de['frac_expressed2'])
     else:
-        assert de.frac_expressed is None
+        assert de['frac_expressed1'] is None
 
 
 @pytest.mark.parametrize("file_format", ['zarr', 'parquet'])
@@ -89,8 +89,8 @@ def test_de_backed(sparse, file_format, tmp_path):
         return reader.read_dataset(filesystem=fs, path=output_dir, dataset=dict(id=''),
                                    keys=dict(X=[slice(i, end)]))
 
-    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn)
-    diff_results(sparse, adata, obs_field, de)
+    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn, [(0, 1)])
+    diff_results(sparse, adata, obs_field, de.pair2results[(0, 1)])
 
 
 def test_de(sparse):
@@ -99,5 +99,5 @@ def test_de(sparse):
     obs_field = 'sc_groups'
     nfeatures = adata.shape[1]
     get_batch_fn = lambda i: adata[:, i:min(nfeatures, i + batch_size)]
-    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn)
-    diff_results(sparse, adata, obs_field, de)
+    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn, [(0, 1)])
+    diff_results(sparse, adata, obs_field, de.pair2results[(0, 1)])

@@ -1,10 +1,5 @@
-import {DialogActions, DialogContentText, InputLabel, Switch, Typography} from '@mui/material';
+import {InputLabel, Switch, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
@@ -13,7 +8,6 @@ import ListItem from '@mui/material/ListItem';
 import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
 import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
 import TextField from '@mui/material/TextField';
@@ -21,9 +15,7 @@ import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {debounce, find} from 'lodash';
 import React from 'react';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import {
-    datasetFilterToJson,
     deleteFeatureSet,
     deleteView,
     getTraceKey,
@@ -49,15 +41,15 @@ import {
     toggleEmbeddingLabel
 } from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
-import {intFormat} from './formatters';
 import JobResultOptions from './JobResultOptions';
-import {copyToClipboard, SERVER_CAPABILITY_JOBS, SERVER_CAPABILITY_LINKS, TRACE_TYPE_META_IMAGE} from './util';
-import ExplorePanel from "./ExplorePanel";
+import {copyToClipboard, SERVER_CAPABILITY_LINKS, TRACE_TYPE_META_IMAGE} from './util';
 import Link from "@mui/material/Link";
 import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import Divider from "@mui/material/Divider";
 import LinkIcon from "@mui/icons-material/Link";
+import ExplorePanel from './ExplorePanel';
+import JobPanel from './JobPanel';
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -131,9 +123,7 @@ class SideBar extends React.PureComponent {
         if (prevProps.unselectedMarkerOpacity !== this.props.unselectedMarkerOpacity) {
             this.setState({unselectedOpacity: this.props.unselectedMarkerOpacity});
         }
-        if (prevProps.dataset !== this.props.dataset) {
-            this.setState({group1: null, group2: null, group1Count: null, group2Count: null});
-        }
+
         if (prevProps.activeFeature !== this.props.activeFeature) {
             const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
             if (this.props.activeFeature == null) {
@@ -189,8 +179,8 @@ class SideBar extends React.PureComponent {
             this.props.handleChartOptions(this.props.chartOptions);
             this.setState({labelStrokeWidth: value});
         }
-
     };
+
 
     onMinUIChange = (value) => {
         this.setState({minColor: value});
@@ -289,43 +279,6 @@ class SideBar extends React.PureComponent {
     };
 
 
-    onJobNameChange = (event) => {
-        this.setState({jobName: event.target.value});
-    };
-
-    onSubmitJobCancel = () => {
-        this.setState({jobName: '', jobParams: null});
-    };
-
-    onSubmitJobOK = () => {
-        this.state.jobParams.name = this.state.jobName;
-        this.props.handleSubmitJob(this.state.jobParams);
-        this.setState({jobName: '', jobParams: null});
-    };
-
-    onSetGroup = (groupNumber) => {
-        const d = {};
-        d['group' + groupNumber] = datasetFilterToJson(this.props.dataset, this.props.datasetFilter, this.props.combineDatasetFilters);
-        d['group' + groupNumber + 'Count'] = this.props.selection.size;
-        this.setState(d);
-    };
-
-    onSubmitJob = (jobType, version) => {
-        if (jobType === 'corr') {
-            const activeFeature = this.props.activeFeature;
-            this.setState({jobName: '', jobParams: {type: 'corr', params: {ref: activeFeature.name}}});
-        } else {
-            this.setState({
-                jobName: '',
-                jobParams: {
-                    type: jobType,
-                    params: {version: version, filter: this.state.group1, filter2: this.state.group2}
-                }
-            });
-        }
-    };
-
-
     onViewSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
@@ -341,11 +294,11 @@ class SideBar extends React.PureComponent {
             chartOptions,
             chartSize,
             classes,
+            compareActions,
             datasetViews,
             embeddingData,
             interpolator,
             pointSize,
-            selection,
             serverInfo,
             tab,
             textColor,
@@ -357,104 +310,13 @@ class SideBar extends React.PureComponent {
         const {
             unselectedOpacity,
             opacity,
-            jobParams,
-            jobName,
             minColor,
             maxColor
         } = this.state;
 
-        return (
-            <div className={classes.root}>
-                <Dialog
-                    open={jobParams != null}
-                    onClose={this.onSubmitJobCancel}
-                    aria-labelledby="submit-job-dialog-title"
-                    aria-describedby="submit-job-dialog-description"
-                >
-                    <DialogTitle id="submit-job-dialog-title">Submit Job</DialogTitle>
-                    <DialogContent>
-                        {/*<DialogContentText id="submit-job-dialog-description">*/}
-                        {/*    Job Details*/}
-                        {/*</DialogContentText>*/}
-                        <TextField
-                            size={"small"}
-                            onChange={this.onJobNameChange}
-                            value={jobName}
-                            autoFocus
-                            margin="dense"
-                            label="Job Name"
-                            type="text"
-                            fullWidth
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={this.onSubmitJobCancel}>
-                            Cancel
-                        </Button>
-                        <Button disabled={jobName === ''} variant="contained" onClick={e => this.onSubmitJobOK(jobName)}
-                                color="primary">
-                            Submit
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-
+        return (<div className={classes.root}>
                 <ExplorePanel/>
-                {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
-                <div style={tab === 'embedding' ? null : {display: 'none'}}>
-                    <Tooltip
-                        title={"Compare two groups of cells"}>
-                        <Typography
-                            component={"h1"} className={classes.title}>Compare</Typography>
-                    </Tooltip>
-                    <ButtonGroup variant="outlined" disabled={selection.size === 0}>
-                        <Tooltip
-                            title={'Group one' + (this.state.group1Count ? ' (' + intFormat(this.state.group1Count) + ' cells)' : '')}>
-                            <Button size={"small"}
-                                    onClick={event => this.onSetGroup(1)}>1</Button>
-                        </Tooltip>
-                        <Tooltip
-                            title={'Group two' + (this.state.group2Count ? ' (' + intFormat(this.state.group2Count) + ' cells)' : '')}>
-                            <Button size={"small"}
-                                    onClick={event => this.onSetGroup(2)}>2</Button>
-                        </Tooltip>
-                    </ButtonGroup>
-
-                    <Button size={"small"} variant={"outlined"}
-                            endIcon={<ArrowDropDownIcon/>}
-                            disabled={this.state.group1 == null || this.state.group2 == null}
-                            onClick={event => this.setState({compareMenu: event.currentTarget})}>
-                        GO</Button>
-                    <Menu
-                        variant={"menu"}
-                        id="compare-menu"
-                        anchorEl={this.state.compareMenu}
-                        open={Boolean(this.state.compareMenu)}
-                        onClose={event => this.setState({compareMenu: null})}
-                    >
-                        {this.props.compareActions.map(action => <MenuItem title={action.title}
-                                                                           key={action.jobType}
-                                                                           onClick={event => {
-                                                                               this.onSubmitJob(action.jobType, action.version);
-                                                                               this.setState({compareMenu: null});
-                                                                           }}>{action.title}</MenuItem>)}
-
-                    </Menu>
-                    {/*<Tooltip*/}
-                    {/*    title={"Find correlated features in selected cells"}><Typography>Correlation</Typography></Tooltip>*/}
-                    {/*<Button style={{minWidth: 40}}*/}
-                    {/*        disabled={selection.size === 0 || activeFeature.type !== FEATURE_TYPE.X}*/}
-                    {/*        size={"small"} variant="outlined"*/}
-                    {/*        onClick={event => this.onSubmitJob('corr')}>Go</Button>*/}
-                </div>}
-                {/*<div*/}
-                {/*    style={tab === 'distribution' ? null : {display: 'none'}}>*/}
-                {/*    <Divider/>*/}
-                {/*    <Typography gutterBottom={false} component={"h1"}*/}
-                {/*                className={classes.title}>View</Typography>*/}
-
-
-                {/*</div>*/}
-
+                <JobPanel compareActions={compareActions}/>
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Divider/>
                     <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>

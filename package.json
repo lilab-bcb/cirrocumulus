@@ -43,7 +43,7 @@
     "redux": "^4.1.1",
     "redux-thunk": "^2.3.0",
     "simplify-js": "^1.2.4",
-    "three": "^0.133.0",
+    "three": "^0.133.1",
     "typescript": "4.3.4",
     "web-vitals": "^2.0.1"
   },

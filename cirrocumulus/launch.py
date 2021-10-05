@@ -1,7 +1,7 @@
 import os
 
 from cirrocumulus.anndata_dataset import AnndataDataset
-from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH, CIRRO_JOB_TYPE
+from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH, CIRRO_JOB_TYPE, CIRRO_JOB_RESULTS
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
 from cirrocumulus.local_db_api import LocalDbAPI
 from cirrocumulus.util import get_fs
@@ -129,8 +129,10 @@ def main(argsv):
 
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
-
+    parser.add_argument('--results', help='URL to save user computed results (e.g. differential expression) to')
     args = parser.parse_args(argsv)
+    if args.results is not None:
+        os.environ[CIRRO_JOB_RESULTS] = args.results
     app = create_app()
     configure_app(app, args.dataset, args.spatial, args.markers)
     if not args.no_open:

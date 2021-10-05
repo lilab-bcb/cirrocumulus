@@ -87,8 +87,8 @@ class AnndataDataset(AbstractDataset):
             if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified
                 X_keys = X_keys[0]
             d = adata[:, X_keys]
-            if not scipy.sparse.issparse(d.X):
-                d.X = scipy.sparse.csc_matrix(d.X)
+            if scipy.sparse.issparse(d.X) and not scipy.sparse.isspmatrix_csc(d.X):
+                d.X = d.X.tocsc()
             X = d.X
             var = pd.DataFrame(index=d.var.index)
         # for key in keys.keys():
