@@ -1,6 +1,8 @@
 import logging
 import os
 
+import anndata
+import math
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
@@ -9,13 +11,12 @@ from anndata import AnnData
 from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
-from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS
-from .util import create_instance, add_dataset_providers, get_fs
+from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
+from .util import create_instance, add_dataset_providers, get_fs, import_path
 
 executor = None
 
 logger = logging.getLogger('cirro')
-job_type_to_func = dict()
 
 
 def save_job_result_to_file(result, job_id):
@@ -71,6 +72,46 @@ def _power(X, power):
     return X ** power if isinstance(X, np.ndarray) else X.power(power)
 
 
+def get_comparisons(dataset_api, dataset, dataset_info, params, X, combinations):
+    obs_fields = params.get('obs')
+    if obs_fields is not None:
+        import itertools
+        adata = dataset_api.read_dataset(keys=dict(obs=obs_fields, X=X if X is not None else []), dataset=dataset)
+        obs_field = obs_fields[0]
+        if len(obs_fields) > 1:
+            # combine in to one field
+            obs_field = '_'.join(obs_fields)
+            adata.obs[obs_field] = adata.obs[obs_fields[0]].astype(str)
+            for i in range(1, len(obs_fields)):
+                adata.obs[obs_field] += '_' + adata.obs[obs_fields[i]].astype(str)
+            adata.obs[obs_field] = adata.obs[obs_field].astype('category')
+        comparison_names = list(
+            itertools.combinations(adata.obs[obs_field].cat.categories, 2)) if combinations else list(
+            itertools.permutations(adata.obs[obs_field].cat.categories, 2))
+        return dict(adata=adata, comparison_names=comparison_names, obs_field=obs_field, is_single=False)
+    else:
+        filters = [params['filter'], params['filter2']]
+        filter_names = [get_filter_str(params['filter']), get_filter_str(params['filter2'])]
+        for i in range(len(filter_names)):
+            if filter_names[i] is None:
+                filter_names[i] = 'group_' + str(i + 1)
+        obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
+        obs_field = 'user'
+        obs[obs_field] = ''
+        masks, _ = get_mask(dataset_api, dataset, filters)
+        for i in range(len(masks)):
+            obs.loc[masks[i], obs_field] = filter_names[i]
+        obs[obs_field] = obs[obs_field].astype('category')
+        if X is not None and len(X) > 0:
+            adata = dataset_api.read_dataset(keys=dict(X=X), dataset=dataset)
+            adata.obs = obs
+        else:
+            adata = anndata.AnnData(obs=obs)
+
+        return dict(adata=adata, comparison_names=[tuple(filter_names)], obs_field=obs_field,
+                    is_single=True)
+
+
 def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api):
     if database_api is None:
         database_api = create_instance(os.environ[CIRRO_DATABASE_CLASS])
@@ -78,21 +119,23 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
         from cirrocumulus.api import dataset_api
         add_dataset_providers()
     database_api.update_job(email=email, job_id=job_id, status='running', result=None)
-    f = job_type_to_func[job_type]
-    f(email, job_id, job_type, dataset, params, database_api, dataset_api)
+    f = os.environ[CIRRO_JOB_TYPE + job_type]
+    if f is None:
+        database_api.update_job(email=email, job_id=job_id, status='error', result=None)
+        raise ValueError('No function to handle {}'.format(job_type))
+    import_path(f)(email, job_id, job_type, dataset, params, database_api, dataset_api)
 
 
 def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info['var']
     nfeatures = len(var_names)
-    filters = [params['filter'], params['filter2']]
-    masks, _ = get_mask(dataset_api, dataset, filters)
-    batch_size = 5000 if os.environ.get(CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
-    obs_field = 'tmp'
+
+    batch_size = math.ceil(nfeatures / 3) if os.environ.get(
+        CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
 
     def get_batch_fn(i):
-        logger.info('batch {}'.format(i))
+        logger.info('batch {}'.format(i + 1))
         end = min(nfeatures, i + batch_size)
         adata = dataset_api.read_dataset(keys=dict(X=[slice(i, end)]), dataset=dataset)
         if batch_size != nfeatures:
@@ -102,30 +145,32 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
                                     result=None)
         return adata
 
-    obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
-    obs[obs_field] = ''
-    for i in range(len(masks)):
-        obs.loc[masks[i], obs_field] = str(i)
-    obs[obs_field] = obs[obs_field].astype('category')
-    de = DE(AnnData(obs=obs), obs_field, nfeatures, batch_size, get_batch_fn,
-            key_set=[str(i) for i in range(len(masks))])
-    pvals = fdrcorrection(de.pvals)
+    comparison_result = get_comparisons(dataset_api, dataset, dataset_info, params, X=None, combinations=True)
+    comparison_names = comparison_result['comparison_names']
+    de = DE(AnnData(obs=comparison_result['adata'].obs), comparison_result['obs_field'], nfeatures, batch_size,
+            get_batch_fn, key_set=comparison_names[0] if comparison_result['is_single'] else None,
+            pairs=comparison_names)
     # group:field is object entry
-    comparison_names = [get_filter_str(params['filter']), get_filter_str(params['filter2'])]
-    comparison = 'comparison' if comparison_names[0] is None or comparison_names[1] is None else '_'.join(
-        comparison_names)
+    result_df = pd.DataFrame(data={'index': var_names})
+    has_frac_expressed = False
+    comparison_name_strs = []
+    for comparison_name in comparison_names:
+        result = de.pair2results[comparison_name]
+        comparison_name = '_'.join(comparison_name)
+        comparison_name_strs.append(comparison_name)
+        pvals = fdrcorrection(result['pvals'])
+        result_df[f'{comparison_name}:pvals_adj'] = pvals
+        result_df[f'{comparison_name}:scores'] = result['scores']
+        result_df[f'{comparison_name}:lfc'] = result['logfoldchanges']
 
-    result_df = pd.DataFrame(
-        data={'index': var_names, '{}:pvals_adj'.format(comparison): pvals, '{}:scores'.format(comparison): de.scores,
-              '{}:lfc'.format(comparison): de.logfoldchanges})
-    if de.frac_expressed is not None:
-        result_df['{}:pts_1'.format(comparison)] = de.frac_expressed.iloc[0]
-        result_df['{}:pts_2'.format(comparison)] = de.frac_expressed.iloc[1]
-    result = dict(groups=[comparison],
-                  fields=['pvals_adj', 'scores', 'lfc'] + (['pts_1', 'pts_2'] if de.frac_expressed is not None else []),
+        if result.get('frac_expressed1') is not None:
+            has_frac_expressed = True
+            result_df[f'{comparison_name}:pts_1'] = result['frac_expressed1']
+            result_df[f'{comparison_name}:pts_2'] = result['frac_expressed2']
+    # client expects field {comparison_name}:pvals_adj
+    result = dict(groups=comparison_name_strs,
+                  fields=['pvals_adj', 'scores', 'lfc'] + (
+                      ['pts_1', 'pts_2'] if has_frac_expressed else []),
                   data=result_df.to_dict(orient='records'))
     result['content-type'] = 'application/json'
     database_api.update_job(email=email, job_id=job_id, status='complete', result=result)
-
-
-job_type_to_func['de'] = run_de

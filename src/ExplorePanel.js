@@ -58,7 +58,7 @@ const styles = theme => ({
         }
     }
 });
-const getAnnotationOptions = memoize(
+export const getAnnotationOptions = memoize(
     (obs, obsCat) => {
         const options = [];
         obs.forEach(item => {
@@ -74,7 +74,6 @@ const getAnnotationOptions = memoize(
                 group: 'Categorical', text: item, id: item, icon: <FontDownloadRoundedIcon style={{
                     marginRight: 2,
                     fontSize: '0.9rem'
-
                 }}/>
             });
         });
@@ -544,13 +543,13 @@ function ExplorePanel(props) {
                             onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
             </FormControl>}
         </div>
-        <div className={classes.section} style={{maxHeight: 500}}>
+        <div style={{maxHeight: 500}}>
             <Divider inset="true"/>
             <Typography gutterBottom={false} component={"h1"}
                         style={{textTransform: 'uppercase'}}>Filters</Typography>
-            <Grid component="label" alignContent={"flex-start"} container alignItems="center"
+            <Grid alignContent={"flex-start"} container alignItems="center"
                   spacing={0}>
-                <Grid item><InputLabel shrink={true} variant={"standard"}>Combine</InputLabel></Grid>
+                <Grid item><InputLabel shrink={true}>Combine</InputLabel></Grid>
                 <Grid item>AND</Grid>
                 <Grid item>
                     <Switch
@@ -602,7 +601,6 @@ function ExplorePanel(props) {
 const mapStateToProps = state => {
         return {
             activeFeature: state.activeFeature,
-
             categoricalNames: state.categoricalNames,
             combineDatasetFilters: state.combineDatasetFilters,
             dataset: state.dataset,

@@ -2,7 +2,7 @@ import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
     CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_PROVIDERS
+    CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE
 from cirrocumulus.launch import create_app
 from cirrocumulus.util import create_instance, add_dataset_providers
 
@@ -23,6 +23,7 @@ def configure_app(app):
     from cirrocumulus.no_auth import NoAuth
     auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
     os.environ[CIRRO_SERVE] = 'true'
+    os.environ[CIRRO_JOB_TYPE + 'de'] = 'cirrocumulus.job_api.run_de'
     if auth_client_id is None:
         app.config[CIRRO_AUTH] = NoAuth()
     else:

@@ -3,7 +3,6 @@
 import os
 
 from cirrocumulus.envir import *
-from cirrocumulus.io_util import unique_id
 
 
 class AbstractDB:
@@ -12,7 +11,6 @@ class AbstractDB:
         """Initializes the object
 
         """
-        self.job_id_to_job = {}
 
     def capabilities(self):  # allow everything
         c = {}
@@ -219,11 +217,7 @@ class AbstractDB:
         Returns:
          job id
       """
-        import datetime
-        job_id = unique_id()
-        self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
-                                          status=None, result=None, submitted=datetime.datetime.utcnow())
-        return job_id
+        raise NotImplementedError()
 
     def get_job(self, email, job_id, return_result):
         """ Gets a job
@@ -236,10 +230,7 @@ class AbstractDB:
        Returns:
           The job
       """
-        job = self.job_id_to_job[job_id]
-        if return_result:
-            return job['result']
-        return dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'], submitted=job['submitted'])
+        raise NotImplementedError()
 
     def get_jobs(self, email, dataset_id):
         """ Gets a list of all jobs for a dataset.
@@ -251,11 +242,7 @@ class AbstractDB:
         Returns:
             List of jobs
       """
-        results = []
-        for job in self.job_id_to_job.values():
-            results.append(dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'],
-                                submitted=job['submitted']))
-        return results
+        raise NotImplementedError()
 
     def delete_job(self, email, job_id):
         """ Deletes a job.
@@ -264,7 +251,7 @@ class AbstractDB:
           email: User email or None
           job_id: Job id
       """
-        del self.job_id_to_job[job_id]
+        raise NotImplementedError()
 
     def update_job(self, email, job_id, status, result):
         """ Updates job info.
@@ -275,8 +262,4 @@ class AbstractDB:
               status: Job status
               result: Job result
           """
-        job = self.job_id_to_job[job_id]
-        job['status'] = status
-        if result is not None:
-            from cirrocumulus.util import to_json
-            job['result'] = to_json(result)
+        raise NotImplementedError()

@@ -1,6 +1,13 @@
 Release Notes
 -------------
 
+- 1.1.21 `October 5, 2021`
+    * Removed `--backed` option in `cirro launch`
+    * Added zarr_ format support in `cirro prepare_data`
+    * Added `--results` option to `cirro serve` and `cirro launch`
+    * Added ability to compute differential expression between all pairs of clusters
+    * Select category by clicking cell on an embedding
+
 - 1.1.20.post4 `September 17, 2021`
     * Style updates
 
@@ -318,3 +325,4 @@ Release Notes
 .. _Scanpy: https://scanpy.readthedocs.io/
 .. _Seurat: https://satijalab.org/seurat/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
+.. _zarr: https://zarr.readthedocs.io/

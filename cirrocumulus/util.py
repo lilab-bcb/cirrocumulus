@@ -3,9 +3,12 @@ import os
 from urllib.parse import urlparse
 
 import fsspec
+import numpy as np
+import pandas as pd
 import pandas._libs.json as ujson
-from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
 from flask import make_response
+
+from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
 
 
 def add_dataset_providers():
@@ -22,11 +25,14 @@ def add_dataset_providers():
     os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(dataset_providers)
 
 
-def create_instance(class_name):
+def import_path(name):
     import importlib
-    dot_index = class_name.rfind('.')
-    c = getattr(importlib.import_module(class_name[0:dot_index]), class_name[dot_index + 1:])
-    return c()
+    dot_index = name.rfind('.')
+    return getattr(importlib.import_module(name[0:dot_index]), name[dot_index + 1:])
+
+
+def create_instance(class_name):
+    return import_path(class_name)()
 
 
 def get_scheme(path):

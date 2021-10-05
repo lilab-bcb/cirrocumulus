@@ -1,9 +1,9 @@
 import json
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS
@@ -347,7 +347,9 @@ def handle_dataset():
         if request.content_type == 'application/json':
             d = request.get_json(force=True, cache=False)
         else:
-            d = request.form.copy()
+            d = dict()
+            for key in request.form:
+                d[key] = request.form[key]
 
         dataset_id = d.get('id')
         dataset_name = d.get('name')
@@ -424,18 +426,16 @@ def handle_job():
         job = database_api.get_job(email=email, job_id=job_id, return_result=True)
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
-            content_type = job['content-type']
-            if content_type == 'application/h5ad':
-                # URL to an h5ad
+            content_type = job.get('content-type')
+            if content_type == 'application/h5ad' or content_type == 'application/zarr':
                 import anndata
-                block_size = 50 * 2 ** 20
-                with get_fs(url).open(url, mode='rb', block_size=block_size) as f:
-                    adata = anndata.read(f)
-                try:
-                    from cStringIO import StringIO
-                except:
-                    from StringIO import StringIO
+                if content_type == 'application/h5ad':
+                    with get_fs(url).open(url, mode='rb') as f:
+                        adata = anndata.read(f)
+                else:
+                    adata = anndata.read_zarr(get_fs(url).get_mapper(url))
 
+                from io import StringIO
                 output = StringIO()
                 adata2gct(adata, output)
                 r = Response(output.getvalue(), mimetype='text/plain')
