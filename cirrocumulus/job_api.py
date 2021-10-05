@@ -96,7 +96,7 @@ def get_comparisons(dataset_api, dataset, dataset_info, params, X, combinations)
             if filter_names[i] is None:
                 filter_names[i] = 'group_' + str(i + 1)
         obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
-        obs_field = 'tmp'
+        obs_field = 'user'
         obs[obs_field] = ''
         masks, _ = get_mask(dataset_api, dataset, filters)
         for i in range(len(masks)):
