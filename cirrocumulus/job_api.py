@@ -102,9 +102,11 @@ def get_comparisons(dataset_api, dataset, dataset_info, params, X, combinations)
         for i in range(len(masks)):
             obs.loc[masks[i], obs_field] = filter_names[i]
         obs[obs_field] = obs[obs_field].astype('category')
-        adata = anndata.AnnData(obs=obs,
-                                X=dataset_api.read_dataset(keys=dict(X=X), dataset=dataset).X if X is not None and len(
-                                    X) > 0 else None)
+        if X is not None and len(X) > 0:
+            adata = dataset_api.read_dataset(keys=dict(X=X), dataset=dataset)
+            adata.obs = obs
+        else:
+            adata = anndata.AnnData(obs=obs)
 
         return dict(adata=adata, comparison_names=[tuple(filter_names)], obs_field=obs_field,
                     is_single=True)
