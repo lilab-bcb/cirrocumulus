@@ -26,11 +26,11 @@ class MongoDb(AbstractDB):
         super().__init__()
         self.client = MongoClient(os.environ[CIRRO_DB_URI])
         self.db = self.client.get_default_database()
-        self.db.categories.ensure_index('dataset_id')
-        self.db.views.ensure_index('dataset_id')
-        self.db.feature_sets.ensure_index('dataset_id')
-        self.db.jobs.ensure_index('dataset_id')
-        self.db.datasets.ensure_index('readers')
+        self.db.categories.create_index('dataset_id')
+        self.db.views.create_index('dataset_id')
+        self.db.feature_sets.create_index('dataset_id')
+        self.db.jobs.create_index('dataset_id')
+        self.db.datasets.create_index('readers')
 
     def category_names(self, email, dataset_id):
 
