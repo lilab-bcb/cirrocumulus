@@ -225,7 +225,7 @@ def datasets_schema(datasets, n_genes=10):
                         color_map = dict()
                         for j in range(len(categories)):
                             color_map[str(categories[j])] = colors[j]
-                        field_to_value_to_color[field] = color_map
+                        field_to_value_to_color[color_field] = color_map
 
         # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
         #
