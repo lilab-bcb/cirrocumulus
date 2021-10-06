@@ -104,7 +104,7 @@ export function DatasetSelector(props) {
     const open = dialog === OPEN_DATASET_DIALOG;
 
     let filteredChoices = datasetChoices;
-    const searchTextLower = searchText.toLowerCase().trim();
+    let searchTextLower = searchText.toLowerCase().trim();
     const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
         id: 'species',
         label: 'Species'
@@ -114,16 +114,30 @@ export function DatasetSelector(props) {
     }];
 
     if (searchTextLower != '') {
-        const ncolumns = columns.length;
-        filteredChoices = filteredChoices.filter(choice => {
-            for (let i = 0; i < ncolumns; i++) {
-                const value = choice[columns[i].id];
-                if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
-                    return true;
+        let searchColumns = columns;
+        const sepIndex = searchTextLower.indexOf(':'); // field search
+        if (sepIndex !== -1) {
+            let field = searchTextLower.substring(0, sepIndex);
+            for (let i = 0; i < columns.length; i++) {
+                if (field == columns[i].label.toLowerCase().replace(' ', '_')) {
+                    searchColumns = [columns[i]];
+                    searchTextLower = searchTextLower.substring(sepIndex + 1).trim();
+                    break;
                 }
             }
-            return false;
-        });
+        }
+        if (searchTextLower != '') { // need to check again as searchTextLower might have been updated
+            const ncolumns = searchColumns.length;
+            filteredChoices = filteredChoices.filter(choice => {
+                for (let i = 0; i < ncolumns; i++) {
+                    const value = choice[searchColumns[i].id];
+                    if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
     }
     if (orderBy != null) {
         filteredChoices.sort((item1, item2) => {
@@ -177,10 +191,11 @@ export function DatasetSelector(props) {
                 maxWidth={"xl"}
             >
                 <DialogContent sx={{height: '100vh'}}>
-                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
+                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search Datasets"}
                                value={searchText}
                                onChange={onSearchChange}
                                fullWidth={true}
+                               helperText={"Search a specific field by typing the field name followed by a colon \":\" and then the term you are looking for"}
                                InputProps={searchText.trim() !== '' ? {
                                    endAdornment:
                                        <InputAdornment position="end">
