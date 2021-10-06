@@ -6,7 +6,7 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_SELECTOR_COLUMNS
+    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
 from .util import json_response, get_scheme, get_fs, adata2gct
@@ -38,9 +38,7 @@ def handle_server():
     d['clientId'] = get_auth().client_id
 
     if os.environ.get(CIRRO_DATASET_SELECTOR_COLUMNS) is not None:
-
         if os.path.exists(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS]):
-
             with open(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS], 'rt') as f:
                 d['datasetSelectorColumns'] = json.loads(f.read())
         else:
@@ -51,8 +49,35 @@ def handle_server():
     if os.environ.get(CIRRO_BRAND) is not None:
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
             d['brand'] = f.read()
-    # server['brand'] = os.environ.get(CIRRO_BRAND)
     d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
+    if os.environ.get(CIRRO_CELL_ONTOLOGY) is not None:
+        if os.path.exists(os.environ[CIRRO_CELL_ONTOLOGY]):
+            def parse_term(f):
+                term = dict()
+                for term_line in f:
+                    term_line = term_line.strip()
+                    if term_line.startswith("["):
+                        break
+                    index = term_line.find(':')
+                    if index != -1:
+                        key = term_line[:index]
+                        term[key] = term_line[index + 1:].strip()
+                # if term.get('is_obsolete', '') == 'true':
+                #     return None
+                return term
+
+            terms = []
+            with open(os.environ[CIRRO_CELL_ONTOLOGY], 'rt') as f:  # obo file
+                for line in f:
+                    line = line.strip()
+                    if line == "[Term]":
+                        t = parse_term(f)
+                        if t is not None:
+                            terms.append(t)
+
+            d['ontology'] = dict(cellTypes=terms)
+        else:
+            d['ontology'] = dict(cellTypes=os.environ[CIRRO_CELL_ONTOLOGY])
     return json_response(d)
 
 

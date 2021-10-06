@@ -410,6 +410,10 @@ function globalFeatureSummary(state = {}, action) {
 function serverInfo(state = {}, action) {
     switch (action.type) {
         case SET_SERVER_INFO:
+            if (action.payload.ontology && action.payload.ontology.cellTypes) {
+                action.payload.ontology.cellTypes.forEach(item => item.text = item.name);
+                action.payload.ontology.cellTypes.sort((item1, item2) => NATSORT(item1.text, item2.text));
+            }
             return action.payload;
         default:
             return state;

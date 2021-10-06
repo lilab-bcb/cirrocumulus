@@ -101,6 +101,7 @@ class EmbeddingChart extends React.PureComponent {
             pointSize,
             primaryChartSize,
             searchTokens,
+            serverInfo,
             selection,
             setTooltip,
             shape,
@@ -175,7 +176,8 @@ class EmbeddingChart extends React.PureComponent {
                             nObs={shape[0]}
                             nObsSelected={nObsSelected}
                             globalFeatureSummary={globalFeatureSummary}
-                            featureSummary={featureSummary}/>
+                            featureSummary={featureSummary}
+                            serverInfo={serverInfo}/>
                     }
                 </Box>
 
@@ -255,6 +257,7 @@ const mapStateToProps = state => {
         selection: state.selection,
         pointSize: state.pointSize,
         primaryChartSize: state.primaryChartSize,
+        serverInfo: state.serverInfo,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,

@@ -15,10 +15,11 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
 import {FEATURE_TYPE, getCategoryValue} from './util';
 import Link from '@mui/material/Link';
+import {isString} from 'lodash';
 
 export default function CategoricalLegend(props) {
     const [contextMenu, setContextMenu] = useState(null);
-    const [tmpName, setTmpName] = useState('');
+    const [newName, setNewName] = useState('');
     const [positiveMarkers, setPositiveMarkers] = useState([]);
     const [negativeMarkers, setNegativeMarkers] = useState([]);
     const [menu, setMenu] = useState(null);
@@ -34,8 +35,13 @@ export default function CategoricalLegend(props) {
     }
 
     function handleNameChange(e) {
-        setTmpName(e.target.value);
+        setNewName(e.target.value);
     }
+
+    function handleNameChangeSelector(e, value) {
+        setNewName(value);
+    }
+
 
     function handleColorChangeApply(e) {
         props.handleColorChange({
@@ -46,7 +52,7 @@ export default function CategoricalLegend(props) {
     }
 
     function handleNameChangeApply(e) {
-        const name = tmpName.trim();
+        const name = isString(newName) ? newName.trim() : newName.text;
         props.handleNameChange({
             name: props.name,
             originalValue: originalCategory,
@@ -94,7 +100,11 @@ export default function CategoricalLegend(props) {
         if (cat == null) {
             cat = {};
         }
-        setTmpName(cat.newValue != null ? cat.newValue : originalCategory);
+        if (serverInfo.ontology != null) {
+            setNewName(cat.newValue != null ? {text: cat.newValue} : null);
+        } else {
+            setNewName(cat.newValue != null ? cat.newValue : originalCategory);
+        }
         setNegativeMarkers(cat.negativeMarkers != null ? cat.negativeMarkers : []);
         setPositiveMarkers(cat.positiveMarkers != null ? cat.positiveMarkers : []);
         setOriginalCategory(originalCategory);
@@ -103,14 +113,15 @@ export default function CategoricalLegend(props) {
 
 
     const {
-        scale,
+        categoricalNames,
         datasetFilter,
-        name,
-        height,
         features,
         featureSummary,
         globalFeatureSummary,
-        categoricalNames,
+        height,
+        name,
+        scale,
+        serverInfo,
         visible
     } = props;
 
@@ -225,19 +236,30 @@ export default function CategoricalLegend(props) {
                         id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
                     <DialogContent>
 
-                        <TextField
+                        {serverInfo.ontology == null && <TextField
                             size={"small"}
                             inputProps={{maxLength: 1000}}
                             fullWidth={true}
                             type="text"
                             required={false}
                             autoComplete="off"
-                            value={tmpName}
+                            value={newName}
                             onChange={handleNameChange}
                             margin="dense"
                             label={"Category Name"}
                             helperText={"Enter cell type or other annotation"}
-                        />
+                        />}
+                        {serverInfo.ontology != null && <FormControl sx={{display: 'block'}}><AutocompleteVirtualized
+                            textFieldSx={{width: '90%'}}
+                            label={"Cell Type"}
+                            multiple={false}
+                            getOptionLabel={(option) => option.text}
+                            getChipText={(option) => option.text}
+                            options={serverInfo.ontology.cellTypes}
+                            value={newName}
+                            getOptionSelected={(option, value) => option.text === value}
+                            onChange={handleNameChangeSelector}
+                        /></FormControl>}
 
 
                         <FormControl sx={{display: 'block'}}>
