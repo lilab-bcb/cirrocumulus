@@ -449,7 +449,6 @@ function DotPlotJobResultsPanel(props) {
     //         domains.push([min, max]);
     //     });
     // }
-    console.log(jobResult);
     tooltipFields = [];
     tooltipFields.push(by);
     rows = jobResult.rows;
