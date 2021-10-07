@@ -1,15 +1,15 @@
 import json
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT, CIRRO_MIXPANEL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
-from .util import json_response, get_scheme, get_fs, adata2gct
+from .util import json_response, get_scheme, get_fs
 
 blueprint = Blueprint('blueprint', __name__)
 
@@ -488,13 +488,15 @@ def handle_job():
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
 
-                from io import StringIO
-                output = StringIO()
-                adata2gct(adata, output)
-                r = Response(output.getvalue(), mimetype='text/plain')
-                output.close()
-                # r.headers["Content-Encoding"] = 'gzip'
-                return r
+                import pandas as pd
+                # output = StringIO()
+                # adata2gct(adata, output)
+                # r = Response(output.getvalue(), mimetype='text/plain')
+                df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
+                df = df.T.join(adata.var)
+                df.index.name = 'id'
+                return Response(df.reset_index().to_json(double_precision=2, orient='records'),
+                                content_type='application/json')
             else:
                 # URL to JSON or text
                 return send_file(url)

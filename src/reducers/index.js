@@ -69,6 +69,7 @@ import {
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
+import {updateJob} from '../DotPlotJobResultsPanel';
 
 
 const DIST_PLOT_OPTIONS = {
@@ -499,6 +500,9 @@ function jobResult(state = null, action) {
         case SET_DATASET:
             return null;
         case SET_JOB_RESULT:
+            if (action.payload != null && action.payload.type == 'de') {
+                updateJob(action.payload); // initialize
+            }
             return action.payload;
         default:
             return state;

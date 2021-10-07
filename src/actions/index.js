@@ -1300,19 +1300,13 @@ export function setJobResult(payload) {
         let jobResults = getState().jobResults;
         let jobResult = find(jobResults, item => item.id === payload);
         if (jobResult.data != null) { // data already loaded
-            updateJob(jobResult);
             return dispatch(_setJobResult(payload));
         }
         dispatch(_setLoading(true));
         getState().dataset.api.getJob(payload, true).then((result) => {
             let jobResults = getState().jobResults;
-            const jobResult = find(jobResults, item => item.id === payload);
-            for (let key in result) {
-                jobResult[key] = result[key];
-            }
-
-            updateJob(jobResult);
-            dispatch(_setJobResult(payload));
+            const jobResult = Object.assign(find(jobResults, item => item.id === payload), result);
+            dispatch(_setJobResult(jobResult));
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
