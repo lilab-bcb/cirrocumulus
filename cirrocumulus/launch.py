@@ -134,6 +134,8 @@ def main(argsv):
     args = parser.parse_args(argsv)
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results
+    else:
+        os.environ[CIRRO_JOB_RESULTS] = os.path.join(os.path.dirname(args.dataset[0].rstrip('/')), 'results')
     if args.ontology is not None:
         os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     app = create_app()

@@ -40,13 +40,15 @@ class LocalDbAPI(AbstractDB):
                     import gzip
                     with gzip.open(fs.open(url)) as f:
                         d = json.load(f)
-                        d['url'] = url
-                        self.job_id_to_job[d['id']] = d
+                        if 'id' in d:
+                            d['url'] = url
+                            self.job_id_to_job[d['id']] = d
                 elif url.lower().endswith('.json'):
                     with fs.open(url) as f:
                         d = json.load(f)
-                        d['url'] = url
-                        self.job_id_to_job[d['id']] = d
+                        if 'id' in d:
+                            d['url'] = url
+                            self.job_id_to_job[d['id']] = d
 
         for path in paths:
             json_data = {}
@@ -255,7 +257,9 @@ class LocalDbAPI(AbstractDB):
         return results
 
     def delete_job(self, email, job_id):
-        del self.job_id_to_job[job_id]
+        job = self.job_id_to_job.pop(job_id)
+        if 'url' in job and os.path.exists(job['url']):
+            os.remove(job['url'])
 
     def update_job(self, email, job_id, status, result):
         job = self.job_id_to_job[job_id]
