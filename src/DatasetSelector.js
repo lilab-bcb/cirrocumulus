@@ -105,22 +105,23 @@ export function DatasetSelector(props) {
 
     let filteredChoices = datasetChoices;
     let searchTextLower = searchText.toLowerCase().trim();
-    const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
+    const allColumns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
         id: 'species',
         label: 'Species'
     }, {
         id: 'title',
         label: 'Title'
     }];
+    const visibleColumns = allColumns.filter(column => column.visible !== false);
 
     if (searchTextLower != '') {
-        let searchColumns = columns;
+        let searchColumns = visibleColumns;
         const sepIndex = searchTextLower.indexOf(':'); // field search
         if (sepIndex !== -1) {
             let field = searchTextLower.substring(0, sepIndex);
-            for (let i = 0; i < columns.length; i++) {
-                if (field == columns[i].label.toLowerCase().replace(' ', '_')) {
-                    searchColumns = [columns[i]];
+            for (let i = 0; i < allColumns.length; i++) {
+                if (field == allColumns[i].label.toLowerCase().replace(' ', '_')) {
+                    searchColumns = [allColumns[i]];
                     searchTextLower = searchTextLower.substring(sepIndex + 1).trim();
                     break;
                 }
@@ -214,7 +215,7 @@ export function DatasetSelector(props) {
                             <Table stickyHeader size={"small"} padding={"normal"}>
                                 <TableHead>
                                     <TableRow>
-                                        {columns.map((column) => (
+                                        {visibleColumns.map((column) => (
                                             <TableCell
                                                 key={column.id}
                                                 align={column.numeric ? 'right' : 'left'}
@@ -245,7 +246,7 @@ export function DatasetSelector(props) {
                                                 <TableRow selected={row.id === selectedId} hover role="checkbox"
                                                           tabIndex={-1} key={row.id}
                                                           onClick={(e) => handleListItemClick(row.id)}>
-                                                    {columns.map((column, columnIndex) => {
+                                                    {visibleColumns.map((column, columnIndex) => {
                                                         const value = row[column.id];
                                                         return (
                                                             <TableCell key={column.id} align={column.align}>

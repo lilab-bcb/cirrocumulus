@@ -328,6 +328,7 @@ export default function AutocompleteVirtualized(props) {
             ref={ref}
             size={"small"}
             disableListWrap
+            freeSolo={props.freeSolo != null ? props.freeSolo : false}
             blurOnSelect={true}
             openOnFocus={false}
             autoHighlight={true}
@@ -363,6 +364,6 @@ export default function AutocompleteVirtualized(props) {
             onSortEnd={onSortEnd}
             axis="xy" items={props.value}
         />}
-     
+
     </>;
 }

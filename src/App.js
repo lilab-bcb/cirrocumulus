@@ -29,7 +29,7 @@ import EditNewDatasetDialog from './EditNewDatasetDialog';
 import EmbeddingChart from './EmbeddingChart';
 import GalleryCharts from './GalleryCharts';
 import HelpDialog from './HelpDialog';
-import JobResultsPanel from './JobResultsPanel';
+
 import LandingPage from './LandingPage';
 import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
@@ -38,6 +38,7 @@ import {COMPARE_ACTIONS} from './job_config';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import {withTheme} from '@emotion/react';
+import JobResultPanel from './JobResultPanel';
 
 
 export const drawerWidth = 240;
@@ -134,7 +135,7 @@ class App extends PureComponent {
                             role="tabpanel"
                             hidden={tab !== 'results'}
                         >
-                            {<JobResultsPanel setTooltip={this.setTooltip}/>}
+                            {<JobResultPanel setTooltip={this.setTooltip}/>}
                         </div>
                         <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
                                     style={{

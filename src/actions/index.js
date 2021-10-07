@@ -7,7 +7,7 @@ import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
-import {updateJob} from '../JobResultsPanel';
+import {updateJob} from '../DotPlotJobResultsPanel';
 import {createCategoryToStats} from '../MetaEmbedding';
 
 import {RestDataset} from '../RestDataset';
