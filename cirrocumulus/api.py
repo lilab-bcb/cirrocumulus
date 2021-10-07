@@ -1,12 +1,12 @@
 import json
 import os
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
-import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT
+    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT, CIRRO_MIXPANEL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
 from .util import json_response, get_scheme, get_fs, adata2gct
@@ -43,7 +43,8 @@ def handle_server():
     d['email'] = os.environ.get(CIRRO_EMAIL)
     d['capabilities'] = get_database().capabilities()
     d['clientId'] = get_auth().client_id
-
+    if os.environ.get(CIRRO_MIXPANEL) is not None:
+        d['mixpanel'] = os.environ[CIRRO_MIXPANEL]
     if os.environ.get(CIRRO_DATASET_SELECTOR_COLUMNS) is not None:
         if os.path.exists(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS]):
             with open(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS], 'rt') as f:

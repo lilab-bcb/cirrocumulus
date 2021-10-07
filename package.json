@@ -31,6 +31,7 @@
     "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.1.3",
     "memoize-one": "^5.2.1",
+    "mixpanel-browser": "^2.41.0",
     "natsort": "^2.0.3",
     "openseadragon": "^2.4.2",
     "prop-types": "^15.7.2",
