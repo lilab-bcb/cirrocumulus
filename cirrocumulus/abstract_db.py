@@ -125,18 +125,17 @@ class AbstractDB:
 
         raise NotImplementedError()
 
-    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
+    def upsert_dataset_view(self, email, dataset_id, view):
         """ Upserts a dataset view
+        View should have id (for update), name, value, and any other additional fields to store
 
         Args:
               email: User email or None
               dataset_id: Dataset id
-              view_id: View id or None to create new view
-              name: View name
-              value: JSON encoded state
+              view: View to upsert
 
          Returns:
-            Upserted view id
+            dict with id, last_updated
         """
         raise NotImplementedError()
 

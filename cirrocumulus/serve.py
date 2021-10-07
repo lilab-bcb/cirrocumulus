@@ -60,7 +60,7 @@ def main(argsv):
     parser.add_argument('--header', help='Markdown file to customize the application header')
     parser.add_argument('--upload', help='URL to allow users to upload files')
     parser.add_argument('--results', help='URL to save user computed results (e.g. differential expression) to')
-    parser.add_argument('--ontology', help='URL to ontology in OBO format for annotation')
+    parser.add_argument('--ontology', help='Path to ontology in OBO format for annotation')
     args = parser.parse_args(argsv)
 
     bind = args.bind if args.bind is not None else '127.0.0.1:5000'

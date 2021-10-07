@@ -291,14 +291,13 @@ export function saveView(payload) {
         const state = getState();
         const value = getDatasetStateJson(state);
         delete value['dataset'];
-        const savedViewObj = {ds_id: state.dataset.id, name: payload.name, value: value};
-
+        payload = Object.assign({ds_id: state.dataset.id}, payload);
         dispatch(_setLoading(true));
-        getState().serverInfo.api.upsertViewPromise(savedViewObj, false)
+        getState().serverInfo.api.upsertViewPromise(payload, false)
             .then(result => {
-                savedViewObj.id = result.id;
+                payload = Object.assign(result, payload);
                 const array = getState().datasetViews;
-                array.push(savedViewObj);
+                array.push(payload);
                 dispatch(setDatasetViews(array.slice()));
                 dispatch(setMessage('Link saved'));
             }).finally(() => {

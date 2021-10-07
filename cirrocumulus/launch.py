@@ -130,7 +130,7 @@ def main(argsv):
     parser.add_argument('--port', help='Server port', default=5000, type=int)
     parser.add_argument('--no-open', dest='no_open', help='Do not open your web browser', action='store_true')
     parser.add_argument('--results', help='URL to save user computed results (e.g. differential expression)')
-    parser.add_argument('--ontology', help='URL to ontology in OBO format for annotation')
+    parser.add_argument('--ontology', help='Path to ontology in OBO format for annotation')
     args = parser.parse_args(argsv)
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results

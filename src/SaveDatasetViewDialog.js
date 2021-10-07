@@ -13,7 +13,8 @@ class SaveDatasetViewDialog extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            name: ''
+            name: '',
+            notes: ''
         };
     }
 
@@ -21,18 +22,21 @@ class SaveDatasetViewDialog extends React.PureComponent {
         this.setState({name: event.target.value});
     };
 
+    onNotesChanged = (event) => {
+        this.setState({notes: event.target.value});
+    };
+
     handleClose = () => {
         this.props.handleCancel();
     };
 
     handleSave = () => {
-        let name = this.state.name.trim();
-        this.props.handleSave({name: name});
+        this.props.handleSave({name: this.state.name.trim(), notes: this.state.notes.trim().trim()});
     };
 
 
     render() {
-        const {name} = this.state;
+        const {name, notes} = this.state;
         const create = true;
         return (
             <Dialog
@@ -47,13 +51,26 @@ class SaveDatasetViewDialog extends React.PureComponent {
                     : 'Edit'} Link</DialogTitle>
                 <DialogContent>
                     <TextField
+                        size="small"
+                        margin="dense"
                         required={true}
                         value={name}
                         autoComplete="off"
                         onChange={this.onNameChanged}
-                        margin="dense"
                         label="Name"
                         fullWidth
+                    />
+                    <TextField
+                        size="small"
+                        margin="dense"
+                        required={false}
+                        value={notes}
+                        autoComplete="off"
+                        onChange={this.onNotesChanged}
+                        label="Notes"
+                        multiline={true}
+                        fullWidth
+
                     />
 
                 </DialogContent>
@@ -84,12 +101,12 @@ const mapDispatchToProps = dispatch => {
         },
         handleError: value => {
             dispatch(setMessage(value));
-        },
+        }
 
     };
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(SaveDatasetViewDialog));
 

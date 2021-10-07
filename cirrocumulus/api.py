@@ -6,7 +6,7 @@ from flask import Blueprint, Response, request, stream_with_context, current_app
 import cirrocumulus.data_processing as data_processing
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY
+    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job
 from .util import json_response, get_scheme, get_fs, adata2gct
@@ -14,6 +14,13 @@ from .util import json_response, get_scheme, get_fs, adata2gct
 blueprint = Blueprint('blueprint', __name__)
 
 dataset_api = DatasetAPI()
+
+remapped_urls = dict()
+if os.environ.get(CIRRO_MOUNT) is not None:
+    tokens = os.environ.get(CIRRO_MOUNT).split(',')
+    for token in tokens:
+        bucket, local_path = token.split(':')
+        remapped_urls[bucket] = local_path
 
 
 @blueprint.errorhandler(InvalidUsage)
@@ -180,26 +187,24 @@ def handle_dataset_view():
         if view_id == '':
             return 'Please provide an id', 400
         return json_response(database_api.get_dataset_view(email, view_id=view_id))
-    content = request.get_json(force=True, cache=False)
-    view_id = content.get('id')
-    name = content.get('name')
+    d = request.get_json(force=True, cache=False)
 
     # POST=new, PUT=update , DELETE=delete, GET=get
     if request.method == 'PUT' or request.method == 'POST':
-        dataset_id = content.get('ds_id')
+        dataset_id = d.pop('ds_id')
+        view_id = d.pop('id') if request.method == 'PUT' else None
         if request.method == 'PUT' and view_id is None:
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_id is None:
             return 'Please supply a ds_id', 400
+
         view_id = database_api.upsert_dataset_view(
             email=email,
             dataset_id=dataset_id,
-            view_id=view_id if request.method == 'PUT' else None,
-            name=name,
-            value=content.get('value'))
+            view=d)
         return json_response({'id': view_id})
     elif request.method == 'DELETE':
-        database_api.delete_dataset_view(email, view_id=view_id)
+        database_api.delete_dataset_view(email, view_id=d.pop('id'))
         return json_response('', 204)
 
 
@@ -218,7 +223,7 @@ def handle_schema():
 
 
 def get_file_path(file, dataset_url):
-    # when serving dataset, image must be relative to dataset directory
+    # when serving dataset, file must be relative to dataset directory
     if os.environ.get(CIRRO_SERVE) == 'true':
         _, ext = os.path.splitext(dataset_url)
         if file[0] == '/' or file.find('..') != -1:
@@ -259,8 +264,19 @@ def handle_file():
     email = get_auth().auth()['email']
     database_api = get_database()
     dataset_id = request.args.get('id', '')
-    dataset = database_api.get_dataset(email, dataset_id)
-    file_path = get_file_path(request.args.get('file'), dataset['url'])
+    url = request.args.get('file')
+    if dataset_id == '':  # allow if file is in static directory
+        static_dirs = os.environ.get(CIRRO_STATIC_DIR)
+        if static_dirs is None:
+            return 'Not authorized', 401
+        static_dirs = static_dirs.split(',')
+        if os.path.dirname(url) in static_dirs:
+            return send_file(url)
+        return 'Not authorized', 401
+    else:
+        dataset = database_api.get_dataset(email, dataset_id)
+        file_path = get_file_path(url, dataset['url'])
+        file_path = map_url(file_path)
     return send_file(file_path)
 
 
@@ -272,6 +288,15 @@ def handle_user():
     return json_response(user)
 
 
+def map_url(url):
+    for remote_path in remapped_urls:
+        before_replace = url
+        url = url.replace(remote_path, remapped_urls[remote_path])
+        if before_replace != url:  # only replace URL once
+            return url
+    return url
+
+
 def get_email_and_dataset(content):
     email = get_auth().auth()['email']
     dataset_id = content.get('id', '')
@@ -279,6 +304,7 @@ def get_email_and_dataset(content):
         return 'Please supply an id', 400
     database_api = get_database()
     dataset = database_api.get_dataset(email, dataset_id)
+    dataset['url'] = map_url(dataset['url'])
     return email, dataset
 
 
@@ -446,6 +472,7 @@ def handle_job():
             dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
             dataset = database_api.get_dataset(email, dataset_id)
+            dataset['url'] = map_url(dataset['url'])
             result = dataset_api.get_result(dataset, job_id)
             return send_file(result)
         job = database_api.get_job(email=email, job_id=job_id, return_result=True)
@@ -470,6 +497,8 @@ def handle_job():
             else:
                 # URL to JSON or text
                 return send_file(url)
+        # elif isinstance(job, bytes):
+        #     job = job.decode('ascii')
         return job
 
 

@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 
@@ -220,17 +221,17 @@ class LocalDbAPI(AbstractDB):
         dataset_id = self.__find_dataset_id(view_id, 'views')
         return self.__get_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
 
-    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
-        entity = {}
-        if name is not None:
-            entity['name'] = name
-        if value is not None:
-            entity['value'] = json.dumps(value)
+    def upsert_dataset_view(self, email, dataset_id, view):
+        view['last_updated'] = datetime.datetime.utcnow()
+        if 'value' in view:
+            view['value'] = json.dumps(view['value'])
         if email is not None:
-            entity['email'] = email
+            view['email'] = email
         if dataset_id is not None:
-            entity['dataset_id'] = dataset_id
-        return self.__upsert_entity(dataset_id=dataset_id, entity_id=view_id, kind='views', entity_dict=entity)
+            view['dataset_id'] = dataset_id
+        view_id = view.pop('id') if 'id' in view else None
+        view_id = self.__upsert_entity(dataset_id=dataset_id, entity_id=view_id, kind='views', entity_dict=view)
+        return dict(id=view_id, last_updated=view['last_updated'])
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
         import datetime

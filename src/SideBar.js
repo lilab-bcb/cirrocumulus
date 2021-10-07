@@ -10,6 +10,7 @@ import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
+import InfoIcon from '@mui/icons-material/Info';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -42,7 +43,7 @@ import {
 } from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import JobResultOptions from './JobResultOptions';
-import {copyToClipboard, SERVER_CAPABILITY_LINKS, TRACE_TYPE_META_IMAGE} from './util';
+import {copyToClipboard, REACT_MD_OVERRIDES, SERVER_CAPABILITY_LINKS, TRACE_TYPE_META_IMAGE} from './util';
 import Link from "@mui/material/Link";
 import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
@@ -50,6 +51,8 @@ import Divider from "@mui/material/Divider";
 import LinkIcon from "@mui/icons-material/Link";
 import ExplorePanel from './ExplorePanel';
 import JobPanel from './JobPanel';
+import Popover from '@mui/material/Popover';
+import ReactMarkdown from 'markdown-to-jsx';
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -95,7 +98,9 @@ class SideBar extends React.PureComponent {
             minColor: '',
             maxColor: '',
             labelFontSize: props.chartOptions.labelFontSize,
-            labelStrokeWidth: props.chartOptions.labelStrokeWidth
+            labelStrokeWidth: props.chartOptions.labelStrokeWidth,
+            selectedViewEl: null,
+            selectedView: null
         };
 
         this.onLabelFontSizeUpdate = debounce(this.onLabelFontSizeUpdate, 500);
@@ -252,6 +257,14 @@ class SideBar extends React.PureComponent {
         this.props.handleDeleteView(id);
     };
 
+    viewDetails = (event, id) => {
+        event.stopPropagation();
+        this.setState({
+            selectedViewEl: event.currentTarget,
+            selectedView: find(this.props.datasetViews, item => item.id === id)
+        });
+    };
+
     copyView = (id) => {
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
         linkText += '#q=' + encodeURIComponent(JSON.stringify({link: id}));
@@ -279,6 +292,9 @@ class SideBar extends React.PureComponent {
     };
 
 
+    handleCloseViewDetails = () => {
+        this.setState({selectedViewEl: null, selectedView: null});
+    };
     onViewSaved = () => {
         this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
     };
@@ -311,12 +327,36 @@ class SideBar extends React.PureComponent {
             unselectedOpacity,
             opacity,
             minColor,
-            maxColor
+            maxColor,
+            selectedViewEl,
+            selectedView
         } = this.state;
 
         return (<div className={classes.root}>
                 <ExplorePanel/>
                 <JobPanel compareActions={compareActions}/>
+                {selectedView && <Popover
+                    id={"view-details"}
+                    open={Boolean(selectedViewEl)}
+                    anchorEl={selectedViewEl}
+                    onClose={this.handleCloseViewDetails}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center'
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'center'
+                    }}
+                >
+                    <div style={{width: 500}}>
+                        {selectedView.last_updated &&
+                        <Typography>Last Updated: {new Date(selectedView.last_updated).toDateString()}</Typography>}
+                        {selectedView.notes &&
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                       children={selectedView.notes}/>}
+                    </div>
+                </Popover>}
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Divider/>
                     <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>
@@ -469,18 +509,25 @@ class SideBar extends React.PureComponent {
                                       onClick={e => this.openView(item.id)}>
                                 <ListItemText primary={item.name}/>
                                 <ListItemSecondaryAction>
+                                    {(item.notes || item.last_updated) && <IconButton
+                                        edge="end"
+                                        aria-label="info"
+                                        onClick={e => this.viewDetails(e, item.id)}
+                                        size="small">
+                                        <InfoIcon/>
+                                    </IconButton>}
                                     <IconButton
                                         edge="end"
                                         aria-label="copy"
                                         onClick={e => this.copyView(item.id)}
-                                        size="large">
+                                        size="small">
                                         <LinkIcon/>
                                     </IconButton>
                                     <IconButton
                                         edge="end"
                                         aria-label="delete"
                                         onClick={e => this.deleteView(item.id)}
-                                        size="large">
+                                        size="small">
                                         <DeleteIcon/>
                                     </IconButton>
                                 </ListItemSecondaryAction>

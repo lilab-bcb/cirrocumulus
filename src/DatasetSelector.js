@@ -30,6 +30,7 @@ import {intFormat} from './formatters';
 import {visuallyHidden} from '@mui/utils';
 import Box from '@mui/material/Box';
 
+import {find} from 'lodash';
 
 export function DatasetSelector(props) {
     const [searchText, setSearchText] = useState('');
@@ -68,12 +69,7 @@ export function DatasetSelector(props) {
     function handleListItemDetailsClick(event, id) {
         event.stopPropagation();
         setDatasetDetailsEl(event.currentTarget);
-        for (let i = 0, n = datasetChoices.length; i < n; i++) {
-            if (id === datasetChoices[i].id) {
-                setSelectedDataset(datasetChoices[i]);
-                break;
-            }
-        }
+        setSelectedDataset(find(datasetChoices, item => id === item.id));
     }
 
     function handleListItemClick(id) {
