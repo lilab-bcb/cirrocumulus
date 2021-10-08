@@ -7,7 +7,6 @@ import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
-import {updateJob} from '../DotPlotJobResultsPanel';
 import {createCategoryToStats} from '../MetaEmbedding';
 
 import {RestDataset} from '../RestDataset';
@@ -67,6 +66,7 @@ export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filte
 export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
 
 
+export const SET_LEGEND_SCROLL_POSITION = 'SET_LEGEND_SCROLL_POSITION';
 export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
 export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
@@ -632,8 +632,17 @@ export function setPrimaryChartSize(payload) {
     return {type: SET_PRIMARY_CHART_SIZE, payload: payload};
 }
 
-export function setActiveFeature(payload) {
+export function _setActiveFeature(payload) {
     return {type: SET_ACTIVE_FEATURE, payload: payload};
+}
+
+
+export function setActiveFeature(payload) {
+    return {type: SET_ACTIVE_FEATURE, payload: payload}
+}
+
+export function setLegendScrollPosition(payload) {
+    return {type: SET_LEGEND_SCROLL_POSITION, payload: payload};
 }
 
 function setGlobalFeatureSummary(payload) {

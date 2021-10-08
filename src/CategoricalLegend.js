@@ -6,7 +6,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {IconButton, ListItem, ListItemText} from '@mui/material';
 import {intFormat} from './formatters';
 import {FixedSizeList} from 'react-window';
@@ -18,6 +18,7 @@ import Link from '@mui/material/Link';
 import {isString} from 'lodash';
 
 export default function CategoricalLegend(props) {
+    const listRef = useRef();
     const [contextMenu, setContextMenu] = useState(null);
     const [newName, setNewName] = useState('');
     const [positiveMarkers, setPositiveMarkers] = useState([]);
@@ -25,6 +26,40 @@ export default function CategoricalLegend(props) {
     const [menu, setMenu] = useState(null);
     const [color, setColor] = useState(null);
     const [originalCategory, setOriginalCategory] = useState(null);
+    const {
+        categoricalNames,
+        datasetFilter,
+        features,
+        featureSummary,
+        globalFeatureSummary,
+        handleScrollPosition,
+        height,
+        name,
+        scale,
+        legendScrollPosition,
+        serverInfo,
+        visible
+    } = props;
+    // restore scroll position
+    useEffect(() => {
+        const p = legendScrollPosition[name];
+        if (p != null) {
+            console.log('scrollTo');
+            listRef.current.scrollTo(p);
+        }
+
+        return () => {
+            if (listRef.current) {
+                handleScrollPosition({name: name, value: listRef.current.state.scrollOffset});
+            }
+        };
+    }, [name]);
+
+    // save scroll position
+    useEffect(() => {
+
+
+    }, [name]);
 
     function handleDialogClose(e) {
         setMenu(null);
@@ -112,19 +147,6 @@ export default function CategoricalLegend(props) {
     }
 
 
-    const {
-        categoricalNames,
-        datasetFilter,
-        features,
-        featureSummary,
-        globalFeatureSummary,
-        height,
-        name,
-        scale,
-        serverInfo,
-        visible
-    } = props;
-
     const categoricalFilter = datasetFilter[name];
     const selectionSummary = featureSummary[name];
     let selectedDimensionToCount = {};
@@ -208,7 +230,12 @@ export default function CategoricalLegend(props) {
         <>
             <div data-testid="categorical-legend">
                 <FixedSizeList height={height} width={250} itemSize={40}
-                               itemCount={categories.length}>
+                               itemCount={categories.length} ref={listRef} onScroll={(e) => {
+                    if (e.scrollDirection === 'forward' && e.scrollOffset === 0) {
+                        return; // event fired on initialization
+                    }
+                    handleScrollPosition({name: name, value: e.scrollOffset});
+                }}>
                     {renderRow}
                 </FixedSizeList>
             </div>

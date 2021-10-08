@@ -38,6 +38,7 @@ import {
     SET_INTERPOLATOR,
     SET_JOB_RESULT,
     SET_JOB_RESULTS,
+    SET_LEGEND_SCROLL_POSITION,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -730,6 +731,7 @@ export function savedDatasetState(state = {}, action) {
     }
 }
 
+
 // object with name, type, embeddingKey
 export function activeFeature(state = {}, action) {
     switch (action.type) {
@@ -737,6 +739,19 @@ export function activeFeature(state = {}, action) {
             return null;
         case SET_ACTIVE_FEATURE:
             return action.payload;
+        default:
+            return state;
+    }
+}
+
+// feature name (e.g. leiden) -> scroll position for restoring state
+export function legendScrollPosition(state = {}, action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return {};
+        case SET_LEGEND_SCROLL_POSITION:
+            state[action.payload.name] = action.payload.value;
+            return state;
         default:
             return state;
     }
@@ -788,6 +803,7 @@ export default combineReducers({
     interpolator,
     jobResult,
     jobResults,
+    legendScrollPosition,
     loading,
     loadingApp,
     markerOpacity,
