@@ -2,7 +2,7 @@ import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
     CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE
+    CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE, CIRRO_CELL_ONTOLOGY
 from cirrocumulus.launch import create_app
 from cirrocumulus.util import create_instance, add_dataset_providers
 
@@ -60,13 +60,14 @@ def main(argsv):
     parser.add_argument('--header', help='Markdown file to customize the application header')
     parser.add_argument('--upload', help='URL to allow users to upload files')
     parser.add_argument('--results', help='URL to save user computed results (e.g. differential expression) to')
-
+    parser.add_argument('--ontology', help='Path to ontology in OBO format for annotation')
     args = parser.parse_args(argsv)
 
     bind = args.bind if args.bind is not None else '127.0.0.1:5000'
     if args.auth_client_id is not None:
         os.environ[CIRRO_AUTH_CLIENT_ID] = args.auth_client_id
-
+    if args.ontology is not None:
+        os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     os.environ[CIRRO_DB_URI] = args.db_uri
 
     if args.footer is not None:

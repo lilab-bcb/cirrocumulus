@@ -1,20 +1,23 @@
 import {connect} from 'react-redux';
+import DotPlotJobResultsPanel from './DotPlotJobResultsPanel';
 import {find} from 'lodash';
-import DotPlotJobResultOptions from './DotPlotJobResultOptions';
+import JobResultsSelector from './JobResultsSelector';
 
-function JobResultOptions(props) {
-    const {jobResultId, jobResults} = props;
+function JobResultPanel(props) {
+    const {setTooltip, jobResultId, jobResults} = props;
     const jobResult = jobResultId != null ? find(jobResults, item => item.id === jobResultId) : null;
     const jobType = jobResult != null ? jobResult.type : null;
     return <>
-        {jobType == 'de' && <DotPlotJobResultOptions jobResult={jobResult}/>}
+        <JobResultsSelector/>
+        {jobType == 'de' && <DotPlotJobResultsPanel setTooltip={setTooltip} jobResult={jobResult}/>}
     </>;
 }
 
 const mapStateToProps = state => {
         return {
             jobResultId: state.jobResult,
-            jobResults: state.jobResults
+            jobResults: state.jobResults,
+            tab: state.tab
         };
     }
 ;
@@ -26,4 +29,4 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 
 export default (connect(
     mapStateToProps, mapDispatchToProps
-)(JobResultOptions));
+)(JobResultPanel));

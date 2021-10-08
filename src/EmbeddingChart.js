@@ -16,6 +16,7 @@ import {
     handleMeasureFilterUpdated,
     setChartOptions,
     setEmbeddingData,
+    setLegendScrollPosition,
     setPrimaryChartSize,
     setSearchTokens
 } from './actions';
@@ -89,6 +90,8 @@ class EmbeddingChart extends React.PureComponent {
             featureSummary,
             globalFeatureSummary,
             handleSearchTokens,
+            handleScrollPosition,
+            legendScrollPosition,
             markerOpacity,
             onCategoricalNameChange,
             onChartOptions,
@@ -101,6 +104,7 @@ class EmbeddingChart extends React.PureComponent {
             pointSize,
             primaryChartSize,
             searchTokens,
+            serverInfo,
             selection,
             setTooltip,
             shape,
@@ -113,6 +117,7 @@ class EmbeddingChart extends React.PureComponent {
         }
         const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
         if (primaryTrace == null) {
+            console.log(activeFeature.embeddingKey + ' not found');
             return null;
         }
         const nObsSelected = selection.size;
@@ -141,7 +146,6 @@ class EmbeddingChart extends React.PureComponent {
                     }
                     {primaryTrace.continuous ?
                         <ColorSchemeLegendWrapper
-                            key={primaryTrace.name}
                             handleDomain={onDomain}
                             width={140}
                             showColorScheme={false}
@@ -160,7 +164,8 @@ class EmbeddingChart extends React.PureComponent {
                             name={primaryTrace.name}
                         /> :
                         <CategoricalLegend
-                            key={primaryTrace.name}
+                            legendScrollPosition={legendScrollPosition}
+                            handleScrollPosition={handleScrollPosition}
                             visible={this.state.showLegend}
                             height={primaryChartSize.height - 40}
                             features={dataset.features}
@@ -175,7 +180,8 @@ class EmbeddingChart extends React.PureComponent {
                             nObs={shape[0]}
                             nObsSelected={nObsSelected}
                             globalFeatureSummary={globalFeatureSummary}
-                            featureSummary={featureSummary}/>
+                            featureSummary={featureSummary}
+                            serverInfo={serverInfo}/>
                     }
                 </Box>
 
@@ -251,10 +257,12 @@ const mapStateToProps = state => {
         embeddingLabels: state.embeddingLabels,
         featureSummary: state.featureSummary,
         globalFeatureSummary: state.globalFeatureSummary,
+        legendScrollPosition: state.legendScrollPosition,
         markerOpacity: state.markerOpacity,
         selection: state.selection,
         pointSize: state.pointSize,
         primaryChartSize: state.primaryChartSize,
+        serverInfo: state.serverInfo,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
@@ -283,6 +291,10 @@ const mapDispatchToProps = dispatch => {
         },
         onSelect: (e) => {
             dispatch(handleBrushFilterUpdated(e));
+        },
+
+        handleScrollPosition: value => {
+            dispatch(setLegendScrollPosition(value));
         },
         handlePrimaryChartSize: value => {
             dispatch(setPrimaryChartSize(value));

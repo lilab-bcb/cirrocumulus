@@ -140,7 +140,6 @@ class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
 
 class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
     def _get_sliceXint(self, row: slice, col: int) -> ss.csc_matrix:
-        print('_get_sliceXint')
         return ss.csc_matrix(
             get_compressed_vector(self, col), shape=(self.shape[0], 1)
         )[row, :]

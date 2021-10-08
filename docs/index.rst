@@ -6,9 +6,9 @@
 
    installation
    documentation
-   command_line
-   release_notes
+   commands
    contact
    source
+   release_notes
 
 

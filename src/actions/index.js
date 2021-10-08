@@ -7,7 +7,6 @@ import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
 import {getPassingFilterIndices} from '../dataset_filter';
 import {DirectAccessDataset} from '../DirectAccessDataset';
-import {updateJob} from '../JobResultsPanel';
 import {createCategoryToStats} from '../MetaEmbedding';
 
 import {RestDataset} from '../RestDataset';
@@ -67,6 +66,7 @@ export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filte
 export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
 
 
+export const SET_LEGEND_SCROLL_POSITION = 'SET_LEGEND_SCROLL_POSITION';
 export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
 export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
@@ -291,14 +291,13 @@ export function saveView(payload) {
         const state = getState();
         const value = getDatasetStateJson(state);
         delete value['dataset'];
-        const savedViewObj = {ds_id: state.dataset.id, name: payload.name, value: value};
-
+        payload = Object.assign({ds_id: state.dataset.id}, payload);
         dispatch(_setLoading(true));
-        getState().serverInfo.api.upsertViewPromise(savedViewObj, false)
+        getState().serverInfo.api.upsertViewPromise(payload, false)
             .then(result => {
-                savedViewObj.id = result.id;
+                payload = Object.assign(result, payload);
                 const array = getState().datasetViews;
-                array.push(savedViewObj);
+                array.push(payload);
                 dispatch(setDatasetViews(array.slice()));
                 dispatch(setMessage('Link saved'));
             }).finally(() => {
@@ -633,8 +632,17 @@ export function setPrimaryChartSize(payload) {
     return {type: SET_PRIMARY_CHART_SIZE, payload: payload};
 }
 
-export function setActiveFeature(payload) {
+export function _setActiveFeature(payload) {
     return {type: SET_ACTIVE_FEATURE, payload: payload};
+}
+
+
+export function setActiveFeature(payload) {
+    return {type: SET_ACTIVE_FEATURE, payload: payload}
+}
+
+export function setLegendScrollPosition(payload) {
+    return {type: SET_LEGEND_SCROLL_POSITION, payload: payload};
 }
 
 function setGlobalFeatureSummary(payload) {
@@ -1301,19 +1309,13 @@ export function setJobResult(payload) {
         let jobResults = getState().jobResults;
         let jobResult = find(jobResults, item => item.id === payload);
         if (jobResult.data != null) { // data already loaded
-            updateJob(jobResult);
             return dispatch(_setJobResult(payload));
         }
         dispatch(_setLoading(true));
         getState().dataset.api.getJob(payload, true).then((result) => {
             let jobResults = getState().jobResults;
-            const jobResult = find(jobResults, item => item.id === payload);
-            for (let key in result) {
-                jobResult[key] = result[key];
-            }
-
-            updateJob(jobResult);
-            dispatch(_setJobResult(payload));
+            const jobResult = Object.assign(find(jobResults, item => item.id === payload), result);
+            dispatch(_setJobResult(jobResult));
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {

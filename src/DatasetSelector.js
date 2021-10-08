@@ -30,6 +30,7 @@ import {intFormat} from './formatters';
 import {visuallyHidden} from '@mui/utils';
 import Box from '@mui/material/Box';
 
+import {find} from 'lodash';
 
 export function DatasetSelector(props) {
     const [searchText, setSearchText] = useState('');
@@ -68,12 +69,7 @@ export function DatasetSelector(props) {
     function handleListItemDetailsClick(event, id) {
         event.stopPropagation();
         setDatasetDetailsEl(event.currentTarget);
-        for (let i = 0, n = datasetChoices.length; i < n; i++) {
-            if (id === datasetChoices[i].id) {
-                setSelectedDataset(datasetChoices[i]);
-                break;
-            }
-        }
+        setSelectedDataset(find(datasetChoices, item => id === item.id));
     }
 
     function handleListItemClick(id) {
@@ -104,26 +100,41 @@ export function DatasetSelector(props) {
     const open = dialog === OPEN_DATASET_DIALOG;
 
     let filteredChoices = datasetChoices;
-    const searchTextLower = searchText.toLowerCase().trim();
-    const columns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
+    let searchTextLower = searchText.toLowerCase().trim();
+    const allColumns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
         id: 'species',
         label: 'Species'
     }, {
         id: 'title',
         label: 'Title'
     }];
+    const visibleColumns = allColumns.filter(column => column.visible !== false);
 
     if (searchTextLower != '') {
-        const ncolumns = columns.length;
-        filteredChoices = filteredChoices.filter(choice => {
-            for (let i = 0; i < ncolumns; i++) {
-                const value = choice[columns[i].id];
-                if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
-                    return true;
+        let searchColumns = visibleColumns;
+        const sepIndex = searchTextLower.indexOf(':'); // field search
+        if (sepIndex !== -1) {
+            let field = searchTextLower.substring(0, sepIndex);
+            for (let i = 0; i < allColumns.length; i++) {
+                if (field == allColumns[i].label.toLowerCase().replace(' ', '_')) {
+                    searchColumns = [allColumns[i]];
+                    searchTextLower = searchTextLower.substring(sepIndex + 1).trim();
+                    break;
                 }
             }
-            return false;
-        });
+        }
+        if (searchTextLower != '') { // need to check again as searchTextLower might have been updated
+            const ncolumns = searchColumns.length;
+            filteredChoices = filteredChoices.filter(choice => {
+                for (let i = 0; i < ncolumns; i++) {
+                    const value = choice[searchColumns[i].id];
+                    if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
     }
     if (orderBy != null) {
         filteredChoices.sort((item1, item2) => {
@@ -177,10 +188,11 @@ export function DatasetSelector(props) {
                 maxWidth={"xl"}
             >
                 <DialogContent sx={{height: '100vh'}}>
-                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
+                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search Datasets"}
                                value={searchText}
                                onChange={onSearchChange}
                                fullWidth={true}
+                               helperText={"Search a specific field by typing the field name followed by a colon \":\" and then the term you are looking for"}
                                InputProps={searchText.trim() !== '' ? {
                                    endAdornment:
                                        <InputAdornment position="end">
@@ -199,7 +211,7 @@ export function DatasetSelector(props) {
                             <Table stickyHeader size={"small"} padding={"normal"}>
                                 <TableHead>
                                     <TableRow>
-                                        {columns.map((column) => (
+                                        {visibleColumns.map((column) => (
                                             <TableCell
                                                 key={column.id}
                                                 align={column.numeric ? 'right' : 'left'}
@@ -230,7 +242,7 @@ export function DatasetSelector(props) {
                                                 <TableRow selected={row.id === selectedId} hover role="checkbox"
                                                           tabIndex={-1} key={row.id}
                                                           onClick={(e) => handleListItemClick(row.id)}>
-                                                    {columns.map((column, columnIndex) => {
+                                                    {visibleColumns.map((column, columnIndex) => {
                                                         const value = row[column.id];
                                                         return (
                                                             <TableCell key={column.id} align={column.align}>

@@ -38,6 +38,7 @@ import {
     SET_INTERPOLATOR,
     SET_JOB_RESULT,
     SET_JOB_RESULTS,
+    SET_LEGEND_SCROLL_POSITION,
     SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
@@ -69,6 +70,7 @@ import {
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
+import {updateJob} from '../DotPlotJobResultsPanel';
 
 
 const DIST_PLOT_OPTIONS = {
@@ -410,6 +412,10 @@ function globalFeatureSummary(state = {}, action) {
 function serverInfo(state = {}, action) {
     switch (action.type) {
         case SET_SERVER_INFO:
+            if (action.payload.ontology && action.payload.ontology.cellTypes) {
+                action.payload.ontology.cellTypes.forEach(item => item.text = item.name);
+                action.payload.ontology.cellTypes.sort((item1, item2) => NATSORT(item1.text, item2.text));
+            }
             return action.payload;
         default:
             return state;
@@ -495,6 +501,9 @@ function jobResult(state = null, action) {
         case SET_DATASET:
             return null;
         case SET_JOB_RESULT:
+            if (action.payload != null && action.payload.type == 'de') {
+                updateJob(action.payload); // initialize
+            }
             return action.payload;
         default:
             return state;
@@ -722,6 +731,7 @@ export function savedDatasetState(state = {}, action) {
     }
 }
 
+
 // object with name, type, embeddingKey
 export function activeFeature(state = {}, action) {
     switch (action.type) {
@@ -729,6 +739,19 @@ export function activeFeature(state = {}, action) {
             return null;
         case SET_ACTIVE_FEATURE:
             return action.payload;
+        default:
+            return state;
+    }
+}
+
+// feature name (e.g. leiden) -> scroll position for restoring state
+export function legendScrollPosition(state = {}, action) {
+    switch (action.type) {
+        case SET_DATASET:
+            return {};
+        case SET_LEGEND_SCROLL_POSITION:
+            state[action.payload.name] = action.payload.value;
+            return state;
         default:
             return state;
     }
@@ -780,6 +803,7 @@ export default combineReducers({
     interpolator,
     jobResult,
     jobResults,
+    legendScrollPosition,
     loading,
     loadingApp,
     markerOpacity,

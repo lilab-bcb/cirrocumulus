@@ -6,7 +6,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {IconButton, ListItem, ListItemText} from '@mui/material';
 import {intFormat} from './formatters';
 import {FixedSizeList} from 'react-window';
@@ -15,15 +15,51 @@ import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
 import {FEATURE_TYPE, getCategoryValue} from './util';
 import Link from '@mui/material/Link';
+import {isString} from 'lodash';
 
 export default function CategoricalLegend(props) {
+    const listRef = useRef();
     const [contextMenu, setContextMenu] = useState(null);
-    const [tmpName, setTmpName] = useState('');
+    const [newName, setNewName] = useState('');
     const [positiveMarkers, setPositiveMarkers] = useState([]);
     const [negativeMarkers, setNegativeMarkers] = useState([]);
     const [menu, setMenu] = useState(null);
     const [color, setColor] = useState(null);
     const [originalCategory, setOriginalCategory] = useState(null);
+    const {
+        categoricalNames,
+        datasetFilter,
+        features,
+        featureSummary,
+        globalFeatureSummary,
+        handleScrollPosition,
+        height,
+        name,
+        scale,
+        legendScrollPosition,
+        serverInfo,
+        visible
+    } = props;
+    // restore scroll position
+    useEffect(() => {
+        const p = legendScrollPosition[name];
+        if (p != null) {
+            console.log('scrollTo');
+            listRef.current.scrollTo(p);
+        }
+
+        return () => {
+            if (listRef.current) {
+                handleScrollPosition({name: name, value: listRef.current.state.scrollOffset});
+            }
+        };
+    }, [name]);
+
+    // save scroll position
+    useEffect(() => {
+
+
+    }, [name]);
 
     function handleDialogClose(e) {
         setMenu(null);
@@ -34,8 +70,13 @@ export default function CategoricalLegend(props) {
     }
 
     function handleNameChange(e) {
-        setTmpName(e.target.value);
+        setNewName(e.target.value);
     }
+
+    function handleNameChangeSelector(e, value) {
+        setNewName(value);
+    }
+
 
     function handleColorChangeApply(e) {
         props.handleColorChange({
@@ -46,7 +87,7 @@ export default function CategoricalLegend(props) {
     }
 
     function handleNameChangeApply(e) {
-        const name = tmpName.trim();
+        const name = isString(newName) ? newName.trim() : newName.text;
         props.handleNameChange({
             name: props.name,
             originalValue: originalCategory,
@@ -94,25 +135,17 @@ export default function CategoricalLegend(props) {
         if (cat == null) {
             cat = {};
         }
-        setTmpName(cat.newValue != null ? cat.newValue : originalCategory);
+        if (serverInfo.ontology != null) {
+            setNewName(cat.newValue != null ? {text: cat.newValue} : null);
+        } else {
+            setNewName(cat.newValue != null ? cat.newValue : originalCategory);
+        }
         setNegativeMarkers(cat.negativeMarkers != null ? cat.negativeMarkers : []);
         setPositiveMarkers(cat.positiveMarkers != null ? cat.positiveMarkers : []);
         setOriginalCategory(originalCategory);
         setColor(props.scale(originalCategory));
     }
 
-
-    const {
-        scale,
-        datasetFilter,
-        name,
-        height,
-        features,
-        featureSummary,
-        globalFeatureSummary,
-        categoricalNames,
-        visible
-    } = props;
 
     const categoricalFilter = datasetFilter[name];
     const selectionSummary = featureSummary[name];
@@ -197,7 +230,12 @@ export default function CategoricalLegend(props) {
         <>
             <div data-testid="categorical-legend">
                 <FixedSizeList height={height} width={250} itemSize={40}
-                               itemCount={categories.length}>
+                               itemCount={categories.length} ref={listRef} onScroll={(e) => {
+                    if (e.scrollDirection === 'forward' && e.scrollOffset === 0) {
+                        return; // event fired on initialization
+                    }
+                    handleScrollPosition({name: name, value: e.scrollOffset});
+                }}>
                     {renderRow}
                 </FixedSizeList>
             </div>
@@ -225,19 +263,30 @@ export default function CategoricalLegend(props) {
                         id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
                     <DialogContent>
 
-                        <TextField
+                        {serverInfo.ontology == null && <TextField
                             size={"small"}
                             inputProps={{maxLength: 1000}}
                             fullWidth={true}
                             type="text"
                             required={false}
                             autoComplete="off"
-                            value={tmpName}
+                            value={newName}
                             onChange={handleNameChange}
                             margin="dense"
                             label={"Category Name"}
                             helperText={"Enter cell type or other annotation"}
-                        />
+                        />}
+                        {serverInfo.ontology != null && <FormControl sx={{display: 'block'}}><AutocompleteVirtualized
+                            textFieldSx={{width: '90%'}}
+                            label={"Cell Type"}
+                            multiple={false}
+                            getOptionLabel={(option) => option.text}
+                            getChipText={(option) => option.text}
+                            options={serverInfo.ontology.cellTypes}
+                            value={newName}
+                            getOptionSelected={(option, value) => option.text === value}
+                            onChange={handleNameChangeSelector}
+                        /></FormControl>}
 
 
                         <FormControl sx={{display: 'block'}}>

@@ -379,6 +379,7 @@ function ExplorePanel(props) {
             <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.name : ''}</DialogTitle>
             <DialogContent>
                 <TextField
+                    size="small"
                     value={selectedItem ? selectedItem.value.features.join('\n') : ''}
                     margin="dense"
                     fullWidth

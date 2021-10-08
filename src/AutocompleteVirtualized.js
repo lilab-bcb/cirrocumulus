@@ -320,14 +320,15 @@ export default function AutocompleteVirtualized(props) {
             </ul>
         );
     });
-
+    const multiple = props.multiple != null ? props.multiple : true;
     return <>
         <Autocomplete
             data-testid={props.testId}
-            multiple={true}
+            multiple={multiple}
             ref={ref}
             size={"small"}
             disableListWrap
+            freeSolo={props.freeSolo != null ? props.freeSolo : false}
             blurOnSelect={true}
             openOnFocus={false}
             autoHighlight={true}
@@ -357,9 +358,12 @@ export default function AutocompleteVirtualized(props) {
             onDragEnd={onDragEnd}
             onDragLeave={onDragEnd}
         />
-        <SortableList
+
+        {multiple && <SortableList
             distance={2}
             onSortEnd={onSortEnd}
             axis="xy" items={props.value}
-        /></>;
+        />}
+
+    </>;
 }

@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 
 import pandas._libs.json as ujson
@@ -26,6 +25,12 @@ class MongoDb(AbstractDB):
         super().__init__()
         self.client = MongoClient(os.environ[CIRRO_DB_URI])
         self.db = self.client.get_default_database()
+        self.db.categories.create_index('dataset_id')
+        self.db.views.create_index('dataset_id')
+        self.db.feature_sets.create_index('dataset_id')
+        self.db.jobs.create_index('dataset_id')
+        self.db.datasets.create_index('readers')
+        self.fs = None
 
     def category_names(self, email, dataset_id):
 
@@ -114,8 +119,7 @@ class MongoDb(AbstractDB):
         self.get_dataset(email, dataset_id)
         collection = self.db.views
         results = []
-
-        for doc in collection.find(dict(dataset_id=dataset_id)):
+        for doc in collection.find(dict(dataset_id=dataset_id), dict(value=0)):
             results.append(format_doc(doc))
         return results
 
@@ -133,25 +137,23 @@ class MongoDb(AbstractDB):
         self.get_dataset(email, doc['dataset_id'])
         return format_doc(doc)
 
-    def upsert_dataset_view(self, email, dataset_id, view_id, name, value):
+    def upsert_dataset_view(self, email, dataset_id, view):
         if not self.capabilities()[SERVER_CAPABILITY_LINKS]:
             return
         self.get_dataset(email, dataset_id)
         collection = self.db.views
-        entity_update = {'last_updated': datetime.datetime.utcnow()}
-        if name is not None:
-            entity_update['name'] = name
-        if value is not None:
-            entity_update['value'] = json.dumps(value)
+        view['last_updated'] = datetime.datetime.utcnow()
+
         if email is not None:
-            entity_update['email'] = email
+            view['email'] = email
         if dataset_id is not None:
-            entity_update['dataset_id'] = dataset_id
-        if view_id is None:
-            return str(collection.insert_one(entity_update).inserted_id)
+            view['dataset_id'] = dataset_id
+        if view.get('id') is None:
+            return dict(id=str(collection.insert_one(view).inserted_id), last_updated=view['last_updated'])
         else:
-            collection.update_one(dict(_id=ObjectId(view_id)), {'$set': entity_update})
-            return view_id
+            view_id = view.pop('id')
+            collection.update_one(dict(_id=ObjectId(view_id)), {'$set': view})
+            return dict(id=view_id, last_updated=view['last_updated'])
 
     def is_importer(self, email):
         # TODO check if user can modify dataset
@@ -238,22 +240,34 @@ class MongoDb(AbstractDB):
             collection.update_one(dict(_id=ObjectId(set_id)), {'$set': entity_update})
             return set_id
 
+    def get_gridfs(self):
+        import gridfs
+        if self.fs is None:
+            self.fs = gridfs.GridFS(self.db)
+        return self.fs
+
     def create_job(self, email, dataset_id, job_name, job_type, params):
         if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
             return
         self.get_dataset(email, dataset_id)
+
         collection = self.db.jobs
-        return str(collection.insert_one(
+        job_id = str(collection.insert_one(
             dict(dataset_id=dataset_id, status='pending', name=job_name, email=email, type=job_type, params=params,
                  submitted=datetime.datetime.utcnow())).inserted_id)
 
+        return job_id
+
     def get_job(self, email, job_id, return_result):
         collection = self.db.jobs
-        doc = collection.find_one(dict(_id=ObjectId(job_id)),
-                                  {"result": 0} if not return_result else {'result': 1, "dataset_id": 1})
+        doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
         if return_result:
-            return doc['result']
+            if os.environ.get(CIRRO_JOB_RESULTS) is None:
+                fs = self.get_gridfs()
+                return fs.get(ObjectId(doc['result'])).read()
+            else:  # URL
+                return doc['result']
         else:
             return dict(status=doc['status'])
 
@@ -287,6 +301,8 @@ class MongoDb(AbstractDB):
                 result = save_job_result_to_file(result, job_id)
             else:
                 result = ujson.dumps(result, double_precision=2, orient='values')
+                result = str(self.get_gridfs().put(result, encoding='ascii'))
+
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
     def delete_job(self, email, job_id):
@@ -296,8 +312,12 @@ class MongoDb(AbstractDB):
         doc = collection.find_one(dict(_id=ObjectId(job_id)), dict(email=1))
         if doc['email'] == email and not doc.get('readonly', False):
             collection.delete_one(dict(_id=ObjectId(job_id)))
-            url = doc.get('url')
-            if url is not None:
-                get_fs(url).rm(url)
+            result = doc.get('result')
+            if result is not None:
+                if os.environ.get(CIRRO_JOB_RESULTS) is not None:
+                    if result.get('url') is not None:
+                        get_fs(result['url']).rm(result['url'])
+                else:
+                    self.get_gridfs().delete(ObjectId(result))
         else:
             raise InvalidUsage('Not authorized', 403)
