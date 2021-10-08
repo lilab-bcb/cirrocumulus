@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.22.post1 `October 8, 2021`
+    * Save categorical legend scroll bar position when switching features
+
 - 1.1.22 `October 7, 2021`
     * Added `--ontology` option to `cirro serve` and `cirro launch`
     * Fixed error saving colors from h5ad files in `cirro prepare`
