@@ -28,6 +28,9 @@ def read_and_diff(ds_reader, path, test_data, measures, dimensions, continuous_o
                                        check_flags=False)
 
     np.testing.assert_equal(prepared_adata.obsm[basis], test_data.obsm[basis])
+    # ensure shape is correct when reading with no keys
+    prepared_adata2 = ds_reader.read_dataset(filesystem=fs, path=path, dataset=dataset, keys=dict())
+    assert prepared_adata2.shape[0] == test_data.shape[0]
 
 
 def test_prepare_cxg_tile_db(test_data, measures, dimensions, continuous_obs, basis, tmp_path):
