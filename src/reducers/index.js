@@ -416,6 +416,17 @@ function serverInfo(state = {}, action) {
                 action.payload.ontology.cellTypes.forEach(item => item.text = item.name);
                 action.payload.ontology.cellTypes.sort((item1, item2) => NATSORT(item1.text, item2.text));
             }
+            if (action.payload.datasetSelectorColumns == null) {
+                action.payload.datasetSelectorColumns = [{id: 'name', label: 'Name', visible: true}, {
+                    id: 'species',
+                    label: 'Species',
+                    visible: true
+                }, {
+                    id: 'title',
+                    label: 'Title',
+                    visible: true
+                }];
+            }
             return action.payload;
         default:
             return state;

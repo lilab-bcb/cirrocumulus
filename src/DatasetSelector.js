@@ -1,5 +1,9 @@
 import {
+    Checkbox,
     Divider,
+    ListItemText,
+    OutlinedInput,
+    Select,
     Table,
     TableBody,
     TableCell,
@@ -30,7 +34,9 @@ import {intFormat} from './formatters';
 import {visuallyHidden} from '@mui/utils';
 import Box from '@mui/material/Box';
 
-import {find} from 'lodash';
+import {find, findIndex} from 'lodash';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
 
 export function DatasetSelector(props) {
     const [searchText, setSearchText] = useState('');
@@ -40,7 +46,8 @@ export function DatasetSelector(props) {
     const [page, setPage] = useState(0);
     const [order, setOrder] = useState('asc');
     const [orderBy, setOrderBy] = useState(null);
-    const {dataset, datasetChoices, dialog} = props;
+    const {dataset, datasetChoices, datasetSelectorColumns, dialog} = props;
+    const [forceUpdate, setForceUpdate] = useState(false);
     const handleRequestSort = (event, property) => {
         const isAsc = orderBy === property && order === 'asc';
         setOrder(isAsc ? 'desc' : 'asc');
@@ -81,6 +88,14 @@ export function DatasetSelector(props) {
         setSearchText('');
     }
 
+    function handleColumnsChange(event) {
+        const value = event.target.value;
+        datasetSelectorColumns.forEach(column => {
+            column.visible = value.indexOf(column.id) !== -1;
+        });
+        setForceUpdate(!forceUpdate); // TODO redux style
+    }
+
     function handleClearSearchText() {
         setPage(0);
         setSearchText('');
@@ -101,13 +116,7 @@ export function DatasetSelector(props) {
 
     let filteredChoices = datasetChoices;
     let searchTextLower = searchText.toLowerCase().trim();
-    const allColumns = props.serverInfo.datasetSelectorColumns || [{id: 'name', label: 'Name'}, {
-        id: 'species',
-        label: 'Species'
-    }, {
-        id: 'title',
-        label: 'Title'
-    }];
+    const allColumns = datasetSelectorColumns;
     const visibleColumns = allColumns.filter(column => column.visible !== false);
 
     if (searchTextLower != '') {
@@ -145,14 +154,6 @@ export function DatasetSelector(props) {
         }
     }
     const datasetDetailsOpen = Boolean(datasetDetailsEl);
-    // const group2Items = groupBy(filteredChoices, item => item[datasetSelectorGroupBy] || '');
-    // const groups = Object.keys(group2Items);
-    // groups.sort(NATSORT);
-    // const otherIndex = groups.indexOf("");
-    // if (otherIndex !== -1) { // move Other (empty string) to end
-    //     groups.push(groups.splice(otherIndex, 1)[0]);
-    // }
-
     return (
         <React.Fragment>
             <Popover
@@ -204,6 +205,25 @@ export function DatasetSelector(props) {
                                } : null}
                     />
                     <div>
+                        <FormControl size={"small"} sx={{float: 'right', transform: 'translateY(-20px)', m: 1}}>
+                            <Select
+                                size={"small"}
+                                labelId="dataset-selector-columns-label"
+                                id="dataset-selector-columns"
+                                multiple
+                                input={<OutlinedInput size={"small"}/>}
+                                value={visibleColumns.map(item => item.id)}
+                                onChange={handleColumnsChange}
+                                renderValue={(selected) => 'Column Visibility'}
+                            >
+                                {allColumns.map((item) => (
+                                    <MenuItem key={item.id} value={item.id}>
+                                        <Checkbox checked={findIndex(visibleColumns, c => c.id === item.id) !== -1}/>
+                                        <ListItemText primary={item.label}/>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <Typography
                             variant="subtitle1">{(filteredChoices.length != datasetChoices.length ? (intFormat(filteredChoices.length) + ' / ') : '') + intFormat(datasetChoices.length) + ' Datasets'}</Typography>
                         <Divider/>
@@ -275,47 +295,7 @@ export function DatasetSelector(props) {
                             onPageChange={handleChangePage}
 
                         />
-                        {/*{groups.map(species => {*/}
-                        {/*    const speciesText = species === '' ? 'Other' : species;*/}
-                        {/*    const choices = group2Items[species];*/}
-                        {/*    choices.sort((a, b) => NATSORT(a.name, b.name));*/}
-                        {/*    return (*/}
-                        {/*        <React.Fragment key={species}>*/}
-                        {/*            <Typography component={"h2"}>{speciesText}</Typography>*/}
-                        {/*            <List dense disablePadding component="nav">*/}
-                        {/*                {choices.map(choice => {*/}
-                        {/*                    let text = choice.name;*/}
-                        {/*                    if (choice.title) {*/}
-                        {/*                        text += ' - ' + choice.title;*/}
-                        {/*                    }*/}
-                        {/*                    return (*/}
-                        {/*                        <ListItem alignItems="flex-start"*/}
-                        {/*                                  selected={choice.id === selectedId}*/}
-                        {/*                                  key={choice.id}*/}
-                        {/*                                  button*/}
-                        {/*                                  onClick={(e) => handleListItemClick(choice.id)}>*/}
-                        {/*                            <ListItemText*/}
-                        {/*                                primary={text}*/}
-                        {/*                                style={{*/}
-                        {/*                                    textOverflow: 'ellipsis',*/}
-                        {/*                                    overflow: 'hidden',*/}
-                        {/*                                    whiteSpace: 'nowrap'*/}
-                        {/*                                }}/>*/}
-                        {/*                            <ListItemSecondaryAction>*/}
-                        {/*                                <IconButton*/}
-                        {/*                                    onClick={(e) => handleListItemDetailsClick(e, choice.id)}*/}
-                        {/*                                    edge="end"*/}
-                        {/*                                    aria-label="summary"*/}
-                        {/*                                    size="large">*/}
-                        {/*                                    <InfoIcon/>*/}
-                        {/*                                </IconButton>*/}
-                        {/*                            </ListItemSecondaryAction>*/}
-                        {/*                        </ListItem>*/}
-                        {/*                    );*/}
-                        {/*                })}*/}
-                        {/*            </List></React.Fragment>*/}
-                        {/*    );*/}
-                        {/*})}*/}
+
                     </div>
                 </DialogContent>
             </Dialog>
@@ -329,7 +309,7 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         dialog: state.dialog,
         datasetChoices: state.datasetChoices,
-        serverInfo: state.serverInfo
+        datasetSelectorColumns: state.serverInfo.datasetSelectorColumns
     };
 };
 const mapDispatchToProps = dispatch => {
