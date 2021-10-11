@@ -359,7 +359,7 @@ class AppHeader extends React.PureComponent {
                               onClose={this.handleUserMenuClose}>
                             <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
                         </Menu>}
-                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} variant="outlined" color="primary"
+                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}}  color="inherit"
                                                 onClick={this.props.handleLogin}>Sign In</Button>}
                     </div>
                 </Toolbar>
