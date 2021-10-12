@@ -32,7 +32,6 @@ Launch cirrocumulus via the command line::
     cirro launch <path_to_dataset>
 
 - Launch accepts more than one dataset to enable quick dataset switching or to combine modalities (e.g gene fusions and expression) stored in separate files.
-- Predefined marker lists can be provided in JSON format (`see example`_) to quickly browse features of interest.
 
 Example Data
 ^^^^^^^^^^^^^
@@ -61,4 +60,5 @@ Complete documentation available at https://cirrocumulus.readthedocs.io
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _Scanpy: https://scanpy.readthedocs.io/
 .. _zarr: https://zarr.readthedocs.io/
+.. _TileDB: https://tiledb.com/
 
