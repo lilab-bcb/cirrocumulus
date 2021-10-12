@@ -1319,6 +1319,9 @@ export function setJobResultId(jobId) {
             if (index === -1) { // job was deleted while fetching result?
                 console.log('Unable to find job');
             } else {
+                if (result.data == null) {
+                    result = {data: result};
+                }
                 const jobResult = Object.assign({}, jobResults[index], result);
                 if (jobResult.type === 'de') {
                     updateJob(jobResult);
