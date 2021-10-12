@@ -19,7 +19,9 @@ remapped_urls = dict()
 if os.environ.get(CIRRO_MOUNT) is not None:
     tokens = os.environ.get(CIRRO_MOUNT).split(',')
     for token in tokens:
-        bucket, local_path = token.split(':')
+        index = token.rfind(':')
+        bucket = token[:index]
+        local_path = token[index + 1:]
         remapped_urls[bucket] = local_path
 
 
