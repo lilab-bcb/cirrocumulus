@@ -13,7 +13,7 @@ function JobResultOptions(props) {
 
 const mapStateToProps = state => {
         return {
-            jobResultId: state.jobResult,
+            jobResultId: state.jobResultId,
             jobResults: state.jobResults
         };
     }

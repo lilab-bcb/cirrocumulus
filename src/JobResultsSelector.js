@@ -14,7 +14,7 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import React, {useState} from 'react';
-import {deleteJobResult, setJobResult} from './actions';
+import {deleteJobResult, setJobResultId} from './actions';
 import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import {COMPARE_ACTIONS} from './job_config';
@@ -127,6 +127,7 @@ function JobResultsSelector(props) {
                                 <TableRow key={jobResult.id}
                                           hover
                                           selected={jobResult.id === jobResultId}
+                                          disabled={!isComplete}
                                           onClick={isComplete ? (event) => onSelectJob(jobResult.id) : null}
                                           role="checkbox"
                                           tabIndex={-1}>
@@ -153,7 +154,7 @@ function JobResultsSelector(props) {
 const mapStateToProps = state => {
         return {
             email: state.email,
-            jobResultId: state.jobResult,
+            jobResultId: state.jobResultId,
             jobResults: state.jobResults
         };
     }
@@ -164,7 +165,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
                 dispatch(deleteJobResult(payload));
             },
             handleJobResult: (payload) => {
-                dispatch(setJobResult(payload));
+                dispatch(setJobResultId(payload));
             }
         };
     }
