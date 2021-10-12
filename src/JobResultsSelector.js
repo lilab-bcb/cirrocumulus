@@ -139,7 +139,7 @@ function JobResultsSelector(props) {
                                             edge="end"
                                             aria-label="delete"
                                             onClick={(event) => onDeleteJob(event, jobResult)}
-                                            size="large">
+                                            size="small">
                                             <DeleteIcon/>
                                         </IconButton>}</TableCell>}
                                 </TableRow>

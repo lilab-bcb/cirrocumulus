@@ -64,13 +64,19 @@ export class RestDataset {
     }
 
     getJob(id) {
-        return fetch(API + '/job?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+        return fetch(API + '/job?c=result&id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            return response.json();
+        });
+    }
+
+    getJobParams(id) {
+        return fetch(API + '/job?c=params&id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         });
     }
 
     getJobStatus(id) {
-        return fetch(API + '/job_status?id=' + id + '&ds_id=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+        return fetch(API + '/job?c=status&id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         });
     }

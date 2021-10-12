@@ -258,18 +258,21 @@ class MongoDb(AbstractDB):
 
         return job_id
 
-    def get_job(self, email, job_id, return_result):
+    def get_job(self, email, job_id, return_type):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
         self.get_dataset(email, doc['dataset_id'])
-        if return_result:
-            if os.environ.get(CIRRO_JOB_RESULTS) is None:
+        if return_type == 'result':
+            result = doc.get('result')
+            if isinstance(result, dict) and result.get('url') is not None:
+                return result
+            else:
                 fs = self.get_gridfs()
                 return fs.get(ObjectId(doc['result'])).read()
-            else:  # URL
-                return doc['result']
-        else:
+        elif return_type == 'status':
             return dict(status=doc['status'])
+        elif return_type == 'params':
+            return dict(params=doc.get('params'))
 
     def get_jobs(self, email, dataset_id):
         self.get_dataset(email, dataset_id)
@@ -314,9 +317,8 @@ class MongoDb(AbstractDB):
             collection.delete_one(dict(_id=ObjectId(job_id)))
             result = doc.get('result')
             if result is not None:
-                if os.environ.get(CIRRO_JOB_RESULTS) is not None:
-                    if result.get('url') is not None:
-                        get_fs(result['url']).rm(result['url'])
+                if isinstance(result, dict) and result.get('url') is not None:
+                    get_fs(result['url']).rm(result['url'])
                 else:
                     self.get_gridfs().delete(ObjectId(result))
         else:

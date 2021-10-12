@@ -1313,7 +1313,13 @@ export function setJobResultId(jobId) {
             return dispatch(_setJobResultId(existingJobResult.id));
         }
         dispatch(_setLoading(true));
-        getState().dataset.api.getJob(jobId, true).then((result) => {
+
+        let promises = [];
+        promises.push(getState().dataset.api.getJobParams(jobId));
+        promises.push(getState().dataset.api.getJob(jobId));
+        Promise.all(promises).then((values) => {
+            const params = values[0];
+            let result = values[1];
             const jobResults = getState().jobResults;
             const index = findIndex(jobResults, item => item.id === jobId);
             if (index === -1) { // job was deleted while fetching result?
@@ -1322,18 +1328,20 @@ export function setJobResultId(jobId) {
                 if (result.data == null) {
                     result = {data: result};
                 }
-                const jobResult = Object.assign({}, jobResults[index], result);
+                const jobResult = Object.assign({}, params, jobResults[index], result);
                 if (jobResult.type === 'de') {
                     updateJob(jobResult);
                 }
                 jobResults[index] = jobResult;
                 dispatch(_setJobResultId(jobResult.id));
             }
+
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve result. Please try again.');
         });
+
     };
 }
 
