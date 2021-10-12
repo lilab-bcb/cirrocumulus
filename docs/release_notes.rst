@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.22.post2 `October 12, 2021`
+    * Fixed error when computing differential expression between two lasso'ed selections using `cirro serve`
+    * Fixed display of "Sign In" button using `cirro serve`
+    * Added ability to control the visibility of table columns in dataset chooser
+
 - 1.1.22.post1 `October 8, 2021`
     * Save categorical legend scroll bar position when switching features
 
