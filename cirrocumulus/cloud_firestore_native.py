@@ -231,7 +231,7 @@ class CloudFireStoreNative(AbstractDB):
 
     # views
     def dataset_views(self, email, dataset_id):
-        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW)
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW, keys=['name', 'notes', 'email', 'last_updated'])
 
     def delete_dataset_view(self, email, dataset_id, view_id):
         return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
