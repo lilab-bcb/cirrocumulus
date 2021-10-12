@@ -112,6 +112,8 @@ class ParquetDataset(AbstractDataset):
                 if X is None:
                     X = scipy.sparse.coo_matrix(([], ([], [])), shape=(vals.shape[0], 0))
 
+        if X is None and obs is None and len(obsm.keys()) == 0:
+            obs = pd.DataFrame(index=pd.RangeIndex(shape[0]))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns['X_module'] = adata_modules

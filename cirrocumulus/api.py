@@ -493,6 +493,11 @@ def handle_job():
                 # adata2gct(adata, output)
                 # r = Response(output.getvalue(), mimetype='text/plain')
                 df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
+                for key in adata.layers.keys():
+                    df2 = pd.DataFrame(adata.layers[key], index=adata.obs.index.astype(str) + '-{}'.format(key),
+                                       columns=adata.var.index)
+                    df = pd.concat((df, df2), axis=0)
+
                 df = df.T.join(adata.var)
                 df.index.name = 'id'
                 return Response(df.reset_index().to_json(double_precision=2, orient='records'),

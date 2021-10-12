@@ -115,6 +115,10 @@ class AbstractBackedDataset(AbstractDataset):
                 obsm[key] = embedding_data
                 if X is None:
                     X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
+        if X is None and obs is None and len(obsm.keys()) == 0:
+            if dataset_info is None:
+                dataset_info = self.get_dataset_info(filesystem, path)
+            obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns['X_module'] = adata_modules
