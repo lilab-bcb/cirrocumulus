@@ -218,13 +218,13 @@ class AbstractDB:
       """
         raise NotImplementedError()
 
-    def get_job(self, email, job_id, return_result):
+    def get_job(self, email, job_id, return_type):
         """ Gets a job
 
        Args:
           email: User email or None
           job_id: Job id
-          return_result: Whether to return the job result or status only
+          return_type: One of "result", "status", or "params"
 
        Returns:
           The job

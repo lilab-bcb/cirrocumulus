@@ -4,7 +4,7 @@ from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, 
     CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE, CIRRO_CELL_ONTOLOGY
 from cirrocumulus.launch import create_app
-from cirrocumulus.util import create_instance, add_dataset_providers
+from cirrocumulus.util import create_instance, add_dataset_providers, get_fs
 
 app = None
 
@@ -87,6 +87,7 @@ def main(argsv):
         os.environ[CIRRO_UPLOAD] = args.upload
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results
+        get_fs(os.environ[CIRRO_JOB_RESULTS]).makedirs(os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
 
     run_args = [
         'gunicorn',
