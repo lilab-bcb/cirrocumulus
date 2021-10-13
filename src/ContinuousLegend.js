@@ -1,13 +1,23 @@
 import React from 'react';
 import {numberFormat, numberFormat0} from './formatters';
-import {stripTrailingZeros} from './util';
+import {FEATURE_TYPE, stripTrailingZeros} from './util';
 
 
-class ContinuousLegend extends React.PureComponent {
+function ContinuousLegend(props) {
 
+    const {name, featureSummary, globalFeatureSummary, nObs, nObsSelected, type} = props;
+    const selectionSummary = featureSummary[name];
+    const globalSummary = globalFeatureSummary[name];
+    const summaryNames = ['all'];
+    // TODO compute unselected mean and % expressed from globals
+    if (selectionSummary != null) {
+        summaryNames.push('selection');
+        //  summaryNames.push('rest');
+    }
 
-    getTable(summaryNames, selectionSummary, globalSummary) {
-        const showPercentExpressed = globalSummary.numExpressed != null && globalSummary.numExpressed !== this.props.nObs;
+    function getTable(summaryNames, selectionSummary, globalSummary) {
+        const showPercentExpressed = globalSummary.numExpressed != null && type === FEATURE_TYPE.X;
+        const showMin = type !== FEATURE_TYPE.X;
         return (
             <table>
                 <thead>
@@ -27,11 +37,11 @@ class ContinuousLegend extends React.PureComponent {
                 {showPercentExpressed &&
                 <tr>
                     <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
-                    <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
+                    <td>{numberFormat0(100 * globalSummary.numExpressed / nObs)}</td>
                     {selectionSummary &&
-                    <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
+                    <td>{numberFormat0(100 * selectionSummary.numExpressed / nObsSelected)}</td>}
                 </tr>}
-                {(!showPercentExpressed || globalSummary.min !== 0) && <tr>
+                {showMin && <tr>
                     <td style={{textAlign: 'right'}}>{'Min'}:</td>
                     <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
                     {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.min))}</td>}
@@ -46,22 +56,12 @@ class ContinuousLegend extends React.PureComponent {
         );
     }
 
-    render() {
-        const {name, featureSummary, globalFeatureSummary} = this.props;
-        const selectionSummary = featureSummary[name];
-        const globalSummary = globalFeatureSummary[name];
-        const summaryNames = ['all'];
-        // TODO compute unselected mean and % expressed from globals
-        if (selectionSummary != null) {
-            summaryNames.push('selection');
-            //  summaryNames.push('rest');
-        }
 
-        return (
-            <>
-                {globalSummary != null && name !== '__count' && this.getTable(summaryNames, selectionSummary, globalSummary)}
-            </>);
-    }
+    return (
+        <>
+            {globalSummary != null && name !== '__count' && getTable(summaryNames, selectionSummary, globalSummary)}
+        </>);
+
 }
 
 export default ContinuousLegend;
