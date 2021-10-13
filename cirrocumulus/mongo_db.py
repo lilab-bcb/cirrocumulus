@@ -167,10 +167,16 @@ class MongoDb(AbstractDB):
             return
 
         self.get_dataset(email, dataset_id, True)
-        collection = self.db.datasets
-        collection.delete_one(dict(_id=ObjectId(dataset_id)))
+        self.db.datasets.delete_one(dict(_id=ObjectId(dataset_id)))
         self.db.filters.delete_many(dict(dataset_id=dataset_id))
+        self.db.views.delete_many(dict(dataset_id=dataset_id))
         self.db.categories.delete_many(dict(dataset_id=dataset_id))
+        self.db.feature_sets.delete_many(dict(dataset_id=dataset_id))
+
+        for doc in self.db.jobs.find(dict(dataset_id=dataset_id), dict(result=1)):
+            result = doc.get('result')
+            self.delete_job_result(result)
+        self.db.jobs.delete_many(dict(dataset_id=dataset_id))
 
     def upsert_dataset(self, email, readers, dataset):
 
@@ -308,6 +314,15 @@ class MongoDb(AbstractDB):
 
         collection.update_one(dict(_id=ObjectId(job_id)), {'$set': dict(status=status, result=result)})
 
+    def delete_job_result(self, result):
+        if result is not None:
+            if isinstance(result, dict) and result.get('url') is not None:
+                fs = get_fs(result['url'])
+                if fs.exists(result['url']):
+                    fs.rm(result['url'], recursive=True)
+            else:
+                self.get_gridfs().delete(ObjectId(result))
+
     def delete_job(self, email, job_id):
         if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
             return
@@ -316,10 +331,6 @@ class MongoDb(AbstractDB):
         if doc['email'] == email and not doc.get('readonly', False):
             collection.delete_one(dict(_id=ObjectId(job_id)))
             result = doc.get('result')
-            if result is not None:
-                if isinstance(result, dict) and result.get('url') is not None:
-                    get_fs(result['url']).rm(result['url'])
-                else:
-                    self.get_gridfs().delete(ObjectId(result))
+            self.delete_job_result(result)
         else:
             raise InvalidUsage('Not authorized', 403)
