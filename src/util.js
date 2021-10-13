@@ -87,7 +87,8 @@ export const FEATURE_TYPE = {
     X: 'X',
     FEATURE_SET: 'featureSet',
     MODULE: 'module',
-    COUNT: 'count'
+    COUNT: 'count',
+    OTHER: 'other'
 };
 
 export const TIES_STRATEGY_IGNORE = 0;
@@ -763,11 +764,12 @@ export function getFeatureSets(markers, featureSets) {
 }
 
 export function splitSearchTokens(tokens) {
-    let X = [];
-    let obs = [];
-    let obsCat = [];
-    let featureSets = [];
-    let modules = [];
+    const X = [];
+    const obs = [];
+    const obsCat = [];
+    const featureSets = [];
+    const modules = [];
+    const other = [];
     tokens.forEach(token => {
         if (token.type === FEATURE_TYPE.X) {
             X.push(token.value);
@@ -780,8 +782,8 @@ export function splitSearchTokens(tokens) {
         } else if (token.type === FEATURE_TYPE.MODULE) {
             modules.push(token.value);
         } else {
-            console.log('Unknown type: ' + token);
+            other.push(token.value);
         }
     });
-    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, modules: modules, featureSetsAdd: []};
+    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, modules: modules, other: other};
 }

@@ -16,21 +16,20 @@ export function getVarNameType(key) {
     }
 }
 
-function getStats(dimensions, obsMeasures, varMeasures) {
+function getStats(dimensionVectors, measureVectors) {
     const results = {};
-    dimensions.forEach(v => {
+    dimensionVectors.forEach(v => {
         results[v.getName()] = valueCounts(v);
     });
-    obsMeasures.forEach(v => {
+    measureVectors.forEach(v => {
         results[v.getName()] = stats(v);
     });
-    varMeasures.forEach(v => {
-        results[v.getName()] = stats(v);
-    });
+
     return results;
 }
 
-function getVectors(cachedData, names, indices = null) {
+
+export function getVectors(cachedData, names, indices = null) {
     let vectors = [];
     names.forEach(name => {
         let array = cachedData[name];
@@ -133,7 +132,13 @@ export function computeDerivedStats(result, q, cachedData) {
         const dimensions = q.stats.dimensions || [];
         const measures = q.stats.measures || [];
         const typeToMeasures = getTypeToMeasures(measures);
-        result.summary = getStats(getVectors(cachedData, dimensions), getVectors(cachedData, typeToMeasures.obs), getVectors(cachedData, typeToMeasures.X));
+
+        let measureVectors = [];
+        Object.values(typeToMeasures).forEach(fields => {
+            measureVectors = measureVectors.concat(getVectors(cachedData, fields));
+        });
+
+        result.summary = getStats(getVectors(cachedData, dimensions), measureVectors);
     }
 
     if (q.groupedStats) {
@@ -161,8 +166,9 @@ export function computeDerivedStats(result, q, cachedData) {
         result.selection = {};
         result.selection.indices = getPassingFilterIndices(cachedData, q.selection.filter);
         const selectedIndices = Array.from(result.selection.indices);
+        const dimensionVectors = getVectors(cachedData, dimensions, selectedIndices);
         if (dimensions.length > 0) {
-            const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions, selectedIndices));
+            const groupDimensionInfo = groupDimensions(dimensionVectors);
             const distribution = {};
             for (const key in typeToMeasures) {
                 const measures = typeToMeasures[key];
@@ -172,8 +178,11 @@ export function computeDerivedStats(result, q, cachedData) {
             }
             result.selection.distribution = distribution;
         }
-        result.selection.summary = getStats(getVectors(cachedData, dimensions, selectedIndices), getVectors(cachedData, typeToMeasures.obs, result.selection.indices),
-            getVectors(cachedData, typeToMeasures.X, selectedIndices));
+        let measureVectors = [];
+        Object.values(typeToMeasures).forEach(fields => {
+            measureVectors = measureVectors.concat(getVectors(cachedData, fields, selectedIndices));
+        });
+        result.selection.summary = getStats(dimensionVectors, measureVectors);
     }
 }
 

@@ -672,9 +672,18 @@ function handleFilterUpdated() {
         let filter = getFilterJson(state);
         addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
 
+        const measures = [];
+        for (let key in searchTokens) {
+            if (key !== FEATURE_TYPE.OBS_CAT) {
+                const values = searchTokens[key];
+                const prefix = key === 'X' ? '' : key + '/';
+                values.forEach(value => measures.push(prefix + value));
+            }
+        }
+
         let q = {
             selection: {
-                measures: searchTokens.X.concat(searchTokens.obs.map(item => 'obs/' + item)),
+                measures: measures,
                 dimensions: searchTokens.obsCat
             }
         };
@@ -1332,8 +1341,23 @@ export function setJobResultId(jobId) {
                 if (jobResult.type === 'de') {
                     updateJob(jobResult);
                 }
+                let promise = Promise.resolve({});
+                if (jobResult.params && jobResult.params.obs) {
+                    const cachedData = getState().cachedData;
+                    const q = {values: {dimensions: []}};
+                    jobResult.params.obs.forEach(field => {
+                        if (cachedData[field] == null) {
+                            q.values.dimensions.push(field);
+                        }
+                    });
+                    if (q.values.dimensions.length > 0) {
+                        promise = getState().dataset.api.getDataPromise(q, cachedData);
+                    }
+                }
                 jobResults[index] = jobResult;
-                dispatch(_setJobResultId(jobResult.id));
+                promise.then(() => {
+                    dispatch(_setJobResultId(jobResult.id));
+                });
             }
 
         }).finally(() => {
@@ -1745,6 +1769,8 @@ function _updateCharts(onError, updateActiveFeature = true) {
                 valuesToFetch.add(feature);
             }
         });
+
+        searchTokens.other.forEach(value => features.add(value)); // don't fetch "other" but add to features so they are displayed in embeddings
         // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
             const embeddingKey = getEmbeddingKey(traceInfo.embedding);
@@ -1822,17 +1848,22 @@ function _updateCharts(onError, updateActiveFeature = true) {
             });
         }
 
-        let globalFeatureSummaryXCacheMiss = [];
-        let globalFeatureSummaryObsContinuousCacheMiss = [];
-        let globalFeatureSummaryDimensionsCacheMiss = [];
+
+        const globalFeatureSummaryMeasuresCacheMiss = [];
+        const globalFeatureSummaryDimensionsCacheMiss = [];
         searchTokens.X.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryXCacheMiss.push(feature);
+                globalFeatureSummaryMeasuresCacheMiss.push(feature);
             }
         });
         searchTokens.obs.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
-                globalFeatureSummaryObsContinuousCacheMiss.push('obs/' + feature);
+                globalFeatureSummaryMeasuresCacheMiss.push('obs/' + feature);
+            }
+        });
+        searchTokens.modules.forEach(feature => {
+            if (globalFeatureSummary[feature] == null) {
+                globalFeatureSummaryMeasuresCacheMiss.push('module/' + feature);
             }
         });
         searchTokens.obsCat.forEach(feature => {
@@ -1842,9 +1873,9 @@ function _updateCharts(onError, updateActiveFeature = true) {
         });
 
 
-        if (globalFeatureSummaryXCacheMiss.length > 0 || globalFeatureSummaryObsContinuousCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0) {
+        if (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0) {
             q.stats = {
-                measures: globalFeatureSummaryXCacheMiss.concat(globalFeatureSummaryObsContinuousCacheMiss),
+                measures: globalFeatureSummaryMeasuresCacheMiss,
                 dimensions: globalFeatureSummaryDimensionsCacheMiss
             };
         }
@@ -1858,22 +1889,18 @@ function _updateCharts(onError, updateActiveFeature = true) {
 
 
         // TODO update selection in new embedding space
-        if (filterJson != null && (globalFeatureSummaryXCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0)) {
+        if (filterJson != null && (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0)) {
             q.selection = {
                 filter: filterJson,
-                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? searchTokens.X : globalFeatureSummaryXCacheMiss,
+                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? searchTokens.X : globalFeatureSummaryMeasuresCacheMiss,
                 dimensions: searchTokens.obsCat
             };
         }
-        let dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
+        const dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
         const allPromises = [dataPromise].concat(promises);
         return Promise.all(allPromises).then(values => {
             const result = values[0];
-            const newSummary = result.summary || {};
-            for (let key in newSummary) {
-                globalFeatureSummary[key] = newSummary[key];
-            }
-            dispatch(setGlobalFeatureSummary(globalFeatureSummary));
+            dispatch(setGlobalFeatureSummary(result.summary));
             const newEmbeddingData = getNewEmbeddingData(state, features);
             embeddingData = embeddingData.concat(newEmbeddingData);
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
@@ -1916,8 +1943,12 @@ function getFeatureType(dataset, feature) {
         return FEATURE_TYPE.OBS_CAT;
     } else if (dataset.obs.indexOf(feature) !== -1) {
         return FEATURE_TYPE.OBS;
+    } else if (dataset.modules && findIndex(dataset.modules, item => item.id === feature) !== -1) {
+        return FEATURE_TYPE.MODULE;
+    } else if (dataset.var.indexOf(feature) !== -1) {
+        return FEATURE_TYPE.X;
     }
-    return FEATURE_TYPE.X;
+    return FEATURE_TYPE.OTHER;
 }
 
 

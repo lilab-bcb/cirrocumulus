@@ -70,7 +70,6 @@ import {
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
-import {updateJob} from '../DotPlotJobResultsPanel';
 
 
 const DIST_PLOT_OPTIONS = {
@@ -401,7 +400,12 @@ function featureSummary(state = {}, action) {
 function globalFeatureSummary(state = {}, action) {
     switch (action.type) {
         case SET_GLOBAL_FEATURE_SUMMARY:
-            return action.payload;
+            if (action.payload != null) {
+                for (let key in action.payload) {
+                    state[key] = action.payload[key];
+                }
+                return Object.assign({}, state);
+            }
         case SET_DATASET:
             return {};
         default:

@@ -7,6 +7,7 @@ class ContinuousLegend extends React.PureComponent {
 
 
     getTable(summaryNames, selectionSummary, globalSummary) {
+        const showPercentExpressed = globalSummary.numExpressed != null && globalSummary.numExpressed !== this.props.nObs;
         return (
             <table>
                 <thead>
@@ -23,15 +24,14 @@ class ContinuousLegend extends React.PureComponent {
                     <td>{stripTrailingZeros(numberFormat(globalSummary.mean))}</td>
                     {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.mean))}</td>}
                 </tr>
-
-                {globalSummary.numExpressed != null &&
+                {showPercentExpressed &&
                 <tr>
                     <td style={{textAlign: 'right'}}>{'% Expressed'}:</td>
                     <td>{numberFormat0(100 * globalSummary.numExpressed / this.props.nObs)}</td>
                     {selectionSummary &&
                     <td>{numberFormat0(100 * selectionSummary.numExpressed / this.props.nObsSelected)}</td>}
                 </tr>}
-                {(globalSummary.numExpressed == null || globalSummary.min !== 0) && <tr>
+                {(!showPercentExpressed || globalSummary.min !== 0) && <tr>
                     <td style={{textAlign: 'right'}}>{'Min'}:</td>
                     <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
                     {selectionSummary && <td>{stripTrailingZeros(numberFormat(selectionSummary.min))}</td>}
