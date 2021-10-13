@@ -64,7 +64,7 @@ export class RestDataset {
     }
 
     getJob(id) {
-        return fetch(API + '/job?c=result&id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+        return fetch(API + '/job?c=result&id=' + id + '&ds=' + this.id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
             return response.json();
         });
     }

@@ -472,12 +472,13 @@ def handle_job():
         if c != 'result':
             raise ValueError('c must be one of status, params, or result')
         if is_precomputed:  # precomputed result
-            dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
-            dataset = database_api.get_dataset(email, dataset_id)
+            suggested_dataset_id = request.args['ds']
+            dataset = database_api.get_dataset(email, suggested_dataset_id)
+            # precompute results need to be a child of dataset
             dataset['url'] = map_url(dataset['url'])
-            result = dataset_api.get_result(dataset, job_id)
-            return send_file(result)
+            result_url = dataset_api.get_result(dataset, job_id)
+            return send_file(result_url)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
@@ -491,9 +492,6 @@ def handle_job():
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
 
                 import pandas as pd
-                # output = StringIO()
-                # adata2gct(adata, output)
-                # r = Response(output.getvalue(), mimetype='text/plain')
                 df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
                 for key in adata.layers.keys():
                     df2 = pd.DataFrame(adata.layers[key], index=adata.obs.index.astype(str) + '-{}'.format(key),

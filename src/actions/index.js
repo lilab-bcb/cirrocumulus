@@ -1084,6 +1084,11 @@ function restoreSavedView(savedView) {
                     dispatch(setActiveFeature(activeFeature));
                 }
             })
+            .then(() => {
+                if (savedView.jobId != null) {
+                    dispatch(setJobResultId(savedView.jobId));
+                }
+            })
             .finally(() => dispatch(_setLoading(false)))
             .catch(err => {
                 console.log(err);
@@ -2246,6 +2251,7 @@ export function getDatasetStateJson(state) {
         searchTokens,
         datasetFilter,
         interpolator,
+        jobResultId,
         markerOpacity,
         pointSize,
         unselectedMarkerOpacity,
@@ -2256,6 +2262,9 @@ export function getDatasetStateJson(state) {
         dataset: dataset.id,
         embeddings: embeddings
     };
+    if (jobResultId != null) {
+        json.jobId = jobResultId;
+    }
 
     const scatterPlot = chartOptions.scatterPlot;
     if (json.embeddings.length > 0 && scatterPlot != null) {
