@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.22.post3 `October 13, 2021`
+    * Fixed bug that required two clicks to load differential expression results
+    * Remove jobs from database when deleting datasets
 
 - 1.1.22.post2 `October 12, 2021`
     * Fixed error when computing differential expression between two lasso'ed selections using `cirro serve`

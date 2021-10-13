@@ -19,7 +19,9 @@ remapped_urls = dict()
 if os.environ.get(CIRRO_MOUNT) is not None:
     tokens = os.environ.get(CIRRO_MOUNT).split(',')
     for token in tokens:
-        bucket, local_path = token.split(':')
+        index = token.rfind(':')
+        bucket = token[:index]
+        local_path = token[index + 1:]
         remapped_urls[bucket] = local_path
 
 
@@ -441,14 +443,6 @@ def handle_dataset():
         return json_response(database_api.get_dataset(email, dataset_id, True))
 
 
-@blueprint.route('/job_status', methods=['GET'])
-def handle_job_status():
-    email = get_auth().auth()['email']
-    database_api = get_database()
-    job_id = request.args.get('id', '')
-    return database_api.get_job(email=email, job_id=job_id, return_result=False)
-
-
 @blueprint.route('/module', methods=['POST'])
 def handle_module_score():
     content = request.get_json(cache=False)
@@ -468,15 +462,23 @@ def handle_job():
         database_api.delete_job(email, job_id)
         return json_response('', 204)
     else:
-        job_id = request.args.get('id', '')
-        if job_id.startswith('cirro-'):  # precomputed result
+        job_id = request.args['id']
+        c = request.args['c']
+        is_precomputed = job_id.startswith('cirro-')
+        if c == 'status' or c == 'params':
+            if is_precomputed:
+                return dict(status='complete') if c == 'status' else dict()
+            return database_api.get_job(email=email, job_id=job_id, return_type=c)
+        if c != 'result':
+            raise ValueError('c must be one of status, params, or result')
+        if is_precomputed:  # precomputed result
             dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
             dataset = database_api.get_dataset(email, dataset_id)
             dataset['url'] = map_url(dataset['url'])
             result = dataset_api.get_result(dataset, job_id)
             return send_file(result)
-        job = database_api.get_job(email=email, job_id=job_id, return_result=True)
+        job = database_api.get_job(email=email, job_id=job_id, return_type=c)
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
             content_type = job.get('content-type')

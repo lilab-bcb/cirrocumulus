@@ -34,6 +34,7 @@ import {
     TRACE_TYPE_SCATTER,
     updateTraceColors
 } from '../util';
+import {updateJob} from '../DotPlotJobResultsPanel';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
 const authScopes = [
@@ -638,7 +639,7 @@ export function _setActiveFeature(payload) {
 
 
 export function setActiveFeature(payload) {
-    return {type: SET_ACTIVE_FEATURE, payload: payload}
+    return {type: SET_ACTIVE_FEATURE, payload: payload};
 }
 
 export function setLegendScrollPosition(payload) {
@@ -1281,7 +1282,7 @@ export function setJobResults(payload) {
     return {type: SET_JOB_RESULTS, payload: payload};
 }
 
-function _setJobResult(payload) {
+function _setJobResultId(payload) {
     return {type: SET_JOB_RESULT, payload: payload};
 }
 
@@ -1293,7 +1294,7 @@ export function deleteJobResult(payload) {
             const index = findIndex(jobResults, item => item.id === payload);
             jobResults.splice(index, 1);
             if (getState().jobResult === payload) {
-                dispatch(_setJobResult(null));
+                dispatch(_setJobResultId(null));
             }
             dispatch(setJobResults(jobResults.slice()));
         }).finally(() => {
@@ -1304,23 +1305,43 @@ export function deleteJobResult(payload) {
     };
 }
 
-export function setJobResult(payload) {
+export function setJobResultId(jobId) {
     return function (dispatch, getState) {
-        let jobResults = getState().jobResults;
-        let jobResult = find(jobResults, item => item.id === payload);
-        if (jobResult.data != null) { // data already loaded
-            return dispatch(_setJobResult(payload));
+        const existingJobResult = find(getState().jobResults, item => item.id === jobId);
+        if (existingJobResult.data != null) { // data already loaded
+            console.log('data already loaded');
+            return dispatch(_setJobResultId(existingJobResult.id));
         }
         dispatch(_setLoading(true));
-        getState().dataset.api.getJob(payload, true).then((result) => {
-            let jobResults = getState().jobResults;
-            const jobResult = Object.assign(find(jobResults, item => item.id === payload), result);
-            dispatch(_setJobResult(jobResult));
+
+        let promises = [];
+        promises.push(getState().dataset.api.getJobParams(jobId));
+        promises.push(getState().dataset.api.getJob(jobId));
+        Promise.all(promises).then((values) => {
+            const params = values[0];
+            let result = values[1];
+            const jobResults = getState().jobResults;
+            const index = findIndex(jobResults, item => item.id === jobId);
+            if (index === -1) { // job was deleted while fetching result?
+                console.log('Unable to find job');
+            } else {
+                if (result.data == null) {
+                    result = {data: result};
+                }
+                const jobResult = Object.assign({}, params, jobResults[index], result);
+                if (jobResult.type === 'de') {
+                    updateJob(jobResult);
+                }
+                jobResults[index] = jobResult;
+                dispatch(_setJobResultId(jobResult.id));
+            }
+
         }).finally(() => {
             dispatch(_setLoading(false));
         }).catch(err => {
             handleError(dispatch, err, 'Unable to retrieve result. Please try again.');
         });
+
     };
 }
 

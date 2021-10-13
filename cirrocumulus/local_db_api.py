@@ -242,11 +242,14 @@ class LocalDbAPI(AbstractDB):
                                           status=None, submitted=datetime.datetime.utcnow())
         return job_id
 
-    def get_job(self, email, job_id, return_result):
+    def get_job(self, email, job_id, return_type):
         job = self.job_id_to_job[job_id]
-        if return_result:
+        if return_type == 'result':
             return job['result'] if 'result' in job else job
-        return dict(id=job['id'], name=job['name'], type=job['type'], status=job['status'], submitted=job['submitted'])
+        elif return_type == 'status':
+            return dict(status=job['status'])
+        elif return_type == 'params':
+            return dict(params=job.get('params'))
 
     def get_jobs(self, email, dataset_id):
         results = []

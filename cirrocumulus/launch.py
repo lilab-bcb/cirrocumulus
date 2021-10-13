@@ -136,6 +136,7 @@ def main(argsv):
         os.environ[CIRRO_JOB_RESULTS] = args.results
     else:
         os.environ[CIRRO_JOB_RESULTS] = os.path.join(os.path.dirname(args.dataset[0].rstrip('/')), 'results')
+    get_fs(os.environ[CIRRO_JOB_RESULTS]).makedirs(os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
     if args.ontology is not None:
         os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     app = create_app()

@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 
-import pandas._libs.json as ujson
 from google.cloud import datastore
 
 from cirrocumulus.abstract_db import AbstractDB
@@ -18,7 +17,6 @@ DATASET_VIEW = 'D_View'
 FEATURE_SET = 'F_Set'
 USER = 'User'
 JOB = 'Job'
-JOB_RESULT = 'Job_Result'
 
 
 def get_datasets(results, email, query, unique_ids):
@@ -231,7 +229,8 @@ class CloudFireStoreNative(AbstractDB):
 
     # views
     def dataset_views(self, email, dataset_id):
-        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW, keys=['name', 'notes', 'email', 'last_updated'])
+        return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW,
+                                      keys=['name', 'notes', 'email', 'last_updated'])
 
     def delete_dataset_view(self, email, dataset_id, view_id):
         return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
@@ -262,19 +261,20 @@ class CloudFireStoreNative(AbstractDB):
                            submitted=datetime.datetime.utcnow(), params=json.dumps(params)))
         client.put(entity)
         job_id = entity.id
-
-        entity = datastore.Entity(client.key(JOB_RESULT, job_id), exclude_from_indexes=["result"])
-        entity.update(dict(dataset_id=dataset_id))
-        client.put(entity)
         return str(job_id)
 
-    def get_job(self, email, job_id, return_result):
+    def get_job(self, email, job_id, return_type):
         client = self.datastore_client
         job_id = int(job_id)
-        key = client.key(JOB_RESULT if return_result else JOB, job_id)
+        key = client.key(JOB, job_id)
         result = client.get(key)
         self.__get_key_and_dataset(email, result['dataset_id'])
-        return dict(status=result['result' if return_result else 'status'])
+        if return_type == 'result':
+            return result['result']
+        elif return_type == 'status':
+            return dict(status=result['status'])
+        elif return_type == 'params':
+            return dict(params=result.get('params'))
 
     def update_job(self, email, job_id, status, result):
         if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
@@ -286,17 +286,16 @@ class CloudFireStoreNative(AbstractDB):
         entity = client.get(key)
         if not is_complete:
             self.__get_key_and_dataset(email, entity['dataset_id'])
-        entity.update(dict(status=status))
-        client.put(entity)
 
         if is_complete:
             if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
                 result = save_job_result_to_file(result, job_id)
             else:
-                result = ujson.dumps(result, double_precision=2, orient='values')
-            key = client.key(JOB_RESULT, job_id)
-            entity = client.get(key)
-            entity.update(dict(result=result))
+                raise ValueError('Please specify job result location')
+            entity.update(dict(result=result, status=status))
+            client.put(entity)
+        else:
+            entity.update(dict(status=status))
             client.put(entity)
 
     def get_jobs(self, email, dataset_id):
@@ -321,6 +320,5 @@ class CloudFireStoreNative(AbstractDB):
         result = client.get(key)
         if result['email'] == email:
             client.delete(key)
-            client.delete(client.key(JOB_RESULT, job_id))
         else:
             raise InvalidUsage('Not authorized', 403)

@@ -507,14 +507,11 @@ function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
 }
 
 
-function jobResult(state = null, action) {
+function jobResultId(state = null, action) {
     switch (action.type) {
         case SET_DATASET:
             return null;
         case SET_JOB_RESULT:
-            if (action.payload != null && action.payload.type == 'de') {
-                updateJob(action.payload); // initialize
-            }
             return action.payload;
         default:
             return state;
@@ -812,7 +809,7 @@ export default combineReducers({
     featureSummary,
     globalFeatureSummary,
     interpolator,
-    jobResult,
+    jobResultId,
     jobResults,
     legendScrollPosition,
     loading,
