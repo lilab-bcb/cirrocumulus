@@ -406,6 +406,7 @@ function globalFeatureSummary(state = {}, action) {
                 }
                 return Object.assign({}, state);
             }
+            return state;
         case SET_DATASET:
             return {};
         default:
