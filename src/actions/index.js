@@ -1323,7 +1323,9 @@ export function setJobResultId(jobId) {
     return function (dispatch, getState) {
         const existingJobResult = find(getState().jobResults, item => item.id === jobId);
         if (existingJobResult.data != null) { // data already loaded
-            console.log('data already loaded');
+            if (existingJobResult.type === 'de') {
+                updateJob(existingJobResult);
+            }
             return dispatch(_setJobResultId(existingJobResult.id));
         }
         dispatch(_setLoading(true));
