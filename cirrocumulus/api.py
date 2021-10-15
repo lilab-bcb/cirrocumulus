@@ -452,7 +452,7 @@ def handle_module_score():
     return json_response(adata.X.mean(axis=1))
 
 
-@blueprint.route('/job', methods=['GET', 'DELETE'])
+@blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
 def handle_job():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -461,6 +461,17 @@ def handle_job():
         job_id = content.get('id', '')
         database_api.delete_job(email, job_id)
         return json_response('', 204)
+    elif request.method == 'POST':
+        if os.environ.get('GAE_APPLICATION') is None:  # TODO
+            content = request.get_json(force=True, cache=False)
+            email, dataset = get_email_and_dataset(content)
+            params = content.get('params')
+            job_type = content.get('type')
+            job_name = content.get('name')
+            return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+                                      job_name=job_name, job_type=job_type, params=params))
+        else:
+            raise ValueError('Submit job not supported on GAE')
     else:
         job_id = request.args['id']
         c = request.args['c']
@@ -516,16 +527,3 @@ def handle_jobs():
     database_api = get_database()
     ds_id = request.args.get('id', '')
     return json_response(database_api.get_jobs(email=email, dataset_id=ds_id))
-
-
-@blueprint.route('/submit_job', methods=['POST'])
-def handle_submit_job():
-    if os.environ.get('GAE_APPLICATION') is None:  # TODO
-        database_api = get_database()
-        content = request.get_json(force=True, cache=False)
-        email, dataset = get_email_and_dataset(content)
-        params = content.get('params')
-        job_type = content.get('type')
-        job_name = content.get('name')
-        return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-                                  job_name=job_name, job_type=job_type, params=params))
