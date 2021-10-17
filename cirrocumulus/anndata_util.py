@@ -20,7 +20,8 @@ def get_scanpy_marker_keys(dataset):
     for key in dataset.uns.keys():
         rank_genes_groups = dataset.uns[key]
         if isinstance(rank_genes_groups, Mapping) and 'names' in rank_genes_groups and (
-                'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
+                'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups) and len(
+            rank_genes_groups['names'][0]) > 0 and not isinstance(rank_genes_groups['names'][0][0], bytes):
             marker_keys.append(key)
     return marker_keys
 
