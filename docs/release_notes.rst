@@ -1,5 +1,10 @@
 Release Notes
 -------------
+- 1.1.22.post4 `October 19, 2021`
+    * Added ability to select all members of a set
+    * Fixed bug displaying renamed category labels on embedding
+    * Added option to integrate Mixpanel_. Set environment variable CIRRO_MIXPANEL to your project token to track open dataset events
+
 - 1.1.22.post3 `October 13, 2021`
     * Fixed bug that required two clicks to load differential expression results
     * Remove jobs from database when deleting datasets
@@ -343,3 +348,4 @@ Release Notes
 .. _Seurat: https://satijalab.org/seurat/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _zarr: https://zarr.readthedocs.io/
+.. _Mixpanel: https://mixpanel.com/
