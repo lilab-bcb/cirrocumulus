@@ -87,10 +87,10 @@ export const FEATURE_TYPE = {
     X: 'X',
     FEATURE_SET: 'featureSet',
     MODULE: 'module',
-    COUNT: 'count',
-    OTHER: 'other'
+    COUNT: 'count'
 };
 
+export const FEATURE_TYPE_MEASURES_EXCLUDE = [FEATURE_TYPE.FEATURE_SET, FEATURE_TYPE.COUNT, FEATURE_TYPE.OBS_CAT];
 export const TIES_STRATEGY_IGNORE = 0;
 export const TIES_STRATEGY_AVERAGE = 1;
 export const TIES_STRATEGY_MAXIMUM = 2;
@@ -385,7 +385,7 @@ function getColorsRgba(trace) {
         const ncolors = 500;
         const colorBins = [];
         const domain = colorScale.domain();
-        //const unknown  = colorScale.unknown();
+        const unknown = rescaleRgb(color(colorScale.unknown()));
         const binScale = scaleLinear().domain(domain).range([0, ncolors - 1]);
         for (let i = 0; i < ncolors; ++i) {
             const value = binScale.invert(i);
@@ -393,17 +393,24 @@ function getColorsRgba(trace) {
         }
         for (let i = 0, dst = 0; i < npoints; ++i) {
             const value = trace.values[i];
-            let bin = Math.ceil(binScale(value));
-            if (bin < 0) {
-                bin = 0;
-            } else if (bin >= ncolors) {
-                bin = ncolors - 1;
+            if (Number.isNaN(value)) {
+                colors[dst++] = unknown.r;
+                colors[dst++] = unknown.g;
+                colors[dst++] = unknown.b;
+                colors[dst++] = 1;
+            } else {
+                let bin = Math.ceil(binScale(value));
+                if (bin < 0) {
+                    bin = 0;
+                } else if (bin >= ncolors) {
+                    bin = ncolors - 1;
+                }
+                const c = colorBins[bin];
+                colors[dst++] = c.r;
+                colors[dst++] = c.g;
+                colors[dst++] = c.b;
+                colors[dst++] = 1;
             }
-            const c = colorBins[bin];
-            colors[dst++] = c.r;
-            colors[dst++] = c.g;
-            colors[dst++] = c.b;
-            colors[dst++] = 1;
         }
     }
 
@@ -699,7 +706,7 @@ export function getInterpolator(name) {
 }
 
 export function createColorScale(colorScaleDef) {
-    const scale = scaleSequential(colorScaleDef.value).clamp(true).unknown('#f0f0f0');
+    const scale = scaleSequential(colorScaleDef.value).clamp(true).unknown('#bdbdbd');
     if (colorScaleDef.reversed) {
         const interpolator = scale.interpolator();
         const mirror = t => interpolator(1 - t);

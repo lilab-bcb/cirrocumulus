@@ -30,7 +30,14 @@ export function nrd0(stats) {
 }
 
 export function boxplotStats(x) {
-    x = x.slice().sort((a, b) => a - b);
+    const xCopy = [];
+    for (let i = 0, n = x.length; i < n; i++) {
+        const value = x[i];
+        if (!Number.isNaN(value)) {
+            xCopy.push(value);
+        }
+    }
+    x = xCopy.sort((a, b) => a - b);
     const q3 = quantileSorted(x, 0.75);
     const q1 = quantileSorted(x, 0.25);
     const q50 = quantileSorted(x, 0.5);
@@ -79,6 +86,12 @@ export function boxplotStats(x) {
     };
 }
 
+/**
+ *
+ * @param x Array without NaN values
+ * @param mean The mean of X
+ * @returns {number} The variance
+ */
 function variance(x, mean) {
     let sum = 0;
     let n = x.length;
@@ -90,7 +103,7 @@ function variance(x, mean) {
         sum += diff;
     }
     if (n <= 1) {
-        return NaN;
+        return Number.NaN;
     }
     n = n - 1;
     if (n < 1) {
@@ -121,17 +134,21 @@ function createKDE(bandwidth, kernel, values) {
 export function density(values, bandwidth, gridsize = 200) {
     let min = Number.MAX_VALUE;
     let max = -Number.MAX_VALUE;
+    let filteredValues = [];
     for (let i = 0, n = values.length; i < n; i++) {
         const value = values[i];
-        min = Math.min(min, value);
-        max = Math.max(max, value);
+        if (!Number.isNaN(value)) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+            filteredValues.push(value);
+        }
     }
     const span = max - min;
     const step = span / (gridsize - 1);
     const x = new Float32Array(gridsize);
     const y = new Float32Array(gridsize);
     let maxKDE = 0;
-    const kde = createKDE(bandwidth, gaussian, values);
+    const kde = createKDE(bandwidth, gaussian, filteredValues);
     for (let i = 0, j = min; i < gridsize; i++, j += step) {
         const v = kde(j);
         x[i] = j;

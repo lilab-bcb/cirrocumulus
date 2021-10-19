@@ -8,11 +8,11 @@ import {Vector} from './Vector';
 export function getVarNameType(key) {
     let index = key.indexOf('/');
     if (index === -1) {
-        return {name: key, type: FEATURE_TYPE.X};
+        return {name: key, type: FEATURE_TYPE.X}; // default
     } else {
-        let key_type = key.substring(0, index);
-        let name = key.substring(index + 1);
-        return {name: name, type: key_type};
+        const type = key.substring(0, index);
+        const name = key.substring(index + 1);
+        return {name: name, type: type};
     }
 }
 
@@ -270,16 +270,20 @@ export function toFloatArray(v) {
 export function variance(v, mean) {
     const size = v.size();
     if (size <= 1) {
-        return NaN;
+        return Number.NaN;
     }
     let ss = 0;
+    let count = 0;
     for (let j = 0; j < size; j++) {
         let x = v.get(j);
-        let diff = x - mean;
-        diff = diff * diff;
-        ss += diff;
+        if (!Number.isNaN(x)) {
+            let diff = x - mean;
+            diff = diff * diff;
+            ss += diff;
+            count++;
+        }
     }
-    let n = size - 1;
+    let n = count - 1;
     if (n < 1) {
         n = 1;
     }
@@ -304,18 +308,22 @@ export function stats(v) {
     let sum = 0;
     let numExpressed = 0;
     let logSum = 0;
+    let count = 0;
     for (let i = 0, size = v.size(); i < size; i++) {
         const value = v.get(i);
-        min = value < min ? value : min;
-        max = value > max ? value : max;
-        sum += value;
-        logSum += Math.expm1(value);
-        if (value !== 0) {
-            numExpressed++;
+        if (!Number.isNaN(value)) {
+            count++;
+            min = value < min ? value : min;
+            max = value > max ? value : max;
+            sum += value;
+            logSum += Math.expm1(value);
+            if (value !== 0) {
+                numExpressed++;
+            }
         }
     }
 
-    const mean = sum / v.size();
+    const mean = sum / count;
     return {
         min: min, max: max, sum: sum, mean: mean, numExpressed: numExpressed, n: v.size(), logSum: logSum
     };
