@@ -15,12 +15,12 @@ const styles = theme => ({
         width: 'unset'
     },
     tr: {
-        cursor: 'pointer',
+        cursor: 'pointer'
     },
     deleteTr: {
         cursor: 'pointer',
         '& span': {
-            display: 'none',
+            display: 'none'
         },
         '&:hover span': {
             display: 'block',
@@ -49,7 +49,7 @@ const styles = theme => ({
          * Rotate 315 (-45) degrees about matched border corners */
         transform: 'translate(calc(50%),0) rotate(315deg)',
         transformOrigin: '0% calc(50%)',
-        width: '100%',
+        width: '100%'
     },
     rotateHeaderSpan: {
         position: 'absolute',
@@ -68,7 +68,7 @@ const styles = theme => ({
     },
     rowHeader: {
         padding: 1,
-        whiteSpace: 'nowrap',
+        whiteSpace: 'nowrap'
     }
 });
 
@@ -99,14 +99,14 @@ function DotPlotTable(props) {
     let selectAllChecked = true;
     const maxSize = Math.max(sizeScale.range()[0], sizeScale.range()[1]);
     for (let i = 0; i < rows.length; i++) {
-        const selected = isRowSelected(rows[i])
+        const selected = isRowSelected(rows[i]);
         if (!selected) {
             selectAllChecked = false;
             break;
         }
     }
 
-    return <>
+    return <div data-testid={'dot-plot-table'}>
         <Box color="text.primary">
             <div>
                 {rows.length > 0 &&
@@ -183,7 +183,7 @@ function DotPlotTable(props) {
                 </Table>}
             </div>
         </Box>
-    </>;
+    </div>;
 }
 
 export default withStyles(styles)((DotPlotTable));

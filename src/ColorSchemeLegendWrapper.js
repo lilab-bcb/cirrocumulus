@@ -55,16 +55,14 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
 
     render() {
         const {
-            colorScale,
             datasetFilter,
             featureSummary,
             globalFeatureSummary,
             handleUpdate,
-            maxHeight,
             name,
             nObs,
             nObsSelected,
-            selected
+            type
         } = this.props;
         let style = {display: 'inline-block', verticalAlign: 'top'};
         if (this.props.style) {
@@ -75,13 +73,11 @@ class ColorSchemeLegendWrapper extends React.PureComponent {
             <div data-testid="continuous-legend" className="cirro-condensed" style={style}>
                 {/*ContinuousLegend shows stats table */}
                 <ContinuousLegend name={name}
-                                  selected={selected}
-                                  summary={colorScale.summary}
                                   featureSummary={featureSummary}
                                   nObs={nObs}
                                   nObsSelected={nObsSelected}
                                   globalFeatureSummary={globalFeatureSummary}
-                                  maxHeight={maxHeight}></ContinuousLegend>
+                                  type={type}></ContinuousLegend>
                 {/*{!isCount && this.props.handleDomain &&*/}
                 {/*<InputLabel shrink={true} variant={"standard"}>Custom Color Scale</InputLabel>}*/}
                 {/*{name !== '__count' && this.props.handleDomain &&*/}

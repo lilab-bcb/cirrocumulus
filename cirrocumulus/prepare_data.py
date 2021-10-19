@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, DataType
+from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json, get_fs
 
@@ -24,7 +24,9 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
         adata = anndata.read_zarr(path)
     else:
         adata = anndata.read(path, backed=backed)
-
+    if 'module' in adata.uns:
+        adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
+                                                          var=adata.uns['module']['var'])
     if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
         logger.info('Using adata.raw')
         adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
@@ -105,10 +107,8 @@ class PrepareData:
                 # ensure cell ids are the same
                 if not np.array_equal(datasets[0].obs.index, dataset.obs.index):
                     raise ValueError('{} obs ids are not equal'.format(name))
-            if dataset.uns.get('data_type') is None and dataset.uns.get('name', '').lower().startswith(
-                    'module'):  # TODO hack
-                dataset.uns['data_type'] = DataType.MODULE
-            data_type = dataset.uns.get('data_type')
+            data_type = dataset.uns.get('experiment_type')
+
             dataset_list = data_type2_datasets.get(data_type)
             if dataset_list is None:
                 dataset_list = []

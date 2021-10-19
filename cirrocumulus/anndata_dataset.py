@@ -4,17 +4,16 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.anndata_util import datasets_schema
+from cirrocumulus.anndata_util import datasets_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import read_star_fusion_file
 
 
 class AnndataDataset(AbstractDataset):
 
-    def __init__(self, backed=None, force_sparse=True):
+    def __init__(self, backed=None):
         super().__init__()
         self.path_to_data = {}
         self.backed = backed
-        self.force_sparse = force_sparse
 
     def get_suffixes(self):
         return ['h5ad', 'loom', 'rds', 'zarr']
@@ -22,11 +21,11 @@ class AnndataDataset(AbstractDataset):
     def read_adata(self, filesystem, path):
         path_lc = path.lower()
         if path_lc.endswith('.loom'):
-            return anndata.read_loom(filesystem.open(path))
+            adata = anndata.read_loom(filesystem.open(path))
         elif path_lc.endswith('.zarr'):
-            return anndata.read_zarr(filesystem.open(path))
+            adata = anndata.read_zarr(filesystem.get_mapper(path))
         elif path_lc.endswith('.tsv'):
-            return read_star_fusion_file(filesystem.open(path))
+            adata = read_star_fusion_file(filesystem.open(path))
         elif path_lc.endswith('.rds'):  # Seurat, convert to h5ad
             h5_file = path + '.h5ad'
             import os
@@ -44,8 +43,12 @@ class AnndataDataset(AbstractDataset):
             if adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
                 print('Using adata.raw')
                 adata = anndata.AnnData(X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns)
-            return adata
-        return anndata.read_h5ad(filesystem.open(path), backed='r' if self.backed else None)
+        else:
+            adata = anndata.read_h5ad(filesystem.open(path), backed='r' if self.backed else None)
+        if 'module' in adata.uns:
+            adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
+                                                              var=adata.uns['module']['var'])
+        return adata
         # elif path.endswith('.mtx'):
         #
         #     return anndata.read_mtx(path, backed=self.backed)
@@ -79,10 +82,12 @@ class AnndataDataset(AbstractDataset):
         X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
+        module_keys = keys.pop('module', [])
         X = None
         obs = None
         var = None
         obsm = {}
+        adata_modules = None
         if len(X_keys) > 0:
             if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified
                 X_keys = X_keys[0]
@@ -91,14 +96,10 @@ class AnndataDataset(AbstractDataset):
                 d.X = d.X.tocsc()
             X = d.X
             var = pd.DataFrame(index=d.var.index)
-        # for key in keys.keys():
-        #     if df is None:
-        #         df = pd.DataFrame()
-        #     d = adata.uns[key]
-        #     features = keys[key]
-        #     X = d['X'][:, d['var'].index.get_indexer_for(features)]
-        #     for i in range(len(features)):
-        #         df[features[i]] = X[:, i]
+        if len(module_keys) > 0:
+            if len(module_keys) == 1 and isinstance(module_keys[0], slice):  # special case if slice specified
+                module_keys = module_keys[0]
+            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY][:, module_keys]
 
         if len(obs_keys) > 0:
             obs = pd.DataFrame()
@@ -116,4 +117,8 @@ class AnndataDataset(AbstractDataset):
                 X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
             obs = pd.DataFrame(index=pd.RangeIndex(adata.shape[0]))
-        return AnnData(X=X, obs=obs, var=var, obsm=obsm)
+
+        adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
+        if adata_modules is not None:
+            adata.uns[ADATA_MODULE_UNS_KEY] = adata_modules
+        return adata

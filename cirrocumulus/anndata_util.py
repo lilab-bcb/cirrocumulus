@@ -1,13 +1,10 @@
-from enum import Enum
-
 import anndata
 import numpy as np
 import pandas as pd
 
-
-class DataType(Enum):
-    UNSPECIFIED = 'unspecified'
-    MODULE = 'module'
+DATA_TYPE_MODULE = 'module'
+DATA_TYPE_UNS_KEY = 'data_type'
+ADATA_MODULE_UNS_KEY = 'anndata_module'
 
 
 def get_scanpy_marker_keys(dataset):
@@ -20,7 +17,8 @@ def get_scanpy_marker_keys(dataset):
     for key in dataset.uns.keys():
         rank_genes_groups = dataset.uns[key]
         if isinstance(rank_genes_groups, Mapping) and 'names' in rank_genes_groups and (
-                'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups):
+                'pvals' in rank_genes_groups or 'pvals_adj' in rank_genes_groups or 'scores' in rank_genes_groups) and len(
+            rank_genes_groups['names'][0]) > 0 and not isinstance(rank_genes_groups['names'][0][0], bytes):
             marker_keys.append(key)
     return marker_keys
 
@@ -262,7 +260,8 @@ def datasets_schema(datasets, n_genes=10):
     var_ids = []
     modules_df = None
     for dataset in datasets:
-        if dataset.uns.get('data_type', '') == DataType.MODULE:
+        is_module = dataset.uns.get(DATA_TYPE_UNS_KEY) == DATA_TYPE_MODULE
+        if is_module:
             module_var = dataset.var
             if not isinstance(module_var, pd.DataFrame):
                 from anndata._io.zarr import read_attribute
@@ -276,6 +275,9 @@ def datasets_schema(datasets, n_genes=10):
             else:  # pd.Index
                 ids = ids.to_list()
             var_ids += ids
+            if ADATA_MODULE_UNS_KEY in dataset.uns and isinstance(dataset.uns[ADATA_MODULE_UNS_KEY], anndata.AnnData):
+                module_var = dataset.uns[ADATA_MODULE_UNS_KEY].var
+                modules_df = module_var if modules_df is None else pd.concat((modules_df, module_var))
     if modules_df is not None:
         modules_df.index.name = 'id'
         schema_dict['modules'] = modules_df.reset_index().to_dict(orient='records')

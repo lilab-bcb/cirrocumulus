@@ -359,7 +359,7 @@ class AppHeader extends React.PureComponent {
                               onClose={this.handleUserMenuClose}>
                             <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
                         </Menu>}
-                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}}  color="inherit"
+                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} color="inherit"
                                                 onClick={this.props.handleLogin}>Sign In</Button>}
                     </div>
                 </Toolbar>
@@ -386,6 +386,7 @@ const mapStateToProps = state => {
         embeddings: state.embeddings,
         interpolator: state.interpolator,
         jobResults: state.jobResults,
+        jobResultId: state.jobResultId,
         loading: state.loading,
         loadingApp: state.loadingApp,
         markerOpacity: state.markerOpacity,

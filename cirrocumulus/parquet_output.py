@@ -7,7 +7,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirrocumulus.anndata_util import DataType
+from cirrocumulus.anndata_util import DATA_TYPE_UNS_KEY, DATA_TYPE_MODULE
 
 logger = logging.getLogger("cirro")
 
@@ -29,7 +29,7 @@ def save_datasets_pq(datasets, schema, output_directory, filesystem, whitelist):
     with filesystem.open(os.path.join(output_directory, 'index.json.gz'), 'wt', compression='gzip') as f:
         f.write(ujson.dumps(schema, double_precision=2, orient='values'))
     for dataset in datasets:
-        if dataset.uns.get('data_type') == DataType.MODULE:
+        if dataset.uns.get(DATA_TYPE_UNS_KEY) == DATA_TYPE_MODULE:
             filesystem.makedirs(module_dir, exist_ok=True)
             if whitelist is None or 'X' in whitelist:
                 save_adata_X(dataset, module_dir, filesystem)

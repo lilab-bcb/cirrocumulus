@@ -134,10 +134,11 @@ export function DatasetSelector(props) {
         }
         if (searchTextLower != '') { // need to check again as searchTextLower might have been updated
             const ncolumns = searchColumns.length;
+            const matches = (value) => value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1;
             filteredChoices = filteredChoices.filter(choice => {
                 for (let i = 0; i < ncolumns; i++) {
                     const value = choice[searchColumns[i].id];
-                    if (value != null && ('' + value).toLowerCase().indexOf(searchTextLower) !== -1) {
+                    if (matches(value)) {
                         return true;
                     }
                 }
@@ -189,7 +190,7 @@ export function DatasetSelector(props) {
                 maxWidth={"xl"}
             >
                 <DialogContent sx={{height: '100vh'}}>
-                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search Datasets"}
+                    <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
                                value={searchText}
                                onChange={onSearchChange}
                                fullWidth={true}
@@ -225,7 +226,7 @@ export function DatasetSelector(props) {
                             </Select>
                         </FormControl>
                         <Typography
-                            variant="subtitle1">{(filteredChoices.length != datasetChoices.length ? (intFormat(filteredChoices.length) + ' / ') : '') + intFormat(datasetChoices.length) + ' Datasets'}</Typography>
+                            variant="subtitle1">{(filteredChoices.length != datasetChoices.length ? (intFormat(filteredChoices.length) + ' / ') : '') + intFormat(datasetChoices.length)}</Typography>
                         <Divider/>
                         <TableContainer>
                             <Table stickyHeader size={"small"} padding={"normal"}>
@@ -295,7 +296,6 @@ export function DatasetSelector(props) {
                             onPageChange={handleChangePage}
 
                         />
-
                     </div>
                 </DialogContent>
             </Dialog>

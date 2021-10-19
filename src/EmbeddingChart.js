@@ -25,13 +25,13 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
-import {splitSearchTokens, TRACE_TYPE_META_IMAGE} from './util';
+import {FEATURE_TYPE, TRACE_TYPE_META_IMAGE} from './util';
 import memoize from 'memoize-one';
 
-// TODO-this causes an unnecessary redraw when obsCat is updated
+// TODO-this causes an unnecessary redraw when searchTokens is updated
 const getActiveEmbeddingLabels = memoize(
     (searchTokens, embeddingLabels) => {
-        return splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+        return searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.value) !== -1).map(item => item.value);
     }
 );
 
@@ -123,7 +123,6 @@ class EmbeddingChart extends React.PureComponent {
         const nObsSelected = selection.size;
         const activeEmbeddingLabels = getActiveEmbeddingLabels(searchTokens, embeddingLabels);
         const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
-
         return (
             <Box bgcolor={"inherit"} color="inherit" style={{position: 'relative'}}>
                 <Box data-testid="chart-extra" color="text.primary" sx={{
@@ -147,21 +146,17 @@ class EmbeddingChart extends React.PureComponent {
                     {primaryTrace.continuous ?
                         <ColorSchemeLegendWrapper
                             handleDomain={onDomain}
-                            width={140}
-                            showColorScheme={false}
-                            height={30}
                             style={{
                                 display: this.state.showLegend ? 'block' : 'none'
                             }}
                             handleUpdate={onMeasureFilterUpdated}
                             datasetFilter={datasetFilter}
-                            colorScale={primaryTrace.colorScale}
                             featureSummary={featureSummary}
                             globalFeatureSummary={globalFeatureSummary}
                             nObs={shape[0]}
                             nObsSelected={nObsSelected}
-                            maxHeight={null}
                             name={primaryTrace.name}
+                            type={activeFeature.type}
                         /> :
                         <CategoricalLegend
                             legendScrollPosition={legendScrollPosition}

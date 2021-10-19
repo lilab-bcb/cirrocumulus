@@ -3,14 +3,15 @@ import scipy.sparse
 import zarr
 from anndata._io.zarr import write_attribute
 
-from cirrocumulus.anndata_util import DataType, get_scanpy_marker_keys, get_pegasus_marker_keys
+from cirrocumulus.anndata_util import get_scanpy_marker_keys, get_pegasus_marker_keys, DATA_TYPE_UNS_KEY, \
+    DATA_TYPE_MODULE
 
 
 def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist):
     adata = None
     module_dataset = None
     for dataset in datasets:
-        if dataset.uns.get('data_type') == DataType.MODULE:
+        if dataset.uns.get(DATA_TYPE_UNS_KEY) == DATA_TYPE_MODULE:
             module_dataset = dataset
         else:
             adata = dataset

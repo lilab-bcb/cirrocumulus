@@ -1,6 +1,7 @@
 import pandas as pd
 import scipy.sparse
 
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY
 from cirrocumulus.dotplot_aggregator import DotPlotAggregator
 from cirrocumulus.feature_aggregator import FeatureAggregator
 from cirrocumulus.ids_aggregator import IdsAggregator
@@ -263,8 +264,8 @@ def handle_data(dataset_api, dataset, embedding_list=None, values=None, grouped_
             else:
                 results['values'][key] = series
 
-        if adata.uns.get('X_module') is not None:
-            adata_modules = adata.uns['X_module']
+        if adata.uns.get(ADATA_MODULE_UNS_KEY) is not None:
+            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY]
             for i in range(len(adata_modules.var.index)):
                 x = adata_modules.X[:, i]
                 results['values'][adata_modules.var.index[i]] = x

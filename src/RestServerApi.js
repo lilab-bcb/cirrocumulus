@@ -150,7 +150,7 @@ export class RestServerApi {
 
 
     submitJob(data) {
-        return fetch(API + '/submit_job',
+        return fetch(API + '/job',
             {
                 body: JSON.stringify(data),
                 method: 'POST',

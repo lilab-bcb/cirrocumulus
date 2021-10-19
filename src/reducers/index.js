@@ -70,7 +70,6 @@ import {
     TRACE_TYPE_META_IMAGE,
     updateTraceColors
 } from '../util';
-import {updateJob} from '../DotPlotJobResultsPanel';
 
 
 const DIST_PLOT_OPTIONS = {
@@ -141,7 +140,7 @@ function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
 
 /**
  *
- * @param state Array of {value:str, type:str} where type is FEATURE_TYPE
+ * @param state Array of {value:str, type:str} where type is one of FEATURE_TYPE
  * @param action
  * @returns {*|*[]}
  */
@@ -401,7 +400,13 @@ function featureSummary(state = {}, action) {
 function globalFeatureSummary(state = {}, action) {
     switch (action.type) {
         case SET_GLOBAL_FEATURE_SUMMARY:
-            return action.payload;
+            if (action.payload != null) {
+                for (let key in action.payload) {
+                    state[key] = action.payload[key];
+                }
+                return Object.assign({}, state);
+            }
+            return state;
         case SET_DATASET:
             return {};
         default:

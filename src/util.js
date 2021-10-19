@@ -87,7 +87,8 @@ export const FEATURE_TYPE = {
     X: 'X',
     FEATURE_SET: 'featureSet',
     MODULE: 'module',
-    COUNT: 'count'
+    COUNT: 'count',
+    OTHER: 'other'
 };
 
 export const TIES_STRATEGY_IGNORE = 0;
@@ -384,6 +385,7 @@ function getColorsRgba(trace) {
         const ncolors = 500;
         const colorBins = [];
         const domain = colorScale.domain();
+        //const unknown  = colorScale.unknown();
         const binScale = scaleLinear().domain(domain).range([0, ncolors - 1]);
         for (let i = 0; i < ncolors; ++i) {
             const value = binScale.invert(i);
@@ -762,26 +764,3 @@ export function getFeatureSets(markers, featureSets) {
     return filteredFeatureSets;
 }
 
-export function splitSearchTokens(tokens) {
-    let X = [];
-    let obs = [];
-    let obsCat = [];
-    let featureSets = [];
-    let modules = [];
-    tokens.forEach(token => {
-        if (token.type === FEATURE_TYPE.X) {
-            X.push(token.value);
-        } else if (token.type === FEATURE_TYPE.OBS) {
-            obs.push(token.value);
-        } else if (token.type === FEATURE_TYPE.OBS_CAT) {
-            obsCat.push(token.value);
-        } else if (token.type === FEATURE_TYPE.FEATURE_SET) {
-            featureSets.push(token.value);
-        } else if (token.type === FEATURE_TYPE.MODULE) {
-            modules.push(token.value);
-        } else {
-            console.log('Unknown type: ' + token);
-        }
-    });
-    return {X: X, obs: obs, obsCat: obsCat, featureSets: featureSets, modules: modules, featureSetsAdd: []};
-}

@@ -452,7 +452,7 @@ def handle_module_score():
     return json_response(adata.X.mean(axis=1))
 
 
-@blueprint.route('/job', methods=['GET', 'DELETE'])
+@blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
 def handle_job():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -461,6 +461,17 @@ def handle_job():
         job_id = content.get('id', '')
         database_api.delete_job(email, job_id)
         return json_response('', 204)
+    elif request.method == 'POST':
+        if os.environ.get('GAE_APPLICATION') is None:  # TODO
+            content = request.get_json(force=True, cache=False)
+            email, dataset = get_email_and_dataset(content)
+            params = content.get('params')
+            job_type = content.get('type')
+            job_name = content.get('name')
+            return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
+                                      job_name=job_name, job_type=job_type, params=params))
+        else:
+            raise ValueError('Submit job not supported on GAE')
     else:
         job_id = request.args['id']
         c = request.args['c']
@@ -472,12 +483,13 @@ def handle_job():
         if c != 'result':
             raise ValueError('c must be one of status, params, or result')
         if is_precomputed:  # precomputed result
-            dataset_id = request.args.get('ds_id', '')
             email = get_auth().auth()['email']
-            dataset = database_api.get_dataset(email, dataset_id)
+            suggested_dataset_id = request.args['ds']
+            dataset = database_api.get_dataset(email, suggested_dataset_id)
+            # precompute results need to be a child of dataset
             dataset['url'] = map_url(dataset['url'])
-            result = dataset_api.get_result(dataset, job_id)
-            return send_file(result)
+            result_url = dataset_api.get_result(dataset, job_id)
+            return send_file(result_url)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
@@ -491,9 +503,6 @@ def handle_job():
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
 
                 import pandas as pd
-                # output = StringIO()
-                # adata2gct(adata, output)
-                # r = Response(output.getvalue(), mimetype='text/plain')
                 df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
                 for key in adata.layers.keys():
                     df2 = pd.DataFrame(adata.layers[key], index=adata.obs.index.astype(str) + '-{}'.format(key),
@@ -518,16 +527,3 @@ def handle_jobs():
     database_api = get_database()
     ds_id = request.args.get('id', '')
     return json_response(database_api.get_jobs(email=email, dataset_id=ds_id))
-
-
-@blueprint.route('/submit_job', methods=['POST'])
-def handle_submit_job():
-    if os.environ.get('GAE_APPLICATION') is None:  # TODO
-        database_api = get_database()
-        content = request.get_json(force=True, cache=False)
-        email, dataset = get_email_and_dataset(content)
-        params = content.get('params')
-        job_type = content.get('type')
-        job_name = content.get('name')
-        return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-                                  job_name=job_name, job_type=job_type, params=params))

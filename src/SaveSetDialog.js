@@ -57,6 +57,7 @@ class SaveSetDialog extends React.PureComponent {
                 <DialogContent>
 
                     <TextField
+                        size={"small"}
                         required={true}
                         autoComplete="off"
                         value={name}
@@ -66,6 +67,7 @@ class SaveSetDialog extends React.PureComponent {
                         fullWidth
                     />
                     <TextField
+                        size={"small"}
                         required={true}
                         autoComplete="off"
                         value={category}
@@ -80,7 +82,7 @@ class SaveSetDialog extends React.PureComponent {
                         Cancel
                     </Button>
                     <Button disabled={name.trim().length === 0 || category.trim().length === 0}
-                            onClick={this.handleSave}  variant="contained" color="primary">
+                            onClick={this.handleSave} variant="contained" color="primary">
                         Save
                     </Button>
                 </DialogActions>
@@ -107,6 +109,6 @@ const mapDispatchToProps = dispatch => {
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(SaveSetDialog));
 

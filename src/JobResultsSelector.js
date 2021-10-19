@@ -64,15 +64,62 @@ function JobResultsSelector(props) {
 
     const showJobStatus = isShowJobStatus();
     const jobTypeToName = {};
-    const showBrowseJobs = (jobResultId == null && jobResults.length > 0) || jobResults.length > 1;
+    const isShowingJob = jobResultId != null;
     COMPARE_ACTIONS.forEach(action => jobTypeToName[action.jobType] = action.title);
 
+    function getTable() {
+        return <Table size="small" stickyHeader={true}>
+            <TableHead>
+                <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Type</TableCell>
+                    {showJobStatus && <TableCell>Status</TableCell>}
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {jobResults.map(jobResult => {
+                    let text = jobResult.name;
+                    if (jobResult.title) {
+                        text += ' - ' + jobResult.title;
+                    }
+                    const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
+                    const isComplete = isPrecomputed || jobResult.status === 'complete';
+
+                    const status = isPrecomputed ? 'complete' : jobResult.status;
+                    const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
+                    const jobType = jobTypeToName[jobResult.type];
+                    // const date = isPrecomputed ? '' : jobResult.submitted;
+                    return (
+                        <TableRow key={jobResult.id}
+                                  hover
+                                  selected={jobResult.id === jobResultId}
+                                  disabled={!isComplete}
+                                  onClick={isComplete ? (event) => onSelectJob(jobResult.id) : null}
+                                  role="checkbox"
+                                  tabIndex={-1}>
+                            <TableCell>{text}</TableCell>
+                            <TableCell>{jobType}</TableCell>
+                            {showJobStatus && <TableCell>{status}
+                                {isJobOwner && !isPrecomputed &&
+                                <IconButton
+                                    edge="end"
+                                    aria-label="delete"
+                                    onClick={(event) => onDeleteJob(event, jobResult)}
+                                    size="small">
+                                    <DeleteIcon/>
+                                </IconButton>}</TableCell>}
+                        </TableRow>
+                    );
+                })}
+            </TableBody>
+        </Table>;
+    }
+
     return <>
-        <Grid container alignItems="center">
-            {showBrowseJobs &&
+        {isShowingJob && <Grid container alignItems="center">
             <Button size={"small"} onClick={onBrowseJobs} variant="outlined"
-                    color="primary">Browse All Results</Button>}
-        </Grid>
+                    color="primary">Browse All Results</Button>
+        </Grid>}
         <Dialog
             open={browseJob != null}
             onClose={onDeleteJobCancel}
@@ -96,59 +143,18 @@ function JobResultsSelector(props) {
                 </Button>
             </DialogActions>
         </Dialog>
-        <Dialog onClose={onCloseJobs} aria-labelledby="job-results-title"
+        {isShowingJob &&
+        <Dialog maxWidth={"xl"} fullWidth={true} onClose={onCloseJobs} aria-labelledby="job-results-title"
                 open={showDialog && jobResults.length > 0}>
             <DialogTitle id="job-results-title" onClose={onCloseJobs}>
                 Results
             </DialogTitle>
             <DialogContent>
-                <Table size="small" stickyHeader={true}>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Type</TableCell>
-                            {showJobStatus && <TableCell>Status</TableCell>}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {jobResults.map(jobResult => {
-                            let text = jobResult.name;
-                            if (jobResult.title) {
-                                text += ' - ' + jobResult.title;
-                            }
-                            const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
-                            const isComplete = isPrecomputed || jobResult.status === 'complete';
-
-                            const status = isPrecomputed ? 'complete' : jobResult.status;
-                            const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
-                            const jobType = jobTypeToName[jobResult.type];
-                            // const date = isPrecomputed ? '' : jobResult.submitted;
-                            return (
-                                <TableRow key={jobResult.id}
-                                          hover
-                                          selected={jobResult.id === jobResultId}
-                                          disabled={!isComplete}
-                                          onClick={isComplete ? (event) => onSelectJob(jobResult.id) : null}
-                                          role="checkbox"
-                                          tabIndex={-1}>
-                                    <TableCell>{text}</TableCell>
-                                    <TableCell>{jobType}</TableCell>
-                                    {showJobStatus && <TableCell>{status}
-                                        {isJobOwner && !isPrecomputed &&
-                                        <IconButton
-                                            edge="end"
-                                            aria-label="delete"
-                                            onClick={(event) => onDeleteJob(event, jobResult)}
-                                            size="small">
-                                            <DeleteIcon/>
-                                        </IconButton>}</TableCell>}
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
+                {getTable()}
             </DialogContent>
-        </Dialog></>;
+        </Dialog>}
+        {!isShowingJob && getTable()}
+    </>;
 }
 
 const mapStateToProps = state => {
