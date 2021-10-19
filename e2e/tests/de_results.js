@@ -1,6 +1,4 @@
 const puppeteer = require('puppeteer');
-const gm = require('gm');
-
 
 it('de_results"', async () => {
     const browser = await puppeteer.launch({headless: true});
