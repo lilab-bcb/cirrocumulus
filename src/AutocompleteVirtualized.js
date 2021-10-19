@@ -10,6 +10,7 @@ import React from 'react';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {VariableSizeList} from 'react-window';
 import Popper from '@mui/material/Popper';
+import Link from '@mui/material/Link';
 
 
 const LISTBOX_PADDING = 0; // px
@@ -41,7 +42,7 @@ function renderRow(props) {
         inlineStyle.whiteSpace = 'nowrap';
         return (
             <ListSubheader disableGutters={true} key={dataSet.key} component="div" style={inlineStyle}>
-                {dataSet.group}
+                {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
             </ListSubheader>
         );
     }
@@ -93,11 +94,11 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
     });
 
     const itemCount = itemData.length;
-    const itemSize = smUp ? 24 : 36;
+    const itemSize = smUp ? 24 : 30;
 
     const getChildSize = (child) => {
         if (child.hasOwnProperty('group')) {
-            return 36;
+            return 30;
         }
 
         return itemSize;
@@ -150,6 +151,7 @@ const StyledPopper = styled(Popper)({
 
 export default function AutocompleteVirtualized(props) {
     const ref = React.createRef();
+    const {value, options, onChange} = props;
 
     function onDrop(event) {
         event.preventDefault();
@@ -172,12 +174,12 @@ export default function AutocompleteVirtualized(props) {
     };
 
     function enterTokens(event, tokens) {
-        const results = props.value;
+        const results = value;
         tokens = tokens.map(token => token.toLowerCase().trim().replace(/"/g, '')).filter(token => token !== '');
         if (tokens.length > 0) {
             let textToOption = new Map();
-            for (let i = 0; i < props.options.length; i++) {
-                const option = props.options[i];
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
                 const text = option.text != null ? option.text : option;
                 const textLowerCase = text.toLowerCase();
                 textToOption.set(textLowerCase, option);
@@ -194,7 +196,7 @@ export default function AutocompleteVirtualized(props) {
                 }
             });
         }
-        props.onChange(event, results);
+        onChange(event, results);
     }
 
     function onPaste(event) {
@@ -255,6 +257,18 @@ export default function AutocompleteVirtualized(props) {
         getOptionLabel = props.groupBy ? (option) => option.text : (option) => option;
     }
 
+    const selectGroup = (event, group) => {
+
+        const uniqueValues = new Set(value);
+        options.forEach(option => {
+            if (option.group === group && !uniqueValues.has(option.id)) {
+                uniqueValues.add(option.id);
+            }
+        });
+        // ensure everything in group is added
+        // newValue.splice(index, 1);
+        props.onChange(event, Array.from(uniqueValues));
+    };
 
     const filterOptions = (options, {inputValue}) => {
         inputValue = inputValue.trim().toLowerCase();
@@ -282,17 +296,17 @@ export default function AutocompleteVirtualized(props) {
         return exactMatches.concat(startsWithMatches).concat(containsMatches);
     };
     const handleTagDelete = (event, index) => {
-        const newValue = props.value.slice();
+        const newValue = value.slice();
         newValue.splice(index, 1);
         props.onChange(event, newValue);
     };
 
     const onSortEnd = (event) => {
-        const newValue = props.value.slice();
+        const newValue = value.slice();
         const tmp = newValue[event.newIndex];
         newValue[event.newIndex] = newValue[event.oldIndex];
         newValue[event.oldIndex] = tmp;
-        props.onChange(event, newValue);
+        onChange(event, newValue);
     };
 
     const SortableItem = sortableElement(({option, sortIndex}) => {
@@ -334,15 +348,15 @@ export default function AutocompleteVirtualized(props) {
             autoHighlight={true}
             filterOptions={filterOptions}
             isOptionEqualToValue={getOptionSelected}
-            value={props.value}
+            value={value}
             filterSelectedOptions={true}
             getOptionLabel={getOptionLabel}
             groupBy={props.groupBy}
             ChipProps={{size: 'small'}}
             ListboxComponent={ListboxComponent}
             PopperComponent={StyledPopper}
-            options={props.options}
-            onChange={props.onChange}
+            options={options}
+            onChange={onChange}
             renderTags={(value, getTagProps) =>
                 null
             }
@@ -350,7 +364,10 @@ export default function AutocompleteVirtualized(props) {
                 <TextField {...params} label={props.label} helperText={props.helperText} fullWidth={true}
                            margin={"dense"}/>
             )}
-            renderGroup={(params) => params}
+            renderGroup={(params) => {
+                params.selectGroup = selectGroup;
+                return params;
+            }}
             renderOption={(props, option, {inputValue}) => [props, option, inputValue]}
             onPaste={onPaste}
             onDrop={onDrop}
@@ -366,4 +383,6 @@ export default function AutocompleteVirtualized(props) {
         />}
 
     </>;
-}
+};
+;
+;

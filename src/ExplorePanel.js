@@ -5,8 +5,7 @@ import {
     getCategoryValue,
     getFeatureSets,
     NATSORT,
-    SERVER_CAPABILITY_FEATURE_SETS,
-    splitSearchTokens
+    SERVER_CAPABILITY_FEATURE_SETS
 } from "./util";
 import NumberIcon from "./NumberIcon";
 import {InputLabel, Switch, Typography} from '@mui/material';
@@ -16,7 +15,7 @@ import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FontDownloadRoundedIcon from '@mui/icons-material/FontDownloadRounded';
-import {findIndex, isArray, isObject} from 'lodash';
+import {findIndex, groupBy, isArray, isObject} from 'lodash';
 import memoize from "memoize-one";
 import React, {useState} from 'react';
 import withStyles from '@mui/styles/withStyles';
@@ -106,10 +105,18 @@ const getEmbeddingOptions = memoize(
 const getModulesOptions = memoize((items) => {
         if (items) {
             const options = items.slice();
-            options.sort((item1, item2) => {
-                return NATSORT(item1.id.toLowerCase(), item2.id.toLowerCase());
+            const textField = options.length > 0 && options[0].name != null ? 'name' : 'id';
+            options.forEach(item => {
+                item.text = item[textField];
             });
-            return options.map(option => option.id);
+            options.sort((item1, item2) => {
+                const g = NATSORT(item1.group.toLowerCase(), item2.group.toLowerCase());
+                if (g !== 0) {
+                    return g;
+                }
+                return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
+            });
+            return options;
         }
         return [];
     }
@@ -139,7 +146,7 @@ const getFeatureSetOptions = memoize((items, categoricalNames) => {
 );
 
 
-function getModuleView(item) {
+function detailsView(item) {
     const keys = Object.keys(item);
     const index = keys.indexOf('id');
     if (index !== -1) {
@@ -187,7 +194,15 @@ function ExplorePanel(props) {
     }
 
     function onModulesChange(event, value) {
-        props.handleSearchTokens(value, FEATURE_TYPE.MODULE);
+        let values = [];
+        value.forEach(item => {
+            if (item.id !== undefined) {
+                values.push(item.id);
+            } else {
+                values.push(item);
+            }
+        });
+        props.handleSearchTokens(values, FEATURE_TYPE.MODULE);
     }
 
     function onObservationsIconClick(event, option) {
@@ -357,8 +372,11 @@ function ExplorePanel(props) {
 
     const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
     datasetFilterKeys.sort(NATSORT);
-    const splitTokens = splitSearchTokens(searchTokens);
-    const featureSets = getFeatureSets(markers, splitTokens.featureSets);
+    const groupedSearchTokens = groupBy(searchTokens, 'type');
+    const obsCatSearchTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value);
+    const xSearchTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value);
+    const featureSets = getFeatureSets(markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []);
+    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.value);
     const featureOptions = dataset.features;
     const moduleOptions = getModulesOptions(dataset.modules);
     const obsCat = dataset.obsCat;
@@ -411,7 +429,7 @@ function ExplorePanel(props) {
             <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.id : ''}</DialogTitle>
             <DialogContent>
 
-                {getModuleView(selectedItem.value)}
+                {detailsView(selectedItem.value)}
                 {/*<DataGrid*/}
                 {/*    rows={rows}*/}
                 {/*    columns={columns}*/}
@@ -455,7 +473,7 @@ function ExplorePanel(props) {
                                          label={"Genes/Features"}
                                          testId={'genes-input'}
                                          options={featureOptions}
-                                         value={splitTokens.X}
+                                         value={xSearchTokens}
                                          getOptionLabel={(option) => option}
                                          onChange={onFeaturesChange}
                                          helperText={"Enter or paste list"}
@@ -467,7 +485,7 @@ function ExplorePanel(props) {
                         marginRight: 4,
                         fontSize: '0.75rem',
                         transform: 'translateY(-50px)',
-                        display: splitTokens.X.length === 0 ? 'none' : ''
+                        display: xSearchTokens.length === 0 ? 'none' : ''
                     }}
                     onClick={onFeatureCopy}>Copy</Link></div>
 
@@ -480,7 +498,7 @@ function ExplorePanel(props) {
                                          onChipClick={onFeatureClick}
                                          getOptionLabel={(option) => option.text}
                                          getChipIcon={(option) => {
-                                             return splitTokens.obsCat.indexOf(option) !== -1 ?
+                                             return obsCatSearchTokens.indexOf(option) !== -1 ?
                                                  <FontDownloadRoundedIcon
                                                      onClick={(event) => {
                                                          onObservationsIconClick(event, option);
@@ -503,8 +521,11 @@ function ExplorePanel(props) {
                     label={"Modules"}
                     testId={'modules-input'}
                     options={moduleOptions}
-                    value={splitTokens.modules}
+                    value={moduleTokens}
+                    getOptionSelected={(option, value) => option.id === value}
+                    groupBy={(option) => option.group}
                     onChange={onModulesChange}
+                    getOptionLabel={(option) => option.text}
                     onChipClick={onModulesClick}
                     getChipIcon={(option) => {
                         return <ArrowDropDownIcon onClick={(event) => {
@@ -539,7 +560,7 @@ function ExplorePanel(props) {
                                 float: 'right',
                                 fontSize: '0.75rem',
                                 marginRight: 4,
-                                display: splitTokens.X.length === 0 ? 'none' : ''
+                                display: xSearchTokens.length === 0 ? 'none' : ''
                             }}
                             onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
             </FormControl>}

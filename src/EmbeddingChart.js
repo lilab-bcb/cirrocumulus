@@ -25,13 +25,13 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
-import {splitSearchTokens, TRACE_TYPE_META_IMAGE} from './util';
+import {FEATURE_TYPE, TRACE_TYPE_META_IMAGE} from './util';
 import memoize from 'memoize-one';
 
-// TODO-this causes an unnecessary redraw when obsCat is updated
+// TODO-this causes an unnecessary redraw when searchTokens is updated
 const getActiveEmbeddingLabels = memoize(
     (searchTokens, embeddingLabels) => {
-        return splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+        return searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.value) !== -1).map(item => item.value);
     }
 );
 

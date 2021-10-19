@@ -1,7 +1,7 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10, schemePaired} from 'd3-scale-chromatic';
 import {saveAs} from 'file-saver';
-import {find, findIndex, indexOf, isArray, isString} from 'lodash';
+import {find, findIndex, groupBy, indexOf, isArray, isString} from 'lodash';
 import OpenSeadragon from 'openseadragon';
 import isPlainObject from 'react-redux/lib/utils/isPlainObject';
 import CustomError from '../CustomError';
@@ -27,7 +27,6 @@ import {
     randomSeq,
     SERVER_CAPABILITY_ADD_DATASET,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
-    splitSearchTokens,
     summarizeDensity,
     TRACE_TYPE_IMAGE,
     TRACE_TYPE_META_IMAGE,
@@ -416,8 +415,7 @@ export function saveFeatureSet(payload) {
     return function (dispatch, getState) {
         const state = getState();
         const searchTokens = state.searchTokens;
-        const splitTokens = splitSearchTokens(searchTokens);
-        let features = splitTokens.X;
+        const features = searchTokens.filter(item => item.type === FEATURE_TYPE.X);
         const requestBody = {
             ds_id: state.dataset.id,
             name: payload.name,
@@ -477,7 +475,7 @@ function getDatasetFilterDependencies(datasetFilter) {
         // basis, path for brush filter
         const filterObject = datasetFilter[key];
         if (Array.isArray(filterObject)) { // brush filter
-            continue;
+
         } else if (filterObject.operation === 'in') {
             features.add(key);
         } else {
@@ -668,9 +666,10 @@ function handleFilterUpdated() {
         dispatch(_setLoading(true));
         // whenever filter is updated, we need to get selection statistics
         const state = getState();
-        const searchTokens = splitSearchTokens(state.searchTokens);
+        const searchTokens = state.searchTokens;
         let filter = getFilterJson(state);
-        addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
+        const groupedSearchTokens = groupBy(searchTokens, 'type');
+        addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
 
         const measures = [];
         for (let key in searchTokens) {
@@ -684,7 +683,7 @@ function handleFilterUpdated() {
         let q = {
             selection: {
                 measures: measures,
-                dimensions: searchTokens.obsCat
+                dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value)
             }
         };
 
@@ -1386,7 +1385,7 @@ export function setUnselectedMarkerOpacity(payload) {
 
 export function toggleEmbeddingLabel(payload) {
     return function (dispatch, getState) {
-        let embeddingLabels = getState().embeddingLabels;
+        const embeddingLabels = getState().embeddingLabels;
         const index = embeddingLabels.indexOf(payload);
         if (index === -1) {
             embeddingLabels.push(payload);
@@ -1626,16 +1625,16 @@ function handleSelectionResult(selectionResult, clear) {
                 if (clear) {
                     selectedDistributionData = [];
                 }
-                const searchTokens = splitSearchTokens(state.searchTokens);
-                addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-                selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, searchTokens);
+                const groupedSearchTokens = groupBy(state.searchTokens, 'type');
+                addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
+                selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, groupedSearchTokens);
                 dispatch(setSelectedDistributionData(selectedDistributionData));
             }
         }
     };
 }
 
-function updateDistributionData(newDistributionData, existingDistributionData, searchTokens) {
+function updateDistributionData(newDistributionData, existingDistributionData, groupedSearchTokens) {
     let keys = new Set(Object.keys(existingDistributionData));
     if (newDistributionData) {
         for (const key in newDistributionData) {
@@ -1643,16 +1642,20 @@ function updateDistributionData(newDistributionData, existingDistributionData, s
         }
     }
     keys.forEach(key => {
-        existingDistributionData[key] = _updateDistributionData(newDistributionData ? newDistributionData[key] : null, existingDistributionData[key] || [], searchTokens);
+        existingDistributionData[key] = _updateDistributionData(newDistributionData ? newDistributionData[key] : null, existingDistributionData[key] || [], groupedSearchTokens);
     });
     return existingDistributionData;
 }
 
-function _updateDistributionData(newDistributionData, existingDistributionData, searchTokens) {
-    let dimensionKeys = [searchTokens.obsCat.join('-')];
+function _updateDistributionData(newDistributionData, existingDistributionData, groupedSearchTokens) {
+    const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value);
+    const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value);
+    const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(item => item.value);
+    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.value);
+    let dimensionKeys = [obsCatTokens.join('-')];
     // keep active dimensions and features only
     let distributionData = existingDistributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 &&
-        (searchTokens.X.indexOf(entry.feature) !== -1 || searchTokens.obs.indexOf(entry.feature) !== -1 || searchTokens.modules.indexOf(entry.feature) !== -1));
+        (xTokens.indexOf(entry.feature) !== -1 || obsTokens.indexOf(entry.feature) !== -1 || moduleTokens.indexOf(entry.feature) !== -1));
 
     if (newDistributionData) {
         // remove old data that is also in new data
@@ -1669,7 +1672,7 @@ function _updateDistributionData(newDistributionData, existingDistributionData, 
 
     // sort features matching X entry order
     let featureSortOrder = {};
-    searchTokens.X.concat(searchTokens.obs).concat(searchTokens.modules).forEach((name, index) => {
+    xTokens.concat(obsTokens).concat(moduleTokens).forEach((name, index) => {
         featureSortOrder[name] = index;
     });
     distributionData.sort((a, b) => {
@@ -1687,9 +1690,14 @@ function _updateCharts(onError, updateActiveFeature = true) {
             return;
         }
         dispatch(_setLoading(true));
-        const searchTokens = splitSearchTokens(state.searchTokens);
-        addFeatureSetsToX(getFeatureSets(state.markers, searchTokens.featureSets), searchTokens.X);
-        let distribution = (searchTokens.X.length > 0 || searchTokens.modules.length > 0 || searchTokens.obs.length > 0 || searchTokens.featureSets.length > 0) && searchTokens.obsCat.length > 0;
+        const groupedSearchTokens = groupBy(state.searchTokens, 'type');
+        const featureSetTokens = (groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []);
+        const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(token => token.value);
+        const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(token => token.value);
+        const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(token => token.value);
+        const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(token => token.value);
+        addFeatureSetsToX(getFeatureSets(state.markers, featureSetTokens), xTokens);
+        let distribution = (xTokens.length > 0 || moduleTokens.length > 0 || obsTokens.length > 0 || featureSetTokens.length > 0) && obsCatTokens.length > 0;
         const embeddings = state.embeddings;
         let distributionData = state.distributionData;
         let selectedDistributionData = state.selectedDistributionData;
@@ -1701,7 +1709,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
         const embeddingKeys = new Set();
         const features = new Set();
         const filterJson = getFilterJson(state);
-        searchTokens.X.concat(searchTokens.obs).concat(searchTokens.obsCat).concat(searchTokens.modules).forEach(feature => {
+        xTokens.concat(obsTokens).concat(obsCatTokens).concat(moduleTokens).forEach(feature => {
             features.add(feature);
         });
         const embeddingImagesToFetch = [];
@@ -1777,7 +1785,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
             }
         });
 
-        searchTokens.other.forEach(value => features.add(value)); // don't fetch "other" but add to features so they are displayed in embeddings
+        (groupedSearchTokens[FEATURE_TYPE.OTHER] || []).forEach(item => features.add(item.value)); // don't fetch "other" but add to features so they are displayed in embeddings
         // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
             const embeddingKey = getEmbeddingKey(traceInfo.embedding);
@@ -1788,7 +1796,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
             traceInfo.active = active;
         });
 
-        let distributionCategories = searchTokens.obsCat.slice();
+        let distributionCategories = obsCatTokens.slice();
         let distributionCategoryKeys = [distributionCategories.join('-')];
         let distributionMeasuresToFetch = new Set();
         if (distribution) { // TODO cleanup this code
@@ -1799,19 +1807,19 @@ function _updateCharts(onError, updateActiveFeature = true) {
                 });
             }
             distributionCategoryKeys.forEach(category => {
-                searchTokens.X.forEach(feature => {
+                xTokens.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add(feature);
                     }
                 });
-                searchTokens.obs.forEach(feature => {
+                obsTokens.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add('obs/' + feature);
                     }
                 });
-                searchTokens.modules.forEach(feature => {
+                moduleTokens.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add('modules/' + feature);
@@ -1847,7 +1855,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
                     q.values.dimensions.push(value);
                 } else if (dataset.obs.indexOf(value) !== -1) {
                     q.values.measures.push('obs/' + value);
-                } else if (searchTokens.modules.indexOf(value) !== -1) {
+                } else if (moduleTokens.indexOf(value) !== -1) {
                     q.values.measures.push('module/' + value);
                 } else {
                     q.values.measures.push(value);
@@ -1858,22 +1866,22 @@ function _updateCharts(onError, updateActiveFeature = true) {
 
         const globalFeatureSummaryMeasuresCacheMiss = [];
         const globalFeatureSummaryDimensionsCacheMiss = [];
-        searchTokens.X.forEach(feature => {
+        xTokens.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push(feature);
             }
         });
-        searchTokens.obs.forEach(feature => {
+        obsTokens.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push('obs/' + feature);
             }
         });
-        searchTokens.modules.forEach(feature => {
+        moduleTokens.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push('module/' + feature);
             }
         });
-        searchTokens.obsCat.forEach(feature => {
+        obsCatTokens.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryDimensionsCacheMiss.push(feature);
             }
@@ -1899,8 +1907,8 @@ function _updateCharts(onError, updateActiveFeature = true) {
         if (filterJson != null && (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0)) {
             q.selection = {
                 filter: filterJson,
-                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? searchTokens.X : globalFeatureSummaryMeasuresCacheMiss,
-                dimensions: searchTokens.obsCat
+                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? xTokens : globalFeatureSummaryMeasuresCacheMiss,
+                dimensions: obsCatTokens
             };
         }
         const dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
@@ -1910,7 +1918,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
             dispatch(setGlobalFeatureSummary(result.summary));
             const newEmbeddingData = getNewEmbeddingData(state, features);
             embeddingData = embeddingData.concat(newEmbeddingData);
-            dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, searchTokens)));
+            dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, groupedSearchTokens)));
             dispatch(setEmbeddingData(embeddingData));
             if (updateActiveFeature) {
                 dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
@@ -1918,7 +1926,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
             if (result.selection) {
                 dispatch(handleSelectionResult(result.selection, false));
             } else { // clear selection
-                dispatch(setSelectedDistributionData(updateDistributionData(null, selectedDistributionData, searchTokens)));
+                dispatch(setSelectedDistributionData(updateDistributionData(null, selectedDistributionData, groupedSearchTokens)));
             }
         }).finally(() => {
             dispatch(_setLoading(false));
@@ -2350,4 +2358,4 @@ export function getDatasetStateJson(state) {
         json.embeddingLabels = embeddingLabels;
     }
     return json;
-};
+}

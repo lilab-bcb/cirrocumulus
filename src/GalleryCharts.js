@@ -5,8 +5,8 @@ import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {getTraceKey, setActiveFeature, setEmbeddingData} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
-import {splitSearchTokens} from './util';
 import {findIndex} from 'lodash';
+import {FEATURE_TYPE} from './util';
 
 function createContainer(chartSize) {
     const containerElement = document.createElement('div');
@@ -72,7 +72,7 @@ class GalleryCharts extends React.PureComponent {
         }
 
         const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
-        const obsCat = splitSearchTokens(searchTokens).obsCat.filter(item => embeddingLabels.indexOf(item) !== -1);
+        const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.value) !== -1);
         const SortableItem = sortableElement(({trace}) => <GalleryImage
             traceInfo={trace}
             obsCat={obsCat}

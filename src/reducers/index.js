@@ -140,7 +140,7 @@ function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
 
 /**
  *
- * @param state Array of {value:str, type:str} where type is FEATURE_TYPE
+ * @param state Array of {value:str, type:str} where type is one of FEATURE_TYPE
  * @param action
  * @returns {*|*[]}
  */

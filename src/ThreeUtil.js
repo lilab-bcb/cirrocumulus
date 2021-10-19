@@ -134,10 +134,9 @@ export function getPositions(trace) {
 }
 
 export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
-    let arrayOfArrays = [];
+    const obsArrayOfArrays = [];
     obsKeys.forEach(key => {
-        const value = cachedData[key];
-        arrayOfArrays.push(value);
+        obsArrayOfArrays.push(cachedData[key]);
     });
     const embeddingKey = getEmbeddingKey(embedding);
     const coordinates = cachedData[embeddingKey];
@@ -156,7 +155,7 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     for (let i = 0; i < npoints; i++) {
         let values = [];
         for (let j = 0; j < nobs; j++) {
-            values.push(arrayOfArrays[j][i]);
+            values.push(obsArrayOfArrays[j][i]);
         }
 
         const key = values.join(',');
@@ -246,7 +245,6 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
         labelPositions[positionIndex + 2] = is3d ? zmedian : 0;
         positionIndex += 3;
     }
-
     return {labels: labelValues, positions: labelPositions};
 }
 
@@ -305,6 +303,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
             labelsVisualizer.shadowStroke = chartOptions.labelStrokeWidth;
             labelsVisualizer.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
             const labels = getLabels(obsCatKeys, labelsPositions.labels, categoricalNames);
+
             labelsVisualizer.setLabels(labels, labelsPositions.positions);
         }
     }
@@ -320,8 +319,8 @@ export function getLabels(obsCat, labels, categoricalNames) {
         let array = labels[i];
         let value = [];
         for (let j = 0; j < array.length; j++) {
-            let renamedValue = renamedCategories[j][array[j]];
-            value.push(renamedValue != null && renamedValue.newValue != null ? renamedValue : array[j]);
+            const renamedValue = renamedCategories[j][array[j]];
+            value.push(renamedValue != null && renamedValue.newValue != null ? renamedValue.newValue : array[j]);
         }
         labelStrings.push(value.join(','));
     }

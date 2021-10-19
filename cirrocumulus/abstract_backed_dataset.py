@@ -6,6 +6,7 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY
 from cirrocumulus.sparse_dataset import SparseDataset
 
 
@@ -42,11 +43,11 @@ class AbstractBackedDataset(AbstractDataset):
             d['var'] = pd.Index(var_ids)
             X = group['X']
             d['shape'] = X.attrs['shape'] if self.is_group(X) else X.shape
-            if 'uns' in group and 'modules' in group['uns']:
-                module_ids = group['uns/modules/var/id'][...]
+            if 'uns' in group and 'module' in group['uns']:
+                module_ids = group['uns/module/var/id'][...]
                 if pd.api.types.is_object_dtype(module_ids):
                     module_ids = module_ids.astype(str)
-                d['modules'] = pd.Index(module_ids)
+                d['module'] = pd.Index(module_ids)
         return d
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
@@ -77,9 +78,9 @@ class AbstractBackedDataset(AbstractDataset):
                 X = self.slice_dense_array(X_node, get_item)
             var = pd.DataFrame(index=X_keys)
         if len(module_keys) > 0:
-            # stored as dense in modules/X, modules/var
-            module_ids = dataset_info['modules']
-            module_X_node = root['uns/modules/X']
+            # stored as dense in module/X, module/var
+            module_ids = dataset_info['module']
+            module_X_node = root['uns/module/X']
             if len(module_keys) == 1 and isinstance(module_keys[0],
                                                     slice):  # special case if slice specified for performance
                 get_item = module_keys[0]
@@ -121,5 +122,5 @@ class AbstractBackedDataset(AbstractDataset):
             obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
-            adata.uns['X_module'] = adata_modules
+            adata.uns[ADATA_MODULE_UNS_KEY] = adata_modules
         return adata
