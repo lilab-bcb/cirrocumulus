@@ -414,8 +414,7 @@ export function deleteFeatureSet(id) {
 export function saveFeatureSet(payload) {
     return function (dispatch, getState) {
         const state = getState();
-        const searchTokens = state.searchTokens;
-        const features = searchTokens.filter(item => item.type === FEATURE_TYPE.X);
+        const features = state.searchTokens.filter(item => item.type === FEATURE_TYPE.X).map(item => item.value);
         const requestBody = {
             ds_id: state.dataset.id,
             name: payload.name,
@@ -670,15 +669,15 @@ function handleFilterUpdated() {
         let filter = getFilterJson(state);
         const groupedSearchTokens = groupBy(searchTokens, 'type');
         addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
-
+        const measureKeys = [FEATURE_TYPE.X, FEATURE_TYPE.MODULE, FEATURE_TYPE.OBS, FEATURE_TYPE.OTHER];
         const measures = [];
-        for (let key in searchTokens) {
-            if (key !== FEATURE_TYPE.OBS_CAT) {
-                const values = searchTokens[key];
-                const prefix = key === 'X' ? '' : key + '/';
-                values.forEach(value => measures.push(prefix + value));
+        measureKeys.forEach(key => {
+            const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
+            if (groupedSearchTokens[key]) {
+                groupedSearchTokens[key].forEach(item => measures.push(prefix + item.value));
             }
-        }
+        });
+
 
         let q = {
             selection: {
