@@ -7,7 +7,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirrocumulus.anndata_util import DATA_TYPE_UNS_KEY
+from cirrocumulus.anndata_util import DATA_TYPE_UNS_KEY, DATA_TYPE_MODULE
 
 logger = logging.getLogger("cirro")
 
