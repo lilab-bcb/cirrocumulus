@@ -12,8 +12,7 @@ import {
     TablePagination,
     TableRow,
     TableSortLabel,
-    Tooltip,
-    Typography
+    Tooltip
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import Button from '@mui/material/Button';
@@ -225,8 +224,6 @@ export function DatasetSelector(props) {
                                 ))}
                             </Select>
                         </FormControl>
-                        <Typography
-                            variant="subtitle1">{(filteredChoices.length != datasetChoices.length ? (intFormat(filteredChoices.length) + ' / ') : '') + intFormat(datasetChoices.length)}</Typography>
                         <Divider/>
                         <TableContainer>
                             <Table stickyHeader size={"small"} padding={"normal"}>
@@ -288,6 +285,12 @@ export function DatasetSelector(props) {
                             </Table>
                         </TableContainer>
                         <TablePagination
+                            labelDisplayedRows={({from, to, count}) => {
+                                from = intFormat(from);
+                                to = intFormat(to);
+                                count = intFormat(count);
+                                return from + '-' + to + ' of ' + count + (datasetChoices.length !== filteredChoices.length ? ' (filtered from ' + intFormat(datasetChoices.length) + ' total)' : '');
+                            }}
                             rowsPerPageOptions={[30]}
                             component="div"
                             count={filteredChoices.length}
