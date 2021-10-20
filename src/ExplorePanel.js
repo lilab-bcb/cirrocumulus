@@ -108,6 +108,9 @@ const getModulesOptions = memoize((items) => {
             const textField = options.length > 0 && options[0].name != null ? 'name' : 'id';
             options.forEach(item => {
                 item.text = item[textField];
+                if (item.group == null) {
+                    item.group = ''; // set default group
+                }
             });
             options.sort((item1, item2) => {
                 const g = NATSORT(item1.group.toLowerCase(), item2.group.toLowerCase());
