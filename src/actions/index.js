@@ -21,6 +21,7 @@ import {
     createColorScale,
     createEmbeddingDensity,
     FEATURE_TYPE,
+    FEATURE_TYPE_MEASURES_EXCLUDE,
     getFeatureSets,
     getInterpolator,
     indexSort,
@@ -668,17 +669,20 @@ function handleFilterUpdated() {
         const searchTokens = state.searchTokens;
         let filter = getFilterJson(state);
         const groupedSearchTokens = groupBy(searchTokens, 'type');
+        console.log(searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
-        const measureKeys = [FEATURE_TYPE.X, FEATURE_TYPE.MODULE, FEATURE_TYPE.OBS, FEATURE_TYPE.OTHER];
+
         const measures = [];
-        measureKeys.forEach(key => {
-            const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
-            if (groupedSearchTokens[key]) {
+        console.log(Object.keys(groupedSearchTokens));
+        for (const key in groupedSearchTokens) {
+            console.log(key, FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1);
+            if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
+                const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
                 groupedSearchTokens[key].forEach(item => measures.push(prefix + item.value));
             }
-        });
+        }
 
-
+        console.log(measures);
         let q = {
             selection: {
                 measures: measures,
@@ -1690,13 +1694,19 @@ function _updateCharts(onError, updateActiveFeature = true) {
         }
         dispatch(_setLoading(true));
         const groupedSearchTokens = groupBy(state.searchTokens, 'type');
-        const featureSetTokens = (groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []);
-        const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(token => token.value);
-        const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(token => token.value);
-        const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(token => token.value);
-        const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(token => token.value);
-        addFeatureSetsToX(getFeatureSets(state.markers, featureSetTokens), xTokens);
-        let distribution = (xTokens.length > 0 || moduleTokens.length > 0 || obsTokens.length > 0 || featureSetTokens.length > 0) && obsCatTokens.length > 0;
+        Object.values(FEATURE_TYPE).forEach(key => {
+            if (!groupedSearchTokens[key]) {
+                groupedSearchTokens[key] = []; // default
+            }
+        });
+        const featureSetTokens = groupedSearchTokens[FEATURE_TYPE.FEATURE_SET];
+        const xValues = groupedSearchTokens[FEATURE_TYPE.X].map(token => token.value);
+        const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map(token => token.value);
+        const obsValues = groupedSearchTokens[FEATURE_TYPE.OBS].map(token => token.value);
+        const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(token => token.value);
+
+        addFeatureSetsToX(getFeatureSets(state.markers, featureSetTokens), xValues);
+
         const embeddings = state.embeddings;
         let distributionData = state.distributionData;
         let selectedDistributionData = state.selectedDistributionData;
@@ -1708,7 +1718,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
         const embeddingKeys = new Set();
         const features = new Set();
         const filterJson = getFilterJson(state);
-        xTokens.concat(obsTokens).concat(obsCatTokens).concat(moduleTokens).forEach(feature => {
+        xValues.concat(obsValues).concat(obsCatValues).concat(moduleValues).forEach(feature => {
             features.add(feature);
         });
         const embeddingImagesToFetch = [];
@@ -1783,8 +1793,19 @@ function _updateCharts(onError, updateActiveFeature = true) {
                 valuesToFetch.add(feature);
             }
         });
+        // don't fetch "other" features but add to features so they are displayed in embeddings
+        // "other" features need to be in cachedData and globalFeatureSummary
+        const keys = Object.values(FEATURE_TYPE);
+        const otherSearchTokenKeys = [];
+        for (const key in groupedSearchTokens) {
+            if (keys.indexOf(key) === -1) {
+                otherSearchTokenKeys.push(key);
+            }
+        }
 
-        (groupedSearchTokens[FEATURE_TYPE.OTHER] || []).forEach(item => features.add(item.value)); // don't fetch "other" but add to features so they are displayed in embeddings
+        otherSearchTokenKeys.forEach(key => {
+            groupedSearchTokens[key].forEach(item => features.add(item.value));
+        });
         // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
             const embeddingKey = getEmbeddingKey(traceInfo.embedding);
@@ -1795,9 +1816,11 @@ function _updateCharts(onError, updateActiveFeature = true) {
             traceInfo.active = active;
         });
 
-        let distributionCategories = obsCatTokens.slice();
-        let distributionCategoryKeys = [distributionCategories.join('-')];
-        let distributionMeasuresToFetch = new Set();
+
+        const distributionCategories = obsCatValues.slice();
+        const distributionCategoryKeys = [distributionCategories.join('-')];
+        const distributionMeasuresToFetch = new Set();
+        const distribution = (xValues.length > 0 || moduleValues.length > 0 || obsValues.length > 0 || otherSearchTokenKeys.length > 0) && obsCatValues.length > 0;
         if (distribution) { // TODO cleanup this code
             let cachedDistributionKeys = {}; // category-feature
             for (const key in distributionData) {
@@ -1806,23 +1829,32 @@ function _updateCharts(onError, updateActiveFeature = true) {
                 });
             }
             distributionCategoryKeys.forEach(category => {
-                xTokens.forEach(feature => {
+                xValues.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add(feature);
                     }
                 });
-                obsTokens.forEach(feature => {
+                obsValues.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add('obs/' + feature);
                     }
                 });
-                moduleTokens.forEach(feature => {
+                moduleValues.forEach(feature => {
                     let key = category + '-' + feature;
                     if (cachedDistributionKeys[key] == null) {
                         distributionMeasuresToFetch.add('modules/' + feature);
                     }
+                });
+                otherSearchTokenKeys.forEach(searchTokenKey => {
+                    groupedSearchTokens[searchTokenKey].forEach(item => {
+                        let key = category + '-' + item.value;
+                        if (cachedDistributionKeys[key] == null) {
+                            console.log(searchTokenKey + '/' + item.value);
+                            distributionMeasuresToFetch.add(searchTokenKey + '/' + item.value);
+                        }
+                    });
                 });
             });
 
@@ -1854,7 +1886,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
                     q.values.dimensions.push(value);
                 } else if (dataset.obs.indexOf(value) !== -1) {
                     q.values.measures.push('obs/' + value);
-                } else if (moduleTokens.indexOf(value) !== -1) {
+                } else if (moduleValues.indexOf(value) !== -1) {
                     q.values.measures.push('module/' + value);
                 } else {
                     q.values.measures.push(value);
@@ -1865,22 +1897,22 @@ function _updateCharts(onError, updateActiveFeature = true) {
 
         const globalFeatureSummaryMeasuresCacheMiss = [];
         const globalFeatureSummaryDimensionsCacheMiss = [];
-        xTokens.forEach(feature => {
+        xValues.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push(feature);
             }
         });
-        obsTokens.forEach(feature => {
+        obsValues.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push('obs/' + feature);
             }
         });
-        moduleTokens.forEach(feature => {
+        moduleValues.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryMeasuresCacheMiss.push('module/' + feature);
             }
         });
-        obsCatTokens.forEach(feature => {
+        obsCatValues.forEach(feature => {
             if (globalFeatureSummary[feature] == null) {
                 globalFeatureSummaryDimensionsCacheMiss.push(feature);
             }
@@ -1906,8 +1938,8 @@ function _updateCharts(onError, updateActiveFeature = true) {
         if (filterJson != null && (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0)) {
             q.selection = {
                 filter: filterJson,
-                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? xTokens : globalFeatureSummaryMeasuresCacheMiss,
-                dimensions: obsCatTokens
+                measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? xValues : globalFeatureSummaryMeasuresCacheMiss,
+                dimensions: obsCatValues
             };
         }
         const dataPromise = Object.keys(q).length > 0 ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
@@ -1962,7 +1994,7 @@ function getFeatureType(dataset, feature) {
     } else if (dataset.var.indexOf(feature) !== -1) {
         return FEATURE_TYPE.X;
     }
-    return FEATURE_TYPE.OTHER;
+    return null;
 }
 
 

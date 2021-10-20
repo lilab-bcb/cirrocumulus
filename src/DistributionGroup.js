@@ -19,7 +19,7 @@ import {
     NATSORT
 } from './util';
 import {Vector} from './Vector';
-import {stats} from './VectorUtil';
+import {continuousVectorStats} from './VectorUtil';
 import ViolinPlot from './ViolinPlot';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -155,8 +155,8 @@ export function computeDiffExp(data, pseudocount = 1) {
                 }
             }
 
-            const selectedStats = stats(new Vector('', values));
-            const restStats = stats(new Vector('', restValues));
+            const selectedStats = continuousVectorStats(new Vector('', values));
+            const restStats = continuousVectorStats(new Vector('', restValues));
             const result = mannWhitney(values, restValues);
             result.foldChange = Math.log2((selectedStats.logSum / selectedStats.n) + pseudocount) - Math.log2((restStats.logSum / restStats.n) + pseudocount); // seurat
             //result.foldChange = Math.log2(Math.expm1(mean1 + 1e-9) / Math.expm1(mean2 + 1e-9)) // scanpy;

@@ -6,6 +6,7 @@ import {connect} from 'react-redux';
 import {setDistributionPlotInterpolator, setDistributionPlotOptions} from './actions';
 import DistributionGroup from './DistributionGroup';
 import Typography from '@mui/material/Typography';
+import {DIST_PLOT_OPTIONS, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ} from './reducers';
 
 
 function DistributionPlots(props) {
@@ -28,7 +29,7 @@ function DistributionPlots(props) {
         props.distributionPlotOptions[dataType] = Object.assign({}, props.distributionPlotOptions[dataType], value);
         onDistributionPlotOptions(Object.assign({}, props.distributionPlotOptions));
     }
-    
+
     const {
         cachedData,
         categoricalNames,
@@ -45,14 +46,25 @@ function DistributionPlots(props) {
     } = props;
     const textColor = chartOptions.darkMode ? 'white' : 'black';
     const keys = Object.keys(distributionData);
-    const typeToInfo = {
-        X: {order: 0, name: 'Features'},
-        modules: {order: 1, name: 'Modules'},
-        obs: {order: 2, name: 'Observations'}
+    const typeToName = {
+        X: 'Features',
+        modules: 'Modules',
+        obs: 'Observations'
     };
-    keys.sort((a, b) => typeToInfo[a].order - typeToInfo[b].order);
+    keys.sort((a, b) => {
+        return a.toLowerCase() - b.toLowerCase();
+    });
+    const xIndex = keys.indexOf('X'); // put features 1st
+    if (xIndex !== -1) {
+        keys.splice(xIndex, 1);
+        keys.unshift('X');
+    }
     return keys.map(key => {
-        const name = typeToInfo[key].name;
+        const name = typeToName[key] || key;
+        if (distributionPlotOptions[key] == null) {
+            distributionPlotOptions[key] = Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'heatmap'});
+            distributionPlotInterpolator[key] = Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ);
+        }
         let dimension2data = groupBy(distributionData[key], 'dimension');
         let dimension2selecteddata = groupBy(selectedDistributionData[key], 'dimension');
         return <div key={key}><Typography color="textPrimary"
@@ -76,7 +88,7 @@ function DistributionPlots(props) {
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
                                       setTooltip={setTooltip}
-                                      showDotPlotOption={key==='X'}
+                                      showDotPlotOption={key === 'X'}
                                       categoryColorScales={categoryColorScales}
                                       dataset={dataset}
                                       distributionData={data}

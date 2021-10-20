@@ -22,7 +22,7 @@ function getStats(dimensionVectors, measureVectors) {
         results[v.getName()] = valueCounts(v);
     });
     measureVectors.forEach(v => {
-        results[v.getName()] = stats(v);
+        results[v.getName()] = continuousVectorStats(v);
     });
 
     return results;
@@ -233,7 +233,7 @@ export function groupedStats(groupDimensionInfo, vectors) {
         const value = groupDimensionInfo.keyToIndices[category];
         vectors.forEach((v) => {
             const categoryVector = new SlicedVector(v, value.indices);
-            const categoryStats = stats(categoryVector);
+            const categoryStats = continuousVectorStats(categoryVector);
             const entry = {
                 dimension: groupDimensionInfo.dimensionName,
                 dimensions: groupDimensionInfo.dimensionNames,
@@ -291,7 +291,7 @@ export function variance(v, mean) {
 }
 
 
-export function stats(v) {
+export function continuousVectorStats(v) {
 
     if (v.size() === 0) {
         return {
