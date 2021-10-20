@@ -127,8 +127,10 @@ function getMeanAndPercentRange(result) {
     result.forEach(feature => {
         // percentRange[0] = Math.min(feature.percentExpressed, percentRange[0]);
         // percentRange[1] = Math.max(feature.percentExpressed, percentRange[1]);
-        meanRange[0] = Math.min(feature.mean, meanRange[0]);
-        meanRange[1] = Math.max(feature.mean, meanRange[1]);
+        if (!Number.isNaN(feature.mean)) {
+            meanRange[0] = Math.min(feature.mean, meanRange[0]);
+            meanRange[1] = Math.max(feature.mean, meanRange[1]);
+        }
     });
     return {mean: meanRange, percent: [0, 100]};
 }
