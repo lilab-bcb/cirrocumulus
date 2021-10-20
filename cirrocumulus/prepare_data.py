@@ -287,7 +287,7 @@ class PrepareData:
             raise ValueError("Unknown format")
 
     def get_schema(self):
-        result = datasets_schema(self.datasets)
+        result = datasets_schema(self.datasets, n_features=self.group_nfeatures)
         markers = result.get('markers', [])
 
         if self.markers is not None:  # add results specified from file

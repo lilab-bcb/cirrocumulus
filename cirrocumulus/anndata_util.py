@@ -1,3 +1,5 @@
+import os
+
 import anndata
 import numpy as np
 import pandas as pd
@@ -68,7 +70,7 @@ def X_stats(adata):
               'mean': X.mean(axis=0)}, index=adata.var.index)
 
 
-def datasets_schema(datasets, n_genes=10):
+def datasets_schema(datasets, n_features=10):
     """ Gets dataset schema.
 
     Returns
@@ -142,7 +144,7 @@ def datasets_schema(datasets, n_genes=10):
                     de_result_df = group_df
                 else:
                     de_result_df = de_result_df.join(group_df, how='outer')
-                if n_genes > 0:
+                if n_features > 0:
                     markers_df = group_df
                     if has_fc:
                         markers_df = group_df[group_df['{}:logfoldchanges'.format(group_name)] > min_fold_change]
@@ -192,7 +194,7 @@ def datasets_schema(datasets, n_genes=10):
             de_result['data'] = de_result_data
             de_results.append(de_result)
 
-            if n_genes > 0:
+            if n_features > 0:
                 field_use = None
                 for field in ['mwu_qval', 'auroc', 't_qval']:
                     if field in field_names:
