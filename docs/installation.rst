@@ -252,7 +252,7 @@ Developer Instructions
 
     cirro launch ./data/pbmc3k_processed.h5ad --no-open
 
-- Alternatively, launch the cirrocumulus server::
+- Alternatively, launch the cirrocumulus server (use cirro prepare_data to convert h5ad file to cirrocumulus format for server mode)::
 
     cirro serve
 
