@@ -19,7 +19,7 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
 
-    uns_whitelist = set(['modules', 'cirro-schema'])
+    uns_whitelist = set(['module', 'cirro-schema'])
     adata.uns['cirro-schema'] = ujson.dumps(schema, double_precision=2, orient='values')
     dataset_kwargs = {}
     chunks = None
@@ -34,8 +34,8 @@ def save_datasets_zarr(datasets, schema, output_directory, filesystem, whitelist
         # else:
         #     write_attribute(group, "X", adata.X, dict(chunks=chunks, **dataset_kwargs))
         if module_dataset is not None:
-            write_attribute(group, "uns/modules/X", module_dataset.X, dict(chunks=chunks, **dataset_kwargs))
-            write_attribute(group, "uns/modules/var", module_dataset.var, dataset_kwargs)
+            write_attribute(group, "uns/module/X", module_dataset.X, dict(chunks=chunks, **dataset_kwargs))
+            write_attribute(group, "uns/module/var", module_dataset.var, dataset_kwargs)
     if whitelist is None or 'obs' in whitelist:
         write_attribute(group, "obs", adata.obs, dataset_kwargs)
     if whitelist is None or 'obsm' in whitelist:
