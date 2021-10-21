@@ -207,11 +207,10 @@ export function DatasetSelector(props) {
                     <div>
                         <FormControl size={"small"} sx={{float: 'right', transform: 'translateY(-20px)', m: 1}}>
                             <Select
-                                size={"small"}
+                                variant={'standard'}
                                 labelId="dataset-selector-columns-label"
                                 id="dataset-selector-columns"
                                 multiple
-                                input={<OutlinedInput size={"small"}/>}
                                 value={visibleColumns.map(item => item.id)}
                                 onChange={handleColumnsChange}
                                 renderValue={(selected) => 'Column Visibility'}
@@ -224,7 +223,7 @@ export function DatasetSelector(props) {
                                 ))}
                             </Select>
                         </FormControl>
-                        <Divider/>
+
                         <TableContainer>
                             <Table stickyHeader size={"small"} padding={"normal"}>
                                 <TableHead>
