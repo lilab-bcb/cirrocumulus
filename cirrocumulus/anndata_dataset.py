@@ -4,7 +4,7 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.anndata_util import datasets_schema, ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import read_star_fusion_file
 
 
@@ -72,7 +72,7 @@ class AnndataDataset(AbstractDataset):
         return adata
 
     def get_schema(self, filesystem, path):
-        return datasets_schema([self.get_data(filesystem, path)])
+        return dataset_schema(self.get_data(filesystem, path))
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
         adata = self.get_data(filesystem, path)

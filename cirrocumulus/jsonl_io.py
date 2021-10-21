@@ -59,16 +59,15 @@ def read_adata_jsonl(path, keys):
     return df
 
 
-def save_datasets_jsonl(datasets, schema, output_dir, base_name, filesystem):
+def save_dataset_jsonl(dataset, schema, output_dir, base_name, filesystem):
     compress = False
     index = {}  # key to byte start-end
     filesystem.makedirs(output_dir, exist_ok=True)
     jsonl_path = os.path.join(output_dir, base_name)
     with filesystem.open(jsonl_path, 'wb') as f:
-        for dataset in datasets:
-            save_adata_X(dataset, f, index, compress)
-            save_data_obs(dataset, f, index, compress)
-            save_data_obsm(dataset, f, index, compress)
+        save_adata_X(dataset, f, index, compress)
+        save_data_obs(dataset, f, index, compress)
+        save_data_obsm(dataset, f, index, compress)
         write_jsonl(schema, f, 'schema', index)
 
     with filesystem.open(os.path.join(output_dir, base_name + '.idx.json'), 'wt') as f:  # save index

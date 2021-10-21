@@ -2,7 +2,6 @@ import concurrent.futures
 import json
 import os
 
-import anndata
 import numpy as np
 import pandas as pd
 import pyarrow as pa
@@ -68,14 +67,13 @@ class ParquetDataset(AbstractDataset):
         dataset_info = self.get_dataset_info(filesystem, path)
         shape = dataset_info['shape']
         X = None
-        adata_modules = None
         obs = None
         var = None
         obsm = {}
         X_keys = keys.pop('X', [])
         obs_keys = keys.pop('obs', [])
         basis_keys = keys.pop('basis', [])
-        module_keys = keys.pop('module', [])
+
         if len(X_keys) > 0:
             if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified for performance
                 get_item_x = X_keys[0]
@@ -84,11 +82,6 @@ class ParquetDataset(AbstractDataset):
             paths = [node_path + '/' + key + '.parquet' for key in X_keys]
             X = get_matrix(read_tables(paths, filesystem), shape)
             var = pd.DataFrame(index=X_keys)
-        if len(module_keys) > 0:
-            node_path = os.path.join(path, 'X_module')
-            paths = [node_path + '/' + key + '.parquet' for key in module_keys]
-            module_X = get_matrix(read_tables(paths, filesystem))
-            adata_modules = anndata.AnnData(X=module_X, var=pd.DataFrame(index=module_keys))
         if len(obs_keys) > 0:
             obs = pd.DataFrame()
             node_path = os.path.join(path, 'obs')
@@ -110,13 +103,12 @@ class ParquetDataset(AbstractDataset):
                 vals = np.array(vals).T
                 obsm[basis_keys[i]] = vals
                 if X is None:
-                    X = scipy.sparse.coo_matrix(([], ([], [])), shape=(vals.shape[0], 0))
-
+                    X = scipy.sparse.coo_matrix((vals.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
             obs = pd.DataFrame(index=pd.RangeIndex(shape[0]))
+        if X is None and obs is None and len(obsm.keys()) == 0:
+            X = scipy.sparse.csc_matrix(tuple(shape))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
-        if adata_modules is not None:
-            adata.uns['X_module'] = adata_modules
         return adata
 
     def read_data_dense(self, filesystem, path, keys=None, dataset=None):
