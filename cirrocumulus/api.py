@@ -9,7 +9,7 @@ from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT, CIRRO_MIXPANEL
 from .invalid_usage import InvalidUsage
-from .job_api import submit_job
+from .job_api import submit_job, delete_job
 from .util import json_response, get_scheme, get_fs
 
 blueprint = Blueprint('blueprint', __name__)
@@ -220,9 +220,10 @@ def handle_schema():
     database_api = get_database()
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.get_schema(dataset)
-    schema.update(dataset)  # add title, etc from database to schema
+    dataset['url'] = map_url(dataset['url'])
+    schema = dataset  # dataset has title, etc. from database
     schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
+    schema.update(dataset_api.get_schema(dataset))
     return json_response(schema)
 
 
@@ -461,6 +462,7 @@ def handle_job():
         content = request.get_json(force=True, cache=False)
         job_id = content.get('id', '')
         database_api.delete_job(email, job_id)
+        delete_job(job_id)
         return json_response('', 204)
     elif request.method == 'POST':
         if os.environ.get('GAE_APPLICATION') is None:  # TODO
