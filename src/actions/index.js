@@ -342,6 +342,9 @@ export function submitJob(jobData) {
             getState().dataset.api.getJobStatus(jobId)
                 .then(result => {
                     const jobResult = find(getState().jobResults, item => item.id === jobId);
+                    if (jobResult == null) { // job was deleted
+                        return;
+                    }
                     const statusUpdated = jobResult.status !== result.status;
                     jobResult.status = result.status;
                     let fetchJobStatus = true;
