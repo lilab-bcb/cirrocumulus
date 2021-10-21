@@ -61,6 +61,7 @@ def done_callback(future):
     for job_id in list(job_id_2_future.keys()):
         if job_id_2_future[job_id] == future:
             del job_id_2_future[job_id]
+
             logger.info('Job {} done'.format(job_id))
             break
 
@@ -88,6 +89,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
                              dataset_api if not is_serve else None)
     future.add_done_callback(done_callback)
     job_id_2_future[job_id] = future
+
     return job_id
 
 
@@ -158,7 +160,6 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
         CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
 
     def get_batch_fn(i):
-        logger.info('batch {}'.format(i + 1))
         end = min(nfeatures, i + batch_size)
         adata = dataset_api.read_dataset(keys=dict(X=[slice(i, end)]), dataset=dataset)
         if batch_size != nfeatures:
