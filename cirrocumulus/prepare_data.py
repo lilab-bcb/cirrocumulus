@@ -17,13 +17,13 @@ cluster_fields = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_
 categorical_fields_convert = ['seurat_clusters']
 
 
-def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
+def read_adata(path, spatial_directory=None, use_raw=False):
     if path.lower().endswith('.loom'):
         adata = anndata.read_loom(path)
     elif path.lower().endswith('.zarr'):
         adata = anndata.read_zarr(path)
     else:
-        adata = anndata.read(path, backed=backed)
+        adata = anndata.read(path)
     if 'module' in adata.uns:
         adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
                                                           var=adata.uns['module']['var'])
@@ -53,8 +53,6 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
             new_key = key.replace(' ', '_')
             adata.obsm[new_key] = adata.obsm[key]
             del adata.obsm[key]
-    if not backed and scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
-        adata.X = adata.X.tocsc()
     return adata
 
 
@@ -94,6 +92,8 @@ class PrepareData:
         self.measures = []
         self.others = []
         self.dataset = dataset
+        if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
+            dataset.X = dataset.X.tocsc()
         for i in range(len(dataset.obs.columns)):
             name = dataset.obs.columns[i]
             c = dataset.obs[name]
@@ -250,7 +250,6 @@ def main(argsv):
                         help='Optional whitelist of fields to save. Only applies when output format is parquet',
                         choices=['obs', 'obsm', 'X'],
                         action='append')
-    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--markers',
                         help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
                         action='append')
@@ -295,7 +294,7 @@ def main(argsv):
             tmp_file = h5_file
             use_raw = True
             tmp_files.append(tmp_file)
-        adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
+        adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
         adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset))[0]
 
