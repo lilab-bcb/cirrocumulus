@@ -3,10 +3,10 @@ import os
 
 import pandas._libs.json as ujson
 from bson import ObjectId
-from pymongo import MongoClient
-
 from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain, get_fs
+from pymongo import MongoClient
+
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS, SERVER_CAPABILITY_EDIT_DATASET, \
     SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_JOBS, \
     SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES
@@ -267,6 +267,8 @@ class MongoDb(AbstractDB):
     def get_job(self, email, job_id, return_type):
         collection = self.db.jobs
         doc = collection.find_one(dict(_id=ObjectId(job_id)))
+        if doc is None:
+            return None
         self.get_dataset(email, doc['dataset_id'])
         if return_type == 'result':
             result = doc.get('result')
