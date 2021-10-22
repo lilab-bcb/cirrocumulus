@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const gm = require('gm');
+const util = require('../util');
 
 async function featureScreenshot(options) {
     const browser = await puppeteer.launch({headless: true});
@@ -20,13 +20,6 @@ async function featureScreenshot(options) {
     return {page, browser};
 }
 
-function diffImages(image1, image2, tolerance) {
-    return new Promise((resolve, reject) => {
-        gm.compare(image1, image2, tolerance, function (err, isEqual, equality, raw, path1, path2) {
-            resolve(isEqual);
-        });
-    });
-}
 
 it('embeddings"', async () => {
     const {page, browser} = await featureScreenshot({name: 'CST3', input: 'genes-input', path: 'CST3.png'});
@@ -55,11 +48,11 @@ it('embeddings"', async () => {
     await page.screenshot({path: 'distributions.png'});
 
     await browser.close();
-    await diffImages('CST3.png', 'screenshots/CST3.png', 0);
-    await diffImages('distributions.png', 'screenshots/distributions.png', 0);
+    await util.diffImages('CST3.png', 'screenshots/CST3.png', 0);
+    await util.diffImages('distributions.png', 'screenshots/distributions.png', 0);
     // categories are drawn in random order
-    await diffImages('louvain.png', 'screenshots/louvain.png', 0.001);
-    await diffImages('CST3_filtered.png', 'screenshots/CST3_filtered.png', 0.001);
+    await util.diffImages('louvain.png', 'screenshots/louvain.png', 0.001);
+    await util.diffImages('CST3_filtered.png', 'screenshots/CST3_filtered.png', 0.001);
 });
 
 

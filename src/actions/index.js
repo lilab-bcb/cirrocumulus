@@ -51,6 +51,7 @@ export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATORS = {};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {name: 'Viridis', reversed: false, value: getInterpolator('Viridis')};
+DEFAULT_INTERPOLATORS[FEATURE_TYPE.COUNT] = {name: 'Greys', reversed: false, value: getInterpolator('Greys')};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.OBS] = {name: 'Inferno', reversed: false, value: getInterpolator('Inferno')};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.MODULE] = {name: 'RdBu', reversed: true, value: getInterpolator('RdBu')};
 
@@ -1060,11 +1061,11 @@ function restoreSavedView(savedView) {
                     const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
                     if (selectedEmbedding) {
                         savedView.embeddings = [selectedEmbedding];
-                        if (obsCat != null) {
-                            savedView.q = [{value: obsCat, type: 'obsCat'}];
+                        if ((savedView.q == null || savedView.q.length === 0) && obsCat != null) {
+                            savedView.q = [{value: obsCat, type: FEATURE_TYPE.OBS_CAT}];
                             savedView.activeFeature = {
                                 name: obsCat,
-                                type: 'obsCat',
+                                type: FEATURE_TYPE.OBS_CAT,
                                 embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding)
                             };
                         }
@@ -1081,11 +1082,11 @@ function restoreSavedView(savedView) {
                     dispatch(setDistributionPlotOptions(savedView.distributionPlotOptions));
                 }
                 let activeFeature = savedView.activeFeature;
-                if (activeFeature == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q != null && savedView.q.length > 0) {
+                if (activeFeature == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q && savedView.q.length > 0) { // pick the 1st search token and 1st embedding
                     activeFeature = {
-                        name: savedView.q[0],
-                        type: getFeatureType(getState().dataset, savedView.q[0]),
-                        embeddingKey: savedView.q[0] + '_' + getEmbeddingKey(savedView.embeddings[0])
+                        name: savedView.q[0].value,
+                        type: savedView.q[0].type,
+                        embeddingKey: savedView.q[0].value + '_' + getEmbeddingKey(savedView.embeddings[0])
                     };
                 }
                 if (activeFeature != null) {
@@ -1987,21 +1988,6 @@ function getNewActiveFeature(embeddingData) {
     return {name: trace.name, type: trace.featureType, embeddingKey: embeddingKey};
 }
 
-function getFeatureType(dataset, feature) {
-    if (feature === '__count') {
-        return FEATURE_TYPE.COUNT;
-    } else if (dataset.obsCat.indexOf(feature) !== -1) {
-        return FEATURE_TYPE.OBS_CAT;
-    } else if (dataset.obs.indexOf(feature) !== -1) {
-        return FEATURE_TYPE.OBS;
-    } else if (dataset.modules && findIndex(dataset.modules, item => item.id === feature) !== -1) {
-        return FEATURE_TYPE.MODULE;
-    } else if (dataset.var.indexOf(feature) !== -1) {
-        return FEATURE_TYPE.X;
-    }
-    return null;
-}
-
 
 // depends on global feature summary
 function getNewEmbeddingData(state, features) {
@@ -2013,6 +1999,7 @@ function getNewEmbeddingData(state, features) {
     const dataset = state.dataset;
     const cachedData = state.cachedData;
     const selection = state.selection;
+    const searchTokens = state.searchTokens;
     const categoricalNames = state.categoricalNames;
     const existingFeaturePlusEmbeddingKeys = new Set();
     embeddingData.forEach(embeddingDatum => {
@@ -2063,7 +2050,10 @@ function getNewEmbeddingData(state, features) {
                     purity = values.purity;
                     values = values.value;
                 }
-                const featureType = getFeatureType(dataset, feature);
+                const searchToken = find(searchTokens, (item => item.value === feature));
+
+                const featureType = searchToken != null ? searchToken.type : FEATURE_TYPE.COUNT;
+
                 let isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
                 let colorScale = null;
 

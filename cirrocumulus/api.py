@@ -497,7 +497,6 @@ def handle_job():
             dataset['url'] = map_url(dataset['url'])
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
-        logging.getLogger('cirro').info('here')
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
         logging.getLogger('cirro').info(job)
         if job is None:
