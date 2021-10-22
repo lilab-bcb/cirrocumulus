@@ -51,7 +51,7 @@ export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATORS = {};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {name: 'Viridis', reversed: false, value: getInterpolator('Viridis')};
-DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {name: 'Inferno', reversed: false, value: getInterpolator('Inferno')};
+DEFAULT_INTERPOLATORS[FEATURE_TYPE.OBS] = {name: 'Inferno', reversed: false, value: getInterpolator('Inferno')};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.MODULE] = {name: 'RdBu', reversed: true, value: getInterpolator('RdBu')};
 
 
