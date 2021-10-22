@@ -13,12 +13,12 @@ const styles = theme => ({
     root: {
         display: 'flex',
         flexWrap: 'wrap',
-        'flex-direction': 'column',
+        'flex-direction': 'column'
     },
     formControl: {
         display: 'block',
         margin: theme.spacing(1)
-    },
+    }
 
 });
 
@@ -48,22 +48,23 @@ class ColorSchemeSelector extends React.PureComponent {
         return createColorScale({
             name: name,
             value: scaleChromatic[name],
-            reversed: this.props.interpolator.reversed
+            reversed: this.props.interpolator == null ? false : this.props.interpolator.reversed
         }).domain([0, 1]);
     }
 
     render() {
 
         const {classes, interpolator} = this.props;
-        if (interpolator.reversed == null) {
+        if (interpolator && interpolator.reversed == null) {
             interpolator.reversed = false;
         }
-        const interpolatorName = fixInterpolatorName(interpolator.name);
+        const interpolatorName = interpolator == null ? 'interpolateViridis' : fixInterpolatorName(interpolator.name);
         const width = this.props.width || 176;
         const height = 14;
         return <>
             <InputLabel shrink={true}>Color Scheme</InputLabel>
             <Select
+                disabled={interpolator == null}
                 input={<Input/>}
                 className={classes.select}
                 onChange={this.onInterpolatorChange}

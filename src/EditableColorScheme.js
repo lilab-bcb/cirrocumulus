@@ -82,7 +82,8 @@ export class EditableColorScheme extends React.PureComponent {
                 <div><FormControlLabel
                     control={
                         <Switch
-                            checked={interpolator.reversed}
+                            disabled={domain == null}
+                            checked={interpolator == null ? false : interpolator.reversed}
                             onChange={this.onReversedChange}
                         />
                     }

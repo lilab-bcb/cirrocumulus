@@ -315,11 +315,11 @@ function DotPlotJobResultsPanel(props) {
             features.add(feature);
         }
 
-        let searchTokens = searchTokens;
+        let filteredSearchTokens;
         if (!isSelected) {
-            searchTokens = searchTokens.filter(token => !features.has(token.value));
+            filteredSearchTokens = searchTokens.filter(token => !features.has(token.value));
         } else {
-            const dataset = dataset;
+            filteredSearchTokens = searchTokens.slice();
             features.forEach(feature => {
                 let found = false;
                 for (let i = 0; i < searchTokens.length; i++) {
@@ -329,14 +329,14 @@ function DotPlotJobResultsPanel(props) {
                     }
                 }
                 if (!found) {
-                    searchTokens.push({
+                    filteredSearchTokens.push({
                         value: feature,
                         type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
                     });
                 }
             });
         }
-        onSearchTokens(searchTokens.slice());
+        onSearchTokens(filteredSearchTokens);
     }
 
     function onRowClick(event, row) {

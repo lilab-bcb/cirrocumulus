@@ -49,7 +49,12 @@ const authScopes = [
 export const DEFAULT_POINT_SIZE = 1;
 export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
-export const DEFAULT_INTERPOLATOR = 'Viridis';
+export const DEFAULT_INTERPOLATORS = {};
+DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {name: 'Viridis', reversed: false, value: getInterpolator('Viridis')};
+DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {name: 'Inferno', reversed: false, value: getInterpolator('Inferno')};
+DEFAULT_INTERPOLATORS[FEATURE_TYPE.MODULE] = {name: 'RdBu', reversed: true, value: getInterpolator('RdBu')};
+
+
 export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
 export const DEFAULT_DRAG_MODE = 'pan';
 
@@ -672,20 +677,16 @@ function handleFilterUpdated() {
         const searchTokens = state.searchTokens;
         let filter = getFilterJson(state);
         const groupedSearchTokens = groupBy(searchTokens, 'type');
-        console.log(searchTokens);
         addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
 
         const measures = [];
-        console.log(Object.keys(groupedSearchTokens));
         for (const key in groupedSearchTokens) {
-            console.log(key, FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1);
             if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
                 const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
                 groupedSearchTokens[key].forEach(item => measures.push(prefix + item.value));
             }
         }
 
-        console.log(measures);
         let q = {
             selection: {
                 measures: measures,
@@ -1011,8 +1012,10 @@ function loadDefaultDataset() {
 
 function restoreSavedView(savedView) {
     return function (dispatch, getState) {
-        if (savedView.colorScheme != null) {
-            savedView.colorScheme.value = getInterpolator(savedView.colorScheme.name);
+        if (savedView.interpolator != null) {
+            for (const key in savedView.interpolator) {
+                savedView.interpolator[key].value = getInterpolator(savedView.interpolator[key].name);
+            }
         }
 
         if (savedView.datasetFilter == null) {
@@ -1854,7 +1857,6 @@ function _updateCharts(onError, updateActiveFeature = true) {
                     groupedSearchTokens[searchTokenKey].forEach(item => {
                         let key = category + '-' + item.value;
                         if (cachedDistributionKeys[key] == null) {
-                            console.log(searchTokenKey + '/' + item.value);
                             distributionMeasuresToFetch.add(searchTokenKey + '/' + item.value);
                         }
                     });
@@ -2095,7 +2097,8 @@ function getNewEmbeddingData(state, features) {
                     if (featureSummary.customMax != null && !isNaN(featureSummary.customMax)) {
                         domain[1] = featureSummary.customMax;
                     }
-                    colorScale = createColorScale(interpolator).domain(domain);
+                    const typeInterpolator = interpolator[featureType];
+                    colorScale = createColorScale(typeInterpolator).domain(domain);
 
                 } else {
                     let traceUniqueValues = featureSummary.categories;
@@ -2383,9 +2386,15 @@ export function getDatasetStateJson(state) {
     }
 
     // TODO save custom color ranges per feature
-    const interpolatorJson = Object.assign({}, interpolator, {value: undefined});
-    if (interpolatorJson.name !== 'Viridis' || interpolatorJson.reversed) {
-        json.colorScheme = interpolatorJson;
+    for (let key in interpolator) {
+        const typedInterpolator = interpolator[key];
+        const defaultInterpolator = DEFAULT_INTERPOLATORS[key];
+        if (defaultInterpolator == null || typedInterpolator.name !== defaultInterpolator || typedInterpolator.reversed !== defaultInterpolator.reversed) {
+            if (json.interpolator == null) {
+                json.interpolator = {};
+            }
+            json.interpolator[key] = Object.assign({}, typedInterpolator, {value: undefined});
+        }
     }
 
     if (embeddingLabels.length > 0) {

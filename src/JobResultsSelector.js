@@ -19,6 +19,7 @@ import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import {COMPARE_ACTIONS} from './job_config';
 import Grid from '@mui/material/Grid';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 function JobResultsSelector(props) {
     const [showDialog, setShowDialog] = useState(false);
@@ -83,12 +84,14 @@ function JobResultsSelector(props) {
                         text += ' - ' + jobResult.title;
                     }
                     const isPrecomputed = ('' + jobResult.id).startsWith('cirro-');
-                    const isComplete = isPrecomputed || jobResult.status === 'complete';
+                    const isComplete = isPrecomputed || (jobResult.status === 'complete' || jobResult.status === 'error');
 
                     const status = isPrecomputed ? 'complete' : jobResult.status;
                     const isJobOwner = email == jobResult.email || (email === null && jobResult.email === '');
                     const jobType = jobTypeToName[jobResult.type];
                     // const date = isPrecomputed ? '' : jobResult.submitted;
+                    const showDelete = isJobOwner && !isPrecomputed && isComplete;
+                    const showCancel = isJobOwner && !isPrecomputed && !isComplete;
                     return (
                         <TableRow key={jobResult.id}
                                   hover
@@ -100,14 +103,23 @@ function JobResultsSelector(props) {
                             <TableCell>{text}</TableCell>
                             <TableCell>{jobType}</TableCell>
                             {showJobStatus && <TableCell>{status}
-                                {isJobOwner && !isPrecomputed &&
+                                {showDelete &&
                                 <IconButton
                                     edge="end"
                                     aria-label="delete"
                                     onClick={(event) => onDeleteJob(event, jobResult)}
                                     size="small">
                                     <DeleteIcon/>
-                                </IconButton>}</TableCell>}
+                                </IconButton>}
+                                {showCancel &&
+                                <IconButton
+                                    edge="end"
+                                    aria-label="cancel"
+                                    onClick={(event) => onDeleteJob(event, jobResult)}
+                                    size="small">
+                                    <CancelIcon/>
+                                </IconButton>}
+                            </TableCell>}
                         </TableRow>
                     );
                 })}
