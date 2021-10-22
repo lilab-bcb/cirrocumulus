@@ -1,9 +1,9 @@
 import json
 import os
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
+import cirrocumulus.data_processing as data_processing
 from .anndata_util import adata_to_json
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
@@ -494,6 +494,8 @@ def handle_job():
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+        if job is None:
+            return json_response('', 404)  # job deleted
         import anndata
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
