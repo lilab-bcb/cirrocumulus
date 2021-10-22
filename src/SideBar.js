@@ -186,7 +186,10 @@ class SideBar extends React.PureComponent {
         }
     };
 
-
+    onInterpolator = (value) => {
+        const {activeFeature} = this.props;
+        this.props.handleInterpolator({featureType: activeFeature.type, value: value});
+    };
     onMinUIChange = (value) => {
         this.setState({minColor: value});
     };
@@ -321,7 +324,7 @@ class SideBar extends React.PureComponent {
             unselectedPointSize
         } = this.props;
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
-
+        const activeInterpolator = activeFeature == null ? null : interpolator[activeFeature.type];
 
         const {
             unselectedOpacity,
@@ -451,7 +454,7 @@ class SideBar extends React.PureComponent {
 
                     <EditableColorScheme
                         textColor={textColor}
-                        interpolator={interpolator}
+                        interpolator={activeInterpolator}
                         domain={primaryTrace && primaryTrace.continuous && primaryTrace.name !== '__count' ? primaryTrace.colorScale.domain() : null}
                         min={minColor}
                         max={maxColor}
@@ -459,7 +462,7 @@ class SideBar extends React.PureComponent {
                         onMaxChange={this.onMaxChange}
                         onMinUIChange={this.onMinUIChange}
                         onMaxUIChange={this.onMaxUIChange}
-                        onInterpolator={this.props.handleInterpolator}/>
+                        onInterpolator={this.onInterpolator}/>
 
                     <FormControl className={classes.formControl}>
                         <TextField

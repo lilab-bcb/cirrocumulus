@@ -106,8 +106,15 @@ const getModulesOptions = memoize((items) => {
         if (items) {
             const options = items.slice();
             const textField = options.length > 0 && options[0].name != null ? 'name' : 'id';
+
             options.forEach(item => {
+                if (item.group == null) {
+                    item.group = ''; // set default group
+                }
                 item.text = item[textField];
+                if (item.text.startsWith(item.group + '-')) { // hide group
+                    item.text = item.text.substring(item.group.length + 1);
+                }
             });
             options.sort((item1, item2) => {
                 const g = NATSORT(item1.group.toLowerCase(), item2.group.toLowerCase());

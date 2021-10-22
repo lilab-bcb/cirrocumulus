@@ -5,7 +5,7 @@ import {
     DEFAULT_DARK_MODE,
     DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
     DEFAULT_DRAG_MODE,
-    DEFAULT_INTERPOLATOR,
+    DEFAULT_INTERPOLATORS,
     DEFAULT_LABEL_FONT_SIZE,
     DEFAULT_LABEL_STROKE_WIDTH,
     DEFAULT_MARKER_OPACITY,
@@ -72,7 +72,7 @@ import {
 } from '../util';
 
 
-const DIST_PLOT_OPTIONS = {
+export const DIST_PLOT_OPTIONS = {
     chartType: 'dotplot',
     violinScale: 'width',
     violinHeight: 100,
@@ -85,13 +85,8 @@ const DEFAULT_DIST_PLOT_OPTIONS = {
     obs: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'violin'})
 };
 
-const DEFAULT_INTERPOLATOR_OBJ = {
-    name: DEFAULT_INTERPOLATOR,
-    value: getInterpolator(DEFAULT_INTERPOLATOR),
-    reversed: false
-};
 
-const DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
+export const DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
     name: DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
     value: getInterpolator(DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR),
     reversed: false,
@@ -99,9 +94,9 @@ const DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
 };
 
 const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
-    X: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
-    modules: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
-    obs: DISTRIBUTION_PLOT_INTERPOLATOR_OBJ
+    X: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ),
+    modules: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ),
+    obs: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ)
 };
 const DEFAULT_PRIMARY_CHART_SIZE = {
     width: window.innerWidth - 280,
@@ -697,9 +692,9 @@ function embeddingData(state = [], action) {
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
             state.forEach((trace) => {
-                if (trace.continuous) {
+                if (trace.continuous && trace.featureType === action.payload.featureType) {
                     let domain = trace.colorScale.domain();
-                    trace.colorScale = createColorScale(action.payload).domain(domain);
+                    trace.colorScale = createColorScale(action.payload.value).domain(domain);
                     updateTraceColors(trace);
                 }
             });
@@ -780,12 +775,14 @@ function loading(state = false, action) {
 }
 
 
-function interpolator(state = DEFAULT_INTERPOLATOR_OBJ, action) {
+function interpolator(state = DEFAULT_INTERPOLATORS, action) {
     switch (action.type) {
         case SET_INTERPOLATOR:
-            return action.payload;
+            const newValue = {};
+            newValue[action.payload.featureType] = action.payload.value;
+            return Object.assign({}, state, newValue);
         case RESTORE_VIEW:
-            return action.payload.colorScheme != null ? action.payload.colorScheme : state;
+            return action.payload.interpolator != null ? Object.assign({}, state, action.payload.interpolator) : state;
         default:
             return state;
     }

@@ -14,7 +14,7 @@ CIRRO_AUTH = 'CIRRO_AUTH'
 CIRRO_MIXPANEL = 'CIRRO_MIXPANEL'
 # for mounting a bucket locally. Comma separated string of bucket:local_path. Example s3://foo/bar:/fsx
 CIRRO_MOUNT = 'CIRRO_MOUNT'
-
+CIRRO_LOG_LEVEL = 'CIRRO_LOG_LEVEL'
 # columns to display to user
 CIRRO_DATASET_SELECTOR_COLUMNS = 'CIRRO_DATASET_SELECTOR_COLUMNS'
 CIRRO_JOB_TYPE = 'CIRRO_JOB_TYPE'

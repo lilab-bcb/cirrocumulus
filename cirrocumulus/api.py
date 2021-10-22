@@ -1,14 +1,16 @@
 import json
+import logging
 import os
 
 from flask import Blueprint, Response, request, stream_with_context, current_app
 
 import cirrocumulus.data_processing as data_processing
+from .anndata_util import adata_to_json
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT, CIRRO_MIXPANEL
 from .invalid_usage import InvalidUsage
-from .job_api import submit_job
+from .job_api import submit_job, delete_job
 from .util import json_response, get_scheme, get_fs
 
 blueprint = Blueprint('blueprint', __name__)
@@ -219,9 +221,10 @@ def handle_schema():
     database_api = get_database()
     dataset_id = request.args.get('id', '')
     dataset = database_api.get_dataset(email, dataset_id)
-    schema = dataset_api.get_schema(dataset)
-    schema.update(dataset)  # add title, etc from database to schema
+    dataset['url'] = map_url(dataset['url'])
+    schema = dataset  # dataset has title, etc. from database
     schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
+    schema.update(dataset_api.get_schema(dataset))
     return json_response(schema)
 
 
@@ -460,6 +463,7 @@ def handle_job():
         content = request.get_json(force=True, cache=False)
         job_id = content.get('id', '')
         database_api.delete_job(email, job_id)
+        delete_job(job_id)
         return json_response('', 204)
     elif request.method == 'POST':
         if os.environ.get('GAE_APPLICATION') is None:  # TODO
@@ -479,7 +483,10 @@ def handle_job():
         if c == 'status' or c == 'params':
             if is_precomputed:
                 return dict(status='complete') if c == 'status' else dict()
-            return database_api.get_job(email=email, job_id=job_id, return_type=c)
+            job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+            if job is None:
+                return json_response('', 404)  # job deleted
+            return job
         if c != 'result':
             raise ValueError('c must be one of status, params, or result')
         if is_precomputed:  # precomputed result
@@ -490,32 +497,27 @@ def handle_job():
             dataset['url'] = map_url(dataset['url'])
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
+        logging.getLogger('cirro').info('here')
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+        logging.getLogger('cirro').info(job)
+        if job is None:
+            return json_response('', 404)  # job deleted
+        import anndata
         if isinstance(job, dict) and 'url' in job:
             url = job['url']
             content_type = job.get('content-type')
             if content_type == 'application/h5ad' or content_type == 'application/zarr':
-                import anndata
                 if content_type == 'application/h5ad':
                     with get_fs(url).open(url, mode='rb') as f:
                         adata = anndata.read(f)
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
-
-                import pandas as pd
-                df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
-                for key in adata.layers.keys():
-                    df2 = pd.DataFrame(adata.layers[key], index=adata.obs.index.astype(str) + '-{}'.format(key),
-                                       columns=adata.var.index)
-                    df = pd.concat((df, df2), axis=0)
-
-                df = df.T.join(adata.var)
-                df.index.name = 'id'
-                return Response(df.reset_index().to_json(double_precision=2, orient='records'),
-                                content_type='application/json')
+                return Response(adata_to_json(adata), content_type='application/json')
             else:
                 # URL to JSON or text
                 return send_file(url)
+        elif isinstance(job, anndata.AnnData):
+            return Response(adata_to_json(job), content_type='application/json')
         # elif isinstance(job, bytes):
         #     job = job.decode('ascii')
         return job

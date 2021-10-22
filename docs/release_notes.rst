@@ -1,5 +1,9 @@
 Release Notes
 -------------
+- 1.1.22.post5 `October 22, 2021`
+    * Separate color schemes for continuous observations, features, and modules
+    * Explore gene modules stored in adata.uns['module']
+
 - 1.1.22.post4 `October 19, 2021`
     * Added ability to select all members of a set
     * Fixed bug displaying renamed category labels on embedding

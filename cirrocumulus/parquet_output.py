@@ -7,8 +7,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
-from cirrocumulus.anndata_util import DATA_TYPE_UNS_KEY, DATA_TYPE_MODULE
-
 logger = logging.getLogger("cirro")
 
 
@@ -18,9 +16,8 @@ def write_pq(d, output_dir, name, filesystem, write_statistics=True, row_group_s
                    write_statistics=write_statistics, row_group_size=row_group_size, filesystem=filesystem)
 
 
-def save_datasets_pq(datasets, schema, output_directory, filesystem, whitelist):
+def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
     X_dir = os.path.join(output_directory, 'X')
-    module_dir = os.path.join(output_directory, 'X_module')
     obs_dir = os.path.join(output_directory, 'obs')
     obsm_dir = os.path.join(output_directory, 'obsm')
     filesystem.makedirs(X_dir, exist_ok=True)
@@ -28,12 +25,7 @@ def save_datasets_pq(datasets, schema, output_directory, filesystem, whitelist):
     filesystem.makedirs(obsm_dir, exist_ok=True)
     with filesystem.open(os.path.join(output_directory, 'index.json.gz'), 'wt', compression='gzip') as f:
         f.write(ujson.dumps(schema, double_precision=2, orient='values'))
-    for dataset in datasets:
-        if dataset.uns.get(DATA_TYPE_UNS_KEY) == DATA_TYPE_MODULE:
-            filesystem.makedirs(module_dir, exist_ok=True)
-            if whitelist is None or 'X' in whitelist:
-                save_adata_X(dataset, module_dir, filesystem)
-        elif whitelist is None or 'X' in whitelist:
+        if whitelist is None or 'X' in whitelist:
             save_adata_X(dataset, X_dir, filesystem)
         if whitelist is None or 'obs' in whitelist:
             save_data_obs(dataset, obs_dir, filesystem)

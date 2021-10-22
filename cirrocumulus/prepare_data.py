@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse
 
-from cirrocumulus.anndata_util import get_scanpy_marker_keys, datasets_schema, ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import get_scanpy_marker_keys, dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json, get_fs
 
@@ -17,13 +17,13 @@ cluster_fields = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_
 categorical_fields_convert = ['seurat_clusters']
 
 
-def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
+def read_adata(path, spatial_directory=None, use_raw=False):
     if path.lower().endswith('.loom'):
         adata = anndata.read_loom(path)
     elif path.lower().endswith('.zarr'):
         adata = anndata.read_zarr(path)
     else:
-        adata = anndata.read(path, backed=backed)
+        adata = anndata.read(path)
     if 'module' in adata.uns:
         adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
                                                           var=adata.uns['module']['var'])
@@ -53,37 +53,13 @@ def read_adata(path, backed=False, spatial_directory=None, use_raw=False):
             new_key = key.replace(' ', '_')
             adata.obsm[new_key] = adata.obsm[key]
             del adata.obsm[key]
-    if not backed and scipy.sparse.issparse(adata.X) and scipy.sparse.isspmatrix_csr(adata.X):
-        adata.X = adata.X.tocsc()
     return adata
-
-
-#
-# def make_unique(index, join='-1'):
-#     index = index.str.replace('/', '_')
-#     lower_index = index.str.lower()
-#     if lower_index.is_unique:
-#         return index
-#     from collections import defaultdict
-#
-#     indices_dup = lower_index.duplicated(keep="first")
-#     values_dup_lc = lower_index.values[indices_dup]
-#     values_dup = index.values[indices_dup]
-#     counter = defaultdict(lambda: 0)
-#     for i, v in enumerate(values_dup_lc):
-#         counter[v] += 1
-#         values_dup[i] += join + str(counter[v])
-#     values = index.values
-#     values[indices_dup] = values_dup
-#     index = pd.Index(values)
-#     return index
 
 
 class PrepareData:
 
     def __init__(self, datasets, output, dimensions=None, groups=[], group_nfeatures=10, markers=[],
                  output_format='parquet', no_auto_groups=False, save_whitelist=None):
-        self.datasets = datasets
         self.groups = groups
         self.group_nfeatures = group_nfeatures
         self.markers = markers
@@ -97,94 +73,63 @@ class PrepareData:
                 dim = m.shape[1]
                 if not (1 < dim <= 3):
                     del dataset.obsm[key]
-        data_type2_datasets = {}
-        for i in range(len(datasets)):
-            dataset = datasets[i]
-            if i > 0:
-                name = dataset.uns.get('name', 'dataset {}'.format(i + 1))
-                prefix = name + '-'
-                dataset.var.index = prefix + dataset.var.index.astype(str)
-                # ensure cell ids are the same
-                if not np.array_equal(datasets[0].obs.index, dataset.obs.index):
-                    raise ValueError('{} obs ids are not equal'.format(name))
-            data_type = dataset.uns.get('experiment_type')
+        if len(datasets) > 1:
+            for i in range(len(datasets)):
+                dataset = datasets[i]
+                if 'group' not in dataset.var:
+                    dataset.var['group'] = dataset.uns.get('name', 'dataset {}'.format(i + 1))
+                if i > 0 and not np.array_equal(datasets[0].obs.index, dataset.obs.index):
+                    raise ValueError('obs ids are not equal')
 
-            dataset_list = data_type2_datasets.get(data_type)
-            if dataset_list is None:
-                dataset_list = []
-                data_type2_datasets[data_type] = dataset_list
-            dataset_list.append(dataset)
-        datasets = []
-        for data_type in data_type2_datasets:
-            dataset_list = data_type2_datasets[data_type]
-            dataset = anndata.concat(dataset_list, axis=1) if len(dataset_list) > 1 else dataset_list[0]
-            dataset.var.index = dataset.var.index.str.replace('/', '_')
-            dataset.var_names_make_unique()
-            dataset.obs.index.name = 'index'
-            dataset.var.index.name = 'index'
-            datasets.append(dataset)
-        primary_dataset = datasets[0]
-        for i in range(1, len(datasets)):
-            dataset = datasets[i]
-            # mark duplicate in obs, then delete after computing DE
-            obs_duplicates = []
-            dataset.uns['cirro_obs_delete'] = obs_duplicates
-            for key in list(dataset.obs.keys()):
-                if key in primary_dataset.obs.columns and dataset.obs[key].equals(primary_dataset.obs[key]):
-                    obs_duplicates.append(key)
-                else:
-                    dataset.obs[prefix + key] = dataset.obs[key]
-                    del dataset.obs[key]
-
-            for key in list(dataset.obsm.keys()):
-                if key in primary_dataset.obsm and np.array_equal(dataset.obsm[key], primary_dataset.obsm[key]):
-                    del dataset.obsm[key]
-                else:
-                    dataset.obsm[prefix + key] = dataset.obsm[key]  # rename
-                    del dataset.obsm[key]
-
+        dataset = anndata.concat(datasets, axis=1, label='group') if len(datasets) > 1 else datasets[0]
+        dataset.var.index = dataset.var.index.str.replace('/', '_')
+        dataset.var_names_make_unique()
+        dataset.obs.index.name = 'index'
+        dataset.var.index.name = 'index'
         self.base_output = output
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
         self.dimensions = [] if not dimensions_supplied else dimensions
         self.measures = []
         self.others = []
-        for dataset in datasets:
-            for i in range(len(dataset.obs.columns)):
-                name = dataset.obs.columns[i]
+        self.dataset = dataset
+        if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
+            dataset.X = dataset.X.tocsc()
+        for i in range(len(dataset.obs.columns)):
+            name = dataset.obs.columns[i]
+            c = dataset.obs[name]
+            if pd.api.types.is_object_dtype(c):
+                dataset.obs[name] = dataset.obs[name].astype('category')
                 c = dataset.obs[name]
-                if pd.api.types.is_object_dtype(c):
-                    dataset.obs[name] = dataset.obs[name].astype('category')
-                    c = dataset.obs[name]
-                if not dimensions_supplied and pd.api.types.is_categorical_dtype(c):
-                    if 1 < len(c.cat.categories) < 2000:
-                        self.dimensions.append(name)
-                        if c.isna().sum() > 0:
-                            logger.info('Replacing nans in {}'.format(name))
-                            dataset.obs[name] = dataset.obs[name].astype(str)
-                            dataset.obs.loc[dataset.obs[name].isna(), name] = ''
-                            dataset.obs[name] = dataset.obs[name].astype('category')
-                    else:
-                        self.others.append(name)
-                elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
-                    self.measures.append('obs/' + name)
+            if not dimensions_supplied and pd.api.types.is_categorical_dtype(c):
+                if 1 < len(c.cat.categories) < 2000:
+                    self.dimensions.append(name)
+                    if c.isna().sum() > 0:
+                        logger.info('Replacing nans in {}'.format(name))
+                        dataset.obs[name] = dataset.obs[name].astype(str)
+                        dataset.obs.loc[dataset.obs[name].isna(), name] = ''
+                        dataset.obs[name] = dataset.obs[name].astype('category')
                 else:
                     self.others.append(name)
+            elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
+                self.measures.append('obs/' + name)
+            else:
+                self.others.append(name)
 
     def execute(self):
         output_format = self.output_format
+        dataset = self.dataset
         if self.groups is None and not self.no_auto_groups:
             groups = []
-            for dataset in self.datasets:
-                existing_fields = set()
-                scanpy_marker_keys = get_scanpy_marker_keys(dataset)
-                for key in scanpy_marker_keys:
-                    existing_fields.add(dataset.uns[key]['params']['groupby'])
-                for field in dataset.obs.columns:
-                    field_lc = field.lower()
-                    for cluster_field in cluster_fields:
-                        if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
-                            groups.append(field)
-                            break
+            existing_fields = set()
+            scanpy_marker_keys = get_scanpy_marker_keys(dataset)
+            for key in scanpy_marker_keys:
+                existing_fields.add(dataset.uns[key]['params']['groupby'])
+            for field in dataset.obs.columns:
+                field_lc = field.lower()
+                for cluster_field in cluster_fields:
+                    if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
+                        groups.append(field)
+                        break
             self.groups = groups
         if self.groups is not None and len(self.groups) > 0:
             use_pegasus = False
@@ -202,36 +147,31 @@ class PrepareData:
                     pass
             if not use_pegasus and not use_scanpy:
                 raise ValueError('Please install pegasuspy or scanpy to compute markers')
-            for dataset in self.datasets:
-                for group in self.groups:
-                    field = group
-                    if group not in dataset.obs:  # test if multiple comma separated fields
-                        split_groups = group.split(',')
-                        if len(split_groups) > 1:
-                            use_split_groups = True
-                            for split_group in split_groups:
-                                if split_group not in dataset.obs:
-                                    use_split_groups = False
-                                    break
-                            if use_split_groups:
-                                dataset.obs[field] = dataset.obs[split_groups[0]].str.cat(dataset.obs[split_groups[1:]],
-                                                                                          sep=',')
 
-                    if field in dataset.obs:
-                        if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
-                            dataset.obs[field] = dataset.obs[field].astype('category')
-                        if len(dataset.obs[field].cat.categories) > 1:
-                            print('Computing markers for {}'.format(field))
-                            key_added = 'rank_genes_' + str(field)
-                            if use_pegasus:
-                                pg.de_analysis(dataset, cluster=field, de_key=key_added)
-                            else:
-                                sc.tl.rank_genes_groups(dataset, field, key_added=key_added, method='t-test')
-        # remove duplicate obs fields after DE
-        for dataset in self.datasets:
-            obs_duplicates = dataset.uns.get('cirro_obs_delete', [])
-            for key in obs_duplicates:
-                del dataset.obs[key]
+            for group in self.groups:
+                field = group
+                if group not in dataset.obs:  # test if multiple comma separated fields
+                    split_groups = group.split(',')
+                    if len(split_groups) > 1:
+                        use_split_groups = True
+                        for split_group in split_groups:
+                            if split_group not in dataset.obs:
+                                use_split_groups = False
+                                break
+                        if use_split_groups:
+                            dataset.obs[field] = dataset.obs[split_groups[0]].str.cat(dataset.obs[split_groups[1:]],
+                                                                                      sep=',')
+
+                if field in dataset.obs:
+                    if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
+                        dataset.obs[field] = dataset.obs[field].astype('category')
+                    if len(dataset.obs[field].cat.categories) > 1:
+                        print('Computing markers for {}'.format(field))
+                        key_added = 'rank_genes_' + str(field)
+                        if use_pegasus:
+                            pg.de_analysis(dataset, cluster=field, de_key=key_added)
+                        else:
+                            sc.tl.rank_genes_groups(dataset, field, key_added=key_added, method='t-test')
 
         schema = self.get_schema()
         schema['format'] = output_format
@@ -260,39 +200,35 @@ class PrepareData:
                 with filesystem.open(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
                     out.write(to_json(full_result))
 
-        for dataset in self.datasets:
-            images = dataset.uns.get('images')
-            if images is not None:
-                image_dir = os.path.join(output_dir, 'images')
-                filesystem.makedirs(image_dir, exist_ok=True)
-                for image in images:
-                    src = image['image']
-                    dest = os.path.join(image_dir, os.path.basename(src))
-                    filesystem.copy(src, dest)
-                    image['image'] = 'images/' + os.path.basename(src)
+        images = dataset.uns.get('images')
+        if images is not None:
+            image_dir = os.path.join(output_dir, 'images')
+            filesystem.makedirs(image_dir, exist_ok=True)
+            for image in images:
+                src = image['image']
+                dest = os.path.join(image_dir, os.path.basename(src))
+                filesystem.copy(src, dest)
+                image['image'] = 'images/' + os.path.basename(src)
 
         if output_format == 'parquet':
-            from cirrocumulus.parquet_output import save_datasets_pq
-            save_datasets_pq(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
+            from cirrocumulus.parquet_output import save_dataset_pq
+            save_dataset_pq(dataset, schema, self.base_output, filesystem, self.save_whitelist)
         elif output_format == 'jsonl':
-            from cirrocumulus.jsonl_io import save_datasets_jsonl
-            save_datasets_jsonl(self.datasets, schema, output_dir, self.base_output, filesystem)
+            from cirrocumulus.jsonl_io import save_dataset_jsonl
+            save_dataset_jsonl(dataset, schema, output_dir, self.base_output, filesystem)
         elif output_format == 'zarr':
-            from cirrocumulus.zarr_output import save_datasets_zarr
-            save_datasets_zarr(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
-        elif output_format == 'h5ad':
-            from cirrocumulus.h5ad_output import save_datasets_h5ad
-            save_datasets_h5ad(self.datasets, schema, self.base_output, filesystem, self.save_whitelist)
+            from cirrocumulus.zarr_output import save_dataset_zarr
+            save_dataset_zarr(dataset, schema, self.base_output, filesystem, self.save_whitelist)
         else:
             raise ValueError("Unknown format")
 
     def get_schema(self):
-        result = datasets_schema(self.datasets)
+        result = dataset_schema(self.dataset, n_features=self.group_nfeatures)
         markers = result.get('markers', [])
 
         if self.markers is not None:  # add results specified from file
             markers += get_markers(self.markers)
-            markers = filter_markers(self.datasets[0], markers)  # TODO check if markers are in union of all features
+            markers = filter_markers(self.dataset, markers)  # TODO check if markers are in union of all features
 
         for marker in markers:
             if marker.get('id') is None:
@@ -314,7 +250,6 @@ def main(argsv):
                         help='Optional whitelist of fields to save. Only applies when output format is parquet',
                         choices=['obs', 'obsm', 'X'],
                         action='append')
-    parser.add_argument('--backed', help='Load h5ad file in backed mode', action='store_true')
     parser.add_argument('--markers',
                         help='Path to JSON file of precomputed markers that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]',
                         action='append')
@@ -359,7 +294,7 @@ def main(argsv):
             tmp_file = h5_file
             use_raw = True
             tmp_files.append(tmp_file)
-        adata = read_adata(input_dataset, backed=args.backed, spatial_directory=args.spatial, use_raw=use_raw)
+        adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
         adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset))[0]
 

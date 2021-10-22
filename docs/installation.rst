@@ -231,9 +231,9 @@ Developer Instructions
 
     pip install -e .
 
-- Install additional optional dependencies::
+- Install additional optional Python dependencies::
 
-    pip install s3fs tiledb
+    pip install s3fs
 
 - Install typescript::
 
@@ -243,9 +243,18 @@ Developer Instructions
 
     yarn install
 
+- Create an example h5ad file in ./data/pbmc3k_processed.h5ad::
+
+    import scanpy as sc
+    sc.datasets.pbmc3k_processed()
+
 - Launch cirrocumulus with the --no-open flag::
 
-    cirro launch path_to_h5ad_file --no-open
+    cirro launch ./data/pbmc3k_processed.h5ad --no-open
+
+- Alternatively, launch the cirrocumulus server (use cirro prepare_data to convert h5ad file to cirrocumulus format for server mode)::
+
+    cirro serve
 
 - Run JavaScript server in development mode::
 
