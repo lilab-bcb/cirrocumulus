@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from flask import Blueprint, Response, request, stream_with_context, current_app
@@ -482,7 +483,10 @@ def handle_job():
         if c == 'status' or c == 'params':
             if is_precomputed:
                 return dict(status='complete') if c == 'status' else dict()
-            return database_api.get_job(email=email, job_id=job_id, return_type=c)
+            job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+            if job is None:
+                return json_response('', 404)  # job deleted
+            return job
         if c != 'result':
             raise ValueError('c must be one of status, params, or result')
         if is_precomputed:  # precomputed result
@@ -493,7 +497,9 @@ def handle_job():
             dataset['url'] = map_url(dataset['url'])
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
+        logging.getLogger('cirro').info('here')
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+        logging.getLogger('cirro').info(job)
         if job is None:
             return json_response('', 404)  # job deleted
         import anndata

@@ -3,10 +3,10 @@ import os
 
 import pandas._libs.json as ujson
 from bson import ObjectId
-from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain, get_fs
 from pymongo import MongoClient
 
+from cirrocumulus.abstract_db import AbstractDB
+from cirrocumulus.util import get_email_domain, get_fs
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS, SERVER_CAPABILITY_EDIT_DATASET, \
     SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_JOBS, \
     SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES
@@ -58,6 +58,7 @@ class MongoDb(AbstractDB):
         update['category'] = category
         update['dataset_id'] = dataset_id
         update['original'] = original_value
+        update['last_updated'] = datetime.datetime.utcnow()
         if 'newValue' in update:  # backwards compatibility
             update['new'] = update.pop('newValue')
         collection.update_one(dict(cat_id=key), {'$set': update}, upsert=True)
@@ -192,7 +193,7 @@ class MongoDb(AbstractDB):
                 readers.remove(email)
             readers.add(email)
             dataset['readers'] = list(readers)
-
+        dataset['last_updated'] = datetime.datetime.utcnow()
         if dataset.get('id') is None:  # new dataset
             if email != '':
                 user = self.db.users.find_one(dict(email=email))
@@ -230,6 +231,7 @@ class MongoDb(AbstractDB):
         self.get_dataset(email, dataset_id)
         collection = self.db.feature_sets
         entity_update = {}
+        entity_update['last_updated'] = datetime.datetime.utcnow()
         if name is not None:
             entity_update['name'] = name
         if features is not None:
@@ -256,12 +258,10 @@ class MongoDb(AbstractDB):
         if not self.capabilities()[SERVER_CAPABILITY_JOBS]:
             return
         self.get_dataset(email, dataset_id)
-
         collection = self.db.jobs
         job_id = str(collection.insert_one(
             dict(dataset_id=dataset_id, status='pending', name=job_name, email=email, type=job_type, params=params,
                  submitted=datetime.datetime.utcnow())).inserted_id)
-
         return job_id
 
     def get_job(self, email, job_id, return_type):
@@ -286,7 +286,8 @@ class MongoDb(AbstractDB):
         self.get_dataset(email, dataset_id)
         collection = self.db.jobs
         results = []
-        for doc in collection.find(dict(dataset_id=dataset_id), dict(name=1, status=1, email=1, type=1, submitted=1)):
+        for doc in collection.find(dict(dataset_id=dataset_id),
+                                   dict(name=1, status=1, email=1, type=1, submitted=1, readonly=1)):
             results.append(
                 dict(id=str(doc['_id']), name=doc['name'], status=doc['status'], type=doc['type'], email=doc['email'],
                      submitted=doc.get('submitted'), readonly=doc.get('readonly', False)))

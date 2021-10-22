@@ -1,21 +1,21 @@
 import logging
-import math
 import os
 
 import anndata
+import math
 import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 from anndata import AnnData
-from cirrocumulus.de import DE
 
+from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
 from .util import create_instance, add_dataset_providers, get_fs, import_path
 
 executor = None
-job_id_2_future = None
+job_id_2_future = dict()
 
 logger = logging.getLogger('cirro')
 
@@ -61,7 +61,6 @@ def done_callback(future):
     for job_id in list(job_id_2_future.keys()):
         if job_id_2_future[job_id] == future:
             del job_id_2_future[job_id]
-
             logger.info('Job {} done'.format(job_id))
             break
 
@@ -74,7 +73,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
     import os
     is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
-        job_id_2_future = {}
+
         if not is_serve:
             max_workers = 1
         else:

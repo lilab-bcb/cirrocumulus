@@ -77,6 +77,9 @@ export class RestDataset {
 
     getJobStatus(id) {
         return fetch(API + '/job?c=status&id=' + id, {headers: {'Authorization': 'Bearer ' + getIdToken()}}).then(response => {
+            if (response.status === 404) {
+                return null;
+            }
             return response.json();
         });
     }
