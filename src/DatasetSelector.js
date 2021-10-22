@@ -1,8 +1,6 @@
 import {
     Checkbox,
-    Divider,
     ListItemText,
-    OutlinedInput,
     Select,
     Table,
     TableBody,
@@ -28,7 +26,6 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React, {useState} from 'react';
 import {connect} from 'react-redux';
 import {OPEN_DATASET_DIALOG, setDialog} from './actions';
-import {NATSORT, REACT_MD_OVERRIDES} from './util';
 import {intFormat} from './formatters';
 import {visuallyHidden} from '@mui/utils';
 import Box from '@mui/material/Box';
@@ -36,6 +33,7 @@ import Box from '@mui/material/Box';
 import {find, findIndex} from 'lodash';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
+import {NATSORT, REACT_MD_OVERRIDES} from './util';
 
 export function DatasetSelector(props) {
     const [searchText, setSearchText] = useState('');
@@ -191,8 +189,8 @@ export function DatasetSelector(props) {
                 <DialogContent sx={{height: '100vh'}}>
                     <TextField size="small" style={{paddingTop: 6}} type="text" placeholder={"Search"}
                                value={searchText}
+                               sx={{width: '80%', maxWidth: 800}}
                                onChange={onSearchChange}
-                               fullWidth={true}
                                helperText={"Search a specific field by typing the field name followed by a colon \":\" and then the term you are looking for"}
                                InputProps={searchText.trim() !== '' ? {
                                    endAdornment:
@@ -204,25 +202,28 @@ export function DatasetSelector(props) {
                                        </InputAdornment>
                                } : null}
                     />
+                    <FormControl sx={{m: 1}}>
+                        <Select
+                            size={"small"}
+
+                            variant={'standard'}
+                            labelId="dataset-selector-columns-label"
+                            id="dataset-selector-columns"
+                            multiple
+                            value={visibleColumns.map(item => item.id)}
+                            onChange={handleColumnsChange}
+                            renderValue={(selected) => 'Column Visibility'}
+                        >
+                            {allColumns.map((item) => (
+                                <MenuItem key={item.id} value={item.id}>
+                                    <Checkbox checked={findIndex(visibleColumns, c => c.id === item.id) !== -1}/>
+                                    <ListItemText primary={item.label}/>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                     <div>
-                        <FormControl size={"small"} sx={{float: 'right', transform: 'translateY(-20px)', m: 1}}>
-                            <Select
-                                variant={'standard'}
-                                labelId="dataset-selector-columns-label"
-                                id="dataset-selector-columns"
-                                multiple
-                                value={visibleColumns.map(item => item.id)}
-                                onChange={handleColumnsChange}
-                                renderValue={(selected) => 'Column Visibility'}
-                            >
-                                {allColumns.map((item) => (
-                                    <MenuItem key={item.id} value={item.id}>
-                                        <Checkbox checked={findIndex(visibleColumns, c => c.id === item.id) !== -1}/>
-                                        <ListItemText primary={item.label}/>
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+
 
                         <TableContainer>
                             <Table stickyHeader size={"small"} padding={"normal"}>
