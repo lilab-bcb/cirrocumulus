@@ -2389,7 +2389,8 @@ export function getDatasetStateJson(state) {
     for (let key in interpolator) {
         const typedInterpolator = interpolator[key];
         const defaultInterpolator = DEFAULT_INTERPOLATORS[key];
-        if (defaultInterpolator == null || typedInterpolator.name !== defaultInterpolator || typedInterpolator.reversed !== defaultInterpolator.reversed) {
+
+        if (defaultInterpolator == null || typedInterpolator.name !== defaultInterpolator.name || typedInterpolator.reversed !== defaultInterpolator.reversed) {
             if (json.interpolator == null) {
                 json.interpolator = {};
             }
