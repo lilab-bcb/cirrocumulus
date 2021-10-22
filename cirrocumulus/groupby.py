@@ -145,8 +145,6 @@ class GroupBy:
         frac_expressed_ = None
         if scipy.sparse.issparse(X):
             frac_expressed_ = asarray(A @ (X != 0))
-        else:
-            print('Skipping')
         index = pd.Index(keys, name=self.key, tupleize_cols=False)
         count_sr = pd.Series(index=index, data=count_, name="count")
         mean_df = pd.DataFrame(
