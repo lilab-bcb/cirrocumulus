@@ -61,7 +61,10 @@ class LocalDbAPI(AbstractDB):
 
             if os.path.exists(json_path) and os.path.getsize(json_path) > 0:
                 with open(json_path, 'rt') as f:
-                    json_data.update(json.load(f))
+                    try:
+                        json_data.update(json.load(f))
+                    except json.decoder.JSONDecodeError:
+                        print('Unable to load {}'.format(json_path))
             meta = create_dataset_meta(path)
             if 'filters' not in json_data:
                 json_data['filters'] = {}
