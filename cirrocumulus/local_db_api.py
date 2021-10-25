@@ -61,7 +61,10 @@ class LocalDbAPI(AbstractDB):
 
             if os.path.exists(json_path) and os.path.getsize(json_path) > 0:
                 with open(json_path, 'rt') as f:
-                    json_data.update(json.load(f))
+                    try:
+                        json_data.update(json.load(f))
+                    except json.decoder.JSONDecodeError:
+                        print('Unable to load {}'.format(json_path))
             meta = create_dataset_meta(path)
             if 'filters' not in json_data:
                 json_data['filters'] = {}
@@ -224,7 +227,7 @@ class LocalDbAPI(AbstractDB):
         return self.__get_entity(dataset_id=dataset_id, entity_id=view_id, kind='views')
 
     def upsert_dataset_view(self, email, dataset_id, view):
-        view['last_updated'] = datetime.datetime.utcnow()
+        view['last_updated'] = str(datetime.datetime.utcnow())
         if 'value' in view:
             view['value'] = json.dumps(view['value'])
         if email is not None:
@@ -236,10 +239,9 @@ class LocalDbAPI(AbstractDB):
         return dict(id=view_id, last_updated=view['last_updated'])
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
-        import datetime
         job_id = unique_id()
         self.job_id_to_job[job_id] = dict(id=job_id, dataset_id=dataset_id, name=job_name, type=job_type, params=params,
-                                          status=None, submitted=datetime.datetime.utcnow())
+                                          status=None, submitted=str(datetime.datetime.utcnow()))
         return job_id
 
     def get_job(self, email, job_id, return_type):
