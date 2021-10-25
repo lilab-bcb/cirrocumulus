@@ -20,6 +20,7 @@ class AnndataDataset(AbstractDataset):
 
     def read_adata(self, filesystem, path):
         path_lc = path.lower()
+        path_lc = path_lc.rstrip('/')
         if path_lc.endswith('.loom'):
             adata = anndata.read_loom(filesystem.open(path))
         elif path_lc.endswith('.zarr'):

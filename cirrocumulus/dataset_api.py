@@ -25,6 +25,7 @@ class DatasetAPI:
         if index == -1:
             return self.default_provider
         suffix = path[index + 1:].lower()
+        suffix = suffix.rstrip('/')
         provider = self.suffix_to_provider.get(suffix)
         return provider if provider is not None else self.default_provider
 
