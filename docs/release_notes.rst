@@ -1,5 +1,10 @@
 Release Notes
 -------------
+
+- 1.1.22.post6 `October 25, 2021`
+    * Preserve embeddings when multiple datasets passed to `cirro prepare_data`
+    * Fixed error saving dataset views
+
 - 1.1.22.post5 `October 22, 2021`
     * Separate color schemes for continuous observations, features, and modules
     * Explore gene modules stored in adata.uns['module']
