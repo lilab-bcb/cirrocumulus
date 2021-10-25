@@ -183,21 +183,54 @@ function ExplorePanel(props) {
     const [selectedPopupMenuItem, setSelectedPopupMenuItem] = useState(null);
     const [popupAnchorEl, setPopupAnchorEl] = useState(null);
     const [selectedItem, setSelectedItem] = useState({});
+    const {
+        categoricalNames,
+        classes,
+        combineDatasetFilters,
+        dataset,
+        datasetFilter,
+        embeddingLabels,
+        embeddings,
+        embeddingData,
+        handleDialog,
+        handleCombineDatasetFilters,
+        handleEmbeddingLabel,
+        handleDownloadSelectedIds,
+        handleActiveFeature,
+        handleTab,
+        handleDeleteFeatureSet,
+        handleEmbeddings,
+        handleSearchTokens,
+        markers,
+        removeDatasetFilter,
+        searchTokens,
+        selection,
+        serverInfo,
+        tab
+    } = props;
 
     function onDatasetFilterChipDeleted(name) {
-        props.removeDatasetFilter(name);
+        removeDatasetFilter(name);
     }
 
     function onDatasetFilterCleared() {
-        props.removeDatasetFilter(null);
+        removeDatasetFilter(null);
     }
 
-    function handleCombineDatasetFilters(event) {
-        props.handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
+    function onCombineDatasetFilters(event) {
+        handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
     }
 
     function onFeaturesChange(event, value) {
-        props.handleSearchTokens(value, FEATURE_TYPE.X);
+        let values = [];
+        value.forEach(item => {
+            if (item.id !== undefined) {
+                values.push(item.id);
+            } else {
+                values.push(item);
+            }
+        });
+        handleSearchTokens(values, FEATURE_TYPE.X);
     }
 
     function onModulesChange(event, value) {
@@ -209,11 +242,11 @@ function ExplorePanel(props) {
                 values.push(item);
             }
         });
-        props.handleSearchTokens(values, FEATURE_TYPE.MODULE);
+        handleSearchTokens(values, FEATURE_TYPE.MODULE);
     }
 
     function onObservationsIconClick(event, option) {
-        props.handleEmbeddingLabel(option);
+        handleEmbeddingLabel(option);
         event.stopPropagation();
     }
 
@@ -226,24 +259,24 @@ function ExplorePanel(props) {
                 values.push(val);
             }
         });
-        props.handleSearchTokens(values, FEATURE_TYPE.OBS);
+        handleSearchTokens(values, FEATURE_TYPE.OBS);
     }
 
     function onSaveFeatureList() {
-        props.handleDialog(SAVE_FEATURE_SET_DIALOG);
+        handleDialog(SAVE_FEATURE_SET_DIALOG);
     }
 
 
     function onEmbeddingsChange(event, value) {
         const selection = [];
-        const embeddingKeys = props.dataset.embeddings.map(item => getEmbeddingKey(item));
+        const embeddingKeys = dataset.embeddings.map(item => getEmbeddingKey(item));
         value.forEach(val => {
             const id = val.id !== undefined ? val.id : val;
             const index = embeddingKeys.indexOf(id);
-            let embedding = props.dataset.embeddings[index];
+            let embedding = dataset.embeddings[index];
             selection.push(embedding);
         });
-        props.handleEmbeddings(selection);
+        handleEmbeddings(selection);
     }
 
     function onFeatureSetsChange(event, value) {
@@ -255,14 +288,13 @@ function ExplorePanel(props) {
                 values.push(val);
             }
         });
-        props.handleSearchTokens(values, FEATURE_TYPE.FEATURE_SET);
+        handleSearchTokens(values, FEATURE_TYPE.FEATURE_SET);
     }
 
     function onFeatureSetClick(event, option) {
         event.stopPropagation();
         const id = option.id;
         const target = event.target.closest(".MuiFormControl-root");
-        let markers = props.markers;
         let newFeatureSet = null;
         for (let i = 0; i < markers.length; i++) {
             if (markers[i].id === id) {
@@ -280,8 +312,7 @@ function ExplorePanel(props) {
     function onModulesClick(event, option) {
         event.stopPropagation();
         const target = event.target.closest(".MuiFormControl-root");
-
-        const modules = props.dataset.modules;
+        const modules = dataset.modules;
         let selectedItem;
         for (let i = 0, n = modules.length; i < n; i++) {
             if (modules[i].id == option) {
@@ -318,11 +349,11 @@ function ExplorePanel(props) {
 
     function onDeleteFeatureSet(event) {
         event.stopPropagation();
-        let searchTokens = props.searchTokens;
+
         const featureSetId = selectedItem.value.id;
         let value = searchTokens.filter(token => token.type === FEATURE_TYPE.FEATURE_SET && token.value.id !== featureSetId);
-        props.handleSearchTokens(value, FEATURE_TYPE.FEATURE_SET);
-        props.handleDeleteFeatureSet(featureSetId);
+        handleSearchTokens(value, FEATURE_TYPE.FEATURE_SET);
+        handleDeleteFeatureSet(featureSetId);
         setSelectedItem({});
         setPopupAnchorEl(null);
     }
@@ -334,25 +365,25 @@ function ExplorePanel(props) {
     function onFeatureCopy(event) {
         event.preventDefault();
         event.stopPropagation();
-        let searchTokens = props.searchTokens;
         copyToClipboard(searchTokens.filter(token => token.type === FEATURE_TYPE.X).map(item => item.value).join('\n'));
+
     }
 
     function onDownloadSelectedIds(event) {
         event.preventDefault();
-        props.handleDownloadSelectedIds();
+        handleDownloadSelectedIds();
     }
 
     function onFeatureClick(event, option) {
         event.stopPropagation();
         const value = option.text !== undefined ? option.text : option;
-        let galleryTraces = props.embeddingData.filter(traceInfo => traceInfo.active);
+        let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name === value) {
                 if (props.tab !== 'embedding') {
-                    props.handleTab('embedding');
+                    handleTab('embedding');
                 }
-                props.handleActiveFeature({
+                handleActiveFeature({
                     name: galleryTraces[i].name,
                     type: galleryTraces[i].featureType,
                     embeddingKey: getTraceKey(galleryTraces[i])
@@ -362,20 +393,6 @@ function ExplorePanel(props) {
         }
     }
 
-    const {
-        categoricalNames,
-        classes,
-        combineDatasetFilters,
-        dataset,
-        datasetFilter,
-        embeddingLabels,
-        embeddings,
-        markers,
-        searchTokens,
-        selection,
-        serverInfo,
-        tab
-    } = props;
 
     const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
     datasetFilterKeys.sort(NATSORT);
@@ -460,7 +477,7 @@ function ExplorePanel(props) {
 
             <Typography gutterBottom={false} component={"h1"}
                         style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
-            {tab === 'embedding' && embeddingOptions.length > 0 &&
+            {embeddingOptions.length > 0 &&
             <FormControl sx={{display: 'block'}}>
                 <AutocompleteVirtualized label={"Embeddings"}
                                          testId={'embeddings-input'}
@@ -481,8 +498,16 @@ function ExplorePanel(props) {
                                          testId={'genes-input'}
                                          options={featureOptions}
                                          value={xSearchTokens}
-                                         getOptionLabel={(option) => option}
+                                         getOptionSelected={(option, value) => option.id === value}
+                                         groupBy={(option) => option.group}
                                          onChange={onFeaturesChange}
+                                         getOptionLabel={(option) => option.text}
+                                         onChipClick={onFeatureClick}
+                                         // getChipIcon={(option) => {
+                                         //     return <ArrowDropDownIcon onClick={(event) => {
+                                         //         onFeatureClick(event, option);
+                                         //     }}/>;
+                                         // }}
                                          helperText={"Enter or paste list"}
 
                 />
@@ -497,6 +522,16 @@ function ExplorePanel(props) {
                     onClick={onFeatureCopy}>Copy</Link></div>
 
             </FormControl>}
+            {/*{layerOptions.length > 0 &&*/}
+            {/*<FormControl sx={{display: 'block'}}>*/}
+            {/*    <AutocompleteVirtualized label={"Layers"}*/}
+            {/*                             testId={'layers-input'}*/}
+            {/*                             options={layerOptions}*/}
+            {/*                             value={layers}*/}
+            {/*                             getOptionLabel={(option) => option}*/}
+            {/*                             onChange={onLayersChange}*/}
+            {/*    />*/}
+            {/*</FormControl>}*/}
             {annotationOptions.length > 0 && <FormControl sx={{display: 'block'}}>
                 <AutocompleteVirtualized label={"Cell Metadata"}
                                          testId={'cell-meta-input'}
@@ -531,6 +566,7 @@ function ExplorePanel(props) {
                     value={moduleTokens}
                     getOptionSelected={(option, value) => option.id === value}
                     groupBy={(option) => option.group}
+                    selectGroup={true}
                     onChange={onModulesChange}
                     getOptionLabel={(option) => option.text}
                     onChipClick={onModulesClick}
@@ -584,7 +620,7 @@ function ExplorePanel(props) {
                     <Switch
                         size="small"
                         checked={combineDatasetFilters === 'or'}
-                        onChange={handleCombineDatasetFilters}
+                        onChange={onCombineDatasetFilters}
                     />
                 </Grid>
                 <Grid item>OR</Grid>
@@ -647,7 +683,7 @@ const mapStateToProps = state => {
         };
     }
 ;
-const mapDispatchToProps = (dispatch, ownProps) => {
+const mapDispatchToProps = (dispatch) => {
     return {
         handleDialog: (value) => {
             dispatch(setDialog(value));

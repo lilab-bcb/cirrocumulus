@@ -50,15 +50,6 @@ class AnndataDataset(AbstractDataset):
             adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
                                                               var=adata.uns['module']['var'])
         return adata
-        # elif path.endswith('.mtx'):
-        #
-        #     return anndata.read_mtx(path, backed=self.backed)
-        # elif path.endswith('.txt'):
-        #
-        #     return anndata.read_text(path, backed=self.backed)
-        # elif path.endswith('.csv'):
-        #
-        #     return anndata.read_csv(path, backed=self.backed)
 
     def add_data(self, path, data):
         self.path_to_data[path] = data

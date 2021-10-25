@@ -595,7 +595,7 @@ const mapStateToProps = state => {
         };
     }
 ;
-const mapDispatchToProps = (dispatch, ownProps) => {
+const mapDispatchToProps = (dispatch) => {
         return {
             onSearchTokens: (payload) => {
                 dispatch(setSearchTokensDirectly(payload));
