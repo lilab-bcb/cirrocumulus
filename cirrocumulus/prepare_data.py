@@ -80,8 +80,9 @@ class PrepareData:
                     dataset.var['group'] = dataset.uns.get('name', 'dataset {}'.format(i + 1))
                 if i > 0 and not np.array_equal(datasets[0].obs.index, dataset.obs.index):
                     raise ValueError('obs ids are not equal')
-
-        dataset = anndata.concat(datasets, axis=1, label='group') if len(datasets) > 1 else datasets[0]
+            dataset = anndata.concat(datasets, axis=1, label='group', merge='unique')
+        else:
+            dataset = datasets[0]
         dataset.var.index = dataset.var.index.str.replace('/', '_')
         dataset.var_names_make_unique()
         dataset.obs.index.name = 'index'

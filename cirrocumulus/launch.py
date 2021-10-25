@@ -1,5 +1,7 @@
 import os
 
+import anndata
+
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.envir import CIRRO_DATABASE, CIRRO_AUTH, CIRRO_JOB_TYPE, CIRRO_JOB_RESULTS, CIRRO_CELL_ONTOLOGY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP
@@ -29,49 +31,15 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths)
         dataset_id = dataset_paths[0]
         dataset_ids.append(dataset_id)
         if len(dataset_paths) > 1:
-            to_concat = []
-            all_ids = None
-            for path in dataset_paths:
-                d = anndata_dataset.get_data(get_fs(path), path)
-                all_ids = d.obs.index.union(all_ids) if all_ids is not None else d.obs.index
-                to_concat.append(d)
-            for i in range(len(to_concat)):
-                d = to_concat[i]
-                missing_ids = all_ids.difference(d.obs.index)
-                if len(missing_ids) > 0:
-                    import scipy.sparse
-                    import anndata
-                    import pandas as pd
-                    X = None
-                    if d.shape[1] > 0:
-                        empty = scipy.sparse.csr_matrix((len(missing_ids), d.shape[1]))
-                        X = scipy.sparse.vstack((d.X, empty), format='csr')
-                    missing_df = pd.DataFrame(index=missing_ids)
-                    for column in d.obs:
-                        if pd.api.types.is_bool_dtype(d.obs[column]):
-                            missing_df[column] = False
-
-                    obs = pd.concat((d.obs, missing_df))
-                    # for column in d.obs:
-                    #     if pd.api.types.is_categorical_dtype(d.obs[column]):
-                    #         obs[column] = obs[column].astype('category')
-                    d = anndata.AnnData(X=X, obs=obs, var=d.var)
-                d = d[all_ids]  # same order
-                to_concat[i] = d
-            X_list = []
-            obs = None
-            obsm = {}
-            var = None
-            for d in to_concat:
-                if d.shape[1] > 0:
-                    X_list.append(d.X)
-                    var = pd.concat((var, d.var)) if var is not None else d.var
-                obs = obs.join(d.obs) if obs is not None else d.obs
-                for key in d.obsm_keys():
-                    obsm[key] = d.obsm[key]
-
-            X = scipy.sparse.hstack(X, format='csr') if len(X_list) > 1 else X_list[0]
-            adata = anndata.AnnData(X=X, obs=obs, var=var, obsm=obsm)
+            datasets = []
+            for i in range(len(dataset_paths)):
+                dataset = anndata_dataset.get_data(get_fs(dataset_paths[i]), dataset_paths[i])
+                if 'group' not in dataset.var:
+                    dataset.var['group'] = dataset.uns.get('name', 'dataset {}'.format(i + 1))
+                datasets.append(dataset)
+            adata = anndata.concat(datasets, axis=1, label='group', merge='unique')
+            dataset.obsm = datasets[0].obsm
+            adata.var.index = adata.var.index.str.replace('/', '_')
             adata.var_names_make_unique()
             anndata_dataset.add_data(dataset_id, adata)
         dataset_api.add(anndata_dataset)
