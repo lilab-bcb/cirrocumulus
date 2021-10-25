@@ -293,10 +293,16 @@ export function openView(id, loadDataset = false) {
 }
 
 
+/**
+ *
+ * @param payload Object with name, notes
+ * @returns {(function(*=, *): void)|*}
+ */
 export function saveView(payload) {
     return function (dispatch, getState) {
         const state = getState();
         const value = getDatasetStateJson(state);
+        payload.value = value;
         delete value['dataset'];
         payload = Object.assign({ds_id: state.dataset.id}, payload);
         dispatch(_setLoading(true));
@@ -2054,7 +2060,7 @@ function getNewEmbeddingData(state, features) {
 
                 const featureType = searchToken != null ? searchToken.type : FEATURE_TYPE.COUNT;
 
-                let isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
+                const isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
                 let colorScale = null;
 
                 if (!isCategorical) {
@@ -2087,7 +2093,11 @@ function getNewEmbeddingData(state, features) {
                     if (featureSummary.customMax != null && !isNaN(featureSummary.customMax)) {
                         domain[1] = featureSummary.customMax;
                     }
-                    const typeInterpolator = interpolator[featureType];
+                    let typeInterpolator = interpolator[featureType];
+                    if (typeInterpolator == null) {
+                        typeInterpolator = DEFAULT_INTERPOLATORS[FEATURE_TYPE.X];
+                        interpolator[featureType] = typeInterpolator;
+                    }
                     colorScale = createColorScale(typeInterpolator).domain(domain);
 
                 } else {
