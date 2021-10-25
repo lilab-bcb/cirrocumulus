@@ -1,4 +1,4 @@
-import {isPlainObject} from 'lodash';
+import {isPlainObject, isString} from 'lodash';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
@@ -137,7 +137,7 @@ function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
  *
  * @param state Array of {value:str, type:str} where type is one of FEATURE_TYPE
  * @param action
- * @returns {*|*[]}
+ * @returns Array of search token objects
  */
 function searchTokens(state = [], action) {
     switch (action.type) {
@@ -181,6 +181,31 @@ function dataset(state = null, action) {
     switch (action.type) {
         case SET_DATASET:
             document.title = action.payload == null ? 'Cirro' : action.payload.name + ' - Cirro';
+            let features = action.payload.var;
+            if (features) {
+                if (features.length > 0 && isString(features[0])) {
+                    features = features.map(item => {
+                        return {id: item, group: ''};
+                    });
+                }
+                features.forEach(item => {
+                    if (item.group == null) {
+                        item.group = ''; // set default group
+                    }
+                    item.text = item.id;
+                    if (item.text.startsWith(item.group + '-')) { // hide group
+                        item.text = item.text.substring(item.group.length + 1);
+                    }
+                });
+                features.sort((item1, item2) => {
+                    const g = NATSORT(item1.group.toLowerCase(), item2.group.toLowerCase());
+                    if (g !== 0) {
+                        return g;
+                    }
+                    return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
+                });
+                action.payload.features = features;
+            }
             return action.payload;
         case UPDATE_DATASET:
             if (action.payload.id === state.id) { // update name, description, url
