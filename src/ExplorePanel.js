@@ -502,7 +502,6 @@ function ExplorePanel(props) {
                                          groupBy={(option) => option.group}
                                          onChange={onFeaturesChange}
                                          getOptionLabel={(option) => option.text}
-                                         onChipClick={onFeatureClick}
                                          // getChipIcon={(option) => {
                                          //     return <ArrowDropDownIcon onClick={(event) => {
                                          //         onFeatureClick(event, option);
