@@ -42,11 +42,11 @@ function renderRow(props) {
         inlineStyle.whiteSpace = 'nowrap';
         return dataSet.group === '' ? null :
             <ListSubheader disableGutters={true} key={dataSet.key} component="div" style={inlineStyle}>
-                {dataSet.group}{dataSet.selectGroup &&
-            <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>}
+                {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
             </ListSubheader>;
 
     }
+
     const item = dataSet[1];
     const text = item.text != null ? item.text : item;
     const icon = item.icon != null ? item.icon : null;
