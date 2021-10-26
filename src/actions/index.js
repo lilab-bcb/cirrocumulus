@@ -25,7 +25,6 @@ import {
     getFeatureSets,
     getInterpolator,
     indexSort,
-    NATSORT,
     randomSeq,
     SERVER_CAPABILITY_ADD_DATASET,
     SERVER_CAPABILITY_RENAME_CATEGORIES,
@@ -2043,8 +2042,14 @@ function getNewEmbeddingData(state, features) {
                     values = values.value;
                 }
                 const searchToken = find(searchTokens, (item => item.value === feature));
-
-                const featureType = searchToken != null ? searchToken.type : FEATURE_TYPE.COUNT;
+                let featureType;
+                if (searchToken) {
+                    featureType = searchToken.type;
+                }
+                // could also be feature in a set
+                if (featureType == null) {
+                    featureType = feature === '__count' ? FEATURE_TYPE.COUNT : FEATURE_TYPE.X;
+                }
 
                 const isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
                 let colorScale = null;
