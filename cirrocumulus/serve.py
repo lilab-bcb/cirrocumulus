@@ -35,9 +35,9 @@ def configure_app(app):
         os.environ[CIRRO_DATABASE_CLASS] = 'cirrocumulus.local_db_api.LocalDbAPI'
 
     app.config[CIRRO_DATABASE] = create_instance(os.environ[CIRRO_DATABASE_CLASS])
-    os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(['cirrocumulus.tiledb_dataset.TileDBDataset',
+    os.environ[CIRRO_DATASET_PROVIDERS] = ','.join(['cirrocumulus.parquet_dataset.ParquetDataset',
                                                     'cirrocumulus.zarr_dataset.ZarrDataset',
-                                                    'cirrocumulus.parquet_dataset.ParquetDataset'])
+                                                    'cirrocumulus.tiledb_dataset.TileDBDataset'])
     add_dataset_providers()
 
 
