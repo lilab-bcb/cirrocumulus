@@ -452,16 +452,7 @@ function ExplorePanel(props) {
         >
             <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.id : ''}</DialogTitle>
             <DialogContent>
-
                 {detailsView(selectedItem.value)}
-                {/*<DataGrid*/}
-                {/*    rows={rows}*/}
-                {/*    columns={columns}*/}
-                {/*    pageSize={5}*/}
-                {/*    rowsPerPageOptions={[5]}*/}
-                {/*    checkboxSelection*/}
-                {/*    disableSelectionOnClick*/}
-                {/*/>*/}
             </DialogContent>
         </Dialog>}
 
@@ -502,11 +493,11 @@ function ExplorePanel(props) {
                                          groupBy={(option) => option.group}
                                          onChange={onFeaturesChange}
                                          getOptionLabel={(option) => option.text}
-                                         // getChipIcon={(option) => {
-                                         //     return <ArrowDropDownIcon onClick={(event) => {
-                                         //         onFeatureClick(event, option);
-                                         //     }}/>;
-                                         // }}
+                    // getChipIcon={(option) => {
+                    //     return <ArrowDropDownIcon onClick={(event) => {
+                    //         onFeatureClick(event, option);
+                    //     }}/>;
+                    // }}
                                          helperText={"Enter or paste list"}
 
                 />
