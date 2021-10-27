@@ -6,7 +6,6 @@ import anndata
 import numpy as np
 import pandas as pd
 import scipy.sparse
-
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json, get_fs
@@ -85,8 +84,8 @@ class PrepareData:
             dataset = datasets[0]
         dataset.var.index = dataset.var.index.str.replace('/', '_')
         dataset.var_names_make_unique()
-        dataset.obs.index.name = 'index'
-        dataset.var.index.name = 'index'
+        dataset.obs.index.name = 'id'
+        dataset.var.index.name = 'id'
         self.base_output = output
         dimensions_supplied = dimensions is not None and len(dimensions) > 0
         self.dimensions = [] if not dimensions_supplied else dimensions
