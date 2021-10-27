@@ -63,27 +63,6 @@ class AppHeader extends React.PureComponent {
     };
 
 
-    handleEmbeddingsChange = (event) => {
-
-        const embeddings = event.target.value;
-        const selection = [];
-        embeddings.forEach(embedding => {
-
-            if (!embedding.precomputed) {
-                embedding = Object.assign(embedding, {
-                    bin: this.props.binValues,
-                    nbins: this.props.numberOfBins,
-                    _nbins: this.props.numberOfBinsUI,
-                    agg: this.props.binSummary
-                });
-            }
-            selection.push(embedding);
-
-        });
-        this.props.handleEmbeddings(selection);
-    };
-
-
     handleUserMenuClose = () => {
         this.setState({userMenuOpen: false});
     };
@@ -165,6 +144,7 @@ class AppHeader extends React.PureComponent {
     render() {
         const {
             dataset,
+            datasetSelectorColumns,
             distributionData,
             loadingApp,
             jobResults,
@@ -175,8 +155,6 @@ class AppHeader extends React.PureComponent {
             tab,
             user
         } = this.props;
-
-
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
         const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
@@ -190,7 +168,7 @@ class AppHeader extends React.PureComponent {
         return (
             <AppBar position="fixed" sx={{width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`}}>
                 <Toolbar variant="dense" style={{paddingLeft: 6}}>
-                    {dataset != null && <Popover
+                    {dataset != null && datasetDetailsOpen && <Popover
                         id={"dataset-details"}
                         open={datasetDetailsOpen}
                         anchorEl={this.state.datasetDetailsEl}
@@ -204,19 +182,15 @@ class AppHeader extends React.PureComponent {
                             horizontal: 'center'
                         }}
                     >
-
                         <Box style={{width: 500, padding: '1em'}}>
                             <Typography>
-                                {dataset.name}
+                                <b>{dataset.name}</b>
                             </Typography>
                             <Divider/>
-                            {dataset.species && <Typography>
-                                Species: {dataset.species}
-                            </Typography>}
-
-                            {dataset.title && <Typography>
-                                Title: {dataset.title}
-                            </Typography>}
+                            {datasetSelectorColumns.map(c => {
+                                return c.id === 'name' || dataset[c.id] == null ? null :
+                                    <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
+                            })}
                             {dataset.description &&
                             <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
                                                           children={dataset.description}/></>}
@@ -242,7 +216,7 @@ class AppHeader extends React.PureComponent {
                         }}
                         href="#"
                         underline={"none"}
-                        onClick={this.handleShowDatasetDetails}
+                        onClick={dataset.id != null && datasetSelectorColumns ? this.handleShowDatasetDetails : null}
                         aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
                         aria-haspopup="true"
                         component={"h3"}>
@@ -268,12 +242,6 @@ class AppHeader extends React.PureComponent {
                     </Tabs>}
 
                     <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
-                        {/*{serverInfo.brand && <Typography variant="h5"*/}
-                        {/*                                 style={{*/}
-                        {/*                                     display: 'inline-block',*/}
-                        {/*                                     paddingRight: 6*/}
-                        {/*                                 }}>{serverInfo.brand}</Typography>}*/}
-
                         {serverInfo.brand &&
                         <ReactMarkdown options={{
                             overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
@@ -282,9 +250,7 @@ class AppHeader extends React.PureComponent {
                                 const elem = React.createElement(type, props, children);
                                 return elem;
                             }
-                        }}
-
-                                       children={serverInfo.brand}/>}
+                        }} children={serverInfo.brand}/>}
 
 
                         {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
@@ -378,6 +344,7 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         datasetChoices: state.datasetChoices,
         datasetFilter: state.datasetFilter,
+        datasetSelectorColumns: state.serverInfo.datasetSelectorColumns,
         dialog: state.dialog,
         distributionData: state.distributionData,
         distributionPlotInterpolator: state.distributionPlotInterpolator,
@@ -401,7 +368,7 @@ const mapStateToProps = state => {
         user: state.user
     };
 };
-const mapDispatchToProps = (dispatch, ownProps) => {
+const mapDispatchToProps = (dispatch) => {
     return {
         handleTab: (value) => {
             dispatch(setTab(value));

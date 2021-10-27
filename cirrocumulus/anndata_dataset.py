@@ -50,15 +50,6 @@ class AnndataDataset(AbstractDataset):
             adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(X=adata.uns['module']['X'],
                                                               var=adata.uns['module']['var'])
         return adata
-        # elif path.endswith('.mtx'):
-        #
-        #     return anndata.read_mtx(path, backed=self.backed)
-        # elif path.endswith('.txt'):
-        #
-        #     return anndata.read_text(path, backed=self.backed)
-        # elif path.endswith('.csv'):
-        #
-        #     return anndata.read_csv(path, backed=self.backed)
 
     def add_data(self, path, data):
         self.path_to_data[path] = data
@@ -117,7 +108,7 @@ class AnndataDataset(AbstractDataset):
             if X is None:  # anndata requires empty X
                 X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
-            obs = pd.DataFrame(index=pd.RangeIndex(adata.shape[0]))
+            obs = pd.DataFrame(index=pd.RangeIndex(adata.shape[0]).astype(str))
 
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:

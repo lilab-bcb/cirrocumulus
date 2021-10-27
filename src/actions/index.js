@@ -1543,21 +1543,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         function onPromisesComplete() {
             newDataset = Object.assign({}, dataset, newDataset);
             newDataset.api = dataset.api;
-            newDataset.features = newDataset.var;
-            newDataset.features.sort((a, b) => {
-                a = a.toLowerCase();
-                b = b.toLowerCase();
-                const aIsDigit = a[0] >= '0' && a[0] <= '9';
-                const bIsDigit = b[0] >= '0' && b[0] <= '9';
-                if (aIsDigit) {
-                    a = 'zzzzzz' + a;
-                }
-                if (bIsDigit) {
-                    b = 'zzzzzz' + b;
-                }
-                // put features that start with a number last
-                return (a < b ? -1 : (a === b ? 0 : 1));
-            });
             newDataset.id = id;
             dispatch(_setDataset(newDataset));
 
@@ -2057,8 +2042,14 @@ function getNewEmbeddingData(state, features) {
                     values = values.value;
                 }
                 const searchToken = find(searchTokens, (item => item.value === feature));
-
-                const featureType = searchToken != null ? searchToken.type : FEATURE_TYPE.COUNT;
+                let featureType;
+                if (searchToken) {
+                    featureType = searchToken.type;
+                }
+                // could also be feature in a set
+                if (featureType == null) {
+                    featureType = feature === '__count' ? FEATURE_TYPE.COUNT : FEATURE_TYPE.X;
+                }
 
                 const isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
                 let colorScale = null;

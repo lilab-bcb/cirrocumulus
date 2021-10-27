@@ -40,12 +40,13 @@ function renderRow(props) {
 
     if (dataSet.hasOwnProperty('group')) {
         inlineStyle.whiteSpace = 'nowrap';
-        return (
+        return dataSet.group === '' ? null :
             <ListSubheader disableGutters={true} key={dataSet.key} component="div" style={inlineStyle}>
                 {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
-            </ListSubheader>
-        );
+            </ListSubheader>;
+
     }
+
     const item = dataSet[1];
     const text = item.text != null ? item.text : item;
     const icon = item.icon != null ? item.icon : null;
@@ -98,7 +99,7 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
 
     const getChildSize = (child) => {
         if (child.hasOwnProperty('group')) {
-            return 30;
+            return child.group === '' ? 0 : 30;
         }
 
         return itemSize;
@@ -257,8 +258,7 @@ export default function AutocompleteVirtualized(props) {
         getOptionLabel = props.groupBy ? (option) => option.text : (option) => option;
     }
 
-    const selectGroup = (event, group) => {
-
+    const selectGroup = props.selectGroup ? (event, group) => {
         const uniqueValues = new Set(value);
         options.forEach(option => {
             if (option.group === group && !uniqueValues.has(option.id)) {
@@ -268,7 +268,7 @@ export default function AutocompleteVirtualized(props) {
         // ensure everything in group is added
         // newValue.splice(index, 1);
         props.onChange(event, Array.from(uniqueValues));
-    };
+    } : null;
 
     const filterOptions = (options, {inputValue}) => {
         inputValue = inputValue.trim().toLowerCase();

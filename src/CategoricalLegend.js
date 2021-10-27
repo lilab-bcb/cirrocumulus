@@ -44,7 +44,6 @@ export default function CategoricalLegend(props) {
     useEffect(() => {
         const p = legendScrollPosition[name];
         if (p != null) {
-            console.log('scrollTo');
             listRef.current.scrollTo(p);
         }
 
@@ -295,6 +294,9 @@ export default function CategoricalLegend(props) {
                                 label={"Positive Genes/Features"}
                                 options={features}
                                 value={positiveMarkers}
+                                getOptionSelected={(option, value) => option.id === value}
+                                groupBy={(option) => option.group}
+                                getOptionLabel={(option) => option.text}
                                 onChange={onPositiveMarkers}
                             />
                             <div><Link
@@ -314,6 +316,9 @@ export default function CategoricalLegend(props) {
                                 label={"Negative Genes/Features"}
                                 options={features}
                                 value={negativeMarkers}
+                                getOptionSelected={(option, value) => option.id === value}
+                                groupBy={(option) => option.group}
+                                getOptionLabel={(option) => option.text}
                                 onChange={onNegativeMarkers}
                             />
                             <div><Link

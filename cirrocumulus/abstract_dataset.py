@@ -3,7 +3,6 @@ import os
 from abc import abstractmethod, ABC
 
 import pandas as pd
-
 from cirrocumulus.api import get_file_path
 
 
@@ -28,7 +27,8 @@ class AbstractDataset(ABC):
        """
         s = self.get_schema(filesystem, path)
         d = dict()
-        d['var'] = pd.Index(s['var'])
+        var = s['var']
+        d['var'] = pd.Index(map(lambda x: x['id'], var)) if isinstance(var[0], dict) else pd.Index(var)
         d['shape'] = s['shape']
         return d
 

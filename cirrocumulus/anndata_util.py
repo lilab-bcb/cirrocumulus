@@ -243,6 +243,13 @@ def dataset_schema(dataset, n_features=10):
     images_node = dataset.uns.get('images',
                                   [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
     image_names = list(map(lambda x: x['name'], images_node))
+    layers = []
+    try:
+        dataset.layers  # dataset can be AnnData or zarr group
+        layers = list(dataset.layers.keys())
+        # adata.list_keys()
+    except AttributeError:
+        pass
 
     for key in dataset.obsm.keys():
         dim = dataset.obsm[key].shape[1]
@@ -265,15 +272,14 @@ def dataset_schema(dataset, n_features=10):
     schema_dict['markers'] = marker_results
     schema_dict['embeddings'] = embeddings
     schema_dict['categoryOrder'] = category_to_order
-    var_ids = []
-    modules_df = None
 
-    ids = dataset.var.index[...]
-    if isinstance(ids, np.ndarray):
-        ids = ids.tolist()
-    else:  # pd.Index
-        ids = ids.to_list()
-    var_ids += ids
+    var_df = dataset.var
+    if not isinstance(var_df, pd.DataFrame):
+        from anndata._io.zarr import read_attribute
+        var_df = read_attribute(dataset.var)
+    var_df.index.name = 'id'
+    schema_dict['var'] = var_df.reset_index().to_dict(orient='records')
+    modules_df = None
     if ADATA_MODULE_UNS_KEY in dataset.uns and isinstance(dataset.uns[ADATA_MODULE_UNS_KEY], anndata.AnnData):
         modules_df = dataset.uns[ADATA_MODULE_UNS_KEY].var
         #  if not isinstance(module_var, pd.DataFrame):
@@ -282,7 +288,7 @@ def dataset_schema(dataset, n_features=10):
     if modules_df is not None:
         modules_df.index.name = 'id'
         schema_dict['modules'] = modules_df.reset_index().to_dict(orient='records')
-    schema_dict['var'] = var_ids
+
     schema_dict['obs'] = obs
     schema_dict['obsCat'] = obs_cat
     shape = dataset.shape if isinstance(dataset, anndata.AnnData) else dataset.X.attrs.shape

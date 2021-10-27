@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.22.post7 `October 25, 2021`
+    * Fixed default color scale for displaying features in sets
 
 - 1.1.22.post6 `October 25, 2021`
     * Preserve embeddings when multiple datasets passed to `cirro prepare_data`
