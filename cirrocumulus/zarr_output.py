@@ -10,7 +10,10 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     module_dataset = None
     if dataset.uns.get(ADATA_MODULE_UNS_KEY) is not None:
         module_dataset = dataset.uns[ADATA_MODULE_UNS_KEY]
+        module_dataset.var.index.name = 'id'
 
+    dataset.obs.index.name = 'id'
+    dataset.var.index.name = 'id'
     dataset.strings_to_categoricals()
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
