@@ -8,7 +8,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 from anndata import AnnData
-
 from cirrocumulus.abstract_dataset import AbstractDataset
 
 max_workers = min(12, pa.cpu_count())
@@ -105,7 +104,7 @@ class ParquetDataset(AbstractDataset):
                 if X is None:
                     X = scipy.sparse.coo_matrix((vals.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
-            obs = pd.DataFrame(index=pd.RangeIndex(shape[0]))
+            obs = pd.DataFrame(index=pd.RangeIndex(shape[0]).astype(str))
         if X is None and obs is None and len(obsm.keys()) == 0:
             X = scipy.sparse.csc_matrix(tuple(shape))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
