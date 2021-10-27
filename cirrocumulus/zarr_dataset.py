@@ -1,8 +1,8 @@
 import json
 
 import zarr
-
 from cirrocumulus.abstract_backed_dataset import AbstractBackedDataset
+from cirrocumulus.anndata_util import dataset_schema
 
 
 class ZarrDataset(AbstractBackedDataset):
@@ -23,5 +23,6 @@ class ZarrDataset(AbstractBackedDataset):
         return X.get_orthogonal_selection((slice(None), indices))
 
     def get_schema(self, filesystem, path):
-        with zarr.open_group(filesystem.get_mapper(path), mode='r') as g:
-            return json.loads(str(g['uns']['cirro-schema'][...]))
+        g = zarr.open_group(filesystem.get_mapper(path), mode='r')
+        return json.loads(str(g['uns']['cirro-schema'][...])) if 'cirro-schema' in g['uns'] else dataset_schema(g,
+                                                                                                                n_features=0)
