@@ -116,6 +116,11 @@ or categorical values:
 .. image:: images/categorical_filter.png
 
 
+Run differential expression analysis:
+
+.. image:: images/de.gif
+
+
 The side bar contains additional controls, such as the embedding point size and opacity.
 
 Distributions
