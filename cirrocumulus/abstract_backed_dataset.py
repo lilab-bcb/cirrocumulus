@@ -35,15 +35,21 @@ class AbstractBackedDataset(AbstractDataset):
 
     def get_dataset_info(self, filesystem, path):
         d = {}
-        with self.open_group(filesystem, path) as group:
-            var_ids = group['var/index'][...]
-            if pd.api.types.is_object_dtype(var_ids):
-                var_ids = var_ids.astype(str)
-            d['var'] = pd.Index(var_ids)
-            X = group['X']
-            d['shape'] = X.attrs['shape'] if self.is_group(X) else X.shape
-            if 'uns' in group and 'module' in group['uns']:
-                module_ids = group['uns/module/var/id'][...]
+        root = self.open_group(filesystem, path)
+        var_group = root['var']
+        var_group_index_field = var_group.attrs['_index']
+        var_ids = var_group[var_group_index_field][...]
+        if pd.api.types.is_object_dtype(var_ids):
+            var_ids = var_ids.astype(str)
+        d['var'] = pd.Index(var_ids)
+        X = root['X']
+        d['shape'] = X.attrs['shape'] if self.is_group(X) else X.shape
+        if 'uns' in root:
+            uns_group = root['uns']
+            if 'module' in uns_group:
+                module_var_group = uns_group['module/var']
+                module_var_group_index_field = module_var_group.attrs['_index']
+                module_ids = module_var_group[module_var_group_index_field][...]
                 if pd.api.types.is_object_dtype(module_ids):
                     module_ids = module_ids.astype(str)
                 d['module'] = pd.Index(module_ids)
@@ -82,7 +88,8 @@ class AbstractBackedDataset(AbstractDataset):
             group = root['obs']
             for key in obs_keys:
                 if key == 'index':
-                    values = group['index'][...]
+                    index_field = group.attrs['_index']
+                    values = group[index_field][...]
                     if pd.api.types.is_object_dtype(values):
                         values = values.astype(str)
                 else:
