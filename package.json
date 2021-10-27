@@ -9,7 +9,7 @@
     "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
     "@mui/icons-material": "^5.0.5",
-    "@mui/material": "^5.0.5",
+    "@mui/material": "^5.0.6",
     "@mui/styles": "^5.0.2",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^12.1.2",
@@ -45,7 +45,7 @@
     "redux-thunk": "^2.4.0",
     "simplify-js": "^1.2.4",
     "three": "^0.133.1",
-    "typescript": "4.3.4",
+    "typescript": "^4.4.4",
     "web-vitals": "^2.1.2"
   },
   "scripts": {
