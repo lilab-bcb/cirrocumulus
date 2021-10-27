@@ -1,6 +1,5 @@
 import {Typography} from '@mui/material';
 import Chip from '@mui/material/Chip';
-import ListSubheader from '@mui/material/ListSubheader';
 import {styled, useTheme} from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -39,11 +38,22 @@ function renderRow(props) {
 
 
     if (dataSet.hasOwnProperty('group')) {
+        if (dataSet.group === '') {
+            return null;
+        }
+
         inlineStyle.whiteSpace = 'nowrap';
-        return dataSet.group === '' ? null :
-            <ListSubheader disableGutters={true} key={dataSet.key} component="div" style={inlineStyle}>
-                {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
-            </ListSubheader>;
+
+        const textMatch = dataSet.inputValue != null ? getTextMatch(dataSet.group, dataSet.inputValue) : null;
+        if (textMatch) {
+            return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
+                {textMatch[0]}<b>{textMatch[1]}</b>{textMatch[2]} <Link href="#"
+                                                                        onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
+            </Typography>;
+        }
+        return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
+            {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
+        </Typography>;
 
     }
 
@@ -152,6 +162,7 @@ const StyledPopper = styled(Popper)({
 
 export default function AutocompleteVirtualized(props) {
     const ref = React.createRef();
+    const inputValueRef = React.createRef('');
     const {value, options, onChange} = props;
 
     function onDrop(event) {
@@ -172,11 +183,11 @@ export default function AutocompleteVirtualized(props) {
 
         reader.readAsText(files[0]);
         showDragIndicator(false);
-    };
+    }
 
     function enterTokens(event, tokens) {
         const results = value;
-        tokens = tokens.map(token => token.toLowerCase().trim().replace(/"/g, '')).filter(token => token !== '');
+        tokens = tokens.map(token => token.toLowerCase().trim().replace(/["']/g, '')).filter(token => token !== '');
         if (tokens.length > 0) {
             let textToOption = new Map();
             for (let i = 0; i < options.length; i++) {
@@ -209,7 +220,7 @@ export default function AutocompleteVirtualized(props) {
             let tokens = text.split(/[\n,\t]/);
             enterTokens(event, tokens);
         }
-    };
+    }
 
     function showDragIndicator(show) {
         ref.current.style.background = show ? '#1976d2' : '';
@@ -222,13 +233,13 @@ export default function AutocompleteVirtualized(props) {
             showDragIndicator(true);
         }
 
-    };
+    }
 
     function onDragEnd(event) {
         event.preventDefault();
         event.stopPropagation();
         showDragIndicator(false);
-    };
+    }
 
 
     const onChipClick = props.onChipClick ? (event, option) => {
@@ -291,6 +302,11 @@ export default function AutocompleteVirtualized(props) {
                 }
             } else if (index !== -1) {
                 containsMatches.push(option);
+            } else if (props.groupBy) { // check group
+                const groupIndex = option.group.toLowerCase().indexOf(inputValue);
+                if (groupIndex !== -1) {
+                    exactMatches.push(option);
+                }
             }
         }
         return exactMatches.concat(startsWithMatches).concat(containsMatches);
@@ -335,6 +351,7 @@ export default function AutocompleteVirtualized(props) {
         );
     });
     const multiple = props.multiple != null ? props.multiple : true;
+
     return <>
         <Autocomplete
             data-testid={props.testId}
@@ -366,7 +383,11 @@ export default function AutocompleteVirtualized(props) {
             )}
             renderGroup={(params) => {
                 params.selectGroup = selectGroup;
+                params.inputValue = inputValueRef.current;
                 return params;
+            }}
+            onInputChange={(event, value, reason) => {
+                inputValueRef.current = value;
             }}
             renderOption={(props, option, {inputValue}) => [props, option, inputValue]}
             onPaste={onPaste}
@@ -384,5 +405,5 @@ export default function AutocompleteVirtualized(props) {
 
     </>;
 };
-;
-;
+
+
