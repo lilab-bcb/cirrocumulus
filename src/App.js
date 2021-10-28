@@ -107,9 +107,10 @@ class App extends PureComponent {
                                                     value={loadingApp.progress}/></h2>
                     </div>}
 
-                    {dataset == null && !loading && !loadingApp.loading && <div><LandingPage/></div>}
-                    {dataset != null && <>
-                        <div
+                    {dataset == null && tab === 'embedding' && !loading && !loadingApp.loading &&
+                    <div><LandingPage/></div>}
+                    {<>
+                        {dataset != null && <div
                             role="tabpanel"
                             hidden={tab !== 'embedding'}
                         >
@@ -118,25 +119,25 @@ class App extends PureComponent {
                             <div ref={this.galleryRef}>
                                 {<GalleryCharts/>}
                             </div>
-                        </div>
-                        <div
+                        </div>}
+                        {dataset != null && <div
                             role="tabpanel"
                             hidden={tab !== 'distribution'}
                         >
                             {<DistributionPlots setTooltip={this.setTooltip}/>}
-                        </div>
-                        <div
+                        </div>}
+                        {dataset != null && <div
                             role="tabpanel"
                             hidden={tab !== 'composition'}
                         >
                             {<CompositionPlots/>}
-                        </div>
-                        <div
+                        </div>}
+                        {dataset != null && <div
                             role="tabpanel"
                             hidden={tab !== 'results'}
                         >
                             {<JobResultPanel setTooltip={this.setTooltip}/>}
-                        </div>
+                        </div>}
                         <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
                                     style={{
                                         position: 'fixed',
