@@ -345,7 +345,7 @@ function ScatterChartThree(props) {
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         const showFog = chartOptions.showFog;
-        const isSelectionEmpty = selection.size === 0;
+        const isSelectionEmpty = selection == null;
         let pointOrder;
         if (is3d) {
             pointOrder = new Uint32Array(npoints);

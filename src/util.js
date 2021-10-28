@@ -196,7 +196,7 @@ export function summarizeDensity(values, index, selection, summarizationMethod) 
     } else {
         throw new Error();
     }
-    const isSelectionEmpty = selection.size === 0;
+    const isSelectionEmpty = selection == null;
     for (let i = 0, n = index.length; i < n; i++) {
         const indices = index[i];
         const summarizedValue = summarize(isSelectionEmpty ? indices : indices.filter(item => selection.has(item)));

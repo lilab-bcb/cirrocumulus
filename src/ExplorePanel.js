@@ -268,15 +268,15 @@ function ExplorePanel(props) {
 
 
     function onEmbeddingsChange(event, value) {
-        const selection = [];
+        const newValue = [];
         const embeddingKeys = dataset.embeddings.map(item => getEmbeddingKey(item));
         value.forEach(val => {
             const id = val.id !== undefined ? val.id : val;
             const index = embeddingKeys.indexOf(id);
             let embedding = dataset.embeddings[index];
-            selection.push(embedding);
+            newValue.push(embedding);
         });
-        handleEmbeddings(selection);
+        handleEmbeddings(newValue);
     }
 
     function onFeatureSetsChange(event, value) {
@@ -615,7 +615,7 @@ function ExplorePanel(props) {
                 </Grid>
                 <Grid item>OR</Grid>
             </Grid>
-            {datasetFilterKeys.length > 0 && selection.size > 0 &&
+            {datasetFilterKeys.length > 0 && selection != null &&
             <>
                 <div style={{marginBottom: 2}}>
                     {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}

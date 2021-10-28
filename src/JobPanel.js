@@ -173,7 +173,7 @@ function JobPanel(props) {
                     title={"Choose a specific pair"}><Grid item>SELECTED</Grid></Tooltip>
             </Grid>
             {compareGroups === 'selected' &&
-            <ButtonGroup variant="outlined" disabled={selection.size === 0}>
+            <ButtonGroup variant="outlined" disabled={selection == null || selection.size === 0}>
                 <Tooltip
                     title={'Group one' + (group1Count ? ' (' + intFormat(group1Count) + ' cells)' : '')}>
                     <Button size={"small"}

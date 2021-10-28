@@ -120,7 +120,7 @@ class EmbeddingChart extends React.PureComponent {
             console.log(activeFeature.embeddingKey + ' not found');
             return null;
         }
-        const nObsSelected = selection.size;
+        const nObsSelected = selection != null ? selection.size : 0;
         const activeEmbeddingLabels = getActiveEmbeddingLabels(searchTokens, embeddingLabels);
         const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
         return (
