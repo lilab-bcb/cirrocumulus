@@ -11,10 +11,10 @@ const styles = theme => ({
 
     root: {
         '& > *': {
-            margin: theme.spacing(.4),
+            margin: theme.spacing(.4)
         },
         '& > .MuiIconButton-root': {
-            padding: 0,
+            padding: 0
         },
         position: 'absolute',
         zIndex: 1,
@@ -23,14 +23,14 @@ const styles = theme => ({
         display: 'inline-block',
         verticalAlign: 'top',
         whiteSpace: 'nowrap',
-        overflow: 'hidden',
+        overflow: 'hidden'
     }
 });
 
 export function createCategoryToStats(trace, selection) {
     const categoryToStats = {};
     const categoryToIndices = trace.categoryToIndices;
-    const selectionEmpty = selection.size === 0;
+    const selectionEmpty = selection == null;
     for (const category in categoryToIndices) {
         const indices = categoryToIndices[category];
         const valueToCount = {};
@@ -252,7 +252,7 @@ class MetaEmbedding extends React.PureComponent {
             </div>
 
             <div style={{
-                display: 'inline-block',
+                display: 'inline-block'
                 // width: this.props.chartSize.width,
                 // height: this.props.chartSize.height
             }}
