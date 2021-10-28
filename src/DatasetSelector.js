@@ -125,7 +125,7 @@ export function DatasetSelector(props) {
                 <DialogContent sx={{height: '100vh'}}>
                     <CirroTable rows={datasetChoices} columns={datasetSelectorColumns} onItemClick={onItemClick}
                                 isSelected={isSelected} renderCell={renderCell} onSearchText={onSearchText}
-                                searchText={searchText}/>
+                                searchText={searchText} rowId={item => item.id}/>
                 </DialogContent>
             </Dialog>
         </React.Fragment>

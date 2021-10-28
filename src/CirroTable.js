@@ -25,7 +25,7 @@ import MenuItem from '@mui/material/MenuItem';
 import {findIndex} from 'lodash';
 
 export default function CirroTable(props) {
-    const {isSelected, onItemClick, rows, columns, renderCell, onSearchText, searchText} = props;
+    const {isSelected, onItemClick, rows, columns, rowId, renderCell, onSearchText, searchText} = props;
 
     const [rowsPerPage, setRowsPerPage] = useState(30);
     const [page, setPage] = useState(0);
@@ -172,10 +172,10 @@ export default function CirroTable(props) {
                 <TableBody>
                     {filteredRows
                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((row) => {
+                        .map((row, rowIndex) => {
                             return (
-                                <TableRow selected={isSelected(row)} hover role="checkbox"
-                                          tabIndex={-1} key={row.field}
+                                <TableRow selected={isSelected(row, rowIndex)} hover role="checkbox"
+                                          tabIndex={-1} key={rowId(row, rowIndex)}
                                           onClick={(e) => handleItemClick(row)}>
                                     {visibleColumns.map((column, columnIndex) => {
                                         return (
