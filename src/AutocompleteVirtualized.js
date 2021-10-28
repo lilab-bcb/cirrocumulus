@@ -47,12 +47,13 @@ function renderRow(props) {
         const textMatch = dataSet.inputValue != null ? getTextMatch(dataSet.group, dataSet.inputValue) : null;
         if (textMatch) {
             return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
-                {textMatch[0]}<b>{textMatch[1]}</b>{textMatch[2]} <Link href="#"
-                                                                        onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
+                {textMatch[0]}<b>{textMatch[1]}</b>{textMatch[2]} {dataSet.selectGroup && <Link href="#"
+                                                                                                onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>}
             </Typography>;
         }
         return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
-            {dataSet.group} <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>
+            {dataSet.group} {dataSet.selectGroup &&
+        <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>}
         </Typography>;
 
     }

@@ -575,6 +575,7 @@ function ExplorePanel(props) {
                                          getChipTitle={(option) => {
                                              return option.category + ', ' + option.name;
                                          }}
+                                         selectGroup={true}
                                          onChipClick={onFeatureSetClick}
                                          getChipIcon={(option) => {
                                              return <ArrowDropDownIcon onClick={(event) => {
