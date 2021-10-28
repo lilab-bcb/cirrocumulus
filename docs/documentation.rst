@@ -24,12 +24,18 @@ For spatial data, you can overlay genes or cell metadata on top of an image:
 .. image:: images/spatial.png
 
 
+Interact with the view:
 
-Use the mouse wheel to zoom. Pan with left mouse-click (2-d) or right-click (3-d). Rotate 3-d plots using left-mouse click.
-Hover hover a data point to see the underlying value.
+- Pan: Mouse left click (2-d), right click (3-d)
+- Hover: Hover a data point to see the underlying value
+- Rotate 3-d: Mouse left click
+- Zoom: Mouse wheel
+- Select: When using lasso or select tool, hold down the Ctrl or Command key to add to selection
+- Resize: Click and drag the divider below the primary embedding
+- Tooltip: Mouse move
+- Select Category: Mouse double-click
 
 .. image:: images/embedding.gif
-
 
 The primary embedding view enables fast, interactive exploration of 1.3 million cells. Note that higher values are plotted on top of lower values for genes, whereas categorical values are plotted in random order:
 
