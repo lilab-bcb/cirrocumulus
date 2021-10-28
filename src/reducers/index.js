@@ -442,12 +442,12 @@ function serverInfo(state = {}, action) {
                 action.payload.ontology.cellTypes.sort((item1, item2) => NATSORT(item1.text, item2.text));
             }
             if (action.payload.datasetSelectorColumns == null) {
-                action.payload.datasetSelectorColumns = [{id: 'name', label: 'Name', visible: true}, {
-                    id: 'species',
+                action.payload.datasetSelectorColumns = [{field: 'name', label: 'Name', visible: true}, {
+                    field: 'species',
                     label: 'Species',
                     visible: true
                 }, {
-                    id: 'title',
+                    field: 'title',
                     label: 'Title',
                     visible: true
                 }];
