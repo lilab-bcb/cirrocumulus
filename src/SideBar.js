@@ -572,7 +572,6 @@ const mapStateToProps = state => {
             pointSize: state.pointSize,
             savedDatasetFilter: state.savedDatasetFilter,
             searchTokens: state.searchTokens,
-            selection: state.selection,
             serverInfo: state.serverInfo,
             tab: state.tab,
             textColor: state.textColor,

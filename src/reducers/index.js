@@ -383,12 +383,12 @@ function user(state = {}, action) {
 }
 
 
-function selection(state = new Set(), action) {
+function selection(state = null, action) {
     switch (action.type) {
         case SET_SELECTION:
             return action.payload;
         case SET_DATASET:
-            return new Set();
+            return null;
         default:
             return state;
     }

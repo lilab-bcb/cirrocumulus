@@ -90,6 +90,5 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             }
         }
     }
-
     return passingIndices;
 }

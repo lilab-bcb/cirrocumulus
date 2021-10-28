@@ -254,7 +254,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     let positions = traceInfo.positions;
 
     const npoints = traceInfo.x.length;
-    const isSelectionEmpty = selection.size === 0;
+    const isSelectionEmpty = selection == null;
     const updateZ = !isSelectionEmpty && !is3d;
     if (updateZ) {
         positions = positions.slice();

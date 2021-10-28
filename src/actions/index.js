@@ -706,8 +706,8 @@ function handleFilterUpdated() {
         }
 
         if (filter == null) {
-            if (state.selection.size !== 0) {
-                dispatch(setSelection(new Set()));
+            if (state.selection != null) { // reset
+                dispatch(setSelection(null));
             }
             dispatch(setSelectedDistributionData([]));
             dispatch(setFeatureSummary({}));

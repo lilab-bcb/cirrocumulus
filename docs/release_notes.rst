@@ -1,7 +1,8 @@
 Release Notes
 -------------
-- 1.1.22.post7 `October 25, 2021`
+- 1.1.22.post7 `October 28, 2021`
     * Fixed default color scale for displaying features in sets
+    * Changed single-click to double-click for selecting categorical values on primary embedding
 
 - 1.1.22.post6 `October 25, 2021`
     * Preserve embeddings when multiple datasets passed to `cirro prepare_data`

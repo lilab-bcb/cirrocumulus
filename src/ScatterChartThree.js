@@ -100,13 +100,35 @@ function ScatterChartThree(props) {
     const lastHoverIndexRef = useRef();
     const [forceUpdate, setForceUpdate] = useState(false);
     const previousChartSizeRef = useRef();
+    const previousCameraPosition = useRef({x: -1, y: -1, z: -1});
+
+    const {
+        cachedData,
+        categoricalNames,
+        chartOptions,
+        chartSize,
+        classes,
+        handleClick,
+        markerOpacity,
+        obsCat,
+        onCamera,
+        onGallery,
+        onSelected,
+        pointSize,
+        selection,
+        setChartOptions,
+        setTooltip,
+        trace,
+        unselectedMarkerOpacity,
+        unselectedPointSize
+    } = props;
+
 
     function getSelectedIndex(point) {
-        const trace = props.trace;
         const positions = trace.positions;
         const camera = scatterPlotRef.current.camera;
-        const widthHalf = props.chartSize.width / 2;
-        const heightHalf = props.chartSize.height / 2;
+        const widthHalf = chartSize.width / 2;
+        const heightHalf = chartSize.height / 2;
         const pos = new Vector3();
         let selectedIndex = -1;
         const tolerance = 2;
@@ -143,41 +165,53 @@ function ScatterChartThree(props) {
 
     useEffect(() => {
         init();
-        if (previousChartSizeRef.current !== props.chartSize) {
+        if (previousChartSizeRef.current !== chartSize) {
             scatterPlotRef.current.resize();
         }
         draw();
-        setAxesColors(scatterPlotRef.current, props.chartOptions.darkMode);
-        props.chartOptions.scatterPlot = scatterPlotRef.current;
-        if (props.chartOptions.camera) {
-            scatterPlotRef.current.updateFromCameraDef(props.chartOptions.camera);
-            props.chartOptions.camera = null;
+        setAxesColors(scatterPlotRef.current, chartOptions.darkMode);
+        chartOptions.scatterPlot = scatterPlotRef.current;
+        if (chartOptions.camera) {
+            scatterPlotRef.current.updateFromCameraDef(chartOptions.camera);
+            chartOptions.camera = null;
         }
-        previousChartSizeRef.current = props.chartSize;
+        previousChartSizeRef.current = chartSize;
+        let singleClickTimer;
+        let clickCount = 0;
+
         scatterPlotRef.current.clickCallback = (point, append) => {
-            if (!props.trace.continuous) {
-                const selectedIndex = getSelectedIndex(point);
-                if (selectedIndex !== -1) {
-                    props.handleClick({
-                        name: props.trace.name,
-                        value: props.trace.values[selectedIndex],
-                        shiftKey: false,
-                        metaKey: append
-                    });
+            if (!trace.continuous) {
+                clickCount++;
+                if (clickCount === 1) {
+                    singleClickTimer = setTimeout(() => {
+                        clickCount = 0; // reset after timeout
+                    }, 400);
+                } else if (clickCount === 2) {
+                    clearTimeout(singleClickTimer);
+                    clickCount = 0;
+                    const selectedIndex = getSelectedIndex(point);
+                    if (selectedIndex !== -1) {
+                        handleClick({
+                            name: trace.name,
+                            value: trace.values[selectedIndex],
+                            shiftKey: false,
+                            metaKey: append
+                        });
+                    }
+                    lastHoverIndexRef.current = selectedIndex;
                 }
-                lastHoverIndexRef.current = selectedIndex;
+
             }
 
         };
         scatterPlotRef.current.hoverCallback = (point) => {
             if (point == null) {
-                props.setTooltip('');
+                setTooltip('');
             } else {
                 const selectedIndex = getSelectedIndex(point);
                 if (selectedIndex !== -1) {
-                    const {trace} = props;
                     let value = trace.values[selectedIndex];
-                    let categoryObject = props.categoricalNames[trace.name] || {};
+                    let categoryObject = categoricalNames[trace.name] || {};
                     let renamedValue = categoryObject[value];
                     if (renamedValue != null && renamedValue.newValue != null) {
                         value = renamedValue.newValue;
@@ -189,18 +223,18 @@ function ScatterChartThree(props) {
                             value = value.substring(0, value.lastIndexOf('.'));
                         }
                     }
-                    props.setTooltip('' + value);
+                    setTooltip('' + value);
                 } else {
-                    props.setTooltip('');
+                    setTooltip('');
                 }
             }
         };
         scatterPlotRef.current.lassoCallback = (points, appendToSelection) => {
-            const trace = props.trace;
+
             const positions = trace.positions;
             const camera = scatterPlotRef.current.camera;
-            const widthHalf = props.chartSize.width / 2;
-            const heightHalf = props.chartSize.height / 2;
+            const widthHalf = chartSize.width / 2;
+            const heightHalf = chartSize.height / 2;
             const pos = new Vector3();
             const selectedIndices = new Set();
 
@@ -216,9 +250,9 @@ function ScatterChartThree(props) {
                 }
             }
             if (selectedIndices.size === 0) {
-                props.onSelected({name: getEmbeddingKey(trace.embedding)});
+                onSelected({name: getEmbeddingKey(trace.embedding)});
             } else {
-                props.onSelected({
+                onSelected({
                     name: getEmbeddingKey(trace.embedding),
                     clear: !appendToSelection,
                     value: {basis: trace.embedding, indices: selectedIndices}
@@ -229,11 +263,11 @@ function ScatterChartThree(props) {
             if (scatterPlotRef.current.interactionMode === 'PAN') {
                 return;
             }
-            const trace = props.trace;
+
             const positions = trace.positions;
             const camera = scatterPlotRef.current.camera;
-            const widthHalf = props.chartSize.width / 2;
-            const heightHalf = props.chartSize.height / 2;
+            const widthHalf = chartSize.width / 2;
+            const heightHalf = chartSize.height / 2;
             const pos = new Vector3();
             const selectedIndices = new Set();
 
@@ -250,19 +284,20 @@ function ScatterChartThree(props) {
             }
 
             if (selectedIndices.size === 0) {
-                props.onSelected({name: getEmbeddingKey(trace.embedding)});
+                onSelected({name: getEmbeddingKey(trace.embedding)});
             } else {
-                props.onSelected({
+                onSelected({
                     name: getEmbeddingKey(trace.embedding),
                     clear: !appendToSelection,
                     value: {basis: trace.embedding, indices: selectedIndices}
                 });
             }
         };
-        scatterPlotRef.current.cameraCallback = (eventName) => {
-            if (scatterPlotRef.current.interactionMode === 'PAN' && props.trace.dimensions === 3) {
+        scatterPlotRef.current.cameraCallback = (eventName, position, target) => {
+            if (scatterPlotRef.current.interactionMode === 'PAN' && trace.dimensions === 3) {
                 // repaint gallery charts with same embedding
-                if (eventName === 'end') {
+                if (eventName === 'end' && (previousCameraPosition.current.x != position.x || previousCameraPosition.current.y != position.y || previousCameraPosition.current.z != position.z)) {
+                    previousCameraPosition.current = position;
                     cameraCallback(eventName);
                 }
             }
@@ -286,19 +321,9 @@ function ScatterChartThree(props) {
     }
 
     function drawContext(context, chartSize, format) {
-        const {
-            obsCat,
-            cachedData,
-            trace,
-            markerOpacity,
-            unselectedMarkerOpacity,
-            selection,
-            categoricalNames,
-            chartOptions
-        } = props;
         const scatterPlot = scatterPlotRef.current;
         const pointSize = calculatePointSize(trace);
-        const scaleFactor = props.pointSize;
+        const scaleFactor = pointSize;
         const PI2 = 2 * Math.PI;
         const colors = trace.colors;
         const positions = trace.positions;
@@ -317,7 +342,7 @@ function ScatterChartThree(props) {
         let outputPointSize;
         let fog = scatterPlot.scene.fog;
         let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-        // const zoomFactor = getScaleFactor(props.chartSize);
+        // const zoomFactor = getScaleFactor(chartSize);
         // const zoomFactorSpecified = false;
 
         if (!is3d) {
@@ -345,7 +370,7 @@ function ScatterChartThree(props) {
         let modelViewMatrix = object.modelViewMatrix.clone();
         modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
         const showFog = chartOptions.showFog;
-        const isSelectionEmpty = selection.size === 0;
+        const isSelectionEmpty = selection == null;
         let pointOrder;
         if (is3d) {
             pointOrder = new Uint32Array(npoints);
@@ -411,7 +436,6 @@ function ScatterChartThree(props) {
     }
 
     function onSaveImage(format) {
-        const {trace, chartSize} = props;
         saveImage(trace, chartSize, drawContext, format);
     }
 
@@ -419,8 +443,8 @@ function ScatterChartThree(props) {
     function resetCamera() {
         const scatterPlot = scatterPlotRef.current;
         scatterPlot.resetZoom();
-        if (scatterPlot.interactionMode === 'PAN' && props.trace.dimensions === 3) {
-            props.onCamera('change', scatterPlot.getCameraDef());
+        if (scatterPlot.interactionMode === 'PAN' && trace.dimensions === 3) {
+            onCamera('change', scatterPlot.getCameraDef());
         }
     }
 
@@ -428,20 +452,20 @@ function ScatterChartThree(props) {
     function onShowAxis() {
         const scatterPlot = scatterPlotRef.current;
         const axes = scatterPlot.scene.getObjectByName('axes');
-        props.chartOptions.showAxis = !props.chartOptions.showAxis;
+        chartOptions.showAxis = !chartOptions.showAxis;
         if (axes) {
-            axes.visible = props.chartOptions.showAxis;
+            axes.visible = chartOptions.showAxis;
         }
 
-        props.setChartOptions(props.chartOptions);
+        setChartOptions(chartOptions);
     }
 
     function onShowFog() {
         const scatterPlot = scatterPlotRef.current;
-        props.chartOptions.showFog = !props.chartOptions.showFog;
+        chartOptions.showFog = !chartOptions.showFog;
         const spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-        spriteVisualizer.styles.fog.enabled = props.chartOptions.showFog;
-        props.setChartOptions(props.chartOptions);
+        spriteVisualizer.styles.fog.enabled = chartOptions.showFog;
+        setChartOptions(chartOptions);
     }
 
 
@@ -456,45 +480,45 @@ function ScatterChartThree(props) {
             scatterPlot.rectangleSelector.setSelectionMode('LASSO');
             scatterPlot.setInteractionMode('SELECT');
         }
-        props.chartOptions.dragmode = mode;
-        props.setChartOptions(props.chartOptions);
+        chartOptions.dragmode = mode;
+        setChartOptions(chartOptions);
     }
 
     function onToggleAnimation() {
         const scatterPlot = scatterPlotRef.current;
         if (scatterPlot.orbitIsAnimating()) {
             scatterPlot.stopOrbitAnimation();
-            props.chartOptions.animating = false;
+            chartOptions.animating = false;
         } else {
             scatterPlot.startOrbitAnimation();
-            props.chartOptions.animating = true;
+            chartOptions.animating = true;
         }
-        props.setChartOptions(props.chartOptions);
+        setChartOptions(chartOptions);
 
     }
 
     function cameraCallback(eventName) {
-        props.onCamera(eventName, scatterPlotRef.current.getCameraDef());
+        onCamera(eventName, scatterPlotRef.current.getCameraDef());
     }
 
     function init() {
         if (scatterPlotRef.current == null) {
             scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, true);
-            if (props.chartOptions.dragmode === 'pan') {
+            if (chartOptions.dragmode === 'pan') {
                 scatterPlotRef.current.setInteractionMode('PAN');
-            } else if (props.chartOptions.dragmode === 'select') {
+            } else if (chartOptions.dragmode === 'select') {
                 scatterPlotRef.current.setInteractionMode('SELECT');
                 scatterPlotRef.current.rectangleSelector.setSelectionMode('BOX');
-            } else if (props.chartOptions.dragmode === 'lasso') {
+            } else if (chartOptions.dragmode === 'lasso') {
                 scatterPlotRef.current.setInteractionMode('SELECT');
                 scatterPlotRef.current.rectangleSelector.setSelectionMode('LASSO');
             }
             const axes = scatterPlotRef.current.scene.getObjectByName('axes');
             if (axes) {
-                axes.visible = props.chartOptions.showAxis;
-                axes.setColors(props.chartOptions.darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
+                axes.visible = chartOptions.showAxis;
+                axes.setColors(chartOptions.darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
             }
-            getVisualizer(scatterPlotRef.current, POINT_VISUALIZER_ID).styles.fog.enabled = props.chartOptions.showFog;
+            getVisualizer(scatterPlotRef.current, POINT_VISUALIZER_ID).styles.fog.enabled = chartOptions.showFog;
             const canvas = containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
             const webglcontextlost = (e) => {
@@ -517,33 +541,22 @@ function ScatterChartThree(props) {
 
 
     function draw() {
-        const {
-            obsCat,
-            cachedData,
-            trace,
-            markerOpacity,
-            unselectedMarkerOpacity,
-            selection,
-            pointSize,
-            chartOptions,
-            categoricalNames,
-            unselectedPointSize
-        } = props;
+
         updateScatterChart(scatterPlotRef.current, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }
 
 
     return <>
-        <div className={props.classes.root}>
+        <div className={classes.root}>
             <ChartToolbar
-                dragmode={props.chartOptions.dragmode}
-                // editSelection={props.chartOptions.editSelection}
-                onGallery={props.onGallery}
-                animating={props.chartOptions.animating}
-                showFog={props.chartOptions.showFog}
+                dragmode={chartOptions.dragmode}
+                // editSelection={chartOptions.editSelection}
+                onGallery={onGallery}
+                animating={chartOptions.animating}
+                showFog={chartOptions.showFog}
                 onShowFog={onShowFog}
-                is3d={props.trace && props.trace.z != null}
+                is3d={trace && trace.z != null}
                 toggleAnimation={onToggleAnimation}
                 onSaveImage={onSaveImage}
                 onDragMode={onDragMode}
@@ -551,12 +564,12 @@ function ScatterChartThree(props) {
                 // onEditSelection={onEditSelection}
                 onShowAxis={onShowAxis}
                 onHome={resetCamera}
-                showAxis={props.chartOptions.showAxis}/>
+                showAxis={chartOptions.showAxis}/>
         </div>
         <div data-testid="scatter-chart-three" style={{
             display: 'inline-block',
-            width: props.chartSize.width,
-            height: props.chartSize.height
+            width: chartSize.width,
+            height: chartSize.height
         }}
              ref={containerElementRef}>
         </div>

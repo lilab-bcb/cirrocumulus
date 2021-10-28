@@ -268,15 +268,15 @@ function ExplorePanel(props) {
 
 
     function onEmbeddingsChange(event, value) {
-        const selection = [];
+        const newValue = [];
         const embeddingKeys = dataset.embeddings.map(item => getEmbeddingKey(item));
         value.forEach(val => {
             const id = val.id !== undefined ? val.id : val;
             const index = embeddingKeys.indexOf(id);
             let embedding = dataset.embeddings[index];
-            selection.push(embedding);
+            newValue.push(embedding);
         });
-        handleEmbeddings(selection);
+        handleEmbeddings(newValue);
     }
 
     function onFeatureSetsChange(event, value) {
@@ -452,16 +452,7 @@ function ExplorePanel(props) {
         >
             <DialogTitle id="view-dialog-title">{selectedItem ? selectedItem.value.id : ''}</DialogTitle>
             <DialogContent>
-
                 {detailsView(selectedItem.value)}
-                {/*<DataGrid*/}
-                {/*    rows={rows}*/}
-                {/*    columns={columns}*/}
-                {/*    pageSize={5}*/}
-                {/*    rowsPerPageOptions={[5]}*/}
-                {/*    checkboxSelection*/}
-                {/*    disableSelectionOnClick*/}
-                {/*/>*/}
             </DialogContent>
         </Dialog>}
 
@@ -502,11 +493,11 @@ function ExplorePanel(props) {
                                          groupBy={(option) => option.group}
                                          onChange={onFeaturesChange}
                                          getOptionLabel={(option) => option.text}
-                                         // getChipIcon={(option) => {
-                                         //     return <ArrowDropDownIcon onClick={(event) => {
-                                         //         onFeatureClick(event, option);
-                                         //     }}/>;
-                                         // }}
+                    // getChipIcon={(option) => {
+                    //     return <ArrowDropDownIcon onClick={(event) => {
+                    //         onFeatureClick(event, option);
+                    //     }}/>;
+                    // }}
                                          helperText={"Enter or paste list"}
 
                 />
@@ -584,6 +575,7 @@ function ExplorePanel(props) {
                                          getChipTitle={(option) => {
                                              return option.category + ', ' + option.name;
                                          }}
+                                         selectGroup={true}
                                          onChipClick={onFeatureSetClick}
                                          getChipIcon={(option) => {
                                              return <ArrowDropDownIcon onClick={(event) => {
@@ -624,7 +616,7 @@ function ExplorePanel(props) {
                 </Grid>
                 <Grid item>OR</Grid>
             </Grid>
-            {datasetFilterKeys.length > 0 && selection.size > 0 &&
+            {datasetFilterKeys.length > 0 && selection != null &&
             <>
                 <div style={{marginBottom: 2}}>
                     {intFormat(selection.size) + " / " + intFormat(dataset.shape[0]) + ": "}

@@ -157,7 +157,7 @@ class AppHeader extends React.PureComponent {
         } = this.props;
         const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
         const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
-        const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection.size > 0;
+        const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection != null;
         const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
         const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
         const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
