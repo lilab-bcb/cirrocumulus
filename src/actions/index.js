@@ -2224,7 +2224,7 @@ function getNewEmbeddingData(state, features) {
                         chartData.stdev = Math.sqrt(variance);
                     }
                     chartData.fullCategoryToStats = createCategoryToStats(chartData, new Set());
-                    chartData.categoryToStats = state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
+                    chartData.categoryToStats = state.selection.size != null && state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
                 }
                 updateTraceColors(chartData);
 

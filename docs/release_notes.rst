@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.22.post8 `October 28, 2021`
+    * Show zero cells instead of all cells when no cells pass filters
+
 - 1.1.22.post7 `October 28, 2021`
     * Fixed default color scale for displaying features in sets
     * Changed single-click to double-click for selecting categorical values on primary embedding

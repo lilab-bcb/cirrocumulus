@@ -132,7 +132,7 @@ function CompositionPlots(props) {
         const composition = getComposition(dataset, obsCat, cachedData, categoricalNames);
 
         const textColor = chartOptions.darkMode ? 'white' : 'black';
-        const selectedComposition = selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
+        const selectedComposition = selection != null && selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
         const title = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
         return <>{composition && <CompositionPlot seriesToValueToCounts={composition.seriesToValueToCounts}
                                                   dimension={dimension}

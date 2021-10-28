@@ -62,7 +62,7 @@ function drawSpots(context, zoom, trace, selection, markerOpacity, unselectedMar
     if (context.setLineDash) {
         context.setLineDash([2, 2]);
     }
-    const isSelectionEmpty = selection.size === 0;
+    const isSelectionEmpty = selection == null;
     const indices = trace.indices;
     if (!isSelectionEmpty) { // draw unselected cells 1st
         context.globalAlpha = unselectedMarkerOpacity;
@@ -110,10 +110,10 @@ const styles = theme => ({
 
     root: {
         '& > *': {
-            margin: theme.spacing(.4),
+            margin: theme.spacing(.4)
         },
         '& > .MuiIconButton-root': {
-            padding: 0,
+            padding: 0
         },
         position: 'absolute',
         zIndex: 1,
@@ -122,7 +122,7 @@ const styles = theme => ({
         display: 'inline-block',
         verticalAlign: 'top',
         whiteSpace: 'nowrap',
-        overflow: 'hidden',
+        overflow: 'hidden'
     }
 });
 
@@ -258,7 +258,7 @@ class ImageChart extends React.PureComponent {
         this.canvasOverlay = new CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
                 _this._drawOverlay(opts);
-            },
+            }
         });
         // let tooltip = document.createElement("div");
         // tooltip.style.background = 'rgba(0,0,0,0.5)';
@@ -346,7 +346,7 @@ class ImageChart extends React.PureComponent {
                         x: startCoordinates[0],
                         y: startCoordinates[1],
                         width: 1,
-                        height: 1,
+                        height: 1
                     };
 
                 }

@@ -229,17 +229,16 @@ class AppHeader extends React.PureComponent {
                     </small>}
 
 
-                    {dataset != null &&
-                    <Tabs textColor="inherit"
-                          indicatorColor="secondary"
-                          value={tab} onChange={this.handleTabChange}>
-                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"/>
+                    <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={this.handleTabChange}>
+                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
+                             disabled={dataset == null}/>
                         <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
-                             disabled={distributionData.length === 0}/>
+                             disabled={dataset == null || distributionData.length === 0}/>
                         <Tab data-testid="composition-tab" value="composition" label="Composition"
-                             disabled={obsCat.length < 2}/>
-                        {jobResults.length > 0 && <Tab data-testid="results-tab" value="results" label="Results"/>}
-                    </Tabs>}
+                             disabled={dataset == null || obsCat.length < 2}/>
+                        {<Tab data-testid="results-tab" value="results" label="Results"
+                              disabled={dataset == null || jobResults.length === 0}/>}
+                    </Tabs>
 
                     <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
                         {serverInfo.brand &&
