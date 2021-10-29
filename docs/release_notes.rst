@@ -1,5 +1,9 @@
 Release Notes
 -------------
+
+- 1.1.22.post9 `October 29, 2021`
+    * Fixed error showing gallery labels
+
 - 1.1.22.post8 `October 28, 2021`
     * Show zero cells instead of all cells when no cells pass filters
 
