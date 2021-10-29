@@ -2,45 +2,114 @@ import json
 import logging
 import os
 
-import cirrocumulus.data_processing as data_processing
-from flask import Blueprint, Response, request, stream_with_context, current_app
+from flask import Blueprint, Response, request, stream_with_context
 
+import cirrocumulus.data_processing as data_processing
 from .anndata_util import adata_to_json
+from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_SELECTOR_COLUMNS, CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MOUNT, CIRRO_MIXPANEL
+from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
+    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job, delete_job
 from .util import json_response, get_scheme, get_fs
 
-blueprint = Blueprint('blueprint', __name__)
+cirro_blueprint = Blueprint('cirro', __name__)
 
 dataset_api = DatasetAPI()
 
-remapped_urls = dict()
-if os.environ.get(CIRRO_MOUNT) is not None:
-    tokens = os.environ.get(CIRRO_MOUNT).split(',')
-    for token in tokens:
-        index = token.rfind(':')
-        bucket = token[:index]
-        local_path = token[index + 1:]
-        remapped_urls[bucket] = local_path
+
+def get_email_and_dataset(content):
+    email = get_auth().auth()['email']
+    dataset_id = content.get('id', '')
+    if dataset_id == '':
+        return 'Please supply an id', 400
+    database_api = get_database()
+    dataset = database_api.get_dataset(email, dataset_id)
+    dataset['url'] = map_url(dataset['url'])
+    return email, dataset
 
 
-@blueprint.errorhandler(InvalidUsage)
+def upload_file(file):
+    from werkzeug.utils import secure_filename
+    filename = secure_filename(file.filename)
+    dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
+    dest_fs = get_fs(dest).open(dest, mode='wb')
+    file.save(dest_fs)
+    dest_fs.close()
+    return dest
+
+
+def copy_url(url):
+    from werkzeug.utils import secure_filename
+    upload = os.environ.get(CIRRO_UPLOAD)
+
+    if url.endswith('/') or os.path.isdir(url):  # don't copy directories
+        return url
+    from urllib.parse import urlparse
+    if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
+        return url
+    src_scheme = get_scheme(url)
+    src_fs = get_fs(src_scheme)
+    filename = secure_filename(os.path.basename(url))
+    dest = os.path.join(upload, filename)
+    dest_scheme = get_scheme(dest)
+    dest_fs = get_fs(dest_scheme)
+    out = dest_fs.open(dest, 'wb')
+    n = 1024 * 1024
+    with src_fs.open(url, mode='rb') as r:
+        while True:
+            b = r.read(n)
+            if not b:
+                break
+            out.write(b)
+    out.close()
+    return dest
+
+
+def get_file_path(file, dataset_url):
+    # when serving dataset, file must be relative to dataset directory
+    if os.environ.get(CIRRO_SERVE) == 'true':
+        _, ext = os.path.splitext(dataset_url)
+        if file[0] == '/' or file.find('..') != -1:
+            raise ValueError('Incorrect path')
+        file_path = os.path.join(dataset_url, file)
+    else:
+        file_path = file
+        scheme = get_scheme(file_path)
+        if scheme == 'file' and not os.path.exists(file_path):
+            file_path = os.path.join(dataset_url, file)
+    return file_path
+
+
+def send_file(file_path):
+    import mimetypes
+    mimetype, encoding = mimetypes.guess_type(file_path)
+    # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
+    #     bytes = f.read()
+    # return Response(bytes, mimetype=mimetype[0])
+    chunk_size = 4096
+    f = get_fs(file_path).open(file_path)
+
+    def generate():
+        while True:
+            chunk = f.read(chunk_size)
+            if len(chunk) <= 0:
+                f.close()
+                break
+            yield chunk
+
+    r = Response(stream_with_context(generate()), mimetype=mimetype)
+    r.headers["Content-Encoding"] = encoding
+    return r
+
+
+@cirro_blueprint.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
     return Response(error.message, error.status_code)
 
 
-def get_database():
-    return current_app.config[CIRRO_DATABASE]
-
-
-def get_auth():
-    return current_app.config[CIRRO_AUTH]
-
-
-@blueprint.route('/server', methods=['GET'])
+@cirro_blueprint.route('/server', methods=['GET'])
 def handle_server():
     # no login required
     d = {}
@@ -93,7 +162,7 @@ def handle_server():
     return json_response(d)
 
 
-@blueprint.route('/category_name', methods=['GET', 'PUT'])
+@cirro_blueprint.route('/category_name', methods=['GET', 'PUT'])
 def handle_category_name():
     """CRUD for category name.
     """
@@ -129,7 +198,7 @@ def handle_category_name():
         return '', 200
 
 
-@blueprint.route('/feature_set', methods=['POST', 'DELETE'])
+@cirro_blueprint.route('/feature_set', methods=['POST', 'DELETE'])
 def handle_feature_set():
     """CRUD for a feature set.
     """
@@ -168,7 +237,7 @@ def handle_feature_set():
         return json_response('', 204)
 
 
-@blueprint.route('/views', methods=['GET'])
+@cirro_blueprint.route('/views', methods=['GET'])
 def handle_dataset_views():
     """List available views for a dataset.
     """
@@ -181,7 +250,7 @@ def handle_dataset_views():
     return json_response(get_database().dataset_views(email, dataset_id))
 
 
-@blueprint.route('/view', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@cirro_blueprint.route('/view', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_dataset_view():
     """CRUD for a dataset view.
     """
@@ -213,7 +282,7 @@ def handle_dataset_view():
         return json_response('', 204)
 
 
-@blueprint.route('/schema', methods=['GET'])
+@cirro_blueprint.route('/schema', methods=['GET'])
 def handle_schema():
     """Get dataset schema.
     """
@@ -228,44 +297,7 @@ def handle_schema():
     return json_response(schema)
 
 
-def get_file_path(file, dataset_url):
-    # when serving dataset, file must be relative to dataset directory
-    if os.environ.get(CIRRO_SERVE) == 'true':
-        _, ext = os.path.splitext(dataset_url)
-        if file[0] == '/' or file.find('..') != -1:
-            raise ValueError('Incorrect path')
-        file_path = os.path.join(dataset_url, file)
-    else:
-        file_path = file
-        scheme = get_scheme(file_path)
-        if scheme == 'file' and not os.path.exists(file_path):
-            file_path = os.path.join(dataset_url, file)
-    return file_path
-
-
-def send_file(file_path):
-    import mimetypes
-    mimetype, encoding = mimetypes.guess_type(file_path)
-    # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
-    #     bytes = f.read()
-    # return Response(bytes, mimetype=mimetype[0])
-    chunk_size = 4096
-    f = get_fs(file_path).open(file_path)
-
-    def generate():
-        while True:
-            chunk = f.read(chunk_size)
-            if len(chunk) <= 0:
-                f.close()
-                break
-            yield chunk
-
-    r = Response(stream_with_context(generate()), mimetype=mimetype)
-    r.headers["Content-Encoding"] = encoding
-    return r
-
-
-@blueprint.route('/file', methods=['GET'])
+@cirro_blueprint.route('/file', methods=['GET'])
 def handle_file():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -286,7 +318,7 @@ def handle_file():
     return send_file(file_path)
 
 
-@blueprint.route('/user', methods=['GET'])
+@cirro_blueprint.route('/user', methods=['GET'])
 def handle_user():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -294,27 +326,7 @@ def handle_user():
     return json_response(user)
 
 
-def map_url(url):
-    for remote_path in remapped_urls:
-        before_replace = url
-        url = url.replace(remote_path, remapped_urls[remote_path])
-        if before_replace != url:  # only replace URL once
-            return url
-    return url
-
-
-def get_email_and_dataset(content):
-    email = get_auth().auth()['email']
-    dataset_id = content.get('id', '')
-    if dataset_id == '':
-        return 'Please supply an id', 400
-    database_api = get_database()
-    dataset = database_api.get_dataset(email, dataset_id)
-    dataset['url'] = map_url(dataset['url'])
-    return email, dataset
-
-
-@blueprint.route('/data', methods=['POST'])
+@cirro_blueprint.route('/data', methods=['POST'])
 def handle_data():
     json_request = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(json_request)
@@ -328,7 +340,7 @@ def handle_data():
                                     selection=json_request.get('selection')))
 
 
-@blueprint.route('/selection', methods=['POST'])
+@cirro_blueprint.route('/selection', methods=['POST'])
 def handle_selection():
     # selection includes stats, coordinates
     content = request.get_json(cache=False)
@@ -341,7 +353,7 @@ def handle_selection():
                                          embeddings=content.get('embeddings', [])))
 
 
-@blueprint.route('/selected_ids', methods=['POST'])
+@cirro_blueprint.route('/selected_ids', methods=['POST'])
 def handle_selected_ids():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
@@ -351,51 +363,14 @@ def handle_selected_ids():
 
 
 # List available datasets
-@blueprint.route('/datasets', methods=['GET'])
+@cirro_blueprint.route('/datasets', methods=['GET'])
 def handle_datasets():
     email = get_auth().auth()['email']
     database_api = get_database()
     return json_response(database_api.datasets(email))
 
 
-def upload_file(file):
-    from werkzeug.utils import secure_filename
-    filename = secure_filename(file.filename)
-    dest = os.path.join(os.environ.get(CIRRO_UPLOAD), filename)
-    dest_fs = get_fs(dest).open(dest, mode='wb')
-    file.save(dest_fs)
-    dest_fs.close()
-    return dest
-
-
-def copy_url(url):
-    from werkzeug.utils import secure_filename
-    upload = os.environ.get(CIRRO_UPLOAD)
-
-    if url.endswith('/') or os.path.isdir(url):  # don't copy directories
-        return url
-    from urllib.parse import urlparse
-    if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
-        return url
-    src_scheme = get_scheme(url)
-    src_fs = get_fs(src_scheme)
-    filename = secure_filename(os.path.basename(url))
-    dest = os.path.join(upload, filename)
-    dest_scheme = get_scheme(dest)
-    dest_fs = get_fs(dest_scheme)
-    out = dest_fs.open(dest, 'wb')
-    n = 1024 * 1024
-    with src_fs.open(url, mode='rb') as r:
-        while True:
-            b = r.read(n)
-            if not b:
-                break
-            out.write(b)
-    out.close()
-    return dest
-
-
-@blueprint.route('/dataset', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@cirro_blueprint.route('/dataset', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def handle_dataset():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -446,7 +421,7 @@ def handle_dataset():
         return json_response(database_api.get_dataset(email, dataset_id, True))
 
 
-@blueprint.route('/module', methods=['POST'])
+@cirro_blueprint.route('/module', methods=['POST'])
 def handle_module_score():
     content = request.get_json(cache=False)
     email, dataset = get_email_and_dataset(content)
@@ -455,7 +430,7 @@ def handle_module_score():
     return json_response(adata.X.mean(axis=1))
 
 
-@blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
+@cirro_blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
 def handle_job():
     email = get_auth().auth()['email']
     database_api = get_database()
@@ -522,7 +497,7 @@ def handle_job():
         return job
 
 
-@blueprint.route('/jobs', methods=['GET'])
+@cirro_blueprint.route('/jobs', methods=['GET'])
 def handle_jobs():
     email = get_auth().auth()['email']
     database_api = get_database()
