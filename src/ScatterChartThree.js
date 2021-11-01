@@ -296,8 +296,9 @@ function ScatterChartThree(props) {
         scatterPlotRef.current.cameraCallback = (eventName, position, target) => {
             if (scatterPlotRef.current.interactionMode === 'PAN' && trace.dimensions === 3) {
                 // repaint gallery charts with same embedding
+
                 if (eventName === 'end' && (previousCameraPosition.current.x != position.x || previousCameraPosition.current.y != position.y || previousCameraPosition.current.z != position.z)) {
-                    previousCameraPosition.current = position;
+                    previousCameraPosition.current = {x: position.x, y: position.y, z: position.z};
                     cameraCallback(eventName);
                 }
             }
