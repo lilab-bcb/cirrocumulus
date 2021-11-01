@@ -4,11 +4,13 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import Drawer from '@mui/material/Drawer';
 import LinearProgress from '@mui/material/LinearProgress';
-
+import * as React from 'react';
+import {useRef} from 'react';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import CloseIcon from '@mui/icons-material/Close';
-
-import React, {PureComponent} from 'react';
 import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
@@ -18,6 +20,7 @@ import {
     SAVE_DATASET_FILTER_DIALOG,
     SAVE_FEATURE_SET_DIALOG,
     setDialog,
+    setDrawerOpen,
     setMessage
 } from './actions';
 import AppHeader from './AppHeader';
@@ -35,8 +38,6 @@ import SaveDatasetFilterDialog from './SaveDatasetViewDialog';
 import SaveSetDialog from './SaveSetDialog';
 import SideBar from './SideBar';
 import {COMPARE_ACTIONS} from './job_config';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
 import {withTheme} from '@emotion/react';
 import JobResultPanel from './JobResultPanel';
 
@@ -44,153 +45,161 @@ import JobResultPanel from './JobResultPanel';
 export const drawerWidth = 240;
 
 
-class App extends PureComponent {
+function App(props) {
+    const tooltipElementRef = useRef();
+    const galleryRef = useRef();
+    const {drawerOpen, theme, dataset, dialog, handleDrawerOpen, loading, loadingApp, message, setMessage, tab} = props;
 
-    constructor(props) {
-        super(props);
-        this.tooltipElementRef = React.createRef();
-        this.galleryRef = React.createRef();
+    function handleMessageClose() {
+        setMessage(null);
     }
 
-    handleMessageClose = () => {
-        this.props.setMessage(null);
-    };
 
+    function onGallery() {
+        window.scrollTo(0, galleryRef.current.offsetTop);
+    }
 
-    onGallery = () => {
-        window.scrollTo(0, this.galleryRef.current.offsetTop);
-    };
-
-    setTooltip = (text) => {
+    function setTooltip(text) {
         text = text === '' || text == null ? '&nbsp;' : text;
-        this.tooltipElementRef.current.innerHTML = text;
-    };
-
-    render() {
-
-        // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
-        // need to add filter, selection
-        const {theme, dataset, dialog, loading, loadingApp, message, tab} = this.props;
-        const color = theme.palette.primary.main;
-
-        const footerBackground = theme.palette.background.paper;
-        return (
-            <Box sx={{display: 'flex'}}>
-                {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
-                <EditNewDatasetDialog/>}
-                {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
-                {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
-                {dialog === HELP_DIALOG && <HelpDialog/>}
-                {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
-                <AppHeader/>
-                <Drawer
-                    variant="permanent"
-                    anchor="left"
-                    sx={{
-                        width: drawerWidth,
-                        flexShrink: 0,
-                        '& .MuiDrawer-paper': {
-                            width: drawerWidth,
-                            boxSizing: 'border-box'
-                        }
-                    }}
-                >
-                    {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
-                </Drawer>
-
-
-                <Box scomponent="main"
-                     sx={{flexGrow: 1, paddingBottom: 24, color: color, backgroundColor: footerBackground}}>
-                    <Toolbar/>
-                    {loadingApp.loading &&
-                    <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
-                                                    value={loadingApp.progress}/></h2>
-                    </div>}
-
-                    {dataset == null && tab === 'embedding' && !loading && !loadingApp.loading &&
-                    <div><LandingPage/></div>}
-                    {<>
-                        {dataset != null && <div
-                            role="tabpanel"
-                            hidden={tab !== 'embedding'}
-                        >
-                            {<EmbeddingChart onGallery={this.onGallery} setTooltip={this.setTooltip}/>}
-                            <DraggableDivider/>
-                            <div ref={this.galleryRef}>
-                                {<GalleryCharts/>}
-                            </div>
-                        </div>}
-                        {dataset != null && <div
-                            role="tabpanel"
-                            hidden={tab !== 'distribution'}
-                        >
-                            {<DistributionPlots setTooltip={this.setTooltip}/>}
-                        </div>}
-                        {dataset != null && <div
-                            role="tabpanel"
-                            hidden={tab !== 'composition'}
-                        >
-                            {<CompositionPlots/>}
-                        </div>}
-                        {dataset != null && <div
-                            role="tabpanel"
-                            hidden={tab !== 'results'}
-                        >
-                            {<JobResultPanel setTooltip={this.setTooltip}/>}
-                        </div>}
-                        <Typography className="cirro-condensed" color="textPrimary" ref={this.tooltipElementRef}
-                                    style={{
-                                        position: 'fixed',
-                                        background: footerBackground,
-                                        width: '100%',
-                                        bottom: 0,
-                                        top: 'auto',
-                                        marginBottom: 0,
-                                        whiteSpace: 'nowrap',
-                                        textOverflow: 'ellipsis'
-                                    }}>&nbsp;</Typography>
-                    </>}
-                </Box>
-
-                {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
-                    <DialogTitle id="loading-dialog-title"><CircularProgress
-                        size={20}/> Loading...</DialogTitle>
-                </Dialog>}
-
-
-                {message != null && <Snackbar
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'left'
-                    }}
-                    ContentProps={{
-                        'aria-describedby': 'message-id'
-                    }}
-                    onClose={this.handleMessageClose}
-                    open={true}
-                    autoHideDuration={6000}
-                    action={[
-                        <IconButton
-                            key="close"
-                            aria-label="Close"
-                            color="inherit"
-                            onClick={this.handleMessageClose}
-                            size="large">
-                            <CloseIcon/>
-                        </IconButton>
-                    ]}
-                    message={<span id="message-id">{message instanceof Error
-                        ? message.message
-                        : message}</span>}
-                />}
-            </Box>
-        );
+        tooltipElementRef.current.innerHTML = text;
     }
+
+
+    // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
+    // need to add filter, selection
+
+    const color = theme.palette.primary.main;
+
+    const footerBackground = theme.palette.background.paper;
+    return (
+        <Box sx={{display: 'flex'}}>
+            {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
+            <EditNewDatasetDialog/>}
+            {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
+            {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
+            {dialog === HELP_DIALOG && <HelpDialog/>}
+            {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
+
+            <AppHeader/>
+            <Drawer
+                open={drawerOpen}
+                variant="persistent"
+                anchor="left"
+                sx={{
+                    width: drawerOpen ? drawerWidth : null,
+                    flexShrink: 0,
+                    '& .MuiDrawer-paper': {
+                        width: drawerOpen ? drawerWidth : null,
+                        boxSizing: 'border-box'
+                    }
+                }}
+            >
+                <Box sx={{
+                    position: 'absolute',
+                    right: 14,
+                    top: 0
+                }}>
+                    <IconButton onClick={e => handleDrawerOpen(false)} size={"large"} edge={"end"}
+                                sx={{padding: 0}}>
+                        {<ChevronLeftIcon/>}
+                    </IconButton>
+                </Box>
+                {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
+            </Drawer>
+
+            <Box scomponent="main"
+                 sx={{flexGrow: 1, marginLeft: 1, paddingBottom: 24, color: color, backgroundColor: footerBackground}}>
+                <Toolbar/>
+                {loadingApp.loading &&
+                <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
+                                                value={loadingApp.progress}/></h2>
+                </div>}
+
+                {dataset == null && tab === 'embedding' && !loading && !loadingApp.loading &&
+                <div><LandingPage/></div>}
+                {<>
+                    {dataset != null && <div
+                        role="tabpanel"
+                        hidden={tab !== 'embedding'}
+                    >
+                        {<EmbeddingChart onGallery={onGallery} setTooltip={setTooltip}/>}
+                        <DraggableDivider/>
+                        <div ref={galleryRef}>
+                            {<GalleryCharts/>}
+                        </div>
+                    </div>}
+                    {dataset != null && <div
+                        role="tabpanel"
+                        hidden={tab !== 'distribution'}
+                    >
+                        {<DistributionPlots setTooltip={setTooltip}/>}
+                    </div>}
+                    {dataset != null && <div
+                        role="tabpanel"
+                        hidden={tab !== 'composition'}
+                    >
+                        {<CompositionPlots/>}
+                    </div>}
+                    {dataset != null && <div
+                        role="tabpanel"
+                        hidden={tab !== 'results'}
+                    >
+                        {<JobResultPanel setTooltip={setTooltip}/>}
+                    </div>}
+                    <Typography className="cirro-condensed" color="textPrimary" ref={tooltipElementRef}
+                                style={{
+                                    position: 'fixed',
+                                    background: footerBackground,
+                                    width: '100%',
+                                    bottom: 0,
+                                    top: 'auto',
+                                    marginBottom: 0,
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis'
+                                }}>&nbsp;</Typography>
+                </>}
+            </Box>
+
+            {loading && <Dialog aria-labelledby="loading-dialog-title" open={true}>
+                <DialogTitle id="loading-dialog-title"><CircularProgress
+                    size={20}/> Loading...</DialogTitle>
+            </Dialog>}
+
+
+            {message != null && <Snackbar
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left'
+                }}
+                ContentProps={{
+                    'aria-describedby': 'message-id'
+                }}
+                onClose={handleMessageClose}
+                open={true}
+                autoHideDuration={6000}
+                action={[
+                    <IconButton
+                        key="close"
+                        aria-label="Close"
+                        color="inherit"
+                        onClick={handleMessageClose}
+                        size="large">
+                        <CloseIcon/>
+                    </IconButton>
+                ]}
+                message={<span id="message-id">{message instanceof Error
+                    ? message.message
+                    : message}</span>}
+            />}
+        </Box>
+    );
+
 }
 
 const mapStateToProps = state => {
     return {
         dataset: state.dataset,
+        drawerOpen: state.panel.drawerOpen,
         dialog: state.dialog,
         loading: state.loading,
         loadingApp: state.loadingApp,
@@ -203,7 +212,9 @@ const mapDispatchToProps = dispatch => {
         handleDialog: (value) => {
             dispatch(setDialog(value));
         },
-
+        handleDrawerOpen: (value) => {
+            dispatch(setDrawerOpen(value));
+        },
         setMessage: (value) => {
             dispatch(setMessage(value));
         }

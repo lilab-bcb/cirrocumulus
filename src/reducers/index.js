@@ -29,7 +29,9 @@ import {
     SET_DISTRIBUTION_DATA,
     SET_DISTRIBUTION_PLOT_INTERPOLATOR,
     SET_DISTRIBUTION_PLOT_OPTIONS,
+    SET_DRAG_DIVIDER,
     SET_DOMAIN,
+    SET_DRAWER_OPEN,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
     SET_EMBEDDING_LABELS,
@@ -45,7 +47,6 @@ import {
     SET_MARKERS,
     SET_MESSAGE,
     SET_POINT_SIZE,
-    SET_PRIMARY_CHART_SIZE,
     SET_SAVED_DATASET_STATE,
     SET_SEARCH_TOKENS,
     SET_SELECTED_DISTRIBUTION_DATA,
@@ -56,6 +57,7 @@ import {
     SET_UNSELECTED_MARKER_OPACITY,
     SET_UNSELECTED_POINT_SIZE,
     SET_USER,
+    SET_WINDOW_SIZE,
     UPDATE_CATEGORICAL_COLOR,
     UPDATE_CATEGORICAL_NAME,
     UPDATE_DATASET
@@ -124,14 +126,29 @@ function chartSize(state = 300, action) {
 }
 
 
-function primaryChartSize(state = DEFAULT_PRIMARY_CHART_SIZE, action) {
+function panel(state = {dividerDelta: 0, drawerOpen: true, primaryChartSize: DEFAULT_PRIMARY_CHART_SIZE}, action) {
     switch (action.type) {
-        case SET_PRIMARY_CHART_SIZE:
-            return action.payload;
+        case SET_DRAG_DIVIDER:
+        case SET_DRAWER_OPEN:
+        case SET_WINDOW_SIZE:
+            let primaryChartSize = state.primaryChartSize;
+            const drawerOpen = action.type === SET_DRAWER_OPEN ? action.payload : state.drawerOpen;
+
+            if (action.type === SET_WINDOW_SIZE) {
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const width = windowWidth - (drawerOpen ? 280 : 40);
+                const height = Math.max(300, windowHeight - 370);
+                primaryChartSize = {width: width, height: height};
+            } else if (action.type === SET_DRAG_DIVIDER) {
+                primaryChartSize = {width: primaryChartSize.width, height: action.payload};
+            }
+            return {drawerOpen: drawerOpen, primaryChartSize: primaryChartSize};
         default:
             return state;
     }
 }
+
 
 /**
  *
@@ -269,6 +286,7 @@ function embeddings(state = [], action) {
             return state;
     }
 }
+
 
 function markers(state = [], action) {
     switch (action.type) {
@@ -844,8 +862,8 @@ export default combineReducers({
     markerOpacity,
     markers,
     message,
+    panel,
     pointSize,
-    primaryChartSize,
     savedDatasetState,
     searchTokens,
     selectedDistributionData,

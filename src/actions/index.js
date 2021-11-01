@@ -65,6 +65,9 @@ export const DEFAULT_DARK_MODE = window.matchMedia ? window.matchMedia('(prefers
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
+export const SET_DRAG_DIVIDER = 'SET_DRAG_DIVIDER';
+export const SET_WINDOW_SIZE = 'SET_WINDOW_SIZE';
+export const SET_DRAWER_OPEN = 'SET_DRAWER_OPEN';
 export const SET_EMBEDDING_LABELS = 'SET_EMBEDDING_LABELS';
 export const SET_DISTRIBUTION_PLOT_INTERPOLATOR = 'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
@@ -76,7 +79,6 @@ export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
 export const SET_LEGEND_SCROLL_POSITION = 'SET_LEGEND_SCROLL_POSITION';
 export const SET_ACTIVE_FEATURE = 'SET_ACTIVE_FEATURE';
 export const SET_CHART_SIZE = 'SET_CHART_SIZE';
-export const SET_PRIMARY_CHART_SIZE = 'SET_PRIMARY_CHART_SIZE';
 export const SET_SERVER_INFO = "SET_SERVER_INFO";
 export const SET_DATASET_FILTER = 'SET_DATASET_FILTER';
 export const ADD_DATASET = 'ADD_DATASET';
@@ -625,6 +627,9 @@ export function setChartOptions(payload) {
     return {type: SET_CHART_OPTIONS, payload: payload};
 }
 
+export function setDrawerOpen(payload) {
+    return {type: SET_DRAWER_OPEN, payload: payload};
+}
 
 function _setCombineDatasetFilters(payload) {
     return {type: SET_COMBINE_DATASET_FILTERS, payload: payload};
@@ -642,8 +647,12 @@ export function setChartSize(payload) {
 }
 
 
-export function setPrimaryChartSize(payload) {
-    return {type: SET_PRIMARY_CHART_SIZE, payload: payload};
+export function setWindowSize(payload) {
+    return {type: SET_WINDOW_SIZE, payload: payload};
+}
+
+export function setDragDivider(payload) {
+    return {type: SET_DRAG_DIVIDER, payload: payload};
 }
 
 export function _setActiveFeature(payload) {

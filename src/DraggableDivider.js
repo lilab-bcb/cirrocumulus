@@ -2,19 +2,21 @@ import Divider from '@mui/material/Divider';
 import React, {useRef} from 'react';
 
 import {connect} from 'react-redux';
-import {setPrimaryChartSize} from './actions';
+import {setDragDivider} from './actions';
 
 
 function DraggableDivider(props) {
     const dragging = useRef(false);
     const clientY = useRef(-1);
-    const primaryChartHeight = useRef(-1);
+    const primaryChartSizeHeightMouseDown = useRef();
+    const {activeFeature, onDragDivider, primaryChartSizeHeight} = props;
 
     function onMouseDown(event) {
         dragging.current = true;
         clientY.current = event.clientY;
-        primaryChartHeight.current = props.primaryChartSize.height;
+        primaryChartSizeHeightMouseDown.current = primaryChartSizeHeight;
         document.body.style.cursor = 'ns-resize';
+        event.stopPropagation();
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
     }
@@ -24,23 +26,20 @@ function DraggableDivider(props) {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
             document.body.style.cursor = null;
+            event.stopPropagation();
         }
         dragging.current = false;
     }
 
     function onMouseMove(event) {
         if (dragging.current) {
-            const primaryChartSize = props.primaryChartSize;
             const delta = clientY.current - event.clientY;
-            props.handlePrimaryChartSize({
-                width: primaryChartSize.width,
-                height: Math.max(50, primaryChartHeight.current - delta)
-            });
+            const height = Math.max(50, primaryChartSizeHeightMouseDown.current - delta);
+            onDragDivider(height);
+            event.stopPropagation();
         }
     }
 
-
-    const {activeFeature} = props;
 
     return (
         <div style={{
@@ -58,18 +57,18 @@ function DraggableDivider(props) {
 const mapStateToProps = state => {
     return {
         activeFeature: state.activeFeature,
-        primaryChartSize: state.primaryChartSize
+        primaryChartSizeHeight: state.panel.primaryChartSize.height
     };
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handlePrimaryChartSize: value => {
-            dispatch(setPrimaryChartSize(value));
+        onDragDivider: value => {
+            dispatch(setDragDivider(value));
         }
     };
 };
 
 export default (connect(
-    mapStateToProps, mapDispatchToProps,
+    mapStateToProps, mapDispatchToProps
 )(DraggableDivider));
 

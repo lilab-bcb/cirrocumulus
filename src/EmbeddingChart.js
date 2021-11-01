@@ -17,8 +17,8 @@ import {
     setChartOptions,
     setEmbeddingData,
     setLegendScrollPosition,
-    setPrimaryChartSize,
-    setSearchTokens
+    setSearchTokens,
+    setWindowSize
 } from './actions';
 import CategoricalLegend from './CategoricalLegend';
 import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
@@ -42,10 +42,7 @@ class EmbeddingChart extends React.PureComponent {
         super(props);
         this.state = {showLegend: true};
         this.resizeListener = () => {
-            let width = window.innerWidth - 280;
-            let height = Math.max(300, window.innerHeight - 370);
-            this.props.handlePrimaryChartSize({width: width, height: height});
-            this.windowHeight = window.innerHeight;
+            this.props.handleWindowSize();
         };
         window.addEventListener('resize', this.resizeListener);
     }
@@ -256,7 +253,7 @@ const mapStateToProps = state => {
         markerOpacity: state.markerOpacity,
         selection: state.selection,
         pointSize: state.pointSize,
-        primaryChartSize: state.primaryChartSize,
+        primaryChartSize: state.panel.primaryChartSize,
         serverInfo: state.serverInfo,
         shape: state.dataset.shape,
         searchTokens: state.searchTokens,
@@ -291,8 +288,8 @@ const mapDispatchToProps = dispatch => {
         handleScrollPosition: value => {
             dispatch(setLegendScrollPosition(value));
         },
-        handlePrimaryChartSize: value => {
-            dispatch(setPrimaryChartSize(value));
+        handleWindowSize: () => {
+            dispatch(setWindowSize());
         },
         handleEmbeddingData: (value) => {
             dispatch(setEmbeddingData(value));
