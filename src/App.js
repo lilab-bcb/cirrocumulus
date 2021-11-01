@@ -69,10 +69,9 @@ function App(props) {
     // need to add filter, selection
 
     const color = theme.palette.primary.main;
-
     const footerBackground = theme.palette.background.paper;
     return (
-        <Box sx={{display: 'flex'}}>
+        <Box sx={{display: 'flex', backgroundColor: footerBackground}}>
             {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
             <EditNewDatasetDialog/>}
             {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
