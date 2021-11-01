@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.22.post10 `November 1, 2021`
+    * Made left-side drawer collapsible
+    * Fixed error saving cluster markers
+
 - 1.1.22.post9 `October 29, 2021`
     * Fixed error showing gallery labels
 
