@@ -194,9 +194,7 @@ function AppHeader(props) {
                 >
 
                     <Box style={{width: 500, padding: '1em'}}>
-                        <Typography>
-                            <b>{dataset.name}</b>
-                        </Typography>
+                        <Typography variant="h6">{dataset.name}</Typography>
                         <Divider/>
                         {datasetSelectorColumns.map(c => {
                             return c.id === 'name' || dataset[c.id] == null ? null :
@@ -223,31 +221,28 @@ function AppHeader(props) {
                 >
                     <MenuIcon/>
                 </IconButton>
-                {dataset && <CirroIcon/>}
                 {dataset &&
-                <Link
-                    color="inherit"
-                    style={{
-                        paddingLeft: 6,
-                        whiteSpace: 'nowrap',
-                        maxWidth: 300,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                    }}
-                    href="#"
-                    underline={"none"}
-                    onClick={dataset.id != null && datasetSelectorColumns ? onShowDatasetDetails : null}
-                    aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
-                    aria-haspopup="true"
-                    component={"h3"}>
-                    <b>{dataset.name}</b>
-                </Link>
-                }
-                {dataset && <small style={{whiteSpace: 'nowrap'}}>&nbsp;
-                    {hasSelection && shape != null && intFormat(selection.size) + ' / '}
-                    {shape != null && intFormat(shape[0]) + ' cells'}
-                </small>}
-
+                <><CirroIcon/><Typography variant="h5">
+                    <Link
+                        color="inherit"
+                        style={{
+                            paddingLeft: 6,
+                            whiteSpace: 'nowrap',
+                            maxWidth: 300,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                        }}
+                        href="#"
+                        underline={"none"}
+                        onClick={dataset.id != null && datasetSelectorColumns ? onShowDatasetDetails : null}
+                        aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
+                        aria-haspopup="true">
+                        {dataset.name}
+                    </Link>
+                </Typography><Typography
+                    variant="subtitle2">&nbsp;{hasSelection && shape != null && intFormat(selection.size) + ' / '}
+                    {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
+                </>}
 
                 <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
                     <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
