@@ -4,7 +4,6 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
-import {saveImage} from './ChartUtil';
 import {numberFormat2f} from './formatters';
 import {
     createScatterPlot,
@@ -14,6 +13,7 @@ import {
     updateScatterChart
 } from './ThreeUtil';
 import {indexSort, isPointInside} from './util';
+import {saveImage} from './ChartUtil';
 
 function clamp(x, min_v, max_v) {
     return Math.min(Math.max(x, min_v), max_v);
@@ -322,15 +322,14 @@ function ScatterChartThree(props) {
     }
 
     function drawContext(context, chartSize, format) {
-        const scatterPlot = scatterPlotRef.current;
-        const pointSize = calculatePointSize(trace);
-        const scaleFactor = pointSize;
         const PI2 = 2 * Math.PI;
-        const colors = trace.colors;
-        const positions = trace.positions;
-        const camera = scatterPlot.camera;
         const width = chartSize.width;
         const height = chartSize.height;
+        const scatterPlot = scatterPlotRef.current;
+        const colors = trace.colors;
+        const positions = trace.positions;
+
+
         if (chartOptions.darkMode) {
             context.fillStyle = 'black';
             context.fillRect(0, 0, width, height);
@@ -340,37 +339,15 @@ function ScatterChartThree(props) {
         const colorScaleConverter = scaleLinear().domain([0, 1]).range([0, 255]);
         const npoints = trace.x.length;
         const is3d = trace.dimensions === 3;
-        let outputPointSize;
-        let fog = scatterPlot.scene.fog;
-        let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-        // const zoomFactor = getScaleFactor(chartSize);
-        // const zoomFactorSpecified = false;
-
-        if (!is3d) {
-            const PI = 3.1415926535897932384626433832795;
-            const minScale = 0.1;  // minimum scaling factor
-            const outSpeed = 2.0;  // shrink speed when zooming out
-            const outNorm = (1. - minScale) / Math.atan(outSpeed);
-            const maxScale = 15.0;  // maximum scaling factor
-            const inSpeed = 0.02;  // enlarge speed when zooming in
-            const zoomOffset = 0.3;  // offset zoom pivot
-            let m = camera.projectionMatrix.elements[0];
-            // if (zoomFactorSpecified) {
-            //     m = zoomFactor;
-            // }
-            let zoom = m + zoomOffset;  // zoom pivot
-            let scale = zoom < 1. ? 1. + outNorm * Math.atan(outSpeed * (zoom - 1.)) :
-                1. + 2. / PI * (maxScale - 1.) * Math.atan(inSpeed * (zoom - 1.));
-            outputPointSize = pointSize * scale;
-        }
-        let gl_PointSize = (outputPointSize * scaleFactor);
-        gl_PointSize /= 2;
+        const fog = scatterPlot.scene.fog;
+        const camera = scatterPlot.camera;
+        const spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
+        const scaleFactor = is3d ? calculatePointSize(trace) : 1; // TODO
         const pos = new Vector3();
-        let cameraSpacePos = new Vector4();
-        let object = spriteVisualizer.points;
-        let modelViewMatrix = object.modelViewMatrix.clone();
-        modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
-        const showFog = chartOptions.showFog;
+        const cameraSpacePos = new Vector4();
+        const modelViewMatrix = spriteVisualizer.points.modelViewMatrix.clone();
+        modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, spriteVisualizer.points.matrixWorld);
+        const showFog = chartOptions.showFog && is3d;
         const isSelectionEmpty = selection == null;
         let pointOrder;
         if (is3d) {
@@ -399,6 +376,7 @@ function ScatterChartThree(props) {
             let g = colors[colorIndex + 1];
             let b = colors[colorIndex + 2];
             let a = isSelected ? markerOpacity : unselectedMarkerOpacity;
+            let outputPointSize;
             if (is3d) {
                 cameraSpacePos.x = positions[positionIndex];
                 cameraSpacePos.y = positions[positionIndex + 1];
@@ -406,22 +384,42 @@ function ScatterChartThree(props) {
                 cameraSpacePos.w = 1;
                 cameraSpacePos.applyMatrix4(modelViewMatrix);
                 outputPointSize = -pointSize / cameraSpacePos.z;
-                gl_PointSize = (outputPointSize * scaleFactor) / 4;
-                if (showFog) {
-                    const fogDepth = pointSize / outputPointSize * 1.2;
-                    const fogFactor = smoothstep(fog.near, fog.far, fogDepth);
-                    r = mix(r, fog.color.r, fogFactor);
-                    g = mix(g, fog.color.g, fogFactor);
-                    b = mix(b, fog.color.b, fogFactor);
-                }
+            } else {  // Create size attenuation (if we're in 2D mode)
+                const PI = 3.1415926535897932384626433832795;
+                const minScale = 0.1;  // minimum scaling factor
+                const outSpeed = 2.0;  // shrink speed when zooming out
+                const outNorm = (1. - minScale) / Math.atan(outSpeed);
+                const maxScale = 15.0;  // maximum scaling factor
+                const inSpeed = 0.02;  // enlarge speed when zooming in
+                const zoomOffset = 0.3;  // offset zoom pivot
+
+                cameraSpacePos.x = positions[positionIndex];
+                cameraSpacePos.y = positions[positionIndex + 1];
+                cameraSpacePos.z = positions[positionIndex + 2];
+                cameraSpacePos.w = 1;
+                cameraSpacePos.applyMatrix4(modelViewMatrix);
+                let m = -cameraSpacePos.z;
+                // if (zoomFactorSpecified) {
+                //     m = zoomFactor;
+                // }
+                const zoom = m + zoomOffset;  // zoom pivot
+                const scale = zoom < 1. ? 1. + outNorm * Math.atan(outSpeed * (zoom - 1.)) :
+                    1. + 2. / PI * (maxScale - 1.) * Math.atan(inSpeed * (zoom - 1.));
+                outputPointSize = pointSize * scale;
             }
+            if (showFog) {
+                const fogDepth = pointSize / outputPointSize * 1.2;
+                const fogFactor = smoothstep(fog.near, fog.far, fogDepth);
+                r = mix(r, fog.color.r, fogFactor);
+                g = mix(g, fog.color.g, fogFactor);
+                b = mix(b, fog.color.b, fogFactor);
+            }
+            const gl_PointSize = (outputPointSize * scaleFactor) / 2;
             pos.x = (pos.x * widthHalf) + widthHalf;
             pos.y = -(pos.y * heightHalf) + heightHalf;
-
             r = Math.round(colorScaleConverter(r));
             g = Math.round(colorScaleConverter(g));
             b = Math.round(colorScaleConverter(b));
-
             context.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
             context.beginPath();
             context.arc(pos.x, pos.y, gl_PointSize, 0, PI2);

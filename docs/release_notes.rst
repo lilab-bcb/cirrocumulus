@@ -4,6 +4,7 @@ Release Notes
 - 1.1.22.post10 `November 1, 2021`
     * Made left-side drawer collapsible
     * Fixed error saving cluster markers
+    * Improved point size when saving embedding images
 
 - 1.1.22.post9 `October 29, 2021`
     * Fixed error showing gallery labels
