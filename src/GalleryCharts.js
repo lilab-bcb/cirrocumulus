@@ -120,7 +120,7 @@ const mapStateToProps = state => {
         embeddingLabels: state.embeddingLabels,
         markerOpacity: state.markerOpacity,
         pointSize: state.pointSize,
-        primaryChartSize: state.primaryChartSize,
+        primaryChartSize: state.panel.primaryChartSize,
         searchTokens: state.searchTokens,
         selection: state.selection,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,

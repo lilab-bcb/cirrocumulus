@@ -606,7 +606,7 @@ function ExplorePanel(props) {
             <Grid alignContent={"flex-start"} container alignItems="center"
                   spacing={0}>
                 <Grid item><InputLabel shrink={true}>Combine</InputLabel></Grid>
-                <Grid item>AND</Grid>
+                <Grid item><InputLabel>AND</InputLabel></Grid>
                 <Grid item>
                     <Switch
                         size="small"
@@ -614,7 +614,7 @@ function ExplorePanel(props) {
                         onChange={onCombineDatasetFilters}
                     />
                 </Grid>
-                <Grid item>OR</Grid>
+                <Grid item><InputLabel>OR</InputLabel></Grid>
             </Grid>
             {datasetFilterKeys.length > 0 && selection != null &&
             <>

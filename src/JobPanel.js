@@ -2,7 +2,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import TextField from '@mui/material/TextField';
-import {DialogActions, Divider, Switch, Typography} from '@mui/material';
+import {DialogActions, Divider, InputLabel, Switch, Typography} from '@mui/material';
 import Button from '@mui/material/Button';
 import {SERVER_CAPABILITY_JOBS} from './util';
 import Tooltip from '@mui/material/Tooltip';
@@ -161,7 +161,8 @@ function JobPanel(props) {
                   spacing={0}>
                 {/*<Grid item><InputLabel shrink={true}>Combine</InputLabel></Grid>*/}
                 <Tooltip
-                    title={"Compare all pairs in a category"}><Grid item>ALL PAIRS</Grid></Tooltip>
+                    title={"Compare all pairs in a category"}><Grid item><InputLabel>ALL
+                    PAIRS</InputLabel></Grid></Tooltip>
                 <Grid item>
                     <Switch
                         size="small"
@@ -170,7 +171,7 @@ function JobPanel(props) {
                     />
                 </Grid>
                 <Tooltip
-                    title={"Choose a specific pair"}><Grid item>SELECTED</Grid></Tooltip>
+                    title={"Choose a specific pair"}><Grid item><InputLabel>SELECTED</InputLabel></Grid></Tooltip>
             </Grid>
             {compareGroups === 'selected' &&
             <ButtonGroup variant="outlined" disabled={selection == null || selection.size === 0}>

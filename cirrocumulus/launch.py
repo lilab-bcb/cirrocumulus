@@ -65,13 +65,13 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths)
 
 
 def create_app():
-    from cirrocumulus.api import blueprint
+    from cirrocumulus.api import cirro_blueprint
     from flask_compress import Compress
     from flask import Flask, send_from_directory
     os.environ['WERKZEUG_RUN_MAIN'] = 'true'
     app = Flask(__name__, static_folder='client', static_url_path='')
     app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-    app.register_blueprint(blueprint, url_prefix='/api')
+    app.register_blueprint(cirro_blueprint, url_prefix='/api')
 
     @app.route('/')
     def root():

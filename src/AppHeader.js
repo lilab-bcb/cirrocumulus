@@ -12,7 +12,7 @@ import Brightness2Icon from '@mui/icons-material/Brightness3';
 import HelpIcon from '@mui/icons-material/Help';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ReactMarkdown from 'markdown-to-jsx';
-import React from 'react';
+import React, {useState} from 'react';
 import {connect} from 'react-redux';
 import {
     DELETE_DATASET_DIALOG,
@@ -25,6 +25,7 @@ import {
     setChartOptions,
     setDataset,
     setDialog,
+    setDrawerOpen,
     setMessage,
     setSavedDatasetState,
     setTab
@@ -43,168 +44,185 @@ import {
 } from './util';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
+import MenuIcon from '@mui/icons-material/Menu';
 
 
-class AppHeader extends React.PureComponent {
+function AppHeader(props) {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            userMenuOpen: false,
-            userMenuAnchorEl: null,
-            moreMenuOpen: false,
-            moreMenuAnchorEl: null
-        };
+    const {
+        chartOptions,
+        dataset,
+        datasetSelectorColumns,
+        drawerOpen,
+        distributionData,
+        handleChartOptions,
+        handleLogin,
+        handleLogout,
+        handleDataset,
+        handleDrawerOpen,
+        handleDialog,
+        handleTab,
+        loadingApp,
+        handleSavedDatasetState,
+        jobResults,
+        email,
+        savedDatasetState,
+        selection,
+        searchTokens,
+        serverInfo,
+        tab,
+        user
+    } = props;
 
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
+    const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+    const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState(null);
+    const [datasetDetailsEl, setDatasetDetailsEl] = useState(null);
+
+    function onTabChange(event, value) {
+        handleTab(value);
     }
 
-    handleTabChange = (event, value) => {
-        this.props.handleTab(value);
-    };
+    function onUserMenuClose() {
+        setUserMenuOpen(false);
+    }
 
+    function onMoreMenuClose() {
+        setMoreMenuOpen(false);
+    }
 
-    handleUserMenuClose = () => {
-        this.setState({userMenuOpen: false});
-    };
+    function onHelp() {
+        handleDialog(HELP_DIALOG);
+    }
 
-    handleMoreMenuClose = () => {
-        this.setState({moreMenuOpen: false});
-    };
+    function onUserMenuOpen(event) {
+        setUserMenuOpen(true);
+        setUserMenuAnchorEl(event.currentTarget);
+    }
 
+    function onMoreMenuOpen(event) {
+        setMoreMenuOpen(true);
+        setMoreMenuAnchorEl(event.currentTarget);
+    }
 
-    handleHelp = () => {
-        this.props.handleDialog(HELP_DIALOG);
-    };
+    function getLinkJson() {
+        return getDatasetStateJson(props);
+    }
 
-
-    handleUserMenuOpen = (event) => {
-        this.setState({userMenuOpen: true, userMenuAnchorEl: event.currentTarget});
-    };
-    handleMoreMenuOpen = (event) => {
-        this.setState({moreMenuOpen: true, moreMenuAnchorEl: event.currentTarget});
-    };
-
-    getLinkJson = () => {
-        return getDatasetStateJson(this.props);
-    };
-
-    handleDataset = (id) => {
-        if (this.props.dataset != null) {
-            const savedDatasetState = this.props.savedDatasetState;
-            const link = this.getLinkJson();
+    function onDataset(id) {
+        if (dataset != null) {
+            const link = getLinkJson();
             link.dataset = null;
-            savedDatasetState[this.props.dataset.id] = link;
-            this.props.handleSavedDatasetState(savedDatasetState);
+            savedDatasetState[dataset.id] = link;
+            handleSavedDatasetState(savedDatasetState);
         }
-        this.props.handleTab('embedding'); // embedding won't render unless visible
-        this.props.handleDataset(id);
-    };
+        handleTab('embedding'); // embedding won't render unless visible
+        handleDataset(id);
+    }
 
-    copyLink = (event) => {
+    function copyLink(event) {
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        linkText += '#q=' + encodeURIComponent(JSON.stringify(this.getLinkJson()));
+        linkText += '#q=' + encodeURIComponent(JSON.stringify(getLinkJson()));
         copyToClipboard(linkText);
-        this.props.setMessage('Link copied');
-        this.setState({moreMenuOpen: false});
-    };
+        setMessage('Link copied');
+        setMoreMenuOpen(false);
+    }
 
 
-    onDarkMode = () => {
-        this.props.chartOptions.darkMode = !this.props.chartOptions.darkMode;
-        this.props.handleChartOptions(this.props.chartOptions);
-    };
+    function onDarkMode() {
+        chartOptions.darkMode = !chartOptions.darkMode;
+        handleChartOptions(chartOptions);
+    }
 
-    handleLogout = () => {
-        this.setState({userMenuOpen: false});
-        this.props.handleLogout();
-    };
+    function onLogout() {
+        setUserMenuOpen(false);
+        handleLogout();
+    }
 
-    handleImportDataset = (event) => {
-        this.props.handleDialog(IMPORT_DATASET_DIALOG);
-        this.setState({moreMenuOpen: false});
-    };
+    function onImportDataset(event) {
+        handleDialog(IMPORT_DATASET_DIALOG);
+        setMoreMenuOpen(false);
+    }
 
-    handleSettings = (event) => {
-        this.props.handleDialog(EDIT_DATASET_DIALOG);
-        this.setState({moreMenuOpen: false});
-    };
+    function onSettings(event) {
+        handleDialog(EDIT_DATASET_DIALOG);
+        setMoreMenuOpen(false);
+    }
 
-    handleDelete = (event) => {
-        this.props.handleDialog(DELETE_DATASET_DIALOG);
-        this.setState({moreMenuOpen: false});
-    };
+    function onDelete(event) {
+        handleDialog(DELETE_DATASET_DIALOG);
+        setMoreMenuOpen(false);
+    }
 
-    handleShowDatasetDetails = (event) => {
-        this.setState({datasetDetailsEl: event.currentTarget});
-    };
-    handleCloseDatasetDetails = (event) => {
-        this.setState({datasetDetailsEl: null});
-    };
+    function onShowDatasetDetails(event) {
+        setDatasetDetailsEl(event.currentTarget);
+    }
 
-    render() {
-        const {
-            dataset,
-            datasetSelectorColumns,
-            distributionData,
-            loadingApp,
-            jobResults,
-            email,
-            selection,
-            searchTokens,
-            serverInfo,
-            tab,
-            user
-        } = this.props;
-        const datasetDetailsOpen = Boolean(this.state.datasetDetailsEl);
-        const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
-        const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection != null;
-        const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
-        const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
-        const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
-        const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
+    function onCloseDatasetDetails(event) {
+        setDatasetDetailsEl(null);
+    }
 
-        const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
-        const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
-        return (
-            <AppBar position="fixed" sx={{width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`}}>
-                <Toolbar variant="dense" style={{paddingLeft: 6}}>
-                    {dataset != null && datasetDetailsOpen && <Popover
-                        id={"dataset-details"}
-                        open={datasetDetailsOpen}
-                        anchorEl={this.state.datasetDetailsEl}
-                        onClose={this.handleCloseDatasetDetails}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'center'
-                        }}
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'center'
-                        }}
-                    >
-                        <Box style={{width: 500, padding: '1em'}}>
-                            <Typography>
-                                <b>{dataset.name}</b>
-                            </Typography>
-                            <Divider/>
-                            {datasetSelectorColumns.map(c => {
-                                return c.id === 'name' || dataset[c.id] == null ? null :
-                                    <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
-                            })}
-                            {dataset.description &&
-                            <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                                          children={dataset.description}/></>}
-                            {!process.env.REACT_APP_STATIC === 'true' && <Typography>
-                                URL: {dataset.url}
-                            </Typography>}
-                        </Box>
-                    </Popover>
-                    }
-                    {dataset == null && <Typography variant="h5">
-                        <CirroIcon/> Cirrocumulus
-                    </Typography>}
-                    {dataset && <CirroIcon/>}
-                    {dataset &&
+
+    const datasetDetailsOpen = Boolean(datasetDetailsEl);
+    const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
+    const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection != null;
+    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
+    const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
+    const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
+    const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
+
+    const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
+    const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
+    return (
+        <AppBar position="fixed"
+                sx={drawerOpen ? {width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`} : {width: '100%'}}>
+            <Toolbar variant="dense" style={{paddingLeft: 6}}>
+                {dataset != null && datasetDetailsOpen && <Popover
+                    id={"dataset-details"}
+                    open={datasetDetailsOpen}
+                    anchorEl={datasetDetailsEl}
+                    onClose={onCloseDatasetDetails}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center'
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'center'
+                    }}
+                >
+
+                    <Box style={{width: 500, padding: '1em'}}>
+                        <Typography variant="h6">{dataset.name}</Typography>
+                        <Divider/>
+                        {datasetSelectorColumns.map(c => {
+                            return c.id === 'name' || dataset[c.id] == null ? null :
+                                <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
+                        })}
+                        {dataset.description &&
+                        <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                                      children={dataset.description}/></>}
+                        {!process.env.REACT_APP_STATIC === 'true' && <Typography>
+                            URL: {dataset.url}
+                        </Typography>}
+                    </Box>
+                </Popover>
+                }
+                {dataset == null && <Typography variant="h5">
+                    <CirroIcon/> Cirrocumulus
+                </Typography>}
+                <IconButton
+                    size="large"
+                    color="inherit"
+                    aria-label="open drawer"
+                    onClick={e => handleDrawerOpen(true)}
+                    sx={{mr: 2, ...(drawerOpen && {display: 'none'})}}
+                >
+                    <MenuIcon/>
+                </IconButton>
+                {dataset &&
+                <><CirroIcon/><Typography variant="h5">
                     <Link
                         color="inherit"
                         style={{
@@ -216,128 +234,121 @@ class AppHeader extends React.PureComponent {
                         }}
                         href="#"
                         underline={"none"}
-                        onClick={dataset.id != null && datasetSelectorColumns ? this.handleShowDatasetDetails : null}
-                        aria-owns={this.state.datasetDetailsOpen ? 'dataset-details' : undefined}
-                        aria-haspopup="true"
-                        component={"h3"}>
-                        <b>{dataset.name}</b>
+                        onClick={dataset.id != null && datasetSelectorColumns ? onShowDatasetDetails : null}
+                        aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
+                        aria-haspopup="true">
+                        {dataset.name}
                     </Link>
-                    }
-                    {dataset && <small style={{whiteSpace: 'nowrap'}}>&nbsp;
-                        {hasSelection && shape != null && intFormat(selection.size) + ' / '}
-                        {shape != null && intFormat(shape[0]) + ' cells'}
-                    </small>}
+                </Typography><Typography
+                    variant="subtitle2">&nbsp;{hasSelection && shape != null && intFormat(selection.size) + ' / '}
+                    {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
+                </>}
+
+                <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
+                    <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
+                         disabled={dataset == null}/>
+                    <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
+                         disabled={dataset == null || distributionData.length === 0}/>
+                    <Tab data-testid="composition-tab" value="composition" label="Composition"
+                         disabled={dataset == null || obsCat.length < 2}/>
+                    {<Tab data-testid="results-tab" value="results" label="Results"
+                          disabled={dataset == null || jobResults.length === 0}/>}
+                </Tabs>
+
+                <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
+                    {serverInfo.brand &&
+                    <ReactMarkdown options={{
+                        overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
+                            props.display = 'inline';
+                            props.gutterBottom = false;
+                            return React.createElement(type, props, children);
+                        }
+                    }} children={serverInfo.brand}/>}
 
 
-                    <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={this.handleTabChange}>
-                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
-                             disabled={dataset == null}/>
-                        <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
-                             disabled={dataset == null || distributionData.length === 0}/>
-                        <Tab data-testid="composition-tab" value="composition" label="Composition"
-                             disabled={dataset == null || obsCat.length < 2}/>
-                        {<Tab data-testid="results-tab" value="results" label="Results"
-                              disabled={dataset == null || jobResults.length === 0}/>}
-                    </Tabs>
+                    {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={onDataset}/>}
+                    {showMoreMenu && <Tooltip title={'More'}>
+                        <IconButton
+                            aria-label="Menu"
+                            aria-haspopup="true"
+                            onClick={onMoreMenuOpen}
+                            size="large">
+                            <MoreVertIcon/>
+                        </IconButton>
+                    </Tooltip>}
+                    {showMoreMenu && <Menu id="more-menu"
+                                           anchorEl={moreMenuAnchorEl}
+                                           anchorOrigin={{
+                                               vertical: 'top',
+                                               horizontal: 'right'
+                                           }}
+                                           transformOrigin={{
+                                               vertical: 'top',
+                                               horizontal: 'right'
+                                           }} open={moreMenuOpen}
+                                           onClose={onMoreMenuClose}>
+                        {showAddDataset && <MenuItem onClick={onImportDataset}>
+                            New Dataset
+                        </MenuItem>}
 
-                    <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
-                        {serverInfo.brand &&
-                        <ReactMarkdown options={{
-                            overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
-                                props.display = 'inline';
-                                props.gutterBottom = false;
-                                const elem = React.createElement(type, props, children);
-                                return elem;
-                            }
-                        }} children={serverInfo.brand}/>}
+                        {showEditDataset && <MenuItem onClick={onSettings}>Edit Dataset</MenuItem>}
+                        {showDeleteDataset && <MenuItem onClick={onDelete}>Delete Dataset</MenuItem>}
+                        {(showAddDataset || showEditDataset || showDeleteDataset) && dataset != null && <Divider/>}
+                        {dataset != null && <MenuItem onClick={copyLink}>Copy Link </MenuItem>}
+                    </Menu>}
 
+                    {<Tooltip title={"Toggle Light/Dark Theme"}>
+                        <IconButton
+                            edge={false}
+                            className={chartOptions.darkMode ? 'cirro-active' : ''}
+                            aria-label="Toggle Theme"
+                            onClick={() => onDarkMode()}
+                            size="large">
+                            <Brightness2Icon/>
+                        </IconButton>
+                    </Tooltip>}
+                    {dataset != null && <Tooltip title={'Help'}>
+                        <IconButton aria-label="Help" onClick={onHelp} size="large">
+                            <HelpIcon/>
+                        </IconButton>
+                    </Tooltip>}
+                    {email != null && email !== '' &&
+                    <Tooltip title={email}>
+                        <IconButton
+                            aria-label="Menu"
+                            aria-haspopup="true"
+                            onClick={onUserMenuOpen}
+                            size="large">
+                            <AccountCircle/>
+                        </IconButton>
+                    </Tooltip>}
+                    {email != null && email !== '' &&
+                    <Menu id="menu-user"
+                          anchorEl={userMenuAnchorEl}
+                          anchorOrigin={{
+                              vertical: 'top',
+                              horizontal: 'right'
+                          }}
 
-                        {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={this.handleDataset}/>}
-                        {showMoreMenu && <Tooltip title={'More'}>
-                            <IconButton
-                                aria-label="Menu"
-                                aria-haspopup="true"
-                                onClick={this.handleMoreMenuOpen}
-                                size="large">
-                                <MoreVertIcon/>
-                            </IconButton>
-                        </Tooltip>}
-                        {showMoreMenu && <Menu id="more-menu"
-                                               anchorEl={this.state.moreMenuAnchorEl}
-                                               anchorOrigin={{
-                                                   vertical: 'top',
-                                                   horizontal: 'right'
-                                               }}
+                          transformOrigin={{
+                              vertical: 'top',
+                              horizontal: 'right'
+                          }} open={userMenuOpen}
+                          onClose={onUserMenuClose}>
+                        <MenuItem onClick={onLogout}>Sign Out</MenuItem>
+                    </Menu>}
+                    {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} color="inherit"
+                                            onClick={handleLogin}>Sign In</Button>}
+                </div>
+            </Toolbar>
+        </AppBar>
+    );
 
-                                               transformOrigin={{
-                                                   vertical: 'top',
-                                                   horizontal: 'right'
-                                               }} open={this.state.moreMenuOpen}
-                                               onClose={this.handleMoreMenuClose}>
-                            {showAddDataset && <MenuItem onClick={this.handleImportDataset}>
-                                New Dataset
-                            </MenuItem>}
-
-                            {showEditDataset && <MenuItem onClick={this.handleSettings}>Edit Dataset</MenuItem>}
-                            {showDeleteDataset && <MenuItem onClick={this.handleDelete}>Delete Dataset</MenuItem>}
-                            {(showAddDataset || showEditDataset || showDeleteDataset) && dataset != null && <Divider/>}
-                            {dataset != null && <MenuItem onClick={this.copyLink}>Copy Link </MenuItem>}
-                        </Menu>}
-
-                        {<Tooltip title={"Toggle Light/Dark Theme"}>
-                            <IconButton
-                                edge={false}
-                                className={this.props.chartOptions.darkMode ? 'cirro-active' : ''}
-                                aria-label="Toggle Theme"
-                                onClick={() => this.onDarkMode()}
-                                size="large">
-                                <Brightness2Icon/>
-                            </IconButton>
-                        </Tooltip>}
-                        {dataset != null && <Tooltip title={'Help'}>
-                            <IconButton aria-label="Help" onClick={this.handleHelp} size="large">
-                                <HelpIcon/>
-                            </IconButton>
-                        </Tooltip>}
-                        {email != null && email !== '' &&
-                        <Tooltip title={email}>
-                            <IconButton
-                                aria-label="Menu"
-                                aria-haspopup="true"
-                                onClick={this.handleUserMenuOpen}
-                                size="large">
-                                <AccountCircle/>
-                            </IconButton>
-                        </Tooltip>}
-                        {email != null && email !== '' &&
-                        <Menu id="menu-user"
-                              anchorEl={this.state.userMenuAnchorEl}
-                              anchorOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right'
-                              }}
-
-                              transformOrigin={{
-                                  vertical: 'top',
-                                  horizontal: 'right'
-                              }} open={this.state.userMenuOpen}
-                              onClose={this.handleUserMenuClose}>
-                            <MenuItem onClick={this.handleLogout}>Sign Out</MenuItem>
-                        </Menu>}
-                        {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} color="inherit"
-                                                onClick={this.props.handleLogin}>Sign In</Button>}
-                    </div>
-                </Toolbar>
-            </AppBar>
-        );
-    }
 }
 
 const mapStateToProps = state => {
     return {
         activeFeature: state.activeFeature,
-        binSummary: state.binSummary,
-        binValues: state.binValues,
         chartOptions: state.chartOptions,
         combineDatasetFilters: state.combineDatasetFilters,
         dataset: state.dataset,
@@ -347,6 +358,7 @@ const mapStateToProps = state => {
         dialog: state.dialog,
         distributionData: state.distributionData,
         distributionPlotInterpolator: state.distributionPlotInterpolator,
+        drawerOpen: state.panel.drawerOpen,
         email: state.email,
         embeddingLabels: state.embeddingLabels,
         embeddings: state.embeddings,
@@ -381,11 +393,9 @@ const mapDispatchToProps = (dispatch) => {
         handleLogout: () => {
             dispatch(logout());
         },
-
         handleSavedDatasetState: value => {
             dispatch(setSavedDatasetState(value));
         },
-
         handleDataset: value => {
             dispatch(setDataset(value));
         },
@@ -394,6 +404,9 @@ const mapDispatchToProps = (dispatch) => {
         },
         handleChartOptions: (value) => {
             dispatch(setChartOptions(value));
+        },
+        handleDrawerOpen: (value) => {
+            dispatch(setDrawerOpen(value));
         }
     };
 };
