@@ -175,11 +175,11 @@ export default function CategoricalLegend(props) {
     // }
 
     function onNegativeMarkers(event, value) {
-        setNegativeMarkers(value);
+        setNegativeMarkers(value.map(item => item.id));
     }
 
     function onPositiveMarkers(event, value) {
-        setPositiveMarkers(value);
+        setPositiveMarkers(value.map(item => item.id));
     }
 
     function addFeatures(event, features) {
