@@ -178,9 +178,8 @@ function AppHeader(props) {
     const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
     const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
     return (
-        <Box sx={{display: 'flex'}}><AppBar position="fixed"
+        <Box sx={{display: 'flex'}}><AppBar position="fixed" color={"default"}
                                             sx={{
-                                                backgroundColor: (theme) => theme.palette.mode === 'light' ? '#5c6bc0' : null,
                                                 zIndex: (theme) => theme.zIndex.drawer + 1
                                             }}>
             <Toolbar variant="dense" style={{paddingLeft: 0}}>
