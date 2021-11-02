@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, Response, request, stream_with_context
 
 import cirrocumulus.data_processing as data_processing
-from .anndata_util import adata_to_json
+from .anndata_util import adata_to_df
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
@@ -486,12 +486,14 @@ def handle_job():
                         adata = anndata.read(f)
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
-                return Response(adata_to_json(adata), content_type='application/json')
+                adata_df = adata_to_df(adata)
+                return Response(adata_df.to_json(double_precision=2, orient='records'), content_type='application/json')
             else:
                 # URL to JSON or text
                 return send_file(url)
         elif isinstance(job, anndata.AnnData):
-            return Response(adata_to_json(job), content_type='application/json')
+            return Response(adata_to_df(job).to_json(double_precision=2, orient='records'),
+                            content_type='application/json')
         # elif isinstance(job, bytes):
         #     job = job.decode('ascii')
         return job
