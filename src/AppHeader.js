@@ -30,7 +30,6 @@ import {
     setSavedDatasetState,
     setTab
 } from './actions';
-import {drawerWidth} from './App';
 import CirroIcon from './CirroIcon';
 import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
@@ -82,6 +81,10 @@ function AppHeader(props) {
 
     function onTabChange(event, value) {
         handleTab(value);
+    }
+
+    function toggleDrawer() {
+        handleDrawerOpen(!drawerOpen);
     }
 
     function onUserMenuClose() {
@@ -175,9 +178,12 @@ function AppHeader(props) {
     const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
     const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
     return (
-        <AppBar position="fixed"
-                sx={drawerOpen ? {width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`} : {width: '100%'}}>
-            <Toolbar variant="dense" style={{paddingLeft: 6}}>
+        <Box sx={{display: 'flex'}}><AppBar position="fixed"
+                                            sx={{
+                                                backgroundColor: (theme) => theme.palette.mode === 'light' ? '#5c6bc0' : null,
+                                                zIndex: (theme) => theme.zIndex.drawer + 1
+                                            }}>
+            <Toolbar variant="dense" style={{paddingLeft: 0}}>
                 {dataset != null && datasetDetailsOpen && <Popover
                     id={"dataset-details"}
                     open={datasetDetailsOpen}
@@ -192,7 +198,6 @@ function AppHeader(props) {
                         horizontal: 'center'
                     }}
                 >
-
                     <Box style={{width: 500, padding: '1em'}}>
                         <Typography variant="h6">{dataset.name}</Typography>
                         <Divider/>
@@ -209,20 +214,18 @@ function AppHeader(props) {
                     </Box>
                 </Popover>
                 }
-                {dataset == null && <Typography variant="h5">
-                    <CirroIcon/> Cirrocumulus
-                </Typography>}
                 <IconButton
                     size="large"
                     color="inherit"
-                    aria-label="open drawer"
-                    onClick={e => handleDrawerOpen(true)}
-                    sx={{mr: 2, ...(drawerOpen && {display: 'none'})}}
+                    aria-label="toggle drawer"
+                    onClick={toggleDrawer}
                 >
                     <MenuIcon/>
                 </IconButton>
+                <CirroIcon/>
+                {dataset == null && <Typography variant="h5">Cirrocumulus</Typography>}
                 {dataset &&
-                <><CirroIcon/><Typography variant="h5">
+                <><Typography variant="h5">
                     <Link
                         color="inherit"
                         style={{
@@ -243,7 +246,6 @@ function AppHeader(props) {
                     variant="subtitle2">&nbsp;{hasSelection && shape != null && intFormat(selection.size) + ' / '}
                     {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
                 </>}
-
                 <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
                     <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
                          disabled={dataset == null}/>
@@ -254,7 +256,6 @@ function AppHeader(props) {
                     {<Tab data-testid="results-tab" value="results" label="Results"
                           disabled={dataset == null || jobResults.length === 0}/>}
                 </Tabs>
-
                 <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
                     {serverInfo.brand &&
                     <ReactMarkdown options={{
@@ -342,7 +343,9 @@ function AppHeader(props) {
                 </div>
             </Toolbar>
         </AppBar>
-    );
+        </Box>
+    )
+        ;
 
 }
 
