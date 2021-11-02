@@ -77,7 +77,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         if not is_serve:
             max_workers = 1
         else:
-            max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
+            max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '1'))
         executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
             max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
