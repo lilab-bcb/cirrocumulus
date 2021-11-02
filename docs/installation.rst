@@ -13,63 +13,6 @@ pip
     cirro launch <path_to_dataset>
 
 
-Terra_ Cloud Environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-- Click ``Open Terminal`` to connect to your running VM
-- Install cirrocumulus via pip if it was not installed in your docker image
-- Download your dataset to your running VM using gsutil as in the example below.
-  Alternatively, you can use gcsfuse_ to mount your Google cloud bucket.
-
-    gsutil -m cp gs://fc-000/test.h5ad .
-
-- Launch cirrocumulus via the command line in the background::
-
-    cirro launch test.h5ad &
-
-- Install ngrok_::
-
-    wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip \
-    && unzip ngrok-stable-linux-amd64.zip \
-    && rm -f ngrok-stable-linux-amd64.zip
-
-- Use ngrok_ to expose cirrocumulus publicly::
-
-    ./ngrok http 5000
-
-After you start ngrok, it will display a UI in your terminal with the public URL of your tunnel:
-
-.. image:: images/ngrok.png
-
-- Navigate to your public URL in your browser (\https://383bc396cc0b.ngrok.io in previous example)
-
-Docker
-^^^^^^^^
-
-- Launch using docker::
-
-    docker run -it -p 5000:5000 --rm -v `pwd`:/data cumulusprod/cirrocumulus cirro launch /data/dataset1.h5ad --host 0.0.0.0
-
-
-UGER (Broad users only)
-^^^^^^^^^^^^^^^^^^^^^^^^
-Request an interactive UGER node with 4G memory::
-
-    reuse UGER
-    qrsh -q interactive -l h_vmem=4g
-
-Add conda to your path::
-
-    reuse Anaconda3
-
-Activate your virtual environment containing cirrocumulus::
-
-    source activate /path_to_your_conda_envs/cirrocumulus
-
-Launch, specifying the host IP address::
-
-    cirro launch <path_to_dataset> --host $(hostname -i)
-
-
 Server Mode
 ^^^^^^^^^^^^^^
 
@@ -210,6 +153,35 @@ Static Website
     cd build ; npx http-server .
 
 - Host the build directory on your static website hosting service (e.g. `Amazon S3`_, `Google Cloud Storage`_)
+
+Terra_ Cloud Environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- Click ``Open Terminal`` to connect to your running VM
+- Install cirrocumulus via pip if it was not installed in your docker image
+- Download your dataset to your running VM using gsutil as in the example below.
+  Alternatively, you can use gcsfuse_ to mount your Google cloud bucket.
+
+    gsutil -m cp gs://fc-000/test.h5ad .
+
+- Launch cirrocumulus via the command line in the background::
+
+    cirro launch test.h5ad &
+
+- Install ngrok_::
+
+    wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip \
+    && unzip ngrok-stable-linux-amd64.zip \
+    && rm -f ngrok-stable-linux-amd64.zip
+
+- Use ngrok_ to expose cirrocumulus publicly::
+
+    ./ngrok http 5000
+
+After you start ngrok, it will display a UI in your terminal with the public URL of your tunnel:
+
+.. image:: images/ngrok.png
+
+- Navigate to your public URL in your browser (\https://383bc396cc0b.ngrok.io in previous example)
 
 
 Developer Instructions
