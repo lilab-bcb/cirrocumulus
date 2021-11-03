@@ -24,11 +24,12 @@ def save_job_result_to_file(result, job_id):
     new_result = dict()
     new_result['content-type'] = result.pop('content-type')
     if new_result['content-type'] == 'application/json':
-        compression = 'gzip'
-        new_result['content-encoding'] = compression
+        new_result['content-encoding'] = 'gzip'
+        import gzip
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.json.gz')
-        with get_fs(url).open(url, 'wt', compression=compression) as out:
-            out.write(ujson.dumps(result, double_precision=2, orient='values'))
+        with get_fs(url).open(url, 'wb') as out:
+            text = ujson.dumps(result, double_precision=2, orient='values')
+            out.write(gzip.compress(text.encode('UTF-8')))
     elif new_result['content-type'] == 'application/h5ad':
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.h5ad')
         with get_fs(url).open(url, 'wb') as out:
@@ -73,11 +74,11 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
     import os
     is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
-
         if not is_serve:
             max_workers = 1
         else:
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '1'))
+
         executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
             max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
@@ -88,7 +89,6 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
                              dataset_api if not is_serve else None)
     future.add_done_callback(done_callback)
     job_id_2_future[job_id] = future
-
     return job_id
 
 
