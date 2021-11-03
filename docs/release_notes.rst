@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.23 `November 3, 2021`
+    * Style updates
+    * Fixed error loading differential expression results
+
 - 1.1.22.post10 `November 2, 2021`
     * Made left-side drawer collapsible
     * Fixed error saving cluster markers
