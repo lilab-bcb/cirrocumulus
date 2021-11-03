@@ -47,7 +47,7 @@ export const drawerWidth = 240;
 function App(props) {
     const tooltipElementRef = useRef();
     const galleryRef = useRef();
-    const {drawerOpen, theme, dataset, dialog, handleDrawerOpen, loading, loadingApp, message, setMessage, tab} = props;
+    const {drawerOpen, theme, dataset, dialog, loading, loadingApp, message, setMessage, tab} = props;
 
     function handleMessageClose() {
         setMessage(null);
@@ -187,7 +187,7 @@ const mapStateToProps = state => {
         dataset: state.dataset,
         drawerOpen: state.panel.drawerOpen,
         dialog: state.dialog,
-        loading: state.loading,
+        loading: state.tasks.length > 0,
         loadingApp: state.loadingApp,
         message: state.message,
         tab: state.tab

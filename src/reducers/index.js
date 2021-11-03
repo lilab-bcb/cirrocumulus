@@ -2,6 +2,7 @@ import {isPlainObject, isString} from 'lodash';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
+    ADD_TASK,
     DEFAULT_DARK_MODE,
     DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
     DEFAULT_DRAG_MODE,
@@ -14,6 +15,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY,
     DELETE_DATASET,
+    REMOVE_TASK,
     RESTORE_VIEW,
     SET_ACTIVE_FEATURE,
     SET_CATEGORICAL_NAME,
@@ -29,8 +31,8 @@ import {
     SET_DISTRIBUTION_DATA,
     SET_DISTRIBUTION_PLOT_INTERPOLATOR,
     SET_DISTRIBUTION_PLOT_OPTIONS,
-    SET_DRAG_DIVIDER,
     SET_DOMAIN,
+    SET_DRAG_DIVIDER,
     SET_DRAWER_OPEN,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
@@ -41,7 +43,6 @@ import {
     SET_JOB_RESULT,
     SET_JOB_RESULTS,
     SET_LEGEND_SCROLL_POSITION,
-    SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
     SET_MARKERS,
@@ -808,10 +809,14 @@ export function legendScrollPosition(state = {}, action) {
     }
 }
 
-function loading(state = false, action) {
+// array of {label}
+function tasks(state = [], action) {
     switch (action.type) {
-        case SET_LOADING:
-            return action.payload;
+        case ADD_TASK:
+            return [...state, action.payload];
+        case REMOVE_TASK:
+            state.splice(state.indexOf(action.payload), 1);
+            return state.slice();
         default:
             return state;
     }
@@ -857,7 +862,7 @@ export default combineReducers({
     jobResultId,
     jobResults,
     legendScrollPosition,
-    loading,
+    tasks,
     loadingApp,
     markerOpacity,
     markers,
