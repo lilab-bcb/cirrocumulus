@@ -272,11 +272,11 @@ def handle_dataset_view():
         if request.method == 'POST' and dataset_id is None:
             return 'Please supply a ds_id', 400
 
-        view_id = database_api.upsert_dataset_view(
+        result = database_api.upsert_dataset_view(
             email=email,
             dataset_id=dataset_id,
             view=d)
-        return json_response({'id': view_id})
+        return json_response(result)
     elif request.method == 'DELETE':
         database_api.delete_dataset_view(email, view_id=d.pop('id'))
         return json_response('', 204)
