@@ -9,7 +9,6 @@ import {useRef} from 'react';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import CloseIcon from '@mui/icons-material/Close';
 import {connect} from 'react-redux';
 import {
@@ -78,12 +77,10 @@ function App(props) {
             {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
             {dialog === HELP_DIALOG && <HelpDialog/>}
             {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
-
             <AppHeader/>
             <Drawer
                 open={drawerOpen}
                 variant="persistent"
-                anchor="left"
                 sx={{
                     width: drawerOpen ? drawerWidth : null,
                     flexShrink: 0,
@@ -93,19 +90,9 @@ function App(props) {
                     }
                 }}
             >
-                <Box sx={{
-                    position: 'absolute',
-                    right: 14,
-                    top: 0
-                }}>
-                    <IconButton onClick={e => handleDrawerOpen(false)} size={"large"} edge={"end"}
-                                sx={{padding: 0}}>
-                        {<ChevronLeftIcon/>}
-                    </IconButton>
-                </Box>
+                <Toolbar/>
                 {dataset != null && <SideBar key={dataset.id} compareActions={COMPARE_ACTIONS}/>}
             </Drawer>
-
             <Box scomponent="main"
                  sx={{flexGrow: 1, marginLeft: 1, paddingBottom: 24, color: color, backgroundColor: footerBackground}}>
                 <Toolbar/>

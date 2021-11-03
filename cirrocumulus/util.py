@@ -57,8 +57,8 @@ def get_fs(path):
     return fs
 
 
-def to_json(data):
-    return ujson.dumps(data, double_precision=2, orient='values')
+def to_json(data, orient='values'):
+    return ujson.dumps(data, double_precision=2, orient=orient)
 
 
 def json_response(data, response=200):

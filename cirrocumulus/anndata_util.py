@@ -7,7 +7,7 @@ DATA_TYPE_UNS_KEY = 'data_type'
 ADATA_MODULE_UNS_KEY = 'anndata_module'
 
 
-def adata_to_json(adata):
+def adata_to_df(adata):
     df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
     for key in adata.layers.keys():
         df2 = pd.DataFrame(adata.layers[key], index=adata.obs.index.astype(str) + '-{}'.format(key),
@@ -16,7 +16,7 @@ def adata_to_json(adata):
 
     df = df.T.join(adata.var)
     df.index.name = 'id'
-    return df.reset_index().to_json(double_precision=2, orient='records')
+    return df.reset_index()
 
 
 def get_scanpy_marker_keys(dataset):
