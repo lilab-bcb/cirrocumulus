@@ -12,7 +12,7 @@ from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
-from .util import create_instance, add_dataset_providers, get_fs, import_path
+from .util import create_instance, add_dataset_providers, get_fs, import_path, open_file
 
 executor = None
 job_id_2_future = dict()
@@ -25,11 +25,9 @@ def save_job_result_to_file(result, job_id):
     new_result['content-type'] = result.pop('content-type')
     if new_result['content-type'] == 'application/json':
         new_result['content-encoding'] = 'gzip'
-        import gzip
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.json.gz')
-        with get_fs(url).open(url, 'wb') as out:
-            text = ujson.dumps(result, double_precision=2, orient='values')
-            out.write(gzip.compress(text.encode('UTF-8')))
+        with open_file(url, 'wt', compression='gzip') as out:
+            out.write(ujson.dumps(result, double_precision=2, orient='values'))
     elif new_result['content-type'] == 'application/h5ad':
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + '.h5ad')
         with get_fs(url).open(url, 'wb') as out:
