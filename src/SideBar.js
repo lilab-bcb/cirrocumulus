@@ -17,29 +17,19 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import {debounce, find} from 'lodash';
 import React from 'react';
 import {
-    deleteFeatureSet,
     deleteView,
     getTraceKey,
     handleDomainChange,
     openView,
-    removeDatasetFilter,
     SAVE_DATASET_FILTER_DIALOG,
-    setActiveFeature,
     setChartOptions,
     setChartSize,
-    setCombineDatasetFilters,
     setDialog,
-    setDistributionPlotOptions,
     setInterpolator,
     setMarkerOpacity,
     setPointSize,
-    setSearchTokens,
-    setSelectedEmbedding,
-    setTab,
     setUnselectedMarkerOpacity,
-    setUnselectedPointSize,
-    submitJob,
-    toggleEmbeddingLabel
+    setUnselectedPointSize
 } from './actions';
 import {EditableColorScheme} from './EditableColorScheme';
 import JobResultOptions from './JobResultOptions';
@@ -320,7 +310,6 @@ class SideBar extends React.PureComponent {
             pointSize,
             serverInfo,
             tab,
-            textColor,
             unselectedPointSize
         } = this.props;
         const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
@@ -453,7 +442,6 @@ class SideBar extends React.PureComponent {
 
 
                     <EditableColorScheme
-                        textColor={textColor}
                         interpolator={activeInterpolator}
                         domain={primaryTrace && primaryTrace.continuous && primaryTrace.name !== '__count' ? primaryTrace.colorScale.domain() : null}
                         min={minColor}
@@ -555,26 +543,17 @@ const mapStateToProps = state => {
             categoricalNames: state.categoricalNames,
             chartSize: state.chartSize,
             chartOptions: state.chartOptions,
-            combineDatasetFilters: state.combineDatasetFilters,
             dataset: state.dataset,
-            datasetFilter: state.datasetFilter,
-            datasetFilters: state.datasetFilters,
             datasetViews: state.datasetViews,
-            distributionPlotOptions: state.distributionPlotOptions,
             embeddingData: state.embeddingData,
-            embeddingLabels: state.embeddingLabels,
             embeddings: state.embeddings,
             globalFeatureSummary: state.globalFeatureSummary,
             interpolator: state.interpolator,
             markerOpacity: state.markerOpacity,
             markers: state.markers,
-            numberOfBins: state.numberOfBins,
             pointSize: state.pointSize,
-            savedDatasetFilter: state.savedDatasetFilter,
-            searchTokens: state.searchTokens,
             serverInfo: state.serverInfo,
             tab: state.tab,
-            textColor: state.textColor,
             unselectedPointSize: state.unselectedPointSize,
             unselectedMarkerOpacity: state.unselectedMarkerOpacity
         };
@@ -584,12 +563,6 @@ const mapDispatchToProps = (dispatch) => {
         return {
             handleDialog: (value) => {
                 dispatch(setDialog(value));
-            },
-            handleTab: (value) => {
-                dispatch(setTab(value));
-            },
-            handleActiveFeature: (value) => {
-                dispatch(setActiveFeature(value));
             },
             handleInterpolator: value => {
                 dispatch(setInterpolator(value));
@@ -603,15 +576,6 @@ const mapDispatchToProps = (dispatch) => {
             onDomain: (value) => {
                 dispatch(handleDomainChange(value));
             },
-            handleCombineDatasetFilters: (value) => {
-                dispatch(setCombineDatasetFilters(value));
-            },
-            removeDatasetFilter: (filter) => {
-                dispatch(removeDatasetFilter(filter));
-            },
-            handleEmbeddings: value => {
-                dispatch(setSelectedEmbedding(value));
-            },
             handlePointSize: value => {
                 dispatch(setPointSize(value));
             },
@@ -621,30 +585,18 @@ const mapDispatchToProps = (dispatch) => {
             handleMarkerOpacity: value => {
                 dispatch(setMarkerOpacity(value));
             },
-            handleEmbeddingLabel: value => {
-                dispatch(toggleEmbeddingLabel(value));
-            },
+
             handleUnselectedMarkerOpacity: value => {
                 dispatch(setUnselectedMarkerOpacity(value));
-            },
-            handleSearchTokens: (value, type) => {
-                dispatch(setSearchTokens(value == null ? [] : value, type));
             },
             handleOpenView: value => {
                 dispatch(openView(value));
             },
             handleDeleteView: value => {
                 dispatch(deleteView(value));
-            },
-            handleDeleteFeatureSet: value => {
-                dispatch(deleteFeatureSet(value));
-            },
-            handleSubmitJob: value => {
-                dispatch(submitJob(value));
-            },
-            onDistributionPlotOptions: (payload) => {
-                dispatch(setDistributionPlotOptions(payload));
             }
+
+
         };
     }
 ;

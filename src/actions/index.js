@@ -438,7 +438,7 @@ export function deleteFeatureSet(id) {
 export function saveFeatureSet(payload) {
     return function (dispatch, getState) {
         const state = getState();
-        const features = state.searchTokens.filter(item => item.type === FEATURE_TYPE.X).map(item => item.value);
+        const features = state.searchTokens.filter(item => item.type === FEATURE_TYPE.X).map(item => item.id);
         const requestBody = {
             ds_id: state.dataset.id,
             name: payload.name,
@@ -702,20 +702,20 @@ function handleFilterUpdated() {
         const searchTokens = state.searchTokens;
         let filter = getFilterJson(state);
         const groupedSearchTokens = groupBy(searchTokens, 'type');
-        addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
+        addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map(item => item.id));
 
         const measures = [];
         for (const key in groupedSearchTokens) {
             if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
                 const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
-                groupedSearchTokens[key].forEach(item => measures.push(prefix + item.value));
+                groupedSearchTokens[key].forEach(item => measures.push(prefix + item.id));
             }
         }
 
         let q = {
             selection: {
                 measures: measures,
-                dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value)
+                dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id)
             }
         };
 
@@ -1016,7 +1016,7 @@ function loadDefaultDatasetView() {
         const dataset = getState().dataset;
         const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
         if (obsCat != null) {
-            dispatch(setSearchTokensDirectly([{value: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
+            dispatch(setSearchTokens([{id: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
         }
         if (selectedEmbedding != null) {
             dispatch(setSelectedEmbedding([selectedEmbedding]));
@@ -1452,48 +1452,7 @@ function _setEmail(payload) {
 }
 
 
-/**
- *
- * @param value
- * @param type one of X, obs, featureSet
- */
-export function setSearchTokens(values, type, updateActiveFeature = true, clear = true) {
-    return function (dispatch, getState) {
-        const state = getState();
-        let searchTokens = state.searchTokens;
-        // keep all other types
-        let removeType = [type];
-        if (type === FEATURE_TYPE.OBS) {
-            removeType.push(FEATURE_TYPE.OBS_CAT);
-        }
-        if (clear) {
-            searchTokens = searchTokens.filter(item => removeType.indexOf(item.type) === -1);
-        }
-        const existingKeys = new Set();
-        searchTokens.forEach(token => existingKeys.add(token.value));
-        if (type === FEATURE_TYPE.OBS) {
-            const obsCat = state.dataset.obsCat;
-            values.forEach(val => {
-                const type = obsCat.indexOf(val) !== -1 ? FEATURE_TYPE.OBS_CAT : FEATURE_TYPE.OBS;
-                if (!existingKeys.has(val)) {
-                    existingKeys.add(val);
-                    searchTokens.push({value: val, type: type});
-                }
-            });
-        } else {
-            values.forEach(val => {
-                if (!existingKeys.has(val)) {
-                    existingKeys.add(val);
-                    searchTokens.push({value: val, type: type});
-                }
-            });
-        }
-        dispatch({type: SET_SEARCH_TOKENS, payload: searchTokens.slice()});
-        dispatch(_updateCharts(null, updateActiveFeature));
-    };
-}
-
-export function setSearchTokensDirectly(tokens, updateActiveFeature = true) {
+export function setSearchTokens(tokens, updateActiveFeature = true) {
     return function (dispatch, getState) {
         dispatch({type: SET_SEARCH_TOKENS, payload: tokens});
         dispatch(_updateCharts(null, updateActiveFeature));
@@ -1609,7 +1568,6 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
             newDataset = result;
         });
         promises.push(schemaPromise);
-        console.log(task);
         if (!isDirectAccess) {
             const categoriesRenamePromise = getState().serverInfo.api.getCategoryNamesPromise(dataset.id).then(results => {
                 categoryNameResults = results;
@@ -1652,7 +1610,7 @@ function handleSelectionResult(selectionResult, clear) {
                     selectedDistributionData = [];
                 }
                 const groupedSearchTokens = groupBy(state.searchTokens, 'type');
-                addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value));
+                addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.id));
                 selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, groupedSearchTokens);
                 dispatch(setSelectedDistributionData(selectedDistributionData));
             }
@@ -1674,11 +1632,11 @@ function updateDistributionData(newDistributionData, existingDistributionData, g
 }
 
 function _updateDistributionData(newDistributionData, existingDistributionData, groupedSearchTokens) {
-    const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value);
-    const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value);
-    const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(item => item.value);
-    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.value);
-    let dimensionKeys = [obsCatTokens.join('-')];
+    const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.id);
+    const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id);
+    const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(item => item.id);
+    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.id);
+    const dimensionKeys = [obsCatTokens.join('-')];
     // keep active dimensions and features only
     let distributionData = existingDistributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 &&
         (xTokens.indexOf(entry.feature) !== -1 || obsTokens.indexOf(entry.feature) !== -1 || moduleTokens.indexOf(entry.feature) !== -1));
@@ -1697,7 +1655,7 @@ function _updateDistributionData(newDistributionData, existingDistributionData, 
     }
 
     // sort features matching X entry order
-    let featureSortOrder = {};
+    const featureSortOrder = {};
     xTokens.concat(obsTokens).concat(moduleTokens).forEach((name, index) => {
         featureSortOrder[name] = index;
     });
@@ -1725,10 +1683,10 @@ function _updateCharts(onError, updateActiveFeature = true) {
             }
         });
         const featureSetTokens = groupedSearchTokens[FEATURE_TYPE.FEATURE_SET];
-        const xValues = groupedSearchTokens[FEATURE_TYPE.X].map(token => token.value);
-        const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map(token => token.value);
-        const obsValues = groupedSearchTokens[FEATURE_TYPE.OBS].map(token => token.value);
-        const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(token => token.value);
+        const xValues = groupedSearchTokens[FEATURE_TYPE.X].map(token => token.id);
+        const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map(token => token.id);
+        const obsValues = groupedSearchTokens[FEATURE_TYPE.OBS].map(token => token.id);
+        const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(token => token.id);
 
         addFeatureSetsToX(getFeatureSets(state.markers, featureSetTokens), xValues);
 
@@ -1829,7 +1787,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
         }
 
         otherSearchTokenKeys.forEach(key => {
-            groupedSearchTokens[key].forEach(item => features.add(item.value));
+            groupedSearchTokens[key].forEach(item => features.add(item.id));
         });
         // set active flag on cached embedding data
         embeddingData.forEach(traceInfo => {
@@ -1874,9 +1832,9 @@ function _updateCharts(onError, updateActiveFeature = true) {
                 });
                 otherSearchTokenKeys.forEach(searchTokenKey => {
                     groupedSearchTokens[searchTokenKey].forEach(item => {
-                        let key = category + '-' + item.value;
+                        let key = category + '-' + item.id;
                         if (cachedDistributionKeys[key] == null) {
-                            distributionMeasuresToFetch.add(searchTokenKey + '/' + item.value);
+                            distributionMeasuresToFetch.add(searchTokenKey + '/' + item.id);
                         }
                     });
                 });
@@ -1981,6 +1939,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
             dispatch(setGlobalFeatureSummary(result.summary));
             const newEmbeddingData = getNewEmbeddingData(state, features);
             embeddingData = embeddingData.concat(newEmbeddingData);
+
             dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, groupedSearchTokens)));
             dispatch(setEmbeddingData(embeddingData));
             if (updateActiveFeature) {
@@ -2078,7 +2037,7 @@ function getNewEmbeddingData(state, features) {
                     purity = values.purity;
                     values = values.value;
                 }
-                const searchToken = find(searchTokens, (item => item.value === feature));
+                const searchToken = find(searchTokens, (item => item.id === feature));
                 let featureType;
                 if (searchToken) {
                     featureType = searchToken.type;

@@ -761,7 +761,7 @@ export function getFeatureSets(markers, featureSets) {
         });
 
         featureSets.forEach(featureSet => {
-            const featureSetId = isString(featureSet) ? featureSet : featureSet.value;
+            const featureSetId = isString(featureSet) ? featureSet : featureSet.id;
             const m = markerIdToMarker.get(featureSetId);
             if (m != null) {
                 filteredFeatureSets.push(m);

@@ -31,7 +31,7 @@ import memoize from 'memoize-one';
 // TODO-this causes an unnecessary redraw when searchTokens is updated
 const getActiveEmbeddingLabels = memoize(
     (searchTokens, embeddingLabels) => {
-        return searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.value) !== -1).map(item => item.value);
+        return searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.id) !== -1).map(item => item.id);
     }
 );
 
@@ -62,6 +62,20 @@ class EmbeddingChart extends React.PureComponent {
         this.setState({showLegend: !this.state.showLegend});
     };
 
+    onAddFeatures = (features) => {
+        const {searchTokens} = this.props;
+        const values = searchTokens.filter(token => token.type !== FEATURE_TYPE.X);
+        const xTokens = searchTokens.filter(token => token.type === FEATURE_TYPE.X);
+        const existingXFeatures = new Set();
+        xTokens.forEach(item => existingXFeatures.add(item.id));
+        features.forEach(item => {
+            if (!existingXFeatures.has(item.id)) {
+                xTokens.push({id: item.id, type: FEATURE_TYPE.X});
+                existingXFeatures.add(item.id);
+            }
+        });
+        this.props.handleSearchTokens(values.concat(xTokens));
+    };
     onCamera = (eventName, cameraDef) => {
         const {embeddingData, activeFeature} = this.props;
         const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
@@ -86,7 +100,6 @@ class EmbeddingChart extends React.PureComponent {
             embeddingLabels,
             featureSummary,
             globalFeatureSummary,
-            handleSearchTokens,
             handleScrollPosition,
             legendScrollPosition,
             markerOpacity,
@@ -165,7 +178,7 @@ class EmbeddingChart extends React.PureComponent {
                             handleClick={onDimensionFilterUpdated}
                             handleColorChange={onColorChange}
                             handleNameChange={onCategoricalNameChange}
-                            handleSearchTokens={handleSearchTokens}
+                            onAddFeatures={this.onAddFeatures}
                             categoricalNames={categoricalNames}
                             name={primaryTrace.name}
                             scale={primaryTrace.colorScale}
@@ -254,9 +267,9 @@ const mapStateToProps = state => {
         selection: state.selection,
         pointSize: state.pointSize,
         primaryChartSize: state.panel.primaryChartSize,
+        searchTokens: state.searchTokens,
         serverInfo: state.serverInfo,
         shape: state.dataset.shape,
-        searchTokens: state.searchTokens,
         unselectedMarkerOpacity: state.unselectedMarkerOpacity,
         unselectedPointSize: state.unselectedPointSize
     };
@@ -294,8 +307,8 @@ const mapDispatchToProps = dispatch => {
         handleEmbeddingData: (value) => {
             dispatch(setEmbeddingData(value));
         },
-        handleSearchTokens: (value, type, updateActiveFeatures, clear) => {
-            dispatch(setSearchTokens(value == null ? [] : value, type, updateActiveFeatures, clear));
+        handleSearchTokens: (value) => {
+            dispatch(setSearchTokens(value, false));
         }
     };
 };

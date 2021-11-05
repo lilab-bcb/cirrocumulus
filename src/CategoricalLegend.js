@@ -13,7 +13,7 @@ import {FixedSizeList} from 'react-window';
 import MenuIcon from '@mui/icons-material/Menu';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
-import {FEATURE_TYPE, getCategoryValue} from './util';
+import {getCategoryValue} from './util';
 import Link from '@mui/material/Link';
 import {isString} from 'lodash';
 
@@ -27,6 +27,7 @@ export default function CategoricalLegend(props) {
     const [color, setColor] = useState(null);
     const [originalCategory, setOriginalCategory] = useState(null);
     const {
+        onAddFeatures,
         categoricalNames,
         datasetFilter,
         features,
@@ -183,7 +184,7 @@ export default function CategoricalLegend(props) {
     }
 
     function addFeatures(event, features) {
-        props.handleSearchTokens(features, FEATURE_TYPE.X, false, false);
+        onAddFeatures(features);
     }
 
     function renderRow(props) {
