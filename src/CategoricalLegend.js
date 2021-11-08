@@ -55,11 +55,6 @@ export default function CategoricalLegend(props) {
         };
     }, [name]);
 
-    // save scroll position
-    useEffect(() => {
-
-
-    }, [name]);
 
     function handleDialogClose(e) {
         setMenu(null);
@@ -176,11 +171,11 @@ export default function CategoricalLegend(props) {
     // }
 
     function onNegativeMarkers(event, value) {
-        setNegativeMarkers(value.map(item => item.id));
+        setNegativeMarkers(value.map(item => item.id != null ? item.id : item));
     }
 
     function onPositiveMarkers(event, value) {
-        setPositiveMarkers(value.map(item => item.id));
+        setPositiveMarkers(value.map(item => item.id != null ? item.id : item));
     }
 
     function addFeatures(event, features) {
