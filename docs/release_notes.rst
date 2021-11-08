@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.23.post1 `November 15, 2021`
+    * Fixed gzip encoding when writing to remote storage (e.g S3)
+
 - 1.1.23 `November 3, 2021`
     * Style updates
     * Fixed error loading differential expression results
