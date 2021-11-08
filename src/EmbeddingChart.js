@@ -2,7 +2,7 @@ import {Tooltip, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import {find} from 'lodash';
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 
 import {connect} from 'react-redux';
@@ -28,226 +28,222 @@ import ScatterChartThree from './ScatterChartThree';
 import {FEATURE_TYPE, TRACE_TYPE_META_IMAGE} from './util';
 import memoize from 'memoize-one';
 
-// TODO-this causes an unnecessary redraw when searchTokens is updated
+
 const getActiveEmbeddingLabels = memoize(
     (searchTokens, embeddingLabels) => {
         return searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.id) !== -1).map(item => item.id);
     }
 );
 
-class EmbeddingChart extends React.PureComponent {
+function EmbeddingChart(props) {
+    const {
+        activeFeature,
+        cachedData,
+        categoricalNames,
+        chartOptions,
+        dataset,
+        datasetFilter,
+        embeddingData,
+        embeddingLabels,
+        featureSummary,
+        globalFeatureSummary,
+        handleEmbeddingData,
+        handleScrollPosition,
+        handleSearchTokens,
+        handleWindowSize,
+        legendScrollPosition,
+        markerOpacity,
+        onCategoricalNameChange,
+        onChartOptions,
+        onColorChange,
+        onDimensionFilterUpdated,
+        onDomain,
+        onGallery,
+        onMeasureFilterUpdated,
+        onSelect,
+        pointSize,
+        primaryChartSize,
+        searchTokens,
+        selection,
+        serverInfo,
+        setTooltip,
+        shape,
+        unselectedMarkerOpacity,
+        unselectedPointSize
+    } = props;
 
-
-    constructor(props) {
-        super(props);
-        this.state = {showLegend: true};
-        this.resizeListener = () => {
-            this.props.handleWindowSize();
-        };
-        window.addEventListener('resize', this.resizeListener);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener('resize', this.resizeListener);
-    }
-
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.activeFeature == null || this.props.activeFeature == null || prevProps.activeFeature.name !== this.props.activeFeature.name) {
-            this.setState({showLegend: true});
+    const [showLegend, setShowLegend] = useState(true);
+    const previousActiveFeature = useRef(null);
+    useEffect(() => {
+        if (previousActiveFeature.current == null || activeFeature == null || previousActiveFeature.current.name !== activeFeature.name) {
+            setShowLegend(true);
         }
+    }, [activeFeature]);
+
+
+    useEffect(() => {
+        window.addEventListener('resize', handleWindowSize);
+        return () => {
+            window.removeEventListener('resize', handleWindowSize);
+        };
+    }, [window]);
+
+
+    function handleToggleLegend(e) {
+        e.preventDefault();
+        setShowLegend(!showLegend);
     }
 
-    handleToggleLegend = (e) => {
-        e.preventDefault();
-        this.setState({showLegend: !this.state.showLegend});
-    };
-
-    onAddFeatures = (features) => {
-        const {searchTokens} = this.props;
+    function onAddFeatures(features) {
         const values = searchTokens.filter(token => token.type !== FEATURE_TYPE.X);
         const xTokens = searchTokens.filter(token => token.type === FEATURE_TYPE.X);
         const existingXFeatures = new Set();
         xTokens.forEach(item => existingXFeatures.add(item.id));
-        features.forEach(item => {
-            if (!existingXFeatures.has(item.id)) {
-                xTokens.push({id: item.id, type: FEATURE_TYPE.X});
-                existingXFeatures.add(item.id);
+        features.forEach(feature => {
+            if (!existingXFeatures.has(feature)) {
+                xTokens.push({id: feature, type: FEATURE_TYPE.X});
+                existingXFeatures.add(feature);
             }
         });
-        this.props.handleSearchTokens(values.concat(xTokens));
-    };
-    onCamera = (eventName, cameraDef) => {
-        const {embeddingData, activeFeature} = this.props;
+        handleSearchTokens(values.concat(xTokens));
+    }
+
+    function onCamera(eventName, cameraDef) {
         const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
         for (let i = 0, n = embeddingData.length; i < n; i++) {
             if (primaryTrace.embedding.name === embeddingData[i].embedding.name) {
                 embeddingData[i].camera = cameraDef;
             }
         }
-        this.props.handleEmbeddingData(this.props.embeddingData.slice());
-    };
+        handleEmbeddingData(embeddingData.slice());
+    }
 
 
-    render() {
-        const {
-            activeFeature,
-            cachedData,
-            categoricalNames,
-            chartOptions,
-            dataset,
-            datasetFilter,
-            embeddingData,
-            embeddingLabels,
-            featureSummary,
-            globalFeatureSummary,
-            handleScrollPosition,
-            legendScrollPosition,
-            markerOpacity,
-            onCategoricalNameChange,
-            onChartOptions,
-            onColorChange,
-            onDimensionFilterUpdated,
-            onDomain,
-            onGallery,
-            onMeasureFilterUpdated,
-            onSelect,
-            pointSize,
-            primaryChartSize,
-            searchTokens,
-            serverInfo,
-            selection,
-            setTooltip,
-            shape,
-            unselectedMarkerOpacity,
-            unselectedPointSize
-        } = this.props;
+    if (activeFeature == null) {
+        return null;
+    }
+    const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
+    if (primaryTrace == null) {
+        console.log(activeFeature.embeddingKey + ' not found');
+        return null;
+    }
+    const nObsSelected = selection != null ? selection.size : 0;
+    const activeEmbeddingLabels = getActiveEmbeddingLabels(searchTokens, embeddingLabels);
+    const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
+    return (
+        <Box bgcolor={"inherit"} color="inherit" style={{position: 'relative'}}>
+            <Box data-testid="chart-extra" color="text.primary" sx={{
+                marginTop: 3.2,
+                position: 'absolute',
+                textAlign: 'right',
+                overflow: 'hidden',
+                // whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                maxWidth: 300,
+                right: 8,
+                zIndex: 1000
+            }}>
+                {displayName !== '' &&
+                <Tooltip title={"Embedding: " + primaryTrace.embedding.name}><Link
+                    onClick={handleToggleLegend}>
+                    <Typography
+                        color="textPrimary" style={{marginRight: 14}}
+                        component={"h4"}>{displayName}</Typography></Link></Tooltip>
+                }
+                {primaryTrace.continuous ?
+                    <ColorSchemeLegendWrapper
+                        handleDomain={onDomain}
+                        style={{
+                            display: showLegend ? 'block' : 'none'
+                        }}
+                        handleUpdate={onMeasureFilterUpdated}
+                        datasetFilter={datasetFilter}
+                        featureSummary={featureSummary}
+                        globalFeatureSummary={globalFeatureSummary}
+                        nObs={shape[0]}
+                        nObsSelected={nObsSelected}
+                        name={primaryTrace.name}
+                        type={activeFeature.type}
+                    /> :
+                    <CategoricalLegend
+                        legendScrollPosition={legendScrollPosition}
+                        handleScrollPosition={handleScrollPosition}
+                        visible={showLegend}
+                        height={primaryChartSize.height - 40}
+                        features={dataset.features}
+                        datasetFilter={datasetFilter}
+                        handleClick={onDimensionFilterUpdated}
+                        handleColorChange={onColorChange}
+                        handleNameChange={onCategoricalNameChange}
+                        onAddFeatures={onAddFeatures}
+                        categoricalNames={categoricalNames}
+                        name={primaryTrace.name}
+                        scale={primaryTrace.colorScale}
+                        nObs={shape[0]}
+                        nObsSelected={nObsSelected}
+                        globalFeatureSummary={globalFeatureSummary}
+                        featureSummary={featureSummary}
+                        serverInfo={serverInfo}/>
+                }
+            </Box>
 
-        if (activeFeature == null) {
-            return null;
-        }
-        const primaryTrace = find(embeddingData, item => getTraceKey(item) === activeFeature.embeddingKey);
-        if (primaryTrace == null) {
-            console.log(activeFeature.embeddingKey + ' not found');
-            return null;
-        }
-        const nObsSelected = selection != null ? selection.size : 0;
-        const activeEmbeddingLabels = getActiveEmbeddingLabels(searchTokens, embeddingLabels);
-        const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
-        return (
-            <Box bgcolor={"inherit"} color="inherit" style={{position: 'relative'}}>
-                <Box data-testid="chart-extra" color="text.primary" sx={{
-                    marginTop: 3.2,
-                    position: 'absolute',
-                    textAlign: 'right',
-                    overflow: 'hidden',
-                    // whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis',
-                    maxWidth: 300,
-                    right: 8,
-                    zIndex: 1000
-                }}>
-                    {displayName !== '' &&
-                    <Tooltip title={"Embedding: " + primaryTrace.embedding.name}><Link
-                        onClick={this.handleToggleLegend}>
-                        <Typography
-                            color="textPrimary" style={{marginRight: 14}}
-                            component={"h4"}>{displayName}</Typography></Link></Tooltip>
-                    }
-                    {primaryTrace.continuous ?
-                        <ColorSchemeLegendWrapper
-                            handleDomain={onDomain}
-                            style={{
-                                display: this.state.showLegend ? 'block' : 'none'
-                            }}
-                            handleUpdate={onMeasureFilterUpdated}
-                            datasetFilter={datasetFilter}
-                            featureSummary={featureSummary}
-                            globalFeatureSummary={globalFeatureSummary}
-                            nObs={shape[0]}
-                            nObsSelected={nObsSelected}
-                            name={primaryTrace.name}
-                            type={activeFeature.type}
-                        /> :
-                        <CategoricalLegend
-                            legendScrollPosition={legendScrollPosition}
-                            handleScrollPosition={handleScrollPosition}
-                            visible={this.state.showLegend}
-                            height={primaryChartSize.height - 40}
-                            features={dataset.features}
-                            datasetFilter={datasetFilter}
-                            handleClick={onDimensionFilterUpdated}
-                            handleColorChange={onColorChange}
-                            handleNameChange={onCategoricalNameChange}
-                            onAddFeatures={this.onAddFeatures}
-                            categoricalNames={categoricalNames}
-                            name={primaryTrace.name}
-                            scale={primaryTrace.colorScale}
-                            nObs={shape[0]}
-                            nObsSelected={nObsSelected}
-                            globalFeatureSummary={globalFeatureSummary}
-                            featureSummary={featureSummary}
-                            serverInfo={serverInfo}/>
-                    }
-                </Box>
-
-                {primaryTrace.type === 'scatter' && primaryTrace.embedding.mode == null &&
-                <ScatterChartThree trace={primaryTrace}
-                                   cachedData={cachedData}
-                                   obsCat={activeEmbeddingLabels}
-                                   chartSize={primaryChartSize}
-                                   setChartOptions={onChartOptions}
-                                   chartOptions={chartOptions}
-                                   categoricalNames={categoricalNames}
-                                   selection={selection}
-                                   onSelected={onSelect}
-                                   pointSize={pointSize}
-                                   unselectedPointSize={unselectedPointSize}
-                                   markerOpacity={markerOpacity}
-                                   unselectedMarkerOpacity={unselectedMarkerOpacity}
-                                   color={primaryTrace.colors}
-                                   onGallery={onGallery}
-                                   onCamera={this.onCamera}
-                                   setTooltip={setTooltip}
-                                   handleClick={onDimensionFilterUpdated}
-
-                />}
-
-                {primaryTrace.type === TRACE_TYPE_META_IMAGE &&
-                <MetaEmbedding trace={primaryTrace}
+            {primaryTrace.type === 'scatter' && primaryTrace.embedding.mode == null &&
+            <ScatterChartThree trace={primaryTrace}
                                cachedData={cachedData}
+                               obsCat={activeEmbeddingLabels}
                                chartSize={primaryChartSize}
                                setChartOptions={onChartOptions}
                                chartOptions={chartOptions}
-                               dataset={dataset}
-                               selection={selection}
                                categoricalNames={categoricalNames}
-                               markerOpacity={markerOpacity}
+                               selection={selection}
                                onSelected={onSelect}
+                               pointSize={pointSize}
+                               unselectedPointSize={unselectedPointSize}
+                               markerOpacity={markerOpacity}
+                               unselectedMarkerOpacity={unselectedMarkerOpacity}
+                               color={primaryTrace.colors}
                                onGallery={onGallery}
+                               onCamera={onCamera}
                                setTooltip={setTooltip}
+                               handleClick={onDimensionFilterUpdated}
 
-                />}
-                {primaryTrace.type === 'image' && <ImageChart
-                    cachedData={cachedData}
-                    obsCat={activeEmbeddingLabels}
-                    setChartOptions={onChartOptions}
-                    chartOptions={chartOptions}
-                    style={{display: 'inline-block'}}
-                    trace={primaryTrace}
-                    pointSize={pointSize}
-                    chartSize={primaryChartSize}
-                    categoricalNames={categoricalNames}
-                    selection={selection}
-                    onInitialized={this.onInitialized}
-                    markerOpacity={markerOpacity}
-                    unselectedMarkerOpacity={unselectedMarkerOpacity}
-                    onSelected={onSelect}
-                    onGallery={onGallery}
-                    setTooltip={setTooltip}
-                />}
-            </Box>);
+            />}
 
-    }
+            {primaryTrace.type === TRACE_TYPE_META_IMAGE &&
+            <MetaEmbedding trace={primaryTrace}
+                           cachedData={cachedData}
+                           chartSize={primaryChartSize}
+                           setChartOptions={onChartOptions}
+                           chartOptions={chartOptions}
+                           dataset={dataset}
+                           selection={selection}
+                           categoricalNames={categoricalNames}
+                           markerOpacity={markerOpacity}
+                           onSelected={onSelect}
+                           onGallery={onGallery}
+                           setTooltip={setTooltip}
+
+            />}
+            {primaryTrace.type === 'image' && <ImageChart
+                cachedData={cachedData}
+                obsCat={activeEmbeddingLabels}
+                setChartOptions={onChartOptions}
+                chartOptions={chartOptions}
+                style={{display: 'inline-block'}}
+                trace={primaryTrace}
+                pointSize={pointSize}
+                chartSize={primaryChartSize}
+                categoricalNames={categoricalNames}
+                selection={selection}
+                markerOpacity={markerOpacity}
+                unselectedMarkerOpacity={unselectedMarkerOpacity}
+                onSelected={onSelect}
+                onGallery={onGallery}
+                setTooltip={setTooltip}
+            />}
+        </Box>);
+
+
 }
 
 const mapStateToProps = state => {
