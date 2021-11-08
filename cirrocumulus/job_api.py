@@ -3,7 +3,6 @@ import os
 
 import anndata
 import math
-import numpy as np
 import pandas as pd
 import pandas._libs.json as ujson
 from anndata import AnnData
@@ -76,22 +75,21 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
             max_workers = 1
         else:
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '1'))
-
-        executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
-            max_workers=max_workers)
+        if max_workers > 0:
+            executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
+                max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
-    # run_job(email, job_id, job_type, dataset, params, database_api if not is_serve else None,
-    #         dataset_api if not is_serve else None)
-    future = executor.submit(run_job, email, job_id, job_type, dataset, params, database_api if not is_serve else None,
-                             dataset_api if not is_serve else None)
-    future.add_done_callback(done_callback)
-    job_id_2_future[job_id] = future
+    if executor is not None:
+        future = executor.submit(run_job, email, job_id, job_type, dataset, params,
+                                 database_api if not is_serve else None,
+                                 dataset_api if not is_serve else None)
+        future.add_done_callback(done_callback)
+        job_id_2_future[job_id] = future
+    else:
+        run_job(email, job_id, job_type, dataset, params, database_api if not is_serve else None,
+                dataset_api if not is_serve else None)
     return job_id
-
-
-def _power(X, power):
-    return X ** power if isinstance(X, np.ndarray) else X.power(power)
 
 
 def get_comparisons(dataset_api, dataset, dataset_info, params, X, combinations):
@@ -117,7 +115,7 @@ def get_comparisons(dataset_api, dataset, dataset_info, params, X, combinations)
         for i in range(len(filter_names)):
             if filter_names[i] is None:
                 filter_names[i] = 'group_' + str(i + 1)
-        obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]))
+        obs = pd.DataFrame(index=pd.RangeIndex(dataset_info['shape'][0]).astype(str))
         obs_field = 'user'
         obs[obs_field] = ''
         masks, _ = get_mask(dataset_api, dataset, filters)
