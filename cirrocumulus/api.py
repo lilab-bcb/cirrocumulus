@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 
 from flask import Blueprint, Response, request, stream_with_context
@@ -85,9 +84,6 @@ def get_file_path(file, dataset_url):
 def send_file(file_path):
     import mimetypes
     mimetype, encoding = mimetypes.guess_type(file_path)
-    # with dataset_api.fs_adapter.get_fs(file_path).open(file_path) as f:
-    #     bytes = f.read()
-    # return Response(bytes, mimetype=mimetype[0])
     chunk_size = 4096
     f = get_fs(file_path).open(file_path)
 
@@ -473,7 +469,7 @@ def handle_job():
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
-        logging.getLogger('cirro').info(job)
+        print(job)
         if job is None:
             return json_response('', 404)  # job deleted
         import anndata
@@ -496,7 +492,7 @@ def handle_job():
                             content_type='application/json')
         # elif isinstance(job, bytes):
         #     job = job.decode('ascii')
-        return job
+        return json_response(job)
 
 
 @cirro_blueprint.route('/jobs', methods=['GET'])

@@ -8,16 +8,14 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import {scaleLinear} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
-import {chiSquare} from './ChiSquare';
-import {fisherTest} from './FisherExact';
-import {intFormat, numberFormat2f} from './formatters';
+import {intFormat} from './formatters';
 
 const styles = theme => ({
     table: {
         width: 'min-content',
         '& td': {padding: 6},
         '& th': {padding: 6}
-    },
+    }
 });
 
 function CompositionPlot(props) {
