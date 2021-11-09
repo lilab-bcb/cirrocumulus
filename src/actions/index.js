@@ -1086,7 +1086,7 @@ function restoreSavedView(savedView) {
                     if (selectedEmbedding) {
                         savedView.embeddings = [selectedEmbedding];
                         if ((savedView.q == null || savedView.q.length === 0) && obsCat != null) {
-                            savedView.q = [{value: obsCat, type: FEATURE_TYPE.OBS_CAT}];
+                            savedView.q = [{id: obsCat, type: FEATURE_TYPE.OBS_CAT}];
                             savedView.activeFeature = {
                                 name: obsCat,
                                 type: FEATURE_TYPE.OBS_CAT,
@@ -1106,11 +1106,12 @@ function restoreSavedView(savedView) {
                     dispatch(setDistributionPlotOptions(savedView.distributionPlotOptions));
                 }
                 let activeFeature = savedView.activeFeature;
+
                 if (activeFeature == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q && savedView.q.length > 0) { // pick the 1st search token and 1st embedding
                     activeFeature = {
-                        name: savedView.q[0].value,
+                        name: savedView.q[0].id,
                         type: savedView.q[0].type,
-                        embeddingKey: savedView.q[0].value + '_' + getEmbeddingKey(savedView.embeddings[0])
+                        embeddingKey: savedView.q[0].id + '_' + getEmbeddingKey(savedView.embeddings[0])
                     };
                 }
                 if (activeFeature != null) {
