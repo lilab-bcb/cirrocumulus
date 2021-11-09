@@ -2,6 +2,7 @@ import {isPlainObject, isString} from 'lodash';
 import {combineReducers} from 'redux';
 import {
     ADD_DATASET,
+    ADD_TASK,
     DEFAULT_DARK_MODE,
     DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
     DEFAULT_DRAG_MODE,
@@ -14,6 +15,7 @@ import {
     DEFAULT_SHOW_FOG,
     DEFAULT_UNSELECTED_MARKER_OPACITY,
     DELETE_DATASET,
+    REMOVE_TASK,
     RESTORE_VIEW,
     SET_ACTIVE_FEATURE,
     SET_CATEGORICAL_NAME,
@@ -29,8 +31,8 @@ import {
     SET_DISTRIBUTION_DATA,
     SET_DISTRIBUTION_PLOT_INTERPOLATOR,
     SET_DISTRIBUTION_PLOT_OPTIONS,
-    SET_DRAG_DIVIDER,
     SET_DOMAIN,
+    SET_DRAG_DIVIDER,
     SET_DRAWER_OPEN,
     SET_EMAIL,
     SET_EMBEDDING_DATA,
@@ -41,7 +43,6 @@ import {
     SET_JOB_RESULT,
     SET_JOB_RESULTS,
     SET_LEGEND_SCROLL_POSITION,
-    SET_LOADING,
     SET_LOADING_APP,
     SET_MARKER_OPACITY,
     SET_MARKERS,
@@ -152,7 +153,7 @@ function panel(state = {dividerDelta: 0, drawerOpen: true, primaryChartSize: DEF
 
 /**
  *
- * @param state Array of {value:str, type:str} where type is one of FEATURE_TYPE
+ * @param state Array of {id:str, type:str} where type is one of FEATURE_TYPE
  * @param action
  * @returns Array of search token objects
  */
@@ -495,13 +496,9 @@ function tab(state = 'embedding', action) {
         case SET_DATASET:
             return 'embedding';
         case SET_DISTRIBUTION_DATA:
-            if (state === 'distribution' && action.payload.length === 0) {
-                return 'embedding';
-            }
+            return (state === 'distribution' && action.payload.length === 0) ? 'embedding' : state;
         case SET_SEARCH_TOKENS:
-            if (state === 'composition' && action.payload.filter(item => item.type === FEATURE_TYPE.OBS_CAT).length < 2) {
-                return 'embedding';
-            }
+            return (state === 'composition' && action.payload.filter(item => item.type === FEATURE_TYPE.OBS_CAT).length < 2) ? 'embedding' : state;
         default:
             return state;
     }
@@ -731,7 +728,6 @@ function embeddingData(state = [], action) {
                 }
             });
             return state.slice();
-
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
             state.forEach((trace) => {
@@ -808,10 +804,14 @@ export function legendScrollPosition(state = {}, action) {
     }
 }
 
-function loading(state = false, action) {
+// array of {label}
+function tasks(state = [], action) {
     switch (action.type) {
-        case SET_LOADING:
-            return action.payload;
+        case ADD_TASK:
+            return [...state, action.payload];
+        case REMOVE_TASK:
+            state.splice(state.indexOf(action.payload), 1);
+            return state.slice();
         default:
             return state;
     }
@@ -857,7 +857,7 @@ export default combineReducers({
     jobResultId,
     jobResults,
     legendScrollPosition,
-    loading,
+    tasks,
     loadingApp,
     markerOpacity,
     markers,

@@ -62,7 +62,7 @@ export const getAnnotationOptions = memoize(
         const options = [];
         obs.forEach(item => {
             options.push({
-                group: 'Continuous', text: item, id: item, icon: <NumberIcon style={{
+                type: FEATURE_TYPE.OBS, text: item, id: item, icon: <NumberIcon style={{
                     marginRight: 2,
                     fontSize: '0.9rem'
                 }}/>
@@ -70,7 +70,7 @@ export const getAnnotationOptions = memoize(
         });
         obsCat.forEach(item => {
             options.push({
-                group: 'Categorical', text: item, id: item, icon: <FontDownloadRoundedIcon style={{
+                type: FEATURE_TYPE.OBS_CAT, text: item, id: item, icon: <FontDownloadRoundedIcon style={{
                     marginRight: 2,
                     fontSize: '0.9rem'
                 }}/>
@@ -221,28 +221,28 @@ function ExplorePanel(props) {
         handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
     }
 
-    function onFeaturesChange(event, value) {
-        let values = [];
-        value.forEach(item => {
-            if (item.id !== undefined) {
-                values.push(item.id);
-            } else {
-                values.push(item);
-            }
-        });
-        handleSearchTokens(values, FEATURE_TYPE.X);
+    function onFeaturesChange(event, values) {
+        handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.X).concat(values.map(item => {
+            return {id: item.id, type: FEATURE_TYPE.X};
+        })));
     }
 
-    function onModulesChange(event, value) {
-        let values = [];
-        value.forEach(item => {
-            if (item.id !== undefined) {
-                values.push(item.id);
-            } else {
-                values.push(item);
-            }
-        });
-        handleSearchTokens(values, FEATURE_TYPE.MODULE);
+    function onModulesChange(event, values) {
+        handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.MODULE).concat(values.map(item => {
+            return {id: item.id, type: FEATURE_TYPE.MODULE};
+        })));
+    }
+
+    function onObservationsChange(event, values) {
+        handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.OBS && token.type !== FEATURE_TYPE.OBS_CAT).concat(values.map(item => {
+            return {id: item.id, type: item.type};
+        })));
+    }
+
+    function onFeatureSetsChange(event, values) {
+        handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.FEATURE_SET).concat(values.map(item => {
+            return {id: item.id, type: FEATURE_TYPE.FEATURE_SET};
+        })));
     }
 
     function onObservationsIconClick(event, option) {
@@ -250,17 +250,6 @@ function ExplorePanel(props) {
         event.stopPropagation();
     }
 
-    function onObservationsChange(event, value) {
-        let values = [];
-        value.forEach(val => {
-            if (val.text !== undefined) {
-                values.push(val.text);
-            } else {
-                values.push(val);
-            }
-        });
-        handleSearchTokens(values, FEATURE_TYPE.OBS);
-    }
 
     function onSaveFeatureList() {
         handleDialog(SAVE_FEATURE_SET_DIALOG);
@@ -279,17 +268,6 @@ function ExplorePanel(props) {
         handleEmbeddings(newValue);
     }
 
-    function onFeatureSetsChange(event, value) {
-        let values = [];
-        value.forEach(val => {
-            if (val.id !== undefined) {
-                values.push(val.id);
-            } else {
-                values.push(val);
-            }
-        });
-        handleSearchTokens(values, FEATURE_TYPE.FEATURE_SET);
-    }
 
     function onFeatureSetClick(event, option) {
         event.stopPropagation();
@@ -349,10 +327,9 @@ function ExplorePanel(props) {
 
     function onDeleteFeatureSet(event) {
         event.stopPropagation();
-
         const featureSetId = selectedItem.value.id;
-        let value = searchTokens.filter(token => token.type === FEATURE_TYPE.FEATURE_SET && token.value.id !== featureSetId);
-        handleSearchTokens(value, FEATURE_TYPE.FEATURE_SET);
+        const values = searchTokens.filter(token => token.type === FEATURE_TYPE.FEATURE_SET && token.id !== featureSetId);
+        handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.FEATURE_SET).concat(values));
         handleDeleteFeatureSet(featureSetId);
         setSelectedItem({});
         setPopupAnchorEl(null);
@@ -365,7 +342,7 @@ function ExplorePanel(props) {
     function onFeatureCopy(event) {
         event.preventDefault();
         event.stopPropagation();
-        copyToClipboard(searchTokens.filter(token => token.type === FEATURE_TYPE.X).map(item => item.value).join('\n'));
+        copyToClipboard(searchTokens.filter(token => token.type === FEATURE_TYPE.X).map(item => item.id).join('\n'));
 
     }
 
@@ -397,10 +374,10 @@ function ExplorePanel(props) {
     const datasetFilterKeys = getDatasetFilterNames(datasetFilter);
     datasetFilterKeys.sort(NATSORT);
     const groupedSearchTokens = groupBy(searchTokens, 'type');
-    const obsCatSearchTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.value);
-    const xSearchTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(item => item.value);
+    const obsCatSearchTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id);
+    const xSearchTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []);
     const featureSets = getFeatureSets(markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []);
-    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.value);
+    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []);
     const featureOptions = dataset.features;
     const moduleOptions = getModulesOptions(dataset.modules);
     const obsCat = dataset.obsCat;
@@ -473,12 +450,9 @@ function ExplorePanel(props) {
                 <AutocompleteVirtualized label={"Embeddings"}
                                          testId={'embeddings-input'}
                                          options={embeddingOptions}
-                                         getChipTitle={(option) => {
-                                             return option.text;
-                                         }}
+                                         getChipText={(option) => option.text}
                                          getOptionLabel={(option) => option.text}
                                          value={selectedEmbeddings}
-                                         getChipText={(option) => option.text}
                                          getOptionSelected={(option, value) => findIndex(selectedEmbeddings, item => item.id === option.id) !== -1}
                                          onChange={onEmbeddingsChange}
                 />
@@ -488,16 +462,12 @@ function ExplorePanel(props) {
                                          label={"Genes/Features"}
                                          testId={'genes-input'}
                                          options={featureOptions}
+                                         getChipText={(option) => option.id}
                                          value={xSearchTokens}
-                                         getOptionSelected={(option, value) => option.id === value}
+                                         getOptionSelected={(option, value) => option.id === value.id}
                                          groupBy={(option) => option.group}
                                          onChange={onFeaturesChange}
                                          getOptionLabel={(option) => option.text}
-                    // getChipIcon={(option) => {
-                    //     return <ArrowDropDownIcon onClick={(event) => {
-                    //         onFeatureClick(event, option);
-                    //     }}/>;
-                    // }}
                                          helperText={"Enter or paste list"}
 
                 />
@@ -526,14 +496,16 @@ function ExplorePanel(props) {
                 <AutocompleteVirtualized label={"Cell Metadata"}
                                          testId={'cell-meta-input'}
                                          options={annotationOptions}
-                                         value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS).map(token => token.value)}
+                                         getChipText={(option) => option.id}
+                                         value={searchTokens.filter(token => token.type === FEATURE_TYPE.OBS_CAT || token.type === FEATURE_TYPE.OBS)}
                                          onChipClick={onFeatureClick}
+                                         getOptionSelected={(option, value) => option.id === value.id}
                                          getOptionLabel={(option) => option.text}
                                          getChipIcon={(option) => {
-                                             return obsCatSearchTokens.indexOf(option) !== -1 ?
+                                             return obsCatSearchTokens.indexOf(option.id) !== -1 ?
                                                  <FontDownloadRoundedIcon
                                                      onClick={(event) => {
-                                                         onObservationsIconClick(event, option);
+                                                         onObservationsIconClick(event, option.id);
                                                      }}
                                                      title={"Toggle Show/Hide Labels"}
                                                      style={{
@@ -542,19 +514,18 @@ function ExplorePanel(props) {
                                                          marginRight: 0,
                                                          marginBottom: 0
                                                      }}
-                                                     className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option) !== -1 ? ' cirro-active' : '')}/> : null;
+                                                     className={"MuiChip-deleteIcon MuiChip-deleteIconSmall" + (embeddingLabels.indexOf(option.id) !== -1 ? ' cirro-active' : '')}/> : null;
                                          }}
-                                         getOptionSelected={(option, value) => option.id === value}
                                          onChange={onObservationsChange}/>
             </FormControl>}
-
             {moduleOptions.length > 0 && <FormControl sx={{display: 'block'}}>
                 <AutocompleteVirtualized
                     label={"Modules"}
                     testId={'modules-input'}
                     options={moduleOptions}
+                    getChipText={(option) => option.id}
                     value={moduleTokens}
-                    getOptionSelected={(option, value) => option.id === value}
+                    getOptionSelected={(option, value) => option.id === value.id}
                     groupBy={(option) => option.group}
                     selectGroup={true}
                     onChange={onModulesChange}
@@ -572,9 +543,10 @@ function ExplorePanel(props) {
                                          testId={'sets-input'}
                                          options={featureSetOptions}
                                          value={featureSets}
-                                         getChipTitle={(option) => {
-                                             return option.category + ', ' + option.name;
-                                         }}
+                                         getChipText={(option) => option.id}
+                    // getChipTitle={(option) => {
+                    //     return option.group + ', ' + option.id;
+                    // }}
                                          selectGroup={true}
                                          onChipClick={onFeatureSetClick}
                                          getChipIcon={(option) => {
@@ -585,7 +557,7 @@ function ExplorePanel(props) {
                                          groupBy={(option) => option.group}
                                          onChange={onFeatureSetsChange}
                                          getOptionSelected={(option, value) => option.id === value.id}
-                                         getChipText={option => option.name}
+
                 />
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_FEATURE_SETS) && <div>
                     <Tooltip title={"Save Current Genes/Features"}>
@@ -700,8 +672,8 @@ const mapDispatchToProps = (dispatch) => {
         handleEmbeddingLabel: value => {
             dispatch(toggleEmbeddingLabel(value));
         },
-        handleSearchTokens: (value, type) => {
-            dispatch(setSearchTokens(value == null ? [] : value, type));
+        handleSearchTokens: value => {
+            dispatch(setSearchTokens(value));
         },
         handleDeleteView: value => {
             dispatch(deleteView(value));

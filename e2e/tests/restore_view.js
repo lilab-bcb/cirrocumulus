@@ -4,7 +4,7 @@ it('restore_view"', async () => {
     const browser = await puppeteer.launch({headless: true});
     const page = await browser.newPage();
     await page.setViewport({width: 1500, height: 1000});
-    await page.goto('http://127.0.0.1:5000/#q={"dataset":"../test-data/pbmc3k_no_raw.h5ad","q":[{"value":"n_counts","type":"obs"},{"value":"ABCB1","type":"X"}]}');
+    await page.goto('http://127.0.0.1:5000/#q={"dataset":"../test-data/pbmc3k_no_raw.h5ad","q":[{"id":"n_counts","type":"obs"},{"id":"ABCB1","type":"X"}]}');
     await page.waitForSelector('[data-testid="scatter-chart-three"]');
     await page.evaluate(() => {
         document.querySelector('[data-testid="chart-extra"]').style.display = 'none';

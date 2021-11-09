@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.23",
+  "version": "1.1.23.post1",
   "private": true,
   "homepage": ".",
   "proxy": "http://127.0.0.1:5000",
@@ -8,9 +8,9 @@
   "dependencies": {
     "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
-    "@mui/icons-material": "^5.0.5",
-    "@mui/material": "^5.0.6",
-    "@mui/styles": "^5.0.2",
+    "@mui/icons-material": "^5.1.0",
+    "@mui/material": "^5.1.0",
+    "@mui/styles": "^5.1.0",
     "@testing-library/jest-dom": "^5.15.0",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",

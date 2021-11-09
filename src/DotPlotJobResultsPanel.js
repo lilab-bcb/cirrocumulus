@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {connect} from 'react-redux';
-import {setSearchTokensDirectly} from './actions';
+import {setSearchTokens} from './actions';
 import {createFilterFunction} from './dataset_filter';
 import {intFormat} from './formatters';
 import {
@@ -317,13 +317,13 @@ function DotPlotJobResultsPanel(props) {
 
         let filteredSearchTokens;
         if (!isSelected) {
-            filteredSearchTokens = searchTokens.filter(token => !features.has(token.value));
+            filteredSearchTokens = searchTokens.filter(token => !features.has(token.id));
         } else {
             filteredSearchTokens = searchTokens.slice();
             features.forEach(feature => {
                 let found = false;
                 for (let i = 0; i < searchTokens.length; i++) {
-                    if (searchTokens[i].value === feature) {
+                    if (searchTokens[i].id === feature) {
                         found = true;
                         break;
                     }
@@ -344,14 +344,14 @@ function DotPlotJobResultsPanel(props) {
         const feature = jobResult.data[row]['index'];
         let index = -1;
         for (let i = 0; i < searchTokens.length; i++) {
-            if (searchTokens[i].value === feature) {
+            if (searchTokens[i].id === feature) {
                 index = i;
                 break;
             }
         }
         if (index === -1) {
             searchTokens.push({
-                value: feature,
+                id: feature,
                 type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
             });
         } else {
@@ -405,7 +405,7 @@ function DotPlotJobResultsPanel(props) {
     const selectedFeatures = new Set();
     searchTokens.forEach(token => {
         if (token.type === FEATURE_TYPE.X) {
-            selectedFeatures.add(token.value);
+            selectedFeatures.add(token.id);
         }
     });
 
@@ -598,7 +598,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = (dispatch) => {
         return {
             onSearchTokens: (payload) => {
-                dispatch(setSearchTokensDirectly(payload));
+                dispatch(setSearchTokens(payload));
             }
 
         };

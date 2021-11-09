@@ -6,9 +6,10 @@ import anndata
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
-from cirrocumulus.util import to_json, get_fs
+from cirrocumulus.util import to_json, get_fs, open_file
 
 logger = logging.getLogger("cirro")
 
@@ -197,7 +198,7 @@ class PrepareData:
 
                 result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
                                                                                                          result_id + '.json')
-                with filesystem.open(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
+                with open_file(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
                     out.write(to_json(full_result))
 
         images = dataset.uns.get('images')

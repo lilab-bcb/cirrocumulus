@@ -1,6 +1,6 @@
 import {scaleOrdinal} from 'd3-scale';
 import {schemeCategory10} from 'd3-scale-chromatic';
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import CompositionPlot from './CompositionPlot';
 import {FEATURE_TYPE, getCategoryValue, NATSORT} from './util';
@@ -124,45 +124,77 @@ function getComposition(dataset, obsCat, cachedData, categoricalNames, selection
 
 
 function CompositionPlots(props) {
-    const {cachedData, categoricalNames, chartOptions, dataset, embeddingData, searchTokens, selection} = props;
-    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
-    if (obsCat.length > 1) {
-        const dimension = obsCat[obsCat.length - 1];
-        const colorScale = getColorScale(embeddingData, dimension);
-        const composition = getComposition(dataset, obsCat, cachedData, categoricalNames);
+    const {
+        cachedData,
+        categoricalNames,
+        darkMode,
+        dataset,
+        embeddingData,
+        searchTokens,
+        selection,
+        visible
+    } = props;
+    const [needsUpdate, setNeedsUpdate] = useState(true);
+    const colorScale = useRef();
+    const composition = useRef();
+    const selectedComposition = useRef();
+    const title = useRef();
+    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.id);
+    const dimension = obsCat.length > 1 ? obsCat[obsCat.length - 1] : null;
+    useEffect(() => {
+        setNeedsUpdate(true);
+    }, [categoricalNames, selection, JSON.stringify(obsCat)]);
 
-        const textColor = chartOptions.darkMode ? 'white' : 'black';
-        const selectedComposition = selection != null && selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
-        const title = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
-        return <>{composition && <CompositionPlot seriesToValueToCounts={composition.seriesToValueToCounts}
-                                                  dimension={dimension}
-                                                  title={title}
-                                                  colorScale={colorScale} series={composition.series}
-                                                  uniqueValues={composition.uniqueValues}
-                                                  textColor={textColor}/>}
+    useEffect(() => {
+        colorScale.current = getColorScale(embeddingData, dimension);
+    }, [embeddingData, dimension]);
 
-            {selectedComposition &&
-            <CompositionPlot seriesToValueToCounts={selectedComposition.seriesToValueToCounts}
-                             dimension={dimension}
-                             title={title}
-                             subtitle="selection"
-                             colorScale={colorScale} series={selectedComposition.series}
-                             uniqueValues={selectedComposition.uniqueValues}
-                             textColor={textColor}/>}
-        </>;
+
+    useEffect(() => {
+        if (needsUpdate && visible) {
+            composition.current = getComposition(dataset, obsCat, cachedData, categoricalNames);
+            selectedComposition.current = selection != null && selection.size > 0 ? getComposition(dataset, obsCat, cachedData, categoricalNames, selection) : null;
+            title.current = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
+            setNeedsUpdate(false);
+        }
+    }, [needsUpdate, visible]);
+
+    if (dimension == null) {
+        return null;
     }
-    return null;
+    const textColor = darkMode ? 'white' : 'black';
+    return <>{composition.current && <CompositionPlot seriesToValueToCounts={composition.current.seriesToValueToCounts}
+                                                      dimension={dimension.current}
+                                                      title={title.current}
+                                                      colorScale={colorScale.current}
+                                                      series={composition.current.series}
+                                                      uniqueValues={composition.current.uniqueValues}
+                                                      textColor={textColor}/>}
+
+        {selectedComposition.current &&
+        <CompositionPlot seriesToValueToCounts={selectedComposition.current.seriesToValueToCounts}
+                         dimension={dimension}
+                         title={title.current}
+                         subtitle="selection"
+                         colorScale={colorScale.current}
+                         series={selectedComposition.current.series}
+                         uniqueValues={selectedComposition.current.uniqueValues}
+                         textColor={textColor}/>}
+    </>;
+
+
 }
 
 const mapStateToProps = state => {
     return {
         cachedData: state.cachedData,
         categoricalNames: state.categoricalNames,
-        chartOptions: state.chartOptions,
+        darkMode: state.chartOptions.darkMode,
         dataset: state.dataset,
         embeddingData: state.embeddingData,
         searchTokens: state.searchTokens,
-        selection: state.selection
+        selection: state.selection,
+        visible: state.tab === 'composition'
     };
 };
 const mapDispatchToProps = dispatch => {

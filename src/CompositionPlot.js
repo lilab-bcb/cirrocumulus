@@ -175,16 +175,16 @@ function CompositionPlot(props) {
             counts.push(count);
         });
     });
-    let pValue = null;
-    let stat = null;
-    if (countsTable.length === 2 && countsTable[0].length === 2) { // fisher exact
-        pValue = fisherTest(countsTable[0][0], countsTable[0][1], countsTable[1][0], countsTable[1][1]);
-        stat = 'Fisher\'s Exact';
-    } else if (countsTable.length >= 2 && countsTable[0].length >= 2) {
-        const result = chiSquare(countsTable);
-        pValue = result.p;
-        stat = 'Chi-Square';
-    }
+    // let pValue = null;
+    // let stat = null;
+    // if (countsTable.length === 2 && countsTable[0].length === 2) { // fisher exact
+    //     pValue = fisherTest(countsTable[0][0], countsTable[0][1], countsTable[1][0], countsTable[1][1]);
+    //     stat = 'Fisher\'s Exact';
+    // } else if (countsTable.length >= 2 && countsTable[0].length >= 2) {
+    //     const result = chiSquare(countsTable);
+    //     pValue = result.p;
+    //     stat = 'Chi-Square';
+    // }
 
     return <>
         <div>
@@ -238,8 +238,8 @@ function CompositionPlot(props) {
                     })}
                     </TableBody>
                 </Table>
-                {pValue != null &&
-                <Typography color="textPrimary">{stat} p-value: {numberFormat2f(pValue)}</Typography>}
+                {/*{pValue != null &&*/}
+                {/*<Typography color="textPrimary">{stat} p-value: {numberFormat2f(pValue)}</Typography>}*/}
             </div>
         </div>
 

@@ -42,19 +42,15 @@ def get_scheme(path):
     return pr.scheme
 
 
-scheme_to_fs = {}
-scheme_to_fs_args = dict(s3=dict(s3_additional_kwargs=dict(ACL='bucket-owner-full-control')))
+fsspec_kwargs = dict(s3_additional_kwargs=dict(ACL='bucket-owner-full-control'))
 
 
 def get_fs(path):
-    scheme = get_scheme(path)
-    fs = scheme_to_fs.get(scheme, None)
-    if fs is not None:
-        return fs
-    fs_args = scheme_to_fs_args.get(scheme, {})
-    fs = fsspec.filesystem(scheme, **fs_args)
-    scheme_to_fs[scheme] = fs
-    return fs
+    return fsspec.filesystem(get_scheme(path), **fsspec_kwargs)
+
+
+def open_file(urlpath, mode="rb", compression=None):
+    return fsspec.open(urlpath, mode=mode, compression=compression, **fsspec_kwargs)
 
 
 def to_json(data, orient='values'):

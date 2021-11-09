@@ -170,7 +170,7 @@ function AppHeader(props) {
     const datasetDetailsOpen = Boolean(datasetDetailsEl);
     const shape = dataset != null && dataset.shape != null ? dataset.shape : null;
     const hasSelection = dataset != null && shape != null && shape[0] > 0 && selection != null;
-    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.value);
+    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.id);
     const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
     const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
     const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);

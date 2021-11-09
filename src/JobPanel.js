@@ -11,7 +11,6 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import {intFormat} from './formatters';
 import FormControl from '@mui/material/FormControl';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
-import FontDownloadRoundedIcon from '@mui/icons-material/FontDownloadRounded';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -46,7 +45,7 @@ function JobPanel(props) {
     const [compareCategories, setCompareCategories] = useState([]);
 
     const obsCatOptions = getAnnotationOptions([], dataset.obsCat);
-
+   
     useEffect(() => {
         setGroup1(null);
         setGroup1Count(null);
@@ -192,16 +191,6 @@ function JobPanel(props) {
                                          options={obsCatOptions}
                                          value={compareCategories}
                                          getOptionLabel={(option) => option.text}
-                                         getChipIcon={(option) => {
-                                             return <FontDownloadRoundedIcon
-                                                 style={{
-                                                     marginLeft: 4,
-                                                     marginTop: 0,
-                                                     marginRight: 0,
-                                                     marginBottom: 0
-                                                 }}
-                                                 className={"MuiChip-deleteIcon MuiChip-deleteIconSmall"}/>;
-                                         }}
                                          getOptionSelected={(option, value) => option.id === value}
                                          onChange={onCompareCategories}/>
             </FormControl>}
