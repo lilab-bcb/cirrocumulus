@@ -30,91 +30,86 @@ function stripInterpolate(name) {
 }
 
 
-class ColorSchemeSelector extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {forceUpdate: false};
-    }
+function ColorSchemeSelector(props) {
+    const {classes, interpolator, handleInterpolator, width} = props;
 
-    onInterpolatorChange = (event) => {
+    function onInterpolatorChange(event) {
         let name = event.target.value;
-        this.props.handleInterpolator(Object.assign({}, this.props.interpolator, {
+        handleInterpolator(Object.assign({}, interpolator, {
             name: name,
             value: getInterpolator(name)
         }));
-    };
+    }
 
-    getScale(name) {
+    function getScale(name) {
         return createColorScale({
             name: name,
             value: scaleChromatic[name],
-            reversed: this.props.interpolator == null ? false : this.props.interpolator.reversed
+            reversed: interpolator == null ? false : interpolator.reversed
         }).domain([0, 1]);
     }
 
-    render() {
 
-        const {classes, interpolator} = this.props;
-        if (interpolator && interpolator.reversed == null) {
-            interpolator.reversed = false;
-        }
-        const interpolatorName = interpolator == null ? 'interpolateViridis' : fixInterpolatorName(interpolator.name);
-        const width = this.props.width || 176;
-        const height = 14;
-        return <>
-            <InputLabel shrink={true}>Color Scheme</InputLabel>
-            <Select
-                disabled={interpolator == null}
-                input={<Input/>}
-                className={classes.select}
-                onChange={this.onInterpolatorChange}
-                value={interpolatorName}
-                multiple={false}>
-                <MenuItem key="Diverging" value="Diverging" divider disabled>
-                    Diverging
-                </MenuItem>
-                {interpolators['Diverging'].map(item => (
-                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
-                        <ColorSchemeLegend width={width}
-                                           label={false} height={height}
-                                           scale={this.getScale(item)}/>
-
-                    </MenuItem>))}
-
-                <MenuItem key="Sequential (Single Hue)" value="Sequential (Single Hue)" divider disabled>
-                    Sequential (Single Hue)
-                </MenuItem>
-                {interpolators['Sequential (Single Hue)'].map(item => (
-                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
-                        <ColorSchemeLegend width={width}
-                                           label={false} height={height}
-                                           scale={this.getScale(item)}/>
-                    </MenuItem>))}
-
-                <MenuItem key="Sequential (Multi-Hue)" value="Sequential (Multi-Hue)" divider disabled>
-                    Sequential (Multi-Hue)
-                </MenuItem>
-                {interpolators['Sequential (Multi-Hue)'].map(item => (
-                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
-
-                        <ColorSchemeLegend width={width}
-                                           label={false} height={height}
-                                           scale={this.getScale(item)}/>
-
-                    </MenuItem>))}
-
-                <MenuItem key="Cyclical" value="Cyclical" divider disabled>
-                    Cyclical
-                </MenuItem>
-                {interpolators['Cyclical'].map(item => (
-                    <MenuItem title={stripInterpolate(item)} value={item} key={item}>
-                        <ColorSchemeLegend width={width}
-                                           label={false} height={height}
-                                           scale={this.getScale(item)}/>
-                    </MenuItem>))}
-            </Select>
-        </>;
+    if (interpolator && interpolator.reversed == null) {
+        interpolator.reversed = false;
     }
+    const interpolatorName = interpolator == null ? 'interpolateViridis' : fixInterpolatorName(interpolator.name);
+    const _width = width || 176;
+    const height = 14;
+    return <>
+        <InputLabel shrink={true}>Color Scheme</InputLabel>
+        <Select
+            disabled={interpolator == null}
+            input={<Input/>}
+            className={classes.select}
+            onChange={onInterpolatorChange}
+            value={interpolatorName}
+            multiple={false}>
+            <MenuItem key="Diverging" value="Diverging" divider disabled>
+                Diverging
+            </MenuItem>
+            {interpolators['Diverging'].map(item => (
+                <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                    <ColorSchemeLegend width={_width}
+                                       label={false} height={height}
+                                       scale={getScale(item)}/>
+
+                </MenuItem>))}
+
+            <MenuItem key="Sequential (Single Hue)" value="Sequential (Single Hue)" divider disabled>
+                Sequential (Single Hue)
+            </MenuItem>
+            {interpolators['Sequential (Single Hue)'].map(item => (
+                <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                    <ColorSchemeLegend width={_width}
+                                       label={false} height={height}
+                                       scale={getScale(item)}/>
+                </MenuItem>))}
+
+            <MenuItem key="Sequential (Multi-Hue)" value="Sequential (Multi-Hue)" divider disabled>
+                Sequential (Multi-Hue)
+            </MenuItem>
+            {interpolators['Sequential (Multi-Hue)'].map(item => (
+                <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+
+                    <ColorSchemeLegend width={_width}
+                                       label={false} height={height}
+                                       scale={getScale(item)}/>
+
+                </MenuItem>))}
+
+            <MenuItem key="Cyclical" value="Cyclical" divider disabled>
+                Cyclical
+            </MenuItem>
+            {interpolators['Cyclical'].map(item => (
+                <MenuItem title={stripInterpolate(item)} value={item} key={item}>
+                    <ColorSchemeLegend width={_width}
+                                       label={false} height={height}
+                                       scale={getScale(item)}/>
+                </MenuItem>))}
+        </Select>
+    </>;
+
 }
 
 

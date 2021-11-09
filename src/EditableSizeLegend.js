@@ -2,73 +2,76 @@ import {InputLabel, Switch} from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import TextField from '@mui/material/TextField';
 import {debounce} from 'lodash';
-import React from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import SizeLegend from './SizeLegend';
 
 
-export class EditableSizeLegend extends React.PureComponent {
+export function EditableSizeLegend(props) {
+    const {onOptions, sizeScale, reversed, showReversed, textColor} = props;
 
-    constructor(props) {
-        super(props);
-        this.state = {minSize: '', maxSize: ''};
-        this.updateMinSize = debounce(this.updateMinSize, 500);
-        this.updateMaxSize = debounce(this.updateMaxSize, 500);
+    const [minSize, setMinSize] = useState('');
+    const [maxSize, setMaxSize] = useState('');
+
+
+    function updateMinSize(value) {
+        value = parseFloat(value);
+        onOptions({minSize: value});
     }
 
 
-    onMinSizeChange = (event) => {
-        this.setState({minSize: event.target.value});
-        this.updateMinSize(event.target.value);
-    };
-
-    updateMinSize = (value) => {
+    function updateMaxSize(value) {
         value = parseFloat(value);
-        this.props.onOptions({minSize: value});
-    };
-
-    onMaxSizeChange = (event) => {
-        this.setState({maxSize: event.target.value});
-        this.updateMaxSize(event.target.value);
-    };
-
-    updateMaxSize = (value) => {
-        value = parseFloat(value);
-        this.props.onOptions({maxSize: value});
-    };
-
-    onReversedChange = (event) => {
-        this.props.onReversedChange(event.target.checked);
-    };
-
-    render() {
-
-        const {sizeScale, reversed, showReversed, textColor} = this.props;
-
-        return <>
-            <SizeLegend style={{display: 'block'}}
-                        width={174}
-                        textColor={textColor}
-                        label={true} height={40}
-                        scale={sizeScale}/>
-            {showReversed && <div><FormControlLabel
-                control={
-                    <Switch
-                        checked={reversed}
-                        onChange={this.onReversedChange}
-                    />
-                }
-                label="Reverse Sizes"
-            /></div>}
-            <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Size Range</InputLabel>
-            <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                       size="small" type="text"
-                       onChange={this.onMinSizeChange} label={"Min"}
-                       value={this.state.minSize}/>
-            <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
-                       onChange={this.onMaxSizeChange} label={"Max"}
-                       value={this.state.maxSize}/>
-        </>;
+        onOptions({maxSize: value});
     }
+
+    function onReversedChange(event) {
+        onReversedChange(event.target.checked);
+    }
+
+    const updateMinSizeDebounced = useMemo(() => debounce(updateMinSize, 500), []);
+    const updateMaxSizeDebounced = useMemo(() => debounce(updateMaxSize, 500), []);
+    useEffect(() => {
+        return () => {
+            updateMinSizeDebounced.cancel();
+            updateMaxSizeDebounced.cancel();
+        };
+    }, []);
+
+    function onMinSizeChange(event) {
+        setMinSize(event.target.value);
+        updateMinSizeDebounced(event.target.value);
+    }
+
+    function onMaxSizeChange(event) {
+        setMaxSize(event.target.value);
+        updateMaxSizeDebounced(event.target.value);
+    }
+
+
+    return <>
+        <SizeLegend style={{display: 'block'}}
+                    width={174}
+                    textColor={textColor}
+                    label={true} height={40}
+                    scale={sizeScale}/>
+        {showReversed && <div><FormControlLabel
+            control={
+                <Switch
+                    checked={reversed}
+                    onChange={onReversedChange}
+                />
+            }
+            label="Reverse Sizes"
+        /></div>}
+        <InputLabel style={{marginTop: 16}} shrink={true} variant={"standard"}>Custom Size Range</InputLabel>
+        <TextField InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                   size="small" type="text"
+                   onChange={onMinSizeChange} label={"Min"}
+                   value={minSize}/>
+        <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small" type="text"
+                   onChange={onMaxSizeChange} label={"Max"}
+                   value={maxSize}/>
+    </>;
 }
 
 
