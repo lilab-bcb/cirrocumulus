@@ -241,7 +241,7 @@ function ExplorePanel(props) {
 
     function onFeatureSetsChange(event, values) {
         handleSearchTokens(searchTokens.filter(token => token.type !== FEATURE_TYPE.FEATURE_SET).concat(values.map(item => {
-            return {id: item.id, type: FEATURE_TYPE.FEATURE_SET};
+            return {id: item.id != null ? item.id : item, type: FEATURE_TYPE.FEATURE_SET};
         })));
     }
 
@@ -353,7 +353,7 @@ function ExplorePanel(props) {
 
     function onFeatureClick(event, option) {
         event.stopPropagation();
-        const value = option.text !== undefined ? option.text : option;
+        const value = option.id !== undefined ? option.id : option;
         let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name === value) {
@@ -375,9 +375,9 @@ function ExplorePanel(props) {
     datasetFilterKeys.sort(NATSORT);
     const groupedSearchTokens = groupBy(searchTokens, 'type');
     const obsCatSearchTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id);
-    const xSearchTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []);
+    const xSearchTokens = groupedSearchTokens[FEATURE_TYPE.X] || [];
     const featureSets = getFeatureSets(markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []);
-    const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []);
+    const moduleTokens = groupedSearchTokens[FEATURE_TYPE.MODULE] || [];
     const featureOptions = dataset.features;
     const moduleOptions = getModulesOptions(dataset.modules);
     const obsCat = dataset.obsCat;
@@ -386,6 +386,7 @@ function ExplorePanel(props) {
     const featureSetOptions = getFeatureSetOptions(markers, categoricalNames);
     const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
     const selectedEmbeddings = getEmbeddingOptions(embeddings);
+
     return <>
 
         {'feature set view' === selectedPopupMenuItem && <Dialog
@@ -543,10 +544,11 @@ function ExplorePanel(props) {
                                          testId={'sets-input'}
                                          options={featureSetOptions}
                                          value={featureSets}
-                                         getChipText={(option) => option.id}
-                    // getChipTitle={(option) => {
-                    //     return option.group + ', ' + option.id;
-                    // }}
+                                         getChipText={(option) => option.name}
+                                         getChipTitle={(option) => {
+                                             return option.category + ', ' + option.name;
+                                         }}
+                                         getOptionLabel={(option) => option.text}
                                          selectGroup={true}
                                          onChipClick={onFeatureSetClick}
                                          getChipIcon={(option) => {
