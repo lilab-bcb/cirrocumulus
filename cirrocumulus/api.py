@@ -469,7 +469,6 @@ def handle_job():
             result_url = dataset_api.get_result(dataset, job_id)
             return send_file(result_url)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
-        print(job)
         if job is None:
             return json_response('', 404)  # job deleted
         import anndata
@@ -487,12 +486,12 @@ def handle_job():
             else:
                 # URL to JSON or text
                 return send_file(url)
+        elif isinstance(job, dict):
+            return json_response(job)
         elif isinstance(job, anndata.AnnData):
             return Response(adata_to_df(job).to_json(double_precision=2, orient='records'),
                             content_type='application/json')
-        # elif isinstance(job, bytes):
-        #     job = job.decode('ascii')
-        return json_response(job)
+        return job
 
 
 @cirro_blueprint.route('/jobs', methods=['GET'])

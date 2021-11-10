@@ -3,95 +3,111 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {debounce} from 'lodash';
-import React from 'react';
+import React, {useEffect, useMemo} from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import {numberFormat, numberFormat2f} from './formatters';
 import {stripTrailingZeros} from './util';
 
 
-export class EditableColorScheme extends React.PureComponent {
+export function EditableColorScheme(props) {
+    const {
+        domain,
+        textColor,
+        interpolator,
+        onMinChange,
+        onMaxChange,
+        onMinUIChange,
+        onMaxUIChange,
+        onInterpolator,
+        min,
+        max
+    } = props;
 
-    constructor(props) {
-        super(props);
-        this.updateMin = debounce(this.updateMin, 500);
-        this.updateMax = debounce(this.updateMax, 500);
+
+    function updateMin(value) {
+        onMinChange(parseFloat(value));
     }
 
-    onMinChange = (event) => {
-        this.props.onMinUIChange(event.target.value);
-        this.updateMin(event.target.value);
-    };
+    function updateMax(value) {
+        onMaxChange(parseFloat(value));
+    }
 
-    updateMin = (value) => {
-        this.props.onMinChange(parseFloat(value));
-    };
+    function onReversedChange(event) {
+        onInterpolator(Object.assign({}, interpolator, {reversed: event.target.checked}));
+    }
 
-    onMaxChange = (event) => {
-        this.props.onMaxUIChange(event.target.value);
-        this.updateMax(event.target.value);
-    };
+    const updateMinSizeDebounced = useMemo(() => debounce(updateMin, 500), []);
+    const updateMaxSizeDebounced = useMemo(() => debounce(updateMax, 500), []);
 
-    updateMax = (value) => {
-        this.props.onMaxChange(parseFloat(value));
-    };
+    useEffect(() => {
+        return () => {
+            updateMinSizeDebounced.cancel();
+            updateMaxSizeDebounced.cancel();
+        };
+    }, []);
 
-    onReversedChange = (event) => {
-        this.props.onInterpolator(Object.assign({}, this.props.interpolator, {reversed: event.target.checked}));
-    };
+    function handleMin(event) {
+        onMinUIChange(event.target.value);
+        updateMinSizeDebounced(event.target.value);
+    }
 
-    render() {
-        const {domain, textColor, interpolator, onInterpolator, min, max} = this.props;
-        let colorMin = "";
-        let colorMax = "";
-        if (domain) {
-            if (!isNaN(domain[0])) {
-                colorMin = stripTrailingZeros(numberFormat(domain[0]));
-            }
-            if (!isNaN(domain[1])) {
-                colorMax = stripTrailingZeros(numberFormat(domain[1]));
-            }
-            if (colorMin !== '' && colorMin === colorMax) {
-                colorMin = stripTrailingZeros(numberFormat2f(domain[0]));
-                colorMax = stripTrailingZeros(numberFormat2f(domain[1]));
-            }
+    function handleMax(event) {
+        onMaxUIChange(event.target.value);
+        updateMaxSizeDebounced(event.target.value);
+    }
+
+
+    let colorMin = "";
+    let colorMax = "";
+    if (domain) {
+        if (!isNaN(domain[0])) {
+            colorMin = stripTrailingZeros(numberFormat(domain[0]));
         }
-        const width = 176;
-        return <>
-            <ColorSchemeSelector handleInterpolator={onInterpolator}
-                                 interpolator={interpolator}/>
-            <>
-                <div style={{color: textColor, width: width}}><Typography
-                    variant={"caption"}>{colorMin}</Typography><Typography
-                    variant={"caption"}
-                    style={{float: 'right'}}>{colorMax}</Typography></div>
-                <InputLabel disabled={domain == null} shrink={true} variant={"standard"}>Custom Color
-                    Range</InputLabel>
-                <TextField
-                    InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
-                    size="small" type="text"
-                    disabled={domain == null}
-                    onChange={this.onMinChange} label={"Min"}
-                    value={min}/>
-                <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
-                           type="text"
-                           disabled={domain == null}
-                           onChange={this.onMaxChange} label={"Max"}
-                           value={max}/>
-            </>
-            <Tooltip title={"Select to invert the color order"}>
-                <div><FormControlLabel
-                    control={
-                        <Switch
-                            disabled={domain == null}
-                            checked={interpolator == null ? false : interpolator.reversed}
-                            onChange={this.onReversedChange}
-                        />
-                    }
-                    label="Reverse Colors"
-                /></div>
-            </Tooltip>
-        </>;
+        if (!isNaN(domain[1])) {
+            colorMax = stripTrailingZeros(numberFormat(domain[1]));
+        }
+        if (colorMin !== '' && colorMin === colorMax) {
+            colorMin = stripTrailingZeros(numberFormat2f(domain[0]));
+            colorMax = stripTrailingZeros(numberFormat2f(domain[1]));
+        }
     }
+    const width = 176;
+    return <>
+        <ColorSchemeSelector handleInterpolator={onInterpolator}
+                             interpolator={interpolator}/>
+        <>
+            <div style={{color: textColor, width: width}}><Typography
+                variant={"caption"}>{colorMin}</Typography><Typography
+                variant={"caption"}
+                style={{float: 'right'}}>{colorMax}</Typography></div>
+            <InputLabel disabled={domain == null} shrink={true} variant={"standard"}>Custom Color
+                Range</InputLabel>
+            <TextField
+                InputLabelProps={{shrink: true}} style={{width: 90, marginRight: 4}}
+                size="small" type="text"
+                disabled={domain == null}
+                onChange={handleMin} label={"Min"}
+                value={min}/>
+            <TextField InputLabelProps={{shrink: true}} style={{width: 90}} size="small"
+                       type="text"
+                       disabled={domain == null}
+                       onChange={handleMax} label={"Max"}
+                       value={max}/>
+        </>
+        <Tooltip title={"Select to invert the color order"}>
+            <div><FormControlLabel
+                control={
+                    <Switch
+                        disabled={domain == null}
+                        checked={interpolator == null ? false : interpolator.reversed}
+                        onChange={onReversedChange}
+                    />
+                }
+                label="Reverse Colors"
+            /></div>
+        </Tooltip>
+    </>;
+
 }
 
 
