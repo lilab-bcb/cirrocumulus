@@ -169,9 +169,8 @@ export default function AutocompleteVirtualized(props) {
     function onDrop(event) {
         event.preventDefault();
         event.stopPropagation();
-        let dt = event.dataTransfer;
-        let files = dt.files;
-        let reader = new FileReader();
+        const files = event.dataTransfer.files;
+        const reader = new FileReader();
         reader.onload = function (event) {
             let text = event.target.result.trim();
             let tokens = text.split(/[\n,\t]/);
@@ -228,7 +227,7 @@ export default function AutocompleteVirtualized(props) {
     }
 
     function onDragOver(event) {
-        if (event.dataTransfer.files.length > 0) {
+        if (event.dataTransfer.items.length > 0) {
             event.preventDefault();
             event.stopPropagation();
             showDragIndicator(true);
