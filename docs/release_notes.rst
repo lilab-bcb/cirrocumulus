@@ -1,7 +1,11 @@
 Release Notes
 -------------
 
-- 1.1.23.post1 `November 15, 2021`
+- 1.1.24 `November 10, 2021`
+    * Changed default output format to zarr_ in `cirro prepare_data`
+    * Fixed error retrieving job results stored in GridFS
+
+- 1.1.23.post1 `November 9, 2021`
     * Fixed gzip encoding when writing to remote storage (e.g S3)
 
 - 1.1.23 `November 3, 2021`
