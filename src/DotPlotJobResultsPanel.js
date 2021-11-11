@@ -330,7 +330,7 @@ function DotPlotJobResultsPanel(props) {
                 }
                 if (!found) {
                     filteredSearchTokens.push({
-                        value: feature,
+                        id: feature,
                         type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
                     });
                 }
