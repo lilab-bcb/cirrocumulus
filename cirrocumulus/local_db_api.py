@@ -64,7 +64,7 @@ class LocalDbAPI(AbstractDB):
                 with open(json_path, 'rt') as f:
                     try:
                         json_data.update(json.load(f))
-                    except json.decoder.JSONDecodeError:
+                    except:
                         print('Unable to load {}'.format(json_path))
             meta = create_dataset_meta(path)
             if 'filters' not in json_data:
