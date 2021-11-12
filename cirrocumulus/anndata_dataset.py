@@ -64,7 +64,14 @@ class AnndataDataset(AbstractDataset):
         return adata
 
     def get_schema(self, filesystem, path):
-        return dataset_schema(self.get_data(filesystem, path))
+        adata = self.get_data(filesystem, path)
+        schema = dataset_schema(adata)
+        if 'cirro-schema' in adata.uns:
+            import json
+            s = json.loads(str(adata.uns['cirro-schema']))
+            if 'results' in s:
+                schema['results'] = s['results']
+        return schema
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
         adata = self.get_data(filesystem, path)
