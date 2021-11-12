@@ -41,6 +41,10 @@ The primary embedding view enables fast, interactive exploration of 1.3 million 
 
 .. image:: images/1.3.million.gif
 
+You can interactively annotate clusters (optionally using a controlled vocabulary), and include positive and negative cluster markers:
+
+.. image:: images/annotate.gif
+
 Toolbar
 ^^^^^^^^^^^
 
