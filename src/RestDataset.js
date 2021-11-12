@@ -38,17 +38,16 @@ export class RestDataset {
     getSelectedIdsPromise(q, cachedData) {
         q.id = this.id;
         if (this.local) {
-            if (cachedData['index'] == null) {
-                return this.getDataPromise({values: {dimensions: ['index']}}, cachedData).then(() => {
-                    const selectedIndices = Array.from(getPassingFilterIndices(cachedData, q.filter));
-                    const ids = [];
-                    const index = cachedData['index'];
-                    for (let i = 0, n = selectedIndices.length; i < n; i++) {
-                        ids.push(index[selectedIndices[i]]);
-                    }
-                    return {ids: ids};
-                });
-            }
+            const p = cachedData['index'] == null ? this.getDataPromise({values: {dimensions: ['index']}}, cachedData) : Promise.resolve();
+            return p.then(() => {
+                const selectedIndices = Array.from(getPassingFilterIndices(cachedData, q.filter));
+                const ids = [];
+                const index = cachedData['index'];
+                for (let i = 0, n = selectedIndices.length; i < n; i++) {
+                    ids.push(index[selectedIndices[i]]);
+                }
+                return {ids: ids};
+            });
         } else {
             return fetch(API + '/selected_ids',
                 {
