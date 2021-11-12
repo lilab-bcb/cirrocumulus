@@ -593,7 +593,6 @@ export function downloadSelectedIds() {
         dispatch(addTask(task));
         const state = getState();
         let filter = getFilterJson(state, true);
-
         state.dataset.api.getSelectedIdsPromise({
             filter: filter
         }, state.cachedData).then(result => {
@@ -1029,8 +1028,6 @@ function loadDefaultDataset() {
     return function (dispatch, getState) {
         if (getState().dataset == null && getState().datasetChoices.length === 1) {
             dispatch(setDataset(getState().datasetChoices[0].id));
-        } else if (getState().datasetChoices.length > 0) {
-            dispatch(setDialog(OPEN_DATASET_DIALOG));
         }
     };
 }
