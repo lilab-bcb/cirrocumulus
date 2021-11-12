@@ -293,7 +293,7 @@ function ExplorePanel(props) {
         const modules = dataset.modules;
         let selectedItem;
         for (let i = 0, n = modules.length; i < n; i++) {
-            if (modules[i].id == option) {
+            if (modules[i].id === option.id) {
                 selectedItem = modules[i];
                 break;
             }
