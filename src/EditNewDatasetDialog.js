@@ -79,27 +79,6 @@ function EditNewDatasetDialog(props) {
     const favoriteSpecies = serverInfo.species.favorite;
     const otherSpecies = serverInfo.species.other;
 
-    function dragStart(event) {
-        showDragIndicator(event, true);
-    }
-
-    function dragEnd(event) {
-        showDragIndicator(event, false);
-    }
-
-    function drop(event) {
-        showDragIndicator(event, false);
-        const filesArray = event.dataTransfer.files;
-        if (filesArray.length === 1) {
-            setFile(filesArray[0]);
-        }
-    }
-
-    function showDragIndicator(event, show) {
-        event.stopPropagation();
-        event.preventDefault();
-        dragIndicator.current.style.background = show ? '#1976d2' : '';
-    }
 
     const canUpload = serverInfo.upload;
     const isNew = dataset == null;
@@ -115,6 +94,30 @@ function EditNewDatasetDialog(props) {
     }
 
     const setFileDropRef = useCallback(node => {
+
+        function dragStart(event) {
+            showDragIndicator(event, true);
+        }
+
+        function dragEnd(event) {
+            showDragIndicator(event, false);
+        }
+
+        function drop(event) {
+            showDragIndicator(event, false);
+            const filesArray = event.dataTransfer.files;
+            if (filesArray.length === 1) {
+                setFile(filesArray[0]);
+            }
+        }
+
+        function showDragIndicator(event, show) {
+            event.stopPropagation();
+            event.preventDefault();
+            dragIndicator.current.style.background = show ? '#1976d2' : '';
+        }
+
+
         if (canUpload && isNew) {
             if (fileDropRef.current) {
                 fileDropRef.current.removeEventListener('dragover', dragStart);
@@ -133,7 +136,7 @@ function EditNewDatasetDialog(props) {
             }
         }
 
-    }, []);
+    }, [canUpload, isNew]);
 
 
     useEffect(() => {
@@ -162,7 +165,7 @@ function EditNewDatasetDialog(props) {
         setOverallDesign(dataset != null && dataset.overallDesign != null ? dataset.overallDesign : '');
         setCitations(dataset != null && dataset.citations != null ? dataset.citations : '');
 
-    }, [dataset]);
+    }, [dataset, email]);
 
 
     function handleSave() {

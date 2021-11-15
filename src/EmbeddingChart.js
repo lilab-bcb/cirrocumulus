@@ -86,7 +86,7 @@ function EmbeddingChart(props) {
         return () => {
             window.removeEventListener('resize', handleWindowSize);
         };
-    }, [window]);
+    }, [handleWindowSize]);
 
 
     function handleToggleLegend(e) {
@@ -293,7 +293,6 @@ const mapDispatchToProps = dispatch => {
         onSelect: (e) => {
             dispatch(handleBrushFilterUpdated(e));
         },
-
         handleScrollPosition: value => {
             dispatch(setLegendScrollPosition(value));
         },

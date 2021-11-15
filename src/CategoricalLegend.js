@@ -44,16 +44,17 @@ export default function CategoricalLegend(props) {
     // restore scroll position
     useEffect(() => {
         const p = legendScrollPosition[name];
+        const currentList = listRef.current;
         if (p != null) {
-            listRef.current.scrollTo(p);
+            currentList.scrollTo(p);
         }
 
         return () => {
-            if (listRef.current) {
-                handleScrollPosition({name: name, value: listRef.current.state.scrollOffset});
+            if (currentList) {
+                handleScrollPosition({name: name, value: currentList.state.scrollOffset});
             }
         };
-    }, [name]);
+    }, [name, handleScrollPosition, legendScrollPosition]);
 
 
     function handleDialogClose(e) {

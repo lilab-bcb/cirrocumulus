@@ -52,7 +52,6 @@ function AppHeader(props) {
     const {
         chartOptions,
         dataset,
-        datasetSelectorColumns,
         drawerOpen,
         distributionData,
         handleChartOptions,
@@ -228,7 +227,6 @@ function AppHeader(props) {
                     {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
                 {dataset && <IconButton
                     aria-label="Info"
-                    aria-haspopup="true"
                     onClick={onShowDatasetDetails}
                     aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
                     aria-haspopup="true"
