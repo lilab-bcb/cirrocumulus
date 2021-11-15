@@ -593,7 +593,6 @@ export function downloadSelectedIds() {
         dispatch(addTask(task));
         const state = getState();
         let filter = getFilterJson(state, true);
-
         state.dataset.api.getSelectedIdsPromise({
             filter: filter
         }, state.cachedData).then(result => {
@@ -985,12 +984,12 @@ function getDefaultDatasetView(dataset) {
         }
         selectedEmbedding = dataset.embeddings[dataset.embeddings.map(e => e.name).indexOf(embeddingName)];
     }
-
-    if (dataset.markers_read_only != null && dataset.markers_read_only.length > 0) {
-        let category = dataset.markers_read_only[0].category;
-        const suffix = ' (rank_genes_groups)';
-        if (category.endsWith(suffix)) {
-            category = category.substring(0, category.length - suffix.length);
+    if (dataset.markers != null && dataset.markers.length > 0) {
+        let category = dataset.markers[0].category;
+        const suffix = ' (rank_genes_';
+        let index = category.indexOf(suffix);
+        if (index !== -1) {
+            category = category.substring(0, index);
         }
         if (dataset.obsCat.indexOf(category) !== -1) {
             obsCat = category;
@@ -1029,8 +1028,6 @@ function loadDefaultDataset() {
     return function (dispatch, getState) {
         if (getState().dataset == null && getState().datasetChoices.length === 1) {
             dispatch(setDataset(getState().datasetChoices[0].id));
-        } else if (getState().datasetChoices.length > 0) {
-            dispatch(setDialog(OPEN_DATASET_DIALOG));
         }
     };
 }

@@ -1,7 +1,6 @@
 import {Divider, IconButton, Menu, Tooltip} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
-import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Popover from '@mui/material/Popover';
 import Tab from '@mui/material/Tab';
@@ -31,6 +30,7 @@ import {
     setTab
 } from './actions';
 import CirroIcon from './CirroIcon';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DatasetSelector from './DatasetSelector';
 import {intFormat} from './formatters';
 import {
@@ -174,7 +174,6 @@ function AppHeader(props) {
     const showAddDataset = user != null && user.importer && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_ADD_DATASET);
     const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
     const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
-
     const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
     const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
     return (
@@ -182,37 +181,37 @@ function AppHeader(props) {
                                             sx={{
                                                 zIndex: (theme) => theme.zIndex.drawer + 1
                                             }}>
+            {dataset != null && datasetDetailsOpen && <Popover
+                id={"dataset-details"}
+                open={datasetDetailsOpen}
+                anchorEl={datasetDetailsEl}
+                onClose={onCloseDatasetDetails}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center'
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center'
+                }}
+            >
+                <Box style={{width: 500, padding: '1em'}}>
+                    <Typography variant="h6">{dataset.name}</Typography>
+                    <Divider/>
+                    {datasetSelectorColumns != null && datasetSelectorColumns.map(c => {
+                        return c.id === 'name' || dataset[c.id] == null ? null :
+                            <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
+                    })}
+                    {dataset.description &&
+                    <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                                  children={dataset.description}/></>}
+                    {!process.env.REACT_APP_STATIC === 'true' && <Typography>
+                        URL: {dataset.url}
+                    </Typography>}
+                </Box>
+            </Popover>
+            }
             <Toolbar variant="dense" style={{paddingLeft: 0}}>
-                {dataset != null && datasetDetailsOpen && <Popover
-                    id={"dataset-details"}
-                    open={datasetDetailsOpen}
-                    anchorEl={datasetDetailsEl}
-                    onClose={onCloseDatasetDetails}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center'
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center'
-                    }}
-                >
-                    <Box style={{width: 500, padding: '1em'}}>
-                        <Typography variant="h6">{dataset.name}</Typography>
-                        <Divider/>
-                        {datasetSelectorColumns.map(c => {
-                            return c.id === 'name' || dataset[c.id] == null ? null :
-                                <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
-                        })}
-                        {dataset.description &&
-                        <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                                      children={dataset.description}/></>}
-                        {!process.env.REACT_APP_STATIC === 'true' && <Typography>
-                            URL: {dataset.url}
-                        </Typography>}
-                    </Box>
-                </Popover>
-                }
                 <IconButton
                     size="large"
                     color="inherit"
@@ -222,40 +221,32 @@ function AppHeader(props) {
                     <MenuIcon/>
                 </IconButton>
                 <CirroIcon/>
-                {dataset == null && <Typography variant="h5">Cirrocumulus</Typography>}
-                {dataset &&
-                <><Typography variant="h5">
-                    <Link
-                        color="inherit"
-                        style={{
-                            paddingLeft: 6,
-                            whiteSpace: 'nowrap',
-                            maxWidth: 300,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                        }}
-                        href="#"
-                        underline={"none"}
-                        onClick={dataset.id != null && datasetSelectorColumns ? onShowDatasetDetails : null}
-                        aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
-                        aria-haspopup="true">
-                        {dataset.name}
-                    </Link>
-                </Typography><Typography
-                    variant="subtitle2">&nbsp;{hasSelection && shape != null && intFormat(selection.size) + ' / '}
+                <Typography variant="h5" sx={{paddingRight: 1}}>Cirro</Typography>
+
+                <Typography sx={{paddingRight: 1}}
+                            variant="subtitle2">&nbsp;{hasSelection && shape != null && intFormat(selection.size) + ' / '}
                     {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
-                </>}
-                <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
-                    <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
-                         disabled={dataset == null}/>
-                    <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
-                         disabled={dataset == null || distributionData.length === 0}/>
-                    <Tab data-testid="composition-tab" value="composition" label="Composition"
-                         disabled={dataset == null || obsCat.length < 2}/>
-                    {<Tab data-testid="results-tab" value="results" label="Results"
-                          disabled={dataset == null || jobResults.length === 0}/>}
-                </Tabs>
-                <div style={{marginLeft: 'auto', whiteSpace: 'nowrap', overflow: 'hidden'}}>
+                {dataset && <IconButton
+                    aria-label="Info"
+                    aria-haspopup="true"
+                    onClick={onShowDatasetDetails}
+                    aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
+                    aria-haspopup="true"
+                    size="small">
+                    <InfoOutlinedIcon/>
+                </IconButton>}
+                <Typography variant="subtitle2">{dataset != null ? dataset.name : ''}</Typography>
+                <div style={{display: 'flex', marginLeft: 'auto'}}>
+                    <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
+                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
+                             disabled={dataset == null}/>
+                        <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
+                             disabled={dataset == null || distributionData.length === 0}/>
+                        <Tab data-testid="composition-tab" value="composition" label="Composition"
+                             disabled={dataset == null || obsCat.length < 2}/>
+                        {<Tab data-testid="results-tab" value="results" label="Results"
+                              disabled={dataset == null || jobResults.length === 0}/>}
+                    </Tabs>
                     {serverInfo.brand &&
                     <ReactMarkdown options={{
                         overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
@@ -264,8 +255,6 @@ function AppHeader(props) {
                             return React.createElement(type, props, children);
                         }
                     }} children={serverInfo.brand}/>}
-
-
                     {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={onDataset}/>}
                     {showMoreMenu && <Tooltip title={'More'}>
                         <IconButton
@@ -296,7 +285,6 @@ function AppHeader(props) {
                         {(showAddDataset || showEditDataset || showDeleteDataset) && dataset != null && <Divider/>}
                         {dataset != null && <MenuItem onClick={copyLink}>Copy Link </MenuItem>}
                     </Menu>}
-
                     {<Tooltip title={"Toggle Light/Dark Theme"}>
                         <IconButton
                             edge={false}

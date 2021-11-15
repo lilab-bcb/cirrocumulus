@@ -10,7 +10,8 @@ from cirrocumulus.util import get_fs
 
 
 def create_dataset_meta(path):
-    result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path))[0], 'description': ''}
+    result = {'id': path, 'url': path, 'name': os.path.splitext(os.path.basename(path.rstrip('/')))[0],
+              'description': ''}
     if os.path.basename(path).endswith('.json'):
         with open(path, 'rt') as f:
             result.update(json.load(f))
@@ -63,7 +64,7 @@ class LocalDbAPI(AbstractDB):
                 with open(json_path, 'rt') as f:
                     try:
                         json_data.update(json.load(f))
-                    except json.decoder.JSONDecodeError:
+                    except:
                         print('Unable to load {}'.format(json_path))
             meta = create_dataset_meta(path)
             if 'filters' not in json_data:
