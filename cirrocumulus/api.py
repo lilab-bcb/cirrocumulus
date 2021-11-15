@@ -1,17 +1,17 @@
 import json
 import os
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context
 
-import cirrocumulus.data_processing as data_processing
 from .anndata_util import adata_to_df
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
-    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL
+    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_SPECIES
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job, delete_job
-from .util import json_response, get_scheme, get_fs
+from .util import json_response, get_scheme, get_fs, open_file
 
 cirro_blueprint = Blueprint('cirro', __name__)
 
@@ -127,8 +127,18 @@ def handle_server():
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
             d['brand'] = f.read()
     d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
+    if os.environ.get(CIRRO_SPECIES) is not None:
+        if get_fs(os.environ[CIRRO_SPECIES]).exists(os.environ[CIRRO_SPECIES]):
+            with open_file(os.environ[CIRRO_SPECIES], 'rt') as f:
+                d['species'] = json.load(f)
+        else:
+            d['species'] = json.loads(os.environ.get(CIRRO_SPECIES))
+    else:
+        d['species'] = dict(favorite=["Homo sapiens", "Mus musculus"], other=["Gallus gallus", "Macaca fascicularis",
+                                                                              "Macaca mulatta", "Rattus norvegicus"]);
+
     if os.environ.get(CIRRO_CELL_ONTOLOGY) is not None:
-        if os.path.exists(os.environ[CIRRO_CELL_ONTOLOGY]):
+        if get_fs(os.environ[CIRRO_CELL_ONTOLOGY]).exists(os.environ[CIRRO_CELL_ONTOLOGY]):
             def parse_term(f):
                 term = dict()
                 for term_line in f:
@@ -144,7 +154,7 @@ def handle_server():
                 return term
 
             terms = []
-            with open(os.environ[CIRRO_CELL_ONTOLOGY], 'rt') as f:  # obo file
+            with open_file(os.environ[CIRRO_CELL_ONTOLOGY], 'rt') as f:  # obo file
                 for line in f:
                     line = line.strip()
                     if line == "[Term]":

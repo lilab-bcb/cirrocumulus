@@ -19,9 +19,9 @@ import TextField from '@mui/material/TextField';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LinkIcon from '@mui/icons-material/Link';
 import ReactMarkdown from 'markdown-to-jsx';
-import React from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
-import {EDIT_DATASET_DIALOG, saveDataset, setDialog, setMessage} from './actions';
+import {EDIT_DATASET_DIALOG, saveDataset, setDialog} from './actions';
 import {REACT_MD_OVERRIDES} from './util';
 
 const styles = theme => ({
@@ -34,9 +34,6 @@ const styles = theme => ({
         minWidth: 200
     }
 });
-
-const favoriteSpecies = ["Homo sapiens", "Mus musculus"];
-const otherSpecies = ["Gallus gallus", "Macaca fascicularis", "Macaca mulatta", "Rattus norvegicus"];
 
 
 function getUniqueArray(text) {
@@ -51,352 +48,363 @@ function getUniqueArray(text) {
     return Array.from(values);
 }
 
-class EditNewDatasetDialog extends React.PureComponent {
+export const DATASET_FIELDS = [{fieldName: 'title', label: 'Title'}, {
+    fieldName: 'species',
+    label: 'Species'
+}, {fieldName: 'experimentType', label: 'Experiment Type'}, {fieldName: 'description', label: 'Summary'},
+    {fieldName: 'overallDesign', label: 'Overall Design'}, {fieldName: 'citations', label: 'Citation(s)'}];
 
-    constructor(props) {
-        super(props);
-        this.init = false;
-        this.fileInputRef = React.createRef();
-        this.fileDropRef = React.createRef();
-        this.dragIndicator = React.createRef();
-        this.state = {
-            url: '',
-            writePreviewTabValue: "Write",
-            uploadTabValue: "URL",
-            species: this.props.dataset != null ? this.props.dataset.species : '',
-            name: this.props.dataset != null ? this.props.dataset.name : '',
-            title: this.props.title != null ? (this.props.dataset.title != null ? this.props.dataset.title : '') : '',
-            description: this.props.dataset != null ? (this.props.dataset.description != null ? this.props.dataset.description : '') : '',
-            readers: '',
-            loading: this.props.dataset != null
-        };
-    }
+function EditNewDatasetDialog(props) {
+    const {classes, dataset, email, serverInfo, onSave, onCancel} = props;
 
-    showDragIndicator(event, show) {
-        event.stopPropagation();
-        event.preventDefault();
-        this.dragIndicator.current.style.background = show ? '#1976d2' : '';
-    }
+    const fileInputRef = useRef();
+    const fileDropRef = useRef();
+    const dragIndicator = useRef();
+
+    const [file, setFile] = useState(null);
+    const [writePreviewTabValue, setWritePreviewTabValue] = useState('Write');
+    const [uploadTabValue, setUploadTabValue] = useState('URL');
+    const [url, setUrl] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [readers, setReaders] = useState('');
+
+    const [name, setName] = useState('');
+    const [title, setTitle] = useState('');
+    const [species, setSpecies] = useState('');
+    const [experimentType, setExperimentType] = useState('');
+    const [description, setDescription] = useState(''); // summary
+    const [overallDesign, setOverallDesign] = useState('');
+    const [citations, setCitations] = useState('');
+
+    const favoriteSpecies = serverInfo.species.favorite;
+    const otherSpecies = serverInfo.species.other;
 
 
-    initDragDrop = () => {
-        if (!this.init) {
-            const fileDropRef = this.fileDropRef.current;
-            this.init = true;
+    const canUpload = serverInfo.upload;
+    const isNew = dataset == null;
+    let saveEnabled = !loading && name.trim() !== '';
+    const isAuthEnabled = serverInfo.clientId !== '';
 
-            fileDropRef.addEventListener('dragover', (e) => {
-                this.showDragIndicator(e, true);
-            });
-            fileDropRef.addEventListener('dragenter', (e) => {
-                this.showDragIndicator(e, true);
-            });
-            fileDropRef.addEventListener('dragend', (e) => {
-                this.showDragIndicator(e, false);
-            });
-            fileDropRef.addEventListener('dragleave', (e) => {
-                this.showDragIndicator(e, false);
-            });
-            fileDropRef.addEventListener('drop', (e) => {
-                this.showDragIndicator(e, false);
-                const filesArray = e.dataTransfer.files;
-                if (filesArray.length === 1) {
-                    this.setState({file: filesArray[0]});
-                }
-            });
+    if (isNew) {
+        if (uploadTabValue === 'URL' || !serverInfo.upload) {
+            saveEnabled = saveEnabled && url.trim() !== '';
+        } else {
+            saveEnabled = saveEnabled && file != null;
         }
-    };
+    }
+
+    const setFileDropRef = useCallback(node => {
+
+        function dragStart(event) {
+            showDragIndicator(event, true);
+        }
+
+        function dragEnd(event) {
+            showDragIndicator(event, false);
+        }
+
+        function drop(event) {
+            showDragIndicator(event, false);
+            const filesArray = event.dataTransfer.files;
+            if (filesArray.length === 1) {
+                setFile(filesArray[0]);
+            }
+        }
+
+        function showDragIndicator(event, show) {
+            event.stopPropagation();
+            event.preventDefault();
+            dragIndicator.current.style.background = show ? '#1976d2' : '';
+        }
 
 
-    componentDidMount() {
-        if (this.props.dataset != null) {
-            let readers = this.props.dataset.readers;
+        if (canUpload && isNew) {
+            if (fileDropRef.current) {
+                fileDropRef.current.removeEventListener('dragover', dragStart);
+                fileDropRef.current.removeEventListener('dragenter', dragStart);
+                fileDropRef.current.removeEventListener('dragend', dragEnd);
+                fileDropRef.current.removeEventListener('dragleave', dragEnd);
+                fileDropRef.current.removeEventListener('drop', drop);
+            }
+            fileDropRef.current = node;
+            if (node) {
+                fileDropRef.current.addEventListener('dragover', dragStart);
+                fileDropRef.current.addEventListener('dragenter', dragStart);
+                fileDropRef.current.addEventListener('dragend', dragEnd);
+                fileDropRef.current.addEventListener('dragleave', dragEnd);
+                fileDropRef.current.addEventListener('drop', drop);
+            }
+        }
+
+    }, [canUpload, isNew]);
+
+
+    useEffect(() => {
+        if (dataset != null) {
+            let readers = dataset.readers;
             if (readers) {
-                let myIndex = readers.indexOf(this.props.email);
+                let myIndex = readers.indexOf(email);
                 if (myIndex !== -1) {
                     readers.splice(myIndex, 1);
                 }
                 readers = readers.join(', ');
             }
-            this.setState({
-                file: null,
-                species: this.props.dataset.species != null ? this.props.dataset.species : '',
-                name: this.props.dataset.name,
-                description: this.props.dataset.description != null ? this.props.dataset.description : '',
-                title: this.props.dataset.title != null ? this.props.dataset.title : '',
-                loading: false,
-                url: this.props.dataset.url,
-                readers: readers
-            });
+            setReaders(readers);
+        } else {
+            setReaders('');
         }
-    }
-
-    handleClose = () => {
-        this.props.handleCancel();
-    };
+        setLoading(false);
+        setUrl(dataset != null ? dataset.url : '');
 
 
-    handleSave = () => {
-        let name = this.state.name.trim();
-        if (name === '') {
+        setName(dataset != null && dataset.name != null ? dataset.name : '');
+        setTitle(dataset != null && dataset.title != null ? dataset.title : '');
+        setSpecies(dataset != null && dataset.species != null ? dataset.species : '');
+        setExperimentType(dataset != null && dataset.experimentType != null ? dataset.experimentType : '');
+        setDescription(dataset != null && dataset.description != null ? dataset.description : '');
+        setOverallDesign(dataset != null && dataset.overallDesign != null ? dataset.overallDesign : '');
+        setCitations(dataset != null && dataset.citations != null ? dataset.citations : '');
+
+    }, [dataset, email]);
+
+
+    function handleSave() {
+        if (name.trim() === '') {
             return;
         }
-        let url = null;
-        let file = null;
-        const isNew = this.props.dataset == null;
+        let useUrl = false;
+        const isNew = dataset == null;
         if (isNew) {
-            if (this.state.uploadTabValue === 1 || !this.props.serverInfo.upload) {
-                url = this.state.url.trim();
-
-            } else {
-                file = this.state.file;
+            if (uploadTabValue === 'URL' || !serverInfo.upload) {
+                useUrl = true;
             }
         }
 
-        let description = this.state.description.trim();
-        let title = this.state.title.trim();
-        let species = this.state.species;
-        this.setState({loading: true});
+        setLoading(true);
 
         let readers = null;
-        if (this.state.readers != null) {
-            readers = getUniqueArray(this.state.readers);
+        if (readers != null) {
+            readers = getUniqueArray(readers);
         }
-        this.props.handleSave({
-            dataset: this.props.dataset,
-            name: name,
-            title: title,
-            description: description,
-            url: url,
-            file: file,
+        onSave({
+            dataset: dataset,
+            url: isNew && useUrl ? url : null,
+            file: isNew && !useUrl ? file : null,
+            readers: readers,
+            name: name.trim(),
+            title: title.trim(),
             species: species,
-            readers: readers
+            experimentType: experimentType.trim(),
+            description: description.trim(),
+            overallDesign: overallDesign.trim(),
+            citations: citations.trim()
         });
-    };
+    }
 
-    onWritePreviewTabChanged = (event, value) => {
-        this.setState({writePreviewTabValue: value});
-    };
 
-    onUploadTabChanged = (event, value) => {
-        this.setState({uploadTabValue: value});
-    };
+    return (
+        <Dialog
+            open={true}
+            ref={setFileDropRef}
+            onClose={onCancel}
+            aria-labelledby="edit-dataset-dialog-title"
+            fullWidth={true}
+            maxWidth={'lg'}>
+            <DialogTitle id="edit-dataset-dialog-title">{isNew
+                ? 'New'
+                : 'Edit'} Dataset</DialogTitle>
+            <DialogContent>
+                <Box>
+                    {loading && <CircularProgress/>}
+                    <TextField
+                        size={"small"}
+                        disabled={loading}
+                        autoComplete="off"
+                        required={true}
+                        value={name}
+                        onChange={event => setName(event.target.value)}
+                        margin="dense"
+                        label="Name"
+                        fullWidth
+                    />
 
-    onEmailChanged = (event) => {
-        this.setState({readers: event.target.value});
-    };
-    onUrlChanged = (event) => {
-        this.setState({url: event.target.value});
-    };
-    onFilesChanged = () => {
-        const files = this.fileInputRef.current.files;
-        this.setState({file: files[0]});
-    };
-    onSpeciesChange = (event) => {
-        this.setState({species: event.target.value});
-    };
-    onNameChanged = (event) => {
-        this.setState({name: event.target.value});
-    };
-    onDescriptionChanged = (event) => {
-        this.setState({description: event.target.value});
-    };
-    onTitleChanged = (event) => {
-        this.setState({title: event.target.value});
-    };
-
-    render() {
-        const canUpload = this.props.serverInfo.upload;
-        const isNew = this.props.dataset == null;
-        let saveEnabled = !this.state.loading && this.state.name.trim() !== '';
-        const isAuthEnabled = this.props.serverInfo.clientId !== '';
-
-        if (isNew) {
-            if (this.state.uploadTabValue === 1 || !this.props.serverInfo.upload) {
-                const url = this.state.url.trim();
-                saveEnabled = saveEnabled && url !== '';
-            } else {
-                saveEnabled = saveEnabled && this.state.file != null;
-            }
-        }
-        return (
-            <Dialog
-                open={true}
-                ref={this.fileDropRef}
-                onClose={this.handleClose}
-                aria-labelledby="edit-dataset-dialog-title"
-                fullWidth={true}
-                maxWidth={'lg'}
-                TransitionProps={{
-                    onEntered: e => this.initDragDrop()
-                }}>
-                <DialogTitle id="edit-dataset-dialog-title">{isNew
-                    ? 'New'
-                    : 'Edit'} Dataset</DialogTitle>
-                <DialogContent>
-                    <Box>
-                        {this.state.loading && <CircularProgress/>}
-                        <TextField
-                            size={"small"}
-                            disabled={this.state.loading}
-                            autoComplete="off"
-                            required={true}
-                            value={this.state.name}
-                            onChange={this.onNameChanged}
-                            margin="dense"
-                            label="Name"
-                            fullWidth
-                        />
-
-                        <div style={{display: isNew && canUpload ? '' : 'none'}}>
-                            <FormControl className={this.props.classes.formControl}>
-                                <InputLabel shrink required>Source</InputLabel>
-                            </FormControl>
-                            <Tabs value={this.state.uploadTabValue} onChange={this.onUploadTabChanged}
-                                  aria-label="upload">
-                                <Tab value="My Computer" label="My Computer" icon={<CloudUploadIcon/>}/>
-                                <Tab value="URL" label="URL" icon={<LinkIcon/>}/>
-                            </Tabs>
-                            <div
-                                role="tabpanel"
-                                hidden={this.state.uploadTabValue !== "My Computer"}
-                            >
-                                <div ref={this.dragIndicator}>
-                                    <Button size="small" variant="outlined" disabled={this.state.loading}
-                                            onClick={e => this.fileInputRef.current.click()}>Select File</Button>
-                                    <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or
-                                        Drag
-                                        And Drop</Typography>
-                                    <input hidden ref={this.fileInputRef} type="file" onChange={this.onFilesChanged}/>
-                                    <Typography style={{display: 'block'}} color="textPrimary"
-                                                variant={"caption"}>{this.state.file ? this.state.file.name : ''}</Typography>
-                                </div>
-                                <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
+                    <div style={{display: isNew && canUpload ? '' : 'none'}}>
+                        <FormControl className={classes.formControl}>
+                            <InputLabel shrink required>Source</InputLabel>
+                        </FormControl>
+                        <Tabs value={uploadTabValue} onChange={(event, value) => setUploadTabValue(value)}
+                              aria-label="upload">
+                            <Tab value="My Computer" label="My Computer" icon={<CloudUploadIcon/>}/>
+                            <Tab value="URL" label="URL" icon={<LinkIcon/>}/>
+                        </Tabs>
+                        <div
+                            role="tabpanel"
+                            hidden={uploadTabValue !== "My Computer"}
+                        >
+                            <div ref={dragIndicator}>
+                                <Button size="small" variant="outlined" disabled={loading}
+                                        onClick={e => fileInputRef.current.click()}>Select File</Button>
+                                <Typography style={{display: 'inline-block', paddingLeft: '1em'}} component={"h3"}>or
+                                    Drag
+                                    And Drop</Typography>
+                                <input hidden ref={fileInputRef} type="file"
+                                       onChange={event => setFile(fileInputRef.current.files[0])}/>
+                                <Typography style={{display: 'block'}} color="textPrimary"
+                                            variant={"caption"}>{file ? file.name : ''}</Typography>
                             </div>
-
-
-                            <div role="tabpanel" hidden={this.state.uploadTabValue !== "URL"}>
-                                <TextField
-                                    size={"small"}
-                                    required={true}
-                                    disabled={this.state.loading}
-                                    autoComplete="off"
-                                    value={this.state.url}
-                                    onChange={this.onUrlChanged}
-                                    margin="dense"
-                                    helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
-                                    label={"URL"}
-                                    fullWidth
-                                />
-                            </div>
+                            <Divider style={{marginTop: '1em', marginBottom: '1em'}}/>
                         </div>
 
-                        <TextField
-                            size={"small"}
-                            style={{display: isNew && canUpload ? 'none' : ''}}
-                            required={true}
-                            disabled={this.state.loading || !isNew}
-                            autoComplete="off"
-                            value={this.state.url}
-                            onChange={this.onUrlChanged}
-                            margin="dense"
-                            helperText={this.props.serverInfo.email ? "Please ensure that " + this.props.serverInfo.email + " has read permission to this URL" : ''}
-                            label={"URL"}
-                            fullWidth
-                        />
 
-                        <FormControl className={this.props.classes.formControl}>
-                            <InputLabel id="species-label">Species</InputLabel>
-                            <Select
-                                label={"Species"}
-                                size={"small"}
-                                labelId="species-label"
-                                value={this.state.species}
-                                onChange={this.onSpeciesChange}
-                            >
-                                {favoriteSpecies.map(species => <MenuItem key={species}
-                                                                          value={species}>{species}</MenuItem>)}
-                                <MenuItem divider={true}/>
-                                {otherSpecies.map(species => <MenuItem key={species}
-                                                                       value={species}>{species}</MenuItem>)}
-                            </Select>
-                        </FormControl>
-
-
-                        <TextField
-                            size={"small"}
-                            disabled={this.state.loading}
-                            autoComplete="off"
-                            required={false}
-                            value={this.state.title}
-                            onChange={this.onTitleChanged}
-                            margin="dense"
-                            label="Title"
-                            fullWidth
-                            inputProps={{maxLength: 255}}
-                        />
-                        <FormControl className={this.props.classes.formControl}>
-                            <InputLabel shrink>Summary</InputLabel>
-                            <FormHelperText style={{marginTop: 14}}><Link
-                                href={"https://www.markdownguide.org/cheat-sheet/"}
-                                target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
-                        </FormControl>
-
-
-                        <Tabs value={this.state.writePreviewTabValue} onChange={this.onWritePreviewTabChanged}
-                              aria-label="description-editor">
-                            <Tab value="Write" label="Write"/>
-                            <Tab value="Preview" label="Preview"/>
-                        </Tabs>
-
-                        <div role="tabpanel" hidden={this.state.writePreviewTabValue !== "Write"}>
+                        <div role="tabpanel" hidden={uploadTabValue !== "URL"}>
                             <TextField
                                 size={"small"}
-                                disabled={this.state.loading}
+                                required={true}
+                                disabled={loading}
                                 autoComplete="off"
-                                required={false}
-                                value={this.state.description}
-                                onChange={this.onDescriptionChanged}
+                                value={url}
+                                onChange={event => setUrl(event.target.value)}
                                 margin="dense"
+                                helperText={serverInfo.email ? "Please ensure that " + serverInfo.email + " has read permission to this URL" : ''}
+                                label={"URL"}
                                 fullWidth
-                                variant="outlined"
-                                rows={8}
-                                maxRows={8}
-                                multiline={true}
-                                inputProps={{maxLength: 1000}}
                             />
                         </div>
-                        <div role="tabpanel" hidden={this.state.writePreviewTabValue !== "Preview"}>
-                            {this.state.description !== '' && <Box border={1}>
-                                <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                               children={this.state.description}/>
-                            </Box>}
-                        </div>
+                    </div>
+                    <TextField
+                        size={"small"}
+                        style={{display: isNew && canUpload ? 'none' : ''}}
+                        required={true}
+                        disabled={loading || !isNew}
+                        autoComplete="off"
+                        value={url}
+                        onChange={event => setUrl(event.target.value)}
+                        margin="dense"
+                        helperText={serverInfo.email ? "Please ensure that " + serverInfo.email + " has read permission to this URL" : ''}
+                        label={"URL"}
+                        fullWidth
+                    />
 
+                    <TextField
+                        size={"small"}
+                        disabled={loading}
+                        autoComplete="off"
+                        required={false}
+                        value={title}
+                        onChange={event => setTitle(event.target.value)}
+                        margin="dense"
+                        label="Title"
+                        fullWidth
+                        inputProps={{maxLength: 255}}
+                    />
+                    <FormControl className={classes.formControl}>
+                        <InputLabel id="species-label">Species</InputLabel>
+                        <Select
+                            label={"Species"}
+                            size={"small"}
+                            labelId="species-label"
+                            value={species}
+                            onChange={event => setSpecies(event.target.value)}
+                        >
+                            {favoriteSpecies.map(species => <MenuItem key={species}
+                                                                      value={species}>{species}</MenuItem>)}
+                            <MenuItem divider={true}/>
+                            {otherSpecies.map(species => <MenuItem key={species}
+                                                                   value={species}>{species}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        size={"small"}
+                        disabled={loading}
+                        autoComplete="off"
+                        value={experimentType}
+                        onChange={(event) => setExperimentType(event.target.value)}
+                        margin="dense"
+                        label={"Experiment Type"}
+                        fullWidth
+                    />
+                    <FormControl className={classes.formControl}>
+                        <InputLabel shrink>Summary</InputLabel>
+                        <FormHelperText style={{marginTop: 14}}><Link
+                            href={"https://www.markdownguide.org/cheat-sheet/"}
+                            target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
+                    </FormControl>
+                    <Tabs value={writePreviewTabValue} onChange={(event, value) => setWritePreviewTabValue(value)}
+                          aria-label="description-editor">
+                        <Tab value="Write" label="Write"/>
+                        <Tab value="Preview" label="Preview"/>
+                    </Tabs>
+                    <div role="tabpanel" hidden={writePreviewTabValue !== "Write"}>
                         <TextField
                             size={"small"}
-                            value={this.state.readers}
-                            onChange={this.onEmailChanged}
+                            disabled={loading}
+                            autoComplete="off"
+                            required={false}
+                            value={description}
+                            onChange={event => setDescription(event.target.value)}
                             margin="dense"
-                            label="Readers"
-                            helperText={isAuthEnabled ? "Enter comma separated list of emails" : "Enable authentication to permit sharing"}
-                            disabled={this.state.loading || !isAuthEnabled}
                             fullWidth
-                            multiline
+                            variant="outlined"
+                            rows={8}
+                            maxRows={8}
+                            multiline={true}
+                            inputProps={{maxLength: 1000}}
                         />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button disabled={this.state.loading} onClick={this.handleClose}>
-                        Cancel
-                    </Button>
-                    <Button disabled={!saveEnabled} onClick={this.handleSave}
-                            variant="contained" color="primary">
-                        Save
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
+                    </div>
+                    <div role="tabpanel" hidden={writePreviewTabValue !== "Preview"}>
+                        {description !== '' && <Box border={1}>
+                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                           children={description}/>
+                        </Box>}
+                    </div>
+                    <TextField
+                        size={"small"}
+                        disabled={loading}
+                        autoComplete="off"
+                        required={false}
+                        value={overallDesign}
+                        onChange={(event) => setOverallDesign(event.target.value)}
+                        margin="dense"
+                        label="Overall Design"
+                        fullWidth
+                    />
+                    <TextField
+                        size={"small"}
+                        disabled={loading}
+                        autoComplete="off"
+                        value={citations}
+                        onChange={(event) => setCitations(event.target.value)}
+                        margin="dense"
+                        label={"Citation(s)"}
+                        fullWidth
+                    />
+
+
+                    <TextField
+                        size={"small"}
+                        value={readers}
+                        onChange={event => setReaders(event.target.value)}
+                        margin="dense"
+                        label="Readers"
+                        helperText={isAuthEnabled ? "Enter comma separated list of emails" : "Enable authentication to permit sharing"}
+                        disabled={loading || !isAuthEnabled}
+                        fullWidth
+                        multiline
+                    />
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button disabled={loading} onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button disabled={!saveEnabled} onClick={handleSave}
+                        variant="contained" color="primary">
+                    Save
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+
 }
 
 const mapStateToProps = state => {
@@ -408,16 +416,12 @@ const mapStateToProps = state => {
 };
 const mapDispatchToProps = dispatch => {
     return {
-        handleSave: value => {
+        onSave: value => {
             dispatch(saveDataset(value));
         },
-        handleCancel: value => {
+        onCancel: value => {
             dispatch(setDialog(null));
-        },
-        handleError: value => {
-            dispatch(setMessage(value));
         }
-
     };
 };
 

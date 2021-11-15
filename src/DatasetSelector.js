@@ -1,4 +1,4 @@
-import {Tooltip} from '@mui/material';
+import {Divider, Tooltip} from '@mui/material';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
@@ -13,13 +13,16 @@ import {find} from 'lodash';
 import {REACT_MD_OVERRIDES} from './util';
 import CirroTable from './CirroTable';
 import InfoIcon from '@mui/icons-material/Info';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import {DATASET_FIELDS} from './EditNewDatasetDialog';
 
 export function DatasetSelector(props) {
 
     const [datasetDetailsEl, setDatasetDetailsEl] = useState(null);
     const [selectedDataset, setSelectedDataset] = useState(null);
     const [searchText, setSearchText] = useState('');
-    const {dataset, datasetChoices, datasetSelectorColumns, dialog} = props;
+    const {dataset, datasetChoices, datasetSelectorColumns, dialog, handleDialog, onChange} = props;
 
 
     function handleCloseDatasetDetails(event) {
@@ -38,7 +41,7 @@ export function DatasetSelector(props) {
             : value;
         return <>{value}
             {columnIndex === 0 && item.description != null && item.description !== '' && <IconButton
-                onClick={(e) => handleListItemDetailsClick(e, item.field)}
+                onClick={(e) => handleListItemDetailsClick(e, item.id)}
                 edge="end"
                 aria-label="description"
                 size="small">
@@ -54,28 +57,28 @@ export function DatasetSelector(props) {
     }
 
     function isSelected(item) {
-        const selectedId = props.dataset != null ? props.dataset.id : null;
+        const selectedId = dataset != null ? dataset.id : null;
         return item.id === selectedId;
     }
 
     function onItemClick(item) {
-        const selectedId = props.dataset != null ? props.dataset.id : null;
+        const selectedId = dataset != null ? dataset.id : null;
         const id = item.id;
         if (id !== selectedId) {
-            props.onChange(id);
+            onChange(id);
         }
-        props.handleDialog(null);
+        handleDialog(null);
         setSearchText('');
     }
 
 
     function handleClick(event) {
-        props.handleDialog(OPEN_DATASET_DIALOG);
+        handleDialog(OPEN_DATASET_DIALOG);
         setSearchText('');
     }
 
     function handleClose() {
-        props.handleDialog(null);
+        handleDialog(null);
         setSearchText('');
     }
 
@@ -85,12 +88,10 @@ export function DatasetSelector(props) {
         return null;
     }
     const open = dialog === OPEN_DATASET_DIALOG;
-
-
     const datasetDetailsOpen = Boolean(datasetDetailsEl);
     return (
-        <React.Fragment>
-            <Popover
+        <>
+            {selectedDataset && <Popover
                 id={"dataset-details-selector"}
                 open={datasetDetailsOpen}
                 anchorEl={datasetDetailsEl}
@@ -104,12 +105,17 @@ export function DatasetSelector(props) {
                     horizontal: 'center'
                 }}
             >
-                <div style={{width: 500}}>
-                    {selectedDataset && selectedDataset.description &&
-                    <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                   children={selectedDataset.description}/>}
-                </div>
-            </Popover>
+                <Box style={{width: 500, padding: '1em'}}>
+                    <Typography variant="h6">{selectedDataset.name}</Typography>
+                    {DATASET_FIELDS.filter(item => selectedDataset[item.fieldName]).map(item => <div
+                        key={item.fieldName}><Divider/>
+                        <Typography variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
+                        <Typography variant="body2"> {selectedDataset[item.fieldName]}</Typography>}
+                        {item.fieldName === 'description' &&
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                       children={selectedDataset[item.fieldName]}/>}</div>)}
+                </Box>
+            </Popover>}
             {selectedId == null && <Button variant="contained" onClick={handleClick}
                                            color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
             {selectedId != null &&
@@ -128,7 +134,7 @@ export function DatasetSelector(props) {
                                 searchText={searchText} rowId={item => item.id}/>
                 </DialogContent>
             </Dialog>
-        </React.Fragment>
+        </>
     );
 
 }

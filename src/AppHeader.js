@@ -44,6 +44,7 @@ import {
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import MenuIcon from '@mui/icons-material/Menu';
+import {DATASET_FIELDS} from './EditNewDatasetDialog';
 
 
 function AppHeader(props) {
@@ -51,7 +52,6 @@ function AppHeader(props) {
     const {
         chartOptions,
         dataset,
-        datasetSelectorColumns,
         drawerOpen,
         distributionData,
         handleChartOptions,
@@ -176,7 +176,10 @@ function AppHeader(props) {
     const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
     const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
     const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
+
+
     return (
+
         <Box sx={{display: 'flex'}}><AppBar position="fixed" color={"default"}
                                             sx={{
                                                 zIndex: (theme) => theme.zIndex.drawer + 1
@@ -197,17 +200,13 @@ function AppHeader(props) {
             >
                 <Box style={{width: 500, padding: '1em'}}>
                     <Typography variant="h6">{dataset.name}</Typography>
-                    <Divider/>
-                    {datasetSelectorColumns != null && datasetSelectorColumns.map(c => {
-                        return c.id === 'name' || dataset[c.id] == null ? null :
-                            <Typography key={c.id}>{c.label}: {dataset[c.id]}</Typography>;
-                    })}
-                    {dataset.description &&
-                    <>Description: <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                                  children={dataset.description}/></>}
-                    {!process.env.REACT_APP_STATIC === 'true' && <Typography>
-                        URL: {dataset.url}
-                    </Typography>}
+                    {DATASET_FIELDS.filter(item => dataset[item.fieldName]).map(item => <div
+                        key={item.fieldName}><Divider/>
+                        <Typography variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
+                        <Typography variant="body2"> {dataset[item.fieldName]}</Typography>}
+                        {item.fieldName === 'description' &&
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                       children={dataset[item.fieldName]}/>}</div>)}
                 </Box>
             </Popover>
             }
@@ -228,7 +227,6 @@ function AppHeader(props) {
                     {shape != null && intFormat(shape[0]) + ' cells'}</Typography>
                 {dataset && <IconButton
                     aria-label="Info"
-                    aria-haspopup="true"
                     onClick={onShowDatasetDetails}
                     aria-owns={datasetDetailsOpen ? 'dataset-details' : undefined}
                     aria-haspopup="true"

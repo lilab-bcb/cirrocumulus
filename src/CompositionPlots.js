@@ -141,9 +141,10 @@ function CompositionPlots(props) {
     const title = useRef();
     const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT).map(item => item.id);
     const dimension = obsCat.length > 1 ? obsCat[obsCat.length - 1] : null;
+    const obsCatString = JSON.stringify(obsCat);
     useEffect(() => {
         setNeedsUpdate(true);
-    }, [categoricalNames, selection, JSON.stringify(obsCat)]);
+    }, [categoricalNames, selection, obsCatString]);
 
     useEffect(() => {
         colorScale.current = getColorScale(embeddingData, dimension);
@@ -157,7 +158,7 @@ function CompositionPlots(props) {
             title.current = dimension + ' composition in ' + obsCat.slice(0, obsCat.length - 1).join(', ');
             setNeedsUpdate(false);
         }
-    }, [needsUpdate, visible]);
+    }, [needsUpdate, visible, cachedData, categoricalNames, dataset, dimension, obsCat, selection]);
 
     if (dimension == null) {
         return null;
