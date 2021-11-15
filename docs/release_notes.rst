@@ -3,6 +3,7 @@ Release Notes
 
 - 1.1.24.post1 `November 15, 2021`
     * Fixed error selecting all features in differential expression results
+    * Added additional fields when adding new datasets
 
 - 1.1.24 `November 10, 2021`
     * Changed default output format to zarr_ in `cirro prepare_data`
