@@ -167,13 +167,14 @@ class PrepareData:
                     if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
                         dataset.obs[field] = dataset.obs[field].astype('category')
                     if len(dataset.obs[field].cat.categories) > 1:
-                        print('Computing markers for {}'.format(field))
+                        logger.info('Computing markers for {}'.format(field))
                         key_added = 'rank_genes_' + str(field)
                         if use_pegasus:
                             pg.de_analysis(dataset, cluster=field, de_key=key_added)
                         else:
                             sc.tl.rank_genes_groups(dataset, field, key_added=key_added, method='t-test')
-
+                else:
+                    logger.info(group + ' not found in ' + ', '.join(dataset.obs.columns))
         schema = self.get_schema()
         schema['format'] = output_format
         if output_format in ['parquet', 'zarr']:
@@ -229,7 +230,7 @@ class PrepareData:
 
         if self.markers is not None:  # add results specified from file
             markers += get_markers(self.markers)
-            markers = filter_markers(self.dataset, markers)  # TODO check if markers are in union of all features
+            markers = filter_markers(self.dataset, markers)
 
         for marker in markers:
             if marker.get('id') is None:
@@ -258,7 +259,7 @@ def main(argsv):
                         help='Disable automatic cluster field detection to compute differential expression results for',
                         action='store_true')
     parser.add_argument('--groups',
-                        help='List of groups to compute markers for (e.g. louvain). Note that markers created with scanpy or cumulus are automatically included.',
+                        help='List of groups to compute markers for (e.g. louvain). Markers created with cumulus/scanpy are automatically included. Separate multiple groups with a comma to combine groups using "AND" logic (e.g. louvain,day)',
                         action='append')
     parser.add_argument('--group_nfeatures', help='Number of marker genes/features to include', type=int, default=10)
     parser.add_argument('--spatial', help=SPATIAL_HELP)
@@ -297,7 +298,7 @@ def main(argsv):
             tmp_files.append(tmp_file)
         adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
-        adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset))[0]
+        adata.uns['name'] = os.path.splitext(os.path.basename(input_dataset.rstrip('/')))[0]
 
     prepare_data = PrepareData(datasets=datasets, output=out, dimensions=args.groups, groups=args.groups,
                                group_nfeatures=args.group_nfeatures,

@@ -69,8 +69,10 @@ class AnndataDataset(AbstractDataset):
         if 'cirro-schema' in adata.uns:
             import json
             s = json.loads(str(adata.uns['cirro-schema']))
-            if 'results' in s:
-                schema['results'] = s['results']
+            keys = ['markers', 'results']
+            for key in keys:
+                if key in s:
+                    schema[key] = s[key]
         return schema
 
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
