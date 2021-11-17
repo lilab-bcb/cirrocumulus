@@ -443,7 +443,6 @@ function ExplorePanel(props) {
             <MenuItem onClick={onViewModule}>View</MenuItem>
         </Menu>}
         <div style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-
             <Typography gutterBottom={false} component={"h1"}
                         style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}>Explore</Typography>
             {embeddingOptions.length > 0 &&
@@ -573,7 +572,8 @@ function ExplorePanel(props) {
                             onClick={onSaveFeatureList}>Save</Link></Tooltip></div>}
             </FormControl>}
         </div>
-        <div style={{maxHeight: 500}}>
+        <div
+            style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? {maxHeight: 500} : {display: 'none'}}>
             <Divider inset="true"/>
             <Typography gutterBottom={false} component={"h1"}
                         style={{textTransform: 'uppercase'}}>Filters</Typography>
