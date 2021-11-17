@@ -6,8 +6,8 @@ import math
 import pandas as pd
 import pandas._libs.json as ujson
 from anndata import AnnData
-
 from cirrocumulus.de import DE
+
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
@@ -74,7 +74,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         if not is_serve:
             max_workers = 1
         else:
-            max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '1'))
+            max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
         if max_workers > 0:
             executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
                 max_workers=max_workers)
