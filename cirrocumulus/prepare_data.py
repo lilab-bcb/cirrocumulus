@@ -6,7 +6,6 @@ import anndata
 import numpy as np
 import pandas as pd
 import scipy.sparse
-
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json, get_fs, open_file
@@ -124,7 +123,10 @@ class PrepareData:
             existing_fields = set()
             scanpy_marker_keys = get_scanpy_marker_keys(dataset)
             for key in scanpy_marker_keys:
-                existing_fields.add(dataset.uns[key]['params']['groupby'])
+                group_by = dataset.uns[key]['params']['groupby']
+                if isinstance(group_by, np.ndarray):
+                    group_by = ','.join(group_by)
+                existing_fields.add(group_by)
             for field in dataset.obs.columns:
                 field_lc = field.lower()
                 for cluster_field in cluster_fields:
