@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-
+import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
@@ -215,7 +215,6 @@ function EditNewDatasetDialog(props) {
                 : 'Edit'} Dataset</DialogTitle>
             <DialogContent>
                 <Box>
-                    {loading && <CircularProgress/>}
                     <TextField
                         size={"small"}
                         disabled={loading}
@@ -397,10 +396,10 @@ function EditNewDatasetDialog(props) {
                 <Button disabled={loading} onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button disabled={!saveEnabled} onClick={handleSave}
-                        variant="contained" color="primary">
+                <LoadingButton disabled={!saveEnabled} onClick={handleSave}
+                        variant="contained" color="primary" loading={loading}>
                     Save
-                </Button>
+                </LoadingButton>
             </DialogActions>
         </Dialog>
     );
