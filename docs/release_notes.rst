@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.24.post2 `November 19, 2021`
+    * Fixed error editing dataset
+
 - 1.1.24.post1 `November 15, 2021`
     * Fixed error selecting all features in differential expression results
     * Added additional fields for new datasets

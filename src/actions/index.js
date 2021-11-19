@@ -1179,23 +1179,24 @@ export function getIdToken() {
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
-        const readers = payload.readers;
         let existingDataset = payload.dataset;
         const isEdit = existingDataset != null;
         const formData = {};
         if (existingDataset != null) {
             const existingReaders = new Set(existingDataset.readers);
-            let setsEqual = existingReaders.size === readers.length;
-            if (setsEqual) {
-                for (let i = 0; i < readers.length; i++) {
-                    if (!existingReaders.has(readers[i])) {
-                        setsEqual = false;
-                        break;
+            if (payload.readers != null) {
+                let setsEqual = existingReaders.size === payload.readers.length;
+                if (setsEqual) {
+                    for (let i = 0; i < payload.readers.length; i++) {
+                        if (!existingReaders.has(payload.readers[i])) {
+                            setsEqual = false;
+                            break;
+                        }
                     }
                 }
-            }
-            if (!setsEqual) {
-                formData.readers = readers;
+                if (!setsEqual) {
+                    formData.readers = payload.readers;
+                }
             }
         }
         if (existingDataset == null) {
