@@ -1,4 +1,4 @@
-import {CircularProgress, InputLabel, Typography} from '@mui/material';
+import {InputLabel, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -181,16 +181,11 @@ function EditNewDatasetDialog(props) {
         }
 
         setLoading(true);
-
-        let readers = null;
-        if (readers != null) {
-            readers = getUniqueArray(readers);
-        }
         onSave({
             dataset: dataset,
             url: isNew && useUrl ? url : null,
             file: isNew && !useUrl ? file : null,
-            readers: readers,
+            readers: readers.trim() !== '' ? getUniqueArray(readers) : null,
             name: name.trim(),
             title: title.trim(),
             species: species,
@@ -231,7 +226,8 @@ function EditNewDatasetDialog(props) {
                         <FormControl className={classes.formControl}>
                             <InputLabel shrink required>Source</InputLabel>
                         </FormControl>
-                        <Tabs value={uploadTabValue} onChange={(event, value) => setUploadTabValue(value)}
+                        <Tabs disabled={loading} value={uploadTabValue}
+                              onChange={(event, value) => setUploadTabValue(value)}
                               aria-label="upload">
                             <Tab value="My Computer" label="My Computer" icon={<CloudUploadIcon/>}/>
                             <Tab value="URL" label="URL" icon={<LinkIcon/>}/>
@@ -299,6 +295,7 @@ function EditNewDatasetDialog(props) {
                     <FormControl className={classes.formControl}>
                         <InputLabel id="species-label">Species</InputLabel>
                         <Select
+                            disabled={loading}
                             label={"Species"}
                             size={"small"}
                             labelId="species-label"
@@ -328,7 +325,8 @@ function EditNewDatasetDialog(props) {
                             href={"https://www.markdownguide.org/cheat-sheet/"}
                             target="_blank">Markdown Cheat Sheet</Link></FormHelperText>
                     </FormControl>
-                    <Tabs value={writePreviewTabValue} onChange={(event, value) => setWritePreviewTabValue(value)}
+                    <Tabs disabled={loading} value={writePreviewTabValue}
+                          onChange={(event, value) => setWritePreviewTabValue(value)}
                           aria-label="description-editor">
                         <Tab value="Write" label="Write"/>
                         <Tab value="Preview" label="Preview"/>
@@ -397,7 +395,7 @@ function EditNewDatasetDialog(props) {
                     Cancel
                 </Button>
                 <LoadingButton disabled={!saveEnabled} onClick={handleSave}
-                        variant="contained" color="primary" loading={loading}>
+                               variant="contained" color="primary" loading={loading}>
                     Save
                 </LoadingButton>
             </DialogActions>
