@@ -6,8 +6,8 @@ import math
 import pandas as pd
 import pandas._libs.json as ujson
 from anndata import AnnData
-from cirrocumulus.de import DE
 
+from cirrocumulus.de import DE
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
@@ -66,8 +66,7 @@ def done_callback(future):
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
     global job_id_2_future
-    from concurrent.futures.process import ProcessPoolExecutor
-    from concurrent.futures.thread import ThreadPoolExecutor
+
     import os
     is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
@@ -76,7 +75,11 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         else:
             max_workers = int(os.environ.get(CIRRO_MAX_WORKERS, '2'))
         if max_workers > 0:
-            executor = ProcessPoolExecutor(max_workers=max_workers) if is_serve else ThreadPoolExecutor(
+            import multiprocessing
+            from concurrent.futures.process import ProcessPoolExecutor
+            from concurrent.futures.thread import ThreadPoolExecutor
+            executor = ProcessPoolExecutor(max_workers=max_workers, mp_context=multiprocessing.get_context(
+                'spawn')) if is_serve else ThreadPoolExecutor(
                 max_workers=max_workers)
     job_id = database_api.create_job(email=email, dataset_id=dataset['id'], job_name=job_name, job_type=job_type,
                                      params=params)
