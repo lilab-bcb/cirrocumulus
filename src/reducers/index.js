@@ -232,6 +232,7 @@ function dataset(state = null, action) {
                 document.title = action.payload.name + ' - Cirro';
                 return Object.assign(state, action.payload);
             }
+            return state;
         default:
             return state;
     }
@@ -526,6 +527,7 @@ function distributionPlotInterpolator(state = DEFAULT_DISTRIBUTION_PLOT_INTERPOL
                 interpolator.value = getInterpolator(interpolator.name);
                 return interpolator;
             }
+            return state;
         default:
             return state;
     }

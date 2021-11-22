@@ -1214,6 +1214,7 @@ export function saveDataset(payload) {
 
 
         if (Object.keys(formData).length === 0) {
+            dispatch(setDialog(null));
             return;
         }
         if (isEdit) {
