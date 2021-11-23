@@ -3,7 +3,7 @@ import scipy.sparse
 import zarr
 from anndata._io.zarr import write_attribute
 
-from cirrocumulus.anndata_util import get_scanpy_marker_keys, get_pegasus_marker_keys, ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import get_pegasus_marker_keys, ADATA_MODULE_UNS_KEY
 
 
 def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
@@ -18,7 +18,6 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
 
-    uns_whitelist = set(['module', 'cirro-schema'])
     dataset.uns['cirro-schema'] = ujson.dumps(schema, double_precision=2, orient='values')
     dataset_kwargs = {}
     chunks = None
@@ -46,20 +45,21 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
             del dataset.varm[key]
     write_attribute(group, 'varm', dataset.varm, dataset_kwargs)
     write_attribute(group, "var", dataset.var, dataset_kwargs)
+    # uns_whitelist = set(['module', 'cirro-schema'])
     # keep DE results and colors
-    sc_marker_keys = get_scanpy_marker_keys(dataset)
-    for key in list(dataset.uns.keys()):
-        if key in uns_whitelist:
-            continue
-        keep = False
-        if key in sc_marker_keys:
-            keep = True
-        elif key.endswith('_colors'):
-            field = key[0:len(key) - len('_colors')]
-            if field in dataset.obs:
-                keep = True
-        if not keep:
-            del dataset.uns[key]
+    # sc_marker_keys = get_scanpy_marker_keys(dataset)
+    # for key in list(dataset.uns.keys()):
+    #     if key in uns_whitelist:
+    #         continue
+    #     keep = False
+    #     if key in sc_marker_keys:
+    #         keep = True
+    #     elif key.endswith('_colors'):
+    #         field = key[0:len(key) - len('_colors')]
+    #         if field in dataset.obs:
+    #             keep = True
+    #     if not keep:
+    #         del dataset.uns[key]
 
     for key in list(dataset.uns.keys()):
         # need to write individual groups so don't overwrite uns

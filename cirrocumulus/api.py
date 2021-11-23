@@ -1,9 +1,10 @@
 import json
 import os
+from urllib.parse import urlparse
 
-import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context
 
+import cirrocumulus.data_processing as data_processing
 from .anndata_util import adata_to_df
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
@@ -45,7 +46,7 @@ def copy_url(url):
 
     if url.endswith('/') or os.path.isdir(url):  # don't copy directories
         return url
-    from urllib.parse import urlparse
+
     if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
         return url
     src_scheme = get_scheme(url)
@@ -463,21 +464,26 @@ def handle_job():
         is_precomputed = job_id.startswith('cirro-')
         if c == 'status' or c == 'params':
             if is_precomputed:
-                return dict(status='complete') if c == 'status' else dict()
-            job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+                job = dict(status='complete') if c == 'status' else dict()
+            else:
+                job = database_api.get_job(email=email, job_id=job_id, return_type=c)
             if job is None:
                 return json_response('', 404)  # job deleted
-            return job
+            return json_response(job, 200)
         if c != 'result':
             raise ValueError('c must be one of status, params, or result')
         if is_precomputed:  # precomputed result
             email = get_auth().auth()['email']
             suggested_dataset_id = request.args['ds']
             dataset = database_api.get_dataset(email, suggested_dataset_id)
-            # precompute results need to be a child of dataset
+            # precomputed results need to be a child of dataset
             dataset['url'] = map_url(dataset['url'])
-            result_url = dataset_api.get_result(dataset, job_id)
-            return send_file(result_url)
+            job_result = dataset_api.get_result(dataset, job_id)
+            scheme = get_scheme(job_result)
+            if scheme == 'file' and not os.path.exists(job_result):
+                return Response(job_result, content_type='application/json')
+            else:
+                return send_file(job_result)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
         if job is None:
             return json_response('', 404)  # job deleted

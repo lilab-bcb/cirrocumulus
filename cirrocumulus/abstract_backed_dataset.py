@@ -1,9 +1,9 @@
-import os
 from abc import abstractmethod
 
 import pandas as pd
 import scipy.sparse
 from anndata import AnnData
+
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY
 from cirrocumulus.sparse_dataset import SparseDataset
@@ -30,8 +30,12 @@ class AbstractBackedDataset(AbstractDataset):
     def slice_dense_array(self, X, indices):
         pass
 
-    def get_schema(self, filesystem, path):
-        return super().get_schema(filesystem, os.path.join(path, 'index.json.gz'))
+    def get_result(self, filesystem, path, dataset, result_id):
+        g = self.open_group(filesystem, path)
+        uns = g['uns']
+        if result_id in uns:
+            return uns[result_id][...]
+        return super().get_result(filesystem, path, dataset, result_id)
 
     def get_dataset_info(self, filesystem, path):
         d = {}

@@ -6,6 +6,7 @@ import anndata
 import numpy as np
 import pandas as pd
 import scipy.sparse
+
 from cirrocumulus.anndata_util import get_scanpy_marker_keys, dataset_schema, ADATA_MODULE_UNS_KEY
 from cirrocumulus.io_util import get_markers, filter_markers, add_spatial, SPATIAL_HELP, unique_id
 from cirrocumulus.util import to_json, get_fs, open_file
@@ -34,24 +35,10 @@ def read_adata(path, spatial_directory=None, use_raw=False):
         if not add_spatial(adata, spatial_directory):
             logger.info('No spatial data found in {}'.format(spatial_directory))
 
-    def fix_column_names(df):
-        rename = {}
-        for c in df.columns:
-            if c.find(' ') != -1:
-                rename[c] = c.replace(' ', '_')
-        return df.rename(rename, axis=1) if len(rename) > 0 else df
-
-    adata.obs = fix_column_names(adata.obs)
-    adata.var = fix_column_names(adata.var)
     for field in categorical_fields_convert:
         if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
             logger.info('Converting {} to categorical'.format(field))
             adata.obs[field] = adata.obs[field].astype('category')
-    for key in adata.obsm:
-        if key.find(' ') != -1:
-            new_key = key.replace(' ', '_')
-            adata.obsm[new_key] = adata.obsm[key]
-            del adata.obsm[key]
     return adata
 
 
@@ -195,15 +182,17 @@ class PrepareData:
             for i in range(len(results)):
                 full_result = results[i]
                 result_id = full_result.pop('id')
-                # keep id, name, type in schema, store rest in file
+                # keep id, name, type in schema, store rest externally
                 results[i] = dict(id=result_id, name=full_result.pop('name'), type=full_result.pop('type'),
                                   content_type='application/json', content_encoding='gzip' if is_gzip else None)
-
-                result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
-                                                                                                         result_id + '.json')
-                with open_file(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
-                    out.write(to_json(full_result))
-
+                json_result = to_json(full_result)
+                if output_format != 'zarr':
+                    result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
+                                                                                                             result_id + '.json')
+                    with open_file(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
+                        out.write(json_result)
+                else:
+                    dataset.uns[result_id] = json_result
         images = dataset.uns.get('images')
         if images is not None:
             image_dir = os.path.join(output_dir, 'images')
