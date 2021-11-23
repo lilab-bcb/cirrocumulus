@@ -34,7 +34,7 @@ class AbstractBackedDataset(AbstractDataset):
         g = self.open_group(filesystem, path)
         uns = g['uns']
         if result_id in uns:
-            return uns[result_id][...]
+            return str(uns[result_id][...])
         return super().get_result(filesystem, path, dataset, result_id)
 
     def get_dataset_info(self, filesystem, path):
