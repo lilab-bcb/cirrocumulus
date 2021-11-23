@@ -1,6 +1,12 @@
 Release Notes
 -------------
 
+- 1.1.24.post3 `November 23, 2021`
+    * Enable double-click to select on spatial images
+    * Use spawn for running background jobs
+    * Fixed bug in which dataset dialog remained open on save
+    * Fixed error getting precomputed results
+
 - 1.1.24.post2 `November 19, 2021`
     * Fixed error editing dataset
 

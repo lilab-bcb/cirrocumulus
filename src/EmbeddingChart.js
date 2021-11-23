@@ -240,6 +240,7 @@ function EmbeddingChart(props) {
                 onSelected={onSelect}
                 onGallery={onGallery}
                 setTooltip={setTooltip}
+                handleClick={onDimensionFilterUpdated}
             />}
         </Box>);
 

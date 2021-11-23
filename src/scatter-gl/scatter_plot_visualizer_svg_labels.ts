@@ -19,7 +19,7 @@ limitations under the License.
 import {ScatterPlotVisualizer} from './scatter_plot_visualizer';
 import {RenderContext} from './render';
 import {Styles} from "./styles";
-import {Vector3, Scene} from 'three';
+import {Scene, Vector3} from 'three';
 
 /**
  * Creates and maintains a 2d canvas on top of the GL canvas. All labels, when
@@ -48,6 +48,7 @@ export class ScatterPlotVisualizerSvgLabels
         this.svgElement.style.width = '100%';
         this.svgElement.style.position = 'absolute';
         this.svgElement.style.pointerEvents = 'none';
+        this.svgElement.style.userSelect = 'none';
         container.insertAdjacentElement('afterbegin', this.svgElement);
 
 
@@ -66,8 +67,8 @@ export class ScatterPlotVisualizerSvgLabels
         const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         label.setAttribute('dominant-baseline', "middle");
         label.setAttribute('text-anchor', "middle");
-        label.setAttribute('x', '' + pos.x)
-        label.setAttribute('y', '' + pos.y)
+        label.setAttribute('x', '' + pos.x);
+        label.setAttribute('y', '' + pos.y);
         label.innerHTML = text;
         return label;
     }
@@ -83,8 +84,6 @@ export class ScatterPlotVisualizerSvgLabels
         // @ts-ignore
         const heightHalf = (this.svgElement.parentElement.clientHeight) / 2;
         this.svgElement.style.font = this.font;
-        const textShadow = this.shadowColor + ' -2px -2px 0px, ' + this.shadowColor +
-            ' -2px 2px 0px, ' + this.shadowColor + ' 2px -2px 0px, ' + this.shadowColor + ' 2px 2px 0px';
         for (let i = 0, k = 0; i < labelStrings.length; i++, k += 3) {
             pos.x = positions[k];
             pos.y = positions[k + 1];

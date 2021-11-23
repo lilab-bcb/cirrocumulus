@@ -18,6 +18,12 @@ class AnndataDataset(AbstractDataset):
     def get_suffixes(self):
         return ['h5ad', 'loom', 'rds', 'zarr']
 
+    def get_result(self, filesystem, path, dataset, result_id):
+        adata = self.get_data(filesystem, path)
+        if result_id in adata.uns:
+            return adata.uns[result_id]
+        return super().get_result(filesystem, path, dataset, result_id)
+
     def read_adata(self, filesystem, path):
         path_lc = path.lower()
         path_lc = path_lc.rstrip('/')
