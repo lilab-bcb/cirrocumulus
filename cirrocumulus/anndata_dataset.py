@@ -21,7 +21,7 @@ class AnndataDataset(AbstractDataset):
     def get_result(self, filesystem, path, dataset, result_id):
         adata = self.get_data(filesystem, path)
         if result_id in adata.uns:
-            return adata.uns[result_id]
+            return str(adata.uns[result_id])
         return super().get_result(filesystem, path, dataset, result_id)
 
     def read_adata(self, filesystem, path):

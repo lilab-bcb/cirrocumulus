@@ -479,8 +479,7 @@ def handle_job():
             # precomputed results need to be a child of dataset
             dataset['url'] = map_url(dataset['url'])
             job_result = dataset_api.get_result(dataset, job_id)
-            scheme = get_scheme(job_result)
-            if scheme == 'file' and not os.path.exists(job_result):
+            if get_scheme(job_result) == 'file' and not os.path.exists(job_result):
                 return Response(job_result, content_type='application/json')
             else:
                 return send_file(job_result)
