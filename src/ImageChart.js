@@ -38,7 +38,7 @@ function drawLabels(context, zoom, trace, chartOptions, categoricalNames, obsCat
     if (showLabels) {
         context.textAlign = 'center';
         context.textBaseline = "middle";
-        const darkMode = true;
+        const darkMode = true; // assume image is dark chartOptions.darkMode;
         const fontSize = Math.ceil(chartOptions.labelFontSize / zoom);
         context.fillStyle = darkMode ? 'white' : 'black';
         context.strokeStyle = darkMode ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)';
@@ -379,27 +379,27 @@ class ImageChart extends React.PureComponent {
             }
         });
 
-        // this.viewer.innerTracker.clickHandler = function (event) {
-        //     if (_this.props.chartOptions.dragmode === 'pan') {
-        //         let webPoint = event.position;
-        //         let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-        //         let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
-        //         const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
-        //         if (point === -1) {
-        //             //   this.props.onSelected({name: getEmbeddingKey(trace.embedding)});
-        //         } else {
-        //             _this.props.onSelected({
-        //                 name: getEmbeddingKey(_this.props.trace.embedding),
-        //                 clear: !_this.props.chartOptions.editSelection,
-        //                 value: {basis: _this.props.trace.embedding, points: [point]}
-        //             });
-        //         }
-        //     }
-        // };
+        this.viewer.innerTracker.dblClickHandler = function (event) {
+            if (_this.props.chartOptions.dragmode === 'pan') {
+                let webPoint = event.position;
+                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+                const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
+                if (point !== -1) {
+                    event.preventDefaultAction = true;
+                    _this.props.handleClick({
+                        name: _this.props.trace.name,
+                        value: _this.props.trace.values[point],
+                        shiftKey: false,
+                        metaKey: false
+                    });
+                }
+            }
+        };
+
 
         viewer.addHandler('canvas-exit', function (event) {
             _this.props.setTooltip('');
-
         });
 
         let svgOverlay = new OpenseadragonSvgOverlay(viewer);
