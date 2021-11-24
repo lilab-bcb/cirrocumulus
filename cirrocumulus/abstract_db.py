@@ -2,7 +2,9 @@
 # Only methods server and datasets must be supported in 'client' mode
 import os
 
-from cirrocumulus.envir import *
+from cirrocumulus.envir import SERVER_CAPABILITY_RENAME_CATEGORIES, SERVER_CAPABILITY_JOBS, \
+    SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_EDIT_DATASET, \
+    SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET
 
 
 class AbstractDB:
@@ -96,12 +98,11 @@ class AbstractDB:
        """
         raise NotImplementedError()
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
         """ Delete a saved view
 
         Args:
             email: User email or None
-            dataset_id: Dataset id
             view_id: View id
 
         """

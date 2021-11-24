@@ -6,8 +6,8 @@ import math
 import pandas as pd
 import pandas._libs.json as ujson
 from anndata import AnnData
-
 from cirrocumulus.de import DE
+
 from .data_processing import get_filter_str, get_mask
 from .diff_exp import fdrcorrection
 from .envir import CIRRO_SERVE, CIRRO_MAX_WORKERS, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_JOB_TYPE
@@ -46,7 +46,6 @@ def save_job_result_to_file(result, job_id):
 
 
 def delete_job(job_id):
-    global job_id_2_future
     future = job_id_2_future.get(job_id)
     if future is not None and not future.done():
         del job_id_2_future[job_id]
@@ -55,7 +54,6 @@ def delete_job(job_id):
 
 
 def done_callback(future):
-    global job_id_2_future
     for job_id in list(job_id_2_future.keys()):
         if job_id_2_future[job_id] == future:
             del job_id_2_future[job_id]
@@ -65,9 +63,7 @@ def done_callback(future):
 
 def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, params):
     global executor
-    global job_id_2_future
 
-    import os
     is_serve = os.environ.get(CIRRO_SERVE) == 'true'
     if executor is None:
         if not is_serve:

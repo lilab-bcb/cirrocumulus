@@ -2,13 +2,12 @@ import datetime
 import json
 import os
 
-from google.cloud import datastore
-
 from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.envir import SERVER_CAPABILITY_JOBS, CIRRO_EMAIL, CIRRO_JOB_RESULTS
 from cirrocumulus.invalid_usage import InvalidUsage
 from cirrocumulus.job_api import save_job_result_to_file
 from cirrocumulus.util import get_email_domain
+from google.cloud import datastore
 
 DATASET = 'Dataset'
 CAT_NAME = 'Cat_Name'
@@ -232,10 +231,10 @@ class CloudFireStoreNative(AbstractDB):
         return self.__get_entity_list(email=email, dataset_id=dataset_id, kind=DATASET_VIEW,
                                       keys=['name', 'notes', 'email', 'last_updated'])
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
         return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
 
-    def get_dataset_view(self, email, dataset_id, view_id):
+    def get_dataset_view(self, email, view_id):
         return self.__get_entity(email=email, entity_id=view_id, kind=DATASET_VIEW)
 
     def upsert_dataset_view(self, email, dataset_id, view):
