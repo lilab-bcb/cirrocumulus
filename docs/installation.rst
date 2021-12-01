@@ -12,16 +12,14 @@ pip
 
     cirro launch <path_to_dataset>
 
+You can see the full list of command line options by typing `cirro launch --help`.
 
 Server Mode
 ^^^^^^^^^^^^^^
 
 Cirrocumulus can also be run in `server` mode in order to serve multiple users and datasets securely.
-The server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
+The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
 
-
-Server
-^^^^^^^^
 
 - Install cirrocumulus using pip or docker
 
@@ -58,6 +56,14 @@ You can see the full list of command line options by typing `cirro serve --help`
     - Google Cloud Storage: `pip install gcsfs`
     - Microsoft Azure: `pip install adlfs`
 
+And google-auth is required for OAuth 2.0 support:
+    - pip install google-auth
+
+- Additional customization via environment variables:
+
+    - CIRRO_MOUNT: For mounting a bucket locally. Comma separated string of bucket:local_path. Example s3://foo/bar:/fsx
+    - CIRRO_SPECIES: Path to JSON file for species list when adding new dataset
+    - CIRRO_MIXPANEL: Mixpanel_ project token for event tracking. Currently, only the open dataset event is supported.
 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
@@ -224,7 +230,7 @@ Developer Instructions
 
     cirro launch ./data/pbmc3k_processed.h5ad --no-open
 
-- Alternatively, launch the cirrocumulus server (use cirro prepare_data to convert h5ad file to cirrocumulus format for server mode)::
+- Alternatively, launch the cirrocumulus server (use cirro prepare_data to convert the h5ad file to cirrocumulus format for server mode)::
 
     cirro serve
 
@@ -255,3 +261,4 @@ Developer Instructions
 .. _MongoDB Compass: https://www.mongodb.com/products/compass
 .. _Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html
 .. _Google Cloud Storage: https://cloud.google.com/storage/docs/hosting-static-website-http
+.. _Mixpanel: https://mixpanel.com/
