@@ -7,6 +7,10 @@ from cirrocumulus.envir import SERVER_CAPABILITY_RENAME_CATEGORIES, SERVER_CAPAB
     SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET
 
 
+def to_bool(s):
+    return s.lower() in ['true', '1']
+
+
 class AbstractDB:
 
     def __init__(self):
@@ -16,13 +20,13 @@ class AbstractDB:
 
     def capabilities(self):  # allow everything
         c = {}
-        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = bool(os.environ.get(SERVER_CAPABILITY_RENAME_CATEGORIES, 'True'))
-        c[SERVER_CAPABILITY_JOBS] = bool(os.environ.get(SERVER_CAPABILITY_JOBS, 'True'))
-        c[SERVER_CAPABILITY_FEATURE_SETS] = bool(os.environ.get(SERVER_CAPABILITY_FEATURE_SETS, 'True'))
-        c[SERVER_CAPABILITY_LINKS] = bool(os.environ.get(SERVER_CAPABILITY_LINKS, 'True'))
-        c[SERVER_CAPABILITY_EDIT_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_EDIT_DATASET, 'True'))
-        c[SERVER_CAPABILITY_ADD_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_ADD_DATASET, 'True'))
-        c[SERVER_CAPABILITY_DELETE_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_DELETE_DATASET, 'True'))
+        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = to_bool(os.environ.get(SERVER_CAPABILITY_RENAME_CATEGORIES, 'True'))
+        c[SERVER_CAPABILITY_JOBS] = to_bool(os.environ.get(SERVER_CAPABILITY_JOBS, 'True'))
+        c[SERVER_CAPABILITY_FEATURE_SETS] = to_bool(os.environ.get(SERVER_CAPABILITY_FEATURE_SETS, 'True'))
+        c[SERVER_CAPABILITY_LINKS] = to_bool(os.environ.get(SERVER_CAPABILITY_LINKS, 'True'))
+        c[SERVER_CAPABILITY_EDIT_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_EDIT_DATASET, 'True'))
+        c[SERVER_CAPABILITY_ADD_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_ADD_DATASET, 'True'))
+        c[SERVER_CAPABILITY_DELETE_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_DELETE_DATASET, 'True'))
         return c
 
     def datasets(self, email):
