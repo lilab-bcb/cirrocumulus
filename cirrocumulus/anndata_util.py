@@ -157,8 +157,11 @@ def dataset_schema(dataset, n_features=10):
         de_result['params'] = params
         de_result['data'] = de_result_data
         de_results.append(de_result)
-    for varm_field in get_pegasus_marker_keys(dataset):
-        de_res = dataset.varm[varm_field]
+    for pg_marker_key in get_pegasus_marker_keys(dataset):
+        de_res = dataset.varm[pg_marker_key]
+        key_name = pg_marker_key
+        if pg_marker_key.startswith('rank_genes_'):
+            key_name = pg_marker_key[len('rank_genes_'):]
         names = de_res.dtype.names
         field_names = set()  # e.g. 1:auroc
         group_names = set()
@@ -179,8 +182,7 @@ def dataset_schema(dataset, n_features=10):
             de_result_data = dict(index=de_result_df.index)
             for c in de_res:
                 de_result_data[c] = de_result_df[c]
-
-        de_result = dict(id='cirro-{}'.format(varm_field), type='de', name='pegasus_de',
+        de_result = dict(id='cirro-{}'.format(pg_marker_key), type='de', name=key_name,
                          color='log2FC' if 'log2FC' in field_names else field_names[0],
                          size='mwu_qval' if 'mwu_qval' in field_names else field_names[0],
                          groups=group_names,
@@ -204,7 +206,8 @@ def dataset_schema(dataset, n_features=10):
                     df_up = de_result_df.loc[idx_up].sort_values(by=[name, fc_column],
                                                                  ascending=[field_ascending, False])
                     features = df_up[:n_features].index.values
-                    marker_results.append(dict(category='markers', name=str(group_name), features=features))
+
+                    marker_results.append(dict(category=key_name, name=str(group_name), features=features))
 
     categories_node = dataset.obs['__categories'] if '__categories' in dataset.obs else None
     for key in dataset.obs.keys():
@@ -243,13 +246,13 @@ def dataset_schema(dataset, n_features=10):
     images_node = dataset.uns.get('images',
                                   [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
     image_names = list(map(lambda x: x['name'], images_node))
-    layers = []
-    try:
-        dataset.layers  # dataset can be AnnData or zarr group
-        layers = list(dataset.layers.keys())
-        # adata.list_keys()
-    except AttributeError:
-        pass
+    # layers = []
+    # try:
+    #     dataset.layers  # dataset can be AnnData or zarr group
+    #     layers = list(dataset.layers.keys())
+    #     # adata.list_keys()
+    # except AttributeError:
+    #     pass
 
     for key in dataset.obsm.keys():
         dim = dataset.obsm[key].shape[1]
