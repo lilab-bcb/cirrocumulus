@@ -1,6 +1,6 @@
 import os
 
-from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_EMAIL, CIRRO_SERVE, \
+from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_SERVE, \
     CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
     CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE, CIRRO_CELL_ONTOLOGY
 from cirrocumulus.launch import create_app
@@ -46,8 +46,6 @@ def main(argsv):
     import os
     parser = argparse.ArgumentParser(description='Run cirrocumulus server')
     parser.add_argument('--db_uri', help='Database connection URI', default=DEFAULT_DB_URI)
-    parser.add_argument('--email',
-                        help='Email address that server runs as. Used for informational purposes to display in user interface.')
     parser.add_argument('--auth_client_id', help='OAuth client id')
     parser.add_argument('-w', '--workers', dest='workers', help='The number of worker processes', type=int)
     parser.add_argument('-t', '--timeout', dest='timeout',
@@ -76,8 +74,6 @@ def main(argsv):
     if args.header is not None:
         os.environ[CIRRO_BRAND] = args.header
 
-    if args.email is not None:
-        os.environ[CIRRO_EMAIL] = args.email
     if args.workers is not None:
         workers = args.workers
     else:

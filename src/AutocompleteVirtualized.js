@@ -53,7 +53,7 @@ function renderRow(props) {
         }
         return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
             {dataSet.group} {dataSet.selectGroup &&
-        <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>}
+            <Link href="#" onClick={e => dataSet.selectGroup(e, dataSet.group)}>All</Link>}
         </Typography>;
 
     }
@@ -330,7 +330,7 @@ export default function AutocompleteVirtualized(props) {
             <Chip
                 tabIndex="-1"
                 key={sortIndex}
-                style={{zIndex: 1000000}}
+                style={{zIndex: 1000000, maxWidth: 216, overflow: 'hidden', textOverflow: 'ellipsis'}}
                 onDelete={event => handleTagDelete(event, sortIndex)}
                 onClick={onChipClick ? event => onChipClick(event, option) : null}
                 label={getChipText(option)}

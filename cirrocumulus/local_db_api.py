@@ -3,7 +3,8 @@ import json
 import os
 
 from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.envir import *
+from cirrocumulus.envir import CIRRO_JOB_RESULTS, SERVER_CAPABILITY_EDIT_DATASET, SERVER_CAPABILITY_ADD_DATASET, \
+    SERVER_CAPABILITY_DELETE_DATASET
 from cirrocumulus.io_util import unique_id
 from cirrocumulus.job_api import save_job_result_to_file
 from cirrocumulus.util import get_fs

@@ -2,7 +2,13 @@
 # Only methods server and datasets must be supported in 'client' mode
 import os
 
-from cirrocumulus.envir import *
+from cirrocumulus.envir import SERVER_CAPABILITY_RENAME_CATEGORIES, SERVER_CAPABILITY_JOBS, \
+    SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_EDIT_DATASET, \
+    SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET
+
+
+def to_bool(s):
+    return s.lower() in ['true', '1']
 
 
 class AbstractDB:
@@ -14,13 +20,13 @@ class AbstractDB:
 
     def capabilities(self):  # allow everything
         c = {}
-        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = bool(os.environ.get(SERVER_CAPABILITY_RENAME_CATEGORIES, 'True'))
-        c[SERVER_CAPABILITY_JOBS] = bool(os.environ.get(SERVER_CAPABILITY_JOBS, 'True'))
-        c[SERVER_CAPABILITY_FEATURE_SETS] = bool(os.environ.get(SERVER_CAPABILITY_FEATURE_SETS, 'True'))
-        c[SERVER_CAPABILITY_LINKS] = bool(os.environ.get(SERVER_CAPABILITY_LINKS, 'True'))
-        c[SERVER_CAPABILITY_EDIT_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_EDIT_DATASET, 'True'))
-        c[SERVER_CAPABILITY_ADD_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_ADD_DATASET, 'True'))
-        c[SERVER_CAPABILITY_DELETE_DATASET] = bool(os.environ.get(SERVER_CAPABILITY_DELETE_DATASET, 'True'))
+        c[SERVER_CAPABILITY_RENAME_CATEGORIES] = to_bool(os.environ.get(SERVER_CAPABILITY_RENAME_CATEGORIES, 'True'))
+        c[SERVER_CAPABILITY_JOBS] = to_bool(os.environ.get(SERVER_CAPABILITY_JOBS, 'True'))
+        c[SERVER_CAPABILITY_FEATURE_SETS] = to_bool(os.environ.get(SERVER_CAPABILITY_FEATURE_SETS, 'True'))
+        c[SERVER_CAPABILITY_LINKS] = to_bool(os.environ.get(SERVER_CAPABILITY_LINKS, 'True'))
+        c[SERVER_CAPABILITY_EDIT_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_EDIT_DATASET, 'True'))
+        c[SERVER_CAPABILITY_ADD_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_ADD_DATASET, 'True'))
+        c[SERVER_CAPABILITY_DELETE_DATASET] = to_bool(os.environ.get(SERVER_CAPABILITY_DELETE_DATASET, 'True'))
         return c
 
     def datasets(self, email):
@@ -96,12 +102,11 @@ class AbstractDB:
        """
         raise NotImplementedError()
 
-    def delete_dataset_view(self, email, dataset_id, view_id):
+    def delete_dataset_view(self, email, view_id):
         """ Delete a saved view
 
         Args:
             email: User email or None
-            dataset_id: Dataset id
             view_id: View id
 
         """
