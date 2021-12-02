@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.24.post4 `December 2, 2021`
+    * Removed --email flag from `cirro serve`
+    * Fixed error storing large precomputed results
+
 - 1.1.24.post3 `November 23, 2021`
     * Enable double-click to select on spatial images
     * Use spawn for running background jobs
