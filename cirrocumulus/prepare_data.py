@@ -185,13 +185,11 @@ class PrepareData:
                 results[i] = dict(id=result_id, name=full_result.pop('name'), type=full_result.pop('type'),
                                   content_type='application/json', content_encoding='gzip' if is_gzip else None)
                 json_result = to_json(full_result)
-                if output_format != 'zarr':
-                    result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
+
+                result_path = os.path.join(uns_dir, result_id + '.json.gz') if is_gzip else os.path.join(uns_dir,
                                                                                                              result_id + '.json')
-                    with open_file(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
-                        out.write(json_result)
-                else:
-                    dataset.uns[result_id] = json_result
+                with open_file(result_path, 'wt', compression='gzip' if is_gzip else None) as out:
+                    out.write(json_result)
         images = dataset.uns.get('images')
         if images is not None:
             image_dir = os.path.join(output_dir, 'images')
