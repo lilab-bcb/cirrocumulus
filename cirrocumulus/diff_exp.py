@@ -1,121 +1,120 @@
+import itertools
+
 import numpy as np
+import pandas as pd
+import scipy.stats
 
 
-def _ecdf(x):
-    '''no frills empirical cdf used in fdrcorrection
-    '''
-    nobs = len(x)
-    return np.arange(1, nobs + 1) / float(nobs)
+def _power(X, power):
+    return X ** power if isinstance(X, np.ndarray) else X.power(power)
 
 
-def fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False):
-    '''pvalue correction for false discovery rate
-
-    This covers Benjamini/Hochberg for independent or positively correlated and
-    Benjamini/Yekutieli for general or negatively correlated tests. Both are
-    available in the function multipletests, as method=`fdr_bh`, resp. `fdr_by`.
-
-    Parameters
-    ----------
-    pvals : array_like
-        set of p-values of the individual tests.
-    alpha : float
-        error rate
-    method : {'indep', 'negcorr')
-
-    Returns
-    -------
-    rejected : ndarray, bool
-        True if a hypothesis is rejected, False if not
-    pvalue-corrected : ndarray
-        pvalues adjusted for multiple hypothesis testing to limit FDR
-
-    Notes
-    -----
-
-    If there is prior information on the fraction of true hypothesis, then alpha
-    should be set to alpha * m/m_0 where m is the number of tests,
-    given by the p-values, and m_0 is an estimate of the true hypothesis.
-    (see Benjamini, Krieger and Yekuteli)
-
-    The two-step method of Benjamini, Krieger and Yekutiel that estimates the number
-    of false hypotheses will be available (soon).
-
-    Method names can be abbreviated to first letter, 'i' or 'p' for fdr_bh and 'n' for
-    fdr_by.
+def asarray(x):
+    return x.toarray() if scipy.sparse.issparse(x) else x
 
 
+class DE:
 
-    '''
-    pvals = np.asarray(pvals)
+    def __init__(self, series: pd.Series, nfeatures: int, batch_size: int, get_batch_fn, base: float = None,
+                 one_vs_rest: bool = True):
+        """
 
-    if not is_sorted:
-        pvals_sortind = np.argsort(pvals)
-        pvals_sorted = np.take(pvals, pvals_sortind)
-    else:
-        pvals_sorted = pvals  # alias
+        :param series: Categorical series in adata.obs to group by
+        :param nfeatures: Number of features in adata
+        :param batch_size: Number of features per batch
+        :param get_batch_fn: Function to retrieve data from a batch
+        :param base: adata.uns['log1p']['base']
+        :param one_vs_rest: Whether to compare each group vs rest or all pairs of groups
+        """
+        mean_df = None
+        variance_df = None
+        frac_expressed_df = None
+        indicator_df = pd.get_dummies(series)
+        if one_vs_rest:
+            pairs = []
+            rest_indicator_df = pd.DataFrame()
+            for c in indicator_df:
+                rest_name = str(c) + '_rest'
+                if rest_name in indicator_df:
+                    counter = 1
+                    rest_name = str(c) + '_rest-{}'.format(counter)
+                    while rest_name in indicator_df:
+                        counter = counter + 1
+                        rest_name = str(c) + '_rest-{}'.format(counter)
+                pairs.append((c, rest_name))
+                rest_indicator_series = indicator_df[c].astype(bool)
+                rest_indicator_series = ~rest_indicator_series
+                rest_indicator_df[rest_name] = rest_indicator_series.astype(int)
+            indicator_df = indicator_df.join(rest_indicator_df)
+        else:
+            pairs = list(itertools.combinations(series.cat.categories, 2))
+        count_ = indicator_df.sum(axis=0)  # count per group
+        A = scipy.sparse.coo_matrix(indicator_df.astype(float).T)
+        n_row = A.shape[0]
+        row_sums = np.asarray(A.sum(axis=1))
+        D = scipy.sparse.dia_matrix(((row_sums.T ** -1), [0]), shape=(n_row, n_row))
+        A = D * A
+        dof = 1
 
-    if method in ['i', 'indep', 'p', 'poscorr']:
-        ecdffactor = _ecdf(pvals_sorted)
-    elif method in ['n', 'negcorr']:
-        cm = np.sum(1. / np.arange(1, len(pvals_sorted) + 1))  # corrected this
-        ecdffactor = _ecdf(pvals_sorted) / cm
-    ##    elif method in ['n', 'negcorr']:
-    ##        cm = np.sum(np.arange(len(pvals)))
-    ##        ecdffactor = ecdf(pvals_sorted)/cm
-    else:
-        raise ValueError('only indep and negcorr implemented')
+        for i in range(0, nfeatures, batch_size):
+            adata_batch = get_batch_fn(i)
+            X = adata_batch.X
+            mean_ = asarray(A @ X)  # (groups, genes)
+            mean_sq = asarray(A @ _power(X, 2))
+            sq_mean = mean_ ** 2
+            var_ = mean_sq - sq_mean
+            # enforce R convention (unbiased estimator) for variance
+            precision = 2 << (42 if X.dtype == np.float64 else 20)
+            # detects loss of precision in mean_sq - sq_mean, which suggests variance is 0
+            var_[precision * var_ < sq_mean] = 0
+            if dof != 0:
+                var_ *= (count_ / (count_ - dof))[:, np.newaxis]
 
-    pvals_corrected_raw = pvals_sorted / ecdffactor
-    pvals_corrected = np.minimum.accumulate(pvals_corrected_raw[::-1])[::-1]
-    del pvals_corrected_raw
-    pvals_corrected[pvals_corrected > 1] = 1
-    if not is_sorted:
-        pvals_corrected_ = np.empty_like(pvals_corrected)
-        pvals_corrected_[pvals_sortind] = pvals_corrected
-        del pvals_corrected
+            frac_expressed_ = None
+            if scipy.sparse.issparse(X):
+                frac_expressed_ = asarray(A @ (X != 0))
+            _mean_df = pd.DataFrame(mean_, columns=adata_batch.var.index, index=indicator_df.columns)
+            _variance_df = pd.DataFrame(var_, columns=adata_batch.var.index, index=indicator_df.columns)
 
-        return pvals_corrected_
-    else:
-        return pvals_corrected
+            # groups on rows, genes on columns
+            mean_df = pd.concat((mean_df, _mean_df), axis=1) if mean_df is not None else _mean_df
+            variance_df = pd.concat((variance_df, _variance_df), axis=1) if variance_df is not None else _variance_df
+            if frac_expressed_ is not None:
+                _frac_expressed_df = pd.DataFrame(frac_expressed_, columns=adata_batch.var.index,
+                                                  index=indicator_df.columns)
+                frac_expressed_df = pd.concat((frac_expressed_df, _frac_expressed_df),
+                                              axis=1) if frac_expressed_df is not None else _frac_expressed_df
 
+        if base is not None:
+            expm1_func = lambda x: np.expm1(x * np.log(base))
+        else:
+            expm1_func = np.expm1
+        pair2results = dict()
+        for p in pairs:
+            group_one, group_two = p
+            nobs1 = count_.loc[group_one]
+            nobs2 = count_.loc[group_two]
 
-def diff_exp(X, mask):
-    pvals = np.full(X.shape[1], 1.0)
-    tscores = np.full(X.shape[1], 0)
-    mat_cond1 = X[mask]
-    mat_cond2 = X[~mask]
-    n1 = mat_cond1.shape[0]
-    n2 = mat_cond2.shape[0]
-    mean1 = mat_cond1.mean(axis=0).A1
-    mean2 = mat_cond2.mean(axis=0).A1
-    psum1 = mat_cond1.power(2).sum(axis=0).A1
-    s1sqr = (psum1 - n1 * (mean1 ** 2)) / (n1 - 1)
+            # add small value to remove 0's
+            foldchanges = np.log2(
+                (expm1_func(mean_df.loc[group_one].values) + 1e-9) / (expm1_func(mean_df.loc[group_two].values) + 1e-9))
+            with np.errstate(invalid="ignore"):
+                scores, pvals = scipy.stats.ttest_ind_from_stats(
+                    mean1=mean_df.loc[group_one],
+                    std1=np.sqrt(variance_df.loc[group_one]),
+                    nobs1=nobs1,
+                    mean2=mean_df.loc[group_two],
+                    std2=np.sqrt(variance_df.loc[group_two]),
+                    nobs2=nobs2,
+                    equal_var=False,  # Welch's
+                )
 
-    psum2 = mat_cond2.power(2).sum(axis=0).A1
-    s2sqr = (psum2 - n2 * (mean2 ** 2)) / (n2 - 1)
-
-    percent1 = (mat_cond1.getnnz(axis=0) / n1 * 100.0).astype(np.float32)
-
-    percent2 = (mat_cond2.getnnz(axis=0) / n2 * 100.0).astype(np.float32)
-
-    import scipy.stats as ss
-
-    var_est = s1sqr / n1 + s2sqr / n2
-    idx = var_est > 0.0
-    if idx.sum() > 0:
-        tscore = (mean1[idx] - mean2[idx]) / np.sqrt(var_est[idx])
-        v = (var_est[idx] ** 2) / (
-                (s1sqr[idx] / n1) ** 2 / (n1 - 1) + (s2sqr[idx] / n2) ** 2 / (n2 - 1)
-        )
-        pvals[idx] = ss.t.sf(np.fabs(tscore), v) * 2.0  # two-sided
-        tscores[idx] = tscore
-    #  qvals = fdrcorrection(pvals)
-    log_fold_change = mean1 - mean2
-    x_avg = (mean1 + mean2) / 2
-    x_max = x_avg.max()
-    x_min = x_avg.min() - 0.001  # to avoid divide by zero
-    weights = (x_avg - x_min) / (x_max - x_min)
-    WAD = log_fold_change * weights
-
-    return dict(WAD=WAD, mean1=mean1, mean2=mean2, percent1=percent1, percent2=percent2, tscore=tscore)
+            scores[np.isnan(scores)] = 0
+            pvals[np.isnan(pvals)] = 1
+            key = p[0] if one_vs_rest else p
+            pair2results[key] = dict(scores=scores, pvals=pvals, logfoldchanges=foldchanges,
+                                     frac_expressed1=frac_expressed_df.loc[
+                                         group_one].values if frac_expressed_df is not None else None,
+                                     frac_expressed2=frac_expressed_df.loc[
+                                         group_two].values if frac_expressed_df is not None else None)
+        self.pair2results = pair2results

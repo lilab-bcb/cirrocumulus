@@ -4,13 +4,14 @@ import numpy as np
 import pandas as pd
 import pytest
 import scanpy as sc
-from numpy.random import negative_binomial, binomial, seed
-from scipy import sparse as sp
-
-from cirrocumulus.de import DE
+import scipy.sparse
+from cirrocumulus.anndata_util import get_base
+from cirrocumulus.diff_exp import DE
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
 from cirrocumulus.zarr_dataset import ZarrDataset
+from numpy.random import negative_binomial, binomial, seed
+from scipy import sparse as sp
 
 
 def get_example_data(sparse=False):
@@ -46,27 +47,26 @@ def sparse(request):
     return request.param
 
 
-def diff_results(sparse, adata, obs_field, de):
+def diff_results(adata, obs_field, results, group='0'):
     sc.tl.rank_genes_groups(adata, obs_field, method='t-test', pts=True)
     rank_genes_groups = adata.uns['rank_genes_groups']
-    sc_scores = rank_genes_groups['scores']['0']
-    sc_pvals = rank_genes_groups['pvals']['0']
-    sc_pts = rank_genes_groups['pts']
-    sc_lfc = rank_genes_groups['logfoldchanges']['0']
+    sc_scores = rank_genes_groups['scores'][group]
+    sc_pvals = rank_genes_groups['pvals'][group]
+    sc_pts = rank_genes_groups['pts'][group]
+    sc_lfc = rank_genes_groups['logfoldchanges'][group]
 
-    features = rank_genes_groups['names']['0']
-    sc_df = pd.DataFrame(index=features,
-                         data={'pvals': sc_pvals, 'scores': sc_scores, 'pts': sc_pts['0'], 'pts_rest': sc_pts['1'],
-                               'lfc': sc_lfc})
+    sc_df = pd.DataFrame(index=rank_genes_groups['names'][group],
+                         data={'pvals': sc_pvals, 'scores': sc_scores, 'pts': sc_pts, 'lfc': sc_lfc})
     sc_df = sc_df.loc[adata.var.index]
-    np.testing.assert_allclose(sc_df['scores'], de['scores'])
-    np.testing.assert_allclose(sc_df['lfc'], de['logfoldchanges'])
-    np.testing.assert_allclose(sc_df['pvals'], de['pvals'])
-    if sparse:
-        np.testing.assert_allclose(sc_df['pts'], de['frac_expressed1'])
-        np.testing.assert_allclose(sc_df['pts_rest'], de['frac_expressed2'])
+    np.testing.assert_allclose(sc_df['pvals'], results['pvals'])
+
+    np.testing.assert_allclose(sc_df['scores'], results['scores'], atol=1e-015)
+    np.testing.assert_allclose(sc_df['lfc'], results['logfoldchanges'], atol=1e-015)
+
+    if scipy.sparse.issparse(adata.X):
+        np.testing.assert_allclose(sc_df['pts'], results['frac_expressed1'])
     else:
-        assert de['frac_expressed1'] is None
+        assert results['frac_expressed1'] is None
 
 
 @pytest.mark.parametrize("file_format", ['zarr', 'parquet'])
@@ -89,15 +89,35 @@ def test_de_backed(sparse, file_format, tmp_path):
         return reader.read_dataset(filesystem=fs, path=output_dir, dataset=dict(id=''),
                                    keys=dict(X=[slice(i, end)]))
 
-    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn, [(0, 1)])
-    diff_results(sparse, adata, obs_field, de.pair2results[(0, 1)])
+    results = DE(series=adata.obs[obs_field], nfeatures=nfeatures, batch_size=batch_size, get_batch_fn=get_batch_fn,
+                 base=get_base(adata), one_vs_rest=True)
+    diff_results(adata, obs_field, results.pair2results[0])
 
 
-def test_de(sparse):
+def test_de_2_groups(sparse):
     adata = get_example_data(sparse)
     batch_size = 3
     obs_field = 'sc_groups'
     nfeatures = adata.shape[1]
     get_batch_fn = lambda i: adata[:, i:min(nfeatures, i + batch_size)]
-    de = DE(adata, obs_field, nfeatures, batch_size, get_batch_fn, [(0, 1)])
-    diff_results(sparse, adata, obs_field, de.pair2results[(0, 1)])
+
+    results = DE(series=adata.obs[obs_field], nfeatures=nfeatures, batch_size=batch_size, get_batch_fn=get_batch_fn,
+                 base=get_base(adata), one_vs_rest=True)
+    diff_results(adata, obs_field, results.pair2results[0])
+
+
+def test_de_4_groups(sparse):
+    adata1 = get_example_data(sparse)
+    adata2 = get_example_data(sparse)
+    adata2.obs['sc_groups'] = adata2.obs['sc_groups'].replace({0: 2, 1: 3})
+    adata = anndata.concat((adata1, adata2))
+    adata.obs_names_make_unique()
+    batch_size = 3
+    obs_field = 'sc_groups'
+    adata.obs[obs_field] = adata.obs[obs_field].astype('category')
+    nfeatures = adata.shape[1]
+    get_batch_fn = lambda i: adata[:, i:min(nfeatures, i + batch_size)]
+    de = DE(series=adata.obs[obs_field], nfeatures=nfeatures, batch_size=batch_size, get_batch_fn=get_batch_fn,
+            base=get_base(adata))
+    for i in range(4):
+        diff_results(adata, obs_field, de.pair2results[i], str(i))
