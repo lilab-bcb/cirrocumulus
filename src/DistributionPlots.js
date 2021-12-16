@@ -41,8 +41,7 @@ function DistributionPlots(props) {
         embeddingData,
         globalFeatureSummary,
         onDistributionPlotOptions,
-        selectedDistributionData,
-        setTooltip
+        selectedDistributionData
     } = props;
     const textColor = chartOptions.darkMode ? 'white' : 'black';
     const keys = Object.keys(distributionData);
@@ -87,7 +86,6 @@ function DistributionPlots(props) {
 
             return <DistributionGroup key={dimension}
                                       cachedData={cachedData}
-                                      setTooltip={setTooltip}
                                       showDotPlotOption={key === 'X'}
                                       categoryColorScales={categoryColorScales}
                                       dataset={dataset}

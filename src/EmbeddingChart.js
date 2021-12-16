@@ -66,7 +66,6 @@ function EmbeddingChart(props) {
         searchTokens,
         selection,
         serverInfo,
-        setTooltip,
         shape,
         unselectedMarkerOpacity,
         unselectedPointSize
@@ -204,7 +203,6 @@ function EmbeddingChart(props) {
                                color={primaryTrace.colors}
                                onGallery={onGallery}
                                onCamera={onCamera}
-                               setTooltip={setTooltip}
                                handleClick={onDimensionFilterUpdated}
 
             />}
@@ -221,7 +219,6 @@ function EmbeddingChart(props) {
                            markerOpacity={markerOpacity}
                            onSelected={onSelect}
                            onGallery={onGallery}
-                           setTooltip={setTooltip}
 
             />}
             {primaryTrace.type === 'image' && <ImageChart
@@ -239,7 +236,6 @@ function EmbeddingChart(props) {
                 unselectedMarkerOpacity={unselectedMarkerOpacity}
                 onSelected={onSelect}
                 onGallery={onGallery}
-                setTooltip={setTooltip}
                 handleClick={onDimensionFilterUpdated}
             />}
         </Box>);

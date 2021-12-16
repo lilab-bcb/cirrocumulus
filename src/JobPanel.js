@@ -2,11 +2,10 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import TextField from '@mui/material/TextField';
-import {DialogActions, Divider, InputLabel, Switch, Typography} from '@mui/material';
+import {DialogActions, Divider, InputLabel, Typography} from '@mui/material';
 import Button from '@mui/material/Button';
 import {SERVER_CAPABILITY_JOBS} from './util';
 import Tooltip from '@mui/material/Tooltip';
-import Grid from '@mui/material/Grid';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import {intFormat} from './formatters';
 import FormControl from '@mui/material/FormControl';
@@ -18,9 +17,20 @@ import React, {useEffect, useState} from 'react';
 import {datasetFilterToJson, setDialog, setTab, submitJob} from './actions';
 import {connect} from 'react-redux';
 import {getAnnotationOptions} from './ExplorePanel';
+import Select from '@mui/material/Select';
+import withStyles from '@mui/styles/withStyles';
+
+const styles = theme => ({
+    formControl: {
+        display: 'block', minWidth: 216, maxWidth: 216, marginBottom: theme.spacing(1)
+    }, select: {
+        width: 216
+    }
+});
 
 function JobPanel(props) {
     const {
+        classes,
         compareActions,
         combineDatasetFilters,
         dataset,
@@ -31,7 +41,7 @@ function JobPanel(props) {
         tab
     } = props;
 
-    const [compareGroups, setCompareGroups] = useState('selected');
+    const [comparisonsOption, setComparisonsOption] = useState('one_vs_rest');
     const [group1, setGroup1] = useState(null);
     const [group1Count, setGroup1Count] = useState(null);
 
@@ -45,7 +55,11 @@ function JobPanel(props) {
     const [compareCategories, setCompareCategories] = useState([]);
 
     const obsCatOptions = getAnnotationOptions([], dataset.obsCat);
-   
+
+    const comparisonOptions = [{label: 'All Pairs', value: 'pairs', title: 'Compare all pairs of groups'}, {
+        label: 'One vs. Rest', value: 'one_vs_rest', title: 'Compare group to all other groups'
+    }, {label: 'Selection', value: 'selection', title: 'Compare selected cells'}];
+
     useEffect(() => {
         setGroup1(null);
         setGroup1Count(null);
@@ -56,7 +70,7 @@ function JobPanel(props) {
     }, [dataset]);
 
     function onCompareGroups(event) {
-        setCompareGroups(event.target.checked ? 'selected' : 'all');
+        setComparisonsOption(event.target.value);
     }
 
     function onJobNameChange(event) {
@@ -103,13 +117,16 @@ function JobPanel(props) {
     function onSubmitJob(jobType, version) {
         setJobName('');
         const p = {
-            type: jobType,
-            params: {version: version}
+            type: jobType, params: {version: version}
         };
-        if (compareGroups === 'selected') {
+        if (comparisonsOption === 'selection') {
             p.params.filter = group1;
             p.params.filter2 = group2;
+            p.params.pairs = '1';
         } else {
+            if (comparisonsOption === 'pairs') {
+                p.params.pairs = '1';
+            }
             p.params.obs = compareCategories;
         }
         setJobParams(p);
@@ -151,101 +168,96 @@ function JobPanel(props) {
         </Dialog>
 
         {serverInfo.capabilities.has(SERVER_CAPABILITY_JOBS) &&
-        <div style={tab === 'embedding' ? null : {display: 'none'}}>
-            <Divider/>
-            <Typography gutterBottom={false} component={"h1"}
-                        style={{textTransform: 'uppercase'}}>Compare</Typography>
+            <div style={tab === 'embedding' ? null : {display: 'none'}}>
+                <Divider/>
+                <Typography gutterBottom={false} component={"h1"}
+                            style={{textTransform: 'uppercase'}}>Compare</Typography>
 
-            <Grid alignContent={"flex-start"} container alignItems="center"
-                  spacing={0}>
-                {/*<Grid item><InputLabel shrink={true}>Combine</InputLabel></Grid>*/}
-                <Tooltip
-                    title={"Compare all pairs in a category"}><Grid item><InputLabel>ALL
-                    PAIRS</InputLabel></Grid></Tooltip>
-                <Grid item>
-                    <Switch
-                        size="small"
-                        checked={compareGroups === 'selected'}
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="comparison_select">Comparisons</InputLabel>
+                    <Select
+                        label={"Comparisons"}
+                        labelId={"comparison_select"}
+                        size={"small"}
+                        className={classes.select}
                         onChange={onCompareGroups}
-                    />
-                </Grid>
-                <Tooltip
-                    title={"Choose a specific pair"}><Grid item><InputLabel>SELECTED</InputLabel></Grid></Tooltip>
-            </Grid>
-            {compareGroups === 'selected' &&
-            <ButtonGroup variant="outlined" disabled={selection == null || selection.size === 0}>
-                <Tooltip
-                    title={'Group one' + (group1Count ? ' (' + intFormat(group1Count) + ' cells)' : '')}>
-                    <Button size={"small"}
-                            onClick={event => onSetGroup(1)}>1</Button>
-                </Tooltip>
-                <Tooltip
-                    title={'Group two' + (group2Count ? ' (' + intFormat(group2Count) + ' cells)' : '')}>
-                    <Button size={"small"}
-                            onClick={event => onSetGroup(2)}>2</Button>
-                </Tooltip>
-            </ButtonGroup>}
-            {compareGroups === 'all' && <FormControl sx={{display: 'block'}}>
-                <AutocompleteVirtualized label={"Metadata Categories"}
-                                         testId={'compare-meta-input'}
-                                         options={obsCatOptions}
-                                         value={compareCategories}
-                                         getOptionLabel={(option) => option.text}
-                                         getOptionSelected={(option, value) => option.id === value}
-                                         onChange={onCompareCategories}/>
-            </FormControl>}
+                        value={comparisonsOption}
+                        multiple={false}>
+                        {comparisonOptions.map(item => (
+                            <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>))}
+                    </Select>
+                </FormControl>
 
-            <Button size={"small"} variant={"outlined"}
-                    endIcon={<ArrowDropDownIcon/>}
-                    disabled={(compareGroups === 'selected' && (group1 == null || group2 == null)) || (compareGroups === 'all' && compareCategories.length === 0)}
-                    onClick={event => setCompareMenu(event.currentTarget)}>
-                GO</Button>
-            <Menu
-                variant={"menu"}
-                id="compare-menu"
-                anchorEl={compareMenu}
-                open={Boolean(compareMenu)}
-                onClose={event => setCompareMenu(null)}
-            >
-                {compareActions.map(action => <MenuItem title={action.title}
-                                                        key={action.jobType}
-                                                        onClick={event => {
-                                                            onSubmitJob(action.jobType, action.version);
-                                                            setCompareMenu(null);
-                                                        }}>{action.title}</MenuItem>)}
 
-            </Menu>
-        </div>}
+                {comparisonsOption === 'selection' &&
+                    <ButtonGroup variant="outlined" disabled={selection == null || selection.size === 0}>
+                        <Tooltip
+                            title={'Group one' + (group1Count ? ' (' + intFormat(group1Count) + ' cells)' : '')}>
+                            <Button size={"small"}
+                                    onClick={event => onSetGroup(1)}>1</Button>
+                        </Tooltip>
+                        <Tooltip
+                            title={'Group two' + (group2Count ? ' (' + intFormat(group2Count) + ' cells)' : '')}>
+                            <Button size={"small"}
+                                    onClick={event => onSetGroup(2)}>2</Button>
+                        </Tooltip>
+                    </ButtonGroup>}
+                {comparisonsOption !== 'selection' && <FormControl sx={{display: 'block'}}>
+                    <AutocompleteVirtualized label={"Metadata Categories"}
+                                             testId={'compare-meta-input'}
+                                             options={obsCatOptions}
+                                             value={compareCategories}
+                                             getOptionLabel={(option) => option.text}
+                                             getOptionSelected={(option, value) => option.id === value}
+                                             helperText={'Select two or more categories to combine categories using "AND"'}
+                                             onChange={onCompareCategories}/>
+                </FormControl>}
+
+                <Button size={"small"} variant={"outlined"}
+                        endIcon={<ArrowDropDownIcon/>}
+                        disabled={(comparisonsOption === 'selection' && (group1 == null || group2 == null)) || (comparisonsOption !== 'selection' && compareCategories.length === 0)}
+                        onClick={event => setCompareMenu(event.currentTarget)}>
+                    GO</Button>
+                <Menu
+                    variant={"menu"}
+                    id="compare-menu"
+                    anchorEl={compareMenu}
+                    open={Boolean(compareMenu)}
+                    onClose={event => setCompareMenu(null)}
+                >
+                    {compareActions.map(action => <MenuItem title={action.title}
+                                                            key={action.jobType}
+                                                            onClick={event => {
+                                                                onSubmitJob(action.jobType, action.version);
+                                                                setCompareMenu(null);
+                                                            }}>{action.title}</MenuItem>)}
+
+                </Menu>
+            </div>}
     </>;
 }
 
 
 const mapStateToProps = state => {
-        return {
-            combineDatasetFilters: state.combineDatasetFilters,
-            dataset: state.dataset,
-            datasetFilter: state.datasetFilter,
-            selection: state.selection,
-            serverInfo: state.serverInfo,
-            tab: state.tab
-        };
-    }
-;
+    return {
+        combineDatasetFilters: state.combineDatasetFilters,
+        dataset: state.dataset,
+        datasetFilter: state.datasetFilter,
+        selection: state.selection,
+        serverInfo: state.serverInfo,
+        tab: state.tab
+    };
+};
 const mapDispatchToProps = (dispatch) => {
-        return {
-            handleDialog: (value) => {
-                dispatch(setDialog(value));
-            },
-            handleTab: (value) => {
-                dispatch(setTab(value));
-            },
-            handleSubmitJob: value => {
-                dispatch(submitJob(value));
-            }
-        };
-    }
-;
+    return {
+        handleDialog: (value) => {
+            dispatch(setDialog(value));
+        }, handleTab: (value) => {
+            dispatch(setTab(value));
+        }, handleSubmitJob: value => {
+            dispatch(submitJob(value));
+        }
+    };
+};
 
-export default (connect(
-    mapStateToProps, mapDispatchToProps
-)(JobPanel));
+export default withStyles(styles)(connect(mapStateToProps, mapDispatchToProps)(JobPanel));

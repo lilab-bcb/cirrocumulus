@@ -14,6 +14,7 @@ import {
 } from './ThreeUtil';
 import {indexSort, isPointInside} from './util';
 import {saveImage} from './ChartUtil';
+import CirroTooltip, {SCATTER_TRANSITION} from './CirroTooltip';
 
 function clamp(x, min_v, max_v) {
     return Math.min(Math.max(x, min_v), max_v);
@@ -101,6 +102,7 @@ function ScatterChartThree(props) {
     const [forceUpdate, setForceUpdate] = useState(false);
     const previousChartSizeRef = useRef();
     const previousCameraPosition = useRef({x: -1, y: -1, z: -1});
+    const [tip, setTip] = useState({html: ''});
 
     const {
         cachedData,
@@ -117,7 +119,6 @@ function ScatterChartThree(props) {
         pointSize,
         selection,
         setChartOptions,
-        setTooltip,
         trace,
         unselectedMarkerOpacity,
         unselectedPointSize
@@ -163,19 +164,16 @@ function ScatterChartThree(props) {
         return selectedIndex;
     }
 
+
     useEffect(() => {
         init();
-        if (previousChartSizeRef.current !== chartSize) {
-            scatterPlotRef.current.resize();
-        }
-        draw();
         setAxesColors(scatterPlotRef.current, chartOptions.darkMode);
         chartOptions.scatterPlot = scatterPlotRef.current;
         if (chartOptions.camera) {
             scatterPlotRef.current.updateFromCameraDef(chartOptions.camera);
             chartOptions.camera = null;
         }
-        previousChartSizeRef.current = chartSize;
+
         let singleClickTimer;
         let clickCount = 0;
 
@@ -200,13 +198,11 @@ function ScatterChartThree(props) {
                     }
                     lastHoverIndexRef.current = selectedIndex;
                 }
-
             }
-
         };
-        scatterPlotRef.current.hoverCallback = (point) => {
+        scatterPlotRef.current.hoverCallback = (point, event) => {
             if (point == null) {
-                setTooltip('');
+                setTip({html: ''});
             } else {
                 const selectedIndex = getSelectedIndex(point);
                 if (selectedIndex !== -1) {
@@ -223,14 +219,15 @@ function ScatterChartThree(props) {
                             value = value.substring(0, value.lastIndexOf('.'));
                         }
                     }
-                    setTooltip('' + value);
+                    setTip({html: '' + value, clientX: event.clientX, clientY: event.clientY});
+                    // updateTooltipText(tip, '' + value, event);
                 } else {
-                    setTooltip('');
+                    setTip({html: ''});
+                    // updateTooltipText(tip, '', event);
                 }
             }
         };
         scatterPlotRef.current.lassoCallback = (points, appendToSelection) => {
-
             const positions = trace.positions;
             const camera = scatterPlotRef.current.camera;
             const widthHalf = chartSize.width / 2;
@@ -263,7 +260,6 @@ function ScatterChartThree(props) {
             if (scatterPlotRef.current.interactionMode === 'PAN') {
                 return;
             }
-
             const positions = trace.positions;
             const camera = scatterPlotRef.current.camera;
             const widthHalf = chartSize.width / 2;
@@ -296,7 +292,6 @@ function ScatterChartThree(props) {
         scatterPlotRef.current.cameraCallback = (eventName, position, target) => {
             if (scatterPlotRef.current.interactionMode === 'PAN' && trace.dimensions === 3) {
                 // repaint gallery charts with same embedding
-
                 if (eventName === 'end' && (previousCameraPosition.current.x != position.x || previousCameraPosition.current.y != position.y || previousCameraPosition.current.z != position.z)) {
                     previousCameraPosition.current = {x: position.x, y: position.y, z: position.z};
                     cameraCallback(eventName);
@@ -304,6 +299,16 @@ function ScatterChartThree(props) {
             }
         };
     });
+
+    useEffect(() => {
+        if (previousChartSizeRef.current !== chartSize) {
+            scatterPlotRef.current.resize();
+        }
+        previousChartSizeRef.current = chartSize;
+        updateScatterChart(scatterPlotRef.current, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
+            categoricalNames, chartOptions, obsCat, cachedData);
+    }, [scatterPlotRef, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
+        categoricalNames, chartOptions, obsCat, cachedData, chartSize]);
 
     useEffect(() => {
         return () => {
@@ -428,7 +433,7 @@ function ScatterChartThree(props) {
         }
         if (obsCat.length > 0) {
             const labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCat, cachedData);
-            let font = format === 'svg' ? 'serif' : 'Roboto Condensed';
+            const font = format === 'svg' ? 'serif' : 'Roboto Condensed';
             context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
             drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, chartSize, camera);
         }
@@ -535,14 +540,6 @@ function ScatterChartThree(props) {
             return true;
         }
         return false;
-
-    }
-
-
-    function draw() {
-
-        updateScatterChart(scatterPlotRef.current, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
-            categoricalNames, chartOptions, obsCat, cachedData);
     }
 
 
@@ -571,6 +568,7 @@ function ScatterChartThree(props) {
             height: chartSize.height
         }}
              ref={containerElementRef}>
+            <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY} transition={SCATTER_TRANSITION}/>
         </div>
     </>;
 

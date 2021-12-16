@@ -8,7 +8,6 @@ import * as React from 'react';
 import {useRef} from 'react';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import {connect} from 'react-redux';
 import {
@@ -45,7 +44,6 @@ export const drawerWidth = 240;
 
 
 function App(props) {
-    const tooltipElementRef = useRef();
     const galleryRef = useRef();
     const {drawerOpen, theme, dataset, dialog, loading, loadingApp, message, setMessage, tab} = props;
 
@@ -58,11 +56,6 @@ function App(props) {
         window.scrollTo(0, galleryRef.current.offsetTop);
     }
 
-    function setTooltip(text) {
-        text = text === '' || text == null ? '&nbsp;' : text;
-        tooltipElementRef.current.innerHTML = text;
-    }
-
 
     // tabs: 1. embedding, 2. grouped table with kde per feature, dotplot
     // need to add filter, selection
@@ -72,7 +65,7 @@ function App(props) {
     return (
         <Box sx={{display: 'flex', backgroundColor: footerBackground}}>
             {(dialog === EDIT_DATASET_DIALOG || dialog === IMPORT_DATASET_DIALOG) &&
-            <EditNewDatasetDialog/>}
+                <EditNewDatasetDialog/>}
             {dialog === DELETE_DATASET_DIALOG && <DeleteDatasetDialog/>}
             {dialog === SAVE_DATASET_FILTER_DIALOG && <SaveDatasetFilterDialog/>}
             {dialog === HELP_DIALOG && <HelpDialog/>}
@@ -97,18 +90,18 @@ function App(props) {
                  sx={{flexGrow: 1, marginLeft: 1, paddingBottom: 24, color: color, backgroundColor: footerBackground}}>
                 <Toolbar/>
                 {loadingApp.loading &&
-                <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
-                                                value={loadingApp.progress}/></h2>
-                </div>}
+                    <div><h2>Loading<LinearProgress style={{width: '90%'}} variant="determinate"
+                                                    value={loadingApp.progress}/></h2>
+                    </div>}
 
                 {dataset == null && tab === 'embedding' && !loading && !loadingApp.loading &&
-                <div><LandingPage/></div>}
+                    <div><LandingPage/></div>}
                 {<>
                     {dataset != null && <div
                         role="tabpanel"
                         hidden={tab !== 'embedding'}
                     >
-                        {<EmbeddingChart onGallery={onGallery} setTooltip={setTooltip}/>}
+                        {<EmbeddingChart onGallery={onGallery}/>}
                         <DraggableDivider/>
                         <div ref={galleryRef}>
                             {<GalleryCharts/>}
@@ -118,7 +111,7 @@ function App(props) {
                         role="tabpanel"
                         hidden={tab !== 'distribution'}
                     >
-                        {<DistributionPlots setTooltip={setTooltip}/>}
+                        {<DistributionPlots/>}
                     </div>}
                     {dataset != null && <div
                         role="tabpanel"
@@ -130,19 +123,8 @@ function App(props) {
                         role="tabpanel"
                         hidden={tab !== 'results'}
                     >
-                        {<JobResultPanel setTooltip={setTooltip}/>}
+                        {<JobResultPanel/>}
                     </div>}
-                    <Typography className="cirro-condensed" color="textPrimary" ref={tooltipElementRef}
-                                style={{
-                                    position: 'fixed',
-                                    background: footerBackground,
-                                    width: '100%',
-                                    bottom: 0,
-                                    top: 'auto',
-                                    marginBottom: 0,
-                                    whiteSpace: 'nowrap',
-                                    textOverflow: 'ellipsis'
-                                }}>&nbsp;</Typography>
                 </>}
             </Box>
 

@@ -4,35 +4,30 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import React from 'react';
+import React, {useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {getNameWidth} from './DotPlotCanvas';
-import {intFormat, numberFormat2f} from './formatters';
-import {stripTrailingZeros} from './util';
 import ViolinPlotOneFeature, {drawFeature, getViolinPlotScales} from './ViolinPlotOneFeature';
 
 const yaxisWidth = 30;
 
+export default function ViolinPlot(props) {
 
-export default class ViolinPlot extends React.PureComponent {
+    const {categoryColorScales, colorScale, data, options, textColor} = props;
+    const [saveImageEl, setSaveImageEl] = useState(null);
 
-    constructor(props) {
-        super(props);
-        this.canvas = null;
-        this.state = {saveImageEl: null};
+
+    function handleSaveImageMenu(event) {
+        setSaveImageEl(event.currentTarget);
     }
 
+    function handleSaveImageMenuClose(event) {
+        setSaveImageEl(null);
+    }
 
-    handleSaveImageMenu = (event) => {
-        this.setState({saveImageEl: event.currentTarget});
-    };
-    handleSaveImageMenuClose = (event) => {
-        this.setState({saveImageEl: null});
-    };
-    handleSaveImage = (format) => {
-        this.setState({saveImageEl: null});
+    function handleSaveImage(format) {
+        setSaveImageEl(null);
         let context;
-
         let canvas;
         if (format === 'svg') {
             context = new window.C2S(10, 10);
@@ -43,7 +38,7 @@ export default class ViolinPlot extends React.PureComponent {
             context.font = CANVAS_FONT;
         }
 
-        const size = this.getSize(context);
+        const size = getSize(context);
 
         const colorScaleHeight = 15;
         const height = size.totalHeight + size.y + colorScaleHeight + 20;
@@ -60,26 +55,26 @@ export default class ViolinPlot extends React.PureComponent {
             context.font = CANVAS_FONT;
         }
         const textColor = 'black';
-        // const textColor = this.props.textColor;
+        // const textColor = props.textColor;
         context.fillStyle = textColor === 'white' ? 'black' : 'white';
         context.fillRect(0, 0, width, height);
-        this.drawContext(context, size);
+        drawContext(context, size);
 
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
             let blob = new Blob([svg], {
                 type: 'text/plain;charset=utf-8'
             });
-            window.saveAs(blob, this.props.data[0][0].dimension + '.svg');
+            window.saveAs(blob, props.data[0][0].dimension + '.svg');
         } else {
             canvas.toBlob(blob => {
-                window.saveAs(blob, this.props.data[0][0].dimension + '.png', true);
+                window.saveAs(blob, props.data[0][0].dimension + '.png', true);
             });
         }
-    };
+    }
 
-    drawContext(context, size) {
-        const {categoryColorScales, colorScale, data, options, textColor} = this.props;
+    function drawContext(context, size) {
+        const {categoryColorScales, colorScale, data, options, textColor} = props;
         const {violinHeight, violinWidth} = options;
         const features = data[0].map(item => item.feature);
         const categories = data.map(array => array[0].name);
@@ -97,18 +92,9 @@ export default class ViolinPlot extends React.PureComponent {
         context.setTransform(1, 0, 0, 1, 0, 0);
     }
 
-    onTooltip = (item) => {
-        if (item) {
-            const median = item.boxplotStats.median;
-            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + ', median: ' + stripTrailingZeros(numberFormat2f(median)) + ', % expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + ', # cells: ' + intFormat(item.n) + ', ' + item.name.join(', ');
-            this.props.setTooltip(tip);
-        } else {
-            this.props.setTooltip('');
-        }
-    };
 
-    getSize(context) {
-        const {data, options} = this.props;
+    function getSize(context) {
+        const {data, options} = props;
         const {violinHeight, violinWidth} = options;
         const categories = data.map(array => array[0].name);
         const features = data[0].map(item => item.feature);
@@ -124,57 +110,51 @@ export default class ViolinPlot extends React.PureComponent {
         };
     }
 
-    render() {
-        const {saveImageEl} = this.state;
-        const {categoryColorScales, colorScale, data, options, textColor} = this.props;
-        const features = data[0].map(item => item.feature);
-        const dimension = data[0][0].dimension;
-        const dummyCanvas = document.createElement('canvas');
-        const dummyContext = dummyCanvas.getContext('2d');
-        dummyContext.font = CANVAS_FONT;
-        const size = this.getSize(dummyContext);
 
-        return (<div style={{position: 'relative'}}>
-            <div>
-                <Typography style={{display: 'inline-block'}} component={"h4"}
-                            color="textPrimary">{dimension}{this.props.subtitle &&
-                <small>({this.props.subtitle})</small>}</Typography>
-                <Tooltip title={"Save Image"}>
-                    <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
-                                size={'small'}
-                                aria-label="Save Image" onClick={this.handleSaveImageMenu}>
-                        <PhotoCameraIcon/>
-                    </IconButton>
-                </Tooltip>
-                <Menu
-                    id="save-image-menu"
-                    anchorEl={saveImageEl}
-                    keepMounted
-                    open={Boolean(saveImageEl)}
-                    onClose={this.handleSaveImageMenuClose}
-                >
-                    <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
-                    <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
+    const features = data[0].map(item => item.feature);
+    const dimension = data[0][0].dimension;
+    const dummyCanvas = document.createElement('canvas');
+    const dummyContext = dummyCanvas.getContext('2d');
+    dummyContext.font = CANVAS_FONT;
+    const size = getSize(dummyContext);
 
-                </Menu>
+    return (<div style={{position: 'relative'}}>
+        <div>
+            <Typography style={{display: 'inline-block'}} component={"h4"}
+                        color="textPrimary">{dimension}{props.subtitle &&
+                <small>({props.subtitle})</small>}</Typography>
+            <Tooltip title={"Save Image"}>
+                <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
+                            size={'small'}
+                            aria-label="Save Image" onClick={handleSaveImageMenu}>
+                    <PhotoCameraIcon/>
+                </IconButton>
+            </Tooltip>
+            <Menu
+                id="save-image-menu"
+                anchorEl={saveImageEl}
+                keepMounted
+                open={Boolean(saveImageEl)}
+                onClose={handleSaveImageMenuClose}
+            >
+                <MenuItem onClick={e => handleSaveImage('png')}>PNG</MenuItem>
+                <MenuItem onClick={e => handleSaveImage('svg')}>SVG</MenuItem>
 
-            </div>
+            </Menu>
 
-            {features.map(feature => {
-                return <ViolinPlotOneFeature onTooltip={this.onTooltip}
-                                             key={feature}
-                                             feature={feature}
-                                             data={data}
-                                             categoryColorScales={categoryColorScales}
-                                             options={options}
-                                             size={size}
-                                             textColor={textColor}
-                                             colorScale={colorScale}/>;
-            })}
-
-        </div>);
-
-    }
+        </div>
+        {features.map(feature => {
+            return <ViolinPlotOneFeature
+                key={feature}
+                feature={feature}
+                data={data}
+                categoryColorScales={categoryColorScales}
+                options={options}
+                size={size}
+                textColor={textColor}
+                colorScale={colorScale}/>;
+        })}
+    </div>);
 }
 
 
