@@ -128,7 +128,7 @@ def dataset_schema(dataset, n_features=10):
         de_result_df = None
         group_names = rank_genes_groups['names'].dtype.names
         de_result = dict(id='cirro-{}'.format(scanpy_marker_key),
-                         type='results',
+                         type='de',
                          readonly=True,
                          groups=group_names,
                          fields=rank_genes_groups_keys,
@@ -189,7 +189,7 @@ def dataset_schema(dataset, n_features=10):
             de_result_data = dict(index=de_result_df.index)
             for c in de_res:
                 de_result_data[c] = de_result_df[c]
-        de_result = dict(id='cirro-{}'.format(pg_marker_key), type='results', name=key_name,
+        de_result = dict(id='cirro-{}'.format(pg_marker_key), type='de', name=key_name,
                          color='log2FC' if 'log2FC' in field_names else field_names[0],
                          size='mwu_qval' if 'mwu_qval' in field_names else field_names[0],
                          groups=group_names,
