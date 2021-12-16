@@ -688,15 +688,16 @@ function embeddingData(state = [], action) {
         case SET_EMBEDDING_DATA :
             return action.payload;
         case SET_SELECTION:
-            state.forEach(trace => {
+            state.forEach((trace, index) => {
                 if (trace.type === TRACE_TYPE_META_IMAGE) {
                     trace.categoryToStats = action.payload.size === 0 ? trace.fullCategoryToStats : createCategoryToStats(trace, action.payload);
                     updateTraceColors(trace);
+                    state[index] = Object.assign({}, trace);
                 }
             });
             return state.slice();
         case SET_DOMAIN:
-            state.forEach((trace) => {
+            state.forEach((trace, index) => {
                 if (trace.continuous && trace.name === action.payload.name) {
                     const summary = action.payload.summary;
                     const domain = trace.type === TRACE_TYPE_META_IMAGE ? [-3, 3] : [summary.min, summary.max];
@@ -719,26 +720,29 @@ function embeddingData(state = [], action) {
 
                     trace.colorScale.domain(domain);
                     updateTraceColors(trace);
+                    state[index] = Object.assign({}, trace);
                 }
             });
             return state.slice();
         case UPDATE_CATEGORICAL_COLOR:
-            state.forEach((trace) => {
+            state.forEach((trace, index) => {
                 if (!trace.continuous && trace.name === action.payload.name) {
                     const range = trace.colorScale.range();
                     range[trace.colorScale.domain().indexOf(action.payload.originalValue)] = action.payload.color;
                     trace.colorScale.range(range);
                     updateTraceColors(trace);
+                    state[index] = Object.assign({}, trace);
                 }
             });
             return state.slice();
         case SET_INTERPOLATOR:
             // update colors for existing continuous traces
-            state.forEach((trace) => {
+            state.forEach((trace, index) => {
                 if (trace.continuous && trace.featureType === action.payload.featureType) {
                     let domain = trace.colorScale.domain();
                     trace.colorScale = createColorScale(action.payload.value).domain(domain);
                     updateTraceColors(trace);
+                    state[index] = Object.assign({}, trace);
                 }
             });
             return state.slice();
