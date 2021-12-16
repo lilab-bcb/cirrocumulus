@@ -96,9 +96,10 @@ const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) 
 
     children.forEach((item) => {
         itemData.push(item);
-        if (item.children) {
-            itemData.push(item.children);
-        }
+        // if (item.children) {
+        //     itemData.push(item.children);
+        // }
+        itemData.push(...(item.children || []));
     });
 
     const theme = useTheme();
