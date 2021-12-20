@@ -1,9 +1,8 @@
 import {Tooltip, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
 import {find} from 'lodash';
-import React, {useEffect, useRef, useState} from 'react';
-
+import React, {useEffect, useState} from 'react';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import {connect} from 'react-redux';
 import {
@@ -72,14 +71,7 @@ function EmbeddingChart(props) {
     } = props;
 
     const [showLegend, setShowLegend] = useState(true);
-    const previousActiveFeature = useRef(null);
-    useEffect(() => {
-        if (previousActiveFeature.current == null || activeFeature == null || previousActiveFeature.current.name !== activeFeature.name) {
-            setShowLegend(true);
-        }
-    }, [activeFeature]);
-
-
+    
     useEffect(() => {
         window.addEventListener('resize', handleWindowSize);
         return () => {
@@ -132,7 +124,6 @@ function EmbeddingChart(props) {
     return (
         <Box bgcolor={"inherit"} color="inherit" style={{position: 'relative'}}>
             <Box data-testid="chart-extra" color="text.primary" sx={{
-                marginTop: 3.2,
                 position: 'absolute',
                 textAlign: 'right',
                 overflow: 'hidden',
@@ -140,15 +131,23 @@ function EmbeddingChart(props) {
                 textOverflow: 'ellipsis',
                 maxWidth: 300,
                 right: 8,
+                top: 0,
                 zIndex: 1000
             }}>
                 {displayName !== '' &&
-                <Tooltip title={"Embedding: " + primaryTrace.embedding.name}><Link
-                    onClick={handleToggleLegend}>
-                    <Typography
-                        color="textPrimary" style={{marginRight: 14}}
-                        component={"h4"}>{displayName}</Typography></Link></Tooltip>
+                    <Tooltip title={"Embedding: " + primaryTrace.embedding.name}>
+                        <div onClick={handleToggleLegend}
+                             style={{cursor: 'pointer', marginRight: 14}}>
+                            <Typography color="textPrimary" variant={"subtitle1"}
+                                        component={"div"} style={{display: 'inline-block'}}>{displayName}</Typography>
+                            <div style={{display: 'inline-block', verticalAlign: 'bottom'}}><ExpandMoreIcon
+                                fontSize={"medium"}
+                                style={{transform: showLegend ? 'rotate(180deg)' : ''}}/>
+                            </div>
+                        </div>
+                    </Tooltip>
                 }
+
                 {primaryTrace.continuous ?
                     <ColorSchemeLegendWrapper
                         handleDomain={onDomain}
@@ -187,40 +186,40 @@ function EmbeddingChart(props) {
             </Box>
 
             {primaryTrace.type === 'scatter' && primaryTrace.embedding.mode == null &&
-            <ScatterChartThree trace={primaryTrace}
+                <ScatterChartThree trace={primaryTrace}
+                                   cachedData={cachedData}
+                                   obsCat={activeEmbeddingLabels}
+                                   chartSize={primaryChartSize}
+                                   setChartOptions={onChartOptions}
+                                   chartOptions={chartOptions}
+                                   categoricalNames={categoricalNames}
+                                   selection={selection}
+                                   onSelected={onSelect}
+                                   pointSize={pointSize}
+                                   unselectedPointSize={unselectedPointSize}
+                                   markerOpacity={markerOpacity}
+                                   unselectedMarkerOpacity={unselectedMarkerOpacity}
+                                   color={primaryTrace.colors}
+                                   onGallery={onGallery}
+                                   onCamera={onCamera}
+                                   handleClick={onDimensionFilterUpdated}
+
+                />}
+
+            {primaryTrace.type === TRACE_TYPE_META_IMAGE &&
+                <MetaEmbedding trace={primaryTrace}
                                cachedData={cachedData}
-                               obsCat={activeEmbeddingLabels}
                                chartSize={primaryChartSize}
                                setChartOptions={onChartOptions}
                                chartOptions={chartOptions}
-                               categoricalNames={categoricalNames}
+                               dataset={dataset}
                                selection={selection}
-                               onSelected={onSelect}
-                               pointSize={pointSize}
-                               unselectedPointSize={unselectedPointSize}
+                               categoricalNames={categoricalNames}
                                markerOpacity={markerOpacity}
-                               unselectedMarkerOpacity={unselectedMarkerOpacity}
-                               color={primaryTrace.colors}
+                               onSelected={onSelect}
                                onGallery={onGallery}
-                               onCamera={onCamera}
-                               handleClick={onDimensionFilterUpdated}
 
-            />}
-
-            {primaryTrace.type === TRACE_TYPE_META_IMAGE &&
-            <MetaEmbedding trace={primaryTrace}
-                           cachedData={cachedData}
-                           chartSize={primaryChartSize}
-                           setChartOptions={onChartOptions}
-                           chartOptions={chartOptions}
-                           dataset={dataset}
-                           selection={selection}
-                           categoricalNames={categoricalNames}
-                           markerOpacity={markerOpacity}
-                           onSelected={onSelect}
-                           onGallery={onGallery}
-
-            />}
+                />}
             {primaryTrace.type === 'image' && <ImageChart
                 cachedData={cachedData}
                 obsCat={activeEmbeddingLabels}
