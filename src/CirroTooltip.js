@@ -7,12 +7,14 @@ export const SCATTER_TRANSITION = {
 
 
 export const DEFAULT_STYLE = {
-    font: '14px Roboto',
+
     position: 'absolute',
     display: 'block',
     borderStyle: 'solid',
     whiteSpace: 'nowrap',
     zIndex: 9999999,
+    fontSize: '14px',
+    fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
     boxShadow: 'rgba(0, 0, 0, 0.2) 1px 2px 10px',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderWidth: '1px',
