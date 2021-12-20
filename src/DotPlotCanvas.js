@@ -7,13 +7,13 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import {cumsum} from 'd3-array';
 import {scaleLinear} from 'd3-scale';
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
-import {computeDiffExp} from './DistributionGroup';
 import {intFormat, numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
 import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros} from './util';
+import CirroTooltip, {SCATTER_TRANSITION} from './CirroTooltip';
 
 export const CHIP_SIZE = 12;
 
@@ -43,92 +43,49 @@ export function getNameWidth(array2d, context) {
 }
 
 
-export default class DotPlotCanvas extends React.PureComponent {
+export default function DotPlotCanvas(props) {
+    const {data, colorScale, interpolator, categoryColorScales, sizeScale, drawCircles, subtitle, textColor} = props;
+    const dimension = data[0][0].dimension;
+    const canvasRef = useRef();
+    const [saveImageEl, setSaveImageEl] = useState(null);
+    const [tip, setTip] = useState({html: ''});
+    const sizeRef = useRef(null);
 
-    constructor(props) {
-        super(props);
-        this.divRef = React.createRef();
-        this.canvas = null;
-        this.state = {saveImageEl: null};
-    }
-
-
-    redraw() {
-
-        if (this.props.data == null) {
-            return <div/>;
-        }
+    useEffect(() => {
         let devicePixelRatio = 1;
         if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
             devicePixelRatio = window.devicePixelRatio;
         }
 
-        if (this.canvas == null) {
-            let onMouseMove = (event) => {
-                const node = event.target;
-                const maxRadius = this.props.sizeScale.range()[1];
-                const rect = node.getBoundingClientRect();
-                let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
-                // xy[0] /= devicePixelRatio;
-                // xy[1] /= devicePixelRatio;
-                const col = Math.floor((xy[0] - this.size.x) / (maxRadius * 2));
-                const row = Math.floor((xy[1]) / (maxRadius * 2));
+        const canvas = canvasRef.current;
+        let context = canvas.getContext('2d');
 
-                if (col >= 0 && col < this.props.data[0].length && row >= 0 && row < this.props.data.length) {
-                    this.props.setTooltip('');
-                    const array = this.props.data[row];
-                    const item = array[col];
-                    let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + ', % expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + ', # cells: ' + intFormat(item.n);
-                    if (item.de) {
-                        tip += ', % expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
-                        tip += ', log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
-                        tip += ', p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p));
-                        tip += ', FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr));
-                        // tip += ', Mann-Whitney U : ' + stripTrailingZeros(numberFormat2f(item.de.statistic));
-                    }
-
-                    this.props.setTooltip(tip + ', ' + item.feature + ', ' + item.name.join(', '));
-                } else {
-                    this.props.setTooltip('');
-                }
-            };
-            let onMouseOut = (event) => {
-                this.props.setTooltip('');
-            };
-            this.canvas = document.createElement('canvas');
-            this.canvas.addEventListener("mousemove", onMouseMove);
-            this.canvas.addEventListener("mouseout", onMouseOut);
-            this.divRef.current.append(this.canvas);
-        }
-
-        const height = this.size.height + this.size.y;
-        const width = this.size.width + this.size.x;
-        let canvas = this.canvas;
-        const context = canvas.getContext('2d');
+        context.font = CANVAS_FONT;
+        const size = getSize(context);
+        sizeRef.current = size;
+        const height = size.height + size.y;
+        const width = size.width + size.x;
         canvas.width = width * devicePixelRatio;
         canvas.height = height * devicePixelRatio;
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
-        context.font = CANVAS_FONT;
 
+        context = canvas.getContext('2d');
+        context.font = CANVAS_FONT;
         context
             .clearRect(0, 0, width * devicePixelRatio, height * devicePixelRatio);
         context.scale(devicePixelRatio, devicePixelRatio);
-        this.drawContext(context, this.size);
-    }
+        drawContext(context, size);
+    });
 
-    diffExp = () => {
-        computeDiffExp(this.props.data);
-    };
-    exportFile = () => {
-        const data2d = this.props.data;
-        const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
-        const ncategories = data2d.length;
+    function exportFile() {
+        const nfeatures = data.length > 0 ? data[0].length : 0;
+        const ncategories = data.length;
         let text = [];
         text.push('id');
         for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
             text.push('\t');
-            const name = data2d[categoryIndex][0].name.join('_');
+            const name = data[categoryIndex][0].name.join('_');
             text.push(name + ':mean');
             text.push('\t');
             text.push(name + ':percent_expressed');
@@ -136,7 +93,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         text.push('\n');
         for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
             for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
-                const item = data2d[categoryIndex][featureIndex];
+                const item = data[categoryIndex][featureIndex];
                 if (categoryIndex === 0) {
                     text.push(item.feature);
                 }
@@ -147,27 +104,55 @@ export default class DotPlotCanvas extends React.PureComponent {
             }
             text.push('\n');
         }
-        let blob = new Blob([text.join('')], {
+        const blob = new Blob([text.join('')], {
             type: 'text/plain;charset=utf-8'
         });
-        window.saveAs(blob, this.props.data[0][0].dimension + '.tsv');
-    };
+        window.saveAs(blob, data[0][0].dimension + '.tsv');
+    }
 
-    drawContext(context, size) {
-        const data2d = this.props.data;
-        const colorScale = this.props.colorScale;
-        const interpolator = this.props.interpolator;
-        const categoryColorScales = this.props.categoryColorScales;
-        const sizeScale = this.props.sizeScale;
-        const drawCircles = this.props.drawCircles;
-        const textColor = this.props.textColor;
+    function onMouseMove(event) {
+        const node = event.target;
+        const maxRadius = sizeScale.range()[1];
+        const rect = node.getBoundingClientRect();
+        let xy = [event.clientX - rect.left - node.clientLeft, event.clientY - rect.top - node.clientTop];
+        // xy[0] /= devicePixelRatio;
+        // xy[1] /= devicePixelRatio;
+        const col = Math.floor((xy[0] - sizeRef.current.x) / (maxRadius * 2));
+        const row = Math.floor((xy[1]) / (maxRadius * 2));
+
+        if (col >= 0 && col < data[0].length && row >= 0 && row < data.length) {
+            const array = data[row];
+            const item = array[col];
+            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br />% expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + '<br /># cells: ' + intFormat(item.n);
+            if (item.de) {
+                tip += '<br />% expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
+                tip += '<br />log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
+                tip += '<br />p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p));
+                tip += '<br />FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr));
+                // tip += ', Mann-Whitney U : ' + stripTrailingZeros(numberFormat2f(item.results.statistic));
+            }
+
+            setTip({
+                html: tip, clientX: event.clientX, clientY: event.clientY
+            });
+        } else {
+            setTip({html: ''});
+        }
+    }
+
+    function onMouseOut(event) {
+        setTip({html: ''});
+    }
+
+
+    function drawContext(context, size) {
         const maxRadius = sizeScale.range()[1];
         const diameter = maxRadius * 2;
         // context.strokeStyle = gridColor;
         // context.lineWidth = gridThickness;
         const valueScale = interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE || interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY ? scaleLinear().range([0, 1]) : null;
-        const nfeatures = data2d.length > 0 ? data2d[0].length : 0;
-        const ncategories = data2d.length;
+        const nfeatures = data.length > 0 ? data[0].length : 0;
+        const ncategories = data.length;
         let domains = null;
         if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
             domains = [];
@@ -175,7 +160,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                 let min = Number.MAX_VALUE;
                 let max = -Number.MAX_VALUE;
                 for (let categoryIndex = 0; categoryIndex < ncategories; categoryIndex++) {
-                    const array = data2d[categoryIndex];
+                    const array = data[categoryIndex];
                     const mean = array[featureIndex].mean;
                     min = Math.min(min, mean);
                     max = Math.max(max, mean);
@@ -188,7 +173,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                 let min = Number.MAX_VALUE;
                 let max = -Number.MAX_VALUE;
                 for (let featureIndex = 0; featureIndex < nfeatures; featureIndex++) {
-                    const array = data2d[categoryIndex];
+                    const array = data[categoryIndex];
                     const mean = array[featureIndex].mean;
                     min = Math.min(min, mean);
                     max = Math.max(max, mean);
@@ -204,7 +189,7 @@ export default class DotPlotCanvas extends React.PureComponent {
                 if (interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
                     valueScale.domain(domains[categoryIndex]);
                 }
-                const item = data2d[categoryIndex][featureIndex];
+                const item = data[categoryIndex][featureIndex];
                 let mean = item.mean;
                 const ypix = categoryIndex * diameter + (drawCircles ? maxRadius : 0);
                 if (valueScale) {
@@ -230,7 +215,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         context.textAlign = 'left';
         context.textBaseline = 'middle';
 
-        data2d.forEach((array, i) => { // categories
+        data.forEach((array, i) => { // categories
             let name = array[0].name;
             const pix = i * diameter + maxRadius;
             for (let j = 0; j < name.length; j++) {
@@ -248,7 +233,7 @@ export default class DotPlotCanvas extends React.PureComponent {
         context.textAlign = 'right';
         context.textBaseline = 'top';
 
-        data2d[0].forEach((item, i) => { // features
+        data[0].forEach((item, i) => { // features
             const text = item.feature;
             const pix = i * diameter;
             context.save();
@@ -261,52 +246,34 @@ export default class DotPlotCanvas extends React.PureComponent {
     }
 
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        this.redraw();
-    }
-
-    componentDidMount() {
-        this.redraw();
-    }
-
-    getSize(context) {
+    function getSize(context) {
         let maxFeatureWidth = 0;
-        const array2d = this.props.data;
-        array2d[0].forEach(item => {
+        data[0].forEach(item => {
             maxFeatureWidth = Math.max(maxFeatureWidth, context.measureText(item.feature).width);
         });
         maxFeatureWidth += 4;
 
-        const nameWidth = getNameWidth(array2d, context);
-        const maxRadius = this.props.sizeScale.range()[1];
+        const nameWidth = getNameWidth(data, context);
+        const maxRadius = sizeScale.range()[1];
         const diameter = maxRadius * 2;
-        const height = array2d.length * diameter + 4;
-        const width = array2d[0].length * diameter + 4;
+        const height = data.length * diameter + 4;
+        const width = data[0].length * diameter + 4;
         return {
-            endCoordinates: nameWidth.endCoordinates,
-            x: nameWidth.sum,
-            y: maxFeatureWidth,
-            width: width,
-            height: height
+            endCoordinates: nameWidth.endCoordinates, x: nameWidth.sum, y: maxFeatureWidth, width: width, height: height
         };
     }
 
-    update() {
-        const canvas = this.canvas == null ? document.createElement('canvas') : this.canvas;
-        const context = canvas.getContext('2d');
-        context.font = CANVAS_FONT;
-        this.size = this.getSize(context);
+
+    function handleSaveImageMenu(event) {
+        setSaveImageEl(event.currentTarget);
     }
 
-    handleSaveImageMenu = (event) => {
-        this.setState({saveImageEl: event.currentTarget});
-    };
-    handleSaveImageMenuClose = (event) => {
-        this.setState({saveImageEl: null});
+    function handleSaveImageMenuClose(event) {
+        setSaveImageEl(null);
     };
 
-    handleSaveImage = (format) => {
-        this.setState({saveImageEl: null});
+    function handleSaveImage(format) {
+        setSaveImageEl(null);
         let context;
 
         let canvas;
@@ -319,7 +286,7 @@ export default class DotPlotCanvas extends React.PureComponent {
             context.font = CANVAS_FONT;
         }
 
-        const size = this.getSize(context);
+        const size = getSize(context);
         const colorScaleHeight = 15 + 20;
         const sizeScaleHeight = 40;
         const height = size.height + size.y + colorScaleHeight + sizeScaleHeight + 10;
@@ -336,21 +303,21 @@ export default class DotPlotCanvas extends React.PureComponent {
             context.scale(scale, scale);
             context.font = CANVAS_FONT;
         }
-        const textColor = this.props.textColor;
+
         context.fillStyle = textColor === 'white' ? 'black' : 'white';
         context.fillRect(0, 0, width, height);
-        this.drawContext(context, size);
+        drawContext(context, size);
 
         // if (format !== 'svg') {
         //     context.scale(window.devicePixelRatio, window.devicePixelRatio);
         // }
 
         context.translate(4, scale * (size.height + size.y + 4));
-        drawColorScheme(context, this.props.colorScale, textColor);
+        drawColorScheme(context, colorScale, textColor);
         context.translate(-10, (colorScaleHeight + 4));
 
-        if (this.props.drawCircles) {
-            drawSizeLegend(context, this.props.sizeScale, 3, 150, 20, textColor);
+        if (drawCircles) {
+            drawSizeLegend(context, sizeScale, 3, 150, 20, textColor);
         }
         if (format === 'svg') {
             let svg = context.getSerializedSvg();
@@ -362,59 +329,48 @@ export default class DotPlotCanvas extends React.PureComponent {
             let blob = new Blob([svg], {
                 type: 'text/plain;charset=utf-8'
             });
-            window.saveAs(blob, this.props.data[0][0].dimension + '.svg');
+            window.saveAs(blob, data[0][0].dimension + '.svg');
         } else {
             canvas.toBlob(blob => {
-                window.saveAs(blob, this.props.data[0][0].dimension + '.png', true);
+                window.saveAs(blob, data[0][0].dimension + '.png', true);
             });
         }
     };
 
-    render() {
-        this.update();
-        const {saveImageEl} = this.state;
-        const array2d = this.props.data;
-        const dimension = array2d[0][0].dimension;
+    return (<div style={{position: 'relative'}}>
+        <div>
+            <Typography style={{display: 'inline-block'}} component={"h4"}
+                        color="textPrimary">{dimension}{subtitle && <small>({subtitle})</small>}</Typography>
+            <Tooltip title={"Save Image"}>
+                <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
+                            size={'small'}
+                            aria-label="Save Image" onClick={handleSaveImageMenu}>
+                    <PhotoCameraIcon/>
+                </IconButton>
+            </Tooltip>
+            <Menu
+                id="save-image-menu"
+                anchorEl={saveImageEl}
+                keepMounted
+                open={Boolean(saveImageEl)}
+                onClose={handleSaveImageMenuClose}
+            >
+                <MenuItem onClick={e => handleSaveImage('png')}>PNG</MenuItem>
+                <MenuItem onClick={e => handleSaveImage('svg')}>SVG</MenuItem>
+            </Menu>
+            <Tooltip title={"Export"}>
+                <IconButton edge={false} size={'small'} aria-label="Export" onClick={exportFile}>
+                    <CloudDownloadIcon/>
+                </IconButton>
+            </Tooltip>
+        </div>
+        <div>
+            <canvas ref={canvasRef} onMouseMove={onMouseMove} onMouseOut={onMouseOut}/>
+            <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY} transition={SCATTER_TRANSITION}/>
+        </div>
+    </div>);
 
-        return (<div style={{position: 'relative'}}>
-            <div>
-                <Typography style={{display: 'inline-block'}} component={"h4"}
-                            color="textPrimary">{dimension}{this.props.subtitle &&
-                <small>({this.props.subtitle})</small>}</Typography>
-                <Tooltip title={"Save Image"}>
-                    <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
-                                size={'small'}
-                                aria-label="Save Image" onClick={this.handleSaveImageMenu}>
-                        <PhotoCameraIcon/>
-                    </IconButton>
-                </Tooltip>
-                <Menu
-                    id="save-image-menu"
-                    anchorEl={saveImageEl}
-                    keepMounted
-                    open={Boolean(saveImageEl)}
-                    onClose={this.handleSaveImageMenuClose}
-                >
-                    <MenuItem onClick={e => this.handleSaveImage('png')}>PNG</MenuItem>
-                    <MenuItem onClick={e => this.handleSaveImage('svg')}>SVG</MenuItem>
-                </Menu>
 
-
-                {/*<Tooltip title={"Differential Expression"}>*/}
-                {/*    <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.diffExp}>*/}
-                {/*        <CompareIcon/>*/}
-                {/*    </IconButton>*/}
-                {/*</Tooltip>*/}
-                <Tooltip title={"Export"}>
-                    <IconButton edge={false} size={'small'} aria-label="Export" onClick={this.exportFile}>
-                        <CloudDownloadIcon/>
-                    </IconButton>
-                </Tooltip>
-            </div>
-            <div ref={this.divRef}></div>
-        </div>);
-
-    }
 }
 
 

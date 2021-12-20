@@ -7,7 +7,7 @@ import SizeLegend from './SizeLegend';
 
 
 export function EditableSizeLegend(props) {
-    const {onOptions, sizeScale, reversed, showReversed, textColor} = props;
+    const {onOptions, sizeScale, reversed, onReversedChange, showReversed, textColor} = props;
 
     const [minSize, setMinSize] = useState('');
     const [maxSize, setMaxSize] = useState('');
@@ -24,7 +24,7 @@ export function EditableSizeLegend(props) {
         onOptions({maxSize: value});
     }
 
-    function onReversedChange(event) {
+    function handleReversedChange(event) {
         onReversedChange(event.target.checked);
     }
 
@@ -35,7 +35,7 @@ export function EditableSizeLegend(props) {
             updateMinSizeDebounced.cancel();
             updateMaxSizeDebounced.cancel();
         };
-    }, []);
+    }, [updateMinSizeDebounced, updateMaxSizeDebounced]);
 
     function onMinSizeChange(event) {
         setMinSize(event.target.value);
@@ -58,7 +58,7 @@ export function EditableSizeLegend(props) {
             control={
                 <Switch
                     checked={reversed}
-                    onChange={onReversedChange}
+                    onChange={handleReversedChange}
                 />
             }
             label="Reverse Sizes"

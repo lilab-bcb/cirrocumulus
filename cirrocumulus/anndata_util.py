@@ -7,6 +7,13 @@ DATA_TYPE_UNS_KEY = 'data_type'
 ADATA_MODULE_UNS_KEY = 'anndata_module'
 
 
+def get_base(adata):
+    base = None
+    if 'log1p' in adata.uns and adata.uns['log1p']['base'] is not None:
+        base = adata.uns['log1p'][base]
+    return base
+
+
 def adata_to_df(adata):
     df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
     for key in adata.layers.keys():

@@ -247,7 +247,9 @@ class LocalDbAPI(AbstractDB):
         return job_id
 
     def get_job(self, email, job_id, return_type):
-        job = self.job_id_to_job[job_id]
+        job = self.job_id_to_job.get(job_id)
+        if job is None:
+            return None
         if return_type == 'result':
             return job['result'] if 'result' in job else job
         elif return_type == 'status':

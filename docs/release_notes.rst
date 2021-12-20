@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.25 `December 20, 2021`
+    * Added option to compute differential expression results for all groups vs. rest
+    * Updated tooltip display
+
 - 1.1.24.post4 `December 2, 2021`
     * Removed --email flag from `cirro serve`
     * Fixed error storing large precomputed results

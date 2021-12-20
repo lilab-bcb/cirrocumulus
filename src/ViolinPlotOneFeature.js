@@ -1,9 +1,12 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {scaleLinear} from 'd3-scale';
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT} from './ChartUtil';
 import {CHIP_SIZE} from './DotPlotCanvas';
+import {stripTrailingZeros} from './util';
+import {intFormat, numberFormat2f} from './formatters';
+import CirroTooltip from './CirroTooltip';
 
 
 function drawAxis(context, xscale, textColor, size) {
@@ -70,9 +73,12 @@ function FeatureCategory(props) {
         size,
         textColor,
         xscale,
-        yscale,
+        yscale
     } = props;
     const canvasRef = useRef(null);
+    const [tip, setTip] = useState({html: ''});
+
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
@@ -84,16 +90,30 @@ function FeatureCategory(props) {
         drawCategory(context, size, names, feature, featureIndex, data, categoryIndex, xscale, yscale, categoryColorScales, textColor, options, true);
     });
 
-    return (
+
+    return <div style={{position: 'relative', display: 'inline-block'}}>
         <canvas
             ref={canvasRef}
-            onMouseOut={event => props.onTooltip(null)}
-            onMouseMove={event => props.onTooltip(data[categoryIndex][featureIndex])}
+            onMouseOut={event => setTip({html: ''})}
+            onMouseMove={event => {
+                const item = data[categoryIndex][featureIndex];
+                if (item) {
+                    const text = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br /> median: ' +
+                        stripTrailingZeros(numberFormat2f(item.boxplotStats.median)) + '<br /> % expressed: ' +
+                        stripTrailingZeros(numberFormat2f(item.percentExpressed)) + '<br /> # cells: ' + intFormat(item.n);
+                    setTip({html: text, clientX: event.clientX, clientY: event.clientY});
+                } else {
+                    setTip({html: ''});
+                }
+            }}
             width={options.violinWidth * window.devicePixelRatio}
             height={(size.y + options.violinHeight) * window.devicePixelRatio}
             style={{width: options.violinWidth, height: size.y + options.violinHeight}}
         />
-    );
+        <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY} style={{width: 150}}
+                      boundsCheck={false}/>
+    </div>;
+
 }
 
 function drawCategory(context, size, names, feature, featureIndex, data, categoryIndex, xscale, yscale, categoryColorScales, textColor, options, drawCategories) {
@@ -240,7 +260,7 @@ export default function ViolinPlotOneFeature(props) {
              style={{display: 'inline-block', margin: 2}}>
             <Typography color="textPrimary" component={"h4"}
                         style={{
-                            marginTop: '3.2px',
+                            marginTop: '3.2px'
                         }}>{feature}</Typography>
             <Axis xscale={xscale} textColor={textColor} violinHeight={options.violinHeight} size={size}/>
             {categories.map((category, categoryIndex) => <FeatureCategory options={options}

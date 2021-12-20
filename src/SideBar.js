@@ -68,12 +68,12 @@ const styles = theme => ({
     title: {textTransform: 'uppercase'},
     formControl: {
         display: 'block',
-        minWidth: 200,
-        maxWidth: 200,
+        minWidth: 216,
+        maxWidth: 216,
         marginBottom: theme.spacing(1)
     },
     select: {
-        minWidth: 200
+        minWidth: 216
     }
 });
 
@@ -343,33 +343,31 @@ class SideBar extends React.PureComponent {
                 >
                     <div style={{width: 500}}>
                         {selectedView.last_updated &&
-                        <Typography>Last Updated: {new Date(selectedView.last_updated).toDateString()}</Typography>}
+                            <Typography>Last Updated: {new Date(selectedView.last_updated).toDateString()}</Typography>}
                         {selectedView.notes &&
-                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                       children={selectedView.notes}/>}
+                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                           children={selectedView.notes}/>}
                     </div>
                 </Popover>}
                 <div style={tab === 'embedding' ? null : {display: 'none'}}>
                     <Divider/>
-                    <Typography gutterBottom={false} component={"h1"} className={classes.title}>View</Typography>
-                    <InputLabel style={{marginTop: 8}} shrink={true}>Marker
-                        Opacity</InputLabel>
+                    <Typography gutterBottom={true} component={"h1"} className={classes.title}>View</Typography>
+                    <InputLabel shrink={true}>Opacity</InputLabel>
                     <Slider
                         min={0.0}
                         max={1}
                         step={0.01}
-                        sx={{width: 190, marginLeft: 0.5}}
+                        sx={{width: 190, marginLeft: 1}}
                         valueLabelDisplay="auto"
                         value={opacity}
                         onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
 
-                    <InputLabel style={{marginTop: 8}} shrink={true}>Filtered Marker
-                        Opacity</InputLabel>
+                    <InputLabel shrink={true}>Filtered Marker Opacity</InputLabel>
                     <Slider
                         min={0.0}
                         max={1}
                         step={0.01}
-                        sx={{width: 190, marginLeft: 0.5}}
+                        sx={{width: 190, marginLeft: 1}}
                         valueLabelDisplay="auto"
                         value={unselectedOpacity}
                         onChange={this.onUnselectedMarkerOpacityChange}
@@ -381,15 +379,13 @@ class SideBar extends React.PureComponent {
                         <Select
                             label={"Marker Size"}
                             labelId={"point_size"}
-                            size={"small"}
                             className={classes.select}
+                            size={"small"}
                             onChange={this.onPointSizeChange}
                             value={pointSize}
                             multiple={false}>
                             {pointSizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>
-                                    <ListItemText primary={item.label}/>
-                                </MenuItem>
+                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -405,9 +401,7 @@ class SideBar extends React.PureComponent {
                             value={unselectedPointSize}
                             multiple={false}>
                             {pointSizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>
-                                    <ListItemText primary={item.label}/>
-                                </MenuItem>
+                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -423,9 +417,7 @@ class SideBar extends React.PureComponent {
                             value={chartSize}
                             multiple={false}>
                             {gallerySizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>
-                                    <ListItemText primary={item.label}/>
-                                </MenuItem>
+                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
                             ))}
                         </Select>
                     </FormControl>
@@ -477,57 +469,57 @@ class SideBar extends React.PureComponent {
                 </div>
 
                 {serverInfo.capabilities.has(SERVER_CAPABILITY_LINKS) &&
-                <div
-                    style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-                    <Divider/>
-                    <Typography gutterBottom={false} component={"h1"}
-                                className={classes.title}>Links</Typography>
-                    <Divider/>
-                    <FormControl className={classes.formControl}>
-                        <Tooltip title={"Save Current Visualization State"}><Link
-                            style={{
-                                float: 'right',
-                                fontSize: '0.75rem'
-                            }}
-                            onClick={this.onViewSaved}>Save</Link></Tooltip></FormControl>
+                    <div
+                        style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                        <Divider/>
+                        <Typography gutterBottom={false} component={"h1"}
+                                    className={classes.title}>Links</Typography>
+                        <Divider/>
+                        <FormControl className={classes.formControl}>
+                            <Tooltip title={"Save Current Visualization State"}><Link
+                                style={{
+                                    float: 'right',
+                                    fontSize: '0.75rem'
+                                }}
+                                onClick={this.onViewSaved}>Save</Link></Tooltip></FormControl>
 
-                    {datasetViews.length === 0 &&
-                    <Box color="text.secondary">No saved links</Box>}
-                    {datasetViews.length > 0 &&
-                    <List dense={true} style={{marginTop: 10}}>
-                        {datasetViews.map(item => (
-                            <ListItem key={item.id} data-key={item.id} button
-                                      onClick={e => this.openView(item.id)}>
-                                <ListItemText primary={item.name}/>
-                                <ListItemSecondaryAction>
-                                    {(item.notes || item.last_updated) && <IconButton
-                                        edge="end"
-                                        aria-label="info"
-                                        onClick={e => this.viewDetails(e, item.id)}
-                                        size="small">
-                                        <InfoIcon/>
-                                    </IconButton>}
-                                    <IconButton
-                                        edge="end"
-                                        aria-label="copy"
-                                        onClick={e => this.copyView(item.id)}
-                                        size="small">
-                                        <LinkIcon/>
-                                    </IconButton>
-                                    <IconButton
-                                        edge="end"
-                                        aria-label="delete"
-                                        onClick={e => this.deleteView(item.id)}
-                                        size="small">
-                                        <DeleteIcon/>
-                                    </IconButton>
-                                </ListItemSecondaryAction>
-                            </ListItem>
-                        ))}
-                    </List>
-                    }
+                        {datasetViews.length === 0 &&
+                            <Box color="text.secondary">No saved links</Box>}
+                        {datasetViews.length > 0 &&
+                            <List dense={true} style={{marginTop: 10}}>
+                                {datasetViews.map(item => (
+                                    <ListItem key={item.id} data-key={item.id} button
+                                              onClick={e => this.openView(item.id)}>
+                                        <ListItemText primary={item.name}/>
+                                        <ListItemSecondaryAction>
+                                            {(item.notes || item.last_updated) && <IconButton
+                                                edge="end"
+                                                aria-label="info"
+                                                onClick={e => this.viewDetails(e, item.id)}
+                                                size="small">
+                                                <InfoIcon/>
+                                            </IconButton>}
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="copy"
+                                                onClick={e => this.copyView(item.id)}
+                                                size="small">
+                                                <LinkIcon/>
+                                            </IconButton>
+                                            <IconButton
+                                                edge="end"
+                                                aria-label="delete"
+                                                onClick={e => this.deleteView(item.id)}
+                                                size="small">
+                                                <DeleteIcon/>
+                                            </IconButton>
+                                        </ListItemSecondaryAction>
+                                    </ListItem>
+                                ))}
+                            </List>
+                        }
 
-                </div>}
+                    </div>}
 
                 <div style={tab === 'results' ? null : {display: 'none'}}>
                     <JobResultOptions/>

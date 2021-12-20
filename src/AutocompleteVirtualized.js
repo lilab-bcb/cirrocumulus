@@ -41,9 +41,7 @@ function renderRow(props) {
         if (dataSet.group === '') {
             return null;
         }
-
         inlineStyle.whiteSpace = 'nowrap';
-
         const textMatch = dataSet.inputValue != null ? getTextMatch(dataSet.group, dataSet.inputValue) : null;
         if (textMatch) {
             return <Typography component="li" {...dataSet[0]} style={inlineStyle}>
@@ -94,10 +92,13 @@ function useResetCache(data) {
 // Adapter for react-window
 const ListboxComponent = React.forwardRef(function ListboxComponent(props, ref) {
     const {children, ...other} = props;
-    const itemData = [];
+    let itemData = [];
+
     children.forEach((item) => {
         itemData.push(item);
-        itemData.push(...(item.children || []));
+        if (item.children) {
+            itemData = itemData.concat(item.children);
+        }
     });
 
     const theme = useTheme();

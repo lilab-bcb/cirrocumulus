@@ -12,6 +12,7 @@ import {numberFormat2f} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
 import {getCategoryLabelsPositions, getLabels} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
+import {DEFAULT_STYLE, SCATTER_TRANSITION, setTooltipPosition} from './CirroTooltip';
 
 
 export function getSpotRadius(trace, pointSize) {
@@ -105,7 +106,8 @@ function drawSpots(context, zoom, trace, selection, markerOpacity, unselectedMar
     if (context.setLineDash) {
         context.setLineDash([]);
     }
-};
+}
+
 const styles = theme => ({
 
     root: {
@@ -133,12 +135,13 @@ class ImageChart extends React.PureComponent {
         this.id = uniqueId('cirro-image');
         this.editSelection = false;
         this.state = {loading: false};
+        this.tooltipElement = null;
     }
 
     findPointsInPolygon(points) {
         let data = this.props.trace;
         // let spotRadius = data[0].embedding.spotDiameter / 2;
-        let indices = [];
+        const indices = [];
         for (let i = 0; i < data.x.length; i++) {
             if (isPointInside({x: data.x[i], y: data.y[i]}, points)) {
                 indices.push(i);
@@ -148,9 +151,9 @@ class ImageChart extends React.PureComponent {
     }
 
     findPointsInRectangle(rect) {
-        let data = this.props.trace;
+        const data = this.props.trace;
         const spotRadius = getSpotRadius(data, this.props.pointSize);
-        let indices = [];
+        const indices = [];
         const x = parseFloat(rect.getAttribute('x'));
         const y = parseFloat(rect.getAttribute('y'));
         const x2 = x + parseFloat(rect.getAttribute('width'));
@@ -167,8 +170,9 @@ class ImageChart extends React.PureComponent {
 
 
     findPointIndex(xpix, ypix) {
-        let data = this.props.trace;
+        const data = this.props.trace;
         const spotRadius = getSpotRadius(data, this.props.pointSize);
+        // x is spot center
         for (let i = 0; i < data.x.length; i++) {
             if (Math.abs(data.x[i] - xpix) <= spotRadius && Math.abs(data.y[i] - ypix) <= spotRadius) {
                 return i;
@@ -177,16 +181,18 @@ class ImageChart extends React.PureComponent {
         return -1;
     }
 
-    setTooltip(xpix, ypix) {
-        let trace = this.props.trace;
-        const point = this.findPointIndex(xpix, ypix);
-        if (point != -1) {
+    setTooltip(point, webPoint) {
+        if (point == null) {
+            this.tooltipElement.innerHTML = '';
+            setTooltipPosition(this.tooltipElement, -1, -1, SCATTER_TRANSITION);
+        } else {
+            const trace = this.props.trace;
             let value = trace.values[point];
-            let categoryObject = this.props.categoricalNames[trace.name];
+            const categoryObject = this.props.categoricalNames[trace.name];
             if (categoryObject) {
                 let renamedValue = categoryObject[value];
-                if (renamedValue != null) {
-                    value = renamedValue;
+                if (renamedValue != null && renamedValue.newValue != null) {
+                    value = renamedValue.newValue;
                 }
             }
             if (typeof value === 'number') {
@@ -195,9 +201,19 @@ class ImageChart extends React.PureComponent {
                     value = value.substring(0, value.lastIndexOf('.'));
                 }
             }
-            this.props.setTooltip('' + value);
-        } else {
-            this.props.setTooltip('');
+            const parentRect = this.tooltipElement.parentElement.getBoundingClientRect();
+            this.tooltipElement.innerHTML = '' + value;
+            const tooltipRect = this.tooltipElement.getBoundingClientRect();
+            let left = webPoint.x + 8;
+            if ((left + tooltipRect.width + 4) >= parentRect.width) {
+                left = webPoint.x - 8 - tooltipRect.width;
+            }
+            let top = webPoint.y + 8;
+            if ((top + tooltipRect.height + 4) >= parentRect.height) {
+                top = webPoint.y - 8 - tooltipRect.height;
+            }
+
+            setTooltipPosition(this.tooltipElement, left + 'px', top + 'px', SCATTER_TRANSITION);
         }
     }
 
@@ -214,11 +230,11 @@ class ImageChart extends React.PureComponent {
     }
 
     _drawOverlay(opts) {
-        let context = opts.context;
-        let trace = this.props.trace;
+        const context = opts.context;
+        const trace = this.props.trace;
         const selection = this.props.selection;
-        let markerOpacity = this.props.markerOpacity;
-        let unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
+        const markerOpacity = this.props.markerOpacity;
+        const unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
         const spotRadius = getSpotRadius(trace, this.props.pointSize);
         drawSpots(context, opts.zoom, trace, selection, markerOpacity, unselectedMarkerOpacity, spotRadius);
         drawLabels(context, opts.zoom, trace, this.props.chartOptions, this.props.categoricalNames, this.props.obsCat, this.props.cachedData);
@@ -252,58 +268,70 @@ class ImageChart extends React.PureComponent {
             // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
             tileSources: this.props.trace.tileSource
         });
-        let viewer = this.viewer;
-
-        let _this = this;
+        const viewer = this.viewer;
+        const _this = this;
         this.canvasOverlay = new CanvasOverlayHd(this.viewer, {
             onRedraw: function (opts) {
                 _this._drawOverlay(opts);
             }
         });
-        // let tooltip = document.createElement("div");
-        // tooltip.style.background = 'rgba(0,0,0,0.5)';
-        // tooltip.style.color = 'white';
-        // tooltip.style.position = 'absolute';
-        // this.viewer.canvas.appendChild(tooltip);
+        const tooltipElement = document.createElement("div");
+        for (const key in DEFAULT_STYLE) {
+            tooltipElement.style[key] = DEFAULT_STYLE[key];
+        }
+        this.viewer.canvas.appendChild(tooltipElement);
+        this.tooltipElement = tooltipElement;
 
         let lassoPathArray = [];
         let startCoordinates = [0, 0];
         let lastBoundingBox = {x: 0, y: 0, width: 0, height: 0};
-
-        this.viewer.innerTracker.moveHandler = function (event) {
-            if (viewer.world == null) {
-                _this.props.setTooltip('');
-            } else if (_this.props.chartOptions.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
-                let webPoint = event.position;
-                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
-                _this.setTooltip(imagePoint.x, imagePoint.y);
-                // if (title !== '') {
-                //     tooltip.innerHTML = title;
-                //     tooltip.style.left = (webPoint.x + 8) + 'px';
-                //     tooltip.style.top = (webPoint.y + 8) + 'px';
-                //     tooltip.style.display = '';
-                // } else {
-                //     tooltip.style.display = 'none';
-                // }
-            } else {
-                _this.props.setTooltip('');
+        const tracker = new OpenSeadragon.MouseTracker({
+            element: this.viewer.container,
+            moveHandler: function (event) {
+                if (viewer.world == null) {
+                    _this.setTooltip();
+                } else if (_this.props.chartOptions.dragmode === 'pan' && viewer.world.getItemCount() > 0) {
+                    const webPoint = event.position;
+                    const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                    const imagePoint = viewer.viewport.viewportToImageCoordinates(viewportPoint);
+                    const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
+                    if (point !== -1) {
+                        _this.setTooltip(point, webPoint);
+                    } else {
+                        _this.setTooltip();
+                    }
+                } else {
+                    _this.setTooltip();
+                }
             }
-        };
-        //
-        // this.viewer.innerTracker.scrollHandler = function (event) {
-        //     if (lassoState > -1) {
-        //         event.preventDefaultAction = true;
-        //     }
-        // };
+        });
+        tracker.setTracking(true);
+
+        this.viewer.addHandler('canvas-double-click', function (event) {
+            if (_this.props.chartOptions.dragmode === 'pan') {
+                const webPoint = event.position;
+                const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                const imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+                const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
+                if (point !== -1) {
+                    event.preventDefaultAction = true;
+                    _this.props.handleClick({
+                        name: _this.props.trace.name,
+                        value: _this.props.trace.values[point],
+                        shiftKey: false,
+                        metaKey: false
+                    });
+                }
+            }
+        });
 
 
         this.viewer.addHandler('canvas-drag', function (event) {
             if ((_this.props.chartOptions.dragmode === 'lasso' || _this.props.chartOptions.dragmode === 'select') && viewer.world.getItemCount() > 0) {
                 event.preventDefaultAction = true;
-                let webPoint = event.position;
-                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+                const webPoint = event.position;
+                const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                const imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
                 lassoPathArray.push({x: imagePoint.x, y: imagePoint.y});
                 if (_this.props.chartOptions.dragmode === 'lasso') {
                     lassoPathArray = simplify(lassoPathArray);
@@ -331,9 +359,9 @@ class ImageChart extends React.PureComponent {
             if (_this.props.chartOptions.dragmode === 'lasso' || _this.props.chartOptions.dragmode === 'select') {
                 event.preventDefaultAction = true;
                 _this.editSelection = event.metaKey || event.ctrlKey;
-                let webPoint = event.position;
-                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
+                const webPoint = event.position;
+                const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
+                const imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
 
                 if (_this.props.chartOptions.dragmode === 'lasso') {
                     lassoPathArray = [];
@@ -379,32 +407,13 @@ class ImageChart extends React.PureComponent {
             }
         });
 
-        this.viewer.innerTracker.dblClickHandler = function (event) {
-            if (_this.props.chartOptions.dragmode === 'pan') {
-                let webPoint = event.position;
-                let viewportPoint = viewer.viewport.pointFromPixel(webPoint);
-                let imagePoint = viewer.world.getItemAt(0).viewportToImageCoordinates(viewportPoint, true);
-                const point = _this.findPointIndex(imagePoint.x, imagePoint.y);
-                if (point !== -1) {
-                    event.preventDefaultAction = true;
-                    _this.props.handleClick({
-                        name: _this.props.trace.name,
-                        value: _this.props.trace.values[point],
-                        shiftKey: false,
-                        metaKey: false
-                    });
-                }
-            }
-        };
-
-
         viewer.addHandler('canvas-exit', function (event) {
-            _this.props.setTooltip('');
+            _this.setTooltip();
         });
 
-        let svgOverlay = new OpenseadragonSvgOverlay(viewer);
-        let lassoPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        let rectElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const svgOverlay = new OpenseadragonSvgOverlay(viewer);
+        const lassoPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const rectElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         [lassoPath, rectElement].forEach(elem => {
             elem.setAttribute('stroke', 'black');
             elem.setAttribute('stroke-width', '3px');
@@ -433,7 +442,7 @@ class ImageChart extends React.PureComponent {
 
     componentDidMount() {
         if (this.viewer == null) {
-            this.createViewer(this.props.trace.url);
+            this.createViewer();
         }
     }
 
@@ -443,11 +452,6 @@ class ImageChart extends React.PureComponent {
         const img = this.viewer.source.levels[this.viewer.source.levels.length - 1].context2D.canvas;
         saveImage(trace, {width: img.width, height: img.height}, bind(this.drawContext, this), format);
     };
-
-    // onEditSelection = () => {
-    //     this.props.chartOptions.editSelection = !this.props.chartOptions.editSelection;
-    //     this.props.setChartOptions(this.props.chartOptions);
-    // };
 
 
     onZoomIn = () => {

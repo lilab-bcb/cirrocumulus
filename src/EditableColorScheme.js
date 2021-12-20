@@ -36,24 +36,24 @@ export function EditableColorScheme(props) {
         onInterpolator(Object.assign({}, interpolator, {reversed: event.target.checked}));
     }
 
-    const updateMinSizeDebounced = useMemo(() => debounce(updateMin, 500), []);
-    const updateMaxSizeDebounced = useMemo(() => debounce(updateMax, 500), []);
+    const updateMinDebounced = useMemo(() => debounce(updateMin, 5000), []);
+    const updateMaxDebounced = useMemo(() => debounce(updateMax, 500), []);
 
     useEffect(() => {
         return () => {
-            updateMinSizeDebounced.cancel();
-            updateMaxSizeDebounced.cancel();
+            updateMinDebounced.cancel();
+            updateMaxDebounced.cancel();
         };
-    }, []);
+    }, [updateMinDebounced, updateMaxDebounced]);
 
     function handleMin(event) {
         onMinUIChange(event.target.value);
-        updateMinSizeDebounced(event.target.value);
+        updateMinDebounced(event.target.value);
     }
 
     function handleMax(event) {
         onMaxUIChange(event.target.value);
-        updateMaxSizeDebounced(event.target.value);
+        updateMaxDebounced(event.target.value);
     }
 
 

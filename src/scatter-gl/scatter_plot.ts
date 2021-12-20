@@ -97,7 +97,7 @@ export class ScatterPlot {
     private styles: Styles;
     private interactive: boolean = true;
     private hoverPoint: Point = {x: 0, y: 0};
-    private hoverCallback: (point: Point | null) => void = () => {
+    private hoverCallback: (point: Point | null, e: PointerEvent | null) => void = () => {
     };
     private clickCallback: (point: Point | null, appendToSelection: boolean) => void = () => {
     };
@@ -376,6 +376,7 @@ export class ScatterPlot {
 
 
     private onPointerDown(e: PointerEvent) {
+        this.hoverCallback(null, null);
         this.isDragSequence = false;
         this.mouseIsDown = true;
         if (this.selecting) {
@@ -430,13 +431,13 @@ export class ScatterPlot {
             // this.setNearestPointToMouse(e);
             this.hoverPoint.x = e.offsetX;
             this.hoverPoint.y = e.offsetY;
-            this.hoverCallback(this.hoverPoint);
+            this.hoverCallback(this.hoverPoint, e);
         }
     }
 
     private onPointerOut(e: PointerEvent) {
         if (!this.selecting) {
-            this.hoverCallback(null);
+            this.hoverCallback(null, null);
         }
     }
 

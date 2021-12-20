@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {scaleLinear} from 'd3-scale';
-import React from 'react';
+import React, {useState} from 'react';
 import {connect} from 'react-redux';
 import {setSearchTokens} from './actions';
 import {createFilterFunction} from './dataset_filter';
@@ -21,6 +21,7 @@ import DotPlotTable from './DotPlotTable';
 import {Tooltip} from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import CirroTooltip from './CirroTooltip';
 
 
 const DEFAULT_DE_INTERPOLATOR = 'RdBu';
@@ -264,14 +265,15 @@ export function updateTopNJobResult(jobResult) {
 }
 
 function DotPlotJobResultsPanel(props) {
-    const {dataset, jobResult, setTooltip, searchTokens, onSearchTokens} = props;
+    const {dataset, jobResult, searchTokens, onSearchTokens} = props;
+    const [tip, setTip] = useState({html: ''});
 
     function onMouseMove(event) {
-        setTooltip(event.target.dataset.title);
+        setTip({html: event.target.dataset.title, clientX: event.clientX, clientY: event.clientY});
     }
 
     function onMouseOut(event) {
-        setTooltip('');
+        setTip({html: ''});
     }
 
 
@@ -535,7 +537,7 @@ function DotPlotJobResultsPanel(props) {
             const value = data[row][column + ':' + field];
             title.push(field + ': ' + value);
         });
-        title = title.join(', ');
+        title = title.join('<br />');
         return title;
     };
 
@@ -562,45 +564,44 @@ function DotPlotJobResultsPanel(props) {
             <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
         <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
                                               onClick={exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>
-        <div style={{paddingTop: 6}}>
+        <div style={{paddingTop: 6, position: 'relative'}}>
             {rows.length > 0 &&
-            <DotPlotTable isRowSelected={isRowSelected}
-                          rows={rows}
-                          columns={columns}
-                          onMouseMove={onMouseMove}
-                          onMouseOut={onMouseOut}
-                          getTooltip={getTooltip}
-                          sizeScale={jobResult.sizeScale}
-                          valueScale={valueScale}
-                          rowStart={rowStart}
-                          getColor={getColor}
-                          getSize={getSize}
-                          getRowId={getRowId}
-                          columnStart={columnStart}
-                          onRowClick={onRowClick}
-                          colorScale={jobResult.colorScale}
-                          toggleAll={toggleAll}
-                          rotateHeaders={rotateHeaders}
-                          headerHeight={headerHeight}
-                          headerWidth={headerWidth}/>}
+                <div style={{position: 'absolute'}}><DotPlotTable isRowSelected={isRowSelected}
+                                                                  rows={rows}
+                                                                  columns={columns}
+                                                                  onMouseMove={onMouseMove}
+                                                                  onMouseOut={onMouseOut}
+                                                                  getTooltip={getTooltip}
+                                                                  sizeScale={jobResult.sizeScale}
+                                                                  valueScale={valueScale}
+                                                                  rowStart={rowStart}
+                                                                  getColor={getColor}
+                                                                  getSize={getSize}
+                                                                  getRowId={getRowId}
+                                                                  columnStart={columnStart}
+                                                                  onRowClick={onRowClick}
+                                                                  colorScale={jobResult.colorScale}
+                                                                  toggleAll={toggleAll}
+                                                                  rotateHeaders={rotateHeaders}
+                                                                  headerHeight={headerHeight}
+                                                                  headerWidth={headerWidth}/>
+                    <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY}/></div>}
         </div>
     </Box>;
 }
 
 
 const mapStateToProps = state => {
-        return {
-            dataset: state.dataset,
-            searchTokens: state.searchTokens
-        };
-    }
-;
+    return {
+        dataset: state.dataset,
+        searchTokens: state.searchTokens
+    };
+};
 const mapDispatchToProps = (dispatch) => {
         return {
             onSearchTokens: (payload) => {
                 dispatch(setSearchTokens(payload));
             }
-
         };
     }
 ;
