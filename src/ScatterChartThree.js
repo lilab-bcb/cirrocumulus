@@ -124,59 +124,94 @@ function ScatterChartThree(props) {
         unselectedPointSize
     } = props;
 
-
-    function getSelectedIndex(point) {
-        const positions = trace.positions;
-        const camera = scatterPlotRef.current.camera;
-        const widthHalf = chartSize.width / 2;
-        const heightHalf = chartSize.height / 2;
-        const pos = new Vector3();
-        let selectedIndex = -1;
-        const tolerance = 2;
-        if (lastHoverIndexRef.current !== -1) {
-            pos.x = positions[lastHoverIndexRef.current * 3];
-            pos.y = positions[lastHoverIndexRef.current * 3 + 1];
-            pos.z = positions[lastHoverIndexRef.current * 3 + 2];
-            pos.project(camera);
-            pos.x = (pos.x * widthHalf) + widthHalf;
-            pos.y = -(pos.y * heightHalf) + heightHalf;
-            if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                selectedIndex = lastHoverIndexRef.current;
-            }
-        }
-
-        if (selectedIndex === -1) {
-            // TODO get all hover points
-            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
-                pos.x = positions[k];
-                pos.y = positions[k + 1];
-                pos.z = positions[k + 2];
-                pos.project(camera);
-                pos.x = (pos.x * widthHalf) + widthHalf;
-                pos.y = -(pos.y * heightHalf) + heightHalf;
-                if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
-                    selectedIndex = i;
-                    break;
-                }
-            }
-        }
-        lastHoverIndexRef.current = selectedIndex;
-        return selectedIndex;
-    }
-
+    const darkMode = chartOptions.darkMode;
+    const showAxis = chartOptions.showAxis;
+    const showFog = chartOptions.showFog;
 
     useEffect(() => {
-        init();
-        setAxesColors(scatterPlotRef.current, chartOptions.darkMode);
-        chartOptions.scatterPlot = scatterPlotRef.current;
+        if (scatterPlotRef.current == null) {
+            const dragmode = chartOptions.dragmode;
+            scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, true);
+            if (dragmode === 'pan') {
+                scatterPlotRef.current.setInteractionMode('PAN');
+            } else if (dragmode === 'select') {
+                scatterPlotRef.current.setInteractionMode('SELECT');
+                scatterPlotRef.current.rectangleSelector.setSelectionMode('BOX');
+            } else if (dragmode === 'lasso') {
+                scatterPlotRef.current.setInteractionMode('SELECT');
+                scatterPlotRef.current.rectangleSelector.setSelectionMode('LASSO');
+            }
+
+            const canvas = containerElementRef.current.querySelector('canvas');
+            canvas.style.outline = '0px';
+            const webglcontextlost = (e) => {
+                console.log('lost webgl context');
+                e.preventDefault();
+            };
+            const webglcontextrestored = (e) => {
+                console.log('restored webgl context');
+                e.preventDefault();
+                setForceUpdate(c => !c);
+            };
+            canvas.addEventListener('webglcontextlost', webglcontextlost);
+            canvas.addEventListener('webglcontextrestored', webglcontextrestored);
+        }
         if (chartOptions.camera) {
             scatterPlotRef.current.updateFromCameraDef(chartOptions.camera);
             chartOptions.camera = null;
         }
+        chartOptions.scatterPlot = scatterPlotRef.current;
+    }, [scatterPlotRef, containerElementRef, chartOptions]);
+
+
+    useEffect(() => {
+
+        function handleCamera(eventName) {
+            onCamera(eventName, scatterPlotRef.current.getCameraDef());
+        }
+
+        function getSelectedIndex(point) {
+            const positions = trace.positions;
+            const camera = scatterPlotRef.current.camera;
+            const widthHalf = chartSize.width / 2;
+            const heightHalf = chartSize.height / 2;
+            const pos = new Vector3();
+            let selectedIndex = -1;
+            const tolerance = 2;
+            if (lastHoverIndexRef.current !== -1) {
+                pos.x = positions[lastHoverIndexRef.current * 3];
+                pos.y = positions[lastHoverIndexRef.current * 3 + 1];
+                pos.z = positions[lastHoverIndexRef.current * 3 + 2];
+                pos.project(camera);
+                pos.x = (pos.x * widthHalf) + widthHalf;
+                pos.y = -(pos.y * heightHalf) + heightHalf;
+                if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                    selectedIndex = lastHoverIndexRef.current;
+                }
+            }
+
+            if (selectedIndex === -1) {
+                // TODO get all hover points
+                for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
+                    pos.x = positions[k];
+                    pos.y = positions[k + 1];
+                    pos.z = positions[k + 2];
+                    pos.project(camera);
+                    pos.x = (pos.x * widthHalf) + widthHalf;
+                    pos.y = -(pos.y * heightHalf) + heightHalf;
+                    if (Math.abs(pos.x - point.x) <= tolerance && Math.abs(pos.y - point.y) <= tolerance) {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            lastHoverIndexRef.current = selectedIndex;
+            return selectedIndex;
+        }
+
 
         let singleClickTimer;
         let clickCount = 0;
-
         scatterPlotRef.current.clickCallback = (point, append) => {
             if (!trace.continuous) {
                 clickCount++;
@@ -294,11 +329,21 @@ function ScatterChartThree(props) {
                 // repaint gallery charts with same embedding
                 if (eventName === 'end' && (previousCameraPosition.current.x != position.x || previousCameraPosition.current.y != position.y || previousCameraPosition.current.z != position.z)) {
                     previousCameraPosition.current = {x: position.x, y: position.y, z: position.z};
-                    cameraCallback(eventName);
+                    handleCamera(eventName);
                 }
             }
         };
-    });
+    }, [scatterPlotRef, categoricalNames, chartSize, trace]); // onSelected, handleClick, onCamera
+
+    useEffect(() => {
+        setAxesColors(scatterPlotRef.current, darkMode);
+        const axes = scatterPlotRef.current.scene.getObjectByName('axes');
+        if (axes) {
+            axes.visible = showAxis;
+        }
+        getVisualizer(scatterPlotRef.current, POINT_VISUALIZER_ID).styles.fog.enabled = showFog;
+    }, [scatterPlotRef, darkMode, showAxis, showFog]);
+
 
     useEffect(() => {
         if (previousChartSizeRef.current !== chartSize) {
@@ -308,7 +353,7 @@ function ScatterChartThree(props) {
         updateScatterChart(scatterPlotRef.current, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
             categoricalNames, chartOptions, obsCat, cachedData);
     }, [scatterPlotRef, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
-        categoricalNames, chartOptions, obsCat, cachedData, chartSize]);
+        categoricalNames, chartOptions, obsCat, cachedData, chartSize, forceUpdate]);
 
     useEffect(() => {
         return () => {
@@ -499,47 +544,6 @@ function ScatterChartThree(props) {
         }
         setChartOptions(chartOptions);
 
-    }
-
-    function cameraCallback(eventName) {
-        onCamera(eventName, scatterPlotRef.current.getCameraDef());
-    }
-
-    function init() {
-        if (scatterPlotRef.current == null) {
-            scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, true);
-            if (chartOptions.dragmode === 'pan') {
-                scatterPlotRef.current.setInteractionMode('PAN');
-            } else if (chartOptions.dragmode === 'select') {
-                scatterPlotRef.current.setInteractionMode('SELECT');
-                scatterPlotRef.current.rectangleSelector.setSelectionMode('BOX');
-            } else if (chartOptions.dragmode === 'lasso') {
-                scatterPlotRef.current.setInteractionMode('SELECT');
-                scatterPlotRef.current.rectangleSelector.setSelectionMode('LASSO');
-            }
-            const axes = scatterPlotRef.current.scene.getObjectByName('axes');
-            if (axes) {
-                axes.visible = chartOptions.showAxis;
-                axes.setColors(chartOptions.darkMode ? new Color("rgb(255, 255, 255)") : new Color("rgb(0, 0, 0)"));
-            }
-            getVisualizer(scatterPlotRef.current, POINT_VISUALIZER_ID).styles.fog.enabled = chartOptions.showFog;
-            const canvas = containerElementRef.current.querySelector('canvas');
-            canvas.style.outline = '0px';
-            const webglcontextlost = (e) => {
-                console.log('lost webgl context');
-                e.preventDefault();
-                scatterPlotRef.current = null;
-            };
-            const webglcontextrestored = (e) => {
-                console.log('restored webgl context');
-                e.preventDefault();
-                setForceUpdate(!forceUpdate);
-            };
-            canvas.addEventListener('webglcontextlost', webglcontextlost);
-            canvas.addEventListener('webglcontextrestored', webglcontextrestored);
-            return true;
-        }
-        return false;
     }
 
 
