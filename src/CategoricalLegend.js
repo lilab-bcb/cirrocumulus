@@ -45,7 +45,7 @@ export default function CategoricalLegend(props) {
     useEffect(() => {
         const p = legendScrollPosition[name];
         const currentList = listRef.current;
-        if (p != null) {
+        if (p != null && currentList) {
             currentList.scrollTo(p);
         }
 
@@ -76,9 +76,7 @@ export default function CategoricalLegend(props) {
 
     function handleColorChangeApply(e) {
         props.handleColorChange({
-            name: props.name,
-            originalValue: originalCategory,
-            color: color
+            name: props.name, originalValue: originalCategory, color: color
         });
     }
 
@@ -112,10 +110,7 @@ export default function CategoricalLegend(props) {
     function onRowClick(event, category) {
         event.preventDefault();
         props.handleClick({
-            name: props.name,
-            value: category,
-            shiftKey: event.shiftKey,
-            metaKey: event.ctrlKey || event.metaKey
+            name: props.name, value: category, shiftKey: event.shiftKey, metaKey: event.ctrlKey || event.metaKey
         });
     }
 
@@ -124,8 +119,7 @@ export default function CategoricalLegend(props) {
         event.stopPropagation();
 
         setContextMenu({
-            mouseX: event.clientX - 2,
-            mouseY: event.clientY - 4
+            mouseX: event.clientX - 2, mouseY: event.clientY - 4
         });
         let cat = renamedCategories[originalCategory];
         if (cat == null) {
@@ -190,12 +184,11 @@ export default function CategoricalLegend(props) {
         const isSelected = categoricalFilter != null && categoricalFilter.value.indexOf(category) !== -1;
         let renamedCategory = getCategoryValue(renamedCategories, category);
 
-        return (
-            <ListItem disableGutters={true} divider={true} dense={true}
-                      onContextMenu={event => onContextmenu(event, category)}
-                      onClick={event => onRowClick(event, category)}
-                      selected={isSelected} button style={style}
-                      key={index}>
+        return (<ListItem disableGutters={true} divider={true} dense={true}
+                          onContextMenu={event => onContextmenu(event, category)}
+                          onClick={event => onRowClick(event, category)}
+                          selected={isSelected} button style={style}
+                          key={index}>
 
                 <div style={{
                     marginBottom: 15,
@@ -214,16 +207,14 @@ export default function CategoricalLegend(props) {
                     size="large">
                     <MenuIcon></MenuIcon>
                 </IconButton>
-            </ListItem>
-        );
+            </ListItem>);
     }
 
 
     if (!visible) {
         return null;
     }
-    return (
-        <>
+    return (<>
             <div data-testid="categorical-legend">
                 <FixedSizeList height={height} width={250} itemSize={40}
                                itemCount={categories.length} ref={listRef} onScroll={(e) => {
@@ -342,19 +333,14 @@ export default function CategoricalLegend(props) {
             </Dialog>
             <Menu
                 anchorReference="anchorPosition"
-                anchorPosition={
-                    contextMenu != null
-                        ? {top: contextMenu.mouseY, left: contextMenu.mouseX}
-                        : undefined
-                }
+                anchorPosition={contextMenu != null ? {top: contextMenu.mouseY, left: contextMenu.mouseX} : undefined}
                 open={Boolean(contextMenu)}
                 onClose={handleContextmenuClose}
             >
                 <MenuItem onClick={handleEditName}>Annotate</MenuItem>
                 <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
             </Menu>
-        </>
-    );
+        </>);
 
 }
 
