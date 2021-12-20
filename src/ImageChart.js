@@ -442,7 +442,7 @@ class ImageChart extends React.PureComponent {
 
     componentDidMount() {
         if (this.viewer == null) {
-            this.createViewer(this.props.trace.url);
+            this.createViewer();
         }
     }
 
