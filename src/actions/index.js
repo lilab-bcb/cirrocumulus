@@ -57,7 +57,7 @@ DEFAULT_INTERPOLATORS[FEATURE_TYPE.MODULE] = {name: 'RdBu', reversed: true, valu
 
 
 export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
-export const DEFAULT_DRAG_MODE = 'pan';
+export const DEFAULT_DRAG_MODE = process.env.REACT_APP_DEFAULT_DRAG_MODE || 'pan';
 
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = false;
