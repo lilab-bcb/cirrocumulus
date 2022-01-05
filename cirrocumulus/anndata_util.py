@@ -231,9 +231,11 @@ def dataset_schema(dataset, n_features=10):
             obs_cat.append(key)
         else:
             obs.append(key)
-        if pd.api.types.is_categorical_dtype(val) and len(val) < 1000:
-            category_to_order[key] = dataset.obs[key].cat.categories
+        if pd.api.types.is_categorical_dtype(val):
             categories = val.cat.categories
+            if len(categories) < 100:  # preserve order
+                category_to_order[key] = dataset.obs[key].cat.categories
+
             color_field = key + '_colors'
             if color_field in dataset.uns:
                 colors = dataset.uns[color_field][...]
@@ -241,7 +243,7 @@ def dataset_schema(dataset, n_features=10):
                     color_map = dict()
                     for j in range(len(categories)):
                         color_map[str(categories[j])] = colors[j]
-                    field_to_value_to_color[color_field] = color_map
+                    field_to_value_to_color[key] = color_map
 
     # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
     #
@@ -253,13 +255,12 @@ def dataset_schema(dataset, n_features=10):
     images_node = dataset.uns.get('images',
                                   [])  # list of {type:image or meta_image, name:image name, image:path to image, spot_diameter:Number}
     image_names = list(map(lambda x: x['name'], images_node))
-    # layers = []
-    # try:
-    #     dataset.layers  # dataset can be AnnData or zarr group
-    #     layers = list(dataset.layers.keys())
-    #     # adata.list_keys()
-    # except AttributeError:
-    #     pass
+    layers = []
+    try:
+        dataset.layers  # dataset can be AnnData or zarr group
+        layers = list(dataset.layers.keys())
+    except AttributeError:
+        pass
 
     for key in dataset.obsm.keys():
         dim = dataset.obsm[key].shape[1]
@@ -282,7 +283,7 @@ def dataset_schema(dataset, n_features=10):
     schema_dict['markers'] = marker_results
     schema_dict['embeddings'] = embeddings
     schema_dict['categoryOrder'] = category_to_order
-
+    schema_dict['layers'] = layers
     var_df = dataset.var
     if not isinstance(var_df, pd.DataFrame):
         from anndata._io.zarr import read_attribute
