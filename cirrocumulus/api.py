@@ -428,15 +428,6 @@ def handle_dataset():
         return json_response(database_api.get_dataset(email, dataset_id, True))
 
 
-@cirro_blueprint.route('/module', methods=['POST'])
-def handle_module_score():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
-    features = content.get('features')
-    adata = dataset_api.read_dataset(dataset, keys=dict(X=features))
-    return json_response(adata.X.mean(axis=1))
-
-
 @cirro_blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
 def handle_job():
     email = get_auth().auth()['email']
