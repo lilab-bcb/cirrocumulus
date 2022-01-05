@@ -248,6 +248,11 @@ Developer Instructions
     yarn test
     pytest
 
+- Build JavaScript front-end for deployment::
+
+    yarn build
+
+
 
 .. _app.yaml: https://cloud.google.com/appengine/docs/standard/python3/config/appref
 .. _Google Cloud SDK: https://cloud.google.com/sdk/install
