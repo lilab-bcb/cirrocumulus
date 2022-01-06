@@ -9,7 +9,7 @@ from .anndata_util import adata_to_df
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
-    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_SPECIES
+    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_SPECIES, CIRRO_AUTH_CLIENT_ID, CIRRO_AUTH_BASE_URL
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job, delete_job
 from .util import json_response, get_scheme, get_fs, open_file
@@ -112,7 +112,8 @@ def handle_server():
     d = {}
     d['email'] = os.environ.get(CIRRO_EMAIL)
     d['capabilities'] = get_database().capabilities()
-    d['clientId'] = get_auth().client_id
+    d['clientId'] = os.environ.get(CIRRO_AUTH_CLIENT_ID)
+    d['baseUrl'] = os.environ.get(CIRRO_AUTH_BASE_URL)
     if os.environ.get(CIRRO_MIXPANEL) is not None:
         d['mixpanel'] = os.environ[CIRRO_MIXPANEL]
     if os.environ.get(CIRRO_DATASET_SELECTOR_COLUMNS) is not None:

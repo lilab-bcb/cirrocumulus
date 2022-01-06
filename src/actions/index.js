@@ -35,15 +35,10 @@ import {
     updateTraceColors
 } from '../util';
 import {updateJob} from '../DotPlotJobResultsPanel';
+import {NoAuth} from '../NoAuth';
+import {GoggleAuth} from '../GoogleAuth';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
-const authScopes = [
-    'email'
-    // 'profile',
-    // 'https://www.googleapis.com/auth/userinfo.profile',
-    // 'https://www.googleapis.com/auth/contacts.readonly',
-    // 'https://www.googleapis.com/auth/devstorage.full_control',
-];
 
 
 export const DEFAULT_POINT_SIZE = 1;
@@ -140,7 +135,7 @@ export const SET_LOADING_APP = 'LOADING_APP';
 
 export const SET_JOB_RESULTS = 'SET_JOB_RESULTS';
 export const SET_JOB_RESULT = 'SET_JOB_RESULT';
-
+let auth = new NoAuth();
 
 export function getEmbeddingKey(embedding, includeDensity = true) {
     let key = embedding.name;
@@ -162,7 +157,7 @@ function getUser() {
     };
 }
 
-export function initGapi() {
+export function initAuth() {
     return function (dispatch, getState) {
         dispatch(_setLoadingApp({loading: true, progress: 0}));
         const startTime = new Date().getTime();
@@ -235,24 +230,13 @@ export function initGapi() {
                     }]));
                     dispatch(_loadSavedView());
                 }
-
             } else {
+                auth = new GoggleAuth();
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
-                let script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://apis.google.com/js/api.js';
-                script.onload = (e) => {
-                    window.gapi.load('client:auth2', () => {
-                        window.gapi.client.init({
-                            clientId: serverInfo.clientId,
-                            scope: authScopes.join(' ')
-                        }).then(() => {
-                            dispatch(_setLoadingApp({loading: false, progress: 0}));
-                            dispatch(initLogin(true));
-                        });
-                    });
-                };
-                document.getElementsByTagName('head')[0].appendChild(script);
+                auth.init(serverInfo).then(() => {
+                    dispatch(_setLoadingApp({loading: false, progress: 0}));
+                    dispatch(initLogin(true));
+                });
             }
         }).catch(err => {
             console.log(err);
@@ -264,7 +248,7 @@ export function initGapi() {
 
 export function logout() {
     return function (dispatch, getState) {
-        window.gapi.auth2.getAuthInstance().signOut().then(() => {
+        auth.signOut().then(() => {
             dispatch({type: SET_EMAIL, payload: null});
             dispatch(_setDataset(null));
         });
@@ -273,7 +257,7 @@ export function logout() {
 
 export function login() {
     return function (dispatch, getState) {
-        window.gapi.auth2.getAuthInstance().signIn().then(e => {
+        auth.signIn().then(e => {
             dispatch(initLogin());
         });
     };
@@ -1153,10 +1137,8 @@ function _loadSavedView() {
 
 export function initLogin(loadSavedView) {
     return function (dispatch, getState) {
-        let isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-        if (isSignedIn) {
-            let googleUser = window.gapi.auth2.getAuthInstance().currentUser.get();
-            let email = googleUser.getBasicProfile().getEmail();
+        const email = auth.getEmail();
+        if (email != null) {
             dispatch(_setEmail(email));
             dispatch(getUser());
             dispatch(listDatasets()).then(() => {
@@ -1169,12 +1151,9 @@ export function initLogin(loadSavedView) {
     };
 }
 
-export function getAccessToken() {
-    return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-}
 
 export function getIdToken() {
-    return typeof window.gapi !== 'undefined' ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token : '';
+    return auth.getIdToken();
 }
 
 export function saveDataset(payload) {

@@ -29,6 +29,7 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
     - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
       and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
     - Note that you need to install google-auth (`pip install google-auth`) to use Google OAuth.
+    - Set the environment variable CIRRO_AUTH_CLIENT_ID to your OAuth client id.
 
 - Install MongoDB_ and start the MongoDB server
 

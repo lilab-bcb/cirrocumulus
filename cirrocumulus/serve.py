@@ -2,7 +2,7 @@ import os
 
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID, CIRRO_DB_URI, CIRRO_SERVE, \
     CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_DATABASE_CLASS, CIRRO_JOB_RESULTS, CIRRO_AUTH, CIRRO_DATABASE, \
-    CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE, CIRRO_CELL_ONTOLOGY
+    CIRRO_DATASET_PROVIDERS, CIRRO_JOB_TYPE, CIRRO_CELL_ONTOLOGY, CIRRO_AUTH_BASE_URL
 from cirrocumulus.launch import create_app
 from cirrocumulus.util import create_instance, add_dataset_providers, get_fs
 
@@ -22,13 +22,14 @@ def cached_app():
 def configure_app(app):
     from cirrocumulus.no_auth import NoAuth
     auth_client_id = os.environ.get(CIRRO_AUTH_CLIENT_ID)
+
     os.environ[CIRRO_SERVE] = 'true'
     os.environ[CIRRO_JOB_TYPE + 'de'] = 'cirrocumulus.job_api.run_de'
     if auth_client_id is None:
         app.config[CIRRO_AUTH] = NoAuth()
     else:
         from cirrocumulus.google_auth import GoogleAuth
-        app.config[CIRRO_AUTH] = GoogleAuth(auth_client_id)
+        app.config[CIRRO_AUTH] = GoogleAuth()
     if os.environ.get(CIRRO_DATABASE_CLASS) is None:
         os.environ[CIRRO_DATABASE_CLASS] = 'cirrocumulus.mongo_db.MongoDb'
     if os.environ[CIRRO_DB_URI] == '':
@@ -46,7 +47,6 @@ def main(argsv):
     import os
     parser = argparse.ArgumentParser(description='Run cirrocumulus server')
     parser.add_argument('--db_uri', help='Database connection URI', default=DEFAULT_DB_URI)
-    parser.add_argument('--auth_client_id', help='OAuth client id')
     parser.add_argument('-w', '--workers', dest='workers', help='The number of worker processes', type=int)
     parser.add_argument('-t', '--timeout', dest='timeout',
                         help='Workers silent for more than this many seconds are killed and restarted', type=int,
@@ -62,8 +62,6 @@ def main(argsv):
     args = parser.parse_args(argsv)
 
     bind = args.bind if args.bind is not None else '127.0.0.1:5000'
-    if args.auth_client_id is not None:
-        os.environ[CIRRO_AUTH_CLIENT_ID] = args.auth_client_id
     if args.ontology is not None:
         os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     os.environ[CIRRO_DB_URI] = args.db_uri
