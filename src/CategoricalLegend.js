@@ -10,12 +10,12 @@ import React, {useEffect, useRef, useState} from 'react';
 import {IconButton, ListItem, ListItemText} from '@mui/material';
 import {intFormat} from './formatters';
 import {FixedSizeList} from 'react-window';
-import MenuIcon from '@mui/icons-material/Menu';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
 import {getCategoryValue} from './util';
 import Link from '@mui/material/Link';
 import {isString} from 'lodash';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 export default function CategoricalLegend(props) {
     const listRef = useRef();
@@ -190,24 +190,25 @@ export default function CategoricalLegend(props) {
                           selected={isSelected} button style={style}
                           key={index}>
 
-                <div style={{
-                    marginBottom: 15,
-                    marginRight: 2,
-                    display: 'inline-block',
-                    width: 12,
-                    height: 12,
-                    background: scale(category)
-                }}></div>
+            <div style={{
+                marginBottom: 15,
+                marginRight: 2,
+                display: 'inline-block',
+                width: 12,
+                height: 12,
+                background: scale(category)
+            }}></div>
 
-                <ListItemText title={renamedCategory} primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
-                              secondary={(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[categoryIndex])}/>
-                <IconButton
-                    onClick={event => onContextmenu(event, category)}
-                    aria-label="menu"
-                    size="large">
-                    <MenuIcon></MenuIcon>
-                </IconButton>
-            </ListItem>);
+            <ListItemText title={renamedCategory} primaryTypographyProps={{noWrap: true}} primary={renamedCategory}
+                          secondary={(selectionSummary == null ? '' : intFormat(selectedDimensionToCount[category] || 0) + ' / ') + intFormat(globalDimensionSummary.counts[categoryIndex])}/>
+            <IconButton
+                disableRipple={true}
+                onClick={event => onContextmenu(event, category)}
+                aria-label="menu"
+                size="small">
+                <ArrowDropDownIcon/>
+            </IconButton>
+        </ListItem>);
     }
 
 
@@ -215,132 +216,132 @@ export default function CategoricalLegend(props) {
         return null;
     }
     return (<>
-            <div data-testid="categorical-legend">
-                <FixedSizeList height={height} width={250} itemSize={40}
-                               itemCount={categories.length} ref={listRef} onScroll={(e) => {
-                    if (e.scrollDirection === 'forward' && e.scrollOffset === 0) {
-                        return; // event fired on initialization
-                    }
-                    handleScrollPosition({name: name, value: e.scrollOffset});
-                }}>
-                    {renderRow}
-                </FixedSizeList>
-            </div>
+        <div data-testid="categorical-legend">
+            <FixedSizeList height={height} width={250} itemSize={40}
+                           itemCount={categories.length} ref={listRef} onScroll={(e) => {
+                if (e.scrollDirection === 'forward' && e.scrollOffset === 0) {
+                    return; // event fired on initialization
+                }
+                handleScrollPosition({name: name, value: e.scrollOffset});
+            }}>
+                {renderRow}
+            </FixedSizeList>
+        </div>
 
-            <Dialog open={Boolean(menu)} onClose={handleDialogClose}
-                    aria-labelledby="edit-category-dialog-title" fullWidth={true}>
-                {menu == 'color' && <>
-                    <DialogTitle
-                        id="edit-category-dialog-title">Edit {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory} Color</DialogTitle>
-                    <DialogContent>
-                        <input type="color" value={color}
-                               onChange={handleColorChange} style={{width: 100}}/>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleDialogClose} color="primary">
-                            Close
-                        </Button>
-                        <Button onClick={handleColorChangeApply} color="primary">
-                            Apply
-                        </Button>
-                    </DialogActions>
-                </>}
-                {menu == 'name' && <>
-                    <DialogTitle
-                        id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
-                    <DialogContent>
+        <Dialog open={Boolean(menu)} onClose={handleDialogClose}
+                aria-labelledby="edit-category-dialog-title" fullWidth={true}>
+            {menu == 'color' && <>
+                <DialogTitle
+                    id="edit-category-dialog-title">Edit {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory} Color</DialogTitle>
+                <DialogContent>
+                    <input type="color" value={color}
+                           onChange={handleColorChange} style={{width: 100}}/>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDialogClose} color="primary">
+                        Close
+                    </Button>
+                    <Button onClick={handleColorChangeApply} color="primary">
+                        Apply
+                    </Button>
+                </DialogActions>
+            </>}
+            {menu == 'name' && <>
+                <DialogTitle
+                    id="edit-category-dialog-title">Annotate {renamedCategories[originalCategory] != null ? renamedCategories[originalCategory].newValue : originalCategory}</DialogTitle>
+                <DialogContent>
 
-                        {serverInfo.ontology == null && <TextField
-                            size={"small"}
-                            inputProps={{maxLength: 1000}}
-                            fullWidth={true}
-                            type="text"
-                            required={false}
-                            autoComplete="off"
-                            value={newName}
-                            onChange={handleNameChange}
-                            margin="dense"
-                            label={"Category Name"}
-                            helperText={"Enter cell type or other annotation"}
-                        />}
-                        {serverInfo.ontology != null && <FormControl sx={{display: 'block'}}><AutocompleteVirtualized
+                    {serverInfo.ontology == null && <TextField
+                        size={"small"}
+                        inputProps={{maxLength: 1000}}
+                        fullWidth={true}
+                        type="text"
+                        required={false}
+                        autoComplete="off"
+                        value={newName}
+                        onChange={handleNameChange}
+                        margin="dense"
+                        label={"Category Name"}
+                        helperText={"Enter cell type or other annotation"}
+                    />}
+                    {serverInfo.ontology != null && <FormControl sx={{display: 'block'}}><AutocompleteVirtualized
+                        textFieldSx={{width: '90%'}}
+                        label={"Cell Type"}
+                        multiple={false}
+                        getOptionLabel={(option) => option.text}
+                        getChipText={(option) => option.text}
+                        options={serverInfo.ontology.cellTypes}
+                        value={newName}
+                        getOptionSelected={(option, value) => option.text === value}
+                        onChange={handleNameChangeSelector}
+                    /></FormControl>}
+
+
+                    <FormControl sx={{display: 'block'}}>
+                        <AutocompleteVirtualized
                             textFieldSx={{width: '90%'}}
-                            label={"Cell Type"}
-                            multiple={false}
+                            label={"Positive Genes/Features"}
+                            options={features}
+                            value={positiveMarkers}
+                            getOptionSelected={(option, value) => option.id === value}
+                            groupBy={(option) => option.group}
                             getOptionLabel={(option) => option.text}
-                            getChipText={(option) => option.text}
-                            options={serverInfo.ontology.cellTypes}
-                            value={newName}
-                            getOptionSelected={(option, value) => option.text === value}
-                            onChange={handleNameChangeSelector}
-                        /></FormControl>}
+                            onChange={onPositiveMarkers}
+                        />
+                        <div><Link
+                            style={{
+                                float: 'right',
+                                marginRight: 4,
+                                fontSize: '0.75rem',
+                                transform: 'translateY(-20px)',
+                                display: positiveMarkers.length === 0 ? 'none' : ''
+                            }}
+                            onClick={e => addFeatures(e, positiveMarkers)}>View All</Link></div>
+                    </FormControl>
 
 
-                        <FormControl sx={{display: 'block'}}>
-                            <AutocompleteVirtualized
-                                textFieldSx={{width: '90%'}}
-                                label={"Positive Genes/Features"}
-                                options={features}
-                                value={positiveMarkers}
-                                getOptionSelected={(option, value) => option.id === value}
-                                groupBy={(option) => option.group}
-                                getOptionLabel={(option) => option.text}
-                                onChange={onPositiveMarkers}
-                            />
-                            <div><Link
-                                style={{
-                                    float: 'right',
-                                    marginRight: 4,
-                                    fontSize: '0.75rem',
-                                    transform: 'translateY(-20px)',
-                                    display: positiveMarkers.length === 0 ? 'none' : ''
-                                }}
-                                onClick={e => addFeatures(e, positiveMarkers)}>View All</Link></div>
-                        </FormControl>
+                    <FormControl sx={{display: 'block'}}>
+                        <AutocompleteVirtualized
+                            label={"Negative Genes/Features"}
+                            options={features}
+                            value={negativeMarkers}
+                            getOptionSelected={(option, value) => option.id === value}
+                            groupBy={(option) => option.group}
+                            getOptionLabel={(option) => option.text}
+                            onChange={onNegativeMarkers}
+                        />
+                        <div><Link
+                            style={{
+                                float: 'right',
+                                marginRight: 4,
+                                fontSize: '0.75rem',
+                                transform: 'translateY(-20px)',
+                                display: negativeMarkers.length === 0 ? 'none' : ''
+                            }}
+                            onClick={e => addFeatures(e, negativeMarkers)}>View All</Link></div>
+                    </FormControl>
 
-
-                        <FormControl sx={{display: 'block'}}>
-                            <AutocompleteVirtualized
-                                label={"Negative Genes/Features"}
-                                options={features}
-                                value={negativeMarkers}
-                                getOptionSelected={(option, value) => option.id === value}
-                                groupBy={(option) => option.group}
-                                getOptionLabel={(option) => option.text}
-                                onChange={onNegativeMarkers}
-                            />
-                            <div><Link
-                                style={{
-                                    float: 'right',
-                                    marginRight: 4,
-                                    fontSize: '0.75rem',
-                                    transform: 'translateY(-20px)',
-                                    display: negativeMarkers.length === 0 ? 'none' : ''
-                                }}
-                                onClick={e => addFeatures(e, negativeMarkers)}>View All</Link></div>
-                        </FormControl>
-
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleDialogClose} color="primary">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleNameChangeApply} color="primary">
-                            OK
-                        </Button>
-                    </DialogActions>
-                </>}
-            </Dialog>
-            <Menu
-                anchorReference="anchorPosition"
-                anchorPosition={contextMenu != null ? {top: contextMenu.mouseY, left: contextMenu.mouseX} : undefined}
-                open={Boolean(contextMenu)}
-                onClose={handleContextmenuClose}
-            >
-                <MenuItem onClick={handleEditName}>Annotate</MenuItem>
-                <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
-            </Menu>
-        </>);
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDialogClose} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleNameChangeApply} color="primary">
+                        OK
+                    </Button>
+                </DialogActions>
+            </>}
+        </Dialog>
+        <Menu
+            anchorReference="anchorPosition"
+            anchorPosition={contextMenu != null ? {top: contextMenu.mouseY, left: contextMenu.mouseX} : undefined}
+            open={Boolean(contextMenu)}
+            onClose={handleContextmenuClose}
+        >
+            <MenuItem onClick={handleEditName}>Annotate</MenuItem>
+            <MenuItem onClick={handleEditColor}>Edit Color</MenuItem>
+        </Menu>
+    </>);
 
 }
 
