@@ -203,22 +203,23 @@ function AppHeader(props) {
                     {DATASET_FIELDS.filter(item => dataset[item.fieldName]).map(item => <div
                         key={item.fieldName}><Divider/>
                         <Typography variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
-                        <Typography variant="body2"> {dataset[item.fieldName]}</Typography>}
+                            <Typography variant="body2"> {dataset[item.fieldName]}</Typography>}
                         {item.fieldName === 'description' &&
-                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                       children={dataset[item.fieldName]}/>}</div>)}
+                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                           children={dataset[item.fieldName]}/>}</div>)}
                 </Box>
             </Popover>
             }
             <Toolbar variant="dense" style={{paddingLeft: 0}}>
-                <IconButton
+                {dataset && <IconButton
                     size="large"
                     color="inherit"
                     aria-label="toggle drawer"
                     onClick={toggleDrawer}
                 >
                     <MenuIcon/>
-                </IconButton>
+                </IconButton>}
+                {!dataset && <Box sx={{paddingLeft: 1}}></Box>}
                 <CirroIcon/>
                 <Typography variant="h5" sx={{paddingRight: 1}}>Cirro</Typography>
 
@@ -235,24 +236,25 @@ function AppHeader(props) {
                 </IconButton>}
                 <Typography variant="subtitle2">{dataset != null ? dataset.name : ''}</Typography>
                 <div style={{display: 'flex', marginLeft: 'auto'}}>
-                    <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
-                        <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
-                             disabled={dataset == null}/>
-                        <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
-                             disabled={dataset == null || distributionData.length === 0}/>
-                        <Tab data-testid="composition-tab" value="composition" label="Composition"
-                             disabled={dataset == null || obsCat.length < 2}/>
-                        {<Tab data-testid="results-tab" value="results" label="Results"
-                              disabled={dataset == null || jobResults.length === 0}/>}
-                    </Tabs>
+                    {!isSignedOut && !loadingApp.loading &&
+                        <Tabs textColor="inherit" indicatorColor="secondary" value={tab} onChange={onTabChange}>
+                            <Tab data-testid="embedding-tab" value="embedding" label="Embeddings"
+                                 disabled={dataset == null}/>
+                            <Tab data-testid="distributions-tab" value="distribution" label="Distributions"
+                                 disabled={dataset == null || distributionData.length === 0}/>
+                            <Tab data-testid="composition-tab" value="composition" label="Composition"
+                                 disabled={dataset == null || obsCat.length < 2}/>
+                            {<Tab data-testid="results-tab" value="results" label="Results"
+                                  disabled={dataset == null || jobResults.length === 0}/>}
+                        </Tabs>}
                     {serverInfo.brand &&
-                    <ReactMarkdown options={{
-                        overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
-                            props.display = 'inline';
-                            props.gutterBottom = false;
-                            return React.createElement(type, props, children);
-                        }
-                    }} children={serverInfo.brand}/>}
+                        <ReactMarkdown options={{
+                            overrides: REACT_MD_OVERRIDES, wrapper: 'span', createElement: (type, props, children) => {
+                                props.display = 'inline';
+                                props.gutterBottom = false;
+                                return React.createElement(type, props, children);
+                            }
+                        }} children={serverInfo.brand}/>}
                     {!loadingApp.loading && !isSignedOut && <DatasetSelector onChange={onDataset}/>}
                     {showMoreMenu && <Tooltip title={'More'}>
                         <IconButton
@@ -299,39 +301,38 @@ function AppHeader(props) {
                         </IconButton>
                     </Tooltip>}
                     {email != null && email !== '' &&
-                    <Tooltip title={email}>
-                        <IconButton
-                            aria-label="Menu"
-                            aria-haspopup="true"
-                            onClick={onUserMenuOpen}
-                            size="large">
-                            <AccountCircle/>
-                        </IconButton>
-                    </Tooltip>}
+                        <Tooltip title={email}>
+                            <IconButton
+                                aria-label="Menu"
+                                aria-haspopup="true"
+                                onClick={onUserMenuOpen}
+                                size="large">
+                                <AccountCircle/>
+                            </IconButton>
+                        </Tooltip>}
                     {email != null && email !== '' &&
-                    <Menu id="menu-user"
-                          anchorEl={userMenuAnchorEl}
-                          anchorOrigin={{
-                              vertical: 'top',
-                              horizontal: 'right'
-                          }}
+                        <Menu id="menu-user"
+                              anchorEl={userMenuAnchorEl}
+                              anchorOrigin={{
+                                  vertical: 'top',
+                                  horizontal: 'right'
+                              }}
 
-                          transformOrigin={{
-                              vertical: 'top',
-                              horizontal: 'right'
-                          }} open={userMenuOpen}
-                          onClose={onUserMenuClose}>
-                        <MenuItem onClick={onLogout}>Sign Out</MenuItem>
-                    </Menu>}
-                    {isSignedOut && <Button style={{whiteSpace: 'nowrap'}} color="inherit"
-                                            onClick={handleLogin}>Sign In</Button>}
+                              transformOrigin={{
+                                  vertical: 'top',
+                                  horizontal: 'right'
+                              }} open={userMenuOpen}
+                              onClose={onUserMenuClose}>
+                            <MenuItem onClick={onLogout}>Sign Out</MenuItem>
+                        </Menu>}
+                    {isSignedOut &&
+                        <Button style={{whiteSpace: 'nowrap'}} color="primary" variant={"contained"}
+                                onClick={handleLogin}>Sign In</Button>}
                 </div>
             </Toolbar>
         </AppBar>
         </Box>
-    )
-        ;
-
+    );
 }
 
 const mapStateToProps = state => {
