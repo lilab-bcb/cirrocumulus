@@ -129,6 +129,17 @@ function ScatterChartThree(props) {
     const showFog = chartOptions.showFog;
 
     useEffect(() => {
+        function webglcontextlost(e) {
+            console.log('lost webgl context');
+            e.preventDefault();
+        }
+
+        function webglcontextrestored(e) {
+            console.log('restored webgl context');
+            e.preventDefault();
+            setForceUpdate(c => !c);
+        }
+
         if (scatterPlotRef.current == null) {
             const dragmode = chartOptions.dragmode;
             scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, true);
@@ -144,15 +155,6 @@ function ScatterChartThree(props) {
 
             const canvas = containerElementRef.current.querySelector('canvas');
             canvas.style.outline = '0px';
-            const webglcontextlost = (e) => {
-                console.log('lost webgl context');
-                e.preventDefault();
-            };
-            const webglcontextrestored = (e) => {
-                console.log('restored webgl context');
-                e.preventDefault();
-                setForceUpdate(c => !c);
-            };
             canvas.addEventListener('webglcontextlost', webglcontextlost);
             canvas.addEventListener('webglcontextrestored', webglcontextrestored);
         }
@@ -161,6 +163,13 @@ function ScatterChartThree(props) {
             chartOptions.camera = null;
         }
         chartOptions.scatterPlot = scatterPlotRef.current;
+        return () => {
+            if (containerElementRef.current) {
+                const canvas = containerElementRef.current.querySelector('canvas');
+                canvas.removeEventListener('webglcontextlost', webglcontextlost);
+                canvas.removeEventListener('webglcontextrestored', webglcontextrestored);
+            }
+        };
     }, [scatterPlotRef, containerElementRef, chartOptions]);
 
 
@@ -332,6 +341,13 @@ function ScatterChartThree(props) {
                     handleCamera(eventName);
                 }
             }
+        };
+        return () => {
+            scatterPlotRef.current.clickCallback = null;
+            scatterPlotRef.current.hoverCallback = null;
+            scatterPlotRef.current.lassoCallback = null;
+            scatterPlotRef.current.boxCallback = null;
+            scatterPlotRef.current.cameraCallback = null;
         };
     }, [scatterPlotRef, categoricalNames, chartSize, trace]); // onSelected, handleClick, onCamera
 

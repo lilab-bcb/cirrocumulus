@@ -146,6 +146,12 @@ export class ScatterPlot {
         this.styles = params.styles;
         this.interactive = params.interactive || false;
 
+        this.onPointerOut = this.onPointerOut.bind(this);
+        this.onPointerMove = this.onPointerMove.bind(this);
+        this.onPointerDown = this.onPointerDown.bind(this);
+        this.onPointerUp = this.onPointerUp.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
         this.computeLayoutValues();
 
         this.scene = new Scene();
@@ -176,14 +182,14 @@ export class ScatterPlot {
     }
 
     private addInteractionListeners() {
-        this.container.addEventListener('pointerout', this.onPointerOut.bind(this));
-        this.container.addEventListener('pointerenter', this.onPointerOut.bind(this));
-        this.container.addEventListener('pointermove', this.onPointerMove.bind(this));
-        this.container.addEventListener('pointerdown', this.onPointerDown.bind(this));
-        this.container.addEventListener('pointerup', this.onPointerUp.bind(this));
+        this.container.addEventListener('pointerout', this.onPointerOut);
+        this.container.addEventListener('pointerenter', this.onPointerOut);
+        this.container.addEventListener('pointermove', this.onPointerMove);
+        this.container.addEventListener('pointerdown', this.onPointerDown);
+        this.container.addEventListener('pointerup', this.onPointerUp);
         // this.container.addEventListener('click', this.onClick.bind(this));
-        window.addEventListener('keydown', this.onKeyDown.bind(this), false);
-        window.addEventListener('keyup', this.onKeyUp.bind(this), false);
+        window.addEventListener('keydown', this.onKeyDown, false);
+        window.addEventListener('keyup', this.onKeyUp, false);
     }
 
     private addCameraControlsEventListeners(cameraControls: any) {
@@ -593,11 +599,22 @@ export class ScatterPlot {
         });
     }
 
-    /** Disposes all visualizers attached to this scatter plot. */
+    /** Disposes all resources attached to this scatter plot. */
     dispose() {
+        this.renderer.dispose();
+        this.orbitCameraControls.dispose();
+        this.orbitCameraControls = null;
         this.visualizers.forEach(v => v.dispose());
         this.visualizers = [];
+        this.container.removeEventListener('pointerout', this.onPointerOut);
+        this.container.removeEventListener('pointerenter', this.onPointerOut);
+        this.container.removeEventListener('pointermove', this.onPointerMove);
+        this.container.removeEventListener('pointerdown', this.onPointerDown);
+        this.container.removeEventListener('pointerup', this.onPointerUp);
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp,);
     }
+
 
     /** Update scatter plot with a new array of packed xyz point positions. */
     setPointPositions(worldSpacePointPositions: Float32Array) {

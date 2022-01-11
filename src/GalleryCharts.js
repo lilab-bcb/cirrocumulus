@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 import {connect} from 'react-redux';
 import {sortableContainer, sortableElement} from 'react-sortable-hoc';
@@ -18,96 +18,109 @@ function createContainer(chartSize) {
 }
 
 
-class GalleryCharts extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.containerElement = createContainer(this.props.chartSize);
-        document.body.appendChild(this.containerElement);
-        this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession != null, false, false);
-    }
+function GalleryCharts(props) {
+    const {
+        cachedData,
+        categoricalNames,
+        chartSize,
+        chartOptions,
+        embeddingData,
+        embeddingLabels,
+        markerOpacity,
+        pointSize,
+        primaryChartSize,
+        searchTokens,
+        selection,
+        unselectedMarkerOpacity,
+        unselectedPointSize,
+        handleActiveFeature,
+        handleEmbeddingData
+    } = props;
 
-    onChartSelected = (traceInfo) => {
-        this.props.handleActiveFeature({
-            name: traceInfo.name,
-            type: traceInfo.featureType,
-            embeddingKey: getTraceKey(traceInfo)
+    const scatterPlotRef = useRef();
+    const containerElementRef = useRef();
+    const [forceUpdate, setForceUpdate] = useState(false);
+
+    function onChartSelected(traceInfo) {
+        handleActiveFeature({
+            name: traceInfo.name, type: traceInfo.featureType, embeddingKey: getTraceKey(traceInfo)
         });
         window.scrollTo(0, 0);
-    };
+    }
 
-    onSortEnd = (galleryTraces, e) => {
+    function onSortEnd(galleryTraces, e) {
         const oldTrace = galleryTraces[e.oldIndex];
         const newTrace = galleryTraces[e.newIndex];
-        const embeddingData = this.props.embeddingData;
+        const embeddingData = embeddingData;
         const oldIndex = findIndex(embeddingData, oldTrace);
         const newIndex = findIndex(embeddingData, newTrace);
         embeddingData.splice(oldIndex, 1);
         embeddingData.splice(newIndex, 0, oldTrace);
-        this.props.handleEmbeddingData(embeddingData.slice());
-    };
+        handleEmbeddingData(embeddingData.slice());
+    }
 
+    useEffect(() => {
+        containerElementRef.current = createContainer(chartSize);
+        document.body.appendChild(containerElementRef.current);
+        scatterPlotRef.current = createScatterPlot(containerElementRef.current, window.ApplePaySession, false, false);
+        const canvas = containerElementRef.current.querySelector('canvas');
 
-    render() {
-        const {
-            cachedData,
-            categoricalNames,
-            chartSize,
-            chartOptions,
-            embeddingData,
-            embeddingLabels,
-            markerOpacity,
-            pointSize,
-            primaryChartSize,
-            searchTokens,
-            selection,
-            unselectedMarkerOpacity,
-            unselectedPointSize
-        } = this.props;
-
-        if (this.containerElement.style.width !== this.props.chartSize + 'px') {
-            document.body.removeChild(this.containerElement);
-            this.containerElement = createContainer(this.props.chartSize);
-            document.body.appendChild(this.containerElement);
-            this.scatterPlot = createScatterPlot(this.containerElement, window.ApplePaySession, false, false);
+        function webglcontextlost(e) {
+            console.log('gallery - lost webgl context');
+            e.preventDefault();
         }
 
-        const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
-        const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.id) !== -1).map(item => item.id);
-        const SortableItem = sortableElement(({trace}) => <GalleryImage
-            traceInfo={trace}
-            obsCat={obsCat}
-            cachedData={cachedData}
-            scatterPlot={this.scatterPlot}
-            markerOpacity={markerOpacity}
-            chartOptions={chartOptions}
-            pointSize={pointSize}
-            unselectedPointSize={unselectedPointSize}
-            primaryChartSize={primaryChartSize}
-            chartSize={chartSize}
-            categoricalNames={categoricalNames}
-            unselectedMarkerOpacity={unselectedMarkerOpacity}
-            selection={selection}
-            containerElement={this.containerElement}
-            onSelect={this.onChartSelected}
-            key={getTraceKey(trace)}/>);
+        function webglcontextrestored(e) {
+            console.log('gallery - restored webgl context');
+            e.preventDefault();
+            setForceUpdate(c => !c);
+        }
 
-        const SortableList = sortableContainer(({items}) => {
-            return (
-                <ul style={{padding: 0, marginTop: 4, marginBottom: 0}}>
-                    {items.map((trace, index) => (
-                        <SortableItem key={getTraceKey(trace)} index={index} trace={trace}/>
-                    ))}
-                </ul>
-            );
-        });
+        canvas.addEventListener('webglcontextlost', webglcontextlost);
+        canvas.addEventListener('webglcontextrestored', webglcontextrestored);
+        return () => {
+            canvas.removeEventListener('webglcontextlost', webglcontextlost);
+            canvas.removeEventListener('webglcontextrestored', webglcontextrestored);
+            if (scatterPlotRef.current) {
+                scatterPlotRef.current.dispose();
+            }
+            if (containerElementRef.current) {
+                document.body.removeChild(containerElementRef.current);
+            }
+        };
+    }, [chartSize, containerElementRef, scatterPlotRef]);
 
-        return (
-            <SortableList
-                distance={2}
-                axis="xy" items={galleryTraces}
-                onSortEnd={(e) => this.onSortEnd(galleryTraces, e)}/>
-        );
-    }
+
+    const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
+    const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.id) !== -1).map(item => item.id);
+    const SortableItem = sortableElement(({trace}) => <GalleryImage
+        traceInfo={trace}
+        obsCat={obsCat}
+        cachedData={cachedData}
+        scatterPlot={scatterPlotRef.current}
+        markerOpacity={markerOpacity}
+        chartOptions={chartOptions}
+        pointSize={pointSize}
+        unselectedPointSize={unselectedPointSize}
+        primaryChartSize={primaryChartSize}
+        chartSize={chartSize}
+        categoricalNames={categoricalNames}
+        unselectedMarkerOpacity={unselectedMarkerOpacity}
+        selection={selection}
+        containerElement={containerElementRef.current}
+        onSelect={onChartSelected}
+        key={getTraceKey(trace)}/>);
+
+    const SortableList = sortableContainer(({items}) => {
+        return (<ul style={{padding: 0, marginTop: 4, marginBottom: 0}}>
+            {items.map((trace, index) => (<SortableItem key={getTraceKey(trace)} index={index} trace={trace}/>))}
+        </ul>);
+    });
+
+    return (<SortableList
+        distance={2}
+        axis="xy" items={galleryTraces}
+        onSortEnd={(e) => onSortEnd(galleryTraces, e)}/>);
 }
 
 const mapStateToProps = state => {
@@ -131,14 +144,11 @@ const mapDispatchToProps = dispatch => {
     return {
         handleActiveFeature: (value) => {
             dispatch(setActiveFeature(value));
-        },
-        handleEmbeddingData: (value) => {
+        }, handleEmbeddingData: (value) => {
             dispatch(setEmbeddingData(value));
         }
     };
 };
 
-export default (connect(
-    mapStateToProps, mapDispatchToProps
-)(GalleryCharts));
+export default (connect(mapStateToProps, mapDispatchToProps)(GalleryCharts));
 
