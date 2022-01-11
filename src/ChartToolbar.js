@@ -122,15 +122,6 @@ export default function ChartToolbar(props) {
             </IconButton>
         </Tooltip>}
 
-        {props.is3d && <Tooltip title={props.animating ? 'Pause' : 'Animate'}>
-            <IconButton edge={false} size={'small'}
-                        aria-label={props.animating ? 'Pause' : 'Animate'}
-                        onClick={props.toggleAnimation}>
-                {!props.animating && <PlayArrowIcon/>}
-                {props.animating && <PauseIcon/>}
-            </IconButton>
-        </Tooltip>}
-
         {props.onDragMode && <Tooltip title={"Pan"}>
             <IconButton edge={false} size={'small'} className={dragmode === 'pan' ? active : ''}
                         aria-label="Pan" onClick={() => setDragMode('pan')}>
@@ -139,6 +130,15 @@ export default function ChartToolbar(props) {
                         d="m1000 350l-187 188 0-125-250 0 0 250 125 0-188 187-187-187 125 0 0-250-250 0 0 125-188-188 186-187 0 125 252 0 0-250-125 0 187-188 188 188-125 0 0 250 250 0 0-126 187 188z"
                         transform="matrix(1 0 0 -1 0 850)"></path>
                 </SvgIcon>
+            </IconButton>
+        </Tooltip>}
+
+        {props.is3d && <Tooltip title={props.animating ? 'Pause' : 'Animate'}>
+            <IconButton edge={false} size={'small'}
+                        aria-label={props.animating ? 'Pause' : 'Animate'}
+                        onClick={props.toggleAnimation}>
+                {!props.animating && <PlayArrowIcon/>}
+                {props.animating && <PauseIcon/>}
             </IconButton>
         </Tooltip>}
 
