@@ -218,8 +218,7 @@ export default function AutocompleteVirtualized(props) {
             event.preventDefault();
             event.stopPropagation();
             text = text.trim();
-            let tokens = text.split(/[\n,\t]/);
-            enterTokens(event, tokens);
+            enterTokens(event, text.split(/[\n,\t]/));
         }
     }
 
@@ -403,7 +402,6 @@ export default function AutocompleteVirtualized(props) {
             onSortEnd={onSortEnd}
             axis="xy" items={props.value}
         />}
-
     </>;
 };
 

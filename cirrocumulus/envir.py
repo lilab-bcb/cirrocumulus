@@ -1,4 +1,6 @@
-CIRRO_AUTH_CLIENT_ID = 'CIRRO_AUTH_CLIENT_ID'
+CIRRO_TEST = 'CIRRO_TEST'  # whether running using pytest
+CIRRO_AUTH_CLIENT_ID = 'CIRRO_AUTH_CLIENT_ID'  # for javascript client
+CIRRO_AUTH_BASE_URL = 'CIRRO_AUTH_BASE_URL'  # for javascript client
 CIRRO_DB_URI = 'CIRRO_DB_URI'
 CIRRO_EMAIL = 'CIRRO_EMAIL'
 CIRRO_SERVE = 'CIRRO_SERVE'
@@ -10,7 +12,7 @@ CIRRO_JOB_RESULTS = 'CIRRO_JOB_RESULTS'
 CIRRO_DATABASE_CLASS = 'CIRRO_DATABASE_CLASS'
 CIRRO_DATABASE = 'CIRRO_DATABASE'
 CIRRO_DATASET_PROVIDERS = 'CIRRO_DATASET_PROVIDERS'
-CIRRO_AUTH = 'CIRRO_AUTH'
+CIRRO_AUTH = 'CIRRO_AUTH'  # provider to validate tokens
 CIRRO_MIXPANEL = 'CIRRO_MIXPANEL'
 # for mounting a bucket locally. Comma separated string of bucket:local_path. Example s3://foo/bar:/fsx
 CIRRO_MOUNT = 'CIRRO_MOUNT'
@@ -18,6 +20,9 @@ CIRRO_LOG_LEVEL = 'CIRRO_LOG_LEVEL'
 # columns to display to user
 CIRRO_DATASET_SELECTOR_COLUMNS = 'CIRRO_DATASET_SELECTOR_COLUMNS'
 CIRRO_JOB_TYPE = 'CIRRO_JOB_TYPE'
+
+# path to JSON file for library list when adding new dataset
+CIRRO_LIBRARY = 'CIRRO_LIBRARY'
 
 # path to JSON file for species list when adding new dataset
 CIRRO_SPECIES = 'CIRRO_SPECIES'

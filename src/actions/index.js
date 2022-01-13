@@ -35,15 +35,10 @@ import {
     updateTraceColors
 } from '../util';
 import {updateJob} from '../DotPlotJobResultsPanel';
+import {NoAuth} from '../NoAuth';
+import {GoggleAuth} from '../GoogleAuth';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
-const authScopes = [
-    'email'
-    // 'profile',
-    // 'https://www.googleapis.com/auth/userinfo.profile',
-    // 'https://www.googleapis.com/auth/contacts.readonly',
-    // 'https://www.googleapis.com/auth/devstorage.full_control',
-];
 
 
 export const DEFAULT_POINT_SIZE = 1;
@@ -140,7 +135,7 @@ export const SET_LOADING_APP = 'LOADING_APP';
 
 export const SET_JOB_RESULTS = 'SET_JOB_RESULTS';
 export const SET_JOB_RESULT = 'SET_JOB_RESULT';
-
+let auth = new NoAuth();
 
 export function getEmbeddingKey(embedding, includeDensity = true) {
     let key = embedding.name;
@@ -162,7 +157,7 @@ function getUser() {
     };
 }
 
-export function initGapi() {
+export function initAuth() {
     return function (dispatch, getState) {
         dispatch(_setLoadingApp({loading: true, progress: 0}));
         const startTime = new Date().getTime();
@@ -235,24 +230,13 @@ export function initGapi() {
                     }]));
                     dispatch(_loadSavedView());
                 }
-
             } else {
+                auth = new GoggleAuth();
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
-                let script = document.createElement('script');
-                script.type = 'text/javascript';
-                script.src = 'https://apis.google.com/js/api.js';
-                script.onload = (e) => {
-                    window.gapi.load('client:auth2', () => {
-                        window.gapi.client.init({
-                            clientId: serverInfo.clientId,
-                            scope: authScopes.join(' ')
-                        }).then(() => {
-                            dispatch(_setLoadingApp({loading: false, progress: 0}));
-                            dispatch(initLogin(true));
-                        });
-                    });
-                };
-                document.getElementsByTagName('head')[0].appendChild(script);
+                auth.init(serverInfo).then(() => {
+                    dispatch(_setLoadingApp({loading: false, progress: 0}));
+                    dispatch(initLogin(true));
+                });
             }
         }).catch(err => {
             console.log(err);
@@ -264,7 +248,7 @@ export function initGapi() {
 
 export function logout() {
     return function (dispatch, getState) {
-        window.gapi.auth2.getAuthInstance().signOut().then(() => {
+        auth.signOut().then(() => {
             dispatch({type: SET_EMAIL, payload: null});
             dispatch(_setDataset(null));
         });
@@ -273,14 +257,14 @@ export function logout() {
 
 export function login() {
     return function (dispatch, getState) {
-        window.gapi.auth2.getAuthInstance().signIn().then(e => {
+        auth.signIn().then(e => {
             dispatch(initLogin());
         });
     };
 }
 
 
-export function openView(id, loadDataset = false) {
+export function openLink(id, loadDataset = false) {
     return function (dispatch, getState) {
         const task = {name: 'Open view'};
         dispatch(addTask(task));
@@ -303,14 +287,14 @@ export function openView(id, loadDataset = false) {
  * @param payload Object with name, notes
  * @returns {(function(*=, *): void)|*}
  */
-export function saveView(payload) {
+export function saveLink(payload) {
     return function (dispatch, getState) {
         const state = getState();
         const value = getDatasetStateJson(state);
         payload.value = value;
         delete value['dataset'];
         payload = Object.assign({ds_id: state.dataset.id}, payload);
-        const task = {name: 'Save view'};
+        const task = {name: 'Save link'};
         dispatch(addTask(task));
         getState().serverInfo.api.upsertViewPromise(payload, false)
             .then(result => {
@@ -328,21 +312,19 @@ export function saveView(payload) {
     };
 }
 
-export function deleteView(id) {
+export function deleteLink(id) {
     return function (dispatch, getState) {
-        const task = {name: 'Delete view'};
+        const task = {name: 'Delete link'};
         dispatch(addTask(task));
         getState().serverInfo.api.deleteViewPromise(id, getState().dataset.id)
             .then(() => {
-                let array = getState().datasetViews;
-                for (let i = 0; i < array.length; i++) {
-                    if (array[i].id === id) {
-                        array.splice(i, 1);
-                        break;
-                    }
+                const array = getState().datasetViews;
+                const index = findIndex(array, item => item.id === id);
+                if (index !== -1) {
+                    array.splice(index, 1);
+                    dispatch(setDatasetViews(array.slice()));
+                    dispatch(setMessage('Link deleted'));
                 }
-                dispatch(setDatasetFilters(array.slice()));
-                dispatch(setMessage('Link deleted'));
             }).finally(() => {
             dispatch(removeTask(task));
             dispatch(setDialog(null));
@@ -1142,7 +1124,7 @@ function _loadSavedView() {
             }
         }
         if (savedView.link != null) {
-            dispatch(openView(savedView.link, true));
+            dispatch(openLink(savedView.link, true));
         } else if (savedView.dataset != null) {
             dispatch(restoreSavedView(savedView));
         } else {
@@ -1153,10 +1135,8 @@ function _loadSavedView() {
 
 export function initLogin(loadSavedView) {
     return function (dispatch, getState) {
-        let isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-        if (isSignedIn) {
-            let googleUser = window.gapi.auth2.getAuthInstance().currentUser.get();
-            let email = googleUser.getBasicProfile().getEmail();
+        const email = auth.getEmail();
+        if (email != null) {
             dispatch(_setEmail(email));
             dispatch(getUser());
             dispatch(listDatasets()).then(() => {
@@ -1169,49 +1149,38 @@ export function initLogin(loadSavedView) {
     };
 }
 
-export function getAccessToken() {
-    return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-}
 
 export function getIdToken() {
-    return typeof window.gapi !== 'undefined' ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token : '';
+    return auth.getIdToken();
 }
 
 export function saveDataset(payload) {
     return function (dispatch, getState) {
         let existingDataset = payload.dataset;
         const isEdit = existingDataset != null;
-        const formData = {};
-        if (existingDataset != null) {
-            const existingReaders = new Set(existingDataset.readers);
-            if (payload.readers != null) {
-                let setsEqual = existingReaders.size === payload.readers.length;
-                if (setsEqual) {
-                    for (let i = 0; i < payload.readers.length; i++) {
-                        if (!existingReaders.has(payload.readers[i])) {
-                            setsEqual = false;
-                            break;
-                        }
-                    }
-                }
-                if (!setsEqual) {
-                    formData.readers = payload.readers;
-                }
-            }
-        }
         if (existingDataset == null) {
             existingDataset = {};
         }
-        const blacklist = new Set(['readers', 'dataset']);
+
+        const formData = {};
+        const blacklist = new Set(['dataset']);
         for (let key in payload) {
             if (!blacklist.has(key)) {
                 const value = payload[key];
-                if (value != null && value !== existingDataset[key]) {
-                    formData[key] = value;
+                const existingValue = existingDataset[key];
+                if (isArray(value)) {
+                    const stringValue = (value || []).join(',');
+                    const existingStringValue = isArray(existingValue) ? existingValue.join(', ') : existingValue;
+                    if (stringValue !== existingStringValue) {
+                        formData[key] = value;
+                    }
+                } else {
+                    if (value != null && value !== existingValue) {
+                        formData[key] = value;
+                    }
                 }
             }
         }
-
 
         if (Object.keys(formData).length === 0) {
             dispatch(setDialog(null));

@@ -7,7 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
 import React from 'react';
 import {connect} from 'react-redux';
-import {saveView, setDialog, setMessage} from './actions';
+import {saveLink, setDialog, setMessage} from './actions';
 
 class SaveDatasetViewDialog extends React.PureComponent {
     constructor(props) {
@@ -94,7 +94,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
     return {
         handleSave: value => {
-            dispatch(saveView(value));
+            dispatch(saveLink(value));
         },
         handleCancel: value => {
             dispatch(setDialog(null));

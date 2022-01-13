@@ -72,13 +72,13 @@ function App(props) {
             {dialog === SAVE_FEATURE_SET_DIALOG && <SaveSetDialog/>}
             <AppHeader/>
             <Drawer
-                open={drawerOpen}
+                open={drawerOpen && dataset != null}
                 variant="persistent"
                 sx={{
-                    width: drawerOpen ? drawerWidth : null,
+                    width: drawerOpen && dataset != null ? drawerWidth : null,
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {
-                        width: drawerOpen ? drawerWidth : null,
+                        width: drawerOpen && dataset != null ? drawerWidth : null,
                         boxSizing: 'border-box'
                     }
                 }}

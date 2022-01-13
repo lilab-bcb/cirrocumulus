@@ -3,7 +3,7 @@ import {render} from 'react-dom';
 import {Provider} from 'react-redux';
 import {applyMiddleware, createStore} from 'redux';
 import thunkMiddleware from 'redux-thunk';
-import {initGapi, SET_DATASET, SET_EMAIL, SET_SERVER_INFO} from './actions';
+import {initAuth, SET_DATASET, SET_EMAIL, SET_SERVER_INFO} from './actions';
 import rootReducer from './reducers';
 import AppWrapper from './AppWrapper';
 // import * as serviceWorker from './serviceWorker';
@@ -28,27 +28,19 @@ const logger = store => next => action => {
     }
     return next(action);
 };
-const store = createStore(
-    rootReducer,
-    applyMiddleware(
-        thunkMiddleware, logger
-    )
-);
+const store = createStore(rootReducer, applyMiddleware(thunkMiddleware, logger));
 
 function main() {
-    render(
-        <Provider store={store}>
-            {/*<React.StrictMode>*/}
+    render(<Provider store={store}>
+        {/*<React.StrictMode>*/}
 
-            <AppWrapper/>
+        <AppWrapper/>
 
-            {/*</React.StrictMode>*/}
-        </Provider>,
-        document.getElementById('root')
-    );
+        {/*</React.StrictMode>*/}
+    </Provider>, document.getElementById('root'));
 }
 
-store.dispatch(initGapi());
+store.dispatch(initAuth());
 main();
 
 // If you want your app to work offline and load faster, you can change

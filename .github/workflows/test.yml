@@ -29,7 +29,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           python -m pip install .
-          python -m pip install pytest scanpy
+          pip install -r requirements-test.txt
           yarn global add typescript
           yarn install
           yarn build

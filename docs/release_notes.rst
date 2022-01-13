@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.25.post1 `January 13, 2022`
+    * Preserve colors in h5ad file in `cirro prepare_data`
+    * Set environment variable CIRRO_AUTH_CLIENT_ID to enable OAuth 2.0 with Google
+    * User interface updates
+
 - 1.1.25 `December 20, 2021`
     * Added option to compute differential expression results for all groups vs. rest
     * Updated tooltip display

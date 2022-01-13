@@ -9,7 +9,7 @@ from cirrocumulus.abstract_db import AbstractDB
 from cirrocumulus.util import get_email_domain, get_fs
 from .envir import CIRRO_DB_URI, CIRRO_AUTH_CLIENT_ID, CIRRO_JOB_RESULTS, SERVER_CAPABILITY_EDIT_DATASET, \
     SERVER_CAPABILITY_ADD_DATASET, SERVER_CAPABILITY_DELETE_DATASET, SERVER_CAPABILITY_LINKS, SERVER_CAPABILITY_JOBS, \
-    SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES
+    SERVER_CAPABILITY_FEATURE_SETS, SERVER_CAPABILITY_RENAME_CATEGORIES, CIRRO_TEST
 from .invalid_usage import InvalidUsage
 from .job_api import save_job_result_to_file
 
@@ -23,7 +23,11 @@ class MongoDb(AbstractDB):
 
     def __init__(self):
         super().__init__()
-        self.client = MongoClient(os.environ[CIRRO_DB_URI])
+        if bool(os.environ.get(CIRRO_TEST)):
+            import mongomock
+            self.client = mongomock.MongoClient(os.environ[CIRRO_DB_URI])
+        else:
+            self.client = MongoClient(os.environ[CIRRO_DB_URI])
         self.db = self.client.get_default_database()
         self.db.categories.create_index('dataset_id')
         self.db.views.create_index('dataset_id')
@@ -186,7 +190,6 @@ class MongoDb(AbstractDB):
         if dataset.get('id') is not None and not self.capabilities()[SERVER_CAPABILITY_EDIT_DATASET]:
             return
         collection = self.db.datasets
-
         if readers is not None:
             readers = set(readers)
             if email in readers:

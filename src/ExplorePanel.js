@@ -21,7 +21,7 @@ import React, {useState} from 'react';
 import withStyles from '@mui/styles/withStyles';
 import {
     deleteFeatureSet,
-    deleteView,
+    deleteLink,
     downloadSelectedIds,
     getDatasetFilterNames,
     getEmbeddingKey,
@@ -678,7 +678,7 @@ const mapDispatchToProps = (dispatch) => {
             dispatch(setSearchTokens(value));
         },
         handleDeleteView: value => {
-            dispatch(deleteView(value));
+            dispatch(deleteLink(value));
         },
         handleDeleteFeatureSet: value => {
             dispatch(deleteFeatureSet(value));

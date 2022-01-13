@@ -9,7 +9,7 @@ import ReactMarkdown from 'markdown-to-jsx';
 import React, {useState} from 'react';
 import {connect} from 'react-redux';
 import {OPEN_DATASET_DIALOG, setDialog} from './actions';
-import {find} from 'lodash';
+import {find, isArray} from 'lodash';
 import {REACT_MD_OVERRIDES} from './util';
 import CirroTable from './CirroTable';
 import InfoIcon from '@mui/icons-material/Info';
@@ -36,9 +36,11 @@ export function DatasetSelector(props) {
 
     function renderCell(item, column, columnIndex) {
         let value = item[column.field];
-        value = column.format && typeof value === 'number'
-            ? column.format(value)
-            : value;
+        if (isArray(value)) {
+            value = value.join(', ');
+        } else if (column.format && typeof value === 'number') {
+            value = column.format(value);
+        }
         return <>{value}
             {columnIndex === 0 && item.description != null && item.description !== '' && <IconButton
                 onClick={(e) => handleListItemDetailsClick(e, item.id)}
@@ -89,53 +91,53 @@ export function DatasetSelector(props) {
     }
     const open = dialog === OPEN_DATASET_DIALOG;
     const datasetDetailsOpen = Boolean(datasetDetailsEl);
-    return (
-        <>
-            {selectedDataset && <Popover
-                id={"dataset-details-selector"}
-                open={datasetDetailsOpen}
-                anchorEl={datasetDetailsEl}
-                onClose={handleCloseDatasetDetails}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center'
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'center'
-                }}
-            >
-                <Box style={{width: 500, padding: '1em'}}>
-                    <Typography variant="h6">{selectedDataset.name}</Typography>
-                    {DATASET_FIELDS.filter(item => selectedDataset[item.fieldName]).map(item => <div
+    return (<>
+        {selectedDataset && <Popover
+            id={"dataset-details-selector"}
+            open={datasetDetailsOpen}
+            anchorEl={datasetDetailsEl}
+            onClose={handleCloseDatasetDetails}
+            anchorOrigin={{
+                vertical: 'bottom', horizontal: 'center'
+            }}
+            transformOrigin={{
+                vertical: 'top', horizontal: 'center'
+            }}
+        >
+            <Box style={{width: 500, padding: '1em'}}>
+                <Typography variant="h6">{selectedDataset.name}</Typography>
+                {DATASET_FIELDS.filter(item => selectedDataset[item.fieldName]).map(item => {
+                    const itemValue = selectedDataset[item.fieldName];
+                    return <div
                         key={item.fieldName}><Divider/>
-                        <Typography variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
-                        <Typography variant="body2"> {selectedDataset[item.fieldName]}</Typography>}
-                        {item.fieldName === 'description' &&
-                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                       children={selectedDataset[item.fieldName]}/>}</div>)}
-                </Box>
-            </Popover>}
-            {selectedId == null && <Button variant="contained" onClick={handleClick}
-                                           color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
-            {selectedId != null &&
-            <Tooltip title={'Open'}><IconButton onClick={handleClick}
-                                                size="large"><FolderOpenIcon/></IconButton></Tooltip>}
+                        <Typography
+                            variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
+                            <Typography
+                                variant="body2">{isArray(itemValue) ? itemValue.join(', ') : itemValue}</Typography>}
+                        {item.fieldName === 'description' && <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                                                            children={selectedDataset[item.fieldName]}/>}
+                    </div>;
+                })}
+            </Box>
+        </Popover>}
+        {selectedId == null && <Button variant="contained" onClick={handleClick}
+                                       color="primary" startIcon={<FolderOpenIcon/>}>Open</Button>}
+        {selectedId != null && <Tooltip title={'Open'}><IconButton onClick={handleClick}
+                                                                   size="large"><FolderOpenIcon/></IconButton></Tooltip>}
 
-            <Dialog
-                fullWidth={true}
-                open={open}
-                onClose={handleClose}
-                maxWidth={"xl"}
-            >
-                <DialogContent sx={{height: '100vh'}}>
-                    <CirroTable rows={datasetChoices} columns={datasetSelectorColumns} onItemClick={onItemClick}
-                                isSelected={isSelected} renderCell={renderCell} onSearchText={onSearchText}
-                                searchText={searchText} rowId={item => item.id}/>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
+        <Dialog
+            fullWidth={true}
+            open={open}
+            onClose={handleClose}
+            maxWidth={"xl"}
+        >
+            <DialogContent sx={{height: '100vh'}}>
+                <CirroTable rows={datasetChoices} columns={datasetSelectorColumns} onItemClick={onItemClick}
+                            isSelected={isSelected} renderCell={renderCell} onSearchText={onSearchText}
+                            searchText={searchText} rowId={item => item.id}/>
+            </DialogContent>
+        </Dialog>
+    </>);
 
 }
 
@@ -156,7 +158,5 @@ const mapDispatchToProps = dispatch => {
     };
 };
 
-export default (connect(
-    mapStateToProps, mapDispatchToProps
-)(DatasetSelector));
+export default (connect(mapStateToProps, mapDispatchToProps)(DatasetSelector));
 

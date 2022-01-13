@@ -66,32 +66,34 @@ export default function GalleryImage(props) {
 
     useEffect(() => {
         if (traceInfo.type === 'scatter' && traceInfo.embedding.mode == null) {
-            let spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID);
-            spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
+            let spriteVisualizer;
+            if (scatterPlot && (spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID))) {
+                spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
 
-            updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
-                categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
+                updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
+                    categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
 
-            const canvas = containerElement.querySelector('canvas');
-            const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
-            let overlayUrl = null;
-            if (showLabels) {
-                const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
-                const labelCanvas = document.createElement('canvas');
-                labelCanvas.width = chartSize * window.devicePixelRatio;
-                labelCanvas.height = chartSize * window.devicePixelRatio;
-                const context = labelCanvas.getContext('2d');
-                context.scale(window.devicePixelRatio, window.devicePixelRatio);
-                context.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
-                drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, {
-                    width: chartSize,
-                    height: chartSize
-                }, scatterPlot.camera);
-                overlayUrl = labelCanvas.toDataURL();
+                const canvas = containerElement.querySelector('canvas');
+                const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
+                let overlayUrl = null;
+                if (showLabels) {
+                    const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
+                    const labelCanvas = document.createElement('canvas');
+                    labelCanvas.width = chartSize * window.devicePixelRatio;
+                    labelCanvas.height = chartSize * window.devicePixelRatio;
+                    const context = labelCanvas.getContext('2d');
+                    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+                    context.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
+                    drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, {
+                        width: chartSize,
+                        height: chartSize
+                    }, scatterPlot.camera);
+                    overlayUrl = labelCanvas.toDataURL();
+                }
+                setUrl(canvas.toDataURL());
+                setOverlayUrl(overlayUrl);
+                setLoading(false);
             }
-            setUrl(canvas.toDataURL());
-            setOverlayUrl(overlayUrl);
-            setLoading(false);
         } else if (traceInfo.type === 'image') {
             if (!traceInfo.tileSource.ready) {
                 setUrl(null);
@@ -169,24 +171,24 @@ export default function GalleryImage(props) {
                 <div onClick={onSelect} ref={elementRef}
                      style={{position: 'absolute', left: 0, top: 0}}></div>
                 {url &&
-                <div style={{position: 'absolute', left: 0, top: 0}}>
-                    <img alt="" src={url}
-                         width={props.chartSize * window.devicePixelRatio}
-                         height={props.chartSize * window.devicePixelRatio}
-                         onClick={onSelect}
-                         style={{
-                             width: props.chartSize,
-                             height: props.chartSize
-                         }}/>
-                </div>}
+                    <div style={{position: 'absolute', left: 0, top: 0}}>
+                        <img alt="" src={url}
+                             width={props.chartSize * window.devicePixelRatio}
+                             height={props.chartSize * window.devicePixelRatio}
+                             onClick={onSelect}
+                             style={{
+                                 width: props.chartSize,
+                                 height: props.chartSize
+                             }}/>
+                    </div>}
                 {overlayUrl &&
-                <div style={{position: 'absolute', left: 0, top: 0}}>
-                    <img alt="" src={overlayUrl}
-                         onClick={onSelect}
-                         style={{
-                             width: props.chartSize,
-                             height: props.chartSize
-                         }}/></div>}
+                    <div style={{position: 'absolute', left: 0, top: 0}}>
+                        <img alt="" src={overlayUrl}
+                             onClick={onSelect}
+                             style={{
+                                 width: props.chartSize,
+                                 height: props.chartSize
+                             }}/></div>}
 
 
             </div>

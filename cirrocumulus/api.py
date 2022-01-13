@@ -2,14 +2,15 @@ import json
 import os
 from urllib.parse import urlparse
 
+import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context
 
-import cirrocumulus.data_processing as data_processing
 from .anndata_util import adata_to_df
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
 from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
-    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_SPECIES
+    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_AUTH_CLIENT_ID, CIRRO_AUTH_BASE_URL, CIRRO_LIBRARY, \
+    CIRRO_SPECIES
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job, delete_job
 from .util import json_response, get_scheme, get_fs, open_file
@@ -106,21 +107,27 @@ def handle_invalid_usage(error):
     return Response(error.message, error.status_code)
 
 
+def load_json(key):
+    if os.environ.get(key) is not None:
+        if get_fs(os.environ[key]).exists(os.environ[key]):
+            with open_file(os.environ[key], 'rt') as f:
+                return json.load(f)
+        else:
+            return json.loads(os.environ.get(key))
+
+
 @cirro_blueprint.route('/server', methods=['GET'])
 def handle_server():
     # no login required
     d = {}
     d['email'] = os.environ.get(CIRRO_EMAIL)
     d['capabilities'] = get_database().capabilities()
-    d['clientId'] = get_auth().client_id
+    d['clientId'] = os.environ.get(CIRRO_AUTH_CLIENT_ID)
+    d['baseUrl'] = os.environ.get(CIRRO_AUTH_BASE_URL)
     if os.environ.get(CIRRO_MIXPANEL) is not None:
         d['mixpanel'] = os.environ[CIRRO_MIXPANEL]
-    if os.environ.get(CIRRO_DATASET_SELECTOR_COLUMNS) is not None:
-        if os.path.exists(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS]):
-            with open(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS], 'rt') as f:
-                d['datasetSelectorColumns'] = json.loads(f.read())
-        else:
-            d['datasetSelectorColumns'] = json.loads(os.environ[CIRRO_DATASET_SELECTOR_COLUMNS])
+    d['datasetSelectorColumns'] = load_json(CIRRO_DATASET_SELECTOR_COLUMNS)
+
     if os.environ.get(CIRRO_FOOTER) is not None:
         with open(os.environ.get(CIRRO_FOOTER), 'rt') as f:
             d['footer'] = f.read()
@@ -128,15 +135,30 @@ def handle_server():
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
             d['brand'] = f.read()
     d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
-    if os.environ.get(CIRRO_SPECIES) is not None:
-        if get_fs(os.environ[CIRRO_SPECIES]).exists(os.environ[CIRRO_SPECIES]):
-            with open_file(os.environ[CIRRO_SPECIES], 'rt') as f:
-                d['species'] = json.load(f)
-        else:
-            d['species'] = json.loads(os.environ.get(CIRRO_SPECIES))
-    else:
-        d['species'] = dict(favorite=["Homo sapiens", "Mus musculus"], other=["Gallus gallus", "Macaca fascicularis",
-                                                                              "Macaca mulatta", "Rattus norvegicus"]);
+    d['species'] = load_json(CIRRO_SPECIES) or dict(favorite=["Homo sapiens", "Mus musculus"],
+                                                    other=["Gallus gallus", "Macaca fascicularis",
+                                                           "Macaca mulatta", "Rattus norvegicus"])
+
+    # from https://www.ebi.ac.uk/ols/ontologies/efo/terms?iri=http%3A%2F%2Fwww.ebi.ac.uk%2Fefo%2FEFO_0010183&viewMode=All&siblings=false
+    d['library'] = load_json(CIRRO_LIBRARY) or ["10x 3' v1", "10x 3' v2", "10x 3' v3",
+                                                "10x 5' v1", "10x 5' v2",
+                                                "10x feature barcode (CRISPR screening)",
+                                                "10x feature barcode (cell surface protein profiling)",
+                                                "10x feature barcode (sample multiplexing)",
+                                                "10x Ig enrichment", "10x TCR enrichment",
+                                                "10x multiome", "10x scATAC-seq",
+                                                "Visium Spatial Gene Expression", 'CEL-seq', 'CEL-seq2',
+                                                'CITE-seq (cell surface protein profiling)',
+                                                'CITE-seq (sample multiplexing)', 'DroNc-seq', 'Drop-seq',
+                                                'Fluidigm C1-based library preparation', 'MARS-seq', 'Nx1-seq',
+                                                'Quartz-seq', 'SCOPE-chip', 'mcSCRB-seq', 'SPLiT-seq', 'STRT-seq',
+                                                'Seq-Well S3', 'Smart-seq',
+                                                'Smart-seq2', 'barcoded plate-based single cell RNA-seq', 'inDrop',
+                                                'mCT-seq', 'microwell-seq', '10x multiome', '10x scATAC-seq',
+                                                'scATAC-seq (Microfluidics)',
+                                                'scATAC-seq (cell index)', 'scBS-seq', 'scChIP-seq', 'sci-CAR',
+                                                'sci-Plex', 'sci-RNA-seq3',
+                                                'single cell Hi-C', 'snmC-Seq2']
 
     if os.environ.get(CIRRO_CELL_ONTOLOGY) is not None:
         if get_fs(os.environ[CIRRO_CELL_ONTOLOGY]).exists(os.environ[CIRRO_CELL_ONTOLOGY]):
@@ -388,8 +410,11 @@ def handle_dataset():
         else:
             d = dict()
             for key in request.form:
-                d[key] = request.form[key]
-
+                val = request.form[key]
+                if len(val) >= 2 and val[0] == '[' and val[len(val) - 1] == ']':
+                    d[key] = json.loads(val)
+                else:
+                    d[key] = val
         dataset_id = d.get('id')
         dataset_name = d.get('name')
         url = d.get('url')  # e.g. gs://foo/a/b/
@@ -397,9 +422,6 @@ def handle_dataset():
         file = None
         if request.content_type != 'application/json':
             file = request.files.get('file')  # file upload
-        if readers is not None and not isinstance(readers, list):
-            import json
-            readers = json.loads(readers)
         if request.method == 'PUT' and dataset_id is None:  # update
             return 'Please supply an id', 400
         if request.method == 'POST' and dataset_name == '':  # new
@@ -426,15 +448,6 @@ def handle_dataset():
     elif request.method == 'GET':
         dataset_id = request.args.get('id', '')
         return json_response(database_api.get_dataset(email, dataset_id, True))
-
-
-@cirro_blueprint.route('/module', methods=['POST'])
-def handle_module_score():
-    content = request.get_json(cache=False)
-    email, dataset = get_email_and_dataset(content)
-    features = content.get('features')
-    adata = dataset_api.read_dataset(dataset, keys=dict(X=features))
-    return json_response(adata.X.mean(axis=1))
 
 
 @cirro_blueprint.route('/job', methods=['GET', 'DELETE', 'POST'])
