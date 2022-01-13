@@ -1,3 +1,4 @@
+CIRRO_TEST = 'CIRRO_TEST'  # whether running using pytest
 CIRRO_AUTH_CLIENT_ID = 'CIRRO_AUTH_CLIENT_ID'  # for javascript client
 CIRRO_AUTH_BASE_URL = 'CIRRO_AUTH_BASE_URL'  # for javascript client
 CIRRO_DB_URI = 'CIRRO_DB_URI'

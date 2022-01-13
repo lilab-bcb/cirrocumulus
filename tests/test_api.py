@@ -2,10 +2,11 @@ import os
 
 import anndata
 import pytest
-from cirrocumulus.envir import CIRRO_DB_URI
+
+from cirrocumulus.envir import CIRRO_DB_URI, CIRRO_TEST
 from cirrocumulus.launch import create_app, configure_app
 from cirrocumulus.prepare_data import PrepareData
-from cirrocumulus.serve import cached_app, DEFAULT_DB_URI
+from cirrocumulus.serve import cached_app
 
 
 @pytest.fixture(scope='session', params=[True, False])
@@ -16,8 +17,10 @@ def app_conf(request, tmpdir_factory):
         app = create_app()
         configure_app(app, [dataset_path], None, None)
         dataset_id = dataset_path
+        os.environ[CIRRO_TEST] = 'false'
     else:
-        os.environ[CIRRO_DB_URI] = DEFAULT_DB_URI
+        os.environ[CIRRO_TEST] = 'true'
+        os.environ[CIRRO_DB_URI] = 'mongodb://localhost:27018/cirrocumulus-test'
         app = cached_app()
     with app.test_client() as client:
         if request.param:

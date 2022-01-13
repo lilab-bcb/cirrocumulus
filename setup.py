@@ -74,7 +74,7 @@ setup(
         "Topic :: Scientific/Engineering :: Visualization"
     ],
     extras_require=dict(
-        test=['pytest', 'scanpy']
+        test=['pytest', 'scanpy', 'mongomock']
     ),
     keywords="single cell/nucleus genomics visualization",
     packages=find_packages(),
