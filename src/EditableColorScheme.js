@@ -36,7 +36,7 @@ export function EditableColorScheme(props) {
         onInterpolator(Object.assign({}, interpolator, {reversed: event.target.checked}));
     }
 
-    const updateMinDebounced = useMemo(() => debounce(updateMin, 5000), []);
+    const updateMinDebounced = useMemo(() => debounce(updateMin, 500), []);
     const updateMaxDebounced = useMemo(() => debounce(updateMax, 500), []);
 
     useEffect(() => {
