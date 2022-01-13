@@ -51,7 +51,6 @@ function GalleryCharts(props) {
     function onSortEnd(galleryTraces, e) {
         const oldTrace = galleryTraces[e.oldIndex];
         const newTrace = galleryTraces[e.newIndex];
-        const embeddingData = embeddingData;
         const oldIndex = findIndex(embeddingData, oldTrace);
         const newIndex = findIndex(embeddingData, newTrace);
         embeddingData.splice(oldIndex, 1);
