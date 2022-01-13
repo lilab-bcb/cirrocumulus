@@ -20,6 +20,9 @@ CIRRO_LOG_LEVEL = 'CIRRO_LOG_LEVEL'
 CIRRO_DATASET_SELECTOR_COLUMNS = 'CIRRO_DATASET_SELECTOR_COLUMNS'
 CIRRO_JOB_TYPE = 'CIRRO_JOB_TYPE'
 
+# path to JSON file for library list when adding new dataset
+CIRRO_LIBRARY = 'CIRRO_LIBRARY'
+
 # path to JSON file for species list when adding new dataset
 CIRRO_SPECIES = 'CIRRO_SPECIES'
 # path to OBO file
