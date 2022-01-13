@@ -30,7 +30,7 @@ function DeleteDatasetDialog(props) {
             fullWidth={true}
             maxWidth={'sm'}
         >
-            <DialogTitle id="delete-dataset-dialog-title">Delete Dataset</DialogTitle>
+            <DialogTitle id="delete-dataset-dialog-title">Delete</DialogTitle>
             <DialogContent>
                 {dataset && <h3>Are you sure you want to delete {dataset.name}?</h3>}
             </DialogContent>
@@ -59,7 +59,6 @@ const mapDispatchToProps = dispatch => {
         handleDelete: value => {
             dispatch(deleteDataset(value));
         },
-
         handleCancel: value => {
             dispatch(setDialog(null));
         }
