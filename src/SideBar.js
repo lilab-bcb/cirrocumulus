@@ -5,28 +5,26 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemSecondaryAction from '@mui/material/ListItemSecondaryAction';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Slider from '@mui/material/Slider';
-import InfoIcon from '@mui/icons-material/Info';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import DeleteIcon from '@mui/icons-material/Delete';
 import {debounce, find} from 'lodash';
-import React from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
-    deleteView,
+    deleteLink,
     getTraceKey,
     handleDomainChange,
-    openView,
+    openLink,
     SAVE_DATASET_FILTER_DIALOG,
     setChartOptions,
     setChartSize,
     setDialog,
     setInterpolator,
     setMarkerOpacity,
+    setMessage,
     setPointSize,
     setUnselectedMarkerOpacity,
     setUnselectedPointSize
@@ -38,11 +36,12 @@ import Link from "@mui/material/Link";
 import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import Divider from "@mui/material/Divider";
-import LinkIcon from "@mui/icons-material/Link";
 import ExplorePanel from './ExplorePanel';
 import JobPanel from './JobPanel';
 import Popover from '@mui/material/Popover';
 import ReactMarkdown from 'markdown-to-jsx';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import Menu from '@mui/material/Menu';
 
 const pointSizeOptions = [{value: 0.1, label: '10%'}, {value: 0.25, label: '25%'}, {value: 0.5, label: '50%'}, {
     value: 0.75,
@@ -78,118 +77,141 @@ const styles = theme => ({
 });
 
 
-class SideBar extends React.PureComponent {
+function SideBar(props) {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            opacity: props.markerOpacity,
-            unselectedOpacity: props.unselectedMarkerOpacity,
-            minColor: '',
-            maxColor: '',
-            labelFontSize: props.chartOptions.labelFontSize,
-            labelStrokeWidth: props.chartOptions.labelStrokeWidth,
-            selectedViewEl: null,
-            selectedView: null
-        };
+    const [opacity, setOpacity] = useState(props.markerOpacity);
+    const [unselectedOpacity, setUnselectedOpacity] = useState(props.unselectedMarkerOpacity);
+    const [labelFontSize, setLabelFontSize] = useState(props.chartOptions.labelFontSize);
+    const [labelStrokeWidth, setLabelStrokeWidth] = useState(props.chartOptions.labelStrokeWidth);
 
-        this.onLabelFontSizeUpdate = debounce(this.onLabelFontSizeUpdate, 500);
-        this.onLabelStrokeWidthUpdate = debounce(this.onLabelStrokeWidthUpdate, 500);
-        this.updateMarkerOpacity = debounce(this.updateMarkerOpacity, 500);
-        this.updateUnselectedMarkerOpacity = debounce(this.updateUnselectedMarkerOpacity, 500);
-    }
+    const [minColor, setMinColor] = useState('');
+    const [maxColor, setMaxColor] = useState('');
+    const [selectedViewEl, ssetSelectedViewEl] = useState(null);
+    const [selectedView, setSelectedView] = useState(null);
+    const [contextMenu, setContextMenu] = useState(null);
+    const [selectedLink, setSelectedLink] = useState(null);
 
+    const {
+        activeFeature,
+        chartOptions,
+        chartSize,
+        classes,
+        compareActions,
+        datasetViews,
+        embeddingData,
+        globalFeatureSummary,
+        interpolator,
+        markerOpacity,
+        pointSize,
+        serverInfo,
+        tab,
+        unselectedPointSize,
+        unselectedMarkerOpacity,
+        handleDialog,
+        handleInterpolator,
+        handleChartSize,
+        handleChartOptions,
+        onDomain,
+        handlePointSize,
+        handleUnselectedPointSize,
+        handleMarkerOpacity,
+        handleUnselectedMarkerOpacity,
+        handleOpenView,
+        handleDeleteView,
+        handleMessage
+    } = props;
 
-    componentDidUpdate(prevProps, prevState, snapshot) {
-        if (prevProps.chartOptions.labelFontSize !== this.props.chartOptions.labelFontSize) {
-            this.setState({
-                labelFontSize: this.props.chartOptions.labelFontSize
-            });
-        }
-        if (prevProps.chartOptions.labelStrokeWidth !== this.props.chartOptions.labelStrokeWidth) {
-            this.setState({
-                labelStrokeWidth: this.props.chartOptions.labelStrokeWidth
-            });
-        }
+    const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+    const activeInterpolator = activeFeature == null ? null : interpolator[activeFeature.type];
+    const onLabelFontSizeUpdateDebouncedFunc = useMemo(() => debounce(onLabelFontSizeUpdate, 500), []);
+    const onLabelStrokeWidthUpdateDebouncedFunc = useMemo(() => debounce(onLabelStrokeWidthUpdate, 500), []);
+    const updateMarkerOpacityDebouncedFunc = useMemo(() => debounce(updateMarkerOpacity, 500), []);
+    const updateUnselectedMarkerOpacityDebouncedFunc = useMemo(() => debounce(updateUnselectedMarkerOpacity, 500), []);
 
-        if (prevProps.markerOpacity !== this.props.markerOpacity) {
-            this.setState({opacity: this.props.markerOpacity});
-        }
-        if (prevProps.unselectedMarkerOpacity !== this.props.unselectedMarkerOpacity) {
-            this.setState({unselectedOpacity: this.props.unselectedMarkerOpacity});
-        }
+    useEffect(() => {
+        setLabelFontSize(chartOptions.labelFontSize);
+    }, [chartOptions.labelFontSize]);
+    useEffect(() => {
+        setLabelStrokeWidth(chartOptions.labelStrokeWidth);
+    }, [chartOptions.labelStrokeWidth]);
+    useEffect(() => {
+        setOpacity(markerOpacity);
+    }, [markerOpacity]);
 
-        if (prevProps.activeFeature !== this.props.activeFeature) {
-            const summary = this.props.activeFeature == null ? null : this.props.globalFeatureSummary[this.props.activeFeature.name];
-            if (this.props.activeFeature == null) {
-                this.setState({
-                    minColor: '',
-                    maxColor: ''
-                });
+    useEffect(() => {
+        setUnselectedOpacity(unselectedMarkerOpacity);
+    }, [unselectedMarkerOpacity]);
+
+    useEffect(() => {
+        const summary = activeFeature == null ? null : globalFeatureSummary[activeFeature.name];
+        if (activeFeature == null) {
+            setMinColor('');
+            setMaxColor('');
+        } else {
+            const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+            if (trace == null) {
+                setMinColor('');
+                setMaxColor('');
+            } else if (trace.type !== TRACE_TYPE_META_IMAGE) {
+                setMinColor(summary.customMin == null ? '' : summary.customMin);
+                setMaxColor(summary.customMax == null ? '' : summary.customMax);
             } else {
-                const trace = find(this.props.embeddingData, traceInfo => getTraceKey(traceInfo) === this.props.activeFeature.embeddingKey);
-                if (trace == null) {
-                    this.setState({
-                        minColor: '',
-                        maxColor: ''
-                    });
-                } else if (trace.type !== TRACE_TYPE_META_IMAGE) {
-                    this.setState({
-                        minColor: summary.customMin == null ? '' : summary.customMin,
-                        maxColor: summary.customMax == null ? '' : summary.customMax
-                    });
-                } else {
-                    this.setState({
-                        minColor: summary.customZMin == null ? '' : summary.customZMin,
-                        maxColor: summary.customZMax == null ? '' : summary.customZMax
-                    });
-                }
+                setMinColor(summary.customZMin == null ? '' : summary.customZMin);
+                setMaxColor(summary.customZMax == null ? '' : summary.customZMax);
             }
+        }
+    }, [activeFeature, embeddingData, globalFeatureSummary]);
 
 
+    function onLinkContextMenu(event, item) {
+        event.preventDefault();
+        event.stopPropagation();
+        setSelectedLink(item);
+        setContextMenu({
+            mouseX: event.clientX - 2, mouseY: event.clientY - 4
+        });
+
+    }
+
+    function onLabelFontSizeUpdate(value) {
+        if (!isNaN(value) && value > 0) {
+            chartOptions.labelFontSize = value;
+            handleChartOptions(chartOptions);
+            setLabelFontSize(value);
         }
     }
 
-    onLabelFontSizeUpdate = (value) => {
-        if (!isNaN(value) && value > 0) {
-            this.props.chartOptions.labelFontSize = value;
-            this.props.handleChartOptions(this.props.chartOptions);
-            this.setState({labelFontSize: value});
-        }
-    };
+    function onLabelFontSize(event) {
+        setLabelFontSize(event.target.value);
+        onLabelFontSizeUpdateDebouncedFunc(event.target.value);
+    }
 
-    onLabelFontSize = (event) => {
-        this.setState({labelFontSize: event.target.value});
-        this.onLabelFontSizeUpdate(event.target.value);
-    };
+    function onLabelStrokeWidth(event) {
+        setLabelStrokeWidth(event.target.value);
+        onLabelStrokeWidthUpdateDebouncedFunc(event.target.value);
+    }
 
-    onLabelStrokeWidth = (event) => {
-        this.setState({labelStrokeWidth: event.target.value});
-        this.onLabelStrokeWidthUpdate(event.target.value);
-    };
-
-    onLabelStrokeWidthUpdate = (value) => {
+    function onLabelStrokeWidthUpdate(value) {
         if (!isNaN(value) && value >= 0) {
-            this.props.chartOptions.labelStrokeWidth = value;
-            this.props.handleChartOptions(this.props.chartOptions);
-            this.setState({labelStrokeWidth: value});
+            chartOptions.labelStrokeWidth = value;
+            handleChartOptions(chartOptions);
+            setLabelStrokeWidth(value);
         }
-    };
+    }
 
-    onInterpolator = (value) => {
-        const {activeFeature} = this.props;
-        this.props.handleInterpolator({featureType: activeFeature.type, value: value});
-    };
-    onMinUIChange = (value) => {
-        this.setState({minColor: value});
-    };
+    function onInterpolator(value) {
+        handleInterpolator({featureType: activeFeature.type, value: value});
+    }
 
-    onMaxUIChange = (value) => {
-        this.setState({maxColor: value});
-    };
+    function onMinUIChange(value) {
+        setMinColor(value);
+    }
 
-    onMinChange = (value) => {
-        const {activeFeature, embeddingData, globalFeatureSummary} = this.props;
+    function onMaxUIChange(value) {
+        setMaxColor(value);
+    }
+
+    function onMinChange(value) {
         const summary = globalFeatureSummary[activeFeature.name];
         const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         if (trace.type !== TRACE_TYPE_META_IMAGE) {
@@ -197,14 +219,13 @@ class SideBar extends React.PureComponent {
         } else {
             summary.customZMin = isNaN(value) ? undefined : value;
         }
-        this.props.onDomain({
+        onDomain({
             name: activeFeature.name,
             summary: summary
         });
-    };
+    }
 
-    onMaxChange = (value) => {
-        const {activeFeature, embeddingData, globalFeatureSummary} = this.props;
+    function onMaxChange(value) {
         const summary = globalFeatureSummary[activeFeature.name];
         const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
         if (trace.type !== TRACE_TYPE_META_IMAGE) {
@@ -212,321 +233,291 @@ class SideBar extends React.PureComponent {
         } else {
             summary.customZMax = isNaN(value) ? undefined : value;
         }
-        this.props.onDomain({
-            name: this.props.activeFeature.name,
+        onDomain({
+            name: activeFeature.name,
             summary: summary
         });
-    };
+    }
 
-    onMarkerOpacityChange = (event, value) => {
-        this.setState({opacity: value});
-        this.updateMarkerOpacity(value);
-    };
+    function onMarkerOpacityChange(event, value) {
+        setOpacity(value);
+        updateMarkerOpacityDebouncedFunc(value);
+    }
 
-    updateMarkerOpacity = (value) => {
+    function updateMarkerOpacity(value) {
         let opacity = parseFloat(value);
         if (opacity >= 0 && opacity <= 1) {
-            this.props.handleMarkerOpacity(opacity);
+            handleMarkerOpacity(opacity);
         }
-    };
+    }
 
-    onUnselectedMarkerOpacityChange = (event, value) => {
-        this.setState({unselectedOpacity: value});
-        this.updateUnselectedMarkerOpacity(value);
-    };
+    function onUnselectedMarkerOpacityChange(event, value) {
+        setUnselectedOpacity(value);
+        updateUnselectedMarkerOpacityDebouncedFunc(value);
+    }
 
-    updateUnselectedMarkerOpacity = (value) => {
+    function updateUnselectedMarkerOpacity(value) {
         let opacity = parseFloat(value);
         if (opacity >= 0 && opacity <= 1) {
-            this.props.handleUnselectedMarkerOpacity(opacity);
+            handleUnselectedMarkerOpacity(opacity);
         }
-    };
+    }
 
-    openView = (id) => {
-        this.props.handleOpenView(id);
-    };
+    function openView(id) {
+        handleOpenView(id);
+    }
 
-    deleteView = (id) => {
-        this.props.handleDeleteView(id);
-    };
+    function deleteView(id) {
+        setContextMenu(null);
+        handleDeleteView(id);
+    }
 
-    viewDetails = (event, id) => {
+    function viewDetails(event, id) {
         event.stopPropagation();
-        this.setState({
-            selectedViewEl: event.currentTarget,
-            selectedView: find(this.props.datasetViews, item => item.id === id)
-        });
-    };
+        setContextMenu(null);
+        ssetSelectedViewEl(event.currentTarget);
+        setSelectedView(find(datasetViews, item => item.id === id));
+    }
 
-    copyView = (id) => {
+    function copyView(id) {
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
         linkText += '#q=' + encodeURIComponent(JSON.stringify({link: id}));
+        setContextMenu(null);
         copyToClipboard(linkText);
-    };
-
-    onPointSizeChange = (event) => {
-        this.props.handlePointSize(event.target.value);
-    };
-
-    onUnselectedPointSizeChange = (event) => {
-        this.props.handleUnselectedPointSize(event.target.value);
-    };
-
-
-    onChartSizeChange = (event) => {
-        const value = event.target.value;
-        this.props.handleChartSize(value);
-    };
-
-    onShowGalleryLabelsChange = (event) => {
-        const {chartOptions} = this.props;
-        chartOptions.showGalleryLabels = event.target.checked;
-        this.props.handleChartOptions(chartOptions);
-    };
-
-
-    handleCloseViewDetails = () => {
-        this.setState({selectedViewEl: null, selectedView: null});
-    };
-    onViewSaved = () => {
-        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
-    };
-
-    onDatasetViewSaved = () => {
-        this.props.handleDialog(SAVE_DATASET_FILTER_DIALOG);
-    };
-
-
-    render() {
-        const {
-            activeFeature,
-            chartOptions,
-            chartSize,
-            classes,
-            compareActions,
-            datasetViews,
-            embeddingData,
-            interpolator,
-            pointSize,
-            serverInfo,
-            tab,
-            unselectedPointSize
-        } = this.props;
-        const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
-        const activeInterpolator = activeFeature == null ? null : interpolator[activeFeature.type];
-
-        const {
-            unselectedOpacity,
-            opacity,
-            minColor,
-            maxColor,
-            selectedViewEl,
-            selectedView
-        } = this.state;
-
-        return (<div className={classes.root}>
-                <ExplorePanel/>
-                <JobPanel compareActions={compareActions}/>
-                {selectedView && <Popover
-                    id={"view-details"}
-                    open={Boolean(selectedViewEl)}
-                    anchorEl={selectedViewEl}
-                    onClose={this.handleCloseViewDetails}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'center'
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'center'
-                    }}
-                >
-                    <div style={{width: 500}}>
-                        {selectedView.last_updated &&
-                            <Typography>Last Updated: {new Date(selectedView.last_updated).toDateString()}</Typography>}
-                        {selectedView.notes &&
-                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                           children={selectedView.notes}/>}
-                    </div>
-                </Popover>}
-                <div style={tab === 'embedding' ? null : {display: 'none'}}>
-                    <Divider/>
-                    <Typography gutterBottom={true} component={"h1"} className={classes.title}>View</Typography>
-                    <InputLabel shrink={true}>Opacity</InputLabel>
-                    <Slider
-                        min={0.0}
-                        max={1}
-                        step={0.01}
-                        sx={{width: 190, marginLeft: 1}}
-                        valueLabelDisplay="auto"
-                        value={opacity}
-                        onChange={this.onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
-
-                    <InputLabel shrink={true}>Filtered Marker Opacity</InputLabel>
-                    <Slider
-                        min={0.0}
-                        max={1}
-                        step={0.01}
-                        sx={{width: 190, marginLeft: 1}}
-                        valueLabelDisplay="auto"
-                        value={unselectedOpacity}
-                        onChange={this.onUnselectedMarkerOpacityChange}
-                        aria-labelledby="continuous-slider"/>
-
-
-                    <FormControl className={classes.formControl}>
-                        <InputLabel htmlFor="point_size">Marker Size</InputLabel>
-                        <Select
-                            label={"Marker Size"}
-                            labelId={"point_size"}
-                            className={classes.select}
-                            size={"small"}
-                            onChange={this.onPointSizeChange}
-                            value={pointSize}
-                            multiple={false}>
-                            {pointSizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl className={classes.formControl}>
-                        <InputLabel htmlFor="filtered_point_size">Filtered Marker Size</InputLabel>
-                        <Select
-                            label={"Filtered Marker Size"}
-                            labelId={"filtered_point_size"}
-                            size={"small"}
-                            className={classes.select}
-                            onChange={this.onUnselectedPointSizeChange}
-                            value={unselectedPointSize}
-                            multiple={false}>
-                            {pointSizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <FormControl className={classes.formControl}>
-                        <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
-                        <Select
-                            label={"Gallery Chart Size"}
-                            labelId={"chart_size"}
-                            size={"small"}
-                            className={classes.select}
-                            onChange={this.onChartSizeChange}
-                            value={chartSize}
-                            multiple={false}>
-                            {gallerySizeOptions.map(item => (
-                                <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-
-                    <div><FormControlLabel
-                        control={
-                            <Switch
-                                checked={chartOptions.showGalleryLabels}
-                                onChange={this.onShowGalleryLabelsChange}
-                            />
-                        }
-                        label="Gallery Labels"
-                    /></div>
-
-
-                    <EditableColorScheme
-                        interpolator={activeInterpolator}
-                        domain={primaryTrace && primaryTrace.continuous && primaryTrace.name !== '__count' ? primaryTrace.colorScale.domain() : null}
-                        min={minColor}
-                        max={maxColor}
-                        onMinChange={this.onMinChange}
-                        onMaxChange={this.onMaxChange}
-                        onMinUIChange={this.onMinUIChange}
-                        onMaxUIChange={this.onMaxUIChange}
-                        onInterpolator={this.onInterpolator}/>
-
-                    <FormControl className={classes.formControl}>
-                        <TextField
-                            value={this.state.labelFontSize}
-                            onChange={this.onLabelFontSize}
-                            size="small"
-                            InputLabelProps={{shrink: true}}
-                            fullWidth
-                            label="Label Font Size"
-                        />
-                    </FormControl>
-
-                    <FormControl className={classes.formControl}>
-                        <TextField
-                            value={this.state.labelStrokeWidth}
-                            onChange={this.onLabelStrokeWidth}
-                            size="small"
-                            InputLabelProps={{shrink: true}}
-                            fullWidth
-                            label="Label Shadow Size"
-                        />
-                    </FormControl>
-
-                </div>
-
-                {serverInfo.capabilities.has(SERVER_CAPABILITY_LINKS) &&
-                    <div
-                        style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
-                        <Divider/>
-                        <Typography gutterBottom={false} component={"h1"}
-                                    className={classes.title}>Links</Typography>
-                        <Divider/>
-                        <FormControl className={classes.formControl}>
-                            <Tooltip title={"Save Current Visualization State"}><Link
-                                style={{
-                                    float: 'right',
-                                    fontSize: '0.75rem'
-                                }}
-                                onClick={this.onViewSaved}>Save</Link></Tooltip></FormControl>
-
-                        {datasetViews.length === 0 &&
-                            <Box color="text.secondary">No saved links</Box>}
-                        {datasetViews.length > 0 &&
-                            <List dense={true} style={{marginTop: 10}}>
-                                {datasetViews.map(item => (
-                                    <ListItem key={item.id} data-key={item.id} button
-                                              onClick={e => this.openView(item.id)}>
-                                        <ListItemText primary={item.name}/>
-                                        <ListItemSecondaryAction>
-                                            {(item.notes || item.last_updated) && <IconButton
-                                                edge="end"
-                                                aria-label="info"
-                                                onClick={e => this.viewDetails(e, item.id)}
-                                                size="small">
-                                                <InfoIcon/>
-                                            </IconButton>}
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="copy"
-                                                onClick={e => this.copyView(item.id)}
-                                                size="small">
-                                                <LinkIcon/>
-                                            </IconButton>
-                                            <IconButton
-                                                edge="end"
-                                                aria-label="delete"
-                                                onClick={e => this.deleteView(item.id)}
-                                                size="small">
-                                                <DeleteIcon/>
-                                            </IconButton>
-                                        </ListItemSecondaryAction>
-                                    </ListItem>
-                                ))}
-                            </List>
-                        }
-
-                    </div>}
-
-                <div style={tab === 'results' ? null : {display: 'none'}}>
-                    <JobResultOptions/>
-                </div>
-            </div>
-        );
+        handleMessage('Link copied');
     }
+
+    function onPointSizeChange(event) {
+        handlePointSize(event.target.value);
+    }
+
+    function onUnselectedPointSizeChange(event) {
+        handleUnselectedPointSize(event.target.value);
+    }
+
+    function onChartSizeChange(event) {
+        handleChartSize(event.target.value);
+    }
+
+    function onShowGalleryLabelsChange(event) {
+        chartOptions.showGalleryLabels = event.target.checked;
+        handleChartOptions(chartOptions);
+    }
+
+    function handleCloseViewDetails() {
+        ssetSelectedViewEl(null);
+        setSelectedView(null);
+    }
+
+    function onViewSaved() {
+        handleDialog(SAVE_DATASET_FILTER_DIALOG);
+    }
+
+    return (<div className={classes.root}>
+            <Menu
+                anchorReference="anchorPosition"
+                anchorPosition={contextMenu != null ? {
+                    top: contextMenu.mouseY,
+                    left: contextMenu.mouseX
+                } : undefined}
+                open={Boolean(contextMenu)}
+                onClose={e => {
+                    setContextMenu(null);
+                    setSelectedLink(null);
+                }}
+            >
+                {selectedLink && (selectedLink.notes || selectedLink.last_updated) &&
+                    <MenuItem onClick={e => viewDetails(e, selectedLink.id)}>Info</MenuItem>}
+                {selectedLink && <MenuItem onClick={e => copyView(selectedLink.id)}>Copy</MenuItem>}
+                {selectedLink && <MenuItem onClick={e => deleteView(selectedLink.id)}>Delete</MenuItem>}
+            </Menu>
+            <ExplorePanel/>
+            <JobPanel compareActions={compareActions}/>
+            {selectedView && <Popover
+                id={"view-details"}
+                open={Boolean(selectedViewEl)}
+                anchorEl={selectedViewEl}
+                onClose={handleCloseViewDetails}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center'
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center'
+                }}
+            >
+                <div style={{width: 500}}>
+                    {selectedView.last_updated &&
+                        <Typography>Last Updated: {new Date(selectedView.last_updated).toDateString()}</Typography>}
+                    {selectedView.notes &&
+                        <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                       children={selectedView.notes}/>}
+                </div>
+            </Popover>}
+            <div style={tab === 'embedding' ? null : {display: 'none'}}>
+                <Divider/>
+                <Typography gutterBottom={true} component={"h1"} className={classes.title}>View</Typography>
+                <InputLabel shrink={true}>Opacity</InputLabel>
+                <Slider
+                    min={0.0}
+                    max={1}
+                    step={0.01}
+                    sx={{width: 190, marginLeft: 1}}
+                    valueLabelDisplay="auto"
+                    value={opacity}
+                    onChange={onMarkerOpacityChange} aria-labelledby="continuous-slider"/>
+
+                <InputLabel shrink={true}>Filtered Marker Opacity</InputLabel>
+                <Slider
+                    min={0.0}
+                    max={1}
+                    step={0.01}
+                    sx={{width: 190, marginLeft: 1}}
+                    valueLabelDisplay="auto"
+                    value={unselectedOpacity}
+                    onChange={onUnselectedMarkerOpacityChange}
+                    aria-labelledby="continuous-slider"/>
+
+
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="point_size">Marker Size</InputLabel>
+                    <Select
+                        label={"Marker Size"}
+                        labelId={"point_size"}
+                        className={classes.select}
+                        size={"small"}
+                        onChange={onPointSizeChange}
+                        value={pointSize}
+                        multiple={false}>
+                        {pointSizeOptions.map(item => (
+                            <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="filtered_point_size">Filtered Marker Size</InputLabel>
+                    <Select
+                        label={"Filtered Marker Size"}
+                        labelId={"filtered_point_size"}
+                        size={"small"}
+                        className={classes.select}
+                        onChange={onUnselectedPointSizeChange}
+                        value={unselectedPointSize}
+                        multiple={false}>
+                        {pointSizeOptions.map(item => (
+                            <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor="chart_size">Gallery Chart Size</InputLabel>
+                    <Select
+                        label={"Gallery Chart Size"}
+                        labelId={"chart_size"}
+                        size={"small"}
+                        className={classes.select}
+                        onChange={onChartSizeChange}
+                        value={chartSize}
+                        multiple={false}>
+                        {gallerySizeOptions.map(item => (
+                            <MenuItem key={item.label} value={item.value}>{item.label}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <div><FormControlLabel
+                    control={
+                        <Switch
+                            checked={chartOptions.showGalleryLabels}
+                            onChange={onShowGalleryLabelsChange}
+                        />
+                    }
+                    label="Gallery Labels"
+                /></div>
+
+
+                <EditableColorScheme
+                    interpolator={activeInterpolator}
+                    domain={primaryTrace && primaryTrace.continuous && primaryTrace.name !== '__count' ? primaryTrace.colorScale.domain() : null}
+                    min={minColor}
+                    max={maxColor}
+                    onMinChange={onMinChange}
+                    onMaxChange={onMaxChange}
+                    onMinUIChange={onMinUIChange}
+                    onMaxUIChange={onMaxUIChange}
+                    onInterpolator={onInterpolator}/>
+
+                <FormControl className={classes.formControl}>
+                    <TextField
+                        value={labelFontSize}
+                        onChange={onLabelFontSize}
+                        size="small"
+                        sx={{width: 130}}
+                        InputLabelProps={{shrink: true}}
+                        fullWidth
+                        label="Label Font Size"
+                    />
+                </FormControl>
+
+                <FormControl className={classes.formControl}>
+                    <TextField
+                        value={labelStrokeWidth}
+                        onChange={onLabelStrokeWidth}
+                        size="small"
+                        sx={{width: 130}}
+                        InputLabelProps={{shrink: true}}
+                        fullWidth
+                        label="Label Shadow Size"
+                    />
+                </FormControl>
+
+            </div>
+
+            {serverInfo.capabilities.has(SERVER_CAPABILITY_LINKS) &&
+                <div
+                    style={tab === 'embedding' || tab === 'distribution' || tab === 'composition' ? null : {display: 'none'}}>
+                    <Divider/>
+                    <Typography gutterBottom={false} component={"h1"}
+                                className={classes.title}>Links</Typography>
+                    <Divider/>
+                    <FormControl className={classes.formControl}>
+                        <Tooltip title={"Save Current Visualization State"}><Link
+                            style={{
+                                float: 'right',
+                                fontSize: '0.75rem'
+                            }}
+                            onClick={onViewSaved}>Save</Link></Tooltip></FormControl>
+
+                    {datasetViews.length === 0 &&
+                        <Box color="text.secondary">No saved links</Box>}
+                    {datasetViews.length > 0 &&
+                        <List dense={true} style={{marginTop: 10}}>
+                            {datasetViews.map(item => (
+                                <ListItem key={item.id} data-key={item.id} button
+                                          onClick={e => openView(item.id)} secondaryAction={<IconButton
+                                    edge="end"
+                                    disableRipple={true}
+                                    onClick={event => onLinkContextMenu(event, item)}
+                                    aria-label="menu"
+                                    size="small">
+                                    <ArrowDropDownIcon/>
+                                </IconButton>}>
+                                    <ListItemText primary={item.name}/>
+                                </ListItem>
+                            ))}
+                        </List>
+                    }
+
+                </div>}
+
+            <div style={tab === 'results' ? null : {display: 'none'}}>
+                <JobResultOptions/>
+            </div>
+        </div>
+    );
 }
 
 const mapStateToProps = state => {
@@ -577,18 +568,18 @@ const mapDispatchToProps = (dispatch) => {
             handleMarkerOpacity: value => {
                 dispatch(setMarkerOpacity(value));
             },
-
             handleUnselectedMarkerOpacity: value => {
                 dispatch(setUnselectedMarkerOpacity(value));
             },
             handleOpenView: value => {
-                dispatch(openView(value));
+                dispatch(openLink(value));
             },
             handleDeleteView: value => {
-                dispatch(deleteView(value));
+                dispatch(deleteLink(value));
+            },
+            handleMessage: value => {
+                dispatch(setMessage(value));
             }
-
-
         };
     }
 ;
