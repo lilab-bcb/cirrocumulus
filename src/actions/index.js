@@ -264,7 +264,7 @@ export function login() {
 }
 
 
-export function openView(id, loadDataset = false) {
+export function openLink(id, loadDataset = false) {
     return function (dispatch, getState) {
         const task = {name: 'Open view'};
         dispatch(addTask(task));
@@ -287,14 +287,14 @@ export function openView(id, loadDataset = false) {
  * @param payload Object with name, notes
  * @returns {(function(*=, *): void)|*}
  */
-export function saveView(payload) {
+export function saveLink(payload) {
     return function (dispatch, getState) {
         const state = getState();
         const value = getDatasetStateJson(state);
         payload.value = value;
         delete value['dataset'];
         payload = Object.assign({ds_id: state.dataset.id}, payload);
-        const task = {name: 'Save view'};
+        const task = {name: 'Save link'};
         dispatch(addTask(task));
         getState().serverInfo.api.upsertViewPromise(payload, false)
             .then(result => {
@@ -312,21 +312,19 @@ export function saveView(payload) {
     };
 }
 
-export function deleteView(id) {
+export function deleteLink(id) {
     return function (dispatch, getState) {
-        const task = {name: 'Delete view'};
+        const task = {name: 'Delete link'};
         dispatch(addTask(task));
         getState().serverInfo.api.deleteViewPromise(id, getState().dataset.id)
             .then(() => {
-                let array = getState().datasetViews;
-                for (let i = 0; i < array.length; i++) {
-                    if (array[i].id === id) {
-                        array.splice(i, 1);
-                        break;
-                    }
+                const array = getState().datasetViews;
+                const index = findIndex(array, item => item.id === id);
+                if (index !== -1) {
+                    array.splice(index, 1);
+                    dispatch(setDatasetViews(array.slice()));
+                    dispatch(setMessage('Link deleted'));
                 }
-                dispatch(setDatasetFilters(array.slice()));
-                dispatch(setMessage('Link deleted'));
             }).finally(() => {
             dispatch(removeTask(task));
             dispatch(setDialog(null));
@@ -1126,7 +1124,7 @@ function _loadSavedView() {
             }
         }
         if (savedView.link != null) {
-            dispatch(openView(savedView.link, true));
+            dispatch(openLink(savedView.link, true));
         } else if (savedView.dataset != null) {
             dispatch(restoreSavedView(savedView));
         } else {
@@ -1160,37 +1158,29 @@ export function saveDataset(payload) {
     return function (dispatch, getState) {
         let existingDataset = payload.dataset;
         const isEdit = existingDataset != null;
-        const formData = {};
-        if (existingDataset != null) {
-            const existingReaders = new Set(existingDataset.readers);
-            if (payload.readers != null) {
-                let setsEqual = existingReaders.size === payload.readers.length;
-                if (setsEqual) {
-                    for (let i = 0; i < payload.readers.length; i++) {
-                        if (!existingReaders.has(payload.readers[i])) {
-                            setsEqual = false;
-                            break;
-                        }
-                    }
-                }
-                if (!setsEqual) {
-                    formData.readers = payload.readers;
-                }
-            }
-        }
         if (existingDataset == null) {
             existingDataset = {};
         }
-        const blacklist = new Set(['readers', 'dataset']);
+
+        const formData = {};
+        const blacklist = new Set(['dataset']);
         for (let key in payload) {
             if (!blacklist.has(key)) {
                 const value = payload[key];
-                if (value != null && value !== existingDataset[key]) {
-                    formData[key] = value;
+                const existingValue = existingDataset[key];
+                if (isArray(value)) {
+                    const stringValue = (value || []).join(',');
+                    const existingStringValue = isArray(existingValue) ? existingValue.join(', ') : existingValue;
+                    if (stringValue !== existingStringValue) {
+                        formData[key] = value;
+                    }
+                } else {
+                    if (value != null && value !== existingValue) {
+                        formData[key] = value;
+                    }
                 }
             }
         }
-
 
         if (Object.keys(formData).length === 0) {
             dispatch(setDialog(null));
