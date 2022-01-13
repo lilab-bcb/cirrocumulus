@@ -45,6 +45,7 @@ import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import MenuIcon from '@mui/icons-material/Menu';
 import {DATASET_FIELDS} from './EditNewDatasetDialog';
+import {isArray} from 'lodash';
 
 
 function AppHeader(props) {
@@ -62,6 +63,7 @@ function AppHeader(props) {
         handleDialog,
         handleTab,
         loadingApp,
+        handleMessage,
         handleSavedDatasetState,
         jobResults,
         email,
@@ -128,7 +130,7 @@ function AppHeader(props) {
         let linkText = window.location.protocol + '//' + window.location.host + window.location.pathname;
         linkText += '#q=' + encodeURIComponent(JSON.stringify(getLinkJson()));
         copyToClipboard(linkText);
-        setMessage('Link copied');
+        handleMessage('Link copied');
         setMoreMenuOpen(false);
     }
 
@@ -200,13 +202,19 @@ function AppHeader(props) {
             >
                 <Box style={{width: 500, padding: '1em'}}>
                     <Typography variant="h6">{dataset.name}</Typography>
-                    {DATASET_FIELDS.filter(item => dataset[item.fieldName]).map(item => <div
-                        key={item.fieldName}><Divider/>
-                        <Typography variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
-                            <Typography variant="body2"> {dataset[item.fieldName]}</Typography>}
-                        {item.fieldName === 'description' &&
-                            <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
-                                           children={dataset[item.fieldName]}/>}</div>)}
+                    {DATASET_FIELDS.filter(item => dataset[item.fieldName]).map(item => {
+                            const itemValue = dataset[item.fieldName];
+                            return <div
+                                key={item.fieldName}><Divider/>
+                                <Typography
+                                    variant={"subtitle2"}>{item.label}</Typography>{item.fieldName !== 'description' &&
+                                    <Typography
+                                        variant="body2"> {isArray(itemValue) ? itemValue.join(', ') : itemValue}</Typography>}
+                                {item.fieldName === 'description' &&
+                                    <ReactMarkdown options={{overrides: REACT_MD_OVERRIDES}}
+                                                   children={dataset[item.fieldName]}/>}</div>;
+                        }
+                    )}
                 </Box>
             </Popover>
             }
@@ -373,7 +381,7 @@ const mapDispatchToProps = (dispatch) => {
         handleTab: (value) => {
             dispatch(setTab(value));
         },
-        setMessage: (value) => {
+        handleMessage: (value) => {
             dispatch(setMessage(value));
         },
         handleLogin: () => {
