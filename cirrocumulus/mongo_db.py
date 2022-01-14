@@ -96,7 +96,7 @@ class MongoDb(AbstractDB):
             raise InvalidUsage('Please provide a valid id', 400)
         readers = doc.get('readers')
         domain = get_email_domain(email)
-        if email not in readers and domain not in readers:
+        if email not in readers and domain not in readers and '' not in readers:
             raise InvalidUsage('Not authorized', 403)
         if ensure_owner and email not in doc['owners']:
             raise InvalidUsage('Not authorized', 403)
@@ -109,7 +109,7 @@ class MongoDb(AbstractDB):
         results = []
         domain = get_email_domain(email)
         if domain is None:
-            query = dict(readers=email)
+            query = dict(readers={'$in': [email, '']})
         else:
             query = dict(readers={'$in': [email, domain]})
 
