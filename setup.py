@@ -37,7 +37,7 @@ requires = [
     "gunicorn",
     "loompy",
     "numpy",
-    "pandas>=1.0",
+    "pandas",
     "pyarrow",
     "pymongo",
     "scipy",
