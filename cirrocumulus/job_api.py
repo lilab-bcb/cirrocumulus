@@ -133,8 +133,7 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info['var']
     nfeatures = len(var_names)
-
-    batch_size = math.ceil(nfeatures / 3) if os.environ.get(
+    batch_size = math.ceil(nfeatures / 5) if os.environ.get(
         CIRRO_SERVE) == 'true' else nfeatures  # TODO more intelligent batches
 
     def get_batch_fn(i):
@@ -150,18 +149,17 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     compare_pairs = params.get('pairs') == '1'
     obs, obs_field = get_obs(dataset_api, dataset, dataset_info, params)
 
-    results = DE(series=obs[obs_field], nfeatures=nfeatures, batch_size=batch_size, get_batch_fn=get_batch_fn,
-                 one_vs_rest=not compare_pairs)  # TODO get base
+    de_results = DE(series=obs[obs_field], nfeatures=nfeatures, batch_size=batch_size, get_batch_fn=get_batch_fn,
+                    one_vs_rest=not compare_pairs)  # TODO get base
 
     # group:field is object entry
     result_df = pd.DataFrame(data={'index': var_names})
     has_frac_expressed = False
-    comparison_name_strs = []
+    comparison_names = []
+    for comparison_name in de_results.pair2results.keys():
+        comparison_names.append(comparison_name)
+        result = de_results.pair2results[comparison_name]
 
-    for comparison_name in results.pair2results.keys():
-        result = results.pair2results[comparison_name]
-        comparison_name = '_'.join(comparison_name)
-        comparison_name_strs.append(comparison_name)
         pvals = fdrcorrection(result['pvals'])
         result_df[f'{comparison_name}:pvals_adj'] = pvals
         result_df[f'{comparison_name}:scores'] = result['scores']
@@ -172,7 +170,9 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
             result_df[f'{comparison_name}:pts_1'] = result['frac_expressed1']
             result_df[f'{comparison_name}:pts_2'] = result['frac_expressed2']
     # client expects field {comparison_name}:pvals_adj
-    result = dict(groups=comparison_name_strs,
+    print(comparison_names)
+    print(result_df.columns)
+    result = dict(groups=comparison_names,
                   fields=['pvals_adj', 'scores', 'lfc'] + (
                       ['pts_1', 'pts_2'] if has_frac_expressed else []),
                   data=result_df.to_dict(orient='records'))
