@@ -5,70 +5,33 @@ import React from 'react';
 
 const styles = theme => ({
     dot: {
-        borderRadius: '50%',
-        display: 'inlineBlock',
-        border: '1px solid lightgray'
-    },
-    table: {
-        borderCollapse: 'collapse',
-        position: 'relative',
-        width: 'unset'
-    },
-    tr: {
+        borderRadius: '50%', display: 'inlineBlock', border: '1px solid lightgray'
+    }, table: {
+        borderCollapse: 'collapse', position: 'relative', width: 'unset'
+    }, tr: {
         cursor: 'pointer'
-    },
-    deleteTr: {
-        cursor: 'pointer',
-        '& span': {
+    }, deleteTr: {
+        cursor: 'pointer', '& span': {
             display: 'none'
-        },
-        '&:hover span': {
-            display: 'block',
-            position: 'absolute',
-            right: 0,
-            top: 0
+        }, '&:hover span': {
+            display: 'block', position: 'absolute', right: 0, top: 0
         }
-    },
-    rotateHeader: {
-        top: 0,
-        padding: 1,
-        background: 'transparent',
-        whiteSpace: 'nowrap'
-    },
-    checkbox: {
+    }, rotateHeader: {
+        top: 0, padding: 1, background: 'transparent', whiteSpace: 'nowrap'
+    }, checkbox: {
         padding: 0
-    },
-    rotateHeaderDiv: {
+    }, rotateHeaderDiv: {
         /* place div at bottom left of the th parent */
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        /* Make sure short labels still meet the corner of the parent otherwise you'll get a gap */
-        textAlign: 'left',
-        /* Move the top left corner of the span's bottom-border to line up with the top left corner of the td's border-right border so that the border corners are matched
+        position: 'absolute', bottom: 0, left: 0, /* Make sure short labels still meet the corner of the parent otherwise you'll get a gap */
+        textAlign: 'left', /* Move the top left corner of the span's bottom-border to line up with the top left corner of the td's border-right border so that the border corners are matched
          * Rotate 315 (-45) degrees about matched border corners */
-        transform: 'translate(calc(50%),0) rotate(315deg)',
-        transformOrigin: '0% calc(50%)',
-        width: '100%'
-    },
-    rotateHeaderSpan: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis'
-    },
-    td: {
-        padding: 1,
-        whiteSpace: 'nowrap',
-        width: 27,
-        minWidth: 27,
-        maxWidth: 27
-    },
-    rowHeader: {
-        padding: 1,
-        whiteSpace: 'nowrap'
+        transform: 'translate(calc(50%),0) rotate(315deg)', transformOrigin: '0% calc(50%)', width: '100%'
+    }, rotateHeaderSpan: {
+        position: 'absolute', bottom: 0, left: 0, pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis'
+    }, td: {
+        padding: 1, whiteSpace: 'nowrap', width: 27, minWidth: 27, maxWidth: 27
+    }, rowHeader: {
+        padding: 1, whiteSpace: 'nowrap'
     }
 });
 
@@ -76,12 +39,14 @@ const styles = theme => ({
 function DotPlotTable(props) {
     const {
         classes,
-        onRowClick,
-        onMouseMove,
-        onMouseOut,
-        toggleAll,
         rows,
         columns,
+        sizeScale,
+        valueScale,
+        colorScale,
+        headerWidth,
+        rotateHeaders,
+
         isRowSelected,
         rowStart,
         columnStart,
@@ -89,15 +54,13 @@ function DotPlotTable(props) {
         getColor,
         getSize,
         getTooltip,
-        sizeScale,
-        valueScale,
-        colorScale,
-        headerWidth,
-        rotateHeaders
+        onRowClick,
+        onMouseMove,
+        onMouseOut,
+        toggleAll
     } = props;
-
     let selectAllChecked = true;
-    const maxSize = Math.max(sizeScale.range()[0], sizeScale.range()[1]);
+
     for (let i = 0; i < rows.length; i++) {
         const selected = isRowSelected(rows[i]);
         if (!selected) {
@@ -105,13 +68,13 @@ function DotPlotTable(props) {
             break;
         }
     }
+    const maxSize = Math.max(sizeScale.range()[0], sizeScale.range()[1]);
 
     return <div data-testid={'dot-plot-table'}>
         <Box color="text.primary">
             <div>
-                {rows.length > 0 &&
-                <Table onMouseMove={onMouseMove} onMouseOut={onMouseOut} stickyHeader={true}
-                       className={classes.table}>
+                {rows.length > 0 && <Table onMouseMove={onMouseMove} onMouseOut={onMouseOut} stickyHeader={true}
+                                           className={classes.table}>
                     <TableHead>
                         <TableRow>
                             <TableCell className={classes.rowHeader} component="th"
@@ -123,7 +86,7 @@ function DotPlotTable(props) {
                             {columns.map(column => {
                                 if (rotateHeaders) {
                                     return <TableCell
-                                        title={column}
+                                        data-title={column}
                                         className={classes.rotateHeader}
                                         key={column}>
                                         <div className={classes.rotateHeaderDiv}><span
