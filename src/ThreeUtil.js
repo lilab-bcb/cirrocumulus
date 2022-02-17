@@ -2,13 +2,14 @@ import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisual
 import {Color, OrthographicCamera, Vector3} from 'three';
 import {getEmbeddingKey} from './actions';
 import {getVisualizer, setAxesColors} from './ScatterChartThree';
-import {indexSort, randomSeq, rankIndexArray} from './util';
+import {randomSeq, rankdata} from './util';
 import {scaleLinear} from 'd3-scale';
+import {extent} from 'd3-array';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
 const SCATTER_PLOT_CUBE_LENGTH = 2;
 export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
-const Z_RANGE_2D = [0, 1000];
+const Z_RANGE_2D = [0, 1];
 
 function scaleLinear3(value, domain, range) {
     const domainDifference = domain[1] - domain[0];
@@ -33,7 +34,7 @@ export function getScaleFactor(size) {
         top /= aspectRatio;
         bottom /= aspectRatio;
     }
-    let camera = new OrthographicCamera(left, right, top, bottom, -1000, 1000);
+    const camera = new OrthographicCamera(left, right, top, bottom, -1000, 1000);
     camera.up = new Vector3(0, 0, 1);
 
     camera.updateProjectionMatrix();
@@ -65,11 +66,10 @@ export function getPositions(trace) {
     const npoints = trace.x.length;
     const is3d = trace.z != null;
     if (!is3d && trace.ranks == null) {
-        trace.ranks = !trace.isCategorical ? rankIndexArray(indexSort(trace.values, true)) : randomSeq(trace.values.length, 1);
+        trace.ranks = !trace.isCategorical ? rankdata(trace.values) : randomSeq(trace.values.length, 1);
         // ranks go from 1 to values.length. Higher rank means higher value.
-        const zNormScale = scaleLinear().domain([1, npoints]).range([0, 1000]);
-        zExtent[0] = Z_RANGE_2D[0];
-        zExtent[1] = Z_RANGE_2D[1];
+        const zNormScale = scaleLinear().domain(extent(trace.ranks)).range(Z_RANGE_2D);
+        zExtent = Z_RANGE_2D;
         const normRanks = new Float32Array(npoints);
         for (let i = 0; i < npoints; i++) {
             normRanks[i] = zNormScale(trace.ranks[i]);
