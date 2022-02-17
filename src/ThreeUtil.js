@@ -63,7 +63,7 @@ export function getPositions(trace) {
     let xExtent = [Infinity, -Infinity];
     let yExtent = [Infinity, -Infinity];
     let zExtent = [Infinity, -Infinity];
-    const npoints = trace.x.length;
+    const npoints = trace.values.length;
     const is3d = trace.z != null;
     if (!is3d && trace.ranks == null) {
         trace.ranks = !trace.isCategorical ? rankdata(trace.values) : randomSeq(trace.values.length, 1);
@@ -240,18 +240,18 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     return {labels: labelValues, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData, cameraDef) {
-    const is3d = traceInfo.z != null;
-    const colors = traceInfo.colors;
-    let positions = traceInfo.positions;
+export function updateScatterChart(scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData, cameraDef) {
+    const is3d = trace.z != null;
+    const colors = trace.colors;
+    let positions = trace.positions;
 
-    const npoints = traceInfo.x.length;
+    const npoints = trace.values.length;
     const isSelectionEmpty = selection == null;
     const updateZ = !isSelectionEmpty && !is3d;
     if (updateZ) {
         positions = positions.slice();
     }
-    const scale = new Float32Array(traceInfo.x.length);
+    const scale = new Float32Array(trace.values.length);
     scale.fill(pointSize);
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
@@ -264,7 +264,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
         }
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
-    scatterPlot.setDimensions(traceInfo.dimensions);
+    scatterPlot.setDimensions(trace.dimensions);
     if (cameraDef) {
         scatterPlot.updateFromCameraDef(cameraDef);
     }
@@ -284,10 +284,10 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     if (labelsVisualizer) {
         labelsVisualizer.labelsActive = showLabels;
         if (showLabels) {
-            const labelKey = getEmbeddingKey(traceInfo.embedding) + '_' + obsCatKeys.join(',');
+            const labelKey = getEmbeddingKey(trace.embedding) + '_' + obsCatKeys.join(',');
             let labelsPositions = cachedData[labelKey];
             if (labelsPositions == null) {
-                labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCatKeys, cachedData);
+                labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCatKeys, cachedData);
                 cachedData[labelKey] = labelsPositions;
             }
             labelsVisualizer.fillStyle = chartOptions.darkMode ? 'white' : 'black';

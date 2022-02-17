@@ -201,7 +201,7 @@ function ScatterChartThree(props) {
 
             if (selectedIndex === -1) {
                 // TODO get all hover points
-                for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
+                for (let i = 0, k = 0, npoints = trace.values.length; i < npoints; i++, k += 3) {
                     pos.x = positions[k];
                     pos.y = positions[k + 1];
                     pos.z = positions[k + 2];
@@ -279,7 +279,7 @@ function ScatterChartThree(props) {
             const pos = new Vector3();
             const selectedIndices = new Set();
 
-            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
+            for (let i = 0, k = 0, npoints = trace.values.length; i < npoints; i++, k += 3) {
                 pos.x = positions[k];
                 pos.y = positions[k + 1];
                 pos.z = positions[k + 2];
@@ -311,7 +311,7 @@ function ScatterChartThree(props) {
             const pos = new Vector3();
             const selectedIndices = new Set();
 
-            for (let i = 0, k = 0, npoints = trace.x.length; i < npoints; i++, k += 3) {
+            for (let i = 0, k = 0, npoints = trace.values.length; i < npoints; i++, k += 3) {
                 pos.x = positions[k];
                 pos.y = positions[k + 1];
                 pos.z = positions[k + 2];
@@ -378,7 +378,7 @@ function ScatterChartThree(props) {
     }, []);
 
     function calculatePointSize(trace) {
-        const n = trace.x.length;
+        const n = trace.values.length;
         const SCALE = 200;
         const LOG_BASE = 8;
         const DIVISOR = 1.5;
@@ -403,7 +403,7 @@ function ScatterChartThree(props) {
         const widthHalf = width / 2;
         const heightHalf = height / 2;
         const colorScaleConverter = scaleLinear().domain([0, 1]).range([0, 255]);
-        const npoints = trace.x.length;
+        const npoints = trace.values.length;
         const is3d = trace.dimensions === 3;
         const fog = scatterPlot.scene.fog;
         const camera = scatterPlot.camera;

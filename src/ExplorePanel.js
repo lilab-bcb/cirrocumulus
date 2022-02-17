@@ -354,7 +354,7 @@ function ExplorePanel(props) {
     function onFeatureClick(event, option) {
         event.stopPropagation();
         const value = option.id !== undefined ? option.id : option;
-        let galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
+        let galleryTraces = embeddingData.filter(trace => trace.active);
         for (let i = 0; i < galleryTraces.length; i++) {
             if (galleryTraces[i].name === value) {
                 if (props.tab !== 'embedding') {

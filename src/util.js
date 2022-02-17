@@ -358,7 +358,7 @@ function getColorsRgba(trace) {
 
 
     let colorScale = trace.colorScale;
-    const npoints = trace.x.length;
+    const npoints = trace.values.length;
     const colors = new Float32Array(npoints * RGBA_NUM_ELEMENTS);
 
     function rescaleRgb(c) {
@@ -417,24 +417,24 @@ function getColorsRgba(trace) {
     return colors;
 }
 
-export function updateTraceColors(traceInfo) {
-    if (traceInfo.type === TRACE_TYPE_IMAGE) {
+export function updateTraceColors(trace) {
+    if (trace.type === TRACE_TYPE_IMAGE) {
         let colors = [];
-        let colorScale = traceInfo.colorScale;
+        let colorScale = trace.colorScale;
         const colorMapper = rgb => rgb.formatHex();
-        for (let i = 0, n = traceInfo.x.length; i < n; i++) {
-            let rgb = color(colorScale(traceInfo.values[i]));
+        for (let i = 0, n = trace.values.length; i < n; i++) {
+            let rgb = color(colorScale(trace.values[i]));
             colors.push(colorMapper(rgb));
         }
-        traceInfo.colors = colors;
-    } else if (traceInfo.type === TRACE_TYPE_SCATTER) {
-        traceInfo.colors = getColorsRgba(traceInfo);
-    } else if (traceInfo.type === TRACE_TYPE_META_IMAGE) {
-        let colorScale = traceInfo.colorScale;
-        const svgNode = traceInfo.source;
-        const galleryNode = traceInfo.gallerySource;
-        const categoryToStats = traceInfo.categoryToStats;
-        if (traceInfo.name !== '__count') {
+        trace.colors = colors;
+    } else if (trace.type === TRACE_TYPE_SCATTER) {
+        trace.colors = getColorsRgba(trace);
+    } else if (trace.type === TRACE_TYPE_META_IMAGE) {
+        let colorScale = trace.colorScale;
+        const svgNode = trace.source;
+        const galleryNode = trace.gallerySource;
+        const categoryToStats = trace.categoryToStats;
+        if (trace.name !== '__count') {
             for (const category in categoryToStats) {
                 const stats = categoryToStats[category];
                 const query = category.replaceAll(' ', '_'); // FIXME
@@ -563,7 +563,7 @@ export function rankdata(values) {
 
     // Walk the sorted array, filling output array using sorted positions,
     // resolving ties as we go
-    const out = new Array(ranks.length);
+    const out = new Float32Array(ranks.length);
     let pos = 1;  // position in sorted array
     out[ranks[0].position] = pos;
     let tiesTrace = [];

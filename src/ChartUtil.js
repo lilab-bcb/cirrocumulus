@@ -5,12 +5,12 @@ import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
 export const CANVAS_FONT = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
 export const SVG_FONT = '12px Helvetica,Arial,sans-serif';
 
-export function saveImage(traceInfo, chartSize, draw, format) {
+export function saveImage(trace, chartSize, draw, format) {
 
     let context;
     let canvas = null;
     const totalSize = {width: chartSize.width, height: chartSize.height};
-    let name = traceInfo.name;
+    let name = trace.name;
     if (name === '__count') {
         name = 'count';
     }
@@ -22,8 +22,8 @@ export function saveImage(traceInfo, chartSize, draw, format) {
     } else {
         context = new C2S(100, 100);
     }
-    if (!traceInfo.continuous) {
-        const legendSize = getCategoricalLegendSize(context, name, traceInfo.colorScale.domain());
+    if (!trace.continuous) {
+        const legendSize = getCategoricalLegendSize(context, name, trace.colorScale.domain());
         totalSize.width += legendSize.width;
         totalSize.height = Math.max(legendSize.height, chartSize.height);
     } else {
@@ -43,12 +43,12 @@ export function saveImage(traceInfo, chartSize, draw, format) {
 
     draw(context, chartSize, format);
 
-    if (!traceInfo.continuous) {
+    if (!trace.continuous) {
         context.translate(chartSize.width, 2);
-        drawCategoricalLegend(context, traceInfo.colorScale, name, traceInfo.colorScale.domain());
+        drawCategoricalLegend(context, trace.colorScale, name, trace.colorScale.domain());
     } else {
         context.translate(chartSize.width / 2 - 75, chartSize.height + 2);
-        drawColorScheme(context, traceInfo.colorScale);
+        drawColorScheme(context, trace.colorScale);
     }
 
     if (format === 'svg') {

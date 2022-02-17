@@ -121,7 +121,7 @@ function SideBar(props) {
         handleMessage
     } = props;
 
-    const primaryTrace = activeFeature == null ? null : find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+    const primaryTrace = activeFeature == null ? null : find(embeddingData, trace => getTraceKey(trace) === activeFeature.embeddingKey);
     const activeInterpolator = activeFeature == null ? null : interpolator[activeFeature.type];
     const onLabelFontSizeUpdateDebouncedFunc = useMemo(() => debounce(onLabelFontSizeUpdate, 500), []);
     const onLabelStrokeWidthUpdateDebouncedFunc = useMemo(() => debounce(onLabelStrokeWidthUpdate, 500), []);
@@ -148,7 +148,7 @@ function SideBar(props) {
             setMinColor('');
             setMaxColor('');
         } else {
-            const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+            const trace = find(embeddingData, trace => getTraceKey(trace) === activeFeature.embeddingKey);
             if (trace == null) {
                 setMinColor('');
                 setMaxColor('');
@@ -213,7 +213,7 @@ function SideBar(props) {
 
     function onMinChange(value) {
         const summary = globalFeatureSummary[activeFeature.name];
-        const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+        const trace = find(embeddingData, trace => getTraceKey(trace) === activeFeature.embeddingKey);
         if (trace.type !== TRACE_TYPE_META_IMAGE) {
             summary.customMin = isNaN(value) ? undefined : value;
         } else {
@@ -227,7 +227,7 @@ function SideBar(props) {
 
     function onMaxChange(value) {
         const summary = globalFeatureSummary[activeFeature.name];
-        const trace = find(embeddingData, traceInfo => getTraceKey(traceInfo) === activeFeature.embeddingKey);
+        const trace = find(embeddingData, trace => getTraceKey(trace) === activeFeature.embeddingKey);
         if (trace.type !== TRACE_TYPE_META_IMAGE) {
             summary.customMax = isNaN(value) ? undefined : value;
         } else {

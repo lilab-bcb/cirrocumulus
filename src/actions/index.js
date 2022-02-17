@@ -146,8 +146,8 @@ export function getEmbeddingKey(embedding, includeDensity = true) {
 }
 
 
-export function getTraceKey(traceInfo) {
-    return traceInfo.name + '_' + getEmbeddingKey(traceInfo.embedding);
+export function getTraceKey(trace) {
+    return trace.name + '_' + getEmbeddingKey(trace.embedding);
 }
 
 
@@ -1759,13 +1759,13 @@ function _updateCharts(onError, updateActiveFeature = true) {
             groupedSearchTokens[key].forEach(item => features.add(item.id));
         });
         // set active flag on cached embedding data
-        embeddingData.forEach(traceInfo => {
-            const embeddingKey = getEmbeddingKey(traceInfo.embedding);
-            const active = embeddingKeys.has(embeddingKey) && (features.has(traceInfo.name) || (features.size === 0 && traceInfo.name === '__count'));
+        embeddingData.forEach(trace => {
+            const embeddingKey = getEmbeddingKey(trace.embedding);
+            const active = embeddingKeys.has(embeddingKey) && (features.has(trace.name) || (features.size === 0 && trace.name === '__count'));
             if (active) {
-                traceInfo.date = new Date();
+                trace.date = new Date();
             }
-            traceInfo.active = active;
+            trace.active = active;
         });
 
 
@@ -2130,7 +2130,7 @@ function getNewEmbeddingData(state, features) {
                     embedding.categoryToIndices = categoryToIndices;
                 }
 
-                let chartData = {
+                const trace = {
                     embedding: Object.assign({}, embedding),
                     name: feature,
                     featureType: featureType,
@@ -2146,22 +2146,22 @@ function getNewEmbeddingData(state, features) {
                     values: values, // for color
                     type: traceType
                 };
-                if (chartData.mode != null) {
-                    chartData.index = coordinates[embedding.name + '_index'];
-                    chartData._values = chartData.values;
-                    chartData.values = summarizeDensity(chartData.values, chartData.index, selection, chartData.continuous ? 'max' : 'mode');
+                if (trace.mode != null) {
+                    trace.index = coordinates[embedding.name + '_index'];
+                    trace._values = trace.values;
+                    trace.values = summarizeDensity(trace.values, trace.index, selection, trace.continuous ? 'max' : 'mode');
                 }
                 if (traceType === TRACE_TYPE_SCATTER) {
-                    chartData.positions = getPositions(chartData);
+                    trace.positions = getPositions(trace);
                 }
                 if (traceType === TRACE_TYPE_META_IMAGE) {
                     const svg = cachedData[getEmbeddingKey(embedding)];
-                    chartData.source = svg.cloneNode(true);
-                    chartData.zscore = true;
-                    chartData.gallerySource = svg.cloneNode(true);
-                    chartData.categoryToIndices = embedding.categoryToIndices;
+                    trace.source = svg.cloneNode(true);
+                    trace.zscore = true;
+                    trace.gallerySource = svg.cloneNode(true);
+                    trace.categoryToIndices = embedding.categoryToIndices;
 
-                    if (chartData.continuous) {
+                    if (trace.continuous) {
                         // compute mean and standard deviation
                         colorScale.domain([-3, 3]);
                         let mean = 0;
@@ -2169,7 +2169,7 @@ function getNewEmbeddingData(state, features) {
                         for (let category in embedding.categoryToIndices) {
                             const indices = embedding.categoryToIndices[category];
                             for (let i = 0, n = indices.length; i < n; i++) {
-                                mean += chartData.values[indices[i]];
+                                mean += trace.values[indices[i]];
                                 count++;
                             }
                         }
@@ -2178,33 +2178,33 @@ function getNewEmbeddingData(state, features) {
                         for (let category in embedding.categoryToIndices) {
                             const indices = embedding.categoryToIndices[category];
                             for (let i = 0, n = indices.length; i < n; i++) {
-                                let diff = chartData.values[indices[i]] - mean;
+                                let diff = trace.values[indices[i]] - mean;
                                 diff = diff * diff;
                                 sum += diff;
                             }
                         }
                         const n = count - 1;
                         const variance = sum / n;
-                        chartData.mean = mean;
-                        chartData.stdev = Math.sqrt(variance);
+                        trace.mean = mean;
+                        trace.stdev = Math.sqrt(variance);
                     }
-                    chartData.fullCategoryToStats = createCategoryToStats(chartData, new Set());
-                    chartData.categoryToStats = state.selection.size != null && state.selection.size === 0 ? chartData.fullCategoryToStats : createCategoryToStats(chartData, state.selection);
+                    trace.fullCategoryToStats = createCategoryToStats(trace, new Set());
+                    trace.categoryToStats = state.selection.size != null && state.selection.size === 0 ? trace.fullCategoryToStats : createCategoryToStats(trace, state.selection);
                 }
-                updateTraceColors(chartData);
+                updateTraceColors(trace);
 
                 if (traceType === TRACE_TYPE_IMAGE) {
                     // TODO cache image
-                    chartData.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
+                    trace.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
                     const url = dataset.api.getFileUrl(embedding.spatial.image);
-                    chartData.tileSource = new OpenSeadragon.ImageTileSource({
+                    trace.tileSource = new OpenSeadragon.ImageTileSource({
                         url: url,
                         buildPyramid: true,
                         crossOriginPolicy: "Anonymous"
                     });
                 }
 
-                newEmbeddingData.push(chartData);
+                newEmbeddingData.push(trace);
             }
         });
     });

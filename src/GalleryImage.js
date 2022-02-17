@@ -21,7 +21,7 @@ function getImageUrl(cachedData,
                      obsCat,
                      pointSize,
                      selection,
-                     traceInfo,
+                     trace,
                      unselectedMarkerOpacity) {
     let canvas = document.createElement('canvas');
     canvas.width = chartSize * window.devicePixelRatio;
@@ -31,7 +31,7 @@ function getImageUrl(cachedData,
     drawEmbeddingImage(context, {
         width: chartSize,
         height: chartSize
-    }, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(traceInfo, pointSize));
+    }, trace, selection, markerOpacity, unselectedMarkerOpacity, chartOptions, categoricalNames, obsCat, cachedData, getSpotRadius(trace, pointSize));
     return canvas.toDataURL();
 }
 
@@ -44,7 +44,7 @@ export default function GalleryImage(props) {
 
     function onSelect(event) {
         event.preventDefault();
-        props.onSelect(props.traceInfo);
+        props.onSelect(props.trace);
     }
 
     const {
@@ -59,25 +59,25 @@ export default function GalleryImage(props) {
         pointSize,
         scatterPlot,
         selection,
-        traceInfo,
+        trace,
         unselectedMarkerOpacity,
         unselectedPointSize
     } = props;
 
     useEffect(() => {
-        if (traceInfo.type === 'scatter' && traceInfo.embedding.mode == null) {
+        if (trace.type === 'scatter' && trace.embedding.mode == null) {
             let spriteVisualizer;
             if (scatterPlot && (spriteVisualizer = getVisualizer(scatterPlot, POINT_VISUALIZER_ID))) {
                 spriteVisualizer.zoomFactor = getScaleFactor(primaryChartSize);
 
-                updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
-                    categoricalNames, chartOptions, obsCat, cachedData, traceInfo.camera);
+                updateScatterChart(scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize,
+                    categoricalNames, chartOptions, obsCat, cachedData, trace.camera);
 
                 const canvas = containerElement.querySelector('canvas');
                 const showLabels = obsCat.length > 0 && chartOptions.showGalleryLabels;
                 let overlayUrl = null;
                 if (showLabels) {
-                    const labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCat, cachedData);
+                    const labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCat, cachedData);
                     const labelCanvas = document.createElement('canvas');
                     labelCanvas.width = chartSize * window.devicePixelRatio;
                     labelCanvas.height = chartSize * window.devicePixelRatio;
@@ -94,12 +94,12 @@ export default function GalleryImage(props) {
                 setOverlayUrl(overlayUrl);
                 setLoading(false);
             }
-        } else if (traceInfo.type === 'image') {
-            if (!traceInfo.tileSource.ready) {
+        } else if (trace.type === 'image') {
+            if (!trace.tileSource.ready) {
                 setUrl(null);
                 setOverlayUrl(null);
                 setLoading(true);
-                traceInfo.tileSource.addOnceHandler('ready', () => {
+                trace.tileSource.addOnceHandler('ready', () => {
                     setLoading(false);
                     setUrl(getImageUrl(cachedData,
                         categoricalNames,
@@ -109,7 +109,7 @@ export default function GalleryImage(props) {
                         obsCat,
                         pointSize,
                         selection,
-                        traceInfo,
+                        trace,
                         unselectedMarkerOpacity));
                 });
             } else {
@@ -121,7 +121,7 @@ export default function GalleryImage(props) {
                     obsCat,
                     pointSize,
                     selection,
-                    traceInfo,
+                    trace,
                     unselectedMarkerOpacity));
                 setOverlayUrl(null);
                 setLoading(false);
@@ -129,7 +129,7 @@ export default function GalleryImage(props) {
         } else {
             const containerElement = elementRef.current;
             containerElement.innerHTML = '';
-            const svg = traceInfo.gallerySource;
+            const svg = trace.gallerySource;
             svg.setAttribute('width', chartSize);
             svg.setAttribute('height', chartSize);
             containerElement.append(svg);
@@ -138,10 +138,10 @@ export default function GalleryImage(props) {
             setLoading(false);
         }
 
-    }, [containerElement, primaryChartSize, cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, traceInfo, unselectedMarkerOpacity, unselectedPointSize]);
+    }, [containerElement, primaryChartSize, cachedData, categoricalNames, chartOptions, chartSize, markerOpacity, obsCat, pointSize, scatterPlot, selection, trace, unselectedMarkerOpacity, unselectedPointSize]);
 
 
-    let name = props.traceInfo.name;
+    let name = props.trace.name;
     if (name === '__count') {
         name = '';
     }
@@ -155,7 +155,7 @@ export default function GalleryImage(props) {
                 height: props.chartSize,
                 cursor: 'pointer'
             }}>
-                <Tooltip title={"Embedding: " + props.traceInfo.embedding.name}>
+                <Tooltip title={"Embedding: " + props.trace.embedding.name}>
                     <Typography color="textPrimary" variant={"caption"}
                                 onClick={onSelect}
                                 style={{
