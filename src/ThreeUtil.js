@@ -2,7 +2,7 @@ import {makeStyles, ScatterPlot, ScatterPlotVisualizerSprites, ScatterPlotVisual
 import {Color, OrthographicCamera, Vector3} from 'three';
 import {getEmbeddingKey} from './actions';
 import {getVisualizer, setAxesColors} from './ScatterChartThree';
-import {randomSeq, rankdata} from './util';
+import {indexSort, randomSeq, rankIndexArray} from './util';
 import {scaleLinear} from 'd3-scale';
 import {extent} from 'd3-array';
 
@@ -66,7 +66,7 @@ export function getPositions(trace) {
     const npoints = trace.values.length;
     const is3d = trace.z != null;
     if (!is3d && trace.ranks == null) {
-        trace.ranks = !trace.isCategorical ? rankdata(trace.values) : randomSeq(trace.values.length, 1);
+        trace.ranks = !trace.isCategorical ? rankIndexArray(indexSort(trace.values, true)) : randomSeq(trace.values.length, 1);
         // ranks go from 1 to values.length. Higher rank means higher value.
         const zNormScale = scaleLinear().domain(extent(trace.ranks)).range(Z_RANGE_2D);
         zExtent = Z_RANGE_2D;
@@ -109,12 +109,12 @@ export function getPositions(trace) {
     const xRange = getRange(xExtent);
     const yRange = getRange(yExtent);
     const zRange = getRange(zExtent);
-    const maxRange = Math.max(xRange, yRange, zRange);
+    const maxXYZRange = is3d ? Math.max(xRange, yRange, zRange) : Math.max(xRange, yRange);
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
-    const makeScaleRange = (range, base) => [-base * (range / maxRange), base * (range / maxRange)];
-    const xScale = makeScaleRange(xRange, halfCube);
-    const yScale = makeScaleRange(yRange, halfCube);
-    const zScale = makeScaleRange(zRange, halfCube);
+    const makeScaleRange = (range, base, maxRange) => [-base * (range / maxRange), base * (range / maxRange)];
+    const xScale = makeScaleRange(xRange, halfCube, maxXYZRange);
+    const yScale = makeScaleRange(yRange, halfCube, maxXYZRange);
+    const zScale = is3d ? makeScaleRange(zRange, halfCube, maxXYZRange) : makeScaleRange(zRange, halfCube, zRange);
     const positions = new Float32Array(npoints * 3);
     let dst = 0;
 
@@ -170,7 +170,7 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
 
     let xScale, yScale, zScale, xExtent, yExtent, zExtent;
     if (!isSpatial) {
-        const getRange = (extent) => Math.abs(extent[1] - extent[0]);
+
         xExtent = [Infinity, -Infinity];
         yExtent = [Infinity, -Infinity];
         zExtent = is3d ? [Infinity, -Infinity] : Z_RANGE_2D;
@@ -201,15 +201,16 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
                 }
             }
         }
+        const getRange = (extent) => Math.abs(extent[1] - extent[0]);
         const xRange = getRange(xExtent);
         const yRange = getRange(yExtent);
         const zRange = getRange(zExtent);
-        const maxRange = Math.max(xRange, yRange, zRange);
+        const maxXYZRange = is3d ? Math.max(xRange, yRange, zRange) : Math.max(xRange, yRange);
         const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
-        const makeScaleRange = (range, base) => [-base * (range / maxRange), base * (range / maxRange)];
-        xScale = makeScaleRange(xRange, halfCube);
-        yScale = makeScaleRange(yRange, halfCube);
-        zScale = makeScaleRange(zRange, halfCube);
+        const makeScaleRange = (range, base, maxRange) => [-base * (range / maxRange), base * (range / maxRange)];
+        xScale = makeScaleRange(xRange, halfCube, maxXYZRange);
+        yScale = makeScaleRange(yRange, halfCube, maxXYZRange);
+        zScale = is3d ? makeScaleRange(zRange, halfCube, maxXYZRange) : makeScaleRange(zRange, halfCube, zRange);
     }
 
     let labelValues = [];
