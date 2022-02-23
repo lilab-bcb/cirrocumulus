@@ -1,7 +1,7 @@
 Release Notes
 -------------
 
-- 1.1.25.post2 `February 16, 2022`
+- 1.1.25.post2 `February 23, 2022`
     * Fixed bug in which lower values were sometimes rendered on top of higher values in embedding chart
     * Performance improvements
 
