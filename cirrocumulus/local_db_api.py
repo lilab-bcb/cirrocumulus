@@ -135,7 +135,9 @@ class LocalDbAPI(AbstractDB):
     def datasets(self, email):
         results = []
         for key in self.dataset_to_info:
-            results.append(self.dataset_to_info[key]['meta'])
+            m = self.dataset_to_info[key]['meta']
+            result = {'id': m['id'], 'url': m['url'], 'name': m['name'], 'description': m.get('description')}
+            results.append(result)
         return results
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):

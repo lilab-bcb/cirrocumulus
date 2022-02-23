@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.25.post2 `February 23, 2022`
+    * Fixed bug in which lower values were sometimes rendered on top of higher values in embedding chart
+    * Performance improvements
+
 - 1.1.25.post1 `January 13, 2022`
     * Preserve colors in h5ad file in `cirro prepare_data`
     * Set environment variable CIRRO_AUTH_CLIENT_ID to enable OAuth 2.0 with Google

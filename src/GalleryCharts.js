@@ -41,9 +41,9 @@ function GalleryCharts(props) {
     const containerElementRef = useRef();
     const [forceUpdate, setForceUpdate] = useState(false);
 
-    function onChartSelected(traceInfo) {
+    function onChartSelected(trace) {
         handleActiveFeature({
-            name: traceInfo.name, type: traceInfo.featureType, embeddingKey: getTraceKey(traceInfo)
+            name: trace.name, type: trace.featureType, embeddingKey: getTraceKey(trace)
         });
         window.scrollTo(0, 0);
     }
@@ -90,10 +90,10 @@ function GalleryCharts(props) {
     }, [chartSize, containerElementRef, scatterPlotRef]);
 
 
-    const galleryTraces = embeddingData.filter(traceInfo => traceInfo.active);
+    const galleryTraces = embeddingData.filter(trace => trace.active);
     const obsCat = searchTokens.filter(item => item.type === FEATURE_TYPE.OBS_CAT && embeddingLabels.indexOf(item.id) !== -1).map(item => item.id);
     const SortableItem = sortableElement(({trace}) => <GalleryImage
-        traceInfo={trace}
+        trace={trace}
         obsCat={obsCat}
         cachedData={cachedData}
         scatterPlot={scatterPlotRef.current}

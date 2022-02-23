@@ -3,12 +3,15 @@ import {Color, OrthographicCamera, Vector3} from 'three';
 import {getEmbeddingKey} from './actions';
 import {getVisualizer, setAxesColors} from './ScatterChartThree';
 import {indexSort, randomSeq, rankIndexArray} from './util';
+import {scaleLinear} from 'd3-scale';
+import {extent} from 'd3-array';
 
 export const POINT_VISUALIZER_ID = 'SPRITES';
 const SCATTER_PLOT_CUBE_LENGTH = 2;
 export const LABELS_VISUALIZER_ID = 'SVG_LABELS';
+const Z_RANGE_2D = [0, 1];
 
-function scaleLinear(value, domain, range) {
+function scaleLinear3(value, domain, range) {
     const domainDifference = domain[1] - domain[0];
     const rangeDifference = range[1] - range[0];
     const percentDomain = (value - domain[0]) / domainDifference;
@@ -31,14 +34,7 @@ export function getScaleFactor(size) {
         top /= aspectRatio;
         bottom /= aspectRatio;
     }
-    let camera = new OrthographicCamera(
-        left,
-        right,
-        top,
-        bottom,
-        -1000,
-        1000
-    );
+    const camera = new OrthographicCamera(left, right, top, bottom, -1000, 1000);
     camera.up = new Vector3(0, 0, 1);
 
     camera.updateProjectionMatrix();
@@ -50,10 +46,7 @@ export function createScatterPlot(containerElement, premultipliedAlpha, labels, 
     styles.label3D.fontSize = 40;
 
     const scatterPlot = new ScatterPlot(containerElement, {
-        camera: {},
-        selectEnabled: false,
-        styles: styles,
-        interactive: interactive
+        camera: {}, selectEnabled: false, styles: styles, interactive: interactive
 
     }, premultipliedAlpha); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
     let visualizers = [new ScatterPlotVisualizerSprites(styles)];
@@ -70,15 +63,20 @@ export function getPositions(trace) {
     let xExtent = [Infinity, -Infinity];
     let yExtent = [Infinity, -Infinity];
     let zExtent = [Infinity, -Infinity];
-    const npoints = trace.x.length;
+    const npoints = trace.values.length;
     const is3d = trace.z != null;
-    let ranks;
-    if (!is3d) {
-        ranks = !trace.isCategorical ? rankIndexArray(indexSort(trace.values, true)) : randomSeq(trace.values.length, 1);
+    if (!is3d && trace.ranks == null) {
+        trace.ranks = !trace.isCategorical ? rankIndexArray(indexSort(trace.values, true)) : randomSeq(trace.values.length, 1);
         // ranks go from 1 to values.length. Higher rank means higher value.
-        zExtent[0] = 0;
-        zExtent[1] = 1;
+        const zNormScale = scaleLinear().domain(extent(trace.ranks)).range(Z_RANGE_2D);
+        zExtent = Z_RANGE_2D;
+        const normRanks = new Float32Array(npoints);
+        for (let i = 0; i < npoints; i++) {
+            normRanks[i] = zNormScale(trace.ranks[i]);
+        }
+        trace.ranks = normRanks;
     }
+    const ranks = trace.ranks;
     // Determine max and min of each axis of our data.
     for (let i = 0; i < npoints; i++) {
         const x = trace.x[i];
@@ -111,22 +109,19 @@ export function getPositions(trace) {
     const xRange = getRange(xExtent);
     const yRange = getRange(yExtent);
     const zRange = getRange(zExtent);
-    const maxRange = Math.max(xRange, yRange, zRange);
+    const maxXYZRange = is3d ? Math.max(xRange, yRange, zRange) : Math.max(xRange, yRange);
     const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
-    const makeScaleRange = (range, base) => [
-        -base * (range / maxRange),
-        base * (range / maxRange)
-    ];
-    const xScale = makeScaleRange(xRange, halfCube);
-    const yScale = makeScaleRange(yRange, halfCube);
-    const zScale = makeScaleRange(zRange, halfCube);
+    const makeScaleRange = (range, base, maxRange) => [-base * (range / maxRange), base * (range / maxRange)];
+    const xScale = makeScaleRange(xRange, halfCube, maxXYZRange);
+    const yScale = makeScaleRange(yRange, halfCube, maxXYZRange);
+    const zScale = is3d ? makeScaleRange(zRange, halfCube, maxXYZRange) : makeScaleRange(zRange, halfCube, zRange);
     const positions = new Float32Array(npoints * 3);
     let dst = 0;
 
     for (let i = 0; i < npoints; i++) {
-        positions[dst++] = scaleLinear(trace.x[i], xExtent, xScale);
-        positions[dst++] = scaleLinear(trace.y[i], yExtent, yScale);
-        positions[dst++] = scaleLinear(is3d ? trace.z[i] : ranks[i] / (ranks.length + 1), zExtent, zScale);
+        positions[dst++] = scaleLinear3(trace.x[i], xExtent, xScale);
+        positions[dst++] = scaleLinear3(trace.y[i], yExtent, yScale);
+        positions[dst++] = scaleLinear3(is3d ? trace.z[i] : ranks[i], zExtent, zScale);
     }
 
     return positions;
@@ -175,10 +170,10 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
 
     let xScale, yScale, zScale, xExtent, yExtent, zExtent;
     if (!isSpatial) {
-        const getRange = (extent) => Math.abs(extent[1] - extent[0]);
+
         xExtent = [Infinity, -Infinity];
         yExtent = [Infinity, -Infinity];
-        zExtent = is3d ? [Infinity, -Infinity] : [0, 1];
+        zExtent = is3d ? [Infinity, -Infinity] : Z_RANGE_2D;
         // Determine max and min of each axis of our data.
         for (let i = 0; i < npoints; i++) {
             let value = x[i];
@@ -206,18 +201,16 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
                 }
             }
         }
+        const getRange = (extent) => Math.abs(extent[1] - extent[0]);
         const xRange = getRange(xExtent);
         const yRange = getRange(yExtent);
         const zRange = getRange(zExtent);
-        const maxRange = Math.max(xRange, yRange, zRange);
+        const maxXYZRange = is3d ? Math.max(xRange, yRange, zRange) : Math.max(xRange, yRange);
         const halfCube = SCATTER_PLOT_CUBE_LENGTH / 2;
-        const makeScaleRange = (range, base) => [
-            -base * (range / maxRange),
-            base * (range / maxRange)
-        ];
-        xScale = makeScaleRange(xRange, halfCube);
-        yScale = makeScaleRange(yRange, halfCube);
-        zScale = makeScaleRange(zRange, halfCube);
+        const makeScaleRange = (range, base, maxRange) => [-base * (range / maxRange), base * (range / maxRange)];
+        xScale = makeScaleRange(xRange, halfCube, maxXYZRange);
+        yScale = makeScaleRange(yRange, halfCube, maxXYZRange);
+        zScale = is3d ? makeScaleRange(zRange, halfCube, maxXYZRange) : makeScaleRange(zRange, halfCube, zRange);
     }
 
     let labelValues = [];
@@ -236,9 +229,9 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
         let zmedian = mid % 1 ? p.z[mid - 0.5] : (p.z[mid - 1] + p.z[mid]) / 2;
 
         if (!isSpatial) {
-            xmedian = scaleLinear(xmedian, xExtent, xScale);
-            ymedian = scaleLinear(ymedian, yExtent, yScale);
-            zmedian = scaleLinear(zmedian, zExtent, zScale);
+            xmedian = scaleLinear3(xmedian, xExtent, xScale);
+            ymedian = scaleLinear3(ymedian, yExtent, yScale);
+            zmedian = scaleLinear3(zmedian, zExtent, zScale);
         }
         labelPositions[positionIndex] = xmedian;
         labelPositions[positionIndex + 1] = ymedian;
@@ -248,18 +241,18 @@ export function getCategoryLabelsPositions(embedding, obsKeys, cachedData) {
     return {labels: labelValues, positions: labelPositions};
 }
 
-export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData, cameraDef) {
-    const is3d = traceInfo.z != null;
-    const colors = traceInfo.colors;
-    let positions = traceInfo.positions;
+export function updateScatterChart(scatterPlot, trace, selection, markerOpacity, unselectedMarkerOpacity, pointSize, unselectedPointSize, categoricalNames = {}, chartOptions, obsCatKeys, cachedData, cameraDef) {
+    const is3d = trace.z != null;
+    const colors = trace.colors;
+    let positions = trace.positions;
 
-    const npoints = traceInfo.x.length;
+    const npoints = trace.values.length;
     const isSelectionEmpty = selection == null;
     const updateZ = !isSelectionEmpty && !is3d;
     if (updateZ) {
         positions = positions.slice();
     }
-    const scale = new Float32Array(traceInfo.x.length);
+    const scale = new Float32Array(trace.values.length);
     scale.fill(pointSize);
     for (let i = 0, j = 3, k = 2; i < npoints; i++, j += 4, k += 3) {
         const isSelected = isSelectionEmpty || selection.has(i);
@@ -272,7 +265,7 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
         }
     }
     scatterPlot.scene.background = chartOptions.darkMode ? new Color("rgb(0, 0, 0)") : null;
-    scatterPlot.setDimensions(traceInfo.dimensions);
+    scatterPlot.setDimensions(trace.dimensions);
     if (cameraDef) {
         scatterPlot.updateFromCameraDef(cameraDef);
     }
@@ -292,10 +285,10 @@ export function updateScatterChart(scatterPlot, traceInfo, selection, markerOpac
     if (labelsVisualizer) {
         labelsVisualizer.labelsActive = showLabels;
         if (showLabels) {
-            const labelKey = getEmbeddingKey(traceInfo.embedding) + '_' + obsCatKeys.join(',');
+            const labelKey = getEmbeddingKey(trace.embedding) + '_' + obsCatKeys.join(',');
             let labelsPositions = cachedData[labelKey];
             if (labelsPositions == null) {
-                labelsPositions = getCategoryLabelsPositions(traceInfo.embedding, obsCatKeys, cachedData);
+                labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCatKeys, cachedData);
                 cachedData[labelKey] = labelsPositions;
             }
             labelsVisualizer.fillStyle = chartOptions.darkMode ? 'white' : 'black';

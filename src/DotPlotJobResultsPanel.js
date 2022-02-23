@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {scaleLinear} from 'd3-scale';
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {connect} from 'react-redux';
 import {setSearchTokens} from './actions';
 import {createFilterFunction} from './dataset_filter';
@@ -25,7 +25,7 @@ import CirroTooltip from './CirroTooltip';
 
 
 const DEFAULT_DE_INTERPOLATOR = 'RdBu';
-
+const DotPlotTableMemo = React.memo(DotPlotTable);
 
 export function updateJob(jobResult) {
     if (jobResult.options === undefined) {
@@ -267,14 +267,152 @@ export function updateTopNJobResult(jobResult) {
 function DotPlotJobResultsPanel(props) {
     const {dataset, jobResult, searchTokens, onSearchTokens} = props;
     const [tip, setTip] = useState({html: ''});
+    const [headerSize, setHeaderSize] = useState({width: 0, height: 0});
+    const [rotateHeaders, setRotateHeaders] = useState(false);
+    const [selectedFeatures, setSelectedFeatures] = useState(new Set());
+    const [tooltipFields, setTooltipFields] = useState([]);
+    const [valueScale, setValueScale] = useState(null);
+    const [domains, setDomains] = useState(null);
+    const [columns, setColumns] = useState([]);
 
-    function onMouseMove(event) {
-        setTip({html: event.target.dataset.title, clientX: event.clientX, clientY: event.clientY});
-    }
 
-    function onMouseOut(event) {
-        setTip({html: ''});
-    }
+    const isRowSelected = useCallback(
+        (row) => {
+            return selectedFeatures.has(jobResult.data[row].index);
+        },
+        [selectedFeatures, jobResult.data]
+    );
+
+    const getRowId = useCallback(
+        (row) => {
+            return jobResult.data[row].index;
+        },
+        [jobResult.data]
+    );
+
+    const getTooltip = useCallback(
+        (row, column) => {
+            let title = [];
+            const item = jobResult.data[row];
+            tooltipFields.forEach(field => {
+                const key = column + ':' + field;
+                const value = item[key];
+                if (value != null) {
+                    title.push(field + ': ' + value);
+                }
+            });
+            title = title.join('<br />');
+            return title;
+        },
+        [jobResult.data, tooltipFields]
+    );
+
+
+    const getColor = useCallback(
+        (row, column) => {
+            return jobResult.data[row][column + ':' + jobResult.color];
+        },
+        [jobResult.data]
+    );
+
+    const getSize = useCallback(
+        (row, column) => {
+            return jobResult.data[row][column + ':' + jobResult.size];
+        },
+        [jobResult.data, jobResult.size]
+    );
+
+    const rowStart = useCallback(
+        (row, rowIndex) => {
+            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                valueScale.domain(domains[rowIndex]);
+            }
+        },
+        [jobResult.interpolator, valueScale, domains]
+    );
+
+    const columnStart = useCallback(
+        (column, columnIndex) => {
+            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                valueScale.domain(domains[columnIndex]);
+            }
+        },
+        [jobResult.interpolator, valueScale, domains]
+    );
+
+    const onMouseMove = useCallback(
+        (event) => {
+            setTip({
+                html: event.target.dataset.title == null ? '' : event.target.dataset.title,
+                clientX: event.clientX,
+                clientY: event.clientY
+            });
+        }, []
+    );
+
+    const onMouseOut = useCallback(
+        (event) => {
+            setTip({html: ''});
+        }, []
+    );
+
+    const toggleAll = useCallback(
+        (event, isSelected) => {
+            event.stopPropagation();
+            isSelected = !isSelected;
+            const features = new Set();
+            for (let i = 0; i < jobResult.rows.length; i++) {
+                const feature = jobResult.data[jobResult.rows[i]]['index'];
+                features.add(feature);
+            }
+
+            let filteredSearchTokens;
+            if (!isSelected) {
+                filteredSearchTokens = searchTokens.filter(token => !features.has(token.id));
+            } else {
+                filteredSearchTokens = searchTokens.slice();
+                features.forEach(feature => {
+                    let found = false;
+                    for (let i = 0; i < searchTokens.length; i++) {
+                        if (searchTokens[i].id === feature) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        filteredSearchTokens.push({
+                            id: feature,
+                            type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
+                        });
+                    }
+                });
+            }
+            onSearchTokens(filteredSearchTokens);
+        }, [jobResult.rows, jobResult.data, searchTokens]
+    );
+
+    const onRowClick = useCallback(
+        (event, row) => {
+            event.stopPropagation();
+            const feature = jobResult.data[row]['index'];
+            let index = -1;
+            for (let i = 0; i < searchTokens.length; i++) {
+                if (searchTokens[i].id === feature) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index === -1) {
+                searchTokens.push({
+                    id: feature,
+                    type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
+                });
+            } else {
+                searchTokens.splice(index, 1);
+            }
+            onSearchTokens(searchTokens.slice());
+        }, [jobResult.data, searchTokens]
+    );
 
 
     function exportJobResult(event) {
@@ -308,283 +446,185 @@ function DotPlotJobResultsPanel(props) {
     }
 
 
-    function toggleAll(event, isSelected) {
-        event.stopPropagation();
-        isSelected = !isSelected;
-        const features = new Set();
-        for (let i = 0; i < jobResult.rows.length; i++) {
-            const feature = jobResult.data[jobResult.rows[i]]['index'];
-            features.add(feature);
+    // function sortColumns() {
+    //     const sortOrder = jobResult.columnSortOrder;
+    //     const groups = jobResult.groups;
+    //     const data = jobResult.data;
+    //     const indices = new Array(groups.length);
+    //     for (let i = 0, n = groups.length; i < n; i++) {
+    //         indices[i] = i;
+    //     }
+    //     const nsortFields = sortOrder.length;
+    //     if (nsortFields.length > 0) { // sort by gene
+    //         const sortFieldRows = [];
+    //         for (let i = 0; i < nsortFields; i++) {
+    //             const field = sortOrder[i].field;
+    //             let index;
+    //             for (let j = 0; j < data.length; j++) {
+    //                 if (data[j]['index'] === field) {
+    //                     index = j;
+    //                     break;
+    //                 }
+    //             }
+    //             sortFieldRows.push(index);
+    //         }
+    //
+    //         indices.sort((a, b) => {
+    //             for (let i = 0; i < nsortFields; i++) {
+    //                 const row = sortFieldRows[i];
+    //                 const val = data[row][jobResult.color] - data[row][jobResult.color];
+    //                 if (val !== 0) {
+    //                     return val;
+    //                 }
+    //                 const val2 = data[row][jobResult.size] - data[row][jobResult.size];
+    //                 if (val2 !== 0) {
+    //                     return val2;
+    //                 }
+    //             }
+    //             return a - b;
+    //         });
+    //     }
+    //     jobResult.columns = indices;
+    // }
+
+
+    useEffect(() => {
+        const selection = new Set();
+        searchTokens.forEach(token => {
+            if (token.type === FEATURE_TYPE.X) {
+                selection.add(token.id);
+            }
+        });
+        setSelectedFeatures(selection);
+
+    }, [searchTokens]);
+    useEffect(() => {
+        const fields = [jobResult.by];
+        if (jobResult.color !== jobResult.by) {
+            fields.push(jobResult.color);
+        }
+        const isSizeScaled = jobResult.size !== 'none';
+        if (jobResult.size !== jobResult.by && isSizeScaled && jobResult.size !== jobResult.color) {
+            fields.push(jobResult.size);
         }
 
-        let filteredSearchTokens;
-        if (!isSelected) {
-            filteredSearchTokens = searchTokens.filter(token => !features.has(token.id));
-        } else {
-            filteredSearchTokens = searchTokens.slice();
-            features.forEach(feature => {
-                let found = false;
-                for (let i = 0; i < searchTokens.length; i++) {
-                    if (searchTokens[i].id === feature) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    filteredSearchTokens.push({
-                        id: feature,
-                        type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
-                    });
-                }
-            });
-        }
-        onSearchTokens(filteredSearchTokens);
-    }
+        jobResult.fields.forEach(field => {
+            if (fields.indexOf(field) === -1) {
+                fields.push(field);
+            }
+        });
+        setTooltipFields(fields);
+    }, [jobResult.color, jobResult.by, jobResult.size, jobResult.fields]);
 
-    function onRowClick(event, row) {
-        event.stopPropagation();
-        const feature = jobResult.data[row]['index'];
-        let index = -1;
-        for (let i = 0; i < searchTokens.length; i++) {
-            if (searchTokens[i].id === feature) {
-                index = i;
+
+    useEffect(() => {
+        let _rotateHeaders = false;
+        for (let i = 0; i < jobResult.groups.length; i++) {
+            if (jobResult.groups[i].length > 2) {
+                _rotateHeaders = true;
                 break;
             }
         }
-        if (index === -1) {
-            searchTokens.push({
-                id: feature,
-                type: dataset.obs.indexOf(feature) !== -1 ? FEATURE_TYPE.OBS : FEATURE_TYPE.X
-            });
-        } else {
-            searchTokens.splice(index, 1);
-        }
-        onSearchTokens(searchTokens.slice());
-    }
+        let headerWidth = 0;
+        let headerHeight = 12;
+        if (_rotateHeaders) {
 
-    function sortColumns() {
-        const sortOrder = jobResult.columnSortOrder;
-        const groups = jobResult.groups;
-        const data = jobResult.data;
-        const indices = new Array(groups.length);
-        for (let i = 0, n = groups.length; i < n; i++) {
-            indices[i] = i;
-        }
-        const nsortFields = sortOrder.length;
-        if (nsortFields.length > 0) { // sort by gene
-            const sortFieldRows = [];
-            for (let i = 0; i < nsortFields; i++) {
-                const field = sortOrder[i].field;
-                let index;
-                for (let j = 0; j < data.length; j++) {
-                    if (data[j]['index'] === field) {
-                        index = j;
-                        break;
-                    }
-                }
-                sortFieldRows.push(index);
+            const d = document.createElement('span');
+            d.style.position = 'absolute';
+            d.style.left = '-1000000px';
+            d.className = '.MuiTableCell-head .MuiTableCell-root';
+            document.body.append(d);
+            for (let i = 0; i < jobResult.groups.length; i++) {
+                d.innerText = jobResult.groups[i];
+                headerWidth = Math.max(headerWidth, 2 + d.getBoundingClientRect().width);
             }
-
-            indices.sort((a, b) => {
-                for (let i = 0; i < nsortFields; i++) {
-                    const row = sortFieldRows[i];
-                    const val = data[row][jobResult.color] - data[row][jobResult.color];
-                    if (val !== 0) {
-                        return val;
-                    }
-                    const val2 = data[row][jobResult.size] - data[row][jobResult.size];
-                    if (val2 !== 0) {
-                        return val2;
-                    }
-                }
-                return a - b;
-            });
+            d.remove();
+            headerWidth += 2; // prevent overflow
+            headerWidth = Math.min(headerWidth, 300);
+            headerHeight = Math.cos(45) * headerWidth;
+            setHeaderSize({width: headerWidth, height: headerHeight});
         }
-        jobResult.columns = indices;
-    }
+        setHeaderSize({width: headerWidth, height: headerHeight});
+        setRotateHeaders(_rotateHeaders);
+    }, [jobResult.groups]);
 
 
-    const selectedFeatures = new Set();
-    searchTokens.forEach(token => {
-        if (token.type === FEATURE_TYPE.X) {
-            selectedFeatures.add(token.id);
-        }
-    });
-
-    let data;
-    let color;
-    let by;
-    let size;
-    let groups;
-    let rotateHeaders = false;
-    let rows;
-    let valueScale = null;
-    let isSizeScaled = true;
-    let domains;
-    let tooltipFields = null;
-    let headerHeight = 0;
-    let headerWidth = 0;
-    // let isSingleComparison = false;
-
-    let columns = jobResult.columns;
-    // isSingleComparison = columns.length === 1;
-    isSizeScaled = jobResult.size !== 'none';
-    data = jobResult.data;
-    color = jobResult.color;
-    by = jobResult.by;
-    size = jobResult.size;
-    groups = jobResult.groups;
-
-    // if (isSingleComparison) {
-    //     // min/max for each field
-    //     jobResult.fields.forEach(field => {
-    //         let min = Number.MAX_VALUE;
-    //         let max = -Number.MAX_VALUE;
-    //         const fieldName = 'comparison:' + field;
-    //         rows.forEach(row => {
-    //             const value = data[row][fieldName];
-    //             if (value != null && !isNaN(value)) {
-    //                 min = value < min ? value : min;
-    //                 max = value > max ? value : max;
-    //             }
-    //         });
-    //         domains.push([min, max]);
-    //     });
-    // }
-    tooltipFields = [];
-    tooltipFields.push(by);
-    rows = jobResult.rows;
-    if (color !== by) {
-        tooltipFields.push(color);
-    }
-    if (size !== by && isSizeScaled && size !== color) {
-        tooltipFields.push(size);
-    }
-
-    jobResult.fields.forEach(field => {
-        if (tooltipFields.indexOf(field) === -1) {
-            tooltipFields.push(field);
-        }
-    });
-
-
-    for (let i = 0; i < groups.length; i++) {
-        if (groups[i].length > 2) {
-            rotateHeaders = true;
-            break;
-        }
-    }
-
-    if (rotateHeaders) {
-        const d = document.createElement('span');
-        d.style.position = 'absolute';
-        d.style.left = '-1000000px';
-        d.className = '.MuiTableCell-head .MuiTableCell-root';
-        document.body.append(d);
-        for (let i = 0; i < groups.length; i++) {
-            d.innerText = groups[i];
-            headerWidth = Math.max(headerWidth, 2 + d.getBoundingClientRect().width);
-        }
-        d.remove();
-        headerWidth += 2; // prevent overflow
-        headerWidth = Math.min(headerWidth, 300);
-        headerHeight = Math.cos(45) * headerWidth;
-    }
-    if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
-        valueScale = scaleLinear().range([0, 1]);
-        domains = [];
-        // can scale colors globally, by row, or by column
-        if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
-            rows.forEach(row => {
-                let min = Number.MAX_VALUE;
-                let max = -Number.MAX_VALUE;
-                columns.forEach(column => {
-                    const group = groups[column];
-                    const colorField = group + ':' + color;
-                    const colorValue = data[row][colorField];
-                    if (colorValue != null && !isNaN(colorValue)) {
-                        min = colorValue < min ? colorValue : min;
-                        max = colorValue > max ? colorValue : max;
-                    }
+    useEffect(() => {
+        if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
+            const _valueScale = scaleLinear().range([0, 1]);
+            const _domains = [];
+            // can scale colors globally, by row, or by column
+            if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
+                jobResult.rows.forEach(row => {
+                    let min = Number.MAX_VALUE;
+                    let max = -Number.MAX_VALUE;
+                    jobResult.columns.forEach(column => {
+                        const group = jobResult.groups[column];
+                        const colorField = group + ':' + jobResult.color;
+                        const colorValue = jobResult.data[row][colorField];
+                        if (colorValue != null && !isNaN(colorValue)) {
+                            min = colorValue < min ? colorValue : min;
+                            max = colorValue > max ? colorValue : max;
+                        }
+                    });
+                    _domains.push([min, max]);
                 });
-                domains.push([min, max]);
-            });
-        } else if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
-            columns.forEach(column => {
-                let min = Number.MAX_VALUE;
-                let max = -Number.MAX_VALUE;
-                rows.forEach(row => {
-                    const group = groups[column];
-                    const colorField = group + ':' + color;
-                    const colorValue = data[row][colorField];
-                    if (colorValue != null && !isNaN(colorValue)) {
-                        min = colorValue < min ? colorValue : min;
-                        max = colorValue > max ? colorValue : max;
-                    }
+            } else if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
+                jobResult.columns.forEach(column => {
+                    let min = Number.MAX_VALUE;
+                    let max = -Number.MAX_VALUE;
+                    jobResult.rows.forEach(row => {
+                        const group = jobResult.groups[column];
+                        const colorField = group + ':' + jobResult.color;
+                        const colorValue = jobResult.data[row][colorField];
+                        if (colorValue != null && !isNaN(colorValue)) {
+                            min = colorValue < min ? colorValue : min;
+                            max = colorValue > max ? colorValue : max;
+                        }
+                    });
+                    _domains.push([min, max]);
                 });
-                domains.push([min, max]);
-            });
+            }
+            setValueScale(_valueScale);
+            setDomains(_domains);
         }
-    }
+    }, [jobResult.interpolator.scale]);
 
+    useEffect(() => {
+        setColumns(jobResult.columns.map(c => jobResult.groups[c]));
+    }, [jobResult.columns, jobResult.groups]);
 
-    columns = jobResult.columns.map(column => groups[column]);
-    const isRowSelected = (row) => selectedFeatures.has(data[row].index);
-    const getRowId = (row) => data[row].index;
-    const getTooltip = (row, column) => {
-        let title = [];
-        tooltipFields.forEach(field => {
-            const value = data[row][column + ':' + field];
-            title.push(field + ': ' + value);
-        });
-        title = title.join('<br />');
-        return title;
-    };
-
-
-    const getColor = (row, column) => data[row][column + ':' + color];
-    const getSize = (row, column) => data[row][column + ':' + size];
-
-    const rowStart = (row, rowIndex) => {
-        if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE) {
-            valueScale.domain(domains[rowIndex]);
-        }
-    };
-    const columnStart = (column, columnIndex) => {
-        if (jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY) {
-            valueScale.domain(domains[columnIndex]);
-        }
-    };
 
     return <Box color="text.primary">
         <Typography
-            style={{marginBottom: headerHeight + 8}}
+            style={{marginBottom: headerSize.height + 8}}
             component={"h3"}
             color={"textPrimary"}><b>{jobResult.name}</b>&nbsp;
-            <small>{intFormat(rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
+            <small>{intFormat(jobResult.rows.length) + ' / ' + intFormat(jobResult.data.length) + ' features'}</small></Typography>
         <Tooltip title={"Export"}><IconButton edge={false} size={'small'} aria-label="Export"
                                               onClick={exportJobResult}><CloudDownloadIcon/></IconButton></Tooltip>
         <div style={{paddingTop: 6, position: 'relative'}}>
-            {rows.length > 0 &&
-                <div style={{position: 'absolute'}}><DotPlotTable isRowSelected={isRowSelected}
-                                                                  rows={rows}
-                                                                  columns={columns}
-                                                                  onMouseMove={onMouseMove}
-                                                                  onMouseOut={onMouseOut}
-                                                                  getTooltip={getTooltip}
-                                                                  sizeScale={jobResult.sizeScale}
-                                                                  valueScale={valueScale}
-                                                                  rowStart={rowStart}
-                                                                  getColor={getColor}
-                                                                  getSize={getSize}
-                                                                  getRowId={getRowId}
-                                                                  columnStart={columnStart}
-                                                                  onRowClick={onRowClick}
-                                                                  colorScale={jobResult.colorScale}
-                                                                  toggleAll={toggleAll}
-                                                                  rotateHeaders={rotateHeaders}
-                                                                  headerHeight={headerHeight}
-                                                                  headerWidth={headerWidth}/>
+            {jobResult.rows.length > 0 &&
+                <div style={{position: 'absolute'}}>
+                    <DotPlotTableMemo isRowSelected={isRowSelected}
+                                      rows={jobResult.rows}
+                                      columns={columns}
+                                      colorScale={jobResult.colorScale}
+                                      rotateHeaders={rotateHeaders}
+                                      headerHeight={headerSize.height}
+                                      headerWidth={headerSize.width}
+                                      onMouseMove={onMouseMove}
+                                      onMouseOut={onMouseOut}
+                                      getTooltip={getTooltip}
+                                      sizeScale={jobResult.sizeScale}
+                                      valueScale={valueScale}
+                                      rowStart={rowStart}
+                                      getColor={getColor}
+                                      getSize={getSize}
+                                      getRowId={getRowId}
+                                      columnStart={columnStart}
+                                      onRowClick={onRowClick}
+                                      toggleAll={toggleAll}/>
                     <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY}/></div>}
         </div>
     </Box>;
