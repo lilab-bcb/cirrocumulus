@@ -156,9 +156,10 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
     result_df = pd.DataFrame(data={'index': var_names})
     has_frac_expressed = False
     comparison_names = []
-    for comparison_name in de_results.pair2results.keys():
+    for comparison in de_results.pair2results.keys():
+        result = de_results.pair2results[comparison]
+        comparison_name = comparison if isinstance(comparison, str) else '_'.join(comparison)
         comparison_names.append(comparison_name)
-        result = de_results.pair2results[comparison_name]
 
         pvals = fdrcorrection(result['pvals'])
         result_df[f'{comparison_name}:pvals_adj'] = pvals
@@ -170,8 +171,6 @@ def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
             result_df[f'{comparison_name}:pts_1'] = result['frac_expressed1']
             result_df[f'{comparison_name}:pts_2'] = result['frac_expressed2']
     # client expects field {comparison_name}:pvals_adj
-    print(comparison_names)
-    print(result_df.columns)
     result = dict(groups=comparison_names,
                   fields=['pvals_adj', 'scores', 'lfc'] + (
                       ['pts_1', 'pts_2'] if has_frac_expressed else []),
