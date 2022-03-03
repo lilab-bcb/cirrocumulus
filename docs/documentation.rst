@@ -130,6 +130,13 @@ Run differential expression analysis:
 
 .. image:: images/de.gif
 
+The output of differential expression contains the following columns for each comparison:
+
+- scores: The t-score underlying the computation of the p-value
+- pvals_adj: Corrected p-values from the t-test.
+- lfc: Log2 fold change for each gene for each group. Note: this is an approximation calculated from mean-log values
+- pts_1: Fraction of cells expressing the genes for group one
+- pts_2: Fraction of cells expressing the genes for group two
 
 The side bar contains additional controls, such as the embedding point size and opacity.
 
