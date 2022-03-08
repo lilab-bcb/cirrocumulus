@@ -403,7 +403,7 @@ function EditNewDatasetDialog(props) {
                     renderTags={renderTags}
                     freeSolo
                     multiple
-                    clearOnBlur
+                    autoSelect
                     options={[]}
                     disabled={loading || !isAuthEnabled}
                     value={readers}

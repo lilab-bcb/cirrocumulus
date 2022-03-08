@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.25.post4 `March 8, 2022`
+    * Minor user interface updates
+
 - 1.1.25.post3 `February 25, 2022`
     * Fixed error displaying differential expression results
 
