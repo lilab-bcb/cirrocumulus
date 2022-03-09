@@ -189,7 +189,7 @@ function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
         case SET_CHART_OPTIONS:
             return Object.assign({}, action.payload);
         case RESTORE_VIEW:
-            return action.payload.chartOptions ? Object.assign(DEFAULT_CHART_OPTIONS, action.payload.chartOptions) : state;
+            return action.payload.chartOptions ? Object.assign({}, DEFAULT_CHART_OPTIONS, action.payload.chartOptions) : state;
         default:
             return state;
     }
