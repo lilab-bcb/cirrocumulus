@@ -1,20 +1,8 @@
 import pandas._libs.json as ujson
 import zarr
 
-anndata_legacy = True
-try:
-    from anndata._io.zarr import write_attribute
-except:
-    anndata_legacy = False
-    from anndata.experimental import write_elem as write_attribute
-
 from cirrocumulus.anndata_util import get_pegasus_marker_keys, ADATA_MODULE_UNS_KEY
-
-
-def wrap_in_dict(d):
-    if anndata_legacy:
-        return d
-    return dict(d)
+from cirrocumulus.zarr import write_attribute
 
 
 def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
@@ -31,9 +19,7 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
 
     dataset.uns['cirro-schema'] = ujson.dumps(schema, double_precision=2, orient='values')
     group = zarr.open_group(filesystem.get_mapper(output_directory), mode='a')
-    if not anndata_legacy:
-        group.attrs.setdefault("encoding-type", "anndata")
-        group.attrs.setdefault("encoding-version", "0.1.0")
+
     if whitelist is None or 'X' in whitelist:
         write_attribute(group, "X", dataset.X)
         # if scipy.sparse.issparse(dataset.X):
@@ -46,13 +32,13 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     if whitelist is None or 'obs' in whitelist:
         write_attribute(group, "obs", dataset.obs)
     if whitelist is None or 'obsm' in whitelist:
-        write_attribute(group, "obsm", wrap_in_dict(dataset.obsm))
+        write_attribute(group, "obsm", dataset.obsm)
 
     pg_marker_keys = get_pegasus_marker_keys(dataset)
     for key in list(dataset.varm.keys()):
         if key not in pg_marker_keys:
             del dataset.varm[key]
-    write_attribute(group, 'varm', wrap_in_dict(dataset.varm))
+    write_attribute(group, 'varm', dataset.varm)
     write_attribute(group, "var", dataset.var)
     # uns_whitelist = set(['module', 'cirro-schema'])
     # keep DE results and colors
