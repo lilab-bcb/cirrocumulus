@@ -1,5 +1,4 @@
 import {Checkbox, Table, TableBody, TableCell, TableHead, TableRow} from '@mui/material';
-import Box from '@mui/material/Box';
 import withStyles from '@mui/styles/withStyles';
 import React from 'react';
 
@@ -41,12 +40,12 @@ function DotPlotTable(props) {
         classes,
         rows,
         columns,
+        darkMode,
         sizeScale,
         valueScale,
         colorScale,
         headerWidth,
         rotateHeaders,
-
         isRowSelected,
         rowStart,
         columnStart,
@@ -70,82 +69,78 @@ function DotPlotTable(props) {
     }
     const maxSize = Math.max(sizeScale.range()[0], sizeScale.range()[1]);
 
-    return <div data-testid={'dot-plot-table'}>
-        <Box color="text.primary">
-            <div>
-                {rows.length > 0 && <Table onMouseMove={onMouseMove} onMouseOut={onMouseOut} stickyHeader={true}
-                                           className={classes.table}>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell className={classes.rowHeader} component="th"
-                                       style={{backgroundColor: 'unset', textAlign: 'left'}}
-                                       key={'__id'}><Checkbox
-                                onClick={(event) => toggleAll(event, selectAllChecked)}
-                                className={classes.checkbox}
-                                checked={selectAllChecked}/></TableCell>
-                            {columns.map(column => {
-                                if (rotateHeaders) {
-                                    return <TableCell
-                                        data-title={column}
-                                        className={classes.rotateHeader}
-                                        key={column}>
-                                        <div className={classes.rotateHeaderDiv}><span
-                                            style={{width: headerWidth}}
-                                            className={classes.rotateHeaderSpan}>{column}</span></div>
-                                    </TableCell>;
-                                } else {
-                                    return <TableCell style={{backgroundColor: 'unset'}}
-                                                      className={classes.td}
-                                                      key={column}>{column}</TableCell>;
-                                }
-                            })}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {rows.map((row, rowIndex) => {
-                            rowStart(row, rowIndex);
-                            const id = getRowId(row);
-                            const selected = isRowSelected(row);
-                            return <TableRow
-                                className={classes.tr}
-                                hover
-                                onClick={(event) => onRowClick(event, row)}
-                                role="checkbox"
-                                tabIndex={-1}
-                                key={row}
-                            ><TableCell className={classes.rowHeader} component="th"
-                                        key={'id'}><Checkbox className={classes.checkbox}
-                                                             checked={selected}/>{id}</TableCell>
-                                {columns.map((column, columnIndex) => {
-                                    columnStart(column, columnIndex);
-                                    const colorValue = getColor(row, column);
-                                    const sizeValue = getSize(row, column);
-                                    const title = getTooltip(row, column);
-                                    if (colorValue == null || isNaN(colorValue)) {
-                                        return <TableCell className={classes.td} data-title={title}
-                                                          key={column}/>;
-                                    }
-                                    const diameter = sizeScale(sizeValue);
-                                    const colorValueScaled = valueScale ? valueScale(colorValue) : colorValue;
-                                    const backgroundColor = colorScale(colorValueScaled);
-                                    return <TableCell className={classes.td} data-title={title}
-                                                      key={column}>
-                                        <div className={classes.dot}
-                                             style={{
-                                                 pointerEvents: 'none',
-                                                 marginLeft: (maxSize - diameter) / 2,
-                                                 width: diameter,
-                                                 height: diameter,
-                                                 backgroundColor: backgroundColor
-                                             }}></div>
-                                    </TableCell>;
-                                })}
-                            </TableRow>;
+    return <div data-testid={'dot-plot-table'} style={{background: darkMode ? 'rgba(0,0,0)' : null, width: '100%'}}>
+        {rows.length > 0 && <Table onMouseMove={onMouseMove} onMouseOut={onMouseOut} stickyHeader={true}
+                                   className={classes.table}>
+            <TableHead>
+                <TableRow>
+                    <TableCell className={classes.rowHeader} component="th"
+                               style={{textAlign: 'left'}}
+                               key={'__id'}><Checkbox
+                        onClick={(event) => toggleAll(event, selectAllChecked)}
+                        className={classes.checkbox}
+                        checked={selectAllChecked}/></TableCell>
+                    {columns.map(column => {
+                        if (rotateHeaders) {
+                            return <TableCell
+                                data-title={column}
+                                className={classes.rotateHeader}
+                                key={column}>
+                                <div className={classes.rotateHeaderDiv}><span
+                                    style={{width: headerWidth}}
+                                    className={classes.rotateHeaderSpan}>{column}</span></div>
+                            </TableCell>;
+                        } else {
+                            return <TableCell style={{}}
+                                              className={classes.td}
+                                              key={column}>{column}</TableCell>;
+                        }
+                    })}
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {rows.map((row, rowIndex) => {
+                    rowStart(row, rowIndex);
+                    const id = getRowId(row);
+                    const selected = isRowSelected(row);
+                    return <TableRow
+                        className={classes.tr}
+                        hover
+                        onClick={(event) => onRowClick(event, row)}
+                        role="checkbox"
+                        tabIndex={-1}
+                        key={row}
+                    ><TableCell className={classes.rowHeader} component="th"
+                                key={'id'}><Checkbox className={classes.checkbox}
+                                                     checked={selected}/>{id}</TableCell>
+                        {columns.map((column, columnIndex) => {
+                            columnStart(column, columnIndex);
+                            const colorValue = getColor(row, column);
+                            const sizeValue = getSize(row, column);
+                            const title = getTooltip(row, column);
+                            if (colorValue == null || isNaN(colorValue)) {
+                                return <TableCell className={classes.td} data-title={title}
+                                                  key={column}/>;
+                            }
+                            const diameter = sizeScale(sizeValue);
+                            const colorValueScaled = valueScale ? valueScale(colorValue) : colorValue;
+                            const backgroundColor = colorScale(colorValueScaled);
+                            return <TableCell className={classes.td} data-title={title}
+                                              key={column}>
+                                <div className={classes.dot}
+                                     style={{
+                                         pointerEvents: 'none',
+                                         marginLeft: (maxSize - diameter) / 2,
+                                         width: diameter,
+                                         height: diameter,
+                                         backgroundColor: backgroundColor
+                                     }}></div>
+                            </TableCell>;
                         })}
-                    </TableBody>
-                </Table>}
-            </div>
-        </Box>
+                    </TableRow>;
+                })}
+            </TableBody>
+        </Table>}
     </div>;
 }
 
