@@ -2,7 +2,7 @@ import pandas._libs.json as ujson
 import zarr
 
 from cirrocumulus.anndata_util import get_pegasus_marker_keys, ADATA_MODULE_UNS_KEY
-from cirrocumulus.zarr import write_attribute
+from cirrocumulus.anndata_zarr import write_attribute
 
 
 def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
