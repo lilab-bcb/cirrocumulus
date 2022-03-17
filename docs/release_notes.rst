@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.26 `March 17, 2022`
+    * Fixed incompatibility with `anndata`_ 0.8.0
+    * Fixed error when normalizing differential expression results
+
 - 1.1.25.post4 `March 8, 2022`
     * Minor user interface updates
 
@@ -415,6 +419,7 @@ Release Notes
 
 
 .. _Pegasus: http://pegasus.readthedocs.io/
+.. _anndata: https://anndata.readthedocs.io/
 .. _Scanpy: https://scanpy.readthedocs.io/
 .. _Seurat: https://satijalab.org/seurat/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
