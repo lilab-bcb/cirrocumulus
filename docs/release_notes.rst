@@ -2,7 +2,7 @@ Release Notes
 -------------
 
 - 1.1.27 `March 30, 2022`
-    * Fixed incompatibility with version 2.1 of Flask
+    * Fixed incompatibility with Flask 2.1
 
 - 1.1.26 `March 17, 2022`
     * Fixed incompatibility with `anndata`_ 0.8.0
