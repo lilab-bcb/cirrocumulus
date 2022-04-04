@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.28 `April 4, 2022`
+    * Fixed incompatibility with some datasets prepared with an earlier version of cirrocumulus
+
 - 1.1.27 `March 30, 2022`
     * Fixed incompatibility with Flask 2.1
 
