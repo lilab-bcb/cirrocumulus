@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.29 `April 11, 2022`
+    * Skip groups with less than 3 cells when computing differential expression results in `cirro prepare_data`
+
 - 1.1.28 `April 4, 2022`
     * Fixed incompatibility with some datasets prepared with an earlier version of cirrocumulus
 
