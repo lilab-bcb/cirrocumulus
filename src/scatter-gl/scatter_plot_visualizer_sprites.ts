@@ -178,11 +178,13 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
 
     private createRenderMaterial(): ShaderMaterial {
         const uniforms = this.createUniforms();
+
         return new ShaderMaterial({
             uniforms: uniforms,
             vertexShader: VERTEX_SHADER,
             fragmentShader: FRAGMENT_SHADER,
             transparent: true,
+            // @ts-ignore
             fog: true,
             depthTest: true,
             depthWrite: true,
