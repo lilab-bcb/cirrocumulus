@@ -92,11 +92,7 @@ export function getBasis(basis, dimensions = 2, mode = null) {
         full_name = full_name + '_' + mode;
     }
     return {
-        name: basis,
-        dimensions: dimensions,
-        coordinate_columns: coordinate_columns,
-        mode: mode,
-        full_name: full_name
+        name: basis, dimensions: dimensions, coordinate_columns: coordinate_columns, mode: mode, full_name: full_name
     };
 }
 
@@ -228,9 +224,13 @@ export function groupDimensions(dimensions) {
 }
 
 export function groupedStats(groupDimensionInfo, vectors) {
-    let result = [];
+    const results = [];
+    let total = 0;
+    //  groupDimensionInfo.categories stores unique category values
+    // one vector per feature (gene)
     groupDimensionInfo.categories.forEach(category => {
         const value = groupDimensionInfo.keyToIndices[category];
+        total += value.indices.length;
         vectors.forEach((v) => {
             const categoryVector = new SlicedVector(v, value.indices);
             const categoryStats = continuousVectorStats(categoryVector);
@@ -244,10 +244,11 @@ export function groupedStats(groupDimensionInfo, vectors) {
                 percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
                 vector: categoryVector
             };
-            result.push(entry);
+            results.push(entry);
         });
     });
-    return result;
+    results.forEach(result => result.percentCells = 100 * (result.n / total));
+    return results;
 
 }
 
