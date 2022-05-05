@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.30 `May 5, 2022`
+    * Fix error when setting a color manually when more than 40 category values
+    * Show percent cells in dot plot
+
 - 1.1.29 `April 11, 2022`
     * Skip groups with less than 3 cells when computing differential expression results in `cirro prepare_data`
 

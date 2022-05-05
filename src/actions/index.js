@@ -223,10 +223,7 @@ export function initAuth() {
                     });
                 } else {
                     dispatch(_setDatasetChoices([{
-                        id: externalDatasetId,
-                        url: externalDatasetId,
-                        name: externalDatasetId,
-                        description: ''
+                        id: externalDatasetId, url: externalDatasetId, name: externalDatasetId, description: ''
                     }]));
                     dispatch(_loadSavedView());
                 }
@@ -422,10 +419,7 @@ export function saveFeatureSet(payload) {
         const state = getState();
         const features = state.searchTokens.filter(item => item.type === FEATURE_TYPE.X).map(item => item.id);
         const requestBody = {
-            ds_id: state.dataset.id,
-            name: payload.name,
-            features: features,
-            category: payload.category
+            ds_id: state.dataset.id, name: payload.name, features: features, category: payload.category
         };
         const task = {name: 'Save feature set'};
         dispatch(addTask(task));
@@ -434,10 +428,7 @@ export function saveFeatureSet(payload) {
 
                 let markers = getState().markers;
                 markers.push({
-                    category: payload.category,
-                    name: payload.name,
-                    features: features,
-                    id: result.id
+                    category: payload.category, name: payload.name, features: features, id: result.id
                 });
                 dispatch(setMarkers(markers.slice()));
                 dispatch(setMessage('Set saved'));
@@ -695,8 +686,7 @@ function handleFilterUpdated() {
 
         let q = {
             selection: {
-                measures: measures,
-                dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id)
+                measures: measures, dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(item => item.id)
             }
         };
 
@@ -1607,8 +1597,7 @@ function _updateDistributionData(newDistributionData, existingDistributionData, 
     const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(item => item.id);
     const dimensionKeys = [obsCatTokens.join('-')];
     // keep active dimensions and features only
-    let distributionData = existingDistributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 &&
-        (xTokens.indexOf(entry.feature) !== -1 || obsTokens.indexOf(entry.feature) !== -1 || moduleTokens.indexOf(entry.feature) !== -1));
+    let distributionData = existingDistributionData.filter(entry => dimensionKeys.indexOf(entry.dimension) !== -1 && (xTokens.indexOf(entry.feature) !== -1 || obsTokens.indexOf(entry.feature) !== -1 || moduleTokens.indexOf(entry.feature) !== -1));
 
     if (newDistributionData) {
         // remove old data that is also in new data
@@ -1872,15 +1861,13 @@ function _updateCharts(onError, updateActiveFeature = true) {
 
         if (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0) {
             q.stats = {
-                measures: globalFeatureSummaryMeasuresCacheMiss,
-                dimensions: globalFeatureSummaryDimensionsCacheMiss
+                measures: globalFeatureSummaryMeasuresCacheMiss, dimensions: globalFeatureSummaryDimensionsCacheMiss
             };
         }
 
         if (distributionCategories.length > 0 && distributionMeasuresToFetch.size > 0) {
             q.groupedStats = {
-                measures: Array.from(distributionMeasuresToFetch),
-                dimensions: [distributionCategories]
+                measures: Array.from(distributionMeasuresToFetch), dimensions: [distributionCategories]
             };
         }
 
@@ -2107,7 +2094,11 @@ function getNewEmbeddingData(state, features) {
                             }
                         }
                     }
-                    colorScale = scaleOrdinal(colors).domain(traceUniqueValues);
+                    let colorsArray = []; // ensure there is a color for every unique value
+                    for (let i = 0; i < traceUniqueValues.length; i++) {
+                        colorsArray[i] = colors[i % colors.length];
+                    }
+                    colorScale = scaleOrdinal(colorsArray).domain(traceUniqueValues);
                     colorScale.summary = featureSummary;
                 }
 
@@ -2198,9 +2189,7 @@ function getNewEmbeddingData(state, features) {
                     trace.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
                     const url = dataset.api.getFileUrl(embedding.spatial.image);
                     trace.tileSource = new OpenSeadragon.ImageTileSource({
-                        url: url,
-                        buildPyramid: true,
-                        crossOriginPolicy: "Anonymous"
+                        url: url, buildPyramid: true, crossOriginPolicy: "Anonymous"
                     });
                 }
 
@@ -2261,8 +2250,7 @@ export function getDatasetStateJson(state) {
     } = state;
 
     let json = {
-        dataset: dataset.id,
-        embeddings: embeddings
+        dataset: dataset.id, embeddings: embeddings
     };
     if (jobResultId != null) {
         json.jobId = jobResultId;
@@ -2279,7 +2267,8 @@ export function getDatasetStateJson(state) {
     let jsonChartOptions = {};
 
     const defaultChartOptions = {
-        showFog: DEFAULT_SHOW_FOG, darkMode: DEFAULT_DARK_MODE,
+        showFog: DEFAULT_SHOW_FOG,
+        darkMode: DEFAULT_DARK_MODE,
         labelFontSize: DEFAULT_LABEL_FONT_SIZE,
         labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
     };
