@@ -2078,6 +2078,11 @@ function getNewEmbeddingData(state, features) {
                         }
                     }
 
+                    let colorsArray = []; // ensure there is a color for every unique value
+                    for (let i = 0; i < traceUniqueValues.length; i++) {
+                        colorsArray[i] = colors[i % colors.length];
+                    }
+
                     // load saved colors from database
                     // category -> originalValue -> {newValue, positiveMarkers, negativeMarkers, color}
                     const originalValueToData = categoricalNames[feature];
@@ -2088,15 +2093,11 @@ function getNewEmbeddingData(state, features) {
                                 if (value.color != null) {
                                     const index = traceUniqueValues.indexOf(originalValue);
                                     if (index !== -1) {
-                                        colors[index] = value.color;
+                                        colorsArray[index] = value.color;
                                     }
                                 }
                             }
                         }
-                    }
-                    let colorsArray = []; // ensure there is a color for every unique value
-                    for (let i = 0; i < traceUniqueValues.length; i++) {
-                        colorsArray[i] = colors[i % colors.length];
                     }
                     colorScale = scaleOrdinal(colorsArray).domain(traceUniqueValues);
                     colorScale.summary = featureSummary;
