@@ -1,8 +1,11 @@
 Release Notes
 -------------
 
-- 1.1.30 `May 5, 2022`
+- 1.1.31 `May 5, 2022`
     * Fix error when setting a color manually when more than 40 category values
+    * Improved differential expression filter user interface
+
+- 1.1.30 `May 5, 2022`
     * Show percent cells in dot plot
 
 - 1.1.29 `April 11, 2022`
