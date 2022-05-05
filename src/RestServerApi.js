@@ -3,6 +3,15 @@
 import {API, getIdToken} from './actions';
 import {isArray} from 'lodash';
 
+function jsonResponse(response) {
+    if (!response.ok) {
+        const error = new Error();
+        error.status = response.status;
+        return Promise.reject(error);
+    }
+    return response.json();
+}
+
 export class RestServerApi {
 
     getUserPromise() {
@@ -11,14 +20,12 @@ export class RestServerApi {
                 'Authorization': 'Bearer ' + getIdToken(),
                 'Content-Type': 'application/json'
             }
-        }).then(result => result.json());
+        }).then(response => jsonResponse(response));
     }
 
     getDatasetsPromise() {
         return fetch(API + '/datasets', {headers: {'Authorization': 'Bearer ' + getIdToken()}})
-            .then(response => {
-                return response.json();
-            });
+            .then(response => jsonResponse(response));
     }
 
     deleteDatasetPromise(datasetId) {
@@ -65,7 +72,7 @@ export class RestServerApi {
             {
                 method: 'GET',
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(result => result.json());
+            }).then(response => jsonResponse(response));
     }
 
 
@@ -74,7 +81,7 @@ export class RestServerApi {
         return fetch(API + '/category_name?id=' + datasetId,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(result => result.json());
+            }).then(response => jsonResponse(response));
     }
 
     setCategoryNamePromise(data) {
@@ -91,7 +98,7 @@ export class RestServerApi {
         return fetch(API + '/views?id=' + datasetId,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(result => result.json());
+            }).then(response => jsonResponse(response));
     }
 
     upsertViewPromise(data, isUpdate) {
@@ -100,7 +107,7 @@ export class RestServerApi {
                 body: JSON.stringify(data),
                 method: isUpdate ? 'PUT' : 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(response => response.json());
+            }).then(response => jsonResponse(response));
     }
 
     deleteViewPromise(viewId, datasetId) {
@@ -116,7 +123,7 @@ export class RestServerApi {
         return fetch(API + '/view?id=' + viewId,
             {
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(response => response.json());
+            }).then(response => jsonResponse(response));
     }
 
     // feature sets
@@ -126,7 +133,7 @@ export class RestServerApi {
                 body: JSON.stringify(data),
                 method: isUpdate ? 'PUT' : 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(response => response.json());
+            }).then(response => jsonResponse(response));
     }
 
     deleteFeatureSet(setId, datasetId) {
@@ -149,14 +156,13 @@ export class RestServerApi {
         });
     }
 
-
     submitJob(data) {
         return fetch(API + '/job',
             {
                 body: JSON.stringify(data),
                 method: 'POST',
                 headers: {'Authorization': 'Bearer ' + getIdToken()}
-            }).then(response => response.json());
+            }).then(response => jsonResponse(response));
     }
 
 }
