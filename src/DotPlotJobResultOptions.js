@@ -18,9 +18,9 @@ import {
 
 const styles = theme => ({
     formControl: {
-        display: 'block', margin: theme.spacing(0, 1)
-    }, formControlInline: {
-        margin: theme.spacing(0, 1)
+        display: 'block'
+    }, leftMargin: {
+        margin: theme.spacing(0, 0.5)
     }
 });
 
@@ -198,8 +198,8 @@ class DotPlotJobResultOptions extends React.PureComponent {
         const fields = jobResult.fields.slice();
         fields.sort(NATSORT);
 
-        return <>
-            <div style={{marginTop: 16}}>
+        return <div className={classes.leftMargin}>
+            <div>
                 <Typography
                     component={"h2"}>Rank Features</Typography>
                 <FormControl style={{display: 'block'}} className={classes.formControl}>
@@ -221,7 +221,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
                     />}
                     label="Ascending"
                 /></div>
-                <InputLabel style={{marginLeft: 8, marginTop: 8}}>Number of Features</InputLabel>
+                <InputLabel style={{marginTop: 8}}>Number of Features</InputLabel>
                 <Slider
                     min={5}
                     max={Math.min(100, jobResult.data.length)}
@@ -246,13 +246,12 @@ class DotPlotJobResultOptions extends React.PureComponent {
             <div style={{marginTop: 8}}></div>
             <Tooltip title="Filters are applied separately per cluster"><Typography
                 component={"h2"}>Filters</Typography></Tooltip>
-
             {rowFilters.map(filter => {
                 // [field, op, val, uiValue]
                 const id = 'job_result' + filter[0];
                 return <div key={filter[0]} style={{paddingTop: 8}}>
-                    <InputLabel style={{lineHeight: 'unset'}} shrink>{filter[0]}</InputLabel>
-                    <FormControl className={classes.formControlInline}>
+                    <InputLabel shrink>{filter[0]}</InputLabel>
+                    <FormControl>
                         <Select
                             autoWidth
                             size={"small"}
@@ -340,7 +339,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
                                     reversed={jobResult.sizeScaleReversed}
                                     onReversedChange={this.onSizeReversedChange}/>
             </div>
-        </>;
+        </div>;
     }
 }
 
@@ -348,7 +347,8 @@ const mapStateToProps = state => {
     return {
         textColor: state.chartOptions.darkMode ? 'white' : 'black', jobResults: state.jobResults
     };
-};const mapDispatchToProps = (dispatch) => {
+};
+const mapDispatchToProps = (dispatch) => {
     return {
         handleJobResults: (payload) => {
             dispatch(setJobResults(payload));
