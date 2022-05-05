@@ -123,7 +123,8 @@ export default function DotPlotCanvas(props) {
         if (col >= 0 && col < data[0].length && row >= 0 && row < data.length) {
             const array = data[row];
             const item = array[col];
-            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br />% expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + '<br /># cells: ' + intFormat(item.n);
+            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br />% expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed))
+                + '<br />% cells: ' + stripTrailingZeros(numberFormat(item.percentCells));
             if (item.de) {
                 tip += '<br />% expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
                 tip += '<br />log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
