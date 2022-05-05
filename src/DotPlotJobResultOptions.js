@@ -13,19 +13,14 @@ import {EditableColorScheme} from './EditableColorScheme';
 import {EditableSizeLegend} from './EditableSizeLegend';
 import {sortAndFilterJobResult, updateJob, updateTopNJobResult} from './DotPlotJobResultsPanel';
 import {
-    createColorScale,
-    INTERPOLATOR_SCALING_MIN_MAX_CATEGORY,
-    INTERPOLATOR_SCALING_MIN_MAX_FEATURE,
-    NATSORT
+    createColorScale, INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, NATSORT
 } from './util';
 
 const styles = theme => ({
     formControl: {
-        display: 'block',
-        margin: theme.spacing(0, 1)
-    },
-    formControlInline: {
-        margin: theme.spacing(0, 1)
+        display: 'block'
+    }, leftMargin: {
+        margin: theme.spacing(0, 0.5)
     }
 });
 
@@ -37,9 +32,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
         this.sortAndFilterDebounced = debounce(this.sortAndFilterDebounced, 500);
         this.updateTopNJobResultDebounced = debounce(this.updateTopNJobResultDebounced, 500);
         this.state = {
-            forceUpdate: false,
-            min: '',
-            max: ''
+            forceUpdate: false, min: '', max: ''
         };
     }
 
@@ -194,29 +187,19 @@ class DotPlotJobResultOptions extends React.PureComponent {
 
     render() {
         const {
-            jobResult,
-            classes,
-            textColor
+            jobResult, classes, textColor
         } = this.props;
 
 
         const {
-            rowFilters,
-            color,
-            size,
-            by,
-            byAscending,
-            colorScale,
-            ntopUI,
-            interpolator,
-            sizeScale
+            rowFilters, color, size, by, byAscending, colorScale, ntopUI, interpolator, sizeScale
         } = jobResult;
 
         const fields = jobResult.fields.slice();
         fields.sort(NATSORT);
 
-        return <>
-            <div style={{marginTop: 16}}>
+        return <div className={classes.leftMargin}>
+            <div>
                 <Typography
                     component={"h2"}>Rank Features</Typography>
                 <FormControl style={{display: 'block'}} className={classes.formControl}>
@@ -227,22 +210,18 @@ class DotPlotJobResultOptions extends React.PureComponent {
                         onChange={this.onByChanged}
                         value={by}
                     >
-                        {fields.map(item => (
-                            <MenuItem key={item} value={item}>{item}</MenuItem>
-                        ))}
+                        {fields.map(item => (<MenuItem key={item} value={item}>{item}</MenuItem>))}
                     </Select>
                 </FormControl>
                 <div><FormControlLabel
-                    control={
-                        <Switch
-                            value={"byAscending"}
-                            checked={byAscending}
-                            onChange={this.onByAscendingChange}
-                        />
-                    }
+                    control={<Switch
+                        value={"byAscending"}
+                        checked={byAscending}
+                        onChange={this.onByAscendingChange}
+                    />}
                     label="Ascending"
                 /></div>
-                <InputLabel style={{marginLeft: 8, marginTop: 8}}>Number of Features</InputLabel>
+                <InputLabel style={{marginTop: 8}}>Number of Features</InputLabel>
                 <Slider
                     min={5}
                     max={Math.min(100, jobResult.data.length)}
@@ -259,25 +238,22 @@ class DotPlotJobResultOptions extends React.PureComponent {
                         onChange={this.onSortChange}
                         value={jobResult.sortByGroup}
                     >
-                        {jobResult.columns.map(index => (
-                            <MenuItem key={jobResult.groups[index]}
-                                      value={jobResult.groups[index]}>{jobResult.groups[index]}</MenuItem>
-                        ))}
+                        {jobResult.columns.map(index => (<MenuItem key={jobResult.groups[index]}
+                                                                   value={jobResult.groups[index]}>{jobResult.groups[index]}</MenuItem>))}
                     </Select>
                 </FormControl>}
             </div>
             <div style={{marginTop: 8}}></div>
             <Tooltip title="Filters are applied separately per cluster"><Typography
                 component={"h2"}>Filters</Typography></Tooltip>
-
             {rowFilters.map(filter => {
                 // [field, op, val, uiValue]
                 const id = 'job_result' + filter[0];
                 return <div key={filter[0]} style={{paddingTop: 8}}>
-                    <FormControl className={classes.formControlInline}>
-                        <InputLabel>{filter[0]}</InputLabel>
+                    <InputLabel shrink>{filter[0]}</InputLabel>
+                    <FormControl>
                         <Select
-                            label={filter[0]}
+                            autoWidth
                             size={"small"}
                             labelId={id + '_label'}
                             id={id}
@@ -295,6 +271,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
                         </Select>
                     </FormControl>
                     <TextField size={"small"}
+                               autoComplete={"off"}
                                onChange={event => this.onValueChange(filter, event.target.value)} value={filter[3]}
                                style={{maxWidth: 60, verticalAlign: 'bottom'}}/>
                 </div>;
@@ -312,9 +289,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
                     onChange={this.onColorChanged}
                     value={color}
                 >
-                    {fields.map(item => (
-                        <MenuItem key={item} value={item}>{item}</MenuItem>
-                    ))}
+                    {fields.map(item => (<MenuItem key={item} value={item}>{item}</MenuItem>))}
                 </Select>
             </FormControl>
 
@@ -355,9 +330,7 @@ class DotPlotJobResultOptions extends React.PureComponent {
                     value={size}
                 >
                     <MenuItem divider value={'none'}>{'(None)'}</MenuItem>
-                    {fields.map(item => (
-                        <MenuItem key={item} value={item}>{item}</MenuItem>
-                    ))}
+                    {fields.map(item => (<MenuItem key={item} value={item}>{item}</MenuItem>))}
                 </Select>
             </FormControl>
             <div style={{display: size === 'none' ? 'none' : '', marginTop: 6}}>
@@ -366,28 +339,23 @@ class DotPlotJobResultOptions extends React.PureComponent {
                                     reversed={jobResult.sizeScaleReversed}
                                     onReversedChange={this.onSizeReversedChange}/>
             </div>
-        </>;
+        </div>;
     }
 }
 
 const mapStateToProps = state => {
-        return {
-            textColor: state.chartOptions.darkMode ? 'white' : 'black',
-            jobResults: state.jobResults
-        };
-    }
-;
+    return {
+        textColor: state.chartOptions.darkMode ? 'white' : 'black', jobResults: state.jobResults
+    };
+};
 const mapDispatchToProps = (dispatch) => {
-        return {
-            handleJobResults: (payload) => {
-                dispatch(setJobResults(payload));
-            }
-        };
-    }
-;
+    return {
+        handleJobResults: (payload) => {
+            dispatch(setJobResults(payload));
+        }
+    };
+};
 
 
-export default withStyles(styles)(connect(
-    mapStateToProps, mapDispatchToProps
-)(DotPlotJobResultOptions));
+export default withStyles(styles)(connect(mapStateToProps, mapDispatchToProps)(DotPlotJobResultOptions));
 
