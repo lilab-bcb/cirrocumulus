@@ -27,7 +27,5 @@ class ZarrDataset(AbstractBackedDataset):
         g = zarr.open_group(filesystem.get_mapper(path), mode='r')
         if 'cirro-schema' in g['uns']:
             s = str(g['uns']['cirro-schema'][()])
-            # hack to fix encoding error in old version
-            s = s.replace('"id"›', '"id":')
             return json.loads(s)
         return dataset_schema(g, n_features=0)

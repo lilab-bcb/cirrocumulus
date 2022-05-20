@@ -6,6 +6,7 @@ import requests
 from flask import request
 from google.oauth2 import id_token
 
+from cirrocumulus.auth_exception import AuthException
 from cirrocumulus.envir import CIRRO_AUTH_CLIENT_ID
 
 
@@ -21,13 +22,13 @@ class GoogleAuth:
         token = request.headers.get('Authorization')
         if token is not None:
             if not token.startswith('Bearer '):
-                raise ValueError('Token should start with Bearer ')
+                raise AuthException('Token should start with Bearer ')
             token = token.split('Bearer ')[1]
         else:
             token = request.args.get('access_token')
         idinfo = id_token.verify_oauth2_token(token, self.cached_request, self.client_id)
         if idinfo['aud'] != self.client_id:
-            raise ValueError('Wrong aud')
+            raise AuthException('Wrong aud')
         if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            raise ValueError('Wrong issuer.')
+            raise AuthException()('Wrong issuer.')
         return idinfo

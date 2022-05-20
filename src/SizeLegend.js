@@ -2,7 +2,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT} from './ChartUtil';
 import {numberFormat2f} from './formatters';
-import {stripTrailingZeros} from './util';
+import {getDevicePixelRatio, stripTrailingZeros} from './util';
 
 export function drawSizeLegend(context, scale, nsteps, width, margin = 20, textColor = 'black') {
     let domain = scale.domain();
@@ -79,11 +79,7 @@ class SizeLegend extends React.PureComponent {
     }
 
     render() {
-
-        let backingScale = 1;
-        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            backingScale = window.devicePixelRatio;
-        }
+        const backingScale = getDevicePixelRatio();
         this.backingScale = backingScale;
         let height = this.props.height;
         let width = this.props.width;

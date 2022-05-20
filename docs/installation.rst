@@ -20,16 +20,38 @@ Server Mode
 Cirrocumulus can also be run in `server` mode in order to serve multiple users and datasets securely.
 The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or on Google App Engine.
 
-
 - Install cirrocumulus using pip or docker
 
-- Optionally visit the `Google API Console`_ to obtain OAuth 2.0 credentials.
+- Optional additional setup to enable authentication and authorization via Okta or google:
 
-    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
-    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
-      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
-    - Note that you need to install google-auth (`pip install google-auth`) to use Google OAuth.
-    - Set the environment variable CIRRO_AUTH_CLIENT_ID to your OAuth client id.
+    - Install additional libraries:
+
+        - Google: `pip install google-auth`
+        - Okta: `pip install okta-jwt-verifier`
+
+    - Set environment variables:
+
+        - CIRRO_AUTH_CLIENT_ID: to your Okta client id
+        - CIRRO_AUTH_PROVIDER: to either okta or google.
+        - CIRRO_AUTH_ISSUER (for okta). The URL of the authorization server that will perform authentication.
+          All Developer Accounts have a "default" authorization server.
+          The issuer is a combination of your Org URL (found in the upper right of the console home page)
+          and /oauth2/default. For example, https://dev-1234.oktapreview.com/oauth2/default
+
+    - See `Okta documentation`_ for creating custom app integrations with Okta.
+
+    - Visit the `Google API Console`_ to obtain OAuth 2.0 credentials for Google:
+
+        - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
+        - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
+          and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+
+
+- Additional libraries needed for cloud storage:
+
+    - Amazon S3: `pip install s3fs`
+    - Google Cloud Storage: `pip install gcsfs`
+    - Microsoft Azure: `pip install adlfs`
 
 - Install MongoDB_ and start the MongoDB server
 
@@ -51,20 +73,12 @@ You can see the full list of command line options by typing `cirro serve --help`
 
     curl http://localhost:5000/api/dataset -X POST -F 'name=my_name' -F 'url=data/my_dataset_path' -F 'description=my_desc'  -F 'species=Mus musculus'
 
-- Please note that additional libraries are needed for cloud storage:
-
-    - Amazon S3: `pip install s3fs`
-    - Google Cloud Storage: `pip install gcsfs`
-    - Microsoft Azure: `pip install adlfs`
-
-And google-auth is required for OAuth 2.0 support:
-    - pip install google-auth
-
 - Additional customization via environment variables:
 
     - CIRRO_MOUNT: For mounting a bucket locally. Comma separated string of bucket:local_path. Example s3://foo/bar:/fsx
     - CIRRO_SPECIES: Path to JSON file for species list when adding new dataset
     - CIRRO_MIXPANEL: Mixpanel_ project token for event tracking. Currently, only the open dataset event is supported.
+
 
 Google App Engine
 ^^^^^^^^^^^^^^^^^^^
@@ -206,6 +220,10 @@ Developer Instructions
 
     cd cirrocumulus
 
+- Insure pip is up to date::
+
+    pip install --upgrade pip
+
 - Install cirrocumulus Python package in editable mode::
 
     pip install -e .
@@ -268,3 +286,4 @@ Developer Instructions
 .. _Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html
 .. _Google Cloud Storage: https://cloud.google.com/storage/docs/hosting-static-website-http
 .. _Mixpanel: https://mixpanel.com/
+.. _Okta documentation: https://help.okta.com/en/prod/Content/Topics/Apps/Apps_App_Integration_Wizard.htm

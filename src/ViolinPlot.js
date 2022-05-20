@@ -8,6 +8,7 @@ import React, {useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {getNameWidth} from './DotPlotCanvas';
 import ViolinPlotOneFeature, {drawFeature, getViolinPlotScales} from './ViolinPlotOneFeature';
+import {getDevicePixelRatio} from './util';
 
 const yaxisWidth = 30;
 
@@ -48,10 +49,11 @@ export default function ViolinPlot(props) {
             context = new window.C2S(width, height);
             context.font = SVG_FONT;
         } else {
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
+            const devicePixelRatio = getDevicePixelRatio();
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
             context = canvas.getContext('2d');
-            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            context.scale(devicePixelRatio, devicePixelRatio);
             context.font = CANVAS_FONT;
         }
         const textColor = 'black';

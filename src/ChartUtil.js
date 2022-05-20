@@ -1,6 +1,7 @@
 import C2S from 'canvas2svg';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
+import {getDevicePixelRatio} from './util';
 
 export const CANVAS_FONT = '12px Roboto Condensed,Helvetica,Arial,sans-serif';
 export const SVG_FONT = '12px Helvetica,Arial,sans-serif';
@@ -33,10 +34,11 @@ export function saveImage(trace, chartSize, draw, format) {
     if (format === 'svg') {
         context = new window.C2S(totalSize.width, totalSize.height);
     } else {
-        canvas.width = totalSize.width * window.devicePixelRatio;
-        canvas.height = totalSize.height * window.devicePixelRatio;
+        const devicePixelRatio = getDevicePixelRatio();
+        canvas.width = totalSize.width * devicePixelRatio;
+        canvas.height = totalSize.height * devicePixelRatio;
         context = canvas.getContext('2d');
-        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        context.scale(devicePixelRatio, devicePixelRatio);
         context.fillStyle = 'white';
         context.fillRect(0, 0, totalSize.width, totalSize.height);
     }

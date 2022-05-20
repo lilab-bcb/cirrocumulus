@@ -1,3 +1,5 @@
+import {getDevicePixelRatio} from './util';
+
 class CanvasOverlayHd {
     constructor(viewer, options) {
         this._viewer = viewer;
@@ -76,10 +78,7 @@ class CanvasOverlayHd {
     }
 
     resize() {
-        let backingScale = 1;
-        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            backingScale = window.devicePixelRatio;
-        }
+        let backingScale = getDevicePixelRatio();
         let backingScaleUpdated = this.backingScale !== backingScale;
         this.backingScale = backingScale;
         if (this._containerWidth !== this._viewer.container.clientWidth || backingScaleUpdated) {

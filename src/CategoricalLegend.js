@@ -268,6 +268,7 @@ export default function CategoricalLegend(props) {
                         textFieldSx={{width: '90%'}}
                         label={"Cell Type"}
                         multiple={false}
+                        freeSolo={true}
                         getOptionLabel={(option) => option.text}
                         getChipText={(option) => option.text}
                         options={serverInfo.ontology.cellTypes}

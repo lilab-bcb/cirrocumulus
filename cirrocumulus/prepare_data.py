@@ -233,7 +233,7 @@ class PrepareData:
                 with open_file(result_path, 'wt',
                                compression='gzip' if is_gzip else None) as out:
                     out.write(json_result)
-        images = dataset.uns.get('images')
+        images = dataset.uns.pop('images', None)
         if images is not None:
             image_dir = os.path.join(output_dir, 'images')
             filesystem.makedirs(image_dir, exist_ok=True)

@@ -177,7 +177,7 @@ function AppHeader(props) {
     const showEditDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_EDIT_DATASET);
     const showDeleteDataset = dataset !== null && dataset.owner && !loadingApp.loading && serverInfo.capabilities.has(SERVER_CAPABILITY_DELETE_DATASET);
     const showMoreMenu = (showAddDataset || showEditDataset || showDeleteDataset || dataset != null) && !loadingApp.loading;
-    const isSignedOut = !loadingApp.loading && email == null && serverInfo.clientId !== '';
+    const isSignedOut = !loadingApp.loading && email == null && serverInfo.auth.clientId !== '';
 
 
     return (

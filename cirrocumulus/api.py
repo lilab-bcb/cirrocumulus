@@ -6,10 +6,14 @@ import cirrocumulus.data_processing as data_processing
 from flask import Blueprint, Response, request, stream_with_context
 
 from .anndata_util import adata_to_df
+from .auth_exception import AuthException
 from .blueprint_util import get_database, map_url, get_auth
 from .dataset_api import DatasetAPI
-from .envir import CIRRO_SERVE, CIRRO_FOOTER, CIRRO_UPLOAD, CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
-    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_AUTH_CLIENT_ID, CIRRO_AUTH_BASE_URL, CIRRO_LIBRARY, \
+from .envir import CIRRO_AUTH_ISSUER, CIRRO_AUTH_PROVIDER, CIRRO_SERVE, \
+    CIRRO_FOOTER, CIRRO_UPLOAD, \
+    CIRRO_BRAND, CIRRO_EMAIL, CIRRO_DATASET_SELECTOR_COLUMNS, \
+    CIRRO_CELL_ONTOLOGY, CIRRO_STATIC_DIR, CIRRO_MIXPANEL, CIRRO_AUTH_CLIENT_ID, \
+    CIRRO_LIBRARY, \
     CIRRO_SPECIES
 from .invalid_usage import InvalidUsage
 from .job_api import submit_job, delete_job
@@ -48,7 +52,8 @@ def copy_url(url):
     if url.endswith('/') or os.path.isdir(url):  # don't copy directories
         return url
 
-    if urlparse(upload).netloc == urlparse(url).netloc:  # don't copy if already in the same bucket
+    if urlparse(upload).netloc == urlparse(
+            url).netloc:  # don't copy if already in the same bucket
         return url
     src_scheme = get_scheme(url)
     src_fs = get_fs(src_scheme)
@@ -122,8 +127,12 @@ def handle_server():
     d = {}
     d['email'] = os.environ.get(CIRRO_EMAIL)
     d['capabilities'] = get_database().capabilities()
-    d['clientId'] = os.environ.get(CIRRO_AUTH_CLIENT_ID)
-    d['baseUrl'] = os.environ.get(CIRRO_AUTH_BASE_URL)
+    auth = {}
+    d['auth'] = auth
+    auth['provider'] = os.environ.get(CIRRO_AUTH_PROVIDER)
+    auth['clientId'] = os.environ.get(CIRRO_AUTH_CLIENT_ID)
+    auth['issuer'] = os.environ.get(CIRRO_AUTH_ISSUER)
+
     if os.environ.get(CIRRO_MIXPANEL) is not None:
         d['mixpanel'] = os.environ[CIRRO_MIXPANEL]
     d['datasetSelectorColumns'] = load_json(CIRRO_DATASET_SELECTOR_COLUMNS)
@@ -135,33 +144,49 @@ def handle_server():
         with open(os.environ.get(CIRRO_BRAND), 'rt') as f:
             d['brand'] = f.read()
     d['upload'] = os.environ.get(CIRRO_UPLOAD) is not None
-    d['species'] = load_json(CIRRO_SPECIES) or dict(favorite=["Homo sapiens", "Mus musculus"],
-                                                    other=["Gallus gallus", "Macaca fascicularis",
-                                                           "Macaca mulatta", "Rattus norvegicus"])
+    d['species'] = load_json(CIRRO_SPECIES) or dict(
+        favorite=["Homo sapiens", "Mus musculus"],
+        other=["Gallus gallus", "Macaca fascicularis",
+               "Macaca mulatta", "Rattus norvegicus"])
 
     # from https://www.ebi.ac.uk/ols/ontologies/efo/terms?iri=http%3A%2F%2Fwww.ebi.ac.uk%2Fefo%2FEFO_0010183&viewMode=All&siblings=false
-    d['library'] = load_json(CIRRO_LIBRARY) or ["10x 3' v1", "10x 3' v2", "10x 3' v3",
+    d['library'] = load_json(CIRRO_LIBRARY) or ["10x 3' v1", "10x 3' v2",
+                                                "10x 3' v3",
                                                 "10x 5' v1", "10x 5' v2",
                                                 "10x feature barcode (CRISPR screening)",
                                                 "10x feature barcode (cell surface protein profiling)",
                                                 "10x feature barcode (sample multiplexing)",
-                                                "10x Ig enrichment", "10x TCR enrichment",
-                                                "10x multiome", "10x scATAC-seq",
-                                                "Visium Spatial Gene Expression", 'CEL-seq', 'CEL-seq2',
+                                                "10x Ig enrichment",
+                                                "10x TCR enrichment",
+                                                "10x multiome",
+                                                "10x scATAC-seq",
+                                                "Visium Spatial Gene Expression",
+                                                'CEL-seq', 'CEL-seq2',
                                                 'CITE-seq (cell surface protein profiling)',
-                                                'CITE-seq (sample multiplexing)', 'DroNc-seq', 'Drop-seq',
-                                                'Fluidigm C1-based library preparation', 'MARS-seq', 'Nx1-seq',
-                                                'Quartz-seq', 'SCOPE-chip', 'mcSCRB-seq', 'SPLiT-seq', 'STRT-seq',
+                                                'CITE-seq (sample multiplexing)',
+                                                'DroNc-seq', 'Drop-seq',
+                                                'Fluidigm C1-based library preparation',
+                                                'MARS-seq', 'Nx1-seq',
+                                                'Quartz-seq', 'SCOPE-chip',
+                                                'mcSCRB-seq', 'SPLiT-seq',
+                                                'STRT-seq',
                                                 'Seq-Well S3', 'Smart-seq',
-                                                'Smart-seq2', 'barcoded plate-based single cell RNA-seq', 'inDrop',
-                                                'mCT-seq', 'microwell-seq', '10x multiome', '10x scATAC-seq',
+                                                'Smart-seq2',
+                                                'barcoded plate-based single cell RNA-seq',
+                                                'inDrop',
+                                                'mCT-seq', 'microwell-seq',
+                                                '10x multiome',
+                                                '10x scATAC-seq',
                                                 'scATAC-seq (Microfluidics)',
-                                                'scATAC-seq (cell index)', 'scBS-seq', 'scChIP-seq', 'sci-CAR',
+                                                'scATAC-seq (cell index)',
+                                                'scBS-seq', 'scChIP-seq',
+                                                'sci-CAR',
                                                 'sci-Plex', 'sci-RNA-seq3',
                                                 'single cell Hi-C', 'snmC-Seq2']
 
     if os.environ.get(CIRRO_CELL_ONTOLOGY) is not None:
-        if get_fs(os.environ[CIRRO_CELL_ONTOLOGY]).exists(os.environ[CIRRO_CELL_ONTOLOGY]):
+        if get_fs(os.environ[CIRRO_CELL_ONTOLOGY]).exists(
+                os.environ[CIRRO_CELL_ONTOLOGY]):
             def parse_term(f):
                 term = dict()
                 for term_line in f:
@@ -177,7 +202,8 @@ def handle_server():
                 return term
 
             terms = []
-            with open_file(os.environ[CIRRO_CELL_ONTOLOGY], 'rt') as f:  # obo file
+            with open_file(os.environ[CIRRO_CELL_ONTOLOGY],
+                           'rt') as f:  # obo file
                 for line in f:
                     line = line.strip()
                     if line == "[Term]":
@@ -262,7 +288,8 @@ def handle_feature_set():
             features=features)
         return json_response({'id': set_id})
     elif request.method == 'DELETE':
-        database_api.delete_feature_set(email, dataset_id=dataset_id, set_id=set_id)
+        database_api.delete_feature_set(email, dataset_id=dataset_id,
+                                        set_id=set_id)
         return json_response('', 204)
 
 
@@ -289,7 +316,8 @@ def handle_dataset_view():
         view_id = request.args.get('id', '')
         if view_id == '':
             return 'Please provide an id', 400
-        return json_response(database_api.get_dataset_view(email, view_id=view_id))
+        return json_response(
+            database_api.get_dataset_view(email, view_id=view_id))
     d = request.get_json(force=True, cache=False)
 
     # POST=new, PUT=update , DELETE=delete, GET=get
@@ -321,7 +349,8 @@ def handle_schema():
     dataset = database_api.get_dataset(email, dataset_id)
     dataset['url'] = map_url(dataset['url'])
     schema = dataset  # dataset has title, etc. from database
-    schema['markers'] = database_api.get_feature_sets(email=email, dataset_id=dataset_id)
+    schema['markers'] = database_api.get_feature_sets(email=email,
+                                                      dataset_id=dataset_id)
     schema.update(dataset_api.get_schema(dataset))
     return json_response(schema)
 
@@ -362,10 +391,12 @@ def handle_data():
     return json_response(
         data_processing.handle_data(dataset_api=dataset_api,
                                     dataset=dataset,
-                                    embedding_list=json_request.get('embedding'),
+                                    embedding_list=json_request.get(
+                                        'embedding'),
                                     values=json_request.get('values'),
                                     stats=json_request.get('stats'),
-                                    grouped_stats=json_request.get('groupedStats'),
+                                    grouped_stats=json_request.get(
+                                        'groupedStats'),
                                     selection=json_request.get('selection')))
 
 
@@ -376,10 +407,14 @@ def handle_selection():
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
     return json_response(
-        data_processing.handle_selection(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter,
+        data_processing.handle_selection(dataset_api=dataset_api,
+                                         dataset=dataset,
+                                         data_filter=data_filter,
                                          measures=content.get('measures', []),
-                                         dimensions=content.get('dimensions', []),
-                                         embeddings=content.get('embeddings', [])))
+                                         dimensions=content.get('dimensions',
+                                                                []),
+                                         embeddings=content.get('embeddings',
+                                                                [])))
 
 
 @cirro_blueprint.route('/selected_ids', methods=['POST'])
@@ -388,7 +423,9 @@ def handle_selected_ids():
     email, dataset = get_email_and_dataset(content)
     data_filter = content.get('filter')
     return json_response(
-        data_processing.handle_selection_ids(dataset_api=dataset_api, dataset=dataset, data_filter=data_filter))
+        data_processing.handle_selection_ids(dataset_api=dataset_api,
+                                             dataset=dataset,
+                                             data_filter=data_filter))
 
 
 # List available datasets
@@ -438,7 +475,8 @@ def handle_dataset():
             d['url'] = url
         if request.method == 'POST' and url is None:  # new
             return 'Must supply dataset URL', 400
-        dataset_id = database_api.upsert_dataset(email=email, readers=readers, dataset=d)
+        dataset_id = database_api.upsert_dataset(email=email, readers=readers,
+                                                 dataset=d)
         return json_response({'id': dataset_id})
     elif request.method == 'DELETE':
         content = request.get_json(force=True, cache=False)
@@ -467,8 +505,11 @@ def handle_job():
             params = content.get('params')
             job_type = content.get('type')
             job_name = content.get('name')
-            return dict(id=submit_job(database_api=database_api, dataset_api=dataset_api, email=email, dataset=dataset,
-                                      job_name=job_name, job_type=job_type, params=params))
+            return dict(id=submit_job(database_api=database_api,
+                                      dataset_api=dataset_api, email=email,
+                                      dataset=dataset,
+                                      job_name=job_name, job_type=job_type,
+                                      params=params))
         else:
             raise ValueError('Submit job not supported on GAE')
     else:
@@ -479,7 +520,8 @@ def handle_job():
             if is_precomputed:
                 job = dict(status='complete') if c == 'status' else dict()
             else:
-                job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+                job = database_api.get_job(email=email, job_id=job_id,
+                                           return_type=c)
             if job is None:
                 return json_response('', 404)  # job deleted
             return json_response(job, 200)
@@ -492,7 +534,8 @@ def handle_job():
             # precomputed results need to be a child of dataset
             dataset['url'] = map_url(dataset['url'])
             job_result = dataset_api.get_result(dataset, job_id)
-            if get_scheme(job_result) == 'file' and not os.path.exists(job_result):
+            if get_scheme(job_result) == 'file' and not os.path.exists(
+                    job_result):
                 return Response(job_result, content_type='application/json')
             else:
                 return send_file(job_result)
@@ -510,15 +553,18 @@ def handle_job():
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
                 adata_df = adata_to_df(adata)
-                return Response(adata_df.to_json(double_precision=2, orient='records'), content_type='application/json')
+                return Response(
+                    adata_df.to_json(double_precision=2, orient='records'),
+                    content_type='application/json')
             else:
                 # URL to JSON or text
                 return send_file(url)
         elif isinstance(job, dict):
             return json_response(job)
         elif isinstance(job, anndata.AnnData):
-            return Response(adata_to_df(job).to_json(double_precision=2, orient='records'),
-                            content_type='application/json')
+            return Response(
+                adata_to_df(job).to_json(double_precision=2, orient='records'),
+                content_type='application/json')
         return job
 
 
@@ -528,3 +574,8 @@ def handle_jobs():
     database_api = get_database()
     ds_id = request.args.get('id', '')
     return json_response(database_api.get_jobs(email=email, dataset_id=ds_id))
+
+
+@cirro_blueprint.errorhandler(AuthException)
+def handle_bad_auth(e):
+    return 'Please authenticate', 401

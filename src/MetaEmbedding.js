@@ -5,7 +5,7 @@ import React from 'react';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
 import {intFormat, numberFormat2f} from './formatters';
-import {stripTrailingZeros} from './util';
+import {getDevicePixelRatio, stripTrailingZeros} from './util';
 
 const styles = theme => ({
 
@@ -84,11 +84,12 @@ class MetaEmbedding extends React.PureComponent {
             name = 'count';
         }
         if (format !== 'svg') {
+            const devicePixelRatio = getDevicePixelRatio();
             canvas = document.createElement('canvas');
-            canvas.width = totalSize.width * window.devicePixelRatio;
-            canvas.height = totalSize.height * window.devicePixelRatio;
+            canvas.width = totalSize.width * devicePixelRatio;
+            canvas.height = totalSize.height * devicePixelRatio;
             context = canvas.getContext('2d');
-            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            context.scale(devicePixelRatio, devicePixelRatio);
             context.fillStyle = 'white';
             context.fillRect(0, 0, totalSize.width, totalSize.height);
             const xml = new XMLSerializer().serializeToString(trace.source);
