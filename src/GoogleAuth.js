@@ -30,7 +30,7 @@ export function GoggleAuth() {
         return typeof window.gapi !== 'undefined' ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token : '';
     };
 
-    this.init = function (serverInfo) {
+    this.init = function (authInfo) {
 
         return new Promise((resolve) => {
             const script = document.createElement('script');
@@ -40,7 +40,7 @@ export function GoggleAuth() {
             script.onload = (e) => {
                 window.gapi.load('client:auth2', () => {
                     window.gapi.client.init({
-                        clientId: serverInfo.clientId, scope: authScopes.join(' ')
+                        clientId: authInfo.clientId, scope: authScopes.join(' ')
                     }).then(() => {
                         resolve();
                     });

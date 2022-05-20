@@ -9,12 +9,11 @@ import {scaleLinear} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {intFormat} from './formatters';
+import {getDevicePixelRatio} from './util';
 
 const styles = theme => ({
     table: {
-        width: 'min-content',
-        '& td': {padding: 6},
-        '& th': {padding: 6}
+        width: 'min-content', '& td': {padding: 6}, '& th': {padding: 6}
     }
 });
 
@@ -89,7 +88,7 @@ function CompositionPlot(props) {
         const canvas = canvasRef.current;
         let context = canvas.getContext('2d');
         context.font = CANVAS_FONT;
-
+        const devicePixelRatio = getDevicePixelRatio();
         let maxSeriesWidth = 0;
         series.forEach(name => maxSeriesWidth = Math.max(maxSeriesWidth, context.measureText(name).width));
         const margin = {left: 25, top: 10, bottom: maxSeriesWidth + 6, right: 4};
@@ -136,10 +135,11 @@ function CompositionPlot(props) {
             context = new window.C2S(width, height);
             context.font = SVG_FONT;
         } else {
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
+            const devicePixelRatio = getDevicePixelRatio();
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
             context = canvas.getContext('2d');
-            context.scale(window.devicePixelRatio, window.devicePixelRatio);
+            context.scale(devicePixelRatio, devicePixelRatio);
             context.font = CANVAS_FONT;
         }
         const textColor = 'black';
@@ -187,8 +187,7 @@ function CompositionPlot(props) {
     return <>
         <div>
             <Typography style={{display: 'inline-block'}} component={"h4"}
-                        color="textPrimary">{title}{subtitle &&
-            <small>({subtitle})</small>}</Typography>
+                        color="textPrimary">{title}{subtitle && <small>({subtitle})</small>}</Typography>
             <Tooltip title={"Save Image"}>
                 <IconButton aria-controls="save-image-menu" aria-haspopup="true" edge={false}
                             size={'small'}

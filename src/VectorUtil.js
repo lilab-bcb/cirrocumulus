@@ -241,6 +241,7 @@ export function groupedStats(groupDimensionInfo, vectors) {
                 feature: v.getName(),
                 mean: categoryStats.mean,
                 n: categoryVector.size(),
+                nExpressed: categoryStats.numExpressed,
                 percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
                 vector: categoryVector
             };

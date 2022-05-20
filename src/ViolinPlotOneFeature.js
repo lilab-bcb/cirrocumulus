@@ -3,9 +3,8 @@ import Typography from '@mui/material/Typography';
 import {scaleLinear} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT} from './ChartUtil';
-import {CHIP_SIZE} from './DotPlotCanvas';
-import {stripTrailingZeros} from './util';
-import {intFormat, numberFormat2f} from './formatters';
+import {CHIP_SIZE, getTooltip} from './DotPlotCanvas';
+import {getDevicePixelRatio} from './util';
 import CirroTooltip from './CirroTooltip';
 
 
@@ -40,6 +39,7 @@ function drawAxis(context, xscale, textColor, size) {
 function Axis(props) {
     const {xscale, textColor, violinHeight, size} = props;
     const canvasRef = useRef(null);
+    const devicePixelRatio = getDevicePixelRatio();
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
@@ -47,15 +47,15 @@ function Axis(props) {
         context.font = CANVAS_FONT;
         context
             .clearRect(0, 0, canvas.width, canvas.height);
-        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        context.scale(devicePixelRatio, devicePixelRatio);
         drawAxis(context, xscale, textColor, size);
     });
 
     return (
         <canvas
             ref={canvasRef}
-            width={size.x * window.devicePixelRatio}
-            height={(size.y + violinHeight) * window.devicePixelRatio}
+            width={size.x * devicePixelRatio}
+            height={(size.y + violinHeight) * devicePixelRatio}
             style={{width: size.x, height: size.y + violinHeight}}
         />
     );
@@ -76,6 +76,7 @@ function FeatureCategory(props) {
         yscale
     } = props;
     const canvasRef = useRef(null);
+    const devicePixelRatio = getDevicePixelRatio();
     const [tip, setTip] = useState({html: ''});
 
 
@@ -86,7 +87,7 @@ function FeatureCategory(props) {
         context.font = CANVAS_FONT;
         context
             .clearRect(0, 0, canvas.width, canvas.height);
-        context.scale(window.devicePixelRatio, window.devicePixelRatio);
+        context.scale(devicePixelRatio, devicePixelRatio);
         drawCategory(context, size, names, feature, featureIndex, data, categoryIndex, xscale, yscale, categoryColorScales, textColor, options, true);
     });
 
@@ -98,16 +99,14 @@ function FeatureCategory(props) {
             onMouseMove={event => {
                 const item = data[categoryIndex][featureIndex];
                 if (item) {
-                    const text = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br /> median: ' +
-                        stripTrailingZeros(numberFormat2f(item.boxplotStats.median)) + '<br /> % expressed: ' +
-                        stripTrailingZeros(numberFormat2f(item.percentExpressed)) + '<br /> # cells: ' + intFormat(item.n);
-                    setTip({html: text, clientX: event.clientX, clientY: event.clientY});
+                    const tip = getTooltip(item);
+                    setTip({html: tip, clientX: event.clientX, clientY: event.clientY});
                 } else {
                     setTip({html: ''});
                 }
             }}
-            width={options.violinWidth * window.devicePixelRatio}
-            height={(size.y + options.violinHeight) * window.devicePixelRatio}
+            width={options.violinWidth * devicePixelRatio}
+            height={(size.y + options.violinHeight) * devicePixelRatio}
             style={{width: options.violinWidth, height: size.y + options.violinHeight}}
         />
         <CirroTooltip html={tip.html} clientX={tip.clientX} clientY={tip.clientY} style={{width: 150}}

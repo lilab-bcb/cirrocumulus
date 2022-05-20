@@ -2,6 +2,7 @@ import {scaleLinear} from 'd3-scale';
 import React from 'react';
 import {CANVAS_FONT} from './ChartUtil';
 import {numberFormat} from './formatters';
+import {getDevicePixelRatio} from './util';
 
 export function drawColorScheme(context, colorScale, textColor = 'black', label = true, width = 150, height = 12) {
     let domain = colorScale.domain();
@@ -80,9 +81,7 @@ class ColorSchemeLegend extends React.PureComponent {
     }
 
     render() {
-        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            this.backingScale = window.devicePixelRatio;
-        }
+        this.backingScale = getDevicePixelRatio();
 
         let height = this.props.height;
         let width = this.props.width;
@@ -90,10 +89,8 @@ class ColorSchemeLegend extends React.PureComponent {
         if (this.props.style) {
             style = Object.assign({}, style, this.props.style);
         }
-        return (
-            <canvas width={width * this.backingScale} height={height * this.backingScale} ref={this.ref}
-                    style={style}></canvas>
-        );
+        return (<canvas width={width * this.backingScale} height={height * this.backingScale} ref={this.ref}
+                        style={style}></canvas>);
 
     }
 }

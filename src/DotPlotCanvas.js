@@ -12,10 +12,32 @@ import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {drawColorScheme} from './ColorSchemeLegend';
 import {intFormat, numberFormat, numberFormat2f} from './formatters';
 import {drawSizeLegend} from './SizeLegend';
-import {INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros} from './util';
+import {
+    getDevicePixelRatio, INTERPOLATOR_SCALING_MIN_MAX_CATEGORY, INTERPOLATOR_SCALING_MIN_MAX_FEATURE, stripTrailingZeros
+} from './util';
 import CirroTooltip, {SCATTER_TRANSITION} from './CirroTooltip';
 
 export const CHIP_SIZE = 12;
+
+
+export function getTooltip(item) {
+    let tip = [];
+    tip.push('mean: ' + stripTrailingZeros(numberFormat2f(item.mean)));
+    if (item.boxplotStats) {
+        tip.push(stripTrailingZeros(numberFormat2f(item.boxplotStats.median)));
+    }
+
+    tip.push(intFormat(item.n) + ' cells (' + intFormat(item.nExpressed) + ' cells expressed, ' + stripTrailingZeros(numberFormat2f(item.percentExpressed)) + '%)');
+    // # cells in cluster (# cells in cluster expressed, % cells in cluster expressed)
+    if (item.de) {
+        tip.push('% expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2)));
+        tip.push('log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange)));
+        tip.push('p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p)));
+        tip.push('FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr)));
+        // tip += ', Mann-Whitney U : ' + stripTrailingZeros(numberFormat2f(item.results.statistic));
+    }
+    return tip.join('<br />');
+}
 
 export function getNameWidth(array2d, context) {
     let endCoordinates = [];
@@ -52,11 +74,7 @@ export default function DotPlotCanvas(props) {
     const sizeRef = useRef(null);
 
     useEffect(() => {
-        let devicePixelRatio = 1;
-        if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
-            devicePixelRatio = window.devicePixelRatio;
-        }
-
+        const devicePixelRatio = getDevicePixelRatio();
         const canvas = canvasRef.current;
         let context = canvas.getContext('2d');
 
@@ -123,16 +141,7 @@ export default function DotPlotCanvas(props) {
         if (col >= 0 && col < data[0].length && row >= 0 && row < data.length) {
             const array = data[row];
             const item = array[col];
-            let tip = 'mean: ' + stripTrailingZeros(numberFormat2f(item.mean)) + '<br />% expressed: ' + stripTrailingZeros(numberFormat2f(item.percentExpressed))
-                + '<br />% cells: ' + stripTrailingZeros(numberFormat(item.percentCells));
-            if (item.de) {
-                tip += '<br />% expressed rest: ' + stripTrailingZeros(numberFormat(item.de.percentExpressed2));
-                tip += '<br />log2 fold change: ' + stripTrailingZeros(numberFormat2f(item.de.foldChange));
-                tip += '<br />p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p));
-                tip += '<br />FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr));
-                // tip += ', Mann-Whitney U : ' + stripTrailingZeros(numberFormat2f(item.results.statistic));
-            }
-
+            const tip = getTooltip(item);
             setTip({
                 html: tip, clientX: event.clientX, clientY: event.clientY
             });
@@ -297,10 +306,11 @@ export default function DotPlotCanvas(props) {
             context = new window.C2S(width, height);
             context.font = SVG_FONT;
         } else {
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
+            const devicePixelRatio = getDevicePixelRatio();
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
             context = canvas.getContext('2d');
-            scale = window.devicePixelRatio;
+            scale = devicePixelRatio;
             context.scale(scale, scale);
             context.font = CANVAS_FONT;
         }

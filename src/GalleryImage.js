@@ -12,6 +12,7 @@ import {
     POINT_VISUALIZER_ID,
     updateScatterChart
 } from './ThreeUtil';
+import {getDevicePixelRatio} from './util';
 
 function getImageUrl(cachedData,
                      categoricalNames,
@@ -23,11 +24,12 @@ function getImageUrl(cachedData,
                      selection,
                      trace,
                      unselectedMarkerOpacity) {
-    let canvas = document.createElement('canvas');
-    canvas.width = chartSize * window.devicePixelRatio;
-    canvas.height = chartSize * window.devicePixelRatio;
+    const canvas = document.createElement('canvas');
+    const devicePixelRatio = getDevicePixelRatio();
+    canvas.width = chartSize * devicePixelRatio;
+    canvas.height = chartSize * devicePixelRatio;
     const context = canvas.getContext('2d');
-    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    context.scale(devicePixelRatio, devicePixelRatio);
     drawEmbeddingImage(context, {
         width: chartSize,
         height: chartSize
@@ -40,7 +42,7 @@ export default function GalleryImage(props) {
     const [overlayUrl, setOverlayUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const elementRef = useRef();
-
+    const devicePixelRatio = getDevicePixelRatio();
 
     function onSelect(event) {
         event.preventDefault();
@@ -79,10 +81,10 @@ export default function GalleryImage(props) {
                 if (showLabels) {
                     const labelsPositions = getCategoryLabelsPositions(trace.embedding, obsCat, cachedData);
                     const labelCanvas = document.createElement('canvas');
-                    labelCanvas.width = chartSize * window.devicePixelRatio;
-                    labelCanvas.height = chartSize * window.devicePixelRatio;
+                    labelCanvas.width = chartSize * devicePixelRatio;
+                    labelCanvas.height = chartSize * devicePixelRatio;
                     const context = labelCanvas.getContext('2d');
-                    context.scale(window.devicePixelRatio, window.devicePixelRatio);
+                    context.scale(devicePixelRatio, devicePixelRatio);
                     context.font = 'bold ' + chartOptions.labelFontSize + 'px Roboto Condensed';
                     drawLabels(context, getLabels(obsCat, labelsPositions.labels, categoricalNames), labelsPositions.positions, chartOptions, {
                         width: chartSize,
@@ -173,8 +175,8 @@ export default function GalleryImage(props) {
                 {url &&
                     <div style={{position: 'absolute', left: 0, top: 0}}>
                         <img alt="" src={url}
-                             width={props.chartSize * window.devicePixelRatio}
-                             height={props.chartSize * window.devicePixelRatio}
+                             width={props.chartSize * devicePixelRatio}
+                             height={props.chartSize * devicePixelRatio}
                              onClick={onSelect}
                              style={{
                                  width: props.chartSize,

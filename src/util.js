@@ -771,3 +771,10 @@ export function getFeatureSets(markers, featureSets) {
     return filteredFeatureSets;
 }
 
+export function getDevicePixelRatio() {
+    let devicePixelRatio = 1;
+    if (typeof window !== 'undefined' && 'devicePixelRatio' in window) {
+        devicePixelRatio = window.devicePixelRatio;
+    }
+    return devicePixelRatio;
+}

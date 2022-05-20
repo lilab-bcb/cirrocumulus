@@ -1,6 +1,10 @@
 CIRRO_TEST = 'CIRRO_TEST'  # whether running using pytest
-CIRRO_AUTH_CLIENT_ID = 'CIRRO_AUTH_CLIENT_ID'  # for javascript client
-CIRRO_AUTH_BASE_URL = 'CIRRO_AUTH_BASE_URL'  # for javascript client
+# authentication/authorization
+CIRRO_AUTH_CLIENT_ID = 'CIRRO_AUTH_CLIENT_ID'
+CIRRO_AUTH_ISSUER = 'CIRRO_AUTH_ISSUER'
+CIRRO_AUTH = 'CIRRO_AUTH'  # python class to validate tokens (created based on CIRRO_AUTH_PROVIDER)
+CIRRO_AUTH_PROVIDER = 'CIRRO_AUTH_PROVIDER'  # okta, google
+
 CIRRO_DB_URI = 'CIRRO_DB_URI'
 CIRRO_EMAIL = 'CIRRO_EMAIL'
 CIRRO_SERVE = 'CIRRO_SERVE'
@@ -12,7 +16,7 @@ CIRRO_JOB_RESULTS = 'CIRRO_JOB_RESULTS'
 CIRRO_DATABASE_CLASS = 'CIRRO_DATABASE_CLASS'
 CIRRO_DATABASE = 'CIRRO_DATABASE'
 CIRRO_DATASET_PROVIDERS = 'CIRRO_DATASET_PROVIDERS'
-CIRRO_AUTH = 'CIRRO_AUTH'  # provider to validate tokens
+
 CIRRO_MIXPANEL = 'CIRRO_MIXPANEL'
 # for mounting a bucket locally. Comma separated string of bucket:local_path. Example s3://foo/bar:/fsx
 CIRRO_MOUNT = 'CIRRO_MOUNT'

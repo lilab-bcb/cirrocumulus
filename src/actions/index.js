@@ -37,6 +37,7 @@ import {
 import {updateJob} from '../DotPlotJobResultsPanel';
 import {NoAuth} from '../NoAuth';
 import {GoggleAuth} from '../GoogleAuth';
+import {OktaAuth} from '../OktaAuth';
 
 export const API = process.env.REACT_APP_API_URL || 'api';
 
@@ -176,7 +177,7 @@ export function initAuth() {
 
         window.setTimeout(loadingAppProgress, 500);
         if (process.env.REACT_APP_STATIC === 'true') {
-            const serverInfo = {clientId: '', capabilities: new Set()};
+            const serverInfo = {capabilities: new Set(), auth: {clientId: ''}};
             serverInfo.api = new StaticServerApi();
             dispatch(setServerInfo(serverInfo));
             dispatch(_setLoadingApp({loading: false}));
@@ -200,8 +201,8 @@ export function initAuth() {
         const getServerInfo = fetch(API + '/server').then(result => result.json());
         return getServerInfo.then(serverInfo => {
             serverInfo.api = new RestServerApi();
-            if (serverInfo.clientId == null) {
-                serverInfo.clientId = '';
+            if (serverInfo.auth.clientId == null) {
+                serverInfo.auth.clientId = '';
             }
             const capabilities = new Set();
             for (let key in serverInfo.capabilities) {
@@ -211,7 +212,7 @@ export function initAuth() {
             }
             serverInfo.capabilities = capabilities;
             dispatch(setServerInfo(serverInfo));
-            if (serverInfo.clientId === '' || serverInfo.clientId == null) { // no login required
+            if (serverInfo.auth.clientId === '' || serverInfo.auth.clientId == null) { // no login required
                 dispatch(_setLoadingApp({loading: false}));
                 dispatch(_setEmail(capabilities.has(SERVER_CAPABILITY_ADD_DATASET) ? '' : null));
                 if (capabilities.has(SERVER_CAPABILITY_ADD_DATASET)) {
@@ -228,9 +229,16 @@ export function initAuth() {
                     dispatch(_loadSavedView());
                 }
             } else {
-                auth = new GoggleAuth();
+                const provider = (serverInfo.auth.provider || '').toLowerCase();
+                if (provider === 'google' || provider === '') {
+                    auth = new GoggleAuth();
+                } else if (provider === 'okta') {
+                    auth = new OktaAuth();
+                } else {
+                    throw new Error('Unknown provider ' + provider);
+                }
                 console.log((new Date().getTime() - startTime) / 1000 + " startup time");
-                auth.init(serverInfo).then(() => {
+                auth.init(serverInfo.auth).then(() => {
                     dispatch(_setLoadingApp({loading: false, progress: 0}));
                     dispatch(initLogin(true));
                 });

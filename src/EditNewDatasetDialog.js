@@ -73,7 +73,7 @@ function EditNewDatasetDialog(props) {
     const canUpload = serverInfo.upload;
     const isNew = dataset == null;
     let saveEnabled = !loading && name.trim() !== '';
-    const isAuthEnabled = serverInfo.clientId !== '';
+    const isAuthEnabled = serverInfo.auth.clientId !== '';
 
     if (isNew) {
         if (uploadTabValue === 'URL' || !serverInfo.upload) {

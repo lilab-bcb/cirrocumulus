@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.32 `May 20, 2022`
+    * Fix error saving spatial datasets in `cirro prepare_data`
+    * Updated dot plot tooltips
+    * Added Okta integration
+
 - 1.1.31 `May 5, 2022`
     * Fix error when setting a color manually when more than 40 category values
     * Improved differential expression filter user interface
