@@ -26,10 +26,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install graphicsmagick libxss1
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          python -m pip install .
-          pip install -r requirements-test.txt
+          pip install --upgrade pip
+          pip install .[test]
           yarn global add typescript
           yarn install
           yarn build
