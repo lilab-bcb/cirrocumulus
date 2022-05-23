@@ -15,9 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-
-
-import {Camera, Vector3} from "three";
+import { Camera, Vector3 } from "three";
 
 /**
  * LabelRenderParams describes the set of points that should have labels
@@ -62,7 +60,7 @@ export class RenderContext {
     public pointColors: Float32Array,
     public pointScaleFactors: Float32Array,
     public labels: LabelRenderParams | undefined,
-    public polylineColors: {[polylineIndex: number]: Float32Array},
+    public polylineColors: { [polylineIndex: number]: Float32Array },
     public polylineOpacities: Float32Array,
     public polylineWidths: Float32Array
   ) {}

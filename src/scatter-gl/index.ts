@@ -15,10 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-
-export {ScatterPlotVisualizerSprites} from './scatter_plot_visualizer_sprites'
-export {ScatterPlot} from './scatter_plot'
-export {makeStyles} from './styles'
-export {ScatterPlotVisualizer3DLabels} from './scatter_plot_visualizer_3d_labels'
-export {ScatterPlotVisualizerSvgLabels} from './scatter_plot_visualizer_svg_labels'
-export {ScatterPlotVisualizerCanvasLabels} from './scatter_plot_visualizer_canvas_labels'
+export { ScatterPlotVisualizerSprites } from "./scatter_plot_visualizer_sprites";
+export { ScatterPlot } from "./scatter_plot";
+export { makeStyles } from "./styles";
+export { ScatterPlotVisualizer3DLabels } from "./scatter_plot_visualizer_3d_labels";
+export { ScatterPlotVisualizerSvgLabels } from "./scatter_plot_visualizer_svg_labels";
+export { ScatterPlotVisualizerCanvasLabels } from "./scatter_plot_visualizer_canvas_labels";

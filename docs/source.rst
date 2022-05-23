@@ -6,4 +6,3 @@ We welcome contributions to cirrocumulus. Please see the source code on `GitHub`
 
 
 .. _GitHub: https://github.com/klarman-cell-observatory/cirrocumulus
-

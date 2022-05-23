@@ -1,8 +1,5 @@
 export function NoAuth() {
-
-
-    this.getIdToken = function () {
-        return '';
-    };
-
+  this.getIdToken = function () {
+    return '';
+  };
 }

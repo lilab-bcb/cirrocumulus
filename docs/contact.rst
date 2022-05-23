@@ -7,4 +7,3 @@ You can report bugs and request new features by creating new issues in our `GitH
 
 
 .. _GitHub repository: https://github.com/klarman-cell-observatory/cirrocumulus
-

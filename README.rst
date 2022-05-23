@@ -61,4 +61,3 @@ Complete documentation available at https://cirrocumulus.readthedocs.io
 .. _Scanpy: https://scanpy.readthedocs.io/
 .. _zarr: https://zarr.readthedocs.io/
 .. _TileDB: https://tiledb.com/
-

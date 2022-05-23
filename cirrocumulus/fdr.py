@@ -2,14 +2,13 @@ import numpy as np
 
 
 def _ecdf(x):
-    '''no frills empirical cdf used in fdrcorrection
-    '''
+    """no frills empirical cdf used in fdrcorrection"""
     nobs = len(x)
     return np.arange(1, nobs + 1) / float(nobs)
 
 
-def fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False):
-    '''pvalue correction for false discovery rate
+def fdrcorrection(pvals, alpha=0.05, method="indep", is_sorted=False):
+    """pvalue correction for false discovery rate
 
     This covers Benjamini/Hochberg for independent or positively correlated and
     Benjamini/Yekutieli for general or negatively correlated tests. Both are
@@ -46,7 +45,7 @@ def fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False):
 
 
 
-    '''
+    """
     pvals = np.asarray(pvals)
 
     if not is_sorted:
@@ -55,16 +54,16 @@ def fdrcorrection(pvals, alpha=0.05, method='indep', is_sorted=False):
     else:
         pvals_sorted = pvals  # alias
 
-    if method in ['i', 'indep', 'p', 'poscorr']:
+    if method in ["i", "indep", "p", "poscorr"]:
         ecdffactor = _ecdf(pvals_sorted)
-    elif method in ['n', 'negcorr']:
-        cm = np.sum(1. / np.arange(1, len(pvals_sorted) + 1))  # corrected this
+    elif method in ["n", "negcorr"]:
+        cm = np.sum(1.0 / np.arange(1, len(pvals_sorted) + 1))  # corrected this
         ecdffactor = _ecdf(pvals_sorted) / cm
-    ##    elif method in ['n', 'negcorr']:
-    ##        cm = np.sum(np.arange(len(pvals)))
-    ##        ecdffactor = ecdf(pvals_sorted)/cm
+    #    elif method in ['n', 'negcorr']:
+    #        cm = np.sum(np.arange(len(pvals)))
+    #        ecdffactor = ecdf(pvals_sorted)/cm
     else:
-        raise ValueError('only indep and negcorr implemented')
+        raise ValueError("only indep and negcorr implemented")
 
     pvals_corrected_raw = pvals_sorted / ecdffactor
     pvals_corrected = np.minimum.accumulate(pvals_corrected_raw[::-1])[::-1]

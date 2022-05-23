@@ -10,103 +10,104 @@ import {connect} from 'react-redux';
 import {saveLink, setDialog, setMessage} from './actions';
 
 class SaveDatasetViewDialog extends React.PureComponent {
-    constructor(props) {
-        super(props);
-        this.state = {
-            name: '',
-            notes: ''
-        };
-    }
-
-    onNameChanged = (event) => {
-        this.setState({name: event.target.value});
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: '',
+      notes: '',
     };
+  }
 
-    onNotesChanged = (event) => {
-        this.setState({notes: event.target.value});
-    };
+  onNameChanged = (event) => {
+    this.setState({name: event.target.value});
+  };
 
-    handleClose = () => {
-        this.props.handleCancel();
-    };
+  onNotesChanged = (event) => {
+    this.setState({notes: event.target.value});
+  };
 
-    handleSave = () => {
-        this.props.handleSave({name: this.state.name.trim(), notes: this.state.notes.trim().trim()});
-    };
+  handleClose = () => {
+    this.props.handleCancel();
+  };
 
+  handleSave = () => {
+    this.props.handleSave({
+      name: this.state.name.trim(),
+      notes: this.state.notes.trim().trim(),
+    });
+  };
 
-    render() {
-        const {name, notes} = this.state;
-        const create = true;
-        return (
-            <Dialog
-                open={true}
-                onClose={this.handleClose}
-                aria-labelledby="edit-dataset-view-dialog-title"
-                fullWidth={true}
-                maxWidth={'sm'}
-            >
-                <DialogTitle id="edit-dataset-view-dialog-title">{create
-                    ? 'Save'
-                    : 'Edit'} Link</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        size="small"
-                        margin="dense"
-                        required={true}
-                        value={name}
-                        autoComplete="off"
-                        onChange={this.onNameChanged}
-                        label="Name"
-                        fullWidth
-                    />
-                    <TextField
-                        size="small"
-                        margin="dense"
-                        required={false}
-                        value={notes}
-                        autoComplete="off"
-                        onChange={this.onNotesChanged}
-                        label="Notes"
-                        multiline={true}
-                        fullWidth
-
-                    />
-
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={this.handleClose}>
-                        Cancel
-                    </Button>
-                    <Button disabled={name.trim().length === 0} onClick={this.handleSave} variant="contained"
-                            color="primary">
-                        Save
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
+  render() {
+    const {name, notes} = this.state;
+    const create = true;
+    return (
+      <Dialog
+        open={true}
+        onClose={this.handleClose}
+        aria-labelledby="edit-dataset-view-dialog-title"
+        fullWidth={true}
+        maxWidth={'sm'}
+      >
+        <DialogTitle id="edit-dataset-view-dialog-title">
+          {create ? 'Save' : 'Edit'} Link
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            size="small"
+            margin="dense"
+            required={true}
+            value={name}
+            autoComplete="off"
+            onChange={this.onNameChanged}
+            label="Name"
+            fullWidth
+          />
+          <TextField
+            size="small"
+            margin="dense"
+            required={false}
+            value={notes}
+            autoComplete="off"
+            onChange={this.onNotesChanged}
+            label="Notes"
+            multiline={true}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={this.handleClose}>Cancel</Button>
+          <Button
+            disabled={name.trim().length === 0}
+            onClick={this.handleSave}
+            variant="contained"
+            color="primary"
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 }
 
-const mapStateToProps = state => {
-    return {};
+const mapStateToProps = (state) => {
+  return {};
 };
-const mapDispatchToProps = dispatch => {
-    return {
-        handleSave: value => {
-            dispatch(saveLink(value));
-        },
-        handleCancel: value => {
-            dispatch(setDialog(null));
-        },
-        handleError: value => {
-            dispatch(setMessage(value));
-        }
-
-    };
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleSave: (value) => {
+      dispatch(saveLink(value));
+    },
+    handleCancel: (value) => {
+      dispatch(setDialog(null));
+    },
+    handleError: (value) => {
+      dispatch(setMessage(value));
+    },
+  };
 };
 
-export default (connect(
-    mapStateToProps, mapDispatchToProps
-)(SaveDatasetViewDialog));
-
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(SaveDatasetViewDialog);

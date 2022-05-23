@@ -9,12 +9,13 @@ See the copyright and license note in this directory source code.
 """
 
 import collections.abc as cabc
-from typing import Union, NamedTuple, Tuple, Sequence, Iterable, Type
+from itertools import accumulate, chain
+from typing import Iterable, NamedTuple, Sequence, Tuple, Type, Union
 
 import numpy as np
 import scipy.sparse as ss
-from itertools import accumulate, chain
 from scipy.sparse import _sparsetools
+
 
 try:
     # Not really important, just for IDEs to be more helpful
@@ -22,7 +23,7 @@ try:
 except ImportError:
     _cs_matrix = ss.spmatrix
 
-from anndata._core.index import unpack_index, _subset, Index
+from anndata._core.index import Index, _subset, unpack_index
 
 
 class BackedFormat(NamedTuple):
@@ -64,9 +65,7 @@ class BackedSparseMatrix(_cs_matrix):
             return
 
         else:
-            raise ValueError(
-                "You cannot change the sparsity structure of a SparseDataset."
-            )
+            raise ValueError("You cannot change the sparsity structure of a SparseDataset.")
             # replace where possible
             # mask = offsets > -1
             # # offsets[mask]
@@ -93,9 +92,7 @@ class BackedSparseMatrix(_cs_matrix):
         # only assign zeros to the existing sparsity structure
         self.data[list(offsets[offsets > -1])] = 0
 
-    def _offsets(
-            self, i: Iterable[int], j: Iterable[int], n_samples: int
-    ) -> np.ndarray:
+    def _offsets(self, i: Iterable[int], j: Iterable[int], n_samples: int) -> np.ndarray:
         i, j, M, N = self._prepare_indices(i, j)
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
         ret = _sparsetools.csr_sample_offsets(
@@ -113,9 +110,7 @@ class BackedSparseMatrix(_cs_matrix):
 class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
     def _get_intXslice(self, row: int, col: slice) -> ss.csr_matrix:
 
-        return ss.csr_matrix(
-            get_compressed_vector(self, row), shape=(1, self.shape[1])
-        )[:, col]
+        return ss.csr_matrix(get_compressed_vector(self, row), shape=(1, self.shape[1]))[:, col]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csr_matrix:
 
@@ -133,16 +128,14 @@ class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
         idxs = np.asarray(row)
         if idxs.dtype == bool:
             idxs = np.where(idxs)
-        return ss.csr_matrix(
-            get_compressed_vectors(self, idxs), shape=(len(idxs), self.shape[1])
-        )[:, col]
+        return ss.csr_matrix(get_compressed_vectors(self, idxs), shape=(len(idxs), self.shape[1]))[
+            :, col
+        ]
 
 
 class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
     def _get_sliceXint(self, row: slice, col: int) -> ss.csc_matrix:
-        return ss.csc_matrix(
-            get_compressed_vector(self, col), shape=(self.shape[0], 1)
-        )[row, :]
+        return ss.csc_matrix(get_compressed_vector(self, col), shape=(self.shape[0], 1))[row, :]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csc_matrix:
 
@@ -162,9 +155,9 @@ class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
             if start is not None and start < 0:
                 start -= 1
             indptr_slice = slice(start, stop)
-            indptr = self.group['indptr'][indptr_slice]
-            data = self.group['data'][indptr[0]:indptr[-1]]
-            indices = self.group['indices'][indptr[0]:indptr[-1]]
+            indptr = self.group["indptr"][indptr_slice]
+            data = self.group["data"][indptr[0] : indptr[-1]]
+            indices = self.group["indices"][indptr[0] : indptr[-1]]
             indptr -= indptr[0]
             shape = (self.shape[0], indptr.size - 1)
             return ss.csc_matrix((data, indices, indptr), shape=shape)  # much faster
@@ -175,9 +168,9 @@ class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
         idxs = np.asarray(col)
         if idxs.dtype == bool:
             idxs = np.where(idxs)
-        return ss.csc_matrix(
-            get_compressed_vectors(self, idxs), shape=(self.shape[0], len(idxs))
-        )[row, :]
+        return ss.csc_matrix(get_compressed_vectors(self, idxs), shape=(self.shape[0], len(idxs)))[
+            row, :
+        ]
 
 
 FORMATS = [
@@ -186,32 +179,30 @@ FORMATS = [
 ]
 
 
-def slice_len(s: slice, l: int) -> int:
-    """Returns length of `a[s]` where `len(a) == l`."""
-    return len(range(*s.indices(l)))
+def slice_len(s: slice, dim: int) -> int:
+    """Returns length of `a[s]` where `len(a) == dim`."""
+    return len(range(*s.indices(dim)))
 
 
-def slice_as_int(s: slice, l: int) -> int:
+def slice_as_int(s: slice, dim: int) -> int:
     """Converts slices of length 1 to the integer index they’ll access."""
-    out = list(range(*s.indices(l)))
+    out = list(range(*s.indices(dim)))
     assert len(out) == 1
     return out[0]
 
 
 def get_compressed_vectors(
-        x: BackedSparseMatrix, row_idxs: Iterable[int]
+    x: BackedSparseMatrix, row_idxs: Iterable[int]
 ) -> Tuple[Sequence, Sequence, Sequence]:
-    slices = [slice(*(x.indptr[i: i + 2])) for i in row_idxs]
+    slices = [slice(*(x.indptr[i : i + 2])) for i in row_idxs]
     data = np.concatenate([x.data[s] for s in slices])
     indices = np.concatenate([x.indices[s] for s in slices])
     indptr = list(accumulate(chain((0,), (s.stop - s.start for s in slices))))
     return data, indices, indptr
 
 
-def get_compressed_vector(
-        x: BackedSparseMatrix, idx: int
-) -> Tuple[Sequence, Sequence, Sequence]:
-    s = slice(*(x.indptr[idx: idx + 2]))
+def get_compressed_vector(x: BackedSparseMatrix, idx: int) -> Tuple[Sequence, Sequence, Sequence]:
+    s = slice(*(x.indptr[idx : idx + 2]))
     data = x.data[s]
     indices = x.indices[s]
     indptr = [0, len(data)]
@@ -288,9 +279,7 @@ class SparseDataset:
         mock_matrix = self.to_backed()
         mock_matrix[row, col] = value
 
-    def _normalize_index(
-            self, index: Union[Index, Tuple[()]]
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _normalize_index(self, index: Union[Index, Tuple[()]]) -> Tuple[np.ndarray, np.ndarray]:
         if index == ():
             index = slice(None)
         row, col = unpack_index(index)
@@ -312,8 +301,7 @@ class SparseDataset:
             )
         if self.format_str not in {"csr", "csc"}:
             raise NotImplementedError(
-                f"The append method for format {self.format_str} "
-                f"is not implemented."
+                f"The append method for format {self.format_str} " f"is not implemented."
             )
         if self.format_str != get_format_str(sparse_matrix):
             raise ValueError(
@@ -324,12 +312,12 @@ class SparseDataset:
         # shape
         if self.format_str == "csr":
             assert (
-                    shape[1] == sparse_matrix.shape[1]
+                shape[1] == sparse_matrix.shape[1]
             ), "CSR matrices must have same size of dimension 1 to be appended."
             new_shape = (shape[0] + sparse_matrix.shape[0], shape[1])
         elif self.format_str == "csc":
             assert (
-                    shape[0] == sparse_matrix.shape[0]
+                shape[0] == sparse_matrix.shape[0]
             ), "CSC matrices must have same size of dimension 0 to be appended."
             new_shape = (shape[0], shape[1] + sparse_matrix.shape[1])
         else:
@@ -349,9 +337,7 @@ class SparseDataset:
         orig_data_size = indptr.shape[0]
         append_offset = indptr[-1]
         indptr.resize((orig_data_size + sparse_matrix.indptr.shape[0] - 1,))
-        indptr[orig_data_size:] = (
-                sparse_matrix.indptr[1:].astype(np.int64) + append_offset
-        )
+        indptr[orig_data_size:] = sparse_matrix.indptr[1:].astype(np.int64) + append_offset
 
         # indices
         indices = self.group["indices"]

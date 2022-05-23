@@ -14,9 +14,15 @@ def asarray(x):
 
 
 class DE:
-
-    def __init__(self, series: pd.Series, nfeatures: int, batch_size: int, get_batch_fn, base: float = None,
-                 one_vs_rest: bool = True):
+    def __init__(
+        self,
+        series: pd.Series,
+        nfeatures: int,
+        batch_size: int,
+        get_batch_fn,
+        base: float = None,
+        one_vs_rest: bool = True,
+    ):
         """
 
         :param series: Categorical series in adata.obs to group by
@@ -34,13 +40,13 @@ class DE:
             pairs = []
             rest_indicator_df = pd.DataFrame()
             for c in indicator_df:
-                rest_name = str(c) + '_rest'
+                rest_name = str(c) + "_rest"
                 if rest_name in indicator_df:
                     counter = 1
-                    rest_name = str(c) + '_rest-{}'.format(counter)
+                    rest_name = str(c) + "_rest-{}".format(counter)
                     while rest_name in indicator_df:
                         counter = counter + 1
-                        rest_name = str(c) + '_rest-{}'.format(counter)
+                        rest_name = str(c) + "_rest-{}".format(counter)
                 pairs.append((c, rest_name))
                 rest_indicator_series = indicator_df[c].astype(bool)
                 rest_indicator_series = ~rest_indicator_series
@@ -52,7 +58,7 @@ class DE:
         A = scipy.sparse.coo_matrix(indicator_df.astype(float).T)
         n_row = A.shape[0]
         row_sums = np.asarray(A.sum(axis=1))
-        D = scipy.sparse.dia_matrix(((row_sums.T ** -1), [0]), shape=(n_row, n_row))
+        D = scipy.sparse.dia_matrix(((row_sums.T**-1), [0]), shape=(n_row, n_row))
         A = D * A
         dof = 1
 
@@ -61,7 +67,7 @@ class DE:
             X = adata_batch.X
             mean_ = asarray(A @ X)  # (groups, genes)
             mean_sq = asarray(A @ _power(X, 2))
-            sq_mean = mean_ ** 2
+            sq_mean = mean_**2
             var_ = mean_sq - sq_mean
             # enforce R convention (unbiased estimator) for variance
             precision = 2 << (42 if X.dtype == np.float64 else 20)
@@ -73,17 +79,29 @@ class DE:
             frac_expressed_ = None
             if scipy.sparse.issparse(X):
                 frac_expressed_ = asarray(A @ (X != 0))
-            _mean_df = pd.DataFrame(mean_, columns=adata_batch.var.index, index=indicator_df.columns)
-            _variance_df = pd.DataFrame(var_, columns=adata_batch.var.index, index=indicator_df.columns)
+            _mean_df = pd.DataFrame(
+                mean_, columns=adata_batch.var.index, index=indicator_df.columns
+            )
+            _variance_df = pd.DataFrame(
+                var_, columns=adata_batch.var.index, index=indicator_df.columns
+            )
 
             # groups on rows, genes on columns
             mean_df = pd.concat((mean_df, _mean_df), axis=1) if mean_df is not None else _mean_df
-            variance_df = pd.concat((variance_df, _variance_df), axis=1) if variance_df is not None else _variance_df
+            variance_df = (
+                pd.concat((variance_df, _variance_df), axis=1)
+                if variance_df is not None
+                else _variance_df
+            )
             if frac_expressed_ is not None:
-                _frac_expressed_df = pd.DataFrame(frac_expressed_, columns=adata_batch.var.index,
-                                                  index=indicator_df.columns)
-                frac_expressed_df = pd.concat((frac_expressed_df, _frac_expressed_df),
-                                              axis=1) if frac_expressed_df is not None else _frac_expressed_df
+                _frac_expressed_df = pd.DataFrame(
+                    frac_expressed_, columns=adata_batch.var.index, index=indicator_df.columns
+                )
+                frac_expressed_df = (
+                    pd.concat((frac_expressed_df, _frac_expressed_df), axis=1)
+                    if frac_expressed_df is not None
+                    else _frac_expressed_df
+                )
 
         if base is not None:
             expm1_func = lambda x: np.expm1(x * np.log(base))
@@ -97,7 +115,9 @@ class DE:
 
             # add small value to remove 0's
             foldchanges = np.log2(
-                (expm1_func(mean_df.loc[group_one].values) + 1e-9) / (expm1_func(mean_df.loc[group_two].values) + 1e-9))
+                (expm1_func(mean_df.loc[group_one].values) + 1e-9)
+                / (expm1_func(mean_df.loc[group_two].values) + 1e-9)
+            )
             with np.errstate(invalid="ignore"):
                 scores, pvals = scipy.stats.ttest_ind_from_stats(
                     mean1=mean_df.loc[group_one],
@@ -112,9 +132,15 @@ class DE:
             scores[np.isnan(scores)] = 0
             pvals[np.isnan(pvals)] = 1
             key = p[0] if one_vs_rest else p
-            pair2results[key] = dict(scores=scores, pvals=pvals, logfoldchanges=foldchanges,
-                                     frac_expressed1=frac_expressed_df.loc[
-                                         group_one].values if frac_expressed_df is not None else None,
-                                     frac_expressed2=frac_expressed_df.loc[
-                                         group_two].values if frac_expressed_df is not None else None)
+            pair2results[key] = dict(
+                scores=scores,
+                pvals=pvals,
+                logfoldchanges=foldchanges,
+                frac_expressed1=frac_expressed_df.loc[group_one].values
+                if frac_expressed_df is not None
+                else None,
+                frac_expressed2=frac_expressed_df.loc[group_two].values
+                if frac_expressed_df is not None
+                else None,
+            )
         self.pair2results = pair2results

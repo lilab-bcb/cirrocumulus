@@ -1,16 +1,10 @@
 # https://raw.githubusercontent.com/theislab/anndata/103461171e80d403ee8556715649533039e8a4ec/anndata/_core/groupby.py
 import collections.abc as cabc
-from typing import (
-    Optional,
-    Iterable,
-    AbstractSet,
-    Sequence,
-    Tuple,
-)
+from typing import AbstractSet, Iterable, Optional, Sequence, Tuple
 
-import anndata
 import numpy as np
 import pandas as pd
+import anndata
 import scipy.sparse
 from scipy.sparse import coo_matrix, dia_matrix
 
@@ -82,13 +76,13 @@ class GroupBy:
     _key_index: Optional[np.ndarray]  # caution, may be stale if attributes are updated
 
     def __init__(
-            self,
-            adata,
-            key: str,
-            *,
-            weight: Optional[str] = None,
-            explode: bool = False,
-            key_set: Optional[Iterable[str]] = None,
+        self,
+        adata,
+        key: str,
+        *,
+        weight: Optional[str] = None,
+        explode: bool = False,
+        key_set: Optional[Iterable[str]] = None,
     ):
         self.adata = adata
         self.key = key
@@ -127,13 +121,13 @@ class GroupBy:
         mean_ = asarray(A @ X)
         mean_sq = asarray(A @ _power(X, 2))
         if self.weight is None:
-            sq_mean = mean_ ** 2
+            sq_mean = mean_**2
         else:
             A_unweighted, _ = GroupBy(
                 self.adata, self.key, explode=self.explode, key_set=self.key_set
             ).sparse_aggregator()
             mean_unweighted = asarray(A_unweighted * X)
-            sq_mean = 2 * mean_ * mean_unweighted + mean_unweighted ** 2
+            sq_mean = 2 * mean_ * mean_unweighted + mean_unweighted**2
         var_ = mean_sq - sq_mean
         # enforce R convention (unbiased estimator) for variance
         precision = 2 << (42 if X.dtype == np.float64 else 20)
@@ -147,20 +141,21 @@ class GroupBy:
             frac_expressed_ = asarray(A @ (X != 0))
         index = pd.Index(keys, name=self.key, tupleize_cols=False)
         count_sr = pd.Series(index=index, data=count_, name="count")
-        mean_df = pd.DataFrame(
-            index=index.copy(), columns=self.adata.var_names.copy(), data=mean_
+        mean_df = pd.DataFrame(index=index.copy(), columns=self.adata.var_names.copy(), data=mean_)
+        var_df = pd.DataFrame(index=index.copy(), columns=self.adata.var_names.copy(), data=var_)
+
+        frac_expressed_df = (
+            pd.DataFrame(
+                index=index.copy(), columns=self.adata.var_names.copy(), data=frac_expressed_
+            )
+            if frac_expressed_ is not None
+            else None
         )
-        var_df = pd.DataFrame(
-            index=index.copy(), columns=self.adata.var_names.copy(), data=var_
+        return CountMeanVarFrac(
+            count=count_sr, mean=mean_df, var=var_df, frac_expressed=frac_expressed_df
         )
 
-        frac_expressed_df = pd.DataFrame(index=index.copy(), columns=self.adata.var_names.copy(),
-                                         data=frac_expressed_) if frac_expressed_ is not None else None
-        return CountMeanVarFrac(count=count_sr, mean=mean_df, var=var_df, frac_expressed=frac_expressed_df)
-
-    def sparse_aggregator(
-            self, normalize: bool = False
-    ) -> Tuple[coo_matrix, np.ndarray]:
+    def sparse_aggregator(self, normalize: bool = False) -> Tuple[coo_matrix, np.ndarray]:
         """
         Form a coordinate-sparse matrix A such that rows of A * X
         are weighted sums of groups of rows of X.
@@ -192,7 +187,7 @@ class GroupBy:
         if normalize:
             n_row = A.shape[0]
             row_sums = np.asarray(A.sum(axis=1))
-            D = dia_matrix(((row_sums.T ** -1), [0]), shape=(n_row, n_row))
+            D = dia_matrix(((row_sums.T**-1), [0]), shape=(n_row, n_row))
             A = D * A
         return A, keys
 
@@ -207,9 +202,7 @@ class GroupBy:
                 for i, j in enumerate(keep):
                     remap[j] = i
                 keys = [keys[j] for j in keep]
-                key_index = np.array(
-                    [remap[i] for i in key_index[mask]], dtype=np.int64
-                )
+                key_index = np.array([remap[i] for i in key_index[mask]], dtype=np.int64)
                 obs_index = obs_index[mask]
                 if weight_value is not None:
                     weight_value = weight_value[mask]
@@ -217,18 +210,14 @@ class GroupBy:
 
         key_value = self.adata.obs[self.key]
         if self.explode:
-            assert isinstance(
-                key_value.iloc[0], tuple
-            ), "key type must be tuple to explode"
+            assert isinstance(key_value.iloc[0], tuple), "key type must be tuple to explode"
             keys, key_index = np.unique(
                 _ndarray_from_seq([k for ks in key_value for k in ks]),
                 return_inverse=True,
             )
             obs_index = np.array([i for i, ks in enumerate(key_value) for _ in ks])
         else:
-            keys, key_index = np.unique(
-                _ndarray_from_seq(key_value), return_inverse=True
-            )
+            keys, key_index = np.unique(_ndarray_from_seq(key_value), return_inverse=True)
             obs_index = np.arange(len(key_index))
         if self.weight is None:
             weight_value = None
@@ -238,7 +227,9 @@ class GroupBy:
             keys, key_index, obs_index, weight_value = _filter_indices(
                 self.key_set, keys, key_index, obs_index, weight_value
             )
-        self._key_index = key_index  # passed to count and count_mean_var to avoid re-extracting in the latter
+        self._key_index = (
+            key_index  # passed to count and count_mean_var to avoid re-extracting in the latter
+        )
         return keys, key_index, obs_index, weight_value
 
 

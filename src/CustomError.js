@@ -1,5 +1,3 @@
-class CustomError extends Error {
-
-}
+class CustomError extends Error {}
 
 export default CustomError;

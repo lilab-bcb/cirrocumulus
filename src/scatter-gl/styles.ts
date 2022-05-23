@@ -107,11 +107,11 @@ export interface UserStyles {
 
 const makeDefaultStyles = () => {
   const defaultStyles: Styles = {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     axesVisible: true,
 
     fog: {
-      color: '#ffffff',
+      color: "#ffffff",
       enabled: true,
       threshold: 5000,
     },
@@ -120,10 +120,10 @@ const makeDefaultStyles = () => {
       fontSize: 10,
       scaleDefault: 1,
       scaleLarge: 2,
-      fillColorSelected: '#000000',
-      fillColorHover: '#000000',
-      strokeColorSelected: '#ffffff',
-      strokeColorHover: '#ffffff',
+      fillColorSelected: "#000000",
+      fillColorHover: "#000000",
+      strokeColorSelected: "#ffffff",
+      strokeColorHover: "#ffffff",
       strokeWidth: 3,
       fillWidth: 6,
     },
@@ -131,17 +131,17 @@ const makeDefaultStyles = () => {
     label3D: {
       fontSize: 80,
       scale: 2.2, // at 1:1 texel/pixel ratio
-      color: 'black',
-      backgroundColor: '#ffffff',
-      colorUnselected: '#ffffff',
-      colorNoSelection: '#ffffff',
+      color: "black",
+      backgroundColor: "#ffffff",
+      colorUnselected: "#ffffff",
+      colorNoSelection: "#ffffff",
     },
 
     point: {
-      colorUnselected: 'rgba(227, 227, 227, 0.7)',
-      colorNoSelection: 'rgba(117, 117, 217, 0.7)',
-      colorSelected: 'rgba(250, 102, 102, 0.7)',
-      colorHover: 'rgba(118, 11, 79, 0.7)',
+      colorUnselected: "rgba(227, 227, 227, 0.7)",
+      colorNoSelection: "rgba(117, 117, 217, 0.7)",
+      colorSelected: "rgba(250, 102, 102, 0.7)",
+      colorHover: "rgba(118, 11, 79, 0.7)",
       scaleDefault: 1.0,
       scaleSelected: 1.2,
       scaleHover: 1.2,
@@ -160,18 +160,18 @@ const makeDefaultStyles = () => {
     },
 
     select: {
-      fill: '#dddddd',
+      fill: "#dddddd",
       fillOpacity: 0.2,
-      stroke: '#aaaaaa',
+      stroke: "#aaaaaa",
       strokeWidth: 2,
-      strokeDashArray: '10 5',
+      strokeDashArray: "10 5",
     },
 
     sprites: {
       minPointSize: 5.0,
       imageSize: 30,
-      colorUnselected: '#ffffff',
-      colorNoSelection: '#ffffff',
+      colorUnselected: "#ffffff",
+      colorNoSelection: "#ffffff",
     },
   };
   return defaultStyles;
@@ -189,8 +189,8 @@ export function makeStyles(userStyles: UserStyles | undefined) {
   for (let key in defaultStyles) {
     const _key = key as keyof Styles;
     if (
-      typeof defaultStyles[_key] === 'object' &&
-      typeof userStyles[_key] === 'object'
+      typeof defaultStyles[_key] === "object" &&
+      typeof userStyles[_key] === "object"
     ) {
       (defaultStyles[_key] as any) = Object.assign(
         defaultStyles[_key],

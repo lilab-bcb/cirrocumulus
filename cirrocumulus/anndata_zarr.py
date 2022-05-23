@@ -1,14 +1,14 @@
 from collections.abc import Mapping
 from enum import Enum
-from functools import singledispatch, _find_impl
+from functools import _find_impl, singledispatch
 from types import MappingProxyType
 from typing import Callable, Type, TypeVar
 from warnings import warn
 
-import numcodecs
+import zarr
 import numpy as np
 import pandas as pd
-import zarr
+import numcodecs
 from packaging import version
 from pandas.api.types import is_categorical_dtype
 from scipy import sparse
@@ -187,6 +187,7 @@ def write_array(g, key, value, dataset_kwargs=MappingProxyType({})):
 
 # TODO: Not working quite right
 
+
 def write_scalar(f, key, value, dataset_kwargs=MappingProxyType({})):
     f.create_dataset(key, data=np.array(value), **dataset_kwargs)
 
@@ -196,6 +197,7 @@ def write_none(f, key, value, dataset_kwargs=MappingProxyType({})):
 
 
 # TODO: Figure out what to do with dataset_kwargs for these
+
 
 def write_csr(f, key, value: sparse.csr_matrix, dataset_kwargs=MappingProxyType({})):
     group = f.create_group(key)
