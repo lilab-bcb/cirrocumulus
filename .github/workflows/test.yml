@@ -27,7 +27,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install graphicsmagick libxss1
           pip install --upgrade pip
-          pip install .[test]
+          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test]
           yarn global add typescript
           yarn install
           yarn build
