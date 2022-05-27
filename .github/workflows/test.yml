@@ -26,11 +26,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install graphicsmagick libxss1
-          python -m pip install --upgrade pip setuptools wheel
-          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test]
+          pip install --upgrade pip
           yarn global add typescript
           yarn install
           yarn build
+          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test]
         env:
           CI: false
       - name: Test with pytest
