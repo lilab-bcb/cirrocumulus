@@ -1,11 +1,10 @@
 [build-system]
-requires = ['hatchling', 'hatch-vcs']
+requires = ["hatchling", 'hatch-vcs']
 build-backend = 'hatchling.build'
-
 
 [project]
 name = 'cirrocumulus'
-description = 'Interactive visualization tool for large-scale single-cell genomics data'
+description = 'Bring your single-cell data to life'
 readme = 'README.rst'
 authors = [
     { name = 'Joshua Gould', email = 'cirrocumulus@googlegroups.com' },
@@ -15,15 +14,20 @@ urls.Documentation = "https://cirrocumulus.readthedocs.io/"
 
 license = { file = 'LICENSE' }
 dynamic = ['version']
+
 classifiers = [
-    "License :: OSI Approved :: BSD License",
-    'Intended Audience :: Developers',
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
     'Intended Audience :: Science/Research',
-    'Natural Language :: English',
-    'Operating System :: MacOS :: MacOS X',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX :: Linux',
-    'Programming Language :: Python :: 3',
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: PyPy",
     'Topic :: Scientific/Engineering :: Bio-Informatics',
     'Topic :: Scientific/Engineering :: Visualization'
 ]
@@ -51,6 +55,22 @@ test = [
     'mongomock',
 ]
 dev = ['pre-commit', 'isort', 'black']
+
+[tool.hatch.build.force-include]
+"build" = "cirrocumulus/client"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/docs",
+    "/test-data",
+    "/e2e",
+    "/src",
+    "/Dockerfile",
+    "tests"
+]
+
+[tool.hatch.build.targets.wheel]
 
 [tool.hatch.version]
 source = 'vcs'
