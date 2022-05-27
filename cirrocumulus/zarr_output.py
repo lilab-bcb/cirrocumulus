@@ -1,7 +1,7 @@
-import pandas._libs.json as ujson
 import zarr
+import pandas._libs.json as ujson
 
-from cirrocumulus.anndata_util import get_pegasus_marker_keys, ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, get_pegasus_marker_keys
 from cirrocumulus.anndata_zarr import write_attribute
 
 
@@ -9,18 +9,18 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     module_dataset = None
     if dataset.uns.get(ADATA_MODULE_UNS_KEY) is not None:
         module_dataset = dataset.uns[ADATA_MODULE_UNS_KEY]
-        module_dataset.var.index.name = 'id'
+        module_dataset.var.index.name = "id"
 
-    dataset.obs.index.name = 'id'
-    dataset.var.index.name = 'id'
+    dataset.obs.index.name = "id"
+    dataset.var.index.name = "id"
     dataset.strings_to_categoricals()
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
 
-    dataset.uns['cirro-schema'] = ujson.dumps(schema, double_precision=2, orient='values')
-    group = zarr.open_group(filesystem.get_mapper(output_directory), mode='a')
+    dataset.uns["cirro-schema"] = ujson.dumps(schema, double_precision=2, orient="values")
+    group = zarr.open_group(filesystem.get_mapper(output_directory), mode="a")
 
-    if whitelist is None or 'X' in whitelist:
+    if whitelist is None or "X" in whitelist:
         write_attribute(group, "X", dataset.X)
         # if scipy.sparse.issparse(dataset.X):
         #     write_csc(group, 'X', dataset.X)
@@ -29,16 +29,16 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
         if module_dataset is not None:
             write_attribute(group, "uns/module/X", module_dataset.X)
             write_attribute(group, "uns/module/var", module_dataset.var)
-    if whitelist is None or 'obs' in whitelist:
+    if whitelist is None or "obs" in whitelist:
         write_attribute(group, "obs", dataset.obs)
-    if whitelist is None or 'obsm' in whitelist:
+    if whitelist is None or "obsm" in whitelist:
         write_attribute(group, "obsm", dataset.obsm)
 
     pg_marker_keys = get_pegasus_marker_keys(dataset)
     for key in list(dataset.varm.keys()):
         if key not in pg_marker_keys:
             del dataset.varm[key]
-    write_attribute(group, 'varm', dataset.varm)
+    write_attribute(group, "varm", dataset.varm)
     write_attribute(group, "var", dataset.var)
     # uns_whitelist = set(['module', 'cirro-schema'])
     # keep DE results and colors

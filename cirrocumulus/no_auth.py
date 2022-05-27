@@ -1,4 +1,3 @@
 class NoAuth:
-
     def auth(self):
-        return {'email': ''}
+        return {"email": ""}

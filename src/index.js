@@ -11,33 +11,41 @@ import mixpanel from 'mixpanel-browser';
 
 let useMixPanel = false;
 
-
-const logger = store => next => action => {
-    if (action.type === SET_SERVER_INFO) {
-        if (action.payload.mixpanel) {
-            mixpanel.init(action.payload.mixpanel);
-            useMixPanel = true;
-        }
+const logger = (store) => (next) => (action) => {
+  if (action.type === SET_SERVER_INFO) {
+    if (action.payload.mixpanel) {
+      mixpanel.init(action.payload.mixpanel);
+      useMixPanel = true;
     }
-    if (useMixPanel) {
-        if (action.type === SET_DATASET) {
-            mixpanel.track('Open Dataset', {name: action.payload.name, id: action.payload.id});
-        } else if (action.type === SET_EMAIL) {
-            mixpanel.identify(action.payload);
-        }
+  }
+  if (useMixPanel) {
+    if (action.type === SET_DATASET) {
+      mixpanel.track('Open Dataset', {
+        name: action.payload.name,
+        id: action.payload.id,
+      });
+    } else if (action.type === SET_EMAIL) {
+      mixpanel.identify(action.payload);
     }
-    return next(action);
+  }
+  return next(action);
 };
-const store = createStore(rootReducer, applyMiddleware(thunkMiddleware, logger));
+const store = createStore(
+  rootReducer,
+  applyMiddleware(thunkMiddleware, logger)
+);
 
 function main() {
-    render(<Provider store={store}>
-        {/*<React.StrictMode>*/}
+  render(
+    <Provider store={store}>
+      {/*<React.StrictMode>*/}
 
-        <AppWrapper/>
+      <AppWrapper />
 
-        {/*</React.StrictMode>*/}
-    </Provider>, document.getElementById('root'));
+      {/*</React.StrictMode>*/}
+    </Provider>,
+    document.getElementById('root')
+  );
 }
 
 store.dispatch(initAuth());

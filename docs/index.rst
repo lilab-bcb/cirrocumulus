@@ -10,5 +10,3 @@
    contact
    source
    release_notes
-
-

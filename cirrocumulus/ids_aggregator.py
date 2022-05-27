@@ -1,4 +1,3 @@
 class IdsAggregator:
-
     def execute(self, adata):
-        return adata.obs['index']
+        return adata.obs["index"]

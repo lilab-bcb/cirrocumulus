@@ -1,12 +1,19 @@
-import anndata as ad
 import h5py
+import zarr
 import numpy as np
 import pytest
-import zarr
-from anndata.tests.helpers import assert_equal, subset_func, slice_subset, array_int_subset, array_bool_subset
+import anndata as ad
+from anndata.tests.helpers import (
+    array_bool_subset,
+    array_int_subset,
+    assert_equal,
+    slice_subset,
+    subset_func,
+)
 from scipy import sparse
 
 from cirrocumulus.sparse_dataset import SparseDataset
+
 
 subset_func2 = subset_func
 

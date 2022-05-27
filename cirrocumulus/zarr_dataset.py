@@ -7,25 +7,24 @@ from cirrocumulus.anndata_util import dataset_schema
 
 
 class ZarrDataset(AbstractBackedDataset):
-
     def __init__(self):
         super().__init__()
 
     def get_suffixes(self):
-        return ['zarr']
+        return ["zarr"]
 
     def is_group(self, node):
         return isinstance(node, zarr.hierarchy.Group)
 
     def open_group(self, filesystem, path):
-        return zarr.open_group(filesystem.get_mapper(path), mode='r')
+        return zarr.open_group(filesystem.get_mapper(path), mode="r")
 
     def slice_dense_array(self, X, indices):
         return X.get_orthogonal_selection((slice(None), indices))
 
     def get_schema(self, filesystem, path):
-        g = zarr.open_group(filesystem.get_mapper(path), mode='r')
-        if 'cirro-schema' in g['uns']:
-            s = str(g['uns']['cirro-schema'][()])
+        g = zarr.open_group(filesystem.get_mapper(path), mode="r")
+        if "cirro-schema" in g["uns"]:
+            s = str(g["uns"]["cirro-schema"][()])
             return json.loads(s)
         return dataset_schema(g, n_features=0)

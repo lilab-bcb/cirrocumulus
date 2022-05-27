@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+      # - id: double-quote-string-fixer  # for single quotes: uncomment and add black config “skip-string-normalization”
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+  - repo: https://github.com/myint/docformatter
+    rev: v1.4
+    hooks:
+      - id: docformatter
+        args: ["--wrap-summaries=100", "--wrap-descriptions=100"]
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+  - repo: https://github.com/csachs/pyproject-flake8
+    rev: v0.0.1a4
+    hooks:
+      - id: pyproject-flake8
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.6.2
+    hooks:
+      - id: prettier
+        types_or: [css, javascript]

@@ -7,32 +7,30 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         python-version: [ 3.8, 3.9]
         node-version: [ 16.x ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install graphicsmagick libxss1
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          python -m pip install .
-          pip install -r requirements-test.txt
+          pip install --upgrade pip
           yarn global add typescript
           yarn install
           yarn build
+          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test]
         env:
           CI: false
       - name: Test with pytest

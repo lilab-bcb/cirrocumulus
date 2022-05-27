@@ -4,12 +4,11 @@ flask==2.1.2
 flask-compress==1.12
 fsspec==2022.5.0
 gunicorn==20.1.0
-h5py==3.6.0
+h5py==3.7.0
 loompy==3.0.7
-numpy==1.22.3
+numpy==1.22.4
 pandas==1.4.2
 pyarrow==8.0.0
 pymongo==4.1.1
 scipy==1.8.1
 zarr==2.11.3
-

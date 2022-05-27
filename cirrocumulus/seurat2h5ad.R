@@ -74,5 +74,3 @@ if (method == 'reticulate') {
   Convert(h5_seurat_path, dest = "h5ad")
   unlink(h5_seurat_path)
 }
-
-

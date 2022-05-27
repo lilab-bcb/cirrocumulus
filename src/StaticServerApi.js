@@ -1,21 +1,19 @@
 export class StaticServerApi {
+  getDatasetsPromise() {
+    return fetch('/datasets.json').then((response) => {
+      const results = response.json();
+      for (let i = 0; i < results.length; i++) {
+        results[i].access = 'direct';
+      }
+      return results;
+    });
+  }
 
-    getDatasetsPromise() {
-        return fetch('/datasets.json')
-            .then(response => {
-                const results = response.json();
-                for (let i = 0; i < results.length; i++) {
-                    results[i].access = 'direct';
-                }
-                return results;
-            });
-    }
+  getCategoryNamesPromise() {
+    return Promise.resolve([]);
+  }
 
-    getCategoryNamesPromise() {
-        return Promise.resolve([]);
-    }
-
-    getViewsPromise() {
-        return Promise.resolve([]);
-    }
+  getViewsPromise() {
+    return Promise.resolve([]);
+  }
 }

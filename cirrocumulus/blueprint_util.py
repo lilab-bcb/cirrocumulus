@@ -15,11 +15,11 @@ def get_auth():
 
 remapped_urls = dict()
 if os.environ.get(CIRRO_MOUNT) is not None:
-    tokens = os.environ.get(CIRRO_MOUNT).split(',')
+    tokens = os.environ.get(CIRRO_MOUNT).split(",")
     for token in tokens:
-        index = token.rfind(':')
+        index = token.rfind(":")
         bucket = token[:index]
-        local_path = token[index + 1:]
+        local_path = token[index + 1 :]
         remapped_urls[bucket] = local_path
 
 

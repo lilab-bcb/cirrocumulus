@@ -1,40 +1,40 @@
 export class Vector {
-    constructor(name, values) {
-        this.name = name;
-        this.values = values;
-    }
+  constructor(name, values) {
+    this.name = name;
+    this.values = values;
+  }
 
-    getName() {
-        return this.name;
-    }
+  getName() {
+    return this.name;
+  }
 
-    size() {
-        return this.values.length;
-    }
+  size() {
+    return this.values.length;
+  }
 
-    get(i) {
-        return this.values[i];
-    }
+  get(i) {
+    return this.values[i];
+  }
 
-    asArray() {
-        return this.values;
-    }
+  asArray() {
+    return this.values;
+  }
 
-    isSparse() {
-        return false;
-    }
+  isSparse() {
+    return false;
+  }
 
-    [Symbol.iterator]() {
-        let index = 0;
-        const size = this.values.length;
-        return {
-            next: () => {
-                if (index < size) {
-                    return {value: this.values[index++], done: false};
-                } else {
-                    return {done: true};
-                }
-            }
-        };
-    }
+  [Symbol.iterator]() {
+    let index = 0;
+    const size = this.values.length;
+    return {
+      next: () => {
+        if (index < size) {
+          return {value: this.values[index++], done: false};
+        } else {
+          return {done: true};
+        }
+      },
+    };
+  }
 }

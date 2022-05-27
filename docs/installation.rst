@@ -220,25 +220,18 @@ Developer Instructions
 
     cd cirrocumulus
 
-- Insure pip is up to date::
+
+- Install::
 
     pip install --upgrade pip
-
-- Install cirrocumulus Python package in editable mode::
-
-    pip install -e .
+    pip install -e .[dev,test]
+    pre-commit install
+    yarn global add typescript
+    yarn install
 
 - Install additional optional Python dependencies::
 
     pip install s3fs
-
-- Install typescript::
-
-    yarn global add typescript
-
-- Install JavaScript dependencies::
-
-    yarn install
 
 - Create an example h5ad file in ./data/pbmc3k_processed.h5ad::
 

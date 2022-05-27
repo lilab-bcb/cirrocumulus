@@ -162,6 +162,3 @@ The app bar shows the number of cells in your dataset and the number of selected
 lets you switch between different tabs.
 
 Share your visualization state with your collaborators by selecting "Copy Link" from the "More" menu.
-
-
-
