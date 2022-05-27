@@ -46,8 +46,8 @@
     "redux": "^4.2.0",
     "redux-thunk": "^2.4.1",
     "simplify-js": "^1.2.4",
-    "three": "^0.140.2",
-    "typescript": "^4.6.4",
+    "three": "^0.141.0",
+    "typescript": "^4.7.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
