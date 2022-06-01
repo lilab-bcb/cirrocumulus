@@ -21,7 +21,7 @@
 
 project = "Cirrocumulus"
 copyright = (
-    "2021 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
+    "2022 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
 )
 author = "Joshua Gould, Bo Li, and Yiming Yang"
 
