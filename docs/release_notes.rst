@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.33 `June 10, 2022`
+    * Fixed error computing differential expression results using scanpy in  `cirro prepare_data` with older h5ad files
+    * Raise error in `cirro prepare_data` when specified group not found in dataset
+
 - 1.1.32 `May 20, 2022`
     * Fix error saving spatial datasets in `cirro prepare_data`
     * Updated dot plot tooltips
