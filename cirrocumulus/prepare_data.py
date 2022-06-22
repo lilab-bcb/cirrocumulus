@@ -133,6 +133,7 @@ class PrepareData:
                     if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
                         groups.append(field)
                         break
+
             self.groups = groups
         if self.groups is not None and len(self.groups) > 0:
             use_pegasus = False
@@ -148,11 +149,16 @@ class PrepareData:
                     import scanpy as sc
 
                     use_scanpy = True
+                    if "log1p" not in dataset.uns:
+                        dataset.uns["log1p"] = {}
+                    if "base" not in dataset.uns["log1p"]:
+                        dataset.uns["log1p"]["base"] = None
                 except ModuleNotFoundError:
                     pass
             if not use_pegasus and not use_scanpy:
                 raise ValueError("Please install pegasuspy or scanpy to compute markers")
             first_time = True
+
             for group in self.groups:
                 field = group
                 if group not in dataset.obs:  # test if multiple comma separated fields
@@ -172,7 +178,6 @@ class PrepareData:
                     if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
                         dataset.obs[field] = dataset.obs[field].astype(str).astype("category")
                     if len(dataset.obs[field].cat.categories) > 1:
-
                         key_added = "rank_genes_" + str(field)
                         value_counts = dataset.obs[field].value_counts()
                         filtered_value_counts = value_counts[value_counts >= 3]
@@ -201,7 +206,7 @@ class PrepareData:
                                     groups=filtered_value_counts.index.to_list(),
                                 )
                 else:
-                    logger.info(group + " not found in " + ", ".join(dataset.obs.columns))
+                    raise ValueError(group + " not found in " + ", ".join(dataset.obs.columns))
         schema = self.get_schema()
         schema["format"] = output_format
         if output_format in ["parquet", "zarr"]:
