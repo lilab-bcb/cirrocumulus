@@ -10,14 +10,12 @@ from cirrocumulus.envir import (
     CIRRO_JOB_RESULTS,
     CIRRO_JOB_TYPE,
 )
-from cirrocumulus.io_util import SPATIAL_HELP, add_spatial, filter_markers, \
-    get_markers
+from cirrocumulus.io_util import SPATIAL_HELP, add_spatial, filter_markers, get_markers
 from cirrocumulus.local_db_api import LocalDbAPI
 from cirrocumulus.util import get_fs
 
 
-def configure_app(app, list_of_dataset_paths, spatial_directories,
-                  marker_paths):
+def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths):
     from cirrocumulus.api import dataset_api
     from cirrocumulus.no_auth import NoAuth
 
@@ -44,15 +42,11 @@ def configure_app(app, list_of_dataset_paths, spatial_directories,
         if len(dataset_paths) > 1:
             datasets = []
             for i in range(len(dataset_paths)):
-                dataset = anndata_dataset.get_data(get_fs(dataset_paths[i]),
-                                                   dataset_paths[i])
+                dataset = anndata_dataset.get_data(get_fs(dataset_paths[i]), dataset_paths[i])
                 if "group" not in dataset.var:
-                    dataset.var["group"] = dataset.uns.get("name",
-                                                           "dataset {}".format(
-                                                               i + 1))
+                    dataset.var["group"] = dataset.uns.get("name", "dataset {}".format(i + 1))
                 datasets.append(dataset)
-            adata = anndata.concat(datasets, axis=1, label="group",
-                                   merge="unique")
+            adata = anndata.concat(datasets, axis=1, label="group", merge="unique")
             dataset.obsm = datasets[0].obsm
             adata.var.index = adata.var.index.str.replace("/", "_")
             adata.var_names_make_unique()
@@ -65,11 +59,9 @@ def configure_app(app, list_of_dataset_paths, spatial_directories,
         for i in range(len(spatial_directories)):
             spatial_directory = spatial_directories[i]
             if spatial_directory != "":
-                adata = anndata_dataset.get_data(get_fs(dataset_ids[i]),
-                                                 dataset_ids[i])
+                adata = anndata_dataset.get_data(get_fs(dataset_ids[i]), dataset_ids[i])
                 if not add_spatial(adata, spatial_directory):
-                    print(
-                        "No spatial data found in {}".format(spatial_directory))
+                    print("No spatial data found in {}".format(spatial_directory))
 
     if marker_paths is not None and len(marker_paths) > 0:
         markers = get_markers(marker_paths)
@@ -108,7 +100,7 @@ def main(argsv):
     parser.add_argument(
         "dataset",
         help="Path to dataset in h5ad, loom, Seurat, TileDB, zarr, or STAR-Fusion format. Separate multiple datasets with "
-             "a comma instead of a space in order to join datasets by cell id",
+        "a comma instead of a space in order to join datasets by cell id",
         nargs="+",
     )
     parser.add_argument("--spatial", help=SPATIAL_HELP, nargs="*")
@@ -123,15 +115,12 @@ def main(argsv):
 
     parser.add_argument("--port", help="Server port", default=5000, type=int)
     parser.add_argument(
-        "--no-open", dest="no_open", help="Do not open your web browser",
-        action="store_true"
+        "--no-open", dest="no_open", help="Do not open your web browser", action="store_true"
     )
     parser.add_argument(
-        "--results",
-        help="URL to save user computed results (e.g. differential expression)"
+        "--results", help="URL to save user computed results (e.g. differential expression)"
     )
-    parser.add_argument("--ontology",
-                        help="Path to ontology in OBO format for annotation")
+    parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
     args = parser.parse_args(argsv)
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results
@@ -139,8 +128,7 @@ def main(argsv):
         os.environ[CIRRO_JOB_RESULTS] = os.path.join(
             os.path.dirname(args.dataset[0].rstrip("/")), "results"
         )
-    get_fs(os.environ[CIRRO_JOB_RESULTS]).makedirs(
-        os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
+    get_fs(os.environ[CIRRO_JOB_RESULTS]).makedirs(os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
     if args.ontology is not None:
         os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     app = create_app()
@@ -161,6 +149,7 @@ def main(argsv):
             pass
         webbrowser.open(url)
     from flask import cli
+
     cli.show_server_banner = lambda *_: None  # suppress warning message
     app.run(host=args.host, port=args.port, debug=False)
 

@@ -32,7 +32,7 @@ import {
   TRACE_TYPE_IMAGE,
   TRACE_TYPE_META_IMAGE,
   TRACE_TYPE_SCATTER,
-  updateTraceColors
+  updateTraceColors,
 } from '../util';
 import {updateJob} from '../DotPlotJobResultsPanel';
 import {NoAuth} from '../NoAuth';
@@ -46,24 +46,35 @@ export const DEFAULT_MARKER_OPACITY = 1;
 export const DEFAULT_UNSELECTED_MARKER_OPACITY = 0.1;
 export const DEFAULT_INTERPOLATORS = {};
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.X] = {
-  name: 'Viridis', reversed: false, value: getInterpolator('Viridis')
+  name: 'Viridis',
+  reversed: false,
+  value: getInterpolator('Viridis'),
 };
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.COUNT] = {
-  name: 'Greys', reversed: false, value: getInterpolator('Greys')
+  name: 'Greys',
+  reversed: false,
+  value: getInterpolator('Greys'),
 };
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.OBS] = {
-  name: 'Inferno', reversed: false, value: getInterpolator('Inferno')
+  name: 'Inferno',
+  reversed: false,
+  value: getInterpolator('Inferno'),
 };
 DEFAULT_INTERPOLATORS[FEATURE_TYPE.MODULE] = {
-  name: 'RdBu', reversed: true, value: getInterpolator('RdBu')
+  name: 'RdBu',
+  reversed: true,
+  value: getInterpolator('RdBu'),
 };
 
 export const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR = 'Reds';
-export const DEFAULT_DRAG_MODE = process.env.REACT_APP_DEFAULT_DRAG_MODE || 'pan';
+export const DEFAULT_DRAG_MODE =
+  process.env.REACT_APP_DEFAULT_DRAG_MODE || 'pan';
 
 export const DEFAULT_SHOW_AXIS = true;
 export const DEFAULT_SHOW_FOG = false;
-export const DEFAULT_DARK_MODE = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
+export const DEFAULT_DARK_MODE = window.matchMedia
+  ? window.matchMedia('(prefers-color-scheme: dark)').matches
+  : false;
 export const DEFAULT_LABEL_FONT_SIZE = 14;
 export const DEFAULT_LABEL_STROKE_WIDTH = 4;
 
@@ -71,7 +82,8 @@ export const SET_DRAG_DIVIDER = 'SET_DRAG_DIVIDER';
 export const SET_WINDOW_SIZE = 'SET_WINDOW_SIZE';
 export const SET_DRAWER_OPEN = 'SET_DRAWER_OPEN';
 export const SET_EMBEDDING_LABELS = 'SET_EMBEDDING_LABELS';
-export const SET_DISTRIBUTION_PLOT_INTERPOLATOR = 'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
+export const SET_DISTRIBUTION_PLOT_INTERPOLATOR =
+  'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
 export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
@@ -156,7 +168,7 @@ export function getTraceKey(trace) {
 }
 
 function getUser() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     getState()
       .serverInfo.api.getUserPromise()
       .then((user) => dispatch(setUser(user)));
@@ -164,7 +176,7 @@ function getUser() {
 }
 
 export function initAuth() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch(_setLoadingApp({loading: true, progress: 0}));
     const startTime = new Date().getTime();
     const approximateColdBootTime = 10;
@@ -198,13 +210,18 @@ export function initAuth() {
       let pairs = urlOptions.split('&');
       pairs.forEach((pair) => {
         let keyVal = pair.split('=');
-        if (keyVal.length === 2 && (keyVal[0] === 'url' || keyVal[0] === 'id')) {
+        if (
+          keyVal.length === 2 &&
+          (keyVal[0] === 'url' || keyVal[0] === 'id')
+        ) {
           // load a dataset by URL or id
           externalDatasetId = keyVal[1];
         }
       });
     }
-    const getServerInfo = fetch(API + '/server').then((result) => result.json());
+    const getServerInfo = fetch(API + '/server').then((result) =>
+      result.json()
+    );
     return getServerInfo
       .then((serverInfo) => {
         serverInfo.api = new RestServerApi();
@@ -219,10 +236,17 @@ export function initAuth() {
         }
         serverInfo.capabilities = capabilities;
         dispatch(setServerInfo(serverInfo));
-        if (serverInfo.auth.clientId === '' || serverInfo.auth.clientId == null) {
+        if (
+          serverInfo.auth.clientId === '' ||
+          serverInfo.auth.clientId == null
+        ) {
           // no login required
           dispatch(_setLoadingApp({loading: false}));
-          dispatch(_setEmail(capabilities.has(SERVER_CAPABILITY_ADD_DATASET) ? '' : null));
+          dispatch(
+            _setEmail(
+              capabilities.has(SERVER_CAPABILITY_ADD_DATASET) ? '' : null
+            )
+          );
           if (capabilities.has(SERVER_CAPABILITY_ADD_DATASET)) {
             dispatch(setUser({importer: true}));
           }
@@ -231,9 +255,16 @@ export function initAuth() {
               dispatch(_loadSavedView());
             });
           } else {
-            dispatch(_setDatasetChoices([{
-              id: externalDatasetId, url: externalDatasetId, name: externalDatasetId, description: ''
-            }]));
+            dispatch(
+              _setDatasetChoices([
+                {
+                  id: externalDatasetId,
+                  url: externalDatasetId,
+                  name: externalDatasetId,
+                  description: '',
+                },
+              ])
+            );
             dispatch(_loadSavedView());
           }
         } else {
@@ -245,7 +276,9 @@ export function initAuth() {
           } else {
             throw new Error('Unknown provider ' + provider);
           }
-          console.log((new Date().getTime() - startTime) / 1000 + ' startup time');
+          console.log(
+            (new Date().getTime() - startTime) / 1000 + ' startup time'
+          );
           auth.init(serverInfo.auth).then(() => {
             dispatch(_setLoadingApp({loading: false, progress: 0}));
             dispatch(initLogin(true));
@@ -261,7 +294,7 @@ export function initAuth() {
 }
 
 export function logout() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     auth.signOut().then(() => {
       dispatch({type: SET_EMAIL, payload: null});
       dispatch(_setDataset(null));
@@ -270,7 +303,7 @@ export function logout() {
 }
 
 export function login() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     auth.signIn().then((e) => {
       dispatch(initLogin());
     });
@@ -278,13 +311,15 @@ export function login() {
 }
 
 export function openLink(id, loadDataset = false) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Open view'};
     dispatch(addTask(task));
     getState()
       .serverInfo.api.getViewPromise(id)
       .then((result) => {
-        const savedView = isString(result.value) ? JSON.parse(result.value) : result.value;
+        const savedView = isString(result.value)
+          ? JSON.parse(result.value)
+          : result.value;
         savedView.dataset = result.dataset_id;
         dispatch(restoreSavedView(savedView));
       })
@@ -292,7 +327,11 @@ export function openLink(id, loadDataset = false) {
         dispatch(removeTask(task));
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to retrieve link. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to retrieve link. Please try again.'
+        );
       });
   };
 }
@@ -303,7 +342,7 @@ export function openLink(id, loadDataset = false) {
  * @returns {(function(*=, *): void)|*}
  */
 export function saveLink(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const state = getState();
     const value = getDatasetStateJson(state);
     payload.value = value;
@@ -331,7 +370,7 @@ export function saveLink(payload) {
 }
 
 export function deleteLink(id) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Delete link'};
     dispatch(addTask(task));
     getState()
@@ -356,14 +395,17 @@ export function deleteLink(id) {
 }
 
 export function submitJob(jobData) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let jobId;
     let timeout = 5 * 1000; // TODO
     function getJobStatus() {
       getState()
         .dataset.api.getJobStatus(jobId)
         .then((result) => {
-          const jobResult = find(getState().jobResults, (item) => item.id === jobId);
+          const jobResult = find(
+            getState().jobResults,
+            (item) => item.id === jobId
+          );
           if (jobResult == null) {
             // job was deleted
             return;
@@ -376,7 +418,10 @@ export function submitJob(jobData) {
             dispatch(setJobResults(getState().jobResults.slice()));
             fetchJobStatus = false;
           } else if (result.status === 'error') {
-            handleError(dispatch, new CustomError('Unable to complete job. Please try again.'));
+            handleError(
+              dispatch,
+              new CustomError('Unable to complete job. Please try again.')
+            );
             fetchJobStatus = false;
           } else if (statusUpdated) {
             // force repaint
@@ -407,8 +452,7 @@ export function submitJob(jobData) {
         dispatch(setJobResults(getState().jobResults.slice()));
         window.setTimeout(getJobStatus, timeout);
       })
-      .finally(() => {
-      })
+      .finally(() => {})
       .catch((err) => {
         handleError(dispatch, err, 'Unable to submit job. Please try again.');
       });
@@ -416,7 +460,7 @@ export function submitJob(jobData) {
 }
 
 export function deleteFeatureSet(id) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Delete set'};
     dispatch(addTask(task));
     getState()
@@ -447,13 +491,16 @@ export function deleteFeatureSet(id) {
 }
 
 export function saveFeatureSet(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const state = getState();
     const features = state.searchTokens
       .filter((item) => item.type === FEATURE_TYPE.X)
       .map((item) => item.id);
     const requestBody = {
-      ds_id: state.dataset.id, name: payload.name, features: features, category: payload.category
+      ds_id: state.dataset.id,
+      name: payload.name,
+      features: features,
+      category: payload.category,
     };
     const task = {name: 'Save feature set'};
     dispatch(addTask(task));
@@ -462,7 +509,10 @@ export function saveFeatureSet(payload) {
       .then((result) => {
         let markers = getState().markers;
         markers.push({
-          category: payload.category, name: payload.name, features: features, id: result.id
+          category: payload.category,
+          name: payload.name,
+          features: features,
+          id: result.id,
         });
         dispatch(setMarkers(markers.slice()));
         dispatch(setMessage('Set saved'));
@@ -478,7 +528,7 @@ export function saveFeatureSet(payload) {
 }
 
 export function removeDatasetFilter(filterKey) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     if (filterKey == null) {
       // clear all
       dispatch(setDatasetFilter({}));
@@ -510,7 +560,11 @@ function getDatasetFilterDependencies(datasetFilter) {
     } else if (filterObject.operation === 'in') {
       features.add(key);
     } else {
-      if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
+      if (
+        filterObject.operation !== '' &&
+        !isNaN(filterObject.value) &&
+        filterObject.value != null
+      ) {
         features.add(key);
       }
     }
@@ -527,7 +581,12 @@ export function getDatasetFilterNames(datasetFilter) {
       isBrushing = true;
     } else if (value.operation === 'in') {
       names.push(key);
-    } else if (value.operation != null && value.operation !== '' && !isNaN(value.value) && value.value != null) {
+    } else if (
+      value.operation != null &&
+      value.operation !== '' &&
+      !isNaN(value.value) &&
+      value.value != null
+    ) {
       names.push(key);
     }
   }
@@ -561,7 +620,12 @@ export function getDatasetFilterArray(datasetFilter) {
     }
     if (value.operation === 'in') {
       f = [key, value.operation, value.value];
-    } else if (value.operation != null && value.operation !== '' && !isNaN(value.value) && value.value != null) {
+    } else if (
+      value.operation != null &&
+      value.operation !== '' &&
+      !isNaN(value.value) &&
+      value.value != null
+    ) {
       f = [key, value.operation, value.value];
     }
     if (f != null) {
@@ -572,10 +636,18 @@ export function getDatasetFilterArray(datasetFilter) {
 }
 
 function getFilterJson(state) {
-  return datasetFilterToJson(state.dataset, state.datasetFilter, state.combineDatasetFilters);
+  return datasetFilterToJson(
+    state.dataset,
+    state.datasetFilter,
+    state.combineDatasetFilters
+  );
 }
 
-export function datasetFilterToJson(dataset, datasetFilter, combineDatasetFilters) {
+export function datasetFilterToJson(
+  dataset,
+  datasetFilter,
+  combineDatasetFilters
+) {
   let filters = getDatasetFilterArray(datasetFilter);
   if (filters.length > 0) {
     const obs = dataset.obs;
@@ -585,7 +657,10 @@ export function datasetFilterToJson(dataset, datasetFilter, combineDatasetFilter
       const filter = filters[i];
       if (filter[0] === '__index') {
         filter[2] = Array.from(filter[2]); // convert Set to array
-      } else if (obsCat.indexOf(filter[0]) !== -1 || obs.indexOf(filter[0]) !== -1) {
+      } else if (
+        obsCat.indexOf(filter[0]) !== -1 ||
+        obs.indexOf(filter[0]) !== -1
+      ) {
         filter[0] = 'obs/' + filter[0];
       }
     }
@@ -594,18 +669,21 @@ export function datasetFilterToJson(dataset, datasetFilter, combineDatasetFilter
 }
 
 export function downloadSelectedIds() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Download ids'};
     dispatch(addTask(task));
     const state = getState();
     let filter = getFilterJson(state, true);
     state.dataset.api
-      .getSelectedIdsPromise({
-        filter: filter
-      }, state.cachedData)
+      .getSelectedIdsPromise(
+        {
+          filter: filter,
+        },
+        state.cachedData
+      )
       .then((result) => {
         const blob = new Blob([result.ids.join('\n')], {
-          type: 'text/plain;charset=utf-8'
+          type: 'text/plain;charset=utf-8',
         });
         saveAs(blob, 'selection.txt');
       })
@@ -619,7 +697,7 @@ export function downloadSelectedIds() {
 }
 
 export function exportDatasetFilters() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Export Filters'};
     dispatch(addTask(task));
     getState()
@@ -658,7 +736,7 @@ function _setCombineDatasetFilters(payload) {
 }
 
 export function setCombineDatasetFilters(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch(_setCombineDatasetFilters(payload));
     dispatch(handleFilterUpdated());
   };
@@ -705,7 +783,7 @@ function setFeatureSummary(payload) {
 }
 
 function handleFilterUpdated() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Update Filter'};
     dispatch(addTask(task));
     // whenever filter is updated, we need to get selection statistics
@@ -713,20 +791,31 @@ function handleFilterUpdated() {
     const searchTokens = state.searchTokens;
     let filter = getFilterJson(state);
     const groupedSearchTokens = groupBy(searchTokens, 'type');
-    addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (searchTokens[FEATURE_TYPE.X] || []).map((item) => item.id));
+    addFeatureSetsToX(
+      getFeatureSets(
+        state.markers,
+        groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []
+      ),
+      (searchTokens[FEATURE_TYPE.X] || []).map((item) => item.id)
+    );
 
     const measures = [];
     for (const key in groupedSearchTokens) {
       if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
         const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
-        groupedSearchTokens[key].forEach((item) => measures.push(prefix + item.id));
+        groupedSearchTokens[key].forEach((item) =>
+          measures.push(prefix + item.id)
+        );
       }
     }
 
     let q = {
       selection: {
-        measures: measures, dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map((item) => item.id)
-      }
+        measures: measures,
+        dimensions: (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(
+          (item) => item.id
+        ),
+      },
     };
 
     if (filter) {
@@ -758,7 +847,7 @@ function handleFilterUpdated() {
 }
 
 export function handleBrushFilterUpdated(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const name = payload.name; // full basis name
     const value = payload.value; // value has basis and indices
     const clear = payload.clear;
@@ -786,7 +875,10 @@ export function handleBrushFilterUpdated(payload) {
       let priorFilters = datasetFilter[name];
       let isToggleRegion = false;
       if (priorFilters != null) {
-        const priorIndex = value.id != null ? findIndex(priorFilters, (f) => f.id === value.id) : -1;
+        const priorIndex =
+          value.id != null
+            ? findIndex(priorFilters, (f) => f.id === value.id)
+            : -1;
         if (priorIndex !== -1) {
           // toggle region
           isToggleRegion = true;
@@ -801,7 +893,9 @@ export function handleBrushFilterUpdated(payload) {
           datasetFilter[name] = priorFilters;
         }
         priorFilters.push({
-          basis: value.basis, indices: indices, id: value.id
+          basis: value.basis,
+          indices: indices,
+          id: value.id,
         });
       }
     }
@@ -813,7 +907,7 @@ export function handleBrushFilterUpdated(payload) {
 }
 
 export function handleMeasureFilterUpdated(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const name = payload.name;
     const operation = payload.operation;
     const value = payload.value;
@@ -828,10 +922,13 @@ export function handleMeasureFilterUpdated(payload) {
     }
     if (update) {
       if (value != null) {
-        update = !isNaN(value) ? value !== filter.value : isNaN(value) !== isNaN(filter.value);
+        update = !isNaN(value)
+          ? value !== filter.value
+          : isNaN(value) !== isNaN(filter.value);
       }
       if (operation != null) {
-        update = update || (operation !== filter.operation && !isNaN(filter.value));
+        update =
+          update || (operation !== filter.operation && !isNaN(filter.value));
       }
     }
     if (operation != null) {
@@ -849,7 +946,7 @@ export function handleMeasureFilterUpdated(payload) {
 }
 
 export function handleDimensionFilterUpdated(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let name = payload.name;
     let newValue = payload.value;
     let shiftKey = payload.shiftKey;
@@ -871,7 +968,9 @@ export function handleDimensionFilterUpdated(payload) {
 
     if (shiftKey && categoricalFilter.value.length > 0) {
       // add last click to current
-      let lastIndex = categories.indexOf(categoricalFilter.value[categoricalFilter.value.length - 1]);
+      let lastIndex = categories.indexOf(
+        categoricalFilter.value[categoricalFilter.value.length - 1]
+      );
       let currentIndex = categories.indexOf(newValue);
       // put clicked category at end of array
       if (currentIndex > lastIndex) {
@@ -929,9 +1028,13 @@ export function _handleColorChange(payload) {
 }
 
 export function handleColorChange(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const value = Object.assign({id: getState().dataset.id}, payload);
-    if (getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES)) {
+    if (
+      getState().serverInfo.capabilities.has(
+        SERVER_CAPABILITY_RENAME_CATEGORIES
+      )
+    ) {
       getState()
         .serverInfo.api.setCategoryNamePromise(value)
         .then(() => {
@@ -945,9 +1048,13 @@ export function handleColorChange(payload) {
 }
 
 export function handleCategoricalNameChange(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const value = Object.assign({id: getState().dataset.id}, payload);
-    if (getState().serverInfo.capabilities.has(SERVER_CAPABILITY_RENAME_CATEGORIES)) {
+    if (
+      getState().serverInfo.capabilities.has(
+        SERVER_CAPABILITY_RENAME_CATEGORIES
+      )
+    ) {
       getState()
         .serverInfo.api.setCategoryNamePromise(value)
         .then(() => {
@@ -991,11 +1098,17 @@ function getDefaultDatasetView(dataset) {
   if (embeddingNames.length > 0) {
     let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
     let embeddingName = null;
-    for (let priorityIndex = 0; priorityIndex < embeddingPriorities.length && embeddingName == null; priorityIndex++) {
+    for (
+      let priorityIndex = 0;
+      priorityIndex < embeddingPriorities.length && embeddingName == null;
+      priorityIndex++
+    ) {
       for (let i = 0; i < embeddingNames.length; i++) {
-        if (embeddingNames[i]
-          .toLowerCase()
-          .indexOf(embeddingPriorities[priorityIndex]) !== -1) {
+        if (
+          embeddingNames[i]
+            .toLowerCase()
+            .indexOf(embeddingPriorities[priorityIndex]) !== -1
+        ) {
           embeddingName = embeddingNames[i];
           break;
         }
@@ -1005,7 +1118,10 @@ function getDefaultDatasetView(dataset) {
     if (embeddingName == null) {
       embeddingName = embeddingNames[0];
     }
-    selectedEmbedding = dataset.embeddings[dataset.embeddings.map((e) => e.name).indexOf(embeddingName)];
+    selectedEmbedding =
+      dataset.embeddings[
+        dataset.embeddings.map((e) => e.name).indexOf(embeddingName)
+      ];
   }
   if (dataset.markers != null && dataset.markers.length > 0) {
     let category = dataset.markers[0].category;
@@ -1019,12 +1135,26 @@ function getDefaultDatasetView(dataset) {
     }
   }
   if (obsCat == null) {
-    let catPriorities = ['anno', 'cell_type', 'celltype', 'leiden', 'louvain', 'seurat_cluster', 'cluster'];
-    for (let priorityIndex = 0; priorityIndex < catPriorities.length && obsCat == null; priorityIndex++) {
+    let catPriorities = [
+      'anno',
+      'cell_type',
+      'celltype',
+      'leiden',
+      'louvain',
+      'seurat_cluster',
+      'cluster',
+    ];
+    for (
+      let priorityIndex = 0;
+      priorityIndex < catPriorities.length && obsCat == null;
+      priorityIndex++
+    ) {
       for (let i = 0; i < dataset.obsCat.length; i++) {
-        if (dataset.obsCat[i]
-          .toLowerCase()
-          .indexOf(catPriorities[priorityIndex]) !== -1) {
+        if (
+          dataset.obsCat[i]
+            .toLowerCase()
+            .indexOf(catPriorities[priorityIndex]) !== -1
+        ) {
           obsCat = dataset.obsCat[i];
           break;
         }
@@ -1036,7 +1166,7 @@ function getDefaultDatasetView(dataset) {
 }
 
 function loadDefaultDatasetView() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const dataset = getState().dataset;
     const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
     if (obsCat != null) {
@@ -1049,7 +1179,7 @@ function loadDefaultDatasetView() {
 }
 
 function loadDefaultDataset() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     if (getState().dataset == null && getState().datasetChoices.length === 1) {
       dispatch(setDataset(getState().datasetChoices[0].id));
     }
@@ -1057,10 +1187,12 @@ function loadDefaultDataset() {
 }
 
 function restoreSavedView(savedView) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     if (savedView.interpolator != null) {
       for (const key in savedView.interpolator) {
-        savedView.interpolator[key].value = getInterpolator(savedView.interpolator[key].name);
+        savedView.interpolator[key].value = getInterpolator(
+          savedView.interpolator[key].name
+        );
       }
     }
 
@@ -1105,12 +1237,15 @@ function restoreSavedView(savedView) {
           const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
           if (selectedEmbedding) {
             savedView.embeddings = [selectedEmbedding];
-            if ((savedView.q == null || savedView.q.length === 0) && obsCat != null) {
+            if (
+              (savedView.q == null || savedView.q.length === 0) &&
+              obsCat != null
+            ) {
               savedView.q = [{id: obsCat, type: FEATURE_TYPE.OBS_CAT}];
               savedView.activeFeature = {
                 name: obsCat,
                 type: FEATURE_TYPE.OBS_CAT,
-                embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding)
+                embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding),
               };
             }
           }
@@ -1122,16 +1257,27 @@ function restoreSavedView(savedView) {
       .then(() => dispatch(handleFilterUpdated()))
       .then(() => {
         if (savedView.distributionPlotOptions != null) {
-          dispatch(setDistributionPlotOptions(savedView.distributionPlotOptions));
+          dispatch(
+            setDistributionPlotOptions(savedView.distributionPlotOptions)
+          );
         }
         let activeFeature = savedView.activeFeature;
 
-        if (activeFeature == null && savedView.embeddings && savedView.embeddings.length > 0 && savedView.q && savedView.q.length > 0) {
+        if (
+          activeFeature == null &&
+          savedView.embeddings &&
+          savedView.embeddings.length > 0 &&
+          savedView.q &&
+          savedView.q.length > 0
+        ) {
           // pick the 1st search token and 1st embedding
           activeFeature = {
             name: savedView.q[0].id,
             type: savedView.q[0].type,
-            embeddingKey: savedView.q[0].id + '_' + getEmbeddingKey(savedView.embeddings[0])
+            embeddingKey:
+              savedView.q[0].id +
+              '_' +
+              getEmbeddingKey(savedView.embeddings[0]),
           };
         }
         if (activeFeature != null) {
@@ -1153,7 +1299,7 @@ function restoreSavedView(savedView) {
 }
 
 function _loadSavedView() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let savedView = {dataset: null};
     // #q=
     let q = window.location.hash.substring(3);
@@ -1175,7 +1321,7 @@ function _loadSavedView() {
 }
 
 export function initLogin(loadSavedView) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const email = auth.getEmail();
     if (email != null) {
       dispatch(_setEmail(email));
@@ -1194,7 +1340,7 @@ export function getIdToken() {
 }
 
 export function saveDataset(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let existingDataset = payload.dataset;
     const isEdit = existingDataset != null;
     if (existingDataset == null) {
@@ -1209,7 +1355,9 @@ export function saveDataset(payload) {
         const existingValue = existingDataset[key];
         if (isArray(value)) {
           const stringValue = (value || []).join(',');
-          const existingStringValue = isArray(existingValue) ? existingValue.join(', ') : existingValue;
+          const existingStringValue = isArray(existingValue)
+            ? existingValue.join(', ')
+            : existingValue;
           if (stringValue !== existingStringValue) {
             formData[key] = value;
           }
@@ -1231,18 +1379,20 @@ export function saveDataset(payload) {
     const task = {name: 'Save Dataset'};
     dispatch(addTask(task));
     const request = getState().serverInfo.api.upsertDatasetPromise(formData);
-    request.upload.addEventListener('progress', function(e) {
+    request.upload.addEventListener('progress', function (e) {
       if (formData['file'] != null) {
         let percent = (e.loaded / e.total) * 100;
         dispatch(setMessage('Percent ' + percent));
       }
     });
-    request.addEventListener('load', function(e) {
+    request.addEventListener('load', function (e) {
       dispatch(removeTask(task));
       dispatch(setDialog(null));
       const status = request.status;
       if (status != 200) {
-        return dispatch(setMessage('Unable to save dataset. Please try again.'));
+        return dispatch(
+          setMessage('Unable to save dataset. Please try again.')
+        );
       }
 
       const resp = JSON.parse(request.response);
@@ -1262,7 +1412,7 @@ export function saveDataset(payload) {
 }
 
 export function deleteDataset(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Delete Dataset'};
     dispatch(addTask(task));
     getState()
@@ -1278,7 +1428,11 @@ export function deleteDataset(payload) {
         dispatch(setDialog(null));
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to delete dataset. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to delete dataset. Please try again.'
+        );
       });
   };
 }
@@ -1352,7 +1506,7 @@ function _setJobResultId(payload) {
 }
 
 export function deleteJobResult(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'Delete Job'};
     dispatch(addTask(task));
     getState()
@@ -1370,14 +1524,21 @@ export function deleteJobResult(payload) {
         dispatch(removeTask(task));
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to delete result. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to delete result. Please try again.'
+        );
       });
   };
 }
 
 export function setJobResultId(jobId) {
-  return function(dispatch, getState) {
-    const existingJobResult = find(getState().jobResults, (item) => item.id === jobId);
+  return function (dispatch, getState) {
+    const existingJobResult = find(
+      getState().jobResults,
+      (item) => item.id === jobId
+    );
     if (existingJobResult.data != null) {
       // data already loaded
       if (existingJobResult.type === 'de') {
@@ -1404,7 +1565,12 @@ export function setJobResultId(jobId) {
           if (result.data == null) {
             result = {data: result};
           }
-          const jobResult = Object.assign({}, params, jobResults[index], result);
+          const jobResult = Object.assign(
+            {},
+            params,
+            jobResults[index],
+            result
+          );
           if (jobResult.type === 'de') {
             updateJob(jobResult);
           }
@@ -1431,7 +1597,11 @@ export function setJobResultId(jobId) {
         dispatch(removeTask(task));
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to retrieve result. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to retrieve result. Please try again.'
+        );
       });
   };
 }
@@ -1445,7 +1615,7 @@ export function setUnselectedMarkerOpacity(payload) {
 }
 
 export function toggleEmbeddingLabel(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const embeddingLabels = getState().embeddingLabels;
     const index = embeddingLabels.indexOf(payload);
     if (index === -1) {
@@ -1454,7 +1624,8 @@ export function toggleEmbeddingLabel(payload) {
       embeddingLabels.splice(index, 1);
     }
     return dispatch({
-      type: SET_EMBEDDING_LABELS, payload: embeddingLabels.slice()
+      type: SET_EMBEDDING_LABELS,
+      payload: embeddingLabels.slice(),
     });
   };
 }
@@ -1472,27 +1643,28 @@ function _setEmail(payload) {
 }
 
 export function setSearchTokens(tokens, updateActiveFeature = true) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({type: SET_SEARCH_TOKENS, payload: tokens});
     dispatch(_updateCharts(null, updateActiveFeature));
   };
 }
 
 export function setSelectedLayers(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     dispatch({type: SET_SELECTED_LAYERS, payload: payload});
     dispatch(_updateCharts(null));
   };
 }
 
-
 export function setSelectedEmbedding(payload) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const prior = getState().embeddings;
     dispatch({type: SET_SELECTED_EMBEDDING, payload: payload});
-    dispatch(_updateCharts((err) => {
-      dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
-    }));
+    dispatch(
+      _updateCharts((err) => {
+        dispatch({type: SET_SELECTED_EMBEDDING, payload: prior});
+      })
+    );
   };
 }
 
@@ -1509,7 +1681,7 @@ function setDatasetViews(payload) {
 }
 
 export function setDataset(id, loadDefaultView = true, setLoading = true) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     let savedDatasetState = getState().savedDatasetState[id];
     const datasetChoices = getState().datasetChoices;
     let selectedChoice = null; // has id, owner, name
@@ -1576,7 +1748,8 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
     if (task) {
       dispatch(addTask(task));
     }
-    const isDirectAccess = dataset.access === 'direct' || process.env.REACT_APP_STATIC === 'true';
+    const isDirectAccess =
+      dataset.access === 'direct' || process.env.REACT_APP_STATIC === 'true';
     if (isDirectAccess) {
       dataset.api = new DirectAccessDataset();
     } else {
@@ -1586,9 +1759,11 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
     const initPromise = dataset.api.init(id, dataset.url);
     const promises = [initPromise];
 
-    promises.push(dataset.api.getJobs(id).then((jobs) => {
-      jobResults = jobs;
-    }));
+    promises.push(
+      dataset.api.getJobs(id).then((jobs) => {
+        jobResults = jobs;
+      })
+    );
 
     const schemaPromise = dataset.api.getSchemaPromise().then((result) => {
       newDataset = result;
@@ -1618,21 +1793,31 @@ export function setDataset(id, loadDefaultView = true, setLoading = true) {
         }
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to retrieve dataset. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to retrieve dataset. Please try again.'
+        );
       });
   };
 }
 
 function handleSelectionResult(selectionResult, clear) {
   // not need to clear when adding a new feature
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const state = getState();
     if (selectionResult) {
       dispatch(setSelection(selectionResult.indices));
       // userPoints are in chart space, points are in server space, count is total number of cells selected
       if (selectionResult.summary) {
         // merge or clear selection
-        let selectionSummary = clear ? selectionResult.summary : Object.assign({}, getState().featureSummary, selectionResult.summary);
+        let selectionSummary = clear
+          ? selectionResult.summary
+          : Object.assign(
+              {},
+              getState().featureSummary,
+              selectionResult.summary
+            );
         dispatch(setFeatureSummary(selectionSummary));
       }
       if (selectionResult.distribution) {
@@ -1641,15 +1826,29 @@ function handleSelectionResult(selectionResult, clear) {
           selectedDistributionData = [];
         }
         const groupedSearchTokens = groupBy(state.searchTokens, 'type');
-        addFeatureSetsToX(getFeatureSets(state.markers, groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []), (groupedSearchTokens[FEATURE_TYPE.X] || []).map((item) => item.id));
-        selectedDistributionData = updateDistributionData(selectionResult.distribution, selectedDistributionData, groupedSearchTokens);
+        addFeatureSetsToX(
+          getFeatureSets(
+            state.markers,
+            groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []
+          ),
+          (groupedSearchTokens[FEATURE_TYPE.X] || []).map((item) => item.id)
+        );
+        selectedDistributionData = updateDistributionData(
+          selectionResult.distribution,
+          selectedDistributionData,
+          groupedSearchTokens
+        );
         dispatch(setSelectedDistributionData(selectedDistributionData));
       }
     }
   };
 }
 
-function updateDistributionData(newDistributionData, existingDistributionData, groupedSearchTokens) {
+function updateDistributionData(
+  newDistributionData,
+  existingDistributionData,
+  groupedSearchTokens
+) {
   let keys = new Set(Object.keys(existingDistributionData));
   if (newDistributionData) {
     for (const key in newDistributionData) {
@@ -1657,25 +1856,50 @@ function updateDistributionData(newDistributionData, existingDistributionData, g
     }
   }
   keys.forEach((key) => {
-    existingDistributionData[key] = _updateDistributionData(newDistributionData ? newDistributionData[key] : null, existingDistributionData[key] || [], groupedSearchTokens);
+    existingDistributionData[key] = _updateDistributionData(
+      newDistributionData ? newDistributionData[key] : null,
+      existingDistributionData[key] || [],
+      groupedSearchTokens
+    );
   });
   return existingDistributionData;
 }
 
-function _updateDistributionData(newDistributionData, existingDistributionData, groupedSearchTokens) {
-  const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map((item) => item.id);
-  const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map((item) => item.id);
-  const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map((item) => item.id);
-  const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map((item) => item.id);
+function _updateDistributionData(
+  newDistributionData,
+  existingDistributionData,
+  groupedSearchTokens
+) {
+  const xTokens = (groupedSearchTokens[FEATURE_TYPE.X] || []).map(
+    (item) => item.id
+  );
+  const obsCatTokens = (groupedSearchTokens[FEATURE_TYPE.OBS_CAT] || []).map(
+    (item) => item.id
+  );
+  const obsTokens = (groupedSearchTokens[FEATURE_TYPE.OBS] || []).map(
+    (item) => item.id
+  );
+  const moduleTokens = (groupedSearchTokens[FEATURE_TYPE.MODULE] || []).map(
+    (item) => item.id
+  );
   const dimensionKeys = [obsCatTokens.join('-')];
   // keep active dimensions and features only
-  let distributionData = existingDistributionData.filter((entry) => dimensionKeys.indexOf(entry.dimension) !== -1 && (xTokens.indexOf(entry.feature) !== -1 || obsTokens.indexOf(entry.feature) !== -1 || moduleTokens.indexOf(entry.feature) !== -1));
+  let distributionData = existingDistributionData.filter(
+    (entry) =>
+      dimensionKeys.indexOf(entry.dimension) !== -1 &&
+      (xTokens.indexOf(entry.feature) !== -1 ||
+        obsTokens.indexOf(entry.feature) !== -1 ||
+        moduleTokens.indexOf(entry.feature) !== -1)
+  );
 
   if (newDistributionData) {
     // remove old data that is also in new data
     newDistributionData.forEach((entry) => {
       for (let i = 0; i < distributionData.length; i++) {
-        if (distributionData[i].dimension === entry.dimension && distributionData[i].feature === entry.feature) {
+        if (
+          distributionData[i].dimension === entry.dimension &&
+          distributionData[i].feature === entry.feature
+        ) {
           distributionData.splice(i, 1);
           break;
         }
@@ -1701,7 +1925,7 @@ function _updateDistributionData(newDistributionData, existingDistributionData, 
 }
 
 function _updateCharts(onError, updateActiveFeature = true) {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const state = getState();
     if (state.dataset == null) {
       return;
@@ -1715,9 +1939,15 @@ function _updateCharts(onError, updateActiveFeature = true) {
     });
     const featureSetTokens = groupedSearchTokens[FEATURE_TYPE.FEATURE_SET];
     let xValues = groupedSearchTokens[FEATURE_TYPE.X].map((token) => token.id);
-    const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map((token) => token.id);
-    const obsValues = groupedSearchTokens[FEATURE_TYPE.OBS].map((token) => token.id);
-    const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map((token) => token.id);
+    const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map(
+      (token) => token.id
+    );
+    const obsValues = groupedSearchTokens[FEATURE_TYPE.OBS].map(
+      (token) => token.id
+    );
+    const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(
+      (token) => token.id
+    );
 
     addFeatureSetsToX(getFeatureSets(state.markers, featureSetTokens), xValues);
 
@@ -1740,8 +1970,8 @@ function _updateCharts(onError, updateActiveFeature = true) {
         features.add(feature);
       });
     const newXValues = [];
-    state.layers.forEach(layer => {
-      xValues.forEach(feature => {
+    state.layers.forEach((layer) => {
+      xValues.forEach((feature) => {
         features.add(layer + '/' + feature);
         newXValues.push(layer + '/' + feature);
       });
@@ -1776,7 +2006,11 @@ function _updateCharts(onError, updateActiveFeature = true) {
         const imagePromise = new Promise((resolve, reject) => {
           fetch(url)
             .then((result) => result.text())
-            .then((text) => document.createRange().createContextualFragment(text).firstElementChild)
+            .then(
+              (text) =>
+                document.createRange().createContextualFragment(text)
+                  .firstElementChild
+            )
             .then((node) => {
               // inline css
               if (node.querySelector('style')) {
@@ -1809,7 +2043,9 @@ function _updateCharts(onError, updateActiveFeature = true) {
       }
     });
     if (filterJson != null) {
-      let filterDependencies = getDatasetFilterDependencies(state.datasetFilter);
+      let filterDependencies = getDatasetFilterDependencies(
+        state.datasetFilter
+      );
       filterDependencies.features.forEach((feature) => {
         if (cachedData[feature] == null) {
           valuesToFetch.add(feature);
@@ -1837,7 +2073,10 @@ function _updateCharts(onError, updateActiveFeature = true) {
     // set active flag on cached embedding data
     embeddingData.forEach((trace) => {
       const embeddingKey = getEmbeddingKey(trace.embedding);
-      const active = embeddingKeys.has(embeddingKey) && (features.has(trace.name) || (features.size === 0 && trace.name === '__count'));
+      const active =
+        embeddingKeys.has(embeddingKey) &&
+        (features.has(trace.name) ||
+          (features.size === 0 && trace.name === '__count'));
       if (active) {
         trace.date = new Date();
       }
@@ -1847,13 +2086,20 @@ function _updateCharts(onError, updateActiveFeature = true) {
     const distributionCategories = obsCatValues.slice();
     const distributionCategoryKeys = [distributionCategories.join('-')];
     const distributionMeasuresToFetch = new Set();
-    const distribution = (xValues.length > 0 || moduleValues.length > 0 || obsValues.length > 0 || otherSearchTokenKeys.length > 0) && obsCatValues.length > 0;
+    const distribution =
+      (xValues.length > 0 ||
+        moduleValues.length > 0 ||
+        obsValues.length > 0 ||
+        otherSearchTokenKeys.length > 0) &&
+      obsCatValues.length > 0;
     if (distribution) {
       // TODO cleanup this code
       let cachedDistributionKeys = {}; // category-feature
       for (const key in distributionData) {
         distributionData[key].forEach((distributionDataItem) => {
-          cachedDistributionKeys[distributionDataItem.name + '-' + distributionDataItem.feature] = true;
+          cachedDistributionKeys[
+            distributionDataItem.name + '-' + distributionDataItem.feature
+          ] = true;
         });
       }
       distributionCategoryKeys.forEach((category) => {
@@ -1892,10 +2138,17 @@ function _updateCharts(onError, updateActiveFeature = true) {
         if (embedding.mode != null) {
           // fetch unbinned coordinates
           const key = getEmbeddingKey(embedding, false);
-          if (indexOf(embeddingsToFetch, (e) => getEmbeddingKey(e) === key) !== -1) {
-            const index = indexOf(state.dataset.embeddings, (e) => getEmbeddingKey(e, false) === key);
+          if (
+            indexOf(embeddingsToFetch, (e) => getEmbeddingKey(e) === key) !== -1
+          ) {
+            const index = indexOf(
+              state.dataset.embeddings,
+              (e) => getEmbeddingKey(e, false) === key
+            );
             if (index === -1) {
-              throw new Error(key + ' not found in ' + state.dataset.embeddings);
+              throw new Error(
+                key + ' not found in ' + state.dataset.embeddings
+              );
             }
             embeddingsToFetch.push(state.dataset.embeddings[index]);
           }
@@ -1944,35 +2197,55 @@ function _updateCharts(onError, updateActiveFeature = true) {
       }
     });
 
-    if (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0) {
+    if (
+      globalFeatureSummaryMeasuresCacheMiss.length > 0 ||
+      globalFeatureSummaryDimensionsCacheMiss.length > 0
+    ) {
       q.stats = {
-        measures: globalFeatureSummaryMeasuresCacheMiss, dimensions: globalFeatureSummaryDimensionsCacheMiss
+        measures: globalFeatureSummaryMeasuresCacheMiss,
+        dimensions: globalFeatureSummaryDimensionsCacheMiss,
       };
     }
 
-    if (distributionCategories.length > 0 && distributionMeasuresToFetch.size > 0) {
+    if (
+      distributionCategories.length > 0 &&
+      distributionMeasuresToFetch.size > 0
+    ) {
       q.groupedStats = {
-        measures: Array.from(distributionMeasuresToFetch), dimensions: [distributionCategories]
+        measures: Array.from(distributionMeasuresToFetch),
+        dimensions: [distributionCategories],
       };
     }
 
     // TODO update selection in new embedding space
-    if (filterJson != null && (globalFeatureSummaryMeasuresCacheMiss.length > 0 || globalFeatureSummaryDimensionsCacheMiss.length > 0)) {
+    if (
+      filterJson != null &&
+      (globalFeatureSummaryMeasuresCacheMiss.length > 0 ||
+        globalFeatureSummaryDimensionsCacheMiss.length > 0)
+    ) {
       q.selection = {
         filter: filterJson,
-        measures: globalFeatureSummaryDimensionsCacheMiss.length > 0 ? xValues : globalFeatureSummaryMeasuresCacheMiss,
-        dimensions: obsCatValues
+        measures:
+          globalFeatureSummaryDimensionsCacheMiss.length > 0
+            ? xValues
+            : globalFeatureSummaryMeasuresCacheMiss,
+        dimensions: obsCatValues,
       };
     }
 
     const fetchData = Object.keys(q).length > 0;
-    const task = fetchData || promises.length > 0 ? {
-      name: 'Update charts'
-    } : null;
+    const task =
+      fetchData || promises.length > 0
+        ? {
+            name: 'Update charts',
+          }
+        : null;
     if (task) {
       dispatch(addTask(task));
     }
-    const dataPromise = fetchData ? state.dataset.api.getDataPromise(q, cachedData) : Promise.resolve({});
+    const dataPromise = fetchData
+      ? state.dataset.api.getDataPromise(q, cachedData)
+      : Promise.resolve({});
     const allPromises = [dataPromise].concat(promises);
     return Promise.all(allPromises)
       .then((values) => {
@@ -1981,7 +2254,15 @@ function _updateCharts(onError, updateActiveFeature = true) {
         const newEmbeddingData = getNewEmbeddingData(state, features);
         embeddingData = embeddingData.concat(newEmbeddingData);
 
-        dispatch(setDistributionData(updateDistributionData(result.distribution, distributionData, groupedSearchTokens)));
+        dispatch(
+          setDistributionData(
+            updateDistributionData(
+              result.distribution,
+              distributionData,
+              groupedSearchTokens
+            )
+          )
+        );
         dispatch(setEmbeddingData(embeddingData));
         if (updateActiveFeature) {
           dispatch(setActiveFeature(getNewActiveFeature(embeddingData)));
@@ -1990,7 +2271,15 @@ function _updateCharts(onError, updateActiveFeature = true) {
           dispatch(handleSelectionResult(result.selection, false));
         } else {
           // clear selection
-          dispatch(setSelectedDistributionData(updateDistributionData(null, selectedDistributionData, groupedSearchTokens)));
+          dispatch(
+            setSelectedDistributionData(
+              updateDistributionData(
+                null,
+                selectedDistributionData,
+                groupedSearchTokens
+              )
+            )
+          );
         }
       })
       .finally(() => {
@@ -1999,7 +2288,11 @@ function _updateCharts(onError, updateActiveFeature = true) {
         }
       })
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to retrieve data. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to retrieve data. Please try again.'
+        );
         if (onError) {
           onError(err);
         }
@@ -2015,7 +2308,9 @@ function getNewActiveFeature(embeddingData) {
   const trace = traces[traces.length - 1];
   const embeddingKey = getTraceKey(trace); // last feature becomes primary
   return {
-    name: trace.name, type: trace.featureType, embeddingKey: embeddingKey
+    name: trace.name,
+    type: trace.featureType,
+    embeddingKey: embeddingKey,
   };
 }
 
@@ -2044,11 +2339,20 @@ function getNewEmbeddingData(state, features) {
   embeddings.forEach((embedding) => {
     const embeddingKey = getEmbeddingKey(embedding);
     // type can be image, scatter, or meta_image
-    const traceType = embedding.spatial != null ? embedding.spatial.type : embedding.type ? embedding.type : TRACE_TYPE_SCATTER;
-    let coordinates = traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
+    const traceType =
+      embedding.spatial != null
+        ? embedding.spatial.type
+        : embedding.type
+        ? embedding.type
+        : TRACE_TYPE_SCATTER;
+    let coordinates =
+      traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
     if (coordinates == null && embedding.mode != null) {
       const unbinnedCoords = cachedData[getEmbeddingKey(embedding, false)];
-      const binnedValues = createEmbeddingDensity(unbinnedCoords[embedding.name + '_1'], unbinnedCoords[embedding.name + '_2']);
+      const binnedValues = createEmbeddingDensity(
+        unbinnedCoords[embedding.name + '_1'],
+        unbinnedCoords[embedding.name + '_2']
+      );
       const binnedCoords = {};
       binnedCoords[embedding.name + '_1'] = binnedValues.x;
       binnedCoords[embedding.name + '_2'] = binnedValues.y;
@@ -2057,9 +2361,18 @@ function getNewEmbeddingData(state, features) {
       cachedData[embeddingKey] = binnedCoords; // save binned coords
       coordinates = binnedCoords;
     }
-    const x = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_1'] : null;
-    const y = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_2'] : null;
-    const z = traceType !== TRACE_TYPE_META_IMAGE ? coordinates[embedding.name + '_3'] : null;
+    const x =
+      traceType !== TRACE_TYPE_META_IMAGE
+        ? coordinates[embedding.name + '_1']
+        : null;
+    const y =
+      traceType !== TRACE_TYPE_META_IMAGE
+        ? coordinates[embedding.name + '_2']
+        : null;
+    const z =
+      traceType !== TRACE_TYPE_META_IMAGE
+        ? coordinates[embedding.name + '_3']
+        : null;
 
     features.forEach((feature) => {
       const featurePlusEmbeddingKey = feature + '_' + embeddingKey;
@@ -2087,7 +2400,8 @@ function getNewEmbeddingData(state, features) {
         }
         // could also be feature in a set
         if (featureType == null) {
-          featureType = feature === '__count' ? FEATURE_TYPE.COUNT : FEATURE_TYPE.X;
+          featureType =
+            feature === '__count' ? FEATURE_TYPE.COUNT : FEATURE_TYPE.X;
         }
 
         const isCategorical = featureType === FEATURE_TYPE.OBS_CAT;
@@ -2116,10 +2430,16 @@ function getNewEmbeddingData(state, features) {
             globalFeatureSummary[feature] = featureSummary;
           }
           let domain = [featureSummary.min, featureSummary.max];
-          if (featureSummary.customMin != null && !isNaN(featureSummary.customMin)) {
+          if (
+            featureSummary.customMin != null &&
+            !isNaN(featureSummary.customMin)
+          ) {
             domain[0] = featureSummary.customMin;
           }
-          if (featureSummary.customMax != null && !isNaN(featureSummary.customMax)) {
+          if (
+            featureSummary.customMax != null &&
+            !isNaN(featureSummary.customMax)
+          ) {
             domain[1] = featureSummary.customMax;
           }
           let typeInterpolator = interpolator[featureType];
@@ -2188,11 +2508,14 @@ function getNewEmbeddingData(state, features) {
           colorScale.summary = featureSummary;
         }
 
-        if (traceType === TRACE_TYPE_META_IMAGE && embedding.categoryToIndices == null) {
+        if (
+          traceType === TRACE_TYPE_META_IMAGE &&
+          embedding.categoryToIndices == null
+        ) {
           const groupBy = cachedData[embedding.attrs.group];
           const categoryToIndices = {};
           const passingIndices = getPassingFilterIndices(cachedData, {
-            filters: embedding.attrs.selection
+            filters: embedding.attrs.selection,
           });
           if (passingIndices.size === 0) {
             throw new Error('No passing indices found');
@@ -2223,12 +2546,17 @@ function getNewEmbeddingData(state, features) {
           continuous: !isCategorical,
           isCategorical: isCategorical,
           values: values, // for color
-          type: traceType
+          type: traceType,
         };
         if (trace.mode != null) {
           trace.index = coordinates[embedding.name + '_index'];
           trace._values = trace.values;
-          trace.values = summarizeDensity(trace.values, trace.index, selection, trace.continuous ? 'max' : 'mode');
+          trace.values = summarizeDensity(
+            trace.values,
+            trace.index,
+            selection,
+            trace.continuous ? 'max' : 'mode'
+          );
         }
         if (traceType === TRACE_TYPE_SCATTER) {
           trace.positions = getPositions(trace);
@@ -2268,16 +2596,23 @@ function getNewEmbeddingData(state, features) {
             trace.stdev = Math.sqrt(variance);
           }
           trace.fullCategoryToStats = createCategoryToStats(trace, new Set());
-          trace.categoryToStats = state.selection.size != null && state.selection.size === 0 ? trace.fullCategoryToStats : createCategoryToStats(trace, state.selection);
+          trace.categoryToStats =
+            state.selection.size != null && state.selection.size === 0
+              ? trace.fullCategoryToStats
+              : createCategoryToStats(trace, state.selection);
         }
         updateTraceColors(trace);
 
         if (traceType === TRACE_TYPE_IMAGE) {
           // TODO cache image
-          trace.indices = !isCategorical ? indexSort(values, true) : randomSeq(values.length);
+          trace.indices = !isCategorical
+            ? indexSort(values, true)
+            : randomSeq(values.length);
           const url = dataset.api.getFileUrl(embedding.spatial.image);
           trace.tileSource = new OpenSeadragon.ImageTileSource({
-            url: url, buildPyramid: true, crossOriginPolicy: 'Anonymous'
+            url: url,
+            buildPyramid: true,
+            crossOriginPolicy: 'Anonymous',
           });
         }
 
@@ -2295,13 +2630,16 @@ function handleError(dispatch, err, message) {
     return dispatch(logout());
   }
   if (message == null) {
-    message = err instanceof CustomError ? err.message : 'An unexpected error occurred. Please try again.';
+    message =
+      err instanceof CustomError
+        ? err.message
+        : 'An unexpected error occurred. Please try again.';
   }
   dispatch(setMessage(new Error(message)));
 }
 
 export function listDatasets() {
-  return function(dispatch, getState) {
+  return function (dispatch, getState) {
     const task = {name: 'List Datasets'};
     dispatch(addTask(task));
     return getState()
@@ -2311,7 +2649,11 @@ export function listDatasets() {
       })
       .finally(() => dispatch(removeTask(task)))
       .catch((err) => {
-        handleError(dispatch, err, 'Unable to retrieve datasets. Please try again.');
+        handleError(
+          dispatch,
+          err,
+          'Unable to retrieve datasets. Please try again.'
+        );
       });
   };
 }
@@ -2333,11 +2675,12 @@ export function getDatasetStateJson(state) {
     markerOpacity,
     pointSize,
     unselectedMarkerOpacity,
-    distributionData
+    distributionData,
   } = state;
 
   let json = {
-    dataset: dataset.id, embeddings: embeddings
+    dataset: dataset.id,
+    embeddings: embeddings,
   };
   if (jobResultId != null) {
     json.jobId = jobResultId;
@@ -2356,7 +2699,7 @@ export function getDatasetStateJson(state) {
     showFog: DEFAULT_SHOW_FOG,
     darkMode: DEFAULT_DARK_MODE,
     labelFontSize: DEFAULT_LABEL_FONT_SIZE,
-    labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
+    labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH,
   };
 
   for (let key in defaultChartOptions) {
@@ -2391,12 +2734,18 @@ export function getDatasetStateJson(state) {
       datasetFilterJson[key] = array;
     } else if (filterObject.operation === 'in') {
       datasetFilterJson[key] = {
-        operation: filterObject.operation, value: filterObject.value
+        operation: filterObject.operation,
+        value: filterObject.value,
       };
     } else {
-      if (filterObject.operation !== '' && !isNaN(filterObject.value) && filterObject.value != null) {
+      if (
+        filterObject.operation !== '' &&
+        !isNaN(filterObject.value) &&
+        filterObject.value != null
+      ) {
         datasetFilterJson[key] = {
-          operation: filterObject.operation, value: filterObject.value
+          operation: filterObject.operation,
+          value: filterObject.value,
         };
       }
     }
@@ -2416,7 +2765,11 @@ export function getDatasetStateJson(state) {
 
   if (distributionData && distributionData.length > 0) {
     json.distributionPlotOptions = distributionPlotOptions;
-    json.distributionPlotInterpolator = Object.assign({}, distributionPlotInterpolator, {value: null});
+    json.distributionPlotInterpolator = Object.assign(
+      {},
+      distributionPlotInterpolator,
+      {value: null}
+    );
   }
 
   // TODO save custom color ranges per feature
@@ -2424,12 +2777,16 @@ export function getDatasetStateJson(state) {
     const typedInterpolator = interpolator[key];
     const defaultInterpolator = DEFAULT_INTERPOLATORS[key];
 
-    if (defaultInterpolator == null || typedInterpolator.name !== defaultInterpolator.name || typedInterpolator.reversed !== defaultInterpolator.reversed) {
+    if (
+      defaultInterpolator == null ||
+      typedInterpolator.name !== defaultInterpolator.name ||
+      typedInterpolator.reversed !== defaultInterpolator.reversed
+    ) {
       if (json.interpolator == null) {
         json.interpolator = {};
       }
       json.interpolator[key] = Object.assign({}, typedInterpolator, {
-        value: undefined
+        value: undefined,
       });
     }
   }
