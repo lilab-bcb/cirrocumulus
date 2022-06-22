@@ -22,10 +22,8 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
 
     if whitelist is None or "X" in whitelist:
         write_attribute(group, "X", dataset.X)
-        # if scipy.sparse.issparse(dataset.X):
-        #     write_csc(group, 'X', dataset.X)
-        # else:
-        #     write_attribute(group, "X", dataset.X, dict(chunks=chunks, **dataset_kwargs))
+        for layer in dataset.layers.keys():
+            write_attribute(group, "layers/{}".format(layer), dataset.layers[layer])
         if module_dataset is not None:
             write_attribute(group, "uns/module/X", module_dataset.X)
             write_attribute(group, "uns/module/var", module_dataset.var)

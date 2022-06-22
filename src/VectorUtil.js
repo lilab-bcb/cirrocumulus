@@ -47,17 +47,13 @@ export function getVectors(cachedData, names, indices = null) {
 export function cacheValues(result, cachedData) {
   if (result.embeddings != null) {
     result.embeddings.forEach((embedding) => {
-      if (
-        embedding.coordinates &&
-        Object.keys(embedding.coordinates).length > 0
-      ) {
+      if (embedding.coordinates && Object.keys(embedding.coordinates).length > 0) {
         cachedData[embedding.name] = embedding.coordinates;
       }
       if (embedding.values) {
         // binned values
         for (let feature in embedding.values) {
-          cachedData[feature + '_' + embedding.name] =
-            embedding.values[feature];
+          cachedData[feature + '_' + embedding.name] = embedding.values[feature];
         }
       }
     });
@@ -67,10 +63,18 @@ export function cacheValues(result, cachedData) {
       cachedData[feature] = result.values[feature];
     }
   }
+  if (result.layers) {
+    for (const layer in result.layers) {
+      const values = result.layers[layer];
+      for (const feature in values) {
+        cachedData[layer + '/' + feature] = values[feature];
+      }
+    }
+  }
 }
 
 export function getTypeToMeasures(measures) {
-  let typeToMeasures = {X: [], obs: []};
+  const typeToMeasures = {X: [], obs: []};
   for (let i = 0; i < measures.length; i++) {
     const {name, type} = getVarNameType(measures[i]);
     let typeMeasures = typeToMeasures[type];
@@ -79,6 +83,13 @@ export function getTypeToMeasures(measures) {
       typeToMeasures[type] = typeMeasures;
     }
     typeMeasures.push(name);
+  }
+  const types = Object.keys(FEATURE_TYPE).map(type => type.toLowerCase());
+  for (const type in typeToMeasures) {
+    if (types.indexOf(type.toLowerCase()) === -1) { // add prefix for layers
+      const prefix = type + '/';
+      typeToMeasures[type] = typeToMeasures[type].map(key => prefix + key);
+    }
   }
   return typeToMeasures;
 }
@@ -94,11 +105,7 @@ export function getBasis(basis, dimensions = 2, mode = null) {
     full_name = full_name + '_' + mode;
   }
   return {
-    name: basis,
-    dimensions: dimensions,
-    coordinate_columns: coordinate_columns,
-    mode: mode,
-    full_name: full_name,
+    name: basis, dimensions: dimensions, coordinate_columns: coordinate_columns, mode: mode, full_name: full_name
   };
 }
 
@@ -125,9 +132,7 @@ export function splitDataFilter(data_filter) {
     }
   }
   return {
-    basis: basis_list,
-    X: Array.from(var_keys),
-    obs: Array.from(obs_keys),
+    basis: basis_list, X: Array.from(var_keys), obs: Array.from(obs_keys)
   };
   //    return list(var_keys), list(obs_keys), basis_list
 }
@@ -139,14 +144,14 @@ export function computeDerivedStats(result, q, cachedData) {
     const typeToMeasures = getTypeToMeasures(measures);
 
     let measureVectors = [];
-    Object.values(typeToMeasures).forEach((fields) => {
-      measureVectors = measureVectors.concat(getVectors(cachedData, fields));
-    });
+    for (const type in typeToMeasures) {
+      let keys = typeToMeasures[type];
 
-    result.summary = getStats(
-      getVectors(cachedData, dimensions),
-      measureVectors
-    );
+
+      measureVectors = measureVectors.concat(getVectors(cachedData, keys));
+    }
+
+    result.summary = getStats(getVectors(cachedData, dimensions), measureVectors);
   }
 
   if (q.groupedStats) {
@@ -155,17 +160,12 @@ export function computeDerivedStats(result, q, cachedData) {
     const typeToMeasures = getTypeToMeasures(measures);
     if (dimensions.length > 0) {
       // TODO, currently we only handle dimensions[0]
-      const groupDimensionInfo = groupDimensions(
-        getVectors(cachedData, dimensions[0])
-      );
+      const groupDimensionInfo = groupDimensions(getVectors(cachedData, dimensions[0]));
       const distribution = {};
       for (const key in typeToMeasures) {
         const measures = typeToMeasures[key];
         if (measures.length > 0) {
-          distribution[key] = groupedStats(
-            groupDimensionInfo,
-            getVectors(cachedData, measures)
-          );
+          distribution[key] = groupedStats(groupDimensionInfo, getVectors(cachedData, measures));
         }
       }
       result.distribution = distribution;
@@ -177,35 +177,23 @@ export function computeDerivedStats(result, q, cachedData) {
     const measures = q.selection.measures || [];
     const typeToMeasures = getTypeToMeasures(measures);
     result.selection = {};
-    result.selection.indices = getPassingFilterIndices(
-      cachedData,
-      q.selection.filter
-    );
+    result.selection.indices = getPassingFilterIndices(cachedData, q.selection.filter);
     const selectedIndices = Array.from(result.selection.indices);
-    const dimensionVectors = getVectors(
-      cachedData,
-      dimensions,
-      selectedIndices
-    );
+    const dimensionVectors = getVectors(cachedData, dimensions, selectedIndices);
     if (dimensions.length > 0) {
       const groupDimensionInfo = groupDimensions(dimensionVectors);
       const distribution = {};
       for (const key in typeToMeasures) {
         const measures = typeToMeasures[key];
         if (measures.length > 0) {
-          distribution[key] = groupedStats(
-            groupDimensionInfo,
-            getVectors(cachedData, measures, selectedIndices)
-          );
+          distribution[key] = groupedStats(groupDimensionInfo, getVectors(cachedData, measures, selectedIndices));
         }
       }
       result.selection.distribution = distribution;
     }
     let measureVectors = [];
     Object.values(typeToMeasures).forEach((fields) => {
-      measureVectors = measureVectors.concat(
-        getVectors(cachedData, fields, selectedIndices)
-      );
+      measureVectors = measureVectors.concat(getVectors(cachedData, fields, selectedIndices));
     });
     result.selection.summary = getStats(dimensionVectors, measureVectors);
   }
@@ -269,9 +257,8 @@ export function groupedStats(groupDimensionInfo, vectors) {
         mean: categoryStats.mean,
         n: categoryVector.size(),
         nExpressed: categoryStats.numExpressed,
-        percentExpressed:
-          100 * (categoryStats.numExpressed / categoryVector.size()),
-        vector: categoryVector,
+        percentExpressed: 100 * (categoryStats.numExpressed / categoryVector.size()),
+        vector: categoryVector
       };
       results.push(entry);
     });
@@ -322,12 +309,7 @@ export function variance(v, mean) {
 export function continuousVectorStats(v) {
   if (v.size() === 0) {
     return {
-      min: Number.NaN,
-      max: Number.NaN,
-      sum: Number.NaN,
-      mean: Number.NaN,
-      numExpressed: Number.NaN,
-      logSum: Number.NaN,
+      min: Number.NaN, max: Number.NaN, sum: Number.NaN, mean: Number.NaN, numExpressed: Number.NaN, logSum: Number.NaN
     };
   }
   let min = Number.MAX_VALUE;
@@ -352,12 +334,6 @@ export function continuousVectorStats(v) {
 
   const mean = sum / count;
   return {
-    min: min,
-    max: max,
-    sum: sum,
-    mean: mean,
-    numExpressed: numExpressed,
-    n: v.size(),
-    logSum: logSum,
+    min: min, max: max, sum: sum, mean: mean, numExpressed: numExpressed, n: v.size(), logSum: logSum
   };
 }

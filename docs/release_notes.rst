@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.33 `June 22, 2022`
+    * Added support for `anndata`_ layers
+
 - 1.1.32 `May 20, 2022`
     * Fix error saving spatial datasets in `cirro prepare_data`
     * Updated dot plot tooltips

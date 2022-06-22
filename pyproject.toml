@@ -44,6 +44,7 @@ dependencies = [
     "pandas",
     "pyarrow",
     "pymongo",
+    "requests",
     "scipy",
     "zarr"
 ]

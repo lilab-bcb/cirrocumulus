@@ -4,7 +4,8 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema, \
+    ADATA_LAYERS_UNS_KEY
 from cirrocumulus.io_util import read_star_fusion_file
 
 
@@ -37,8 +38,9 @@ class AnndataDataset(AbstractDataset):
             import os
 
             if (
-                not os.path.exists(h5_file)
-                or abs(os.path.getmtime(h5_file) - os.path.getmtime(path)) > 0.00001
+                    not os.path.exists(h5_file)
+                    or abs(
+                os.path.getmtime(h5_file) - os.path.getmtime(path)) > 0.00001
             ):
                 import shutil
                 import subprocess
@@ -51,24 +53,29 @@ class AnndataDataset(AbstractDataset):
                 subprocess.check_call(
                     [
                         "Rscript",
-                        pkg_resources.resource_filename("cirrocumulus", "seurat2h5ad.R"),
+                        pkg_resources.resource_filename("cirrocumulus",
+                                                        "seurat2h5ad.R"),
                         path,
                         h5_file,
                     ]
                 )
                 shutil.copystat(path, h5_file)
-            adata = anndata.read_h5ad(h5_file, backed="r" if self.backed else None)
+            adata = anndata.read_h5ad(h5_file,
+                                      backed="r" if self.backed else None)
             if adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
                 print("Using adata.raw")
                 adata = anndata.AnnData(
-                    X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns
+                    X=adata.raw.X, var=adata.raw.var, obs=adata.obs,
+                    obsm=adata.obsm, uns=adata.uns
                 )
         else:
-            adata = anndata.read_h5ad(filesystem.open(path), backed="r" if self.backed else None)
+            adata = anndata.read_h5ad(filesystem.open(path),
+                                      backed="r" if self.backed else None)
         if "module" in adata.uns:
             adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
                 X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
             )
+
         return adata
 
     def add_data(self, path, data):
@@ -96,6 +103,19 @@ class AnndataDataset(AbstractDataset):
                     schema[key] = s[key]
         return schema
 
+    @staticmethod
+    def get_X(adata, keys, layer=None):
+        if len(keys) == 1 and isinstance(keys[0],
+                                         slice):  # special case if slice specified
+            keys = keys[0]
+        d = adata[:, keys]
+        X = d.X if layer is None else d.layers[layer]
+        if scipy.sparse.issparse(X) and not scipy.sparse.isspmatrix_csc(X):
+            X = X.tocsc()
+
+        var = pd.DataFrame(index=d.var.index)
+        return X, var
+
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
         adata = self.get_data(filesystem, path)
         if keys is None:
@@ -110,17 +130,17 @@ class AnndataDataset(AbstractDataset):
         var = None
         obsm = {}
         adata_modules = None
+        layers = {}
+        for layer_key in keys.keys():
+            X_layer, var_layer = AnndataDataset.get_X(adata, keys[layer_key],
+                                                      layer_key)
+            adata_layer = AnnData(X=X_layer, var=var_layer)
+            layers[layer_key] = adata_layer
         if len(X_keys) > 0:
-            if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified
-                X_keys = X_keys[0]
-            d = adata[:, X_keys]
-            if scipy.sparse.issparse(d.X) and not scipy.sparse.isspmatrix_csc(d.X):
-                d.X = d.X.tocsc()
-            X = d.X
-            var = pd.DataFrame(index=d.var.index)
+            X, var = AnndataDataset.get_X(adata, X_keys)
         if len(module_keys) > 0:
             if len(module_keys) == 1 and isinstance(
-                module_keys[0], slice
+                    module_keys[0], slice
             ):  # special case if slice specified
                 module_keys = module_keys[0]
             adata_modules = adata.uns[ADATA_MODULE_UNS_KEY][:, module_keys]
@@ -138,11 +158,13 @@ class AnndataDataset(AbstractDataset):
                 embedding_data = adata.obsm[key]
                 obsm[key] = embedding_data
             if X is None:  # anndata requires empty X
-                X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
+                X = scipy.sparse.coo_matrix(([], ([], [])),
+                                            shape=(embedding_data.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
             obs = pd.DataFrame(index=pd.RangeIndex(adata.shape[0]).astype(str))
 
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns[ADATA_MODULE_UNS_KEY] = adata_modules
+        adata.uns[ADATA_LAYERS_UNS_KEY] = layers
         return adata

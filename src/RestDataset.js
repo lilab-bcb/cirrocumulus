@@ -13,11 +13,33 @@ function reshapeDistributionResult(distribution) {
         name: categories[i],
         feature: distributionResult.values[i].name,
         mean: distributionResult.values[i].mean,
-        percentExpressed: distributionResult.values[i].percentExpressed,
+        percentExpressed: distributionResult.values[i].percentExpressed
       });
     }
   });
   return results;
+}
+
+// convert sparse to dense and expand categorical values
+function convertSparseAndCategoricalArrays(resultObject, ndim) {
+  for (let key in resultObject) {
+    const data = resultObject[key];
+    if (data.indices) {
+      // sparse
+      const values = new Float32Array(ndim);
+      for (let i = 0, n = data.indices.length; i < n; i++) {
+        values[data.indices[i]] = data.values[i];
+      }
+      resultObject[key] = values;
+    } else if (data.categories) {
+      // category
+      const values = new Array(ndim);
+      for (let i = 0, n = data.values.length; i < n; i++) {
+        values[i] = data.categories[data.values[i]];
+      }
+      resultObject[key] = values;
+    }
+  }
 }
 
 export class RestDataset {
@@ -58,8 +80,8 @@ export class RestDataset {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + getIdToken(),
-        },
+          Authorization: 'Bearer ' + getIdToken()
+        }
       }).then((result) => result.json());
     }
   }
@@ -78,7 +100,7 @@ export class RestDataset {
 
   getJob(id) {
     return fetch(API + '/job?c=result&id=' + id + '&ds=' + this.id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     }).then((response) => {
       return response.json();
     });
@@ -86,7 +108,7 @@ export class RestDataset {
 
   getJobParams(id) {
     return fetch(API + '/job?c=params&id=' + id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     }).then((response) => {
       return response.json();
     });
@@ -94,7 +116,7 @@ export class RestDataset {
 
   getJobStatus(id) {
     return fetch(API + '/job?c=status&id=' + id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     }).then((response) => {
       if (response.status === 404) {
         return null;
@@ -105,7 +127,7 @@ export class RestDataset {
 
   getJobs(id) {
     return fetch(API + '/jobs?id=' + id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     }).then((response) => {
       return response.json();
     });
@@ -115,7 +137,7 @@ export class RestDataset {
     return fetch(API + '/job', {
       body: JSON.stringify({id: id}),
       method: 'DELETE',
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     });
   }
 
@@ -137,39 +159,26 @@ export class RestDataset {
     let p =
       jsonData !== '{}'
         ? fetch(API + '/data', {
-            body: jsonData,
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + getIdToken(),
-            },
-          })
-            .then((r) => r.json())
-            .then((result) => {
-              // convert sparse to dense
-              if (result.values) {
-                for (let key in result.values) {
-                  let data = result.values[key];
-                  if (data.indices) {
-                    // sparse
-                    let values = new Float32Array(this.schema.shape[0]);
-                    for (let i = 0, n = data.indices.length; i < n; i++) {
-                      values[data.indices[i]] = data.values[i];
-                    }
-                    result.values[key] = values;
-                  } else if (data.categories) {
-                    // category
-                    let values = new Array(this.schema.shape[0]);
-                    for (let i = 0, n = data.values.length; i < n; i++) {
-                      values[i] = data.categories[data.values[i]];
-                    }
-                    result.values[key] = values;
-                  }
-                }
+          body: jsonData,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + getIdToken()
+          }
+        })
+          .then((r) => r.json())
+          .then((result) => {
+            if (result.values) {
+              convertSparseAndCategoricalArrays(result.values, this.schema.shape[0]);
+            }
+            if (result.layers) {
+              for (const layer in result.layers) {
+                convertSparseAndCategoricalArrays(result.layers[layer], this.schema.shape[0]);
               }
-              cacheValues(result, cachedData);
-              return result;
-            })
+            }
+            cacheValues(result, cachedData);
+            return result;
+          })
         : Promise.resolve({});
     return p.then((result) => {
       if (local) {
@@ -193,7 +202,7 @@ export class RestDataset {
       return Promise.resolve(this.schema);
     }
     return fetch(API + '/schema?id=' + this.id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
+      headers: {Authorization: 'Bearer ' + getIdToken()}
     })
       .then((response) => {
         return response.json();

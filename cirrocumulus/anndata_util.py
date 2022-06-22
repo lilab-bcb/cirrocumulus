@@ -6,6 +6,7 @@ import anndata
 DATA_TYPE_MODULE = "module"
 DATA_TYPE_UNS_KEY = "data_type"
 ADATA_MODULE_UNS_KEY = "anndata_module"
+ADATA_LAYERS_UNS_KEY = "anndata_layers"
 
 
 def get_base(adata):
