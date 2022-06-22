@@ -1,7 +1,7 @@
 import pandas as pd
 import scipy.sparse
 
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY
 from cirrocumulus.dotplot_aggregator import DotPlotAggregator
 from cirrocumulus.feature_aggregator import FeatureAggregator
 from cirrocumulus.ids_aggregator import IdsAggregator
@@ -272,6 +272,7 @@ def handle_data(
     if values is not None:
         dimensions = values.get("dimensions", [])
         measures = values.get("measures", [])
+        # measure can be X or layers
         type2measures = get_type_to_measures(measures)
         results["values"] = {}
         for key in type2measures["obs"] + dimensions:
@@ -289,16 +290,27 @@ def handle_data(
             for i in range(len(adata_modules.var.index)):
                 x = adata_modules.X[:, i]
                 results["values"][adata_modules.var.index[i]] = x
-        if adata.X is not None:
-            is_sparse = scipy.sparse.issparse(adata.X)
-            for i in range(len(adata.var.index)):
-                x = adata.X[:, i]
+
+        def array_to_json(d, var_index, result):
+            is_sparse = scipy.sparse.issparse(d)
+            for i in range(len(var_index)):
+                x = d[:, i]
                 if is_sparse:
                     indices = x.indices
                     data = x.data
-                    results["values"][adata.var.index[i]] = dict(indices=indices, values=data)
+                    result[var_index[i]] = dict(indices=indices, values=data)
                 else:
-                    results["values"][adata.var.index[i]] = x
+                    result[var_index[i]] = x
+
+        if adata.X is not None:
+            array_to_json(adata.X, adata.var.index, results["values"])
+        if ADATA_LAYERS_UNS_KEY in adata.uns:
+            for layer_name in adata.uns[ADATA_LAYERS_UNS_KEY].keys():
+                if "layers" not in results:
+                    results["layers"] = {}
+                results["layers"][layer_name] = {}
+                adata_layer = adata.uns[ADATA_LAYERS_UNS_KEY][layer_name]
+                array_to_json(adata_layer.X, adata_layer.var.index, results["layers"][layer_name])
 
     if embedding_list is not None and len(embedding_list) > 0:
         results["embeddings"] = []

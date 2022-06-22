@@ -33,6 +33,7 @@ import {
   setDialog,
   setSearchTokens,
   setSelectedEmbedding,
+  setSelectedLayers,
   setTab,
   toggleEmbeddingLabel,
 } from './actions';
@@ -106,6 +107,22 @@ const getEmbeddingOptions = memoize((embeddings) => {
       id: getEmbeddingKey(embedding),
     });
   });
+
+  options.sort((item1, item2) => {
+    return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
+  });
+  return options;
+});
+const getLayersOptions = memoize((layers) => {
+  const options = [];
+  if (layers) {
+    layers.forEach((layer) => {
+      options.push({
+        text: layer,
+        id: layer,
+      });
+    });
+  }
 
   options.sort((item1, item2) => {
     return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
@@ -205,6 +222,7 @@ function ExplorePanel(props) {
     embeddingLabels,
     embeddings,
     embeddingData,
+    layers,
     handleDialog,
     handleCombineDatasetFilters,
     handleEmbeddingLabel,
@@ -213,6 +231,7 @@ function ExplorePanel(props) {
     handleTab,
     handleDeleteFeatureSet,
     handleEmbeddings,
+    handleLayers,
     handleSearchTokens,
     markers,
     removeDatasetFilter,
@@ -310,6 +329,10 @@ function ExplorePanel(props) {
       newValue.push(embedding);
     });
     handleEmbeddings(newValue);
+  }
+
+  function onLayersChange(event, value) {
+    handleLayers(value.map((item) => item.id));
   }
 
   function onFeatureSetClick(event, option) {
@@ -444,7 +467,7 @@ function ExplorePanel(props) {
   const featureSetOptions = getFeatureSetOptions(markers, categoricalNames);
   const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
   const selectedEmbeddings = getEmbeddingOptions(embeddings);
-
+  const layerOptions = getLayersOptions(dataset.layers);
   return (
     <>
       {'feature set view' === selectedPopupMenuItem && (
@@ -578,16 +601,22 @@ function ExplorePanel(props) {
             </div>
           </FormControl>
         )}
-        {/*{layerOptions.length > 0 &&*/}
-        {/*<FormControl sx={{display: 'block'}}>*/}
-        {/*    <AutocompleteVirtualized label={"Layers"}*/}
-        {/*                             testId={'layers-input'}*/}
-        {/*                             options={layerOptions}*/}
-        {/*                             value={layers}*/}
-        {/*                             getOptionLabel={(option) => option}*/}
-        {/*                             onChange={onLayersChange}*/}
-        {/*    />*/}
-        {/*</FormControl>}*/}
+        {layerOptions.length > 0 && (
+          <FormControl sx={{display: 'block'}}>
+            <AutocompleteVirtualized
+              label={'Layers'}
+              testId={'layers-input'}
+              options={layerOptions}
+              value={layers}
+              getChipText={(option) => option}
+              getOptionLabel={(option) => option.text}
+              getOptionSelected={(option, value) =>
+                findIndex(layers, (item) => item.id === option.id) !== -1
+              }
+              onChange={onLayersChange}
+            />
+          </FormControl>
+        )}
         {annotationOptions.length > 0 && (
           <FormControl sx={{display: 'block'}}>
             <AutocompleteVirtualized
@@ -798,6 +827,7 @@ const mapStateToProps = (state) => {
     embeddingData: state.embeddingData,
     embeddingLabels: state.embeddingLabels,
     embeddings: state.embeddings,
+    layers: state.layers,
     markers: state.markers,
     savedDatasetFilter: state.savedDatasetFilter,
     searchTokens: state.searchTokens,
@@ -828,6 +858,9 @@ const mapDispatchToProps = (dispatch) => {
     },
     handleEmbeddings: (value) => {
       dispatch(setSelectedEmbedding(value));
+    },
+    handleLayers: (value) => {
+      dispatch(setSelectedLayers(value));
     },
     handleEmbeddingLabel: (value) => {
       dispatch(toggleEmbeddingLabel(value));

@@ -20,6 +20,28 @@ function reshapeDistributionResult(distribution) {
   return results;
 }
 
+// convert sparse to dense and expand categorical values
+function convertSparseAndCategoricalArrays(resultObject, ndim) {
+  for (let key in resultObject) {
+    const data = resultObject[key];
+    if (data.indices) {
+      // sparse
+      const values = new Float32Array(ndim);
+      for (let i = 0, n = data.indices.length; i < n; i++) {
+        values[data.indices[i]] = data.values[i];
+      }
+      resultObject[key] = values;
+    } else if (data.categories) {
+      // category
+      const values = new Array(ndim);
+      for (let i = 0, n = data.values.length; i < n; i++) {
+        values[i] = data.categories[data.values[i]];
+      }
+      resultObject[key] = values;
+    }
+  }
+}
+
 export class RestDataset {
   /**
    *
@@ -146,25 +168,18 @@ export class RestDataset {
           })
             .then((r) => r.json())
             .then((result) => {
-              // convert sparse to dense
               if (result.values) {
-                for (let key in result.values) {
-                  let data = result.values[key];
-                  if (data.indices) {
-                    // sparse
-                    let values = new Float32Array(this.schema.shape[0]);
-                    for (let i = 0, n = data.indices.length; i < n; i++) {
-                      values[data.indices[i]] = data.values[i];
-                    }
-                    result.values[key] = values;
-                  } else if (data.categories) {
-                    // category
-                    let values = new Array(this.schema.shape[0]);
-                    for (let i = 0, n = data.values.length; i < n; i++) {
-                      values[i] = data.categories[data.values[i]];
-                    }
-                    result.values[key] = values;
-                  }
+                convertSparseAndCategoricalArrays(
+                  result.values,
+                  this.schema.shape[0]
+                );
+              }
+              if (result.layers) {
+                for (const layer in result.layers) {
+                  convertSparseAndCategoricalArrays(
+                    result.layers[layer],
+                    this.schema.shape[0]
+                  );
                 }
               }
               cacheValues(result, cachedData);

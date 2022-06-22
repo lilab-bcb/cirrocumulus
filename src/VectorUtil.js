@@ -67,10 +67,18 @@ export function cacheValues(result, cachedData) {
       cachedData[feature] = result.values[feature];
     }
   }
+  if (result.layers) {
+    for (const layer in result.layers) {
+      const values = result.layers[layer];
+      for (const feature in values) {
+        cachedData[layer + '/' + feature] = values[feature];
+      }
+    }
+  }
 }
 
 export function getTypeToMeasures(measures) {
-  let typeToMeasures = {X: [], obs: []};
+  const typeToMeasures = {X: [], obs: []};
   for (let i = 0; i < measures.length; i++) {
     const {name, type} = getVarNameType(measures[i]);
     let typeMeasures = typeToMeasures[type];
@@ -79,6 +87,14 @@ export function getTypeToMeasures(measures) {
       typeToMeasures[type] = typeMeasures;
     }
     typeMeasures.push(name);
+  }
+  const types = Object.keys(FEATURE_TYPE).map((type) => type.toLowerCase());
+  for (const type in typeToMeasures) {
+    if (types.indexOf(type.toLowerCase()) === -1) {
+      // add prefix for layers
+      const prefix = type + '/';
+      typeToMeasures[type] = typeToMeasures[type].map((key) => prefix + key);
+    }
   }
   return typeToMeasures;
 }
@@ -139,9 +155,11 @@ export function computeDerivedStats(result, q, cachedData) {
     const typeToMeasures = getTypeToMeasures(measures);
 
     let measureVectors = [];
-    Object.values(typeToMeasures).forEach((fields) => {
-      measureVectors = measureVectors.concat(getVectors(cachedData, fields));
-    });
+    for (const type in typeToMeasures) {
+      let keys = typeToMeasures[type];
+
+      measureVectors = measureVectors.concat(getVectors(cachedData, keys));
+    }
 
     result.summary = getStats(
       getVectors(cachedData, dimensions),

@@ -148,6 +148,9 @@ def main(argsv):
         except:
             pass
         webbrowser.open(url)
+    from flask import cli
+
+    cli.show_server_banner = lambda *_: None  # suppress warning message
     app.run(host=args.host, port=args.port, debug=False)
 
 

@@ -52,6 +52,7 @@ import {
   SET_SEARCH_TOKENS,
   SET_SELECTED_DISTRIBUTION_DATA,
   SET_SELECTED_EMBEDDING,
+  SET_SELECTED_LAYERS,
   SET_SELECTION,
   SET_SERVER_INFO,
   SET_TAB,
@@ -302,6 +303,19 @@ function embeddings(state = [], action) {
       return action.payload.embeddings != null
         ? action.payload.embeddings
         : state;
+    default:
+      return state;
+  }
+}
+
+function layers(state = [], action) {
+  switch (action.type) {
+    case SET_SELECTED_LAYERS:
+      return action.payload;
+    case SET_DATASET:
+      return [];
+    case RESTORE_VIEW:
+      return action.payload.layers != null ? action.payload.layers : state;
     default:
       return state;
   }
@@ -924,6 +938,7 @@ export default combineReducers({
   jobResults,
   legendScrollPosition,
   tasks,
+  layers,
   loadingApp,
   markerOpacity,
   markers,

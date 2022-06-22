@@ -4,7 +4,7 @@ import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema
+from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY, dataset_schema
 from cirrocumulus.io_util import read_star_fusion_file
 
 
@@ -69,6 +69,7 @@ class AnndataDataset(AbstractDataset):
             adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
                 X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
             )
+
         return adata
 
     def add_data(self, path, data):
@@ -96,6 +97,18 @@ class AnndataDataset(AbstractDataset):
                     schema[key] = s[key]
         return schema
 
+    @staticmethod
+    def get_X(adata, keys, layer=None):
+        if len(keys) == 1 and isinstance(keys[0], slice):  # special case if slice specified
+            keys = keys[0]
+        d = adata[:, keys]
+        X = d.X if layer is None else d.layers[layer]
+        if scipy.sparse.issparse(X) and not scipy.sparse.isspmatrix_csc(X):
+            X = X.tocsc()
+
+        var = pd.DataFrame(index=d.var.index)
+        return X, var
+
     def read_dataset(self, filesystem, path, keys=None, dataset=None):
         adata = self.get_data(filesystem, path)
         if keys is None:
@@ -110,14 +123,13 @@ class AnndataDataset(AbstractDataset):
         var = None
         obsm = {}
         adata_modules = None
+        layers = {}
+        for layer_key in keys.keys():
+            X_layer, var_layer = AnndataDataset.get_X(adata, keys[layer_key], layer_key)
+            adata_layer = AnnData(X=X_layer, var=var_layer)
+            layers[layer_key] = adata_layer
         if len(X_keys) > 0:
-            if len(X_keys) == 1 and isinstance(X_keys[0], slice):  # special case if slice specified
-                X_keys = X_keys[0]
-            d = adata[:, X_keys]
-            if scipy.sparse.issparse(d.X) and not scipy.sparse.isspmatrix_csc(d.X):
-                d.X = d.X.tocsc()
-            X = d.X
-            var = pd.DataFrame(index=d.var.index)
+            X, var = AnndataDataset.get_X(adata, X_keys)
         if len(module_keys) > 0:
             if len(module_keys) == 1 and isinstance(
                 module_keys[0], slice
@@ -145,4 +157,5 @@ class AnndataDataset(AbstractDataset):
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns[ADATA_MODULE_UNS_KEY] = adata_modules
+        adata.uns[ADATA_LAYERS_UNS_KEY] = layers
         return adata

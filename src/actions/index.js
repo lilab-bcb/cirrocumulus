@@ -114,6 +114,7 @@ export const SET_FEATURE_SUMMARY = 'SET_FEATURE_SUMMARY';
 
 export const SET_SEARCH_TOKENS = 'SET_SEARCH_TOKENS';
 
+export const SET_SELECTED_LAYERS = 'SET_SELECTED_LAYERS';
 export const SET_SELECTED_EMBEDDING = 'SET_SELECTED_EMBEDDING';
 export const SET_MESSAGE = 'SET_MESSAGE';
 export const SET_INTERPOLATOR = 'SET_INTERPOLATOR';
@@ -1648,9 +1649,16 @@ export function setSearchTokens(tokens, updateActiveFeature = true) {
   };
 }
 
+export function setSelectedLayers(payload) {
+  return function (dispatch, getState) {
+    dispatch({type: SET_SELECTED_LAYERS, payload: payload});
+    dispatch(_updateCharts(null));
+  };
+}
+
 export function setSelectedEmbedding(payload) {
   return function (dispatch, getState) {
-    let prior = getState().embeddings;
+    const prior = getState().embeddings;
     dispatch({type: SET_SELECTED_EMBEDDING, payload: payload});
     dispatch(
       _updateCharts((err) => {
@@ -1930,9 +1938,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
       }
     });
     const featureSetTokens = groupedSearchTokens[FEATURE_TYPE.FEATURE_SET];
-    const xValues = groupedSearchTokens[FEATURE_TYPE.X].map(
-      (token) => token.id
-    );
+    let xValues = groupedSearchTokens[FEATURE_TYPE.X].map((token) => token.id);
     const obsCatValues = groupedSearchTokens[FEATURE_TYPE.OBS_CAT].map(
       (token) => token.id
     );
@@ -1963,6 +1969,14 @@ function _updateCharts(onError, updateActiveFeature = true) {
       .forEach((feature) => {
         features.add(feature);
       });
+    const newXValues = [];
+    state.layers.forEach((layer) => {
+      xValues.forEach((feature) => {
+        features.add(layer + '/' + feature);
+        newXValues.push(layer + '/' + feature);
+      });
+    });
+    xValues = xValues.concat(newXValues);
     const embeddingImagesToFetch = [];
     embeddings.forEach((embedding) => {
       const embeddingKey = getEmbeddingKey(embedding);
@@ -2104,7 +2118,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
         moduleValues.forEach((feature) => {
           let key = category + '-' + feature;
           if (cachedDistributionKeys[key] == null) {
-            distributionMeasuresToFetch.add('modules/' + feature);
+            distributionMeasuresToFetch.add('module/' + feature);
           }
         });
         otherSearchTokenKeys.forEach((searchTokenKey) => {
