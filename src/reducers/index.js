@@ -62,7 +62,7 @@ import {
   SET_WINDOW_SIZE,
   UPDATE_CATEGORICAL_COLOR,
   UPDATE_CATEGORICAL_NAME,
-  UPDATE_DATASET
+  UPDATE_DATASET,
 } from '../actions';
 import {createCategoryToStats} from '../MetaEmbedding';
 import {
@@ -72,32 +72,37 @@ import {
   INTERPOLATOR_SCALING_NONE,
   NATSORT,
   TRACE_TYPE_META_IMAGE,
-  updateTraceColors
+  updateTraceColors,
 } from '../util';
 
 export const DIST_PLOT_OPTIONS = {
-  chartType: 'dotplot', violinScale: 'width', violinHeight: 100, violinWidth: 80, violinShowBoxplot: true
+  chartType: 'dotplot',
+  violinScale: 'width',
+  violinHeight: 100,
+  violinWidth: 80,
+  violinShowBoxplot: true,
 };
 const DEFAULT_DIST_PLOT_OPTIONS = {
   X: DIST_PLOT_OPTIONS,
   modules: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'heatmap'}),
-  obs: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'violin'})
+  obs: Object.assign({}, DIST_PLOT_OPTIONS, {chartType: 'violin'}),
 };
 
 export const DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
   name: DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR,
   value: getInterpolator(DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR),
   reversed: false,
-  scale: INTERPOLATOR_SCALING_NONE
+  scale: INTERPOLATOR_SCALING_NONE,
 };
 
 const DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ = {
   X: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ),
   modules: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ),
-  obs: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ)
+  obs: Object.assign({}, DISTRIBUTION_PLOT_INTERPOLATOR_OBJ),
 };
 const DEFAULT_PRIMARY_CHART_SIZE = {
-  width: window.innerWidth - 280, height: Math.max(300, window.innerHeight - 370)
+  width: window.innerWidth - 280,
+  height: Math.max(300, window.innerHeight - 370),
 };
 
 const DEFAULT_CHART_OPTIONS = {
@@ -108,7 +113,7 @@ const DEFAULT_CHART_OPTIONS = {
   showFog: DEFAULT_SHOW_FOG,
   darkMode: DEFAULT_DARK_MODE,
   labelFontSize: DEFAULT_LABEL_FONT_SIZE,
-  labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH
+  labelStrokeWidth: DEFAULT_LABEL_STROKE_WIDTH,
 };
 
 function chartSize(state = 300, action) {
@@ -120,15 +125,21 @@ function chartSize(state = 300, action) {
   }
 }
 
-function panel(state = {
-  dividerDelta: 0, drawerOpen: true, primaryChartSize: DEFAULT_PRIMARY_CHART_SIZE
-}, action) {
+function panel(
+  state = {
+    dividerDelta: 0,
+    drawerOpen: true,
+    primaryChartSize: DEFAULT_PRIMARY_CHART_SIZE,
+  },
+  action
+) {
   switch (action.type) {
     case SET_DRAG_DIVIDER:
     case SET_DRAWER_OPEN:
     case SET_WINDOW_SIZE:
       let primaryChartSize = state.primaryChartSize;
-      const drawerOpen = action.type === SET_DRAWER_OPEN ? action.payload : state.drawerOpen;
+      const drawerOpen =
+        action.type === SET_DRAWER_OPEN ? action.payload : state.drawerOpen;
 
       if (action.type === SET_WINDOW_SIZE) {
         const windowWidth = window.innerWidth;
@@ -138,7 +149,8 @@ function panel(state = {
         primaryChartSize = {width: width, height: height};
       } else if (action.type === SET_DRAG_DIVIDER) {
         primaryChartSize = {
-          width: primaryChartSize.width, height: action.payload
+          width: primaryChartSize.width,
+          height: action.payload,
         };
       }
       return {drawerOpen: drawerOpen, primaryChartSize: primaryChartSize};
@@ -184,7 +196,9 @@ function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
     case SET_CHART_OPTIONS:
       return Object.assign({}, action.payload);
     case RESTORE_VIEW:
-      return action.payload.chartOptions ? Object.assign({}, DEFAULT_CHART_OPTIONS, action.payload.chartOptions) : state;
+      return action.payload.chartOptions
+        ? Object.assign({}, DEFAULT_CHART_OPTIONS, action.payload.chartOptions)
+        : state;
     default:
       return state;
   }
@@ -193,7 +207,8 @@ function chartOptions(state = DEFAULT_CHART_OPTIONS, action) {
 function dataset(state = null, action) {
   switch (action.type) {
     case SET_DATASET:
-      document.title = action.payload == null ? 'Cirro' : action.payload.name + ' - Cirro';
+      document.title =
+        action.payload == null ? 'Cirro' : action.payload.name + ' - Cirro';
       if (action.payload) {
         let features = action.payload.var;
         if (features) {
@@ -213,7 +228,10 @@ function dataset(state = null, action) {
             }
           });
           features.sort((item1, item2) => {
-            const g = NATSORT(item1.group.toLowerCase(), item2.group.toLowerCase());
+            const g = NATSORT(
+              item1.group.toLowerCase(),
+              item2.group.toLowerCase()
+            );
             if (g !== 0) {
               return g;
             }
@@ -282,7 +300,9 @@ function embeddings(state = [], action) {
     case SET_DATASET:
       return [];
     case RESTORE_VIEW:
-      return action.payload.embeddings != null ? action.payload.embeddings : state;
+      return action.payload.embeddings != null
+        ? action.payload.embeddings
+        : state;
     default:
       return state;
   }
@@ -301,7 +321,6 @@ function layers(state = [], action) {
   }
 }
 
-
 function markers(state = [], action) {
   switch (action.type) {
     case SET_MARKERS:
@@ -319,7 +338,7 @@ function markers(state = [], action) {
               name: name,
               id: categoryName + '-' + name,
               readonly: true,
-              features: category[name]
+              features: category[name],
             });
           }
         }
@@ -338,7 +357,7 @@ function markers(state = [], action) {
                 name: name,
                 id: categoryName + '-' + name,
                 readonly: true,
-                features: category[name]
+                features: category[name],
               });
             }
           }
@@ -368,20 +387,27 @@ function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
     case SET_DATASET:
       return DEFAULT_MARKER_OPACITY;
     case RESTORE_VIEW:
-      return action.payload.markerOpacity != null ? action.payload.markerOpacity : state;
+      return action.payload.markerOpacity != null
+        ? action.payload.markerOpacity
+        : state;
     default:
       return state;
   }
 }
 
-function unselectedMarkerOpacity(state = DEFAULT_UNSELECTED_MARKER_OPACITY, action) {
+function unselectedMarkerOpacity(
+  state = DEFAULT_UNSELECTED_MARKER_OPACITY,
+  action
+) {
   switch (action.type) {
     case SET_UNSELECTED_MARKER_OPACITY:
       return action.payload;
     case SET_DATASET:
       return DEFAULT_UNSELECTED_MARKER_OPACITY;
     case RESTORE_VIEW:
-      return action.payload.unselectedMarkerOpacity != null ? action.payload.unselectedMarkerOpacity : state;
+      return action.payload.unselectedMarkerOpacity != null
+        ? action.payload.unselectedMarkerOpacity
+        : state;
     default:
       return state;
   }
@@ -469,15 +495,27 @@ function serverInfo(state = {}, action) {
   switch (action.type) {
     case SET_SERVER_INFO:
       if (action.payload.ontology && action.payload.ontology.cellTypes) {
-        action.payload.ontology.cellTypes.forEach((item) => (item.text = item.name));
-        action.payload.ontology.cellTypes.sort((item1, item2) => NATSORT(item1.text, item2.text));
+        action.payload.ontology.cellTypes.forEach(
+          (item) => (item.text = item.name)
+        );
+        action.payload.ontology.cellTypes.sort((item1, item2) =>
+          NATSORT(item1.text, item2.text)
+        );
       }
       if (action.payload.datasetSelectorColumns == null) {
-        action.payload.datasetSelectorColumns = [{field: 'name', label: 'Name', visible: true}, {
-          field: 'species', label: 'Species', visible: true
-        }, {
-          field: 'title', label: 'Title', visible: true
-        }];
+        action.payload.datasetSelectorColumns = [
+          {field: 'name', label: 'Name', visible: true},
+          {
+            field: 'species',
+            label: 'Species',
+            visible: true,
+          },
+          {
+            field: 'title',
+            label: 'Title',
+            visible: true,
+          },
+        ];
       }
       return action.payload;
     default:
@@ -502,9 +540,15 @@ function tab(state = 'embedding', action) {
     case SET_DATASET:
       return 'embedding';
     case SET_DISTRIBUTION_DATA:
-      return state === 'distribution' && action.payload.length === 0 ? 'embedding' : state;
+      return state === 'distribution' && action.payload.length === 0
+        ? 'embedding'
+        : state;
     case SET_SEARCH_TOKENS:
-      return state === 'composition' && action.payload.filter((item) => item.type === FEATURE_TYPE.OBS_CAT).length < 2 ? 'embedding' : state;
+      return state === 'composition' &&
+        action.payload.filter((item) => item.type === FEATURE_TYPE.OBS_CAT)
+          .length < 2
+        ? 'embedding'
+        : state;
     default:
       return state;
   }
@@ -519,13 +563,24 @@ function dialog(state = null, action) {
   }
 }
 
-function distributionPlotInterpolator(state = DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action) {
+function distributionPlotInterpolator(
+  state = DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
+  action
+) {
   switch (action.type) {
     case SET_DISTRIBUTION_PLOT_INTERPOLATOR:
-      return Object.assign({}, DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action.payload);
+      return Object.assign(
+        {},
+        DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
+        action.payload
+      );
     case RESTORE_VIEW:
       if (action.payload.distributionPlotInterpolator != null) {
-        const interpolator = Object.assign({}, DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ, action.payload.distributionPlotInterpolator);
+        const interpolator = Object.assign(
+          {},
+          DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
+          action.payload.distributionPlotInterpolator
+        );
         interpolator.value = getInterpolator(interpolator.name);
         return interpolator;
       }
@@ -545,7 +600,9 @@ function distributionPlotOptions(state = DEFAULT_DIST_PLOT_OPTIONS, action) {
     case SET_DISTRIBUTION_PLOT_OPTIONS:
       return Object.assign({}, state, action.payload);
     case RESTORE_VIEW:
-      return action.payload.distributionPlotOptions != null ? action.payload.distributionPlotOptions : state;
+      return action.payload.distributionPlotOptions != null
+        ? action.payload.distributionPlotOptions
+        : state;
     default:
       return state;
   }
@@ -628,7 +685,9 @@ function datasetFilter(state = {}, action) {
     case SET_DATASET_FILTER:
       return action.payload;
     case RESTORE_VIEW:
-      return action.payload.datasetFilter != null ? action.payload.datasetFilter : state;
+      return action.payload.datasetFilter != null
+        ? action.payload.datasetFilter
+        : state;
     default:
       return state;
   }
@@ -641,7 +700,9 @@ function combineDatasetFilters(state = 'and', action) {
     case SET_DATASET:
       return 'and';
     case RESTORE_VIEW:
-      return action.payload.combineDatasetFilters != null ? action.payload.combineDatasetFilters : state;
+      return action.payload.combineDatasetFilters != null
+        ? action.payload.combineDatasetFilters
+        : state;
     default:
       return state;
   }
@@ -685,7 +746,10 @@ function embeddingData(state = [], action) {
     case SET_SELECTION:
       state.forEach((trace, index) => {
         if (trace.type === TRACE_TYPE_META_IMAGE) {
-          trace.categoryToStats = action.payload.size === 0 ? trace.fullCategoryToStats : createCategoryToStats(trace, action.payload);
+          trace.categoryToStats =
+            action.payload.size === 0
+              ? trace.fullCategoryToStats
+              : createCategoryToStats(trace, action.payload);
           updateTraceColors(trace);
           state[index] = Object.assign({}, trace);
         }
@@ -695,7 +759,10 @@ function embeddingData(state = [], action) {
       state.forEach((trace, index) => {
         if (trace.continuous && trace.name === action.payload.name) {
           const summary = action.payload.summary;
-          const domain = trace.type === TRACE_TYPE_META_IMAGE ? [-3, 3] : [summary.min, summary.max];
+          const domain =
+            trace.type === TRACE_TYPE_META_IMAGE
+              ? [-3, 3]
+              : [summary.min, summary.max];
 
           if (trace.type === TRACE_TYPE_META_IMAGE) {
             if (summary.customZMin != null && !isNaN(summary.customZMin)) {
@@ -723,7 +790,9 @@ function embeddingData(state = [], action) {
       state.forEach((trace, index) => {
         if (!trace.continuous && trace.name === action.payload.name) {
           const range = trace.colorScale.range();
-          range[trace.colorScale.domain().indexOf(action.payload.originalValue)] = action.payload.color;
+          range[
+            trace.colorScale.domain().indexOf(action.payload.originalValue)
+          ] = action.payload.color;
           trace.colorScale.range(range);
           updateTraceColors(trace);
           state[index] = Object.assign({}, trace);
@@ -733,9 +802,14 @@ function embeddingData(state = [], action) {
     case SET_INTERPOLATOR:
       // update colors for existing continuous traces
       state.forEach((trace, index) => {
-        if (trace.continuous && trace.featureType === action.payload.featureType) {
+        if (
+          trace.continuous &&
+          trace.featureType === action.payload.featureType
+        ) {
           let domain = trace.colorScale.domain();
-          trace.colorScale = createColorScale(action.payload.value).domain(domain);
+          trace.colorScale = createColorScale(action.payload.value).domain(
+            domain
+          );
           updateTraceColors(trace);
           state[index] = Object.assign({}, trace);
         }
@@ -753,7 +827,9 @@ export function pointSize(state = DEFAULT_POINT_SIZE, action) {
     case SET_POINT_SIZE:
       return action.payload;
     case RESTORE_VIEW:
-      return action.payload.pointSize != null ? action.payload.pointSize : state;
+      return action.payload.pointSize != null
+        ? action.payload.pointSize
+        : state;
     default:
       return state;
   }
@@ -764,7 +840,9 @@ export function unselectedPointSize(state = DEFAULT_POINT_SIZE, action) {
     case SET_UNSELECTED_POINT_SIZE:
       return action.payload;
     case RESTORE_VIEW:
-      return action.payload.unselectedPointSize != null ? action.payload.unselectedPointSize : state;
+      return action.payload.unselectedPointSize != null
+        ? action.payload.unselectedPointSize
+        : state;
     default:
       return state;
   }
@@ -825,7 +903,9 @@ function interpolator(state = DEFAULT_INTERPOLATORS, action) {
       newValue[action.payload.featureType] = action.payload.value;
       return Object.assign({}, state, newValue);
     case RESTORE_VIEW:
-      return action.payload.interpolator != null ? Object.assign({}, state, action.payload.interpolator) : state;
+      return action.payload.interpolator != null
+        ? Object.assign({}, state, action.payload.interpolator)
+        : state;
     default:
       return state;
   }
@@ -873,5 +953,5 @@ export default combineReducers({
   tab,
   unselectedMarkerOpacity,
   unselectedPointSize,
-  user
+  user,
 });
