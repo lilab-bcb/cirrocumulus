@@ -285,12 +285,6 @@ def handle_data(
             else:
                 results["values"][key] = series
 
-        if adata.uns.get(ADATA_MODULE_UNS_KEY) is not None:
-            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY]
-            for i in range(len(adata_modules.var.index)):
-                x = adata_modules.X[:, i]
-                results["values"][adata_modules.var.index[i]] = x
-
         def array_to_json(d, var_index, result):
             is_sparse = scipy.sparse.issparse(d)
             for i in range(len(var_index)):
@@ -301,6 +295,10 @@ def handle_data(
                     result[var_index[i]] = dict(indices=indices, values=data)
                 else:
                     result[var_index[i]] = x
+
+        if adata.uns.get(ADATA_MODULE_UNS_KEY) is not None:
+            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY]
+            array_to_json(adata_modules.X, adata_modules.var.index, results["values"])
 
         if adata.X is not None:
             array_to_json(adata.X, adata.var.index, results["values"])
