@@ -138,7 +138,8 @@ def get_filter_expr(adata, data_filter):
     return keep_expr
 
 
-def precomputed_summary(dataset_api, dataset, obs_measures, var_measures, dimensions):
+def precomputed_summary(dataset_api, dataset, obs_measures, var_measures,
+                        dimensions):
     if "__count" in var_measures:
         var_measures.remove("__count")
     return dataset_api.read_precomputed_stats(
@@ -154,11 +155,13 @@ def precomputed_grouped_stats(dataset_api, dataset, var_measures, dimensions):
     return []
 
 
-def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measures, dimensions):
+def precomputed_embedding(dataset_api, dataset, basis, obs_measures,
+                          var_measures, dimensions):
     if (len(obs_measures) + len(var_measures) + len(dimensions)) == 0:
         obs_measures = ["__count"]
     return dataset_api.read_precomputed_basis(
-        dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures, basis=basis
+        dataset, obs_keys=obs_measures + dimensions, var_keys=var_measures,
+        basis=basis
     )
 
 
@@ -168,7 +171,7 @@ def get_var_name_type(key):
         return key, "X"
     else:
         key_type = key[0:index]
-        name = key[index + 1 :]
+        name = key[index + 1:]
         return name, key_type
 
 
@@ -203,7 +206,8 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
         filter_names.append(data_filter_obj["name"])
         reformatted_filters.append(filter_value)
 
-    df = get_adata(dataset_api, dataset, measures=["obs/index"], data_filters=reformatted_filters)
+    df = get_adata(dataset_api, dataset, measures=["obs/index"],
+                   data_filters=reformatted_filters)
     result_df = pd.DataFrame(index=df["index"])
     for i in range(len(reformatted_filters)):
         data_filter = reformatted_filters[i]
@@ -218,13 +222,13 @@ def handle_export_dataset_filters(dataset_api, dataset, data_filters):
 
 # embedding - list of basis and coords (whether to return coordinates). For binned embeddings, also measures and dimensions.
 def handle_data(
-    dataset_api,
-    dataset,
-    embedding_list=None,
-    values=None,
-    grouped_stats=None,
-    stats=None,
-    selection=None,
+        dataset_api,
+        dataset,
+        embedding_list=None,
+        values=None,
+        grouped_stats=None,
+        stats=None,
+        selection=None,
 ):
     dimensions = set()
     measures = set()
@@ -280,16 +284,11 @@ def handle_data(
             results["values"][key] = series
             if pd.api.types.is_categorical_dtype(series):
                 results["values"][key] = dict(
-                    values=series.values.codes, categories=series.cat.categories.values
+                    values=series.values.codes,
+                    categories=series.cat.categories.values
                 )
             else:
                 results["values"][key] = series
-
-        if adata.uns.get(ADATA_MODULE_UNS_KEY) is not None:
-            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY]
-            for i in range(len(adata_modules.var.index)):
-                x = adata_modules.X[:, i]
-                results["values"][adata_modules.var.index[i]] = x
 
         def array_to_json(d, var_index, result):
             is_sparse = scipy.sparse.issparse(d)
@@ -302,6 +301,11 @@ def handle_data(
                 else:
                     result[var_index[i]] = x
 
+        if adata.uns.get(ADATA_MODULE_UNS_KEY) is not None:
+            adata_modules = adata.uns[ADATA_MODULE_UNS_KEY]
+            array_to_json(adata_modules.X, adata_modules.var.index,
+                          results["values"])
+
         if adata.X is not None:
             array_to_json(adata.X, adata.var.index, results["values"])
         if ADATA_LAYERS_UNS_KEY in adata.uns:
@@ -310,7 +314,8 @@ def handle_data(
                     results["layers"] = {}
                 results["layers"][layer_name] = {}
                 adata_layer = adata.uns[ADATA_LAYERS_UNS_KEY][layer_name]
-                array_to_json(adata_layer.X, adata_layer.var.index, results["layers"][layer_name])
+                array_to_json(adata_layer.X, adata_layer.var.index,
+                              results["layers"][layer_name])
 
     if embedding_list is not None and len(embedding_list) > 0:
         results["embeddings"] = []
@@ -346,7 +351,8 @@ def handle_data(
         if len(selection_embeddings) > 0:
             results["selection"]["coordinates"] = {}
             for embedding in selection_embeddings:
-                results["selection"]["coordinates"][embedding["name"]] = UniqueAggregator(
+                results["selection"]["coordinates"][
+                    embedding["name"]] = UniqueAggregator(
                     "index"
                 ).execute(df)
         var_measures = type2measures["X"]
@@ -363,11 +369,13 @@ def handle_data(
 
 
 def handle_selection_ids(dataset_api, dataset, data_filter):
-    df = get_selected_data(dataset_api, dataset, measures=["obs/index"], data_filter=data_filter)
+    df = get_selected_data(dataset_api, dataset, measures=["obs/index"],
+                           data_filter=data_filter)
     return {"ids": IdsAggregator().execute(df)}
 
 
-def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
+def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[],
+              data_filters=[]):
     type2measures = get_type_to_measures(measures)
     var_keys_filter = []
     obs_keys_filter = []
@@ -388,7 +396,8 @@ def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], d
         basis_keys.add(embedding["name"])
 
     adata = dataset_api.read_dataset(
-        dataset=dataset, keys=dict(obs=obs_keys, X=var_keys, basis=list(basis_keys))
+        dataset=dataset,
+        keys=dict(obs=obs_keys, X=var_keys, basis=list(basis_keys))
     )
     # for basis_obj in basis_objs:
     #     if not basis_obj['precomputed'] and basis_obj['nbins'] is not None:
@@ -400,7 +409,8 @@ def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], d
 
 
 def get_selected_data(
-    dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None
+        dataset_api, dataset, embeddings=[], measures=[], dimensions=[],
+        data_filter=None
 ):
     df = get_adata(
         dataset_api,
