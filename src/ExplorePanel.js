@@ -113,22 +113,17 @@ const getEmbeddingOptions = memoize((embeddings) => {
   });
   return options;
 });
-const getLayersOptions = memoize((layers) => {
-  const options = [];
+const getLayersOptions = (layers) => {
   if (layers) {
-    layers.forEach((layer) => {
-      options.push({
-        text: layer,
-        id: layer,
-      });
+    const options = layers.slice();
+    options.sort((item1, item2) => {
+      return NATSORT(item1.toLowerCase(), item2.toLowerCase());
     });
+    return options;
+  } else {
+    return [];
   }
-
-  options.sort((item1, item2) => {
-    return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
-  });
-  return options;
-});
+};
 const getModulesOptions = memoize((items) => {
   if (items) {
     const options = items.slice();
@@ -332,7 +327,7 @@ function ExplorePanel(props) {
   }
 
   function onLayersChange(event, value) {
-    handleLayers(value.map((item) => item.id));
+    handleLayers(value);
   }
 
   function onFeatureSetClick(event, option) {
@@ -609,10 +604,8 @@ function ExplorePanel(props) {
               options={layerOptions}
               value={layers}
               getChipText={(option) => option}
-              getOptionLabel={(option) => option.text}
-              getOptionSelected={(option, value) =>
-                findIndex(layers, (item) => item.id === option.id) !== -1
-              }
+              getOptionLabel={(option) => option}
+              getOptionSelected={(option, value) => option === value}
               onChange={onLayersChange}
             />
           </FormControl>
