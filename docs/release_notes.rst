@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.35 `July 1, 2022`
+    * Fixed error when selecting more than one layer in `anndata`_ layers
+
 - 1.1.34 `June 22, 2022`
     * Added support for `anndata`_ layers
 
