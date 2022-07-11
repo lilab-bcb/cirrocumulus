@@ -42,7 +42,6 @@ dependencies = [
     "gunicorn",
     "numpy",
     "pandas",
-    "pyarrow",
     "pymongo",
     "requests",
     "scipy",
@@ -50,6 +49,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+parquet = [
+    'pyarrow',
+]
 test = [
     'pytest',
     'scanpy',
