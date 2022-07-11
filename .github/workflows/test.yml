@@ -30,7 +30,7 @@ jobs:
           yarn global add typescript
           yarn install
           yarn build
-          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test]
+          SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1 pip install .[test,parquet]
         env:
           CI: false
       - name: Test with pytest
