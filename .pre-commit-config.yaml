@@ -11,7 +11,7 @@ repos:
       - id: docformatter
         args: ["--wrap-summaries=100", "--wrap-descriptions=100"]
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.6.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/isort
