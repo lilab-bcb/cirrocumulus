@@ -85,7 +85,7 @@
     "jest-puppeteer": "^6.1.1",
     "prettier": "^2.7.1",
     "preval.macro": "^5.0.0",
-    "puppeteer": "^15.3.2"
+    "puppeteer": "^15.4.0"
   },
   "prettier": {
     "bracketSpacing": false,
