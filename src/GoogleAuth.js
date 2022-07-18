@@ -17,7 +17,7 @@ export function GoggleAuth() {
   };
 
   this.getEmail = function() {
-    return credential != null ? user.email : null;
+    return credential && user ? user.email : null;
   };
 
   this.signIn = function() {
