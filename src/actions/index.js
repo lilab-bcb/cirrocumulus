@@ -279,7 +279,7 @@ export function initAuth() {
           console.log(
             (new Date().getTime() - startTime) / 1000 + ' startup time'
           );
-          auth.init(serverInfo.auth).then(() => {
+          auth.init(serverInfo.auth, serverInfo.api).then(() => {
             dispatch(_setLoadingApp({loading: false, progress: 0}));
             dispatch(initLogin(true));
           });
