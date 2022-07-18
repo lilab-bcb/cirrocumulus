@@ -1,61 +1,94 @@
-const authScopes = [
-  'email',
+const authScopes = ['email'
   // 'profile',
   // 'https://www.googleapis.com/auth/userinfo.profile',
   // 'https://www.googleapis.com/auth/contacts.readonly',
   // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 
+const LOCAL_STORAGE_KEY = 'google-token-storage';
+
 export function GoggleAuth() {
-  this.signOut = function () {
-    return window.gapi.auth2.getAuthInstance().signOut();
+  let credential = null;
+  let resolveCallback = null;
+  let user = null;
+
+  this.getIdToken = function() {
+    return credential;
   };
 
-  this.signIn = function () {
-    return window.gapi.auth2.getAuthInstance().signIn();
+  this.getEmail = function() {
+    return credential != null ? user.email : null;
   };
 
-  this.getEmail = function () {
-    const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-    if (isSignedIn) {
-      return window.gapi.auth2
-        .getAuthInstance()
-        .currentUser.get()
-        .getBasicProfile()
-        .getEmail();
-    }
-  };
-
-  // this.getAccessToken = function () {
-  //     return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-  // };
-
-  this.getIdToken = function () {
-    return typeof window.gapi !== 'undefined'
-      ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
-          .id_token
-      : '';
-  };
-
-  this.init = function (authInfo) {
+  this.signIn = function() {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://apis.google.com/js/api.js';
+      resolveCallback = resolve;
+      window.google.accounts.id.prompt();
+    });
+  };
 
-      script.onload = (e) => {
-        window.gapi.load('client:auth2', () => {
-          window.gapi.client
-            .init({
-              clientId: authInfo.clientId,
-              scope: authScopes.join(' '),
-            })
-            .then(() => {
-              resolve();
-            });
+  this.signOut = function() {
+    return new Promise((resolve) => {
+      window.google.accounts.id.revoke(user.sub, done => {
+        window.google.accounts.id.disableAutoSelect();
+        credential = null;
+        user = null;
+        delete window.localStorage[LOCAL_STORAGE_KEY];
+        resolve();
+      });
+    });
+  };
+
+
+  this.init = function(authInfo, api) {
+    return new Promise((resolve) => {
+
+
+      function handleCredentialResponse(response) {
+        credential = response.credential; //  ID token as a base64-encoded JSON Web Token (JWT) string.
+        // get user from server
+        api.getUserPromise().then(_user => {
+          user = _user;
+          window.localStorage[LOCAL_STORAGE_KEY] = credential;
+          if (resolveCallback) {
+            resolveCallback();
+          }
+        }).catch(err => {
+          console.log(err);
         });
-      };
-      document.getElementsByTagName('head')[0].appendChild(script);
+      }
+
+      function onGapiLoad() {
+        window.google.accounts.id.initialize({
+          client_id: authInfo.clientId, scope: authScopes.join(' '), callback: handleCredentialResponse
+        });
+        if (LOCAL_STORAGE_KEY in window.localStorage) {
+          credential = window.localStorage[LOCAL_STORAGE_KEY];
+          api.getUserPromise().then(_user => {
+            user = _user;
+          }).catch(err => {
+            console.log(err);
+          }).finally(() => resolve());
+        } else {
+          resolve();
+        }
+      }
+
+      function addScript(src, onLoad) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.defer = true;
+        script.src = src;
+
+        script.onload = (e) => {
+          onLoad();
+        };
+
+        document.getElementsByTagName('head')[0].appendChild(script);
+      }
+
+      addScript('https://accounts.google.com/gsi/client', onGapiLoad);
     });
   };
 }
