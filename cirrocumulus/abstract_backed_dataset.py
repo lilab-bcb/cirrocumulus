@@ -126,9 +126,7 @@ class AbstractBackedDataset(AbstractDataset):
             module_ids = dataset_info["module"]
             module_X_node = root["uns/module/X"]
             module_X, module_var = self.get_X(module_ids, module_keys, module_X_node)
-            adata_modules = AnnData(
-                X=module_X, var=pd.DataFrame(index=module_var), obs=obs
-            )  # obs is shared
+            adata_modules = AnnData(X=module_X, var=module_var, obs=obs)  # obs is shared
         if len(basis_keys) > 0:
             group = root["obsm"]
             for key in basis_keys:

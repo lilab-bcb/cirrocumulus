@@ -94,6 +94,10 @@ class PrepareData:
         self.dataset = dataset
         if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
             dataset.X = dataset.X.tocsc()
+        for layer_name in dataset.layers.keys():
+            X = dataset.layers[layer_name]
+            if scipy.sparse.issparse(X) and not scipy.sparse.isspmatrix_csc(X):
+                dataset.layers[layer_name] = X.tocsc()
         for i in range(len(dataset.obs.columns)):
             name = dataset.obs.columns[i]
             c = dataset.obs[name]

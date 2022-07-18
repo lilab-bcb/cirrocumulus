@@ -31,20 +31,16 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
 
     - Set environment variables:
 
-        - CIRRO_AUTH_CLIENT_ID: to your Okta client id
+        - CIRRO_AUTH_CLIENT_ID: to your Okta or Google client id
         - CIRRO_AUTH_PROVIDER: to either okta or google.
-        - CIRRO_AUTH_ISSUER (for okta). The URL of the authorization server that will perform authentication.
+        - CIRRO_AUTH_ISSUER (okta only). The URL of the authorization server that will perform authentication.
           All Developer Accounts have a "default" authorization server.
           The issuer is a combination of your Org URL (found in the upper right of the console home page)
-          and /oauth2/default. For example, https://dev-1234.oktapreview.com/oauth2/default
+          and /oauth2/default. For example, https://dev-1234.oktapreview.com/oauth2/default.
 
     - See `Okta documentation`_ for creating custom app integrations with Okta.
 
-    - Visit the `Google API Console`_ to obtain OAuth 2.0 credentials for Google:
-
-        - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”
-        - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
-          and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+    - Visit the `Google OAuth 2.0 documentation`_ to obtain OAuth 2.0 credentials for Google.
 
 
 - Additional libraries needed for cloud storage:
@@ -102,13 +98,13 @@ Google App Engine
 
     gcloud app create --project=<PROJECT>
 
-- Obtain OAuth 2.0 credentials.
 
-    - Create an OAuth client id. Set the OAuth consent screen application name and add your server URL to the list of “Authorized domains”. Your server URL is \https://<PROJECT>.appspot.com.
-    - Go to Credentials and click “Create Credentials > OAuth client ID”. Enter “Web application” for “Application Type”
-      and your server URL for “Authorized JavaScript origins”. Click “Create” to create the credentials.
+- Optionally set up OAuth 2.0.
 
-- Replace CIRRO_AUTH_CLIENT_ID in app.yaml with your OAuth client id. You can optionally edit `app.yaml`_ to further customize your application settings.
+    - Follow the instructions at `Google OAuth 2.0 documentation`_. Add your server URL to the list of “Authorized domains”. Your server URL is \https://<PROJECT>.appspot.com.
+    - Replace CIRRO_AUTH_CLIENT_ID in app.yaml with your OAuth client id.
+
+- Optionally edit `app.yaml`_ to further customize your application settings.
 
 - Deploy the application using the command below. Your project is available at \https://<PROJECT>.appspot.com.::
 
@@ -116,9 +112,8 @@ Google App Engine
 
 - Use the `prepare_data` command to freeze an h5ad, loom, or Seurat file in cirrocumulus format. The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
 
-- Go to \https://<PROJECT>.appspot.com in your web browser and login.
-
-    - By default, no one is allowed to add datasets to your application.
+-  If you enabled OAuth 2.0, no one is allowed to add datasets to your application
+    - Go to \https://<PROJECT>.appspot.com in your web browser and login
     - In Google Console, navigate to Datastore > Entities and click on your email address. Add the property ``importer`` of type ``boolean`` and set it to ``true``.
     - Go back to \https://<PROJECT>.appspot.com and start adding datasets.
 
@@ -280,3 +275,4 @@ Developer Instructions
 .. _Google Cloud Storage: https://cloud.google.com/storage/docs/hosting-static-website-http
 .. _Mixpanel: https://mixpanel.com/
 .. _Okta documentation: https://help.okta.com/en/prod/Content/Topics/Apps/Apps_App_Integration_Wizard.htm
+.. _Google OAuth 2.0 documentation: https://support.google.com/cloud/answer/6158849

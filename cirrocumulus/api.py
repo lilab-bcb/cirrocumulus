@@ -396,9 +396,10 @@ def handle_file():
 
 @cirro_blueprint.route("/user", methods=["GET"])
 def handle_user():
-    email = get_auth().auth()["email"]
+    user = get_auth().auth()
     database_api = get_database()
-    user = database_api.user(email)
+    db_user = database_api.user(user["email"])
+    user.update(db_user)
     return json_response(user)
 
 

@@ -6,56 +6,96 @@ const authScopes = [
   // 'https://www.googleapis.com/auth/devstorage.full_control',
 ];
 
-export function GoggleAuth() {
-  this.signOut = function () {
-    return window.gapi.auth2.getAuthInstance().signOut();
-  };
+const LOCAL_STORAGE_KEY = 'google-token-storage';
 
-  this.signIn = function () {
-    return window.gapi.auth2.getAuthInstance().signIn();
+export function GoggleAuth() {
+  let credential = null;
+  let resolveCallback = null;
+  let user = null;
+
+  this.getIdToken = function () {
+    return credential;
   };
 
   this.getEmail = function () {
-    const isSignedIn = window.gapi.auth2.getAuthInstance().isSignedIn.get();
-    if (isSignedIn) {
-      return window.gapi.auth2
-        .getAuthInstance()
-        .currentUser.get()
-        .getBasicProfile()
-        .getEmail();
-    }
+    return credential != null ? user.email : null;
   };
 
-  // this.getAccessToken = function () {
-  //     return window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-  // };
-
-  this.getIdToken = function () {
-    return typeof window.gapi !== 'undefined'
-      ? window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse()
-          .id_token
-      : '';
-  };
-
-  this.init = function (authInfo) {
+  this.signIn = function () {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = 'https://apis.google.com/js/api.js';
+      resolveCallback = resolve;
+      window.google.accounts.id.prompt();
+    });
+  };
 
-      script.onload = (e) => {
-        window.gapi.load('client:auth2', () => {
-          window.gapi.client
-            .init({
-              clientId: authInfo.clientId,
-              scope: authScopes.join(' '),
-            })
-            .then(() => {
-              resolve();
-            });
+  this.signOut = function () {
+    return new Promise((resolve) => {
+      window.google.accounts.id.revoke(user.sub, (done) => {
+        window.google.accounts.id.disableAutoSelect();
+        credential = null;
+        user = null;
+        delete window.localStorage[LOCAL_STORAGE_KEY];
+        resolve();
+      });
+    });
+  };
+
+  this.init = function (authInfo, api) {
+    return new Promise((resolve) => {
+      function handleCredentialResponse(response) {
+        credential = response.credential; //  ID token as a base64-encoded JSON Web Token (JWT) string.
+        // get user from server
+        api
+          .getUserPromise()
+          .then((_user) => {
+            user = _user;
+            window.localStorage[LOCAL_STORAGE_KEY] = credential;
+            if (resolveCallback) {
+              resolveCallback();
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+
+      function onGapiLoad() {
+        window.google.accounts.id.initialize({
+          client_id: authInfo.clientId,
+          scope: authScopes.join(' '),
+          callback: handleCredentialResponse,
         });
-      };
-      document.getElementsByTagName('head')[0].appendChild(script);
+        if (LOCAL_STORAGE_KEY in window.localStorage) {
+          credential = window.localStorage[LOCAL_STORAGE_KEY];
+          api
+            .getUserPromise()
+            .then((_user) => {
+              user = _user;
+            })
+            .catch((err) => {
+              console.log(err);
+            })
+            .finally(() => resolve());
+        } else {
+          resolve();
+        }
+      }
+
+      function addScript(src, onLoad) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.defer = true;
+        script.src = src;
+
+        script.onload = (e) => {
+          onLoad();
+        };
+
+        document.getElementsByTagName('head')[0].appendChild(script);
+      }
+
+      addScript('https://accounts.google.com/gsi/client', onGapiLoad);
     });
   };
 }
