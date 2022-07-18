@@ -1,14 +1,15 @@
-import datetime
-import json
 import os
+import json
+import datetime
+
+from google.cloud import datastore
 
 from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.envir import CIRRO_EMAIL, CIRRO_JOB_RESULTS, \
-    SERVER_CAPABILITY_JOBS
+from cirrocumulus.envir import CIRRO_EMAIL, CIRRO_JOB_RESULTS, SERVER_CAPABILITY_JOBS
 from cirrocumulus.invalid_usage import InvalidUsage
 from cirrocumulus.job_api import save_job_result_to_file
 from cirrocumulus.util import get_email_domain
-from google.cloud import datastore
+
 
 DATASET = "Dataset"
 CAT_NAME = "Cat_Name"
@@ -34,13 +35,13 @@ def get_datasets(results, email, query, unique_ids):
                 }
             )
 
+
 # Firestore in Datastore Mode
 class CloudDatastore(AbstractDB):
     def __init__(self):
         super().__init__()
         self.datastore_client = datastore.Client()
-        os.environ[
-            CIRRO_EMAIL] = self.datastore_client.project + "@appspot.gserviceaccount.com"
+        os.environ[CIRRO_EMAIL] = self.datastore_client.project + "@appspot.gserviceaccount.com"
 
     def capabilities(self):
         c = super().capabilities()
@@ -85,19 +86,17 @@ class CloudDatastore(AbstractDB):
     def __get_entity(self, email, kind, entity_id):
         client = self.datastore_client
         if entity_id is None:
-            raise ValueError('entity_id not specified')
+            raise ValueError("entity_id not specified")
         e = client.get(client.key(kind, int(entity_id)))
         self.__get_key_and_dataset(email, e["dataset_id"])
         return e
 
-    def __upsert_entity(self, email, dataset_id, entity_id, kind,
-                        entity_update):
+    def __upsert_entity(self, email, dataset_id, entity_id, kind, entity_update):
         dataset_id = int(dataset_id)
         client = self.datastore_client
         self.__get_key_and_dataset(email, dataset_id)
         if entity_id is None:
-            e = datastore.Entity(client.key(kind),
-                                 exclude_from_indexes=["value"])
+            e = datastore.Entity(client.key(kind), exclude_from_indexes=["value"])
         else:
             entity_id = int(entity_id)
             key = client.key(kind, entity_id)
@@ -134,14 +133,12 @@ class CloudDatastore(AbstractDB):
 
         return results
 
-    def upsert_category_name(self, email, dataset_id, category, original_value,
-                             update):
+    def upsert_category_name(self, email, dataset_id, category, original_value, update):
         dataset_id = int(dataset_id)
         self.__get_key_and_dataset(email, dataset_id, False)
         client = self.datastore_client
         key = client.key(
-            CAT_NAME,
-            str(dataset_id) + "-" + str(category) + "-" + str(original_value)
+            CAT_NAME, str(dataset_id) + "-" + str(category) + "-" + str(original_value)
         )
         entity = datastore.Entity(key=key)
         update["category"] = category
@@ -211,11 +208,9 @@ class CloudDatastore(AbstractDB):
             dataset["readers"] = list(readers)
         dataset_id = dataset.get("id")
         if dataset_id is not None:  # only owner can update
-            key, dataset_entity = self.__get_key_and_dataset(email, dataset_id,
-                                                             True)
+            key, dataset_entity = self.__get_key_and_dataset(email, dataset_id, True)
         else:  # new dataset
-            dataset_entity = datastore.Entity(client.key(DATASET),
-                                              exclude_from_indexes=["url"])
+            dataset_entity = datastore.Entity(client.key(DATASET), exclude_from_indexes=["url"])
             user = client.get(client.key(USER, email))
             if "importer" not in user or not user["importer"]:
                 raise InvalidUsage("Not authorized", 403)
@@ -236,11 +231,9 @@ class CloudDatastore(AbstractDB):
         )
 
     def delete_feature_set(self, email, dataset_id, set_id):
-        return self.__delete_entity(email=email, kind=FEATURE_SET,
-                                    entity_id=set_id)
+        return self.__delete_entity(email=email, kind=FEATURE_SET, entity_id=set_id)
 
-    def upsert_feature_set(self, email, dataset_id, set_id, category, name,
-                           features):
+    def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
         entity_update = {}
         if name is not None:
             entity_update["name"] = name
@@ -266,12 +259,10 @@ class CloudDatastore(AbstractDB):
         )
 
     def delete_dataset_view(self, email, view_id):
-        return self.__delete_entity(email=email, kind=DATASET_VIEW,
-                                    entity_id=view_id)
+        return self.__delete_entity(email=email, kind=DATASET_VIEW, entity_id=view_id)
 
     def get_dataset_view(self, email, view_id):
-        return self.__get_entity(email=email, entity_id=view_id,
-                                 kind=DATASET_VIEW)
+        return self.__get_entity(email=email, entity_id=view_id, kind=DATASET_VIEW)
 
     def upsert_dataset_view(self, email, dataset_id, view):
         view["last_updated"] = datetime.datetime.utcnow()
@@ -295,8 +286,7 @@ class CloudDatastore(AbstractDB):
         dataset_id = int(dataset_id)
         client = self.datastore_client
         self.__get_key_and_dataset(email, dataset_id)
-        entity = datastore.Entity(client.key(JOB),
-                                  exclude_from_indexes=["params"])
+        entity = datastore.Entity(client.key(JOB), exclude_from_indexes=["params"])
         import json
 
         entity.update(
@@ -339,8 +329,7 @@ class CloudDatastore(AbstractDB):
             self.__get_key_and_dataset(email, entity["dataset_id"])
 
         if is_complete:
-            if os.environ.get(
-                    CIRRO_JOB_RESULTS) is not None:  # save to directory
+            if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
                 result = save_job_result_to_file(result, job_id)
             else:
                 raise ValueError("Please specify job result location")

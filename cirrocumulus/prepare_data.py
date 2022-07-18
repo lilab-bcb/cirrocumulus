@@ -1,22 +1,20 @@
-import argparse
-import logging
 import os
+import logging
+import argparse
 
-import anndata
 import numpy as np
 import pandas as pd
+import anndata
 import scipy.sparse
 
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema, \
-    get_scanpy_marker_keys
-from cirrocumulus.io_util import SPATIAL_HELP, add_spatial, filter_markers, \
-    get_markers, unique_id
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema, get_scanpy_marker_keys
+from cirrocumulus.io_util import SPATIAL_HELP, add_spatial, filter_markers, get_markers, unique_id
 from cirrocumulus.util import get_fs, open_file, to_json
+
 
 logger = logging.getLogger("cirro")
 
-cluster_fields = ["anno", "cell_type", "celltype", "leiden", "louvain",
-                  "seurat_cluster", "cluster"]
+cluster_fields = ["anno", "cell_type", "celltype", "leiden", "louvain", "seurat_cluster", "cluster"]
 categorical_fields_convert = ["seurat_clusters"]
 
 
@@ -31,12 +29,10 @@ def read_adata(path, spatial_directory=None, use_raw=False):
         adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
             X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
         )
-    if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[
-        0]:
+    if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
         logger.info("Using adata.raw")
         adata = anndata.AnnData(
-            X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm,
-            uns=adata.uns
+            X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns
         )
 
     if spatial_directory is not None:
@@ -44,8 +40,7 @@ def read_adata(path, spatial_directory=None, use_raw=False):
             logger.info("No spatial data found in {}".format(spatial_directory))
 
     for field in categorical_fields_convert:
-        if field in adata.obs and not pd.api.types.is_categorical_dtype(
-                adata.obs[field]):
+        if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
             logger.info("Converting {} to categorical".format(field))
             adata.obs[field] = adata.obs[field].astype(str).astype("category")
     return adata
@@ -53,16 +48,16 @@ def read_adata(path, spatial_directory=None, use_raw=False):
 
 class PrepareData:
     def __init__(
-            self,
-            datasets,
-            output,
-            dimensions=None,
-            groups=[],
-            group_nfeatures=10,
-            markers=[],
-            output_format="parquet",
-            no_auto_groups=False,
-            save_whitelist=None,
+        self,
+        datasets,
+        output,
+        dimensions=None,
+        groups=[],
+        group_nfeatures=10,
+        markers=[],
+        output_format="parquet",
+        no_auto_groups=False,
+        save_whitelist=None,
     ):
         self.groups = groups
         self.group_nfeatures = group_nfeatures
@@ -81,14 +76,10 @@ class PrepareData:
             for i in range(len(datasets)):
                 dataset = datasets[i]
                 if "group" not in dataset.var:
-                    dataset.var["group"] = dataset.uns.get("name",
-                                                           "dataset {}".format(
-                                                               i + 1))
-                if i > 0 and not np.array_equal(datasets[0].obs.index,
-                                                dataset.obs.index):
+                    dataset.var["group"] = dataset.uns.get("name", "dataset {}".format(i + 1))
+                if i > 0 and not np.array_equal(datasets[0].obs.index, dataset.obs.index):
                     raise ValueError("obs ids are not equal")
-            dataset = anndata.concat(datasets, axis=1, label="group",
-                                     merge="unique")
+            dataset = anndata.concat(datasets, axis=1, label="group", merge="unique")
         else:
             dataset = datasets[0]
         dataset.var.index = dataset.var.index.str.replace("/", "_")
@@ -101,8 +92,7 @@ class PrepareData:
         self.measures = []
         self.others = []
         self.dataset = dataset
-        if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(
-                dataset.X):
+        if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
             dataset.X = dataset.X.tocsc()
         for layer_name in dataset.layers.keys():
             X = dataset.layers[layer_name]
@@ -124,8 +114,7 @@ class PrepareData:
                         dataset.obs[name] = dataset.obs[name].astype("category")
                 else:
                     self.others.append(name)
-            elif not pd.api.types.is_string_dtype(
-                    c) and not pd.api.types.is_object_dtype(c):
+            elif not pd.api.types.is_string_dtype(c) and not pd.api.types.is_object_dtype(c):
                 self.measures.append("obs/" + name)
             else:
                 self.others.append(name)
@@ -145,8 +134,7 @@ class PrepareData:
             for field in dataset.obs.columns:
                 field_lc = field.lower()
                 for cluster_field in cluster_fields:
-                    if field_lc.find(
-                            cluster_field) != -1 and cluster_field not in existing_fields:
+                    if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
                         groups.append(field)
                         break
 
@@ -172,8 +160,7 @@ class PrepareData:
                 except ModuleNotFoundError:
                     pass
             if not use_pegasus and not use_scanpy:
-                raise ValueError(
-                    "Please install pegasuspy or scanpy to compute markers")
+                raise ValueError("Please install pegasuspy or scanpy to compute markers")
             first_time = True
 
             for group in self.groups:
@@ -187,16 +174,13 @@ class PrepareData:
                                 use_split_groups = False
                                 break
                         if use_split_groups:
-                            dataset.obs[field] = dataset.obs[
-                                split_groups[0]].str.cat(
+                            dataset.obs[field] = dataset.obs[split_groups[0]].str.cat(
                                 dataset.obs[split_groups[1:]], sep=","
                             )
 
                 if field in dataset.obs:
-                    if not pd.api.types.is_categorical_dtype(
-                            dataset.obs[field]):
-                        dataset.obs[field] = dataset.obs[field].astype(
-                            str).astype("category")
+                    if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
+                        dataset.obs[field] = dataset.obs[field].astype(str).astype("category")
                     if len(dataset.obs[field].cat.categories) > 1:
                         key_added = "rank_genes_" + str(field)
                         value_counts = dataset.obs[field].value_counts()
@@ -209,8 +193,7 @@ class PrepareData:
                                     )
                                 )
                                 first_time = False
-                            logger.info(
-                                "Computing markers for {}".format(field))
+                            logger.info("Computing markers for {}".format(field))
                             if use_pegasus:
                                 pg.de_analysis(
                                     dataset,
@@ -227,8 +210,7 @@ class PrepareData:
                                     groups=filtered_value_counts.index.to_list(),
                                 )
                 else:
-                    raise ValueError(group + " not found in " + ", ".join(
-                        dataset.obs.columns))
+                    raise ValueError(group + " not found in " + ", ".join(dataset.obs.columns))
         schema = self.get_schema()
         schema["format"] = output_format
         if output_format in ["parquet", "zarr"]:
@@ -262,8 +244,7 @@ class PrepareData:
                     if is_gzip
                     else os.path.join(uns_dir, result_id + ".json")
                 )
-                with open_file(result_path, "wt",
-                               compression="gzip" if is_gzip else None) as out:
+                with open_file(result_path, "wt", compression="gzip" if is_gzip else None) as out:
                     out.write(json_result)
         images = dataset.uns.pop("images", None)
         if images is not None:
@@ -278,18 +259,15 @@ class PrepareData:
         if output_format == "parquet":
             from cirrocumulus.parquet_output import save_dataset_pq
 
-            save_dataset_pq(dataset, schema, self.base_output, filesystem,
-                            self.save_whitelist)
+            save_dataset_pq(dataset, schema, self.base_output, filesystem, self.save_whitelist)
         elif output_format == "jsonl":
             from cirrocumulus.jsonl_io import save_dataset_jsonl
 
-            save_dataset_jsonl(dataset, schema, output_dir, self.base_output,
-                               filesystem)
+            save_dataset_jsonl(dataset, schema, output_dir, self.base_output, filesystem)
         elif output_format == "zarr":
             from cirrocumulus.zarr_output import save_dataset_zarr
 
-            save_dataset_zarr(dataset, schema, self.base_output, filesystem,
-                              self.save_whitelist)
+            save_dataset_zarr(dataset, schema, self.base_output, filesystem, self.save_whitelist)
         else:
             raise ValueError("Unknown format")
 
@@ -311,14 +289,11 @@ class PrepareData:
 
 
 def main(argsv):
-    parser = argparse.ArgumentParser(
-        description="Prepare a dataset for cirrocumulus server.")
-    parser.add_argument("dataset", help="Path to a h5ad, loom, or Seurat file",
-                        nargs="+")
+    parser = argparse.ArgumentParser(description="Prepare a dataset for cirrocumulus server.")
+    parser.add_argument("dataset", help="Path to a h5ad, loom, or Seurat file", nargs="+")
     parser.add_argument("--out", help="Path to output directory")
     parser.add_argument(
-        "--format", help="Output format", choices=["parquet", "jsonl", "zarr"],
-        default="zarr"
+        "--format", help="Output format", choices=["parquet", "jsonl", "zarr"], default="zarr"
     )
     parser.add_argument(
         "--whitelist",
@@ -343,8 +318,7 @@ def main(argsv):
         action="append",
     )
     parser.add_argument(
-        "--group_nfeatures", help="Number of marker genes/features to include",
-        type=int, default=10
+        "--group_nfeatures", help="Number of marker genes/features to include", type=int, default=10
     )
     parser.add_argument("--spatial", help=SPATIAL_HELP)
     args = parser.parse_args(argsv)
@@ -360,8 +334,7 @@ def main(argsv):
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
     if out.endswith("/"):
         out = out[: len(out) - 1]
-    output_format2extension = dict(parquet=".cpq", jsonl=".jsonl", zarr=".zarr",
-                                   h5ad=".h5ad")
+    output_format2extension = dict(parquet=".cpq", jsonl=".jsonl", zarr=".zarr", h5ad=".h5ad")
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
 
@@ -380,8 +353,7 @@ def main(argsv):
             subprocess.check_call(
                 [
                     "Rscript",
-                    pkg_resources.resource_filename("cirrocumulus",
-                                                    "seurat2h5ad.R"),
+                    pkg_resources.resource_filename("cirrocumulus", "seurat2h5ad.R"),
                     input_dataset,
                     h5_file,
                 ]
@@ -390,11 +362,9 @@ def main(argsv):
             tmp_file = h5_file
             use_raw = True
             tmp_files.append(tmp_file)
-        adata = read_adata(input_dataset, spatial_directory=args.spatial,
-                           use_raw=use_raw)
+        adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
-        adata.uns["name"] = \
-            os.path.splitext(os.path.basename(input_dataset.rstrip("/")))[0]
+        adata.uns["name"] = os.path.splitext(os.path.basename(input_dataset.rstrip("/")))[0]
 
     prepare_data = PrepareData(
         datasets=datasets,
