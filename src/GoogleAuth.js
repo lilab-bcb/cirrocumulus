@@ -1,4 +1,5 @@
-const authScopes = ['email'
+const authScopes = [
+  'email',
   // 'profile',
   // 'https://www.googleapis.com/auth/userinfo.profile',
   // 'https://www.googleapis.com/auth/contacts.readonly',
@@ -12,24 +13,24 @@ export function GoggleAuth() {
   let resolveCallback = null;
   let user = null;
 
-  this.getIdToken = function() {
+  this.getIdToken = function () {
     return credential;
   };
 
-  this.getEmail = function() {
+  this.getEmail = function () {
     return credential && user ? user.email : null;
   };
 
-  this.signIn = function() {
+  this.signIn = function () {
     return new Promise((resolve) => {
       resolveCallback = resolve;
       window.google.accounts.id.prompt();
     });
   };
 
-  this.signOut = function() {
+  this.signOut = function () {
     return new Promise((resolve) => {
-      window.google.accounts.id.revoke(user.sub, done => {
+      window.google.accounts.id.revoke(user.sub, (done) => {
         window.google.accounts.id.disableAutoSelect();
         credential = null;
         user = null;
@@ -39,36 +40,42 @@ export function GoggleAuth() {
     });
   };
 
-
-  this.init = function(authInfo, api) {
+  this.init = function (authInfo, api) {
     return new Promise((resolve) => {
-
-
       function handleCredentialResponse(response) {
         credential = response.credential; //  ID token as a base64-encoded JSON Web Token (JWT) string.
         // get user from server
-        api.getUserPromise().then(_user => {
-          user = _user;
-          window.localStorage[LOCAL_STORAGE_KEY] = credential;
-          if (resolveCallback) {
-            resolveCallback();
-          }
-        }).catch(err => {
-          console.log(err);
-        });
+        api
+          .getUserPromise()
+          .then((_user) => {
+            user = _user;
+            window.localStorage[LOCAL_STORAGE_KEY] = credential;
+            if (resolveCallback) {
+              resolveCallback();
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       }
 
       function onGapiLoad() {
         window.google.accounts.id.initialize({
-          client_id: authInfo.clientId, scope: authScopes.join(' '), callback: handleCredentialResponse
+          client_id: authInfo.clientId,
+          scope: authScopes.join(' '),
+          callback: handleCredentialResponse,
         });
         if (LOCAL_STORAGE_KEY in window.localStorage) {
           credential = window.localStorage[LOCAL_STORAGE_KEY];
-          api.getUserPromise().then(_user => {
-            user = _user;
-          }).catch(err => {
-            console.log(err);
-          }).finally(() => resolve());
+          api
+            .getUserPromise()
+            .then((_user) => {
+              user = _user;
+            })
+            .catch((err) => {
+              console.log(err);
+            })
+            .finally(() => resolve());
         } else {
           resolve();
         }
