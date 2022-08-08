@@ -99,6 +99,8 @@ Google App Engine
     gcloud app create --project=<PROJECT>
 
 
+- Enable the `Cloud Build API`_.
+
 - Optionally set up OAuth 2.0.
 
     - Follow the instructions at `Google OAuth 2.0 documentation`_. Add your server URL to the list of “Authorized domains”. Your server URL is \https://<PROJECT>.appspot.com.
@@ -112,7 +114,7 @@ Google App Engine
 
 - Use the `prepare_data` command to freeze an h5ad, loom, or Seurat file in cirrocumulus format. The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
 
--  If you enabled OAuth 2.0, no one is allowed to add datasets to your application
+- If you enabled OAuth 2.0, no one is allowed to add datasets to your application
     - Go to \https://<PROJECT>.appspot.com in your web browser and login
     - In Google Console, navigate to Datastore > Entities and click on your email address. Add the property ``importer`` of type ``boolean`` and set it to ``true``.
     - Go back to \https://<PROJECT>.appspot.com and start adding datasets.
@@ -276,3 +278,4 @@ Developer Instructions
 .. _Mixpanel: https://mixpanel.com/
 .. _Okta documentation: https://help.okta.com/en/prod/Content/Topics/Apps/Apps_App_Integration_Wizard.htm
 .. _Google OAuth 2.0 documentation: https://support.google.com/cloud/answer/6158849
+.. _Cloud Build API: https://console.cloud.google.com/flows/enableapi?apiid=cloudbuild.googleapis.com
