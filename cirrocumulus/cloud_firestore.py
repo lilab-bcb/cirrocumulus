@@ -36,7 +36,7 @@ def get_datasets(results, email, query, unique_ids):
             )
 
 
-class CloudFireStoreNative(AbstractDB):
+class CloudFireStore(AbstractDB):
     def __init__(self):
         super().__init__()
         self.datastore_client = datastore.Client()
