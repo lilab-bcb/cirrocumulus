@@ -215,7 +215,7 @@ class CloudFireStore(AbstractDB):
 
         dataset_entity.update(dataset)
         client.put(dataset_entity)
-        dataset_id = dataset.id
+        dataset_id = dataset_entity.id
         return dataset_id
 
     # feature sets
