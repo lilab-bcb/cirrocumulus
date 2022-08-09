@@ -36,8 +36,7 @@ def get_datasets(results, email, query, unique_ids):
             )
 
 
-# Firestore in Datastore Mode
-class CloudDatastore(AbstractDB):
+class CloudFireStore(AbstractDB):
     def __init__(self):
         super().__init__()
         self.datastore_client = datastore.Client()
@@ -73,7 +72,7 @@ class CloudDatastore(AbstractDB):
             d = dict(id=result.id)
             for key in keys:
                 d[key] = result.get(key)
-            results.append(d)
+            results.append(result)
         return results
 
     def __delete_entity(self, email, kind, entity_id):
@@ -85,8 +84,6 @@ class CloudDatastore(AbstractDB):
 
     def __get_entity(self, email, kind, entity_id):
         client = self.datastore_client
-        if entity_id is None:
-            raise ValueError("entity_id not specified")
         e = client.get(client.key(kind, int(entity_id)))
         self.__get_key_and_dataset(email, e["dataset_id"])
         return e

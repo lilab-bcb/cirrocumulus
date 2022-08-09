@@ -64,7 +64,10 @@ class AnndataDataset(AbstractDataset):
                     X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns
                 )
         else:
-            adata = anndata.read_h5ad(filesystem.open(path), backed="r" if self.backed else None)
+            if self.backed:
+                adata = anndata.read_h5ad(path, backed="r")
+            else:
+                adata = anndata.read_h5ad(filesystem.open(path))
         if "module" in adata.uns:
             adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
                 X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
