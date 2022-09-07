@@ -9,7 +9,7 @@ readme = 'README.rst'
 authors = [
     { name = 'Joshua Gould', email = 'cirrocumulus@googlegroups.com' },
 ]
-urls.Source = 'https://github.com/klarman-cell-observatory/cirrocumulus'
+urls.Source = 'https://github.com/lilab-bcb/cirrocumulus'
 urls.Documentation = "https://cirrocumulus.readthedocs.io/"
 
 license = { file = 'LICENSE' }
@@ -57,7 +57,7 @@ test = [
     'scanpy',
     'mongomock',
 ]
-dev = ['pre-commit', 'isort', 'black']
+
 
 [tool.hatch.build.force-include]
 "build" = "cirrocumulus/client"
@@ -77,6 +77,8 @@ exclude = [
 
 [tool.hatch.version]
 source = 'vcs'
+
+dev = ['pre-commit', 'isort', 'black']
 
 [tool.black]
 line-length = 100
