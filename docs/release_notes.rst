@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.37 `September 8, 2022`
+    * Added option to sort clusters by percentage of selected cells within a cluster
+
 - 1.1.36 `July 18, 2022`
     * Updated support for Google OAuth 2.0 and App Engine
     * Ensure `anndata`_ layers are stored in sparse csc format in `cirro prepare_data`

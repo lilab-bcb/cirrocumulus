@@ -7,8 +7,8 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import React, {useEffect, useRef, useState} from 'react';
-import {IconButton, ListItem, ListItemText} from '@mui/material';
-import {intFormat} from './formatters';
+import {IconButton, ListItemButton, ListItemText} from '@mui/material';
+import {intFormat, numberFormat0} from './formatters';
 import {FixedSizeList} from 'react-window';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
@@ -21,6 +21,7 @@ export default function CategoricalLegend(props) {
   const listRef = useRef();
   const [contextMenu, setContextMenu] = useState(null);
   const [newName, setNewName] = useState('');
+
   const [positiveMarkers, setPositiveMarkers] = useState([]);
   const [negativeMarkers, setNegativeMarkers] = useState([]);
   const [menu, setMenu] = useState(null);
@@ -37,6 +38,7 @@ export default function CategoricalLegend(props) {
     height,
     name,
     scale,
+    sortOrder,
     legendScrollPosition,
     serverInfo,
     visible,
@@ -154,22 +156,29 @@ export default function CategoricalLegend(props) {
   const globalDimensionSummary = globalFeatureSummary[name];
   const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
   const renamedCategories = categoricalNames[name] || {};
-  // if (sort === 'ascending' || sort === 'descending') {
-  //     categories.sort((a, b) => {
-  //         let renamed1 = renamedCategories[a];
-  //         if (renamed1 != null) {
-  //             a = renamed1;
-  //         }
-  //         let renamed2 = renamedCategories[b];
-  //         if (renamed2 != null) {
-  //             b = renamed2;
-  //         }
-  //         return NATSORT(a, b);
-  //     });
-  //     if (sort === 'descending') {
-  //         categories.reverse();
-  //     }
-  // }
+  if (selectionSummary && sortOrder === 'percent') {
+    const globalDimensionSummaryCategoryToIndex = new Map();
+    globalDimensionSummary.categories.forEach((category, index) => {
+      globalDimensionSummaryCategoryToIndex.set(category, index);
+    });
+    categories.sort((a, b) => {
+      const fracA =
+        (selectedDimensionToCount[a] || 0) /
+        globalDimensionSummary.counts[
+          globalDimensionSummary.categories[
+            globalDimensionSummaryCategoryToIndex.get(a)
+          ]
+        ];
+      const fracB =
+        (selectedDimensionToCount[b] || 0) /
+        globalDimensionSummary.counts[
+          globalDimensionSummary.categories[
+            globalDimensionSummaryCategoryToIndex.get(b)
+          ]
+        ];
+      return fracB - fracA;
+    });
+  }
 
   function onNegativeMarkers(event, value) {
     setNegativeMarkers(value.map((item) => (item.id != null ? item.id : item)));
@@ -190,17 +199,22 @@ export default function CategoricalLegend(props) {
     const isSelected =
       categoricalFilter != null &&
       categoricalFilter.value.indexOf(category) !== -1;
-    let renamedCategory = getCategoryValue(renamedCategories, category);
-
+    const renamedCategory = getCategoryValue(renamedCategories, category);
+    const numSelected = selectedDimensionToCount[category] || 0;
+    const numGroup = globalDimensionSummary.counts[categoryIndex];
+    let title = renamedCategory;
+    if (numSelected > 0) {
+      title +=
+        ' (' + numberFormat0(100 * (numSelected / numGroup)) + '% selected)';
+    }
     return (
-      <ListItem
+      <ListItemButton
         disableGutters={true}
         divider={true}
         dense={true}
         onContextMenu={(event) => onContextmenu(event, category)}
         onClick={(event) => onRowClick(event, category)}
         selected={isSelected}
-        button
         style={style}
         key={index}
       >
@@ -216,14 +230,12 @@ export default function CategoricalLegend(props) {
         ></div>
 
         <ListItemText
-          title={renamedCategory}
+          title={title}
           primaryTypographyProps={{noWrap: true}}
           primary={renamedCategory}
           secondary={
-            (selectionSummary == null
-              ? ''
-              : intFormat(selectedDimensionToCount[category] || 0) + ' / ') +
-            intFormat(globalDimensionSummary.counts[categoryIndex])
+            (selectionSummary == null ? '' : intFormat(numSelected) + ' / ') +
+            intFormat(numGroup)
           }
         />
         <IconButton
@@ -234,13 +246,14 @@ export default function CategoricalLegend(props) {
         >
           <ArrowDropDownIcon />
         </IconButton>
-      </ListItem>
+      </ListItemButton>
     );
   }
 
   if (!visible) {
     return null;
   }
+
   return (
     <>
       <div data-testid="categorical-legend">

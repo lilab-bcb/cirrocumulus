@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.36",
+  "version": "1.1.37",
   "private": true,
   "homepage": ".",
   "proxy": "http://127.0.0.1:5000",
@@ -16,11 +16,11 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^14.2.6",
-    "@types/jest": "^28.1.6",
+    "@types/jest": "^29.0.0",
     "@types/node": "^18.0.6",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
-    "@types/three": "^0.141.0",
+    "@types/three": "^0.144.0",
     "canvas2svg": "^1.0.16",
     "classnames": "^2.3.1",
     "d3-array": "^3.2.0",
@@ -46,9 +46,9 @@
     "redux": "^4.2.0",
     "redux-thunk": "^2.4.1",
     "simplify-js": "^1.2.4",
-    "three": "^0.142.0",
+    "three": "^0.144.0",
     "typescript": "^4.6.3",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^3.0.1"
   },
   "scripts": {
     "e2e": "cd e2e && ../node_modules/.bin/jest",
@@ -85,7 +85,7 @@
     "jest-puppeteer": "^6.1.1",
     "prettier": "^2.7.1",
     "preval.macro": "^5.0.0",
-    "puppeteer": "^15.4.0"
+    "puppeteer": "^17.1.2"
   },
   "prettier": {
     "bracketSpacing": false,

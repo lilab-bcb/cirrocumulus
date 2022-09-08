@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import {find} from 'lodash';
 import React, {useEffect, useState} from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
+import PercentIcon from '@mui/icons-material/Percent';
 import {connect} from 'react-redux';
 import {
   getTraceKey,
@@ -26,6 +26,8 @@ import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
 import {FEATURE_TYPE, TRACE_TYPE_META_IMAGE} from './util';
 import memoize from 'memoize-one';
+import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
+import IconButton from '@mui/material/IconButton';
 
 const getActiveEmbeddingLabels = memoize((searchTokens, embeddingLabels) => {
   return searchTokens
@@ -74,7 +76,8 @@ function EmbeddingChart(props) {
   } = props;
 
   const [showLegend, setShowLegend] = useState(true);
-
+  const [sortOrder, setSortOrder] = useState('alpha');
+  const active = 'cirro-active';
   useEffect(() => {
     window.addEventListener('resize', handleWindowSize);
     return () => {
@@ -143,37 +146,81 @@ function EmbeddingChart(props) {
         sx={{
           position: 'absolute',
           textAlign: 'right',
-          overflow: 'hidden',
-          // whiteSpace: 'nowrap',
-          textOverflow: 'ellipsis',
-          maxWidth: 300,
           right: 8,
           top: 0,
           zIndex: 1000,
         }}
       >
         {displayName !== '' && (
-          <Tooltip title={'Embedding: ' + primaryTrace.embedding.name}>
-            <div
-              onClick={handleToggleLegend}
-              style={{cursor: 'pointer', marginRight: 14}}
-            >
-              <Typography
-                color="textPrimary"
-                variant={'subtitle1'}
-                component={'div'}
-                style={{display: 'inline-block'}}
-              >
-                {displayName}
-              </Typography>
-              <div style={{display: 'inline-block', verticalAlign: 'bottom'}}>
-                <ExpandMoreIcon
-                  fontSize={'medium'}
-                  style={{transform: showLegend ? 'rotate(180deg)' : ''}}
-                />
+          <>
+            {!primaryTrace.continuous && (
+              <div style={{float: 'left'}}>
+                <Tooltip title={'Sort Legend Alphabetically'}>
+                  <IconButton
+                    edge={false}
+                    style={{padding: 0}}
+                    className={sortOrder === 'alpha' ? active : ''}
+                    size={'small'}
+                    aria-label="Sort Alphabetically"
+                    onClick={() => setSortOrder('alpha')}
+                  >
+                    <SortByAlphaIcon fontSize={'small'} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={'Sort Legend By Percent Selected'}>
+                  <IconButton
+                    edge={false}
+                    size={'small'}
+                    style={{padding: 0}}
+                    className={sortOrder === 'percent' ? active : ''}
+                    aria-label="Sort By Percent Selected"
+                    onClick={() => setSortOrder('percent')}
+                  >
+                    <PercentIcon />
+                  </IconButton>
+                </Tooltip>
               </div>
-            </div>
-          </Tooltip>
+            )}
+            <Tooltip
+              title={
+                <>
+                  {displayName}
+                  <br />
+                  {primaryTrace.embedding.name}
+                </>
+              }
+            >
+              <div
+                onClick={handleToggleLegend}
+                style={{
+                  cursor: 'pointer',
+                  marginRight: 14,
+                  display: 'inline-block',
+                }}
+              >
+                <Typography
+                  color="textPrimary"
+                  variant={'subtitle1'}
+                  component={'div'}
+                  style={{
+                    display: 'inline-block',
+                    maxWidth: 200,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {displayName}
+                </Typography>
+                <div style={{display: 'inline-block', verticalAlign: 'bottom'}}>
+                  <ExpandMoreIcon
+                    fontSize={'medium'}
+                    style={{transform: showLegend ? 'rotate(180deg)' : ''}}
+                  />
+                </div>
+              </div>
+            </Tooltip>
+          </>
         )}
 
         {primaryTrace.continuous ? (
@@ -211,6 +258,7 @@ function EmbeddingChart(props) {
             globalFeatureSummary={globalFeatureSummary}
             featureSummary={featureSummary}
             serverInfo={serverInfo}
+            sortOrder={sortOrder}
           />
         )}
       </Box>

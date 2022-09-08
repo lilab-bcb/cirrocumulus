@@ -23,7 +23,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {connect} from 'react-redux';
 import {EDIT_DATASET_DIALOG, saveDataset, setDialog} from './actions';
 import {REACT_MD_OVERRIDES} from './util';
-import {Autocomplete} from '@mui/lab';
+import Autocomplete from '@mui/material/Autocomplete';
 import {isArray} from 'lodash';
 import Chip from '@mui/material/Chip';
 
