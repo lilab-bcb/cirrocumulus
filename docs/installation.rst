@@ -22,7 +22,7 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
 
 - Install cirrocumulus using pip or docker
 
-- Optional additional setup to enable authentication and authorization via Okta or google:
+- Optional additional setup to enable authentication and authorization via Okta or Google:
 
     - Install additional libraries:
 
@@ -32,7 +32,7 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
     - Set environment variables:
 
         - CIRRO_AUTH_CLIENT_ID: to your Okta or Google client id
-        - CIRRO_AUTH_PROVIDER: to either okta or google.
+        - CIRRO_AUTH_PROVIDER: to either okta or Google.
         - CIRRO_AUTH_ISSUER (okta only). The URL of the authorization server that will perform authentication.
           All Developer Accounts have a "default" authorization server.
           The issuer is a combination of your Org URL (found in the upper right of the console home page)
@@ -42,6 +42,7 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
 
     - Visit the `Google OAuth 2.0 documentation`_ to obtain OAuth 2.0 credentials for Google.
 
+    - Please note that https is required if using Okta or Google authentication
 
 - Additional libraries needed for cloud storage:
 

@@ -1,6 +1,5 @@
 const authScopes = [
-  'email',
-  // 'profile',
+  'email', // 'profile',
   // 'https://www.googleapis.com/auth/userinfo.profile',
   // 'https://www.googleapis.com/auth/contacts.readonly',
   // 'https://www.googleapis.com/auth/devstorage.full_control',
@@ -62,6 +61,7 @@ export function GoggleAuth() {
       function onGapiLoad() {
         window.google.accounts.id.initialize({
           client_id: authInfo.clientId,
+          itp_support: true,
           scope: authScopes.join(' '),
           callback: handleCredentialResponse,
         });

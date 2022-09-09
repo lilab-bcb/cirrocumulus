@@ -43,11 +43,11 @@ def configure_app(app):
     if auth_client_id is None:
         app.config[CIRRO_AUTH] = NoAuth()
     else:
-        if os.environ.get(CIRRO_AUTH_PROVIDER, "google") == "google":
+        if os.environ.get(CIRRO_AUTH_PROVIDER, "google").lower() == "google":
             from cirrocumulus.google_auth import GoogleAuth
 
             app.config[CIRRO_AUTH] = GoogleAuth()
-        elif os.environ.get(CIRRO_AUTH_PROVIDER) == "okta":
+        elif os.environ.get(CIRRO_AUTH_PROVIDER, "").lower() == "okta":
             from cirrocumulus.okta_auth import OktaAuth
 
             app.config[CIRRO_AUTH] = OktaAuth()
