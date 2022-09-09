@@ -199,7 +199,10 @@ function AppHeader(props) {
     !loadingApp.loading;
   const isSignedOut =
     !loadingApp.loading && email == null && serverInfo.auth.clientId !== '';
-
+  const isGoogle =
+    serverInfo.auth &&
+    serverInfo.auth.provider &&
+    serverInfo.auth.provider.toLowerCase() === 'google';
   return (
     <Box sx={{display: 'flex'}}>
       <AppBar
@@ -439,7 +442,7 @@ function AppHeader(props) {
                 <MenuItem onClick={onLogout}>Sign Out</MenuItem>
               </Menu>
             )}
-            {isSignedOut && (
+            {!isGoogle && isSignedOut && (
               <Button
                 style={{whiteSpace: 'nowrap'}}
                 color="primary"
@@ -448,6 +451,12 @@ function AppHeader(props) {
               >
                 Sign In
               </Button>
+            )}
+            {isGoogle && (
+              <div
+                id={'login-button'}
+                style={{display: isSignedOut ? '' : 'none'}}
+              ></div>
             )}
           </div>
         </Toolbar>
