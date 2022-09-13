@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.39 `September 13, 2022`
+    * Fixed sorting clusters by percentage bug
+
 - 1.1.38 `September 9, 2022`
     * Fixed authenticating with Google on Safari and FireFox
 
