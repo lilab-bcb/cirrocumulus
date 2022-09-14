@@ -8,11 +8,11 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import React, {useEffect, useRef, useState} from 'react';
 import {IconButton, ListItemButton, ListItemText} from '@mui/material';
-import {intFormat, numberFormat0} from './formatters';
+import {intFormat, numberFormat2f} from './formatters';
 import {FixedSizeList} from 'react-window';
 import AutocompleteVirtualized from './AutocompleteVirtualized';
 import FormControl from '@mui/material/FormControl';
-import {getCategoryValue} from './util';
+import {getCategoryValue, stripTrailingZeros} from './util';
 import Link from '@mui/material/Link';
 import {isString} from 'lodash';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -162,20 +162,18 @@ export default function CategoricalLegend(props) {
       globalDimensionSummaryCategoryToIndex.set(category, index);
     });
     categories.sort((a, b) => {
-      const fracA =
-        (selectedDimensionToCount[a] || 0) /
+      const numSelectedA = selectedDimensionToCount[a] || 0;
+      const numGroupA =
         globalDimensionSummary.counts[
-          globalDimensionSummary.categories[
-            globalDimensionSummaryCategoryToIndex.get(a)
-          ]
+          globalDimensionSummaryCategoryToIndex.get(a)
         ];
-      const fracB =
-        (selectedDimensionToCount[b] || 0) /
+      const numSelectedB = selectedDimensionToCount[b] || 0;
+      const numGroupB =
         globalDimensionSummary.counts[
-          globalDimensionSummary.categories[
-            globalDimensionSummaryCategoryToIndex.get(b)
-          ]
+          globalDimensionSummaryCategoryToIndex.get(b)
         ];
+      const fracA = numSelectedA / numGroupA;
+      const fracB = numSelectedB / numGroupB;
       return fracB - fracA;
     });
   }
@@ -202,11 +200,12 @@ export default function CategoricalLegend(props) {
     const renamedCategory = getCategoryValue(renamedCategories, category);
     const numSelected = selectedDimensionToCount[category] || 0;
     const numGroup = globalDimensionSummary.counts[categoryIndex];
-    let title = renamedCategory;
-    if (numSelected > 0) {
-      title +=
-        ' (' + numberFormat0(100 * (numSelected / numGroup)) + '% selected)';
-    }
+    const title =
+      renamedCategory + selectionSummary
+        ? ' (' +
+          stripTrailingZeros(numberFormat2f(100 * (numSelected / numGroup))) +
+          '% selected)'
+        : '';
     return (
       <ListItemButton
         disableGutters={true}
