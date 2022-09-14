@@ -9,7 +9,8 @@ function ContinuousLegend(props) {
   const globalSummary = globalFeatureSummary[name];
   const summaryNames = ['all'];
   // TODO compute unselected mean and % expressed from globals
-  if (selectionSummary != null) {
+  const showSelectionStats = selectionSummary != null && nObsSelected > 0;
+  if (showSelectionStats) {
     summaryNames.push('selection');
     //  summaryNames.push('rest');
   }
@@ -36,8 +37,12 @@ function ContinuousLegend(props) {
           <tr>
             <td style={{textAlign: 'right'}}>{'Mean'}:</td>
             <td>{stripTrailingZeros(numberFormat(globalSummary.mean))}</td>
-            {selectionSummary && (
-              <td>{stripTrailingZeros(numberFormat(selectionSummary.mean))}</td>
+            {showSelectionStats && (
+              <td>
+                {isNaN(selectionSummary.mean)
+                  ? ''
+                  : stripTrailingZeros(numberFormat(selectionSummary.mean))}
+              </td>
             )}
           </tr>
           {showPercentExpressed && (
@@ -46,11 +51,13 @@ function ContinuousLegend(props) {
               <td>
                 {numberFormat0((100 * globalSummary.numExpressed) / nObs)}
               </td>
-              {selectionSummary && (
+              {showSelectionStats && (
                 <td>
-                  {numberFormat0(
-                    (100 * selectionSummary.numExpressed) / nObsSelected
-                  )}
+                  {isNaN(selectionSummary.numExpressed)
+                    ? ''
+                    : numberFormat0(
+                        (100 * selectionSummary.numExpressed) / nObsSelected
+                      )}
                 </td>
               )}
             </tr>
@@ -59,9 +66,11 @@ function ContinuousLegend(props) {
             <tr>
               <td style={{textAlign: 'right'}}>{'Min'}:</td>
               <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
-              {selectionSummary && (
+              {showSelectionStats && (
                 <td>
-                  {stripTrailingZeros(numberFormat(selectionSummary.min))}
+                  {isNaN(selectionSummary.min)
+                    ? ''
+                    : stripTrailingZeros(numberFormat(selectionSummary.min))}
                 </td>
               )}
             </tr>
@@ -69,8 +78,12 @@ function ContinuousLegend(props) {
           <tr>
             <td style={{textAlign: 'right'}}>{'Max'}:</td>
             <td>{stripTrailingZeros(numberFormat(globalSummary.max))}</td>
-            {selectionSummary && (
-              <td>{stripTrailingZeros(numberFormat(selectionSummary.max))}</td>
+            {showSelectionStats && (
+              <td>
+                {isNaN(selectionSummary.max)
+                  ? ''
+                  : stripTrailingZeros(numberFormat(selectionSummary.max))}
+              </td>
             )}
           </tr>
         </tbody>
