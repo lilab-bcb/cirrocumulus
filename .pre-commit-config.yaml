@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/csachs/pyproject-flake8
-    rev: v0.0.1a5
+    rev: v5.0.4a1.post1
     hooks:
       - id: pyproject-flake8
   - repo: https://github.com/pre-commit/mirrors-prettier
