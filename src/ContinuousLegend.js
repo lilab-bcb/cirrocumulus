@@ -37,7 +37,11 @@ function ContinuousLegend(props) {
             <td style={{textAlign: 'right'}}>{'Mean'}:</td>
             <td>{stripTrailingZeros(numberFormat(globalSummary.mean))}</td>
             {selectionSummary && (
-              <td>{stripTrailingZeros(numberFormat(selectionSummary.mean))}</td>
+              <td>
+                {isNaN(selectionSummary.mean)
+                  ? ''
+                  : stripTrailingZeros(numberFormat(selectionSummary.mean))}
+              </td>
             )}
           </tr>
           {showPercentExpressed && (
@@ -48,9 +52,11 @@ function ContinuousLegend(props) {
               </td>
               {selectionSummary && (
                 <td>
-                  {numberFormat0(
-                    (100 * selectionSummary.numExpressed) / nObsSelected
-                  )}
+                  {isNaN(selectionSummary.numExpressed)
+                    ? ''
+                    : numberFormat0(
+                        (100 * selectionSummary.numExpressed) / nObsSelected
+                      )}
                 </td>
               )}
             </tr>
@@ -61,7 +67,9 @@ function ContinuousLegend(props) {
               <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
               {selectionSummary && (
                 <td>
-                  {stripTrailingZeros(numberFormat(selectionSummary.min))}
+                  {isNaN(selectionSummary.min)
+                    ? ''
+                    : stripTrailingZeros(numberFormat(selectionSummary.min))}
                 </td>
               )}
             </tr>
@@ -70,7 +78,11 @@ function ContinuousLegend(props) {
             <td style={{textAlign: 'right'}}>{'Max'}:</td>
             <td>{stripTrailingZeros(numberFormat(globalSummary.max))}</td>
             {selectionSummary && (
-              <td>{stripTrailingZeros(numberFormat(selectionSummary.max))}</td>
+              <td>
+                {isNaN(selectionSummary.max)
+                  ? ''
+                  : stripTrailingZeros(numberFormat(selectionSummary.max))}
+              </td>
             )}
           </tr>
         </tbody>
