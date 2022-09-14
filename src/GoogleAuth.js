@@ -1,6 +1,5 @@
 const authScopes = [
-  'email',
-  // 'profile',
+  'email', // 'profile',
   // 'https://www.googleapis.com/auth/userinfo.profile',
   // 'https://www.googleapis.com/auth/contacts.readonly',
   // 'https://www.googleapis.com/auth/devstorage.full_control',
@@ -8,9 +7,8 @@ const authScopes = [
 
 const LOCAL_STORAGE_KEY = 'google-token-storage';
 
-export function GoggleAuth() {
+export function GoggleAuth(props) {
   let credential = null;
-  let resolveCallback = null;
   let user = null;
 
   this.getIdToken = function () {
@@ -22,10 +20,7 @@ export function GoggleAuth() {
   };
 
   this.signIn = function () {
-    return new Promise((resolve) => {
-      resolveCallback = resolve;
-      window.google.accounts.id.prompt();
-    });
+    // never gets called
   };
 
   this.signOut = function () {
@@ -40,7 +35,7 @@ export function GoggleAuth() {
     });
   };
 
-  this.init = function (authInfo, api) {
+  this.init = function (authInfo, api, callback) {
     return new Promise((resolve) => {
       function handleCredentialResponse(response) {
         credential = response.credential; //  ID token as a base64-encoded JSON Web Token (JWT) string.
@@ -50,9 +45,7 @@ export function GoggleAuth() {
           .then((_user) => {
             user = _user;
             window.localStorage[LOCAL_STORAGE_KEY] = credential;
-            if (resolveCallback) {
-              resolveCallback();
-            }
+            callback();
           })
           .catch((err) => {
             console.log(err);
@@ -61,10 +54,18 @@ export function GoggleAuth() {
 
       function onGapiLoad() {
         window.google.accounts.id.initialize({
-          client_id: authInfo.clientId,
+          client_id: authInfo.clientId, // itp_support: true, // for one tap
           scope: authScopes.join(' '),
           callback: handleCredentialResponse,
         });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById('login-button'),
+          {
+            theme: 'outline',
+            size: 'large',
+          }
+        );
         if (LOCAL_STORAGE_KEY in window.localStorage) {
           credential = window.localStorage[LOCAL_STORAGE_KEY];
           api
