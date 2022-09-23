@@ -146,6 +146,62 @@ export const INTERPOLATOR_SCALING_MIN_MAX_FEATURE = 'min_max_feature';
 export const INTERPOLATOR_SCALING_MIN_MAX_CATEGORY = 'min_max_category';
 export const INTERPOLATOR_SCALING_NONE = 'none';
 
+export function sortCategories(
+  globalFeatureSummary,
+  featureSummary,
+  categoryName,
+  by,
+) {
+  const globalDimensionSummary = globalFeatureSummary[categoryName];
+  const selectionSummary = featureSummary[categoryName];
+  const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
+  const sortByPercent = by === 'percent';
+  const globalDimensionSummaryCategoryToIndex = new Map();
+  globalDimensionSummary.categories.forEach((category, index) => {
+    globalDimensionSummaryCategoryToIndex.set(category, index);
+  });
+
+  if (selectionSummary) {
+    let selectedDimensionToCount = {};
+    for (let i = 0; i < selectionSummary.counts.length; i++) {
+      selectedDimensionToCount[selectionSummary.categories[i]] =
+        selectionSummary.counts[i];
+    }
+
+    categories.sort((a, b) => {
+      const numSelectedA = selectedDimensionToCount[a] || 0;
+      const numSelectedB = selectedDimensionToCount[b] || 0;
+      if (sortByPercent) {
+        const numGroupA =
+          globalDimensionSummary.counts[
+            globalDimensionSummaryCategoryToIndex.get(a)
+          ];
+        const numGroupB =
+          globalDimensionSummary.counts[
+            globalDimensionSummaryCategoryToIndex.get(b)
+          ];
+        const fracA = numSelectedA / numGroupA;
+        const fracB = numSelectedB / numGroupB;
+        return fracB - fracA;
+      }
+      return numSelectedB - numSelectedA;
+    });
+  } else if (!sortByPercent) {
+    categories.sort((a, b) => {
+      const numGroupA =
+        globalDimensionSummary.counts[
+          globalDimensionSummaryCategoryToIndex.get(a)
+        ];
+      const numGroupB =
+        globalDimensionSummary.counts[
+          globalDimensionSummaryCategoryToIndex.get(b)
+        ];
+      return numGroupB - numGroupA;
+    });
+  }
+  return categories;
+}
+
 export function getCategoryValue(renamedCategories, category) {
   let renamedCategoryValue = renamedCategories[category];
   if (renamedCategoryValue != null && renamedCategoryValue.newValue != null) {
@@ -204,7 +260,7 @@ export function summarizeDensity(
   values,
   index,
   selection,
-  summarizationMethod
+  summarizationMethod,
 ) {
   let newValues = [];
   let summarize;
@@ -246,7 +302,9 @@ export function summarizeDensity(
   for (let i = 0, n = index.length; i < n; i++) {
     const indices = index[i];
     const summarizedValue = summarize(
-      isSelectionEmpty ? indices : indices.filter((item) => selection.has(item))
+      isSelectionEmpty
+        ? indices
+        : indices.filter((item) => selection.has(item)),
     );
     newValues.push(summarizedValue);
   }

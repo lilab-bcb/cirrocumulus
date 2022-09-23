@@ -30,6 +30,7 @@ export default function CategoricalLegend(props) {
   const {
     onAddFeatures,
     categoricalNames,
+    categoricalSortOrder,
     datasetFilter,
     features,
     featureSummary,
@@ -38,7 +39,6 @@ export default function CategoricalLegend(props) {
     height,
     name,
     scale,
-    sortOrder,
     legendScrollPosition,
     serverInfo,
     visible,
@@ -154,29 +154,10 @@ export default function CategoricalLegend(props) {
     }
   }
   const globalDimensionSummary = globalFeatureSummary[name];
-  const categories = globalDimensionSummary.categories.slice(0); // make a copy so that when sorting, counts stays in same order as categories
+  const categories =
+    categoricalSortOrder[name] || globalDimensionSummary.categories;
+
   const renamedCategories = categoricalNames[name] || {};
-  if (selectionSummary && sortOrder === 'percent') {
-    const globalDimensionSummaryCategoryToIndex = new Map();
-    globalDimensionSummary.categories.forEach((category, index) => {
-      globalDimensionSummaryCategoryToIndex.set(category, index);
-    });
-    categories.sort((a, b) => {
-      const numSelectedA = selectedDimensionToCount[a] || 0;
-      const numGroupA =
-        globalDimensionSummary.counts[
-          globalDimensionSummaryCategoryToIndex.get(a)
-        ];
-      const numSelectedB = selectedDimensionToCount[b] || 0;
-      const numGroupB =
-        globalDimensionSummary.counts[
-          globalDimensionSummaryCategoryToIndex.get(b)
-        ];
-      const fracA = numSelectedA / numGroupA;
-      const fracB = numSelectedB / numGroupB;
-      return fracB - fracA;
-    });
-  }
 
   function onNegativeMarkers(event, value) {
     setNegativeMarkers(value.map((item) => (item.id != null ? item.id : item)));

@@ -19,6 +19,7 @@ import {
   RESTORE_VIEW,
   SET_ACTIVE_FEATURE,
   SET_CATEGORICAL_NAME,
+  SET_CATEGORICAL_SORT_ORDER,
   SET_CHART_OPTIONS,
   SET_CHART_SIZE,
   SET_COMBINE_DATASET_FILTERS,
@@ -131,7 +132,7 @@ function panel(
     drawerOpen: true,
     primaryChartSize: DEFAULT_PRIMARY_CHART_SIZE,
   },
-  action
+  action,
 ) {
   switch (action.type) {
     case SET_DRAG_DIVIDER:
@@ -230,7 +231,7 @@ function dataset(state = null, action) {
           features.sort((item1, item2) => {
             const g = NATSORT(
               item1.group.toLowerCase(),
-              item2.group.toLowerCase()
+              item2.group.toLowerCase(),
             );
             if (g !== 0) {
               return g;
@@ -397,7 +398,7 @@ function markerOpacity(state = DEFAULT_MARKER_OPACITY, action) {
 
 function unselectedMarkerOpacity(
   state = DEFAULT_UNSELECTED_MARKER_OPACITY,
-  action
+  action,
 ) {
   switch (action.type) {
     case SET_UNSELECTED_MARKER_OPACITY:
@@ -496,10 +497,10 @@ function serverInfo(state = {}, action) {
     case SET_SERVER_INFO:
       if (action.payload.ontology && action.payload.ontology.cellTypes) {
         action.payload.ontology.cellTypes.forEach(
-          (item) => (item.text = item.name)
+          (item) => (item.text = item.name),
         );
         action.payload.ontology.cellTypes.sort((item1, item2) =>
-          NATSORT(item1.text, item2.text)
+          NATSORT(item1.text, item2.text),
         );
       }
       if (action.payload.datasetSelectorColumns == null) {
@@ -565,21 +566,21 @@ function dialog(state = null, action) {
 
 function distributionPlotInterpolator(
   state = DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
-  action
+  action,
 ) {
   switch (action.type) {
     case SET_DISTRIBUTION_PLOT_INTERPOLATOR:
       return Object.assign(
         {},
         DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
-        action.payload
+        action.payload,
       );
     case RESTORE_VIEW:
       if (action.payload.distributionPlotInterpolator != null) {
         const interpolator = Object.assign(
           {},
           DEFAULT_DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
-          action.payload.distributionPlotInterpolator
+          action.payload.distributionPlotInterpolator,
         );
         interpolator.value = getInterpolator(interpolator.name);
         return interpolator;
@@ -727,6 +728,18 @@ function categoricalNames(state = {}, action) {
       return state;
   }
 }
+// name -> array or null if no custom sort order defined
+function categoricalSortOrder(state = {}, action) {
+  switch (action.type) {
+    case SET_CATEGORICAL_SORT_ORDER:
+      state[action.payload.name] = action.payload.value;
+      return Object.assign({}, state);
+    case SET_DATASET:
+      return {};
+    default:
+      return state;
+  }
+}
 
 // maps keys to values, features=>array, embedding key=>x,y,z, feature_embedding_key=>array for binned embeddings
 function cachedData(state = {}, action) {
@@ -808,7 +821,7 @@ function embeddingData(state = [], action) {
         ) {
           let domain = trace.colorScale.domain();
           trace.colorScale = createColorScale(action.payload.value).domain(
-            domain
+            domain,
           );
           updateTraceColors(trace);
           state[index] = Object.assign({}, trace);
@@ -915,6 +928,7 @@ export default combineReducers({
   activeFeature,
   cachedData,
   categoricalNames,
+  categoricalSortOrder,
   chartOptions,
   chartSize,
   combineDatasetFilters,
