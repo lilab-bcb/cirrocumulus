@@ -38,7 +38,7 @@ export function drawEmbeddingImage(
   categoricalNames,
   obsCat,
   cachedData,
-  spotRadius
+  spotRadius,
 ) {
   if (trace.tileSource.ready) {
     const img =
@@ -49,7 +49,7 @@ export function drawEmbeddingImage(
     }
     const zoom = Math.min(
       chartSize.width / img.width,
-      chartSize.height / img.height
+      chartSize.height / img.height,
     );
     context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
     context.scale(zoom, zoom);
@@ -60,7 +60,7 @@ export function drawEmbeddingImage(
       selection,
       markerOpacity,
       unselectedMarkerOpacity,
-      spotRadius
+      spotRadius,
     );
     drawLabels(
       context,
@@ -69,7 +69,7 @@ export function drawEmbeddingImage(
       chartOptions,
       categoricalNames,
       obsCat,
-      cachedData
+      cachedData,
     );
     context.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -82,7 +82,7 @@ function drawLabels(
   chartOptions,
   categoricalNames,
   obsCat,
-  cachedData
+  cachedData,
 ) {
   const showLabels = obsCat.length > 0;
   if (showLabels) {
@@ -101,7 +101,7 @@ function drawLabels(
     const labelsPositions = getCategoryLabelsPositions(
       trace.embedding,
       obsCat,
-      cachedData
+      cachedData,
     );
     const labels = getLabels(obsCat, labelsPositions.labels, categoricalNames);
     for (let i = 0, index = 0, n = labels.length; i < n; i++, index += 3) {
@@ -120,7 +120,7 @@ function drawSpots(
   selection,
   markerOpacity,
   unselectedMarkerOpacity,
-  spotRadius
+  spotRadius,
 ) {
   context.lineWidth = (2 * 1) / zoom;
   if (context.setLineDash) {
@@ -287,7 +287,7 @@ class ImageChart extends React.PureComponent {
         this.tooltipElement,
         left + 'px',
         top + 'px',
-        SCATTER_TRANSITION
+        SCATTER_TRANSITION,
       );
     }
   }
@@ -302,7 +302,7 @@ class ImageChart extends React.PureComponent {
 
     const zoom = Math.min(
       chartSize.width / img.width,
-      chartSize.height / img.height
+      chartSize.height / img.height,
     );
     context.drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
     this._drawOverlay({context: context, zoom: zoom});
@@ -322,7 +322,7 @@ class ImageChart extends React.PureComponent {
       selection,
       markerOpacity,
       unselectedMarkerOpacity,
-      spotRadius
+      spotRadius,
     );
     drawLabels(
       context,
@@ -331,7 +331,7 @@ class ImageChart extends React.PureComponent {
       this.props.chartOptions,
       this.props.categoricalNames,
       this.props.obsCat,
-      this.props.cachedData
+      this.props.cachedData,
     );
   }
 
@@ -453,7 +453,7 @@ class ImageChart extends React.PureComponent {
           rectElement.setAttribute('x', '' + lastBoundingBox.x);
           rectElement.setAttribute(
             'y',
-            '' + (lastBoundingBox.y - lastBoundingBox.height)
+            '' + (lastBoundingBox.y - lastBoundingBox.height),
           );
           rectElement.setAttribute('width', '' + lastBoundingBox.width);
           rectElement.setAttribute('height', '' + lastBoundingBox.height);
@@ -524,11 +524,11 @@ class ImageChart extends React.PureComponent {
     const svgOverlay = new OpenseadragonSvgOverlay(viewer);
     const lassoPath = document.createElementNS(
       'http://www.w3.org/2000/svg',
-      'path'
+      'path',
     );
     const rectElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
-      'rect'
+      'rect',
     );
     [lassoPath, rectElement].forEach((elem) => {
       elem.setAttribute('stroke', 'black');
@@ -571,7 +571,7 @@ class ImageChart extends React.PureComponent {
       trace,
       {width: img.width, height: img.height},
       bind(this.drawContext, this),
-      format
+      format,
     );
   };
 

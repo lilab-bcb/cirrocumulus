@@ -96,7 +96,7 @@ export default function ViolinPlot(props) {
         categoryColorScales,
         textColor,
         xscale,
-        yscale
+        yscale,
       );
       context.textBaseline = 'top';
       context.textAlign = 'middle';

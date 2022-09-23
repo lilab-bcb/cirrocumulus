@@ -254,7 +254,7 @@ function AppHeader(props) {
                       )}
                     </div>
                   );
-                }
+                },
               )}
             </Box>
           </Popover>

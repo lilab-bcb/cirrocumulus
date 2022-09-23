@@ -10,7 +10,7 @@ export function drawSizeLegend(
   nsteps,
   width,
   margin = 20,
-  textColor = 'black'
+  textColor = 'black',
 ) {
   let domain = scale.domain();
 
@@ -81,7 +81,7 @@ class SizeLegend extends React.PureComponent {
       this.props.nsteps || 3,
       width,
       20,
-      textColor
+      textColor,
     );
     context.setTransform(1, 0, 0, 1, 0, 0);
   }

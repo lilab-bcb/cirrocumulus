@@ -123,7 +123,7 @@ export function DatasetSelector(props) {
           <Box style={{width: 500, padding: '1em'}}>
             <Typography variant="h6">{selectedDataset.name}</Typography>
             {DATASET_FIELDS.filter(
-              (item) => selectedDataset[item.fieldName]
+              (item) => selectedDataset[item.fieldName],
             ).map((item) => {
               const itemValue = selectedDataset[item.fieldName];
               return (

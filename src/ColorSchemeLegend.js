@@ -10,7 +10,7 @@ export function drawColorScheme(
   textColor = 'black',
   label = true,
   width = 150,
-  height = 12
+  height = 12,
 ) {
   let domain = colorScale.domain();
   if (domain[0] === domain[1]) {
@@ -78,7 +78,7 @@ class ColorSchemeLegend extends React.PureComponent {
       textColor,
       this.props.label,
       width,
-      height
+      height,
     );
     context.setTransform(1, 0, 0, 1, 0, 0);
   }

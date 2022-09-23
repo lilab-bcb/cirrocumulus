@@ -49,7 +49,7 @@ export function createScatterPlot(
   containerElement,
   premultipliedAlpha,
   labels,
-  interactive = true
+  interactive = true,
 ) {
   const styles = makeStyles();
   styles.label3D.fontSize = 40;
@@ -62,13 +62,13 @@ export function createScatterPlot(
       styles: styles,
       interactive: interactive,
     },
-    premultipliedAlpha
+    premultipliedAlpha,
   ); // toDataUrl images are flipped on Safari when premultipliedAlpha is false
   let visualizers = [new ScatterPlotVisualizerSprites(styles)];
   if (labels) {
     // visualizers.push(new ScatterPlotVisualizerCanvasLabels(containerElement, styles));
     visualizers.push(
-      new ScatterPlotVisualizerSvgLabels(containerElement, styles)
+      new ScatterPlotVisualizerSvgLabels(containerElement, styles),
     );
   }
   scatterPlot.setActiveVisualizers(visualizers);
@@ -151,7 +151,7 @@ export function getPositions(trace) {
     positions[dst++] = scaleLinear3(
       is3d ? trace.z[i] : ranks[i],
       zExtent,
-      zScale
+      zScale,
     );
   }
 
@@ -289,7 +289,7 @@ export function updateScatterChart(
   chartOptions,
   obsCatKeys,
   cachedData,
-  cameraDef
+  cameraDef,
 ) {
   const is3d = trace.z != null;
   const colors = trace.colors;
@@ -343,7 +343,7 @@ export function updateScatterChart(
         labelsPositions = getCategoryLabelsPositions(
           trace.embedding,
           obsCatKeys,
-          cachedData
+          cachedData,
         );
         cachedData[labelKey] = labelsPositions;
       }
@@ -357,7 +357,7 @@ export function updateScatterChart(
       const labels = getLabels(
         obsCatKeys,
         labelsPositions.labels,
-        categoricalNames
+        categoricalNames,
       );
 
       labelsVisualizer.setLabels(labels, labelsPositions.positions);
@@ -379,7 +379,7 @@ export function getLabels(obsCat, labels, categoricalNames) {
       value.push(
         renamedValue != null && renamedValue.newValue != null
           ? renamedValue.newValue
-          : array[j]
+          : array[j],
       );
     }
     labelStrings.push(value.join(','));

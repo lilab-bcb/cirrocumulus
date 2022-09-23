@@ -42,7 +42,7 @@ function ColorSchemeSelector(props) {
       Object.assign({}, interpolator, {
         name: name,
         value: getInterpolator(name),
-      })
+      }),
     );
   }
 

@@ -2,7 +2,8 @@ export function getCategoricalLegendSize(context, name, categories) {
   context.font = '14px Helvetica';
   let maxWidth = context.measureText(name).width;
   categories.forEach(
-    (value) => (maxWidth = Math.max(maxWidth, context.measureText(value).width))
+    (value) =>
+      (maxWidth = Math.max(maxWidth, context.measureText(value).width)),
   );
   return {width: maxWidth + 14, height: categories.length * 12 + 4};
 }

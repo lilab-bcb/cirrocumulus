@@ -45,7 +45,7 @@ export default function CirroTable(props) {
   let searchTextLower = searchText.toLowerCase().trim();
   const allColumns = columns;
   const visibleColumns = allColumns.filter(
-    (column) => column.visible !== false
+    (column) => column.visible !== false,
   );
   const [forceUpdate, setForceUpdate] = useState(false);
 

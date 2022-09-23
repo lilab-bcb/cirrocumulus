@@ -32,7 +32,7 @@ function DistributionPlots(props) {
     props.distributionPlotOptions[dataType] = Object.assign(
       {},
       props.distributionPlotOptions[dataType],
-      value
+      value,
     );
     onDistributionPlotOptions(Object.assign({}, props.distributionPlotOptions));
   }
@@ -73,13 +73,13 @@ function DistributionPlots(props) {
       });
       distributionPlotInterpolator[key] = Object.assign(
         {},
-        DISTRIBUTION_PLOT_INTERPOLATOR_OBJ
+        DISTRIBUTION_PLOT_INTERPOLATOR_OBJ,
       );
     }
     let dimension2data = groupBy(distributionData[key], 'dimension');
     let dimension2selecteddata = groupBy(
       selectedDistributionData[key],
-      'dimension'
+      'dimension',
     );
     return (
       <div key={key}>
@@ -121,7 +121,7 @@ function DistributionPlots(props) {
               onColorScalingChange={partial(onColorScalingChange, key)}
               onDistributionPlotOptions={partial(
                 onDistributionPlotOptionsDataType,
-                key
+                key,
               )}
             />
           );

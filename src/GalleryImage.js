@@ -24,7 +24,7 @@ function getImageUrl(
   pointSize,
   selection,
   trace,
-  unselectedMarkerOpacity
+  unselectedMarkerOpacity,
 ) {
   const canvas = document.createElement('canvas');
   const devicePixelRatio = getDevicePixelRatio();
@@ -46,7 +46,7 @@ function getImageUrl(
     categoricalNames,
     obsCat,
     cachedData,
-    getSpotRadius(trace, pointSize)
+    getSpotRadius(trace, pointSize),
   );
   return canvas.toDataURL();
 }
@@ -101,7 +101,7 @@ export default function GalleryImage(props) {
           chartOptions,
           obsCat,
           cachedData,
-          trace.camera
+          trace.camera,
         );
 
         const canvas = containerElement.querySelector('canvas');
@@ -111,7 +111,7 @@ export default function GalleryImage(props) {
           const labelsPositions = getCategoryLabelsPositions(
             trace.embedding,
             obsCat,
-            cachedData
+            cachedData,
           );
           const labelCanvas = document.createElement('canvas');
           labelCanvas.width = chartSize * devicePixelRatio;
@@ -129,7 +129,7 @@ export default function GalleryImage(props) {
               width: chartSize,
               height: chartSize,
             },
-            scatterPlot.camera
+            scatterPlot.camera,
           );
           overlayUrl = labelCanvas.toDataURL();
         }
@@ -155,8 +155,8 @@ export default function GalleryImage(props) {
               pointSize,
               selection,
               trace,
-              unselectedMarkerOpacity
-            )
+              unselectedMarkerOpacity,
+            ),
           );
         });
       } else {
@@ -171,8 +171,8 @@ export default function GalleryImage(props) {
             pointSize,
             selection,
             trace,
-            unselectedMarkerOpacity
-          )
+            unselectedMarkerOpacity,
+          ),
         );
         setOverlayUrl(null);
         setLoading(false);

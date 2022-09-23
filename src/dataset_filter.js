@@ -67,18 +67,18 @@ export function getPassingFilterIndices(cachedData, data_filter) {
             let p = path[j];
             let xKeep = getIndices(
               cachedData[coords[0]],
-              (val) => val >= p.x && val <= p.x + p.width
+              (val) => val >= p.x && val <= p.x + p.width,
             );
             let yKeep = getIndices(
               cachedData[coords[1]],
-              (val) => val >= p.y && val <= p.y + p.height
+              (val) => val >= p.y && val <= p.y + p.height,
             );
             selection_keep = combine(xKeep, yKeep, 'and');
             if (p.z) {
               // 3d
               let zKeep = getIndices(
                 cachedData[coords[2]],
-                (val) => val >= p.z && val <= p.z + p.depth
+                (val) => val >= p.z && val <= p.z + p.depth,
               );
               selection_keep = combine(selection_keep, zKeep, 'and');
             }

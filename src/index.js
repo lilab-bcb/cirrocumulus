@@ -32,7 +32,7 @@ const logger = (store) => (next) => (action) => {
 };
 const store = createStore(
   rootReducer,
-  applyMiddleware(thunkMiddleware, logger)
+  applyMiddleware(thunkMiddleware, logger),
 );
 
 function main() {
@@ -44,7 +44,7 @@ function main() {
 
       {/*</React.StrictMode>*/}
     </Provider>,
-    document.getElementById('root')
+    document.getElementById('root'),
   );
 }
 

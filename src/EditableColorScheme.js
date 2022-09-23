@@ -32,7 +32,7 @@ export function EditableColorScheme(props) {
 
   function onReversedChange(event) {
     onInterpolator(
-      Object.assign({}, interpolator, {reversed: event.target.checked})
+      Object.assign({}, interpolator, {reversed: event.target.checked}),
     );
   }
 

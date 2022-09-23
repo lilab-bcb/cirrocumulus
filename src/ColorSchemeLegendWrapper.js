@@ -17,7 +17,7 @@ export default function ColorSchemeLegendWrapper(props) {
 
   const legendStyle = Object.assign(
     {display: 'inline-block', verticalAlign: 'top'},
-    style || {}
+    style || {},
   );
   const isCount = name === '__count';
   return (

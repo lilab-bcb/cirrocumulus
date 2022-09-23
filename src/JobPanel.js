@@ -107,7 +107,7 @@ function JobPanel(props) {
     const g = datasetFilterToJson(
       dataset,
       datasetFilter,
-      combineDatasetFilters
+      combineDatasetFilters,
     );
     const count = selection.size;
     if (groupNumber === 1) {
@@ -326,5 +326,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default withStyles(styles)(
-  connect(mapStateToProps, mapDispatchToProps)(JobPanel)
+  connect(mapStateToProps, mapDispatchToProps)(JobPanel),
 );

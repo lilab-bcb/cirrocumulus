@@ -30,13 +30,13 @@ it('embeddings"', async () => {
   const gallery = await page.$$('[data-testid="gallery-image"]');
   await gallery[0].click();
   const louvainCanvas = await page.$(
-    '[data-testid="scatter-chart-three"] > canvas'
+    '[data-testid="scatter-chart-three"] > canvas',
   );
   await louvainCanvas.screenshot({path: 'louvain.png'});
   const gallery2 = await page.$$('[data-testid="gallery-image"]');
   await gallery2[1].click();
   const geneCanvas = await page.$(
-    '[data-testid="scatter-chart-three"] > canvas'
+    '[data-testid="scatter-chart-three"] > canvas',
   );
   await page.evaluate(() => {
     document.querySelector('[data-testid="chart-extra"]').style.display = '';
@@ -60,13 +60,13 @@ it('embeddings"', async () => {
   await util.diffImages(
     'distributions.png',
     'screenshots/distributions.png',
-    0
+    0,
   );
   // categories are drawn in random order
   await util.diffImages('louvain.png', 'screenshots/louvain.png', 0.001);
   await util.diffImages(
     'CST3_filtered.png',
     'screenshots/CST3_filtered.png',
-    0.001
+    0.001,
   );
 });

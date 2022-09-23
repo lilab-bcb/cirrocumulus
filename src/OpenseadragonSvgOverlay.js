@@ -56,7 +56,7 @@ class OpenseadragonSvgOverlay {
 
     let p = this._viewer.viewport.pixelFromPoint(
       new OpenSeadragon.Point(0, 0),
-      true
+      true,
     );
     let zoom = this._viewer.viewport.getZoom(true);
     if (this._viewer.world.getItemCount() > 0) {
@@ -76,7 +76,7 @@ class OpenseadragonSvgOverlay {
         zoom +
         ') rotate(' +
         rotation +
-        ')'
+        ')',
     );
   }
 }

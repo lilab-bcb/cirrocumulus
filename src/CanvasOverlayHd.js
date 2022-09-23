@@ -52,7 +52,7 @@ class CanvasOverlayHd {
         viewportPos.x,
         viewportPos.y,
         0,
-        0
+        0,
       );
       let tileSourcePosRect =
         tiledImage._viewportToTiledImageRectangle(viewportPosRect);
@@ -89,7 +89,7 @@ class CanvasOverlayHd {
         0,
         0,
         this._containerWidth * this.backingScale,
-        this._containerHeight * this.backingScale
+        this._containerHeight * this.backingScale,
       );
   }
 

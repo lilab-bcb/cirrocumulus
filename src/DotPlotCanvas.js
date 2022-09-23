@@ -35,17 +35,17 @@ export function getTooltip(item) {
       intFormat(item.nExpressed) +
       ' cells expressed, ' +
       stripTrailingZeros(numberFormat2f(item.percentExpressed)) +
-      '%)'
+      '%)',
   );
   // # cells in cluster (# cells in cluster expressed, % cells in cluster expressed)
   if (item.de) {
     tip.push(
       '% expressed rest: ' +
-        stripTrailingZeros(numberFormat(item.de.percentExpressed2))
+        stripTrailingZeros(numberFormat(item.de.percentExpressed2)),
     );
     tip.push(
       'log2 fold change: ' +
-        stripTrailingZeros(numberFormat2f(item.de.foldChange))
+        stripTrailingZeros(numberFormat2f(item.de.foldChange)),
     );
     tip.push('p-value: ' + stripTrailingZeros(numberFormat2f(item.de.p)));
     tip.push('FDR: ' + stripTrailingZeros(numberFormat2f(item.de.fdr)));
@@ -68,7 +68,7 @@ export function getNameWidth(array2d, context) {
     for (let i = 0; i < ncategories; i++) {
       endCoordinates[i] = Math.max(
         endCoordinates[i],
-        context.measureText(name[i]).width
+        context.measureText(name[i]).width,
       );
     }
   });
@@ -123,7 +123,7 @@ export default function DotPlotCanvas(props) {
       0,
       0,
       width * devicePixelRatio,
-      height * devicePixelRatio
+      height * devicePixelRatio,
     );
     context.scale(devicePixelRatio, devicePixelRatio);
     drawContext(context, size);
@@ -295,7 +295,7 @@ export default function DotPlotCanvas(props) {
           chipStartCoord,
           pix - maxRadius / 2 - 3,
           CHIP_SIZE,
-          CHIP_SIZE
+          CHIP_SIZE,
         );
         context.fill();
         context.stroke();
@@ -324,7 +324,7 @@ export default function DotPlotCanvas(props) {
     data[0].forEach((item) => {
       maxFeatureWidth = Math.max(
         maxFeatureWidth,
-        context.measureText(item.feature).width
+        context.measureText(item.feature).width,
       );
     });
     maxFeatureWidth += 4;
