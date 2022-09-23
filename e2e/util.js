@@ -8,7 +8,7 @@ module.exports.diffImages = (image1, image2, tolerance) => {
       tolerance,
       function (err, isEqual, equality, raw, path1, path2) {
         resolve(isEqual);
-      }
+      },
     );
   });
 };

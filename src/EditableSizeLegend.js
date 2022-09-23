@@ -34,11 +34,11 @@ export function EditableSizeLegend(props) {
 
   const updateMinSizeDebounced = useMemo(
     () => debounce(updateMinSize, 500),
-    []
+    [],
   );
   const updateMaxSizeDebounced = useMemo(
     () => debounce(updateMaxSize, 500),
-    []
+    [],
   );
   useEffect(() => {
     return () => {

@@ -35,7 +35,7 @@ export function drawLabels(
   positions,
   chartOptions,
   chartSize,
-  camera
+  camera,
 ) {
   const pos = new Vector3();
   context.fillStyle = chartOptions.darkMode ? 'white' : 'black';
@@ -100,7 +100,7 @@ export function setAxesColors(scatterPlot, darkMode) {
   const axes = scatterPlot.scene.getObjectByName('axes');
   if (axes) {
     axes.setColors(
-      darkMode ? new Color('rgb(255, 255, 255)') : new Color('rgb(0, 0, 0)')
+      darkMode ? new Color('rgb(255, 255, 255)') : new Color('rgb(0, 0, 0)'),
     );
   }
 }
@@ -155,7 +155,7 @@ function ScatterChartThree(props) {
       scatterPlotRef.current = createScatterPlot(
         containerElementRef.current,
         window.ApplePaySession,
-        true
+        true,
       );
       if (dragmode === 'pan') {
         scatterPlotRef.current.setInteractionMode('PAN');
@@ -183,7 +183,7 @@ function ScatterChartThree(props) {
         canvas.removeEventListener('webglcontextlost', webglcontextlost);
         canvas.removeEventListener(
           'webglcontextrestored',
-          webglcontextrestored
+          webglcontextrestored,
         );
       }
     };
@@ -412,7 +412,7 @@ function ScatterChartThree(props) {
     }
     getVisualizer(
       scatterPlotRef.current,
-      POINT_VISUALIZER_ID
+      POINT_VISUALIZER_ID,
     ).styles.fog.enabled = showFog;
   }, [scatterPlotRef, darkMode, showAxis, showFog]);
 
@@ -432,7 +432,7 @@ function ScatterChartThree(props) {
       categoricalNames,
       chartOptions,
       obsCat,
-      cachedData
+      cachedData,
     );
   }, [
     scatterPlotRef,
@@ -492,7 +492,7 @@ function ScatterChartThree(props) {
     const modelViewMatrix = spriteVisualizer.points.modelViewMatrix.clone();
     modelViewMatrix.multiplyMatrices(
       camera.matrixWorldInverse,
-      spriteVisualizer.points.matrixWorld
+      spriteVisualizer.points.matrixWorld,
     );
     const showFog = chartOptions.showFog && is3d;
     const isSelectionEmpty = selection == null;
@@ -580,7 +580,7 @@ function ScatterChartThree(props) {
       const labelsPositions = getCategoryLabelsPositions(
         trace.embedding,
         obsCat,
-        cachedData
+        cachedData,
       );
       const font = format === 'svg' ? 'serif' : 'Roboto Condensed';
       context.font = 'bold ' + chartOptions.labelFontSize + 'px ' + font;
@@ -590,7 +590,7 @@ function ScatterChartThree(props) {
         labelsPositions.positions,
         chartOptions,
         chartSize,
-        camera
+        camera,
       );
     }
   }

@@ -64,7 +64,7 @@ export function GoggleAuth(props) {
           {
             theme: 'outline',
             size: 'large',
-          }
+          },
         );
         if (LOCAL_STORAGE_KEY in window.localStorage) {
           credential = window.localStorage[LOCAL_STORAGE_KEY];

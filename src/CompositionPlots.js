@@ -39,7 +39,7 @@ function getComposition(
   obsCat,
   cachedData,
   categoricalNames,
-  selection
+  selection,
 ) {
   const ncategories = obsCat.length;
   const maxCategories = 100;
@@ -130,7 +130,7 @@ function getComposition(
 
     const uniqueValues = Array.from(uniqueValuesSet);
     uniqueValues.sort(
-      createSorter(obsCat[ncategories - 1], categoryOrder, categoricalNames)
+      createSorter(obsCat[ncategories - 1], categoryOrder, categoricalNames),
     );
     return {
       seriesToValueToCounts: seriesToValueToCounts,
@@ -176,7 +176,7 @@ function CompositionPlots(props) {
         dataset,
         obsCat,
         cachedData,
-        categoricalNames
+        categoricalNames,
       );
       selectedComposition.current =
         selection != null && selection.size > 0
@@ -185,7 +185,7 @@ function CompositionPlots(props) {
               obsCat,
               cachedData,
               categoricalNames,
-              selection
+              selection,
             )
           : null;
       title.current =

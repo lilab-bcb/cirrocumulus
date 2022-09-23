@@ -35,7 +35,7 @@ function DraggableDivider(props) {
       const delta = clientY.current - event.clientY;
       const height = Math.max(
         50,
-        primaryChartSizeHeightMouseDown.current - delta
+        primaryChartSizeHeightMouseDown.current - delta,
       );
       onDragDivider(height);
       event.stopPropagation();

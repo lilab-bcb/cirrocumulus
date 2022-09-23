@@ -37,12 +37,12 @@ class DotPlotJobResultOptions extends React.PureComponent {
     super(props);
     this.handleJobResultDebounced = debounce(
       this.handleJobResultDebounced,
-      500
+      500,
     );
     this.sortAndFilterDebounced = debounce(this.sortAndFilterDebounced, 500);
     this.updateTopNJobResultDebounced = debounce(
       this.updateTopNJobResultDebounced,
-      500
+      500,
     );
     this.state = {
       forceUpdate: false,
@@ -442,5 +442,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default withStyles(styles)(
-  connect(mapStateToProps, mapDispatchToProps)(DotPlotJobResultOptions)
+  connect(mapStateToProps, mapDispatchToProps)(DotPlotJobResultOptions),
 );

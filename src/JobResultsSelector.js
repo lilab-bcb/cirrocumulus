@@ -68,7 +68,7 @@ function JobResultsSelector(props) {
   const jobTypeToName = {};
   const isShowingJob = jobResultId != null;
   COMPARE_ACTIONS.forEach(
-    (action) => (jobTypeToName[action.jobType] = action.title)
+    (action) => (jobTypeToName[action.jobType] = action.title),
   );
 
   function getTable() {
@@ -223,5 +223,5 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 export default withStyles({})(
-  connect(mapStateToProps, mapDispatchToProps)(JobResultsSelector)
+  connect(mapStateToProps, mapDispatchToProps)(JobResultsSelector),
 );

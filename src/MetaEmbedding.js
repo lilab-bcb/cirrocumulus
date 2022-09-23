@@ -111,7 +111,7 @@ class MetaEmbedding extends React.PureComponent {
         [new XMLSerializer().serializeToString(trace.source)],
         {
           type: 'text/plain;charset=utf-8',
-        }
+        },
       );
       window.saveAs(blob, name + '.svg');
     }
@@ -162,7 +162,7 @@ class MetaEmbedding extends React.PureComponent {
   onHome = () => {
     select(this.props.trace.source).call(
       this.d3Zoom.transform,
-      zoomIdentity.scale(1)
+      zoomIdentity.scale(1),
     );
   };
 

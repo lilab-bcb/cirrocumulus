@@ -26,7 +26,7 @@ export function saveImage(trace, chartSize, draw, format) {
     const legendSize = getCategoricalLegendSize(
       context,
       name,
-      trace.colorScale.domain()
+      trace.colorScale.domain(),
     );
     totalSize.width += legendSize.width;
     totalSize.height = Math.max(legendSize.height, chartSize.height);
@@ -53,7 +53,7 @@ export function saveImage(trace, chartSize, draw, format) {
       context,
       trace.colorScale,
       name,
-      trace.colorScale.domain()
+      trace.colorScale.domain(),
     );
   } else {
     context.translate(chartSize.width / 2 - 75, chartSize.height + 2);

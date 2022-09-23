@@ -11,7 +11,7 @@ function phyper(a, b, c, d) {
         logFactorial(b) +
         logFactorial(c) +
         logFactorial(d) +
-        logFactorial(a + b + c + d))
+        logFactorial(a + b + c + d)),
   );
 }
 

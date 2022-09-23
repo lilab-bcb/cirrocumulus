@@ -97,7 +97,7 @@ function FeatureCategory(props) {
       categoryColorScales,
       textColor,
       options,
-      true
+      true,
     );
   });
 
@@ -150,7 +150,7 @@ function drawCategory(
   categoryColorScales,
   textColor,
   options,
-  drawCategories
+  drawCategories,
 ) {
   const {violinScale, violinHeight, violinWidth, violinShowBoxplot} = options;
   context.save();
@@ -190,18 +190,18 @@ function drawCategory(
       violinWidth / 2 - boxplotWidth / 2,
       xscale(item.boxplotStats.q3),
       boxplotWidth,
-      xscale(item.boxplotStats.q1) - xscale(item.boxplotStats.q3)
+      xscale(item.boxplotStats.q1) - xscale(item.boxplotStats.q3),
     );
 
     // median
     context.beginPath();
     context.moveTo(
       violinWidth / 2 - boxplotWidth / 2,
-      xscale(item.boxplotStats.median)
+      xscale(item.boxplotStats.median),
     );
     context.lineTo(
       violinWidth / 2 - boxplotWidth / 2 + boxplotWidth,
-      xscale(item.boxplotStats.median)
+      xscale(item.boxplotStats.median),
     );
     context.stroke();
 
@@ -217,7 +217,7 @@ function drawCategory(
     context.beginPath();
     context.moveTo(
       violinWidth / 2,
-      xscale(item.boxplotStats.upperAdjacentValue)
+      xscale(item.boxplotStats.upperAdjacentValue),
     );
     context.lineTo(violinWidth / 2, xscale(item.boxplotStats.q3));
     context.stroke();
@@ -226,7 +226,7 @@ function drawCategory(
     context.moveTo(violinWidth / 2, xscale(item.boxplotStats.q1));
     context.lineTo(
       violinWidth / 2,
-      xscale(item.boxplotStats.lowerAdjacentValue)
+      xscale(item.boxplotStats.lowerAdjacentValue),
     );
     context.stroke();
   }
@@ -249,7 +249,7 @@ function drawCategory(
         centerPix - CHIP_SIZE + 4,
         height - CHIP_SIZE - chipStartCoord,
         CHIP_SIZE,
-        CHIP_SIZE
+        CHIP_SIZE,
       );
       context.fill();
       context.stroke();
@@ -301,7 +301,7 @@ export function drawFeature(
   categoryColorScales,
   textColor,
   xscale,
-  yscale
+  yscale,
 ) {
   const features = data[0].map((item) => item.feature);
   const featureIndex = features.indexOf(feature);
@@ -324,7 +324,7 @@ export function drawFeature(
       categoryColorScales,
       textColor,
       options,
-      drawCategories
+      drawCategories,
     );
     context.restore();
   }

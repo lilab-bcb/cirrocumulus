@@ -56,7 +56,7 @@ function ContinuousLegend(props) {
                   {isNaN(selectionSummary.numExpressed)
                     ? ''
                     : numberFormat0(
-                        (100 * selectionSummary.numExpressed) / nObsSelected
+                        (100 * selectionSummary.numExpressed) / nObsSelected,
                       )}
                 </td>
               )}

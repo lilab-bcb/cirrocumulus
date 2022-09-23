@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PercentIcon from '@mui/icons-material/Percent';
 import {connect} from 'react-redux';
+import NumbersIcon from '@mui/icons-material/Numbers';
 import {
   getTraceKey,
   handleBrushFilterUpdated,
@@ -13,6 +14,7 @@ import {
   handleDimensionFilterUpdated,
   handleDomainChange,
   handleMeasureFilterUpdated,
+  setCategoricalSortOrder,
   setChartOptions,
   setEmbeddingData,
   setLegendScrollPosition,
@@ -24,7 +26,7 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
-import {FEATURE_TYPE, TRACE_TYPE_META_IMAGE} from './util';
+import {FEATURE_TYPE, sortCategories, TRACE_TYPE_META_IMAGE} from './util';
 import memoize from 'memoize-one';
 import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
 import IconButton from '@mui/material/IconButton';
@@ -34,7 +36,7 @@ const getActiveEmbeddingLabels = memoize((searchTokens, embeddingLabels) => {
     .filter(
       (item) =>
         item.type === FEATURE_TYPE.OBS_CAT &&
-        embeddingLabels.indexOf(item.id) !== -1
+        embeddingLabels.indexOf(item.id) !== -1,
     )
     .map((item) => item.id);
 });
@@ -44,6 +46,7 @@ function EmbeddingChart(props) {
     activeFeature,
     cachedData,
     categoricalNames,
+    categoricalSortOrder,
     chartOptions,
     dataset,
     datasetFilter,
@@ -61,6 +64,7 @@ function EmbeddingChart(props) {
     onChartOptions,
     onColorChange,
     onDimensionFilterUpdated,
+    onCategoricalSortOrder,
     onDomain,
     onGallery,
     onMeasureFilterUpdated,
@@ -76,7 +80,8 @@ function EmbeddingChart(props) {
   } = props;
 
   const [showLegend, setShowLegend] = useState(true);
-  const [sortOrder, setSortOrder] = useState('alpha');
+  const [sortOrder, setSortOrder] = useState('alpha'); // alpha, percent, size
+
   const active = 'cirro-active';
   useEffect(() => {
     window.addEventListener('resize', handleWindowSize);
@@ -90,12 +95,26 @@ function EmbeddingChart(props) {
     setShowLegend(!showLegend);
   }
 
+  function handleSortOrder(value) {
+    const categories =
+      value !== 'alpha'
+        ? sortCategories(
+            globalFeatureSummary,
+            featureSummary,
+            activeFeature.name,
+            value,
+          )
+        : null;
+    onCategoricalSortOrder({name: activeFeature.name, value: categories});
+    setSortOrder(value);
+  }
+
   function onAddFeatures(features) {
     const values = searchTokens.filter(
-      (token) => token.type !== FEATURE_TYPE.X
+      (token) => token.type !== FEATURE_TYPE.X,
     );
     const xTokens = searchTokens.filter(
-      (token) => token.type === FEATURE_TYPE.X
+      (token) => token.type === FEATURE_TYPE.X,
     );
     const existingXFeatures = new Set();
     xTokens.forEach((item) => existingXFeatures.add(item.id));
@@ -111,7 +130,7 @@ function EmbeddingChart(props) {
   function onCamera(eventName, cameraDef) {
     const primaryTrace = find(
       embeddingData,
-      (item) => getTraceKey(item) === activeFeature.embeddingKey
+      (item) => getTraceKey(item) === activeFeature.embeddingKey,
     );
     for (let i = 0, n = embeddingData.length; i < n; i++) {
       if (primaryTrace.embedding.name === embeddingData[i].embedding.name) {
@@ -126,7 +145,7 @@ function EmbeddingChart(props) {
   }
   const primaryTrace = find(
     embeddingData,
-    (item) => getTraceKey(item) === activeFeature.embeddingKey
+    (item) => getTraceKey(item) === activeFeature.embeddingKey,
   );
   if (primaryTrace == null) {
     console.log(activeFeature.embeddingKey + ' not found');
@@ -135,7 +154,7 @@ function EmbeddingChart(props) {
   const nObsSelected = selection != null ? selection.size : 0;
   const activeEmbeddingLabels = getActiveEmbeddingLabels(
     searchTokens,
-    embeddingLabels
+    embeddingLabels,
   );
   const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
   return (
@@ -156,16 +175,19 @@ function EmbeddingChart(props) {
             {!primaryTrace.continuous && (
               <div style={{float: 'left'}}>
                 <Tooltip title={'Sort Legend Alphabetically'}>
-                  <IconButton
-                    edge={false}
-                    style={{padding: 0}}
-                    className={sortOrder === 'alpha' ? active : ''}
-                    size={'small'}
-                    aria-label="Sort Alphabetically"
-                    onClick={() => setSortOrder('alpha')}
-                  >
-                    <SortByAlphaIcon fontSize={'small'} />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      edge={false}
+                      disabled={sortOrder !== 'percent'}
+                      style={{padding: 0}}
+                      className={sortOrder === 'alpha' ? active : ''}
+                      size={'small'}
+                      aria-label="Sort Alphabetically"
+                      onClick={() => handleSortOrder('alpha')}
+                    >
+                      <SortByAlphaIcon fontSize={'small'} />
+                    </IconButton>
+                  </span>
                 </Tooltip>
                 <Tooltip title={'Sort Legend By Percent Selected'}>
                   <IconButton
@@ -173,10 +195,22 @@ function EmbeddingChart(props) {
                     size={'small'}
                     style={{padding: 0}}
                     className={sortOrder === 'percent' ? active : ''}
-                    aria-label="Sort By Percent Selected"
-                    onClick={() => setSortOrder('percent')}
+                    aria-label="Sort Legend By Percent Selected"
+                    onClick={() => handleSortOrder('percent')}
                   >
                     <PercentIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={'Sort Legend By Size'}>
+                  <IconButton
+                    edge={false}
+                    size={'small'}
+                    style={{padding: 0}}
+                    className={sortOrder === 'size' ? active : ''}
+                    aria-label="Sort Legend By Size"
+                    onClick={() => handleSortOrder('size')}
+                  >
+                    <NumbersIcon />
                   </IconButton>
                 </Tooltip>
               </div>
@@ -258,7 +292,7 @@ function EmbeddingChart(props) {
             globalFeatureSummary={globalFeatureSummary}
             featureSummary={featureSummary}
             serverInfo={serverInfo}
-            sortOrder={sortOrder}
+            categoricalSortOrder={categoricalSortOrder}
           />
         )}
       </Box>
@@ -330,6 +364,7 @@ const mapStateToProps = (state) => {
     embeddingData: state.embeddingData,
     cachedData: state.cachedData,
     categoricalNames: state.categoricalNames,
+    categoricalSortOrder: state.categoricalSortOrder,
     chartOptions: state.chartOptions,
     dataset: state.dataset,
     datasetFilter: state.datasetFilter,
@@ -382,6 +417,9 @@ const mapDispatchToProps = (dispatch) => {
     },
     handleSearchTokens: (value) => {
       dispatch(setSearchTokens(value, false));
+    },
+    onCategoricalSortOrder: (value) => {
+      dispatch(setCategoricalSortOrder(value));
     },
   };
 };

@@ -135,7 +135,7 @@ function EditNewDatasetDialog(props) {
         }
       }
     },
-    [canUpload, isNew]
+    [canUpload, isNew],
   );
 
   useEffect(() => {
@@ -171,18 +171,18 @@ function EditNewDatasetDialog(props) {
     setExperimentType(
       dataset != null && dataset.experimentType != null
         ? dataset.experimentType
-        : ''
+        : '',
     );
     setDescription(
-      dataset != null && dataset.description != null ? dataset.description : ''
+      dataset != null && dataset.description != null ? dataset.description : '',
     );
     setOverallDesign(
       dataset != null && dataset.overallDesign != null
         ? dataset.overallDesign
-        : ''
+        : '',
     );
     setCitations(
-      dataset != null && dataset.citations != null ? dataset.citations : ''
+      dataset != null && dataset.citations != null ? dataset.citations : '',
     );
   }, [dataset, email]);
 
@@ -570,5 +570,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default withStyles(styles)(
-  connect(mapStateToProps, mapDispatchToProps)(EditNewDatasetDialog)
+  connect(mapStateToProps, mapDispatchToProps)(EditNewDatasetDialog),
 );

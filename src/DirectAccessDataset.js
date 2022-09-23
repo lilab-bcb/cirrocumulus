@@ -107,7 +107,7 @@ export class DirectAccessDataset {
     return new Promise((resolve) => {
       this.fetchData(keys).then(() => {
         const indices = Array.from(
-          getPassingFilterIndices(this.key2data, dataFilter)
+          getPassingFilterIndices(this.key2data, dataFilter),
         );
         let idVector = this.getVector('index', indices);
         let ids = [];
@@ -176,7 +176,7 @@ export class DirectAccessDataset {
         dimensions
           .concat(typeToMeasures.obs)
           .concat(typeToMeasures.X)
-          .concat(Array.from(basisKeys))
+          .concat(Array.from(basisKeys)),
       ).then(() => {
         if (q.embedding) {
           results.embeddings = [];

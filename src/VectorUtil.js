@@ -163,7 +163,7 @@ export function computeDerivedStats(result, q, cachedData) {
 
     result.summary = getStats(
       getVectors(cachedData, dimensions),
-      measureVectors
+      measureVectors,
     );
   }
 
@@ -174,7 +174,7 @@ export function computeDerivedStats(result, q, cachedData) {
     if (dimensions.length > 0) {
       // TODO, currently we only handle dimensions[0]
       const groupDimensionInfo = groupDimensions(
-        getVectors(cachedData, dimensions[0])
+        getVectors(cachedData, dimensions[0]),
       );
       const distribution = {};
       for (const key in typeToMeasures) {
@@ -182,7 +182,7 @@ export function computeDerivedStats(result, q, cachedData) {
         if (measures.length > 0) {
           distribution[key] = groupedStats(
             groupDimensionInfo,
-            getVectors(cachedData, measures)
+            getVectors(cachedData, measures),
           );
         }
       }
@@ -197,13 +197,13 @@ export function computeDerivedStats(result, q, cachedData) {
     result.selection = {};
     result.selection.indices = getPassingFilterIndices(
       cachedData,
-      q.selection.filter
+      q.selection.filter,
     );
     const selectedIndices = Array.from(result.selection.indices);
     const dimensionVectors = getVectors(
       cachedData,
       dimensions,
-      selectedIndices
+      selectedIndices,
     );
     if (dimensions.length > 0) {
       const groupDimensionInfo = groupDimensions(dimensionVectors);
@@ -213,7 +213,7 @@ export function computeDerivedStats(result, q, cachedData) {
         if (measures.length > 0) {
           distribution[key] = groupedStats(
             groupDimensionInfo,
-            getVectors(cachedData, measures, selectedIndices)
+            getVectors(cachedData, measures, selectedIndices),
           );
         }
       }
@@ -222,7 +222,7 @@ export function computeDerivedStats(result, q, cachedData) {
     let measureVectors = [];
     Object.values(typeToMeasures).forEach((fields) => {
       measureVectors = measureVectors.concat(
-        getVectors(cachedData, fields, selectedIndices)
+        getVectors(cachedData, fields, selectedIndices),
       );
     });
     result.selection.summary = getStats(dimensionVectors, measureVectors);

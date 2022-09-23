@@ -112,8 +112,8 @@ function CompositionPlot(props) {
       (name) =>
         (maxSeriesWidth = Math.max(
           maxSeriesWidth,
-          context.measureText(name).width
-        ))
+          context.measureText(name).width,
+        )),
     );
     const margin = {left: 25, top: 10, bottom: maxSeriesWidth + 6, right: 4};
     size.current.margin = margin;
@@ -135,7 +135,7 @@ function CompositionPlot(props) {
       0,
       0,
       width * devicePixelRatio,
-      height * devicePixelRatio
+      height * devicePixelRatio,
     );
     context.scale(devicePixelRatio, devicePixelRatio);
     drawContext(context);

@@ -151,7 +151,7 @@ export function updateJob(jobResult) {
       domain[1] = jobResult.options.max;
     }
     jobResult.colorScale = createColorScale(jobResult.interpolator).domain(
-      domain
+      domain,
     );
 
     if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
@@ -352,7 +352,7 @@ function DotPlotJobResultsPanel(props) {
         d.innerText = jobResult.groups[i];
         headerWidth = Math.max(
           headerWidth,
-          2 + d.getBoundingClientRect().width
+          2 + d.getBoundingClientRect().width,
         );
       }
       d.remove();
@@ -373,7 +373,7 @@ function DotPlotJobResultsPanel(props) {
         jobResult.valueScale.domain(jobResult.domains[rowIndex]);
       }
     },
-    [jobResult.interpolator, jobResult.valueScale, jobResult.domains]
+    [jobResult.interpolator, jobResult.valueScale, jobResult.domains],
   );
   useEffect(() => {
     const selection = new Set();
@@ -413,14 +413,14 @@ function DotPlotJobResultsPanel(props) {
     (row) => {
       return selectedFeatures.has(jobResult.data[row].index);
     },
-    [selectedFeatures, jobResult.data]
+    [selectedFeatures, jobResult.data],
   );
 
   const getRowId = useCallback(
     (row) => {
       return jobResult.data[row].index;
     },
-    [jobResult.data]
+    [jobResult.data],
   );
 
   const getTooltip = useCallback(
@@ -437,21 +437,21 @@ function DotPlotJobResultsPanel(props) {
       title = title.join('<br />');
       return title;
     },
-    [jobResult.data, tooltipFields]
+    [jobResult.data, tooltipFields],
   );
 
   const getColor = useCallback(
     (row, column) => {
       return jobResult.data[row][column + ':' + jobResult.color];
     },
-    [jobResult.data, jobResult.color]
+    [jobResult.data, jobResult.color],
   );
 
   const getSize = useCallback(
     (row, column) => {
       return jobResult.data[row][column + ':' + jobResult.size];
     },
-    [jobResult.data, jobResult.size]
+    [jobResult.data, jobResult.size],
   );
 
   const columnStart = useCallback(
@@ -462,7 +462,7 @@ function DotPlotJobResultsPanel(props) {
         jobResult.valueScale.domain(jobResult.domains[columnIndex]);
       }
     },
-    [jobResult.interpolator, jobResult.valueScale, jobResult.domains]
+    [jobResult.interpolator, jobResult.valueScale, jobResult.domains],
   );
 
   const onMouseMove = useCallback((event) => {
@@ -491,7 +491,7 @@ function DotPlotJobResultsPanel(props) {
       let filteredSearchTokens;
       if (!isSelected) {
         filteredSearchTokens = searchTokens.filter(
-          (token) => !features.has(token.id)
+          (token) => !features.has(token.id),
         );
       } else {
         filteredSearchTokens = searchTokens.slice();
@@ -516,7 +516,7 @@ function DotPlotJobResultsPanel(props) {
       }
       onSearchTokens(filteredSearchTokens);
     },
-    [jobResult.rows, jobResult.data, searchTokens]
+    [jobResult.rows, jobResult.data, searchTokens],
   );
 
   const onRowClick = useCallback(
@@ -543,7 +543,7 @@ function DotPlotJobResultsPanel(props) {
       }
       onSearchTokens(searchTokens.slice());
     },
-    [jobResult.data, searchTokens]
+    [jobResult.data, searchTokens],
   );
 
   function exportJobResult(event) {
@@ -695,5 +695,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  mapDispatchToProps,
 )(DotPlotJobResultsPanel);

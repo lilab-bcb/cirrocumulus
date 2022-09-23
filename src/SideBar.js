@@ -100,13 +100,13 @@ const styles = (theme) => ({
 function SideBar(props) {
   const [opacity, setOpacity] = useState(props.markerOpacity);
   const [unselectedOpacity, setUnselectedOpacity] = useState(
-    props.unselectedMarkerOpacity
+    props.unselectedMarkerOpacity,
   );
   const [labelFontSize, setLabelFontSize] = useState(
-    props.chartOptions.labelFontSize
+    props.chartOptions.labelFontSize,
   );
   const [labelStrokeWidth, setLabelStrokeWidth] = useState(
-    props.chartOptions.labelStrokeWidth
+    props.chartOptions.labelStrokeWidth,
   );
 
   const [minColor, setMinColor] = useState('');
@@ -151,25 +151,25 @@ function SideBar(props) {
       ? null
       : find(
           embeddingData,
-          (trace) => getTraceKey(trace) === activeFeature.embeddingKey
+          (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
         );
   const activeInterpolator =
     activeFeature == null ? null : interpolator[activeFeature.type];
   const onLabelFontSizeUpdateDebouncedFunc = useMemo(
     () => debounce(onLabelFontSizeUpdate, 500),
-    []
+    [],
   );
   const onLabelStrokeWidthUpdateDebouncedFunc = useMemo(
     () => debounce(onLabelStrokeWidthUpdate, 500),
-    []
+    [],
   );
   const updateMarkerOpacityDebouncedFunc = useMemo(
     () => debounce(updateMarkerOpacity, 500),
-    []
+    [],
   );
   const updateUnselectedMarkerOpacityDebouncedFunc = useMemo(
     () => debounce(updateUnselectedMarkerOpacity, 500),
-    []
+    [],
   );
 
   useEffect(() => {
@@ -195,7 +195,7 @@ function SideBar(props) {
     } else {
       const trace = find(
         embeddingData,
-        (trace) => getTraceKey(trace) === activeFeature.embeddingKey
+        (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
       );
       if (trace == null) {
         setMinColor('');
@@ -262,7 +262,7 @@ function SideBar(props) {
     const summary = globalFeatureSummary[activeFeature.name];
     const trace = find(
       embeddingData,
-      (trace) => getTraceKey(trace) === activeFeature.embeddingKey
+      (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
     );
     if (trace.type !== TRACE_TYPE_META_IMAGE) {
       summary.customMin = isNaN(value) ? undefined : value;
@@ -279,7 +279,7 @@ function SideBar(props) {
     const summary = globalFeatureSummary[activeFeature.name];
     const trace = find(
       embeddingData,
-      (trace) => getTraceKey(trace) === activeFeature.embeddingKey
+      (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
     );
     if (trace.type !== TRACE_TYPE_META_IMAGE) {
       summary.customMax = isNaN(value) ? undefined : value;
@@ -715,5 +715,5 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 export default withStyles(styles)(
-  connect(mapStateToProps, mapDispatchToProps)(SideBar)
+  connect(mapStateToProps, mapDispatchToProps)(SideBar),
 );

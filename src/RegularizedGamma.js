@@ -91,7 +91,7 @@ export function regularizedGammaQValue(
   a,
   x,
   epsilon = 1e-15,
-  maxIterations = Number.MAX_VALUE
+  maxIterations = Number.MAX_VALUE,
 ) {
   if (Number.isNaN(a) || Number.isNaN(x) || a <= 0 || x < 0) {
     return Number.NaN;
@@ -230,7 +230,7 @@ export function regularizedGammaPValue(
   a,
   x,
   epsilon = 1e-15,
-  maxIterations = Number.MAX_VALUE
+  maxIterations = Number.MAX_VALUE,
 ) {
   if (Number.isNaN(a) || Number.isNaN(x) || a <= 0 || x < 0) {
     return Number.NaN;
@@ -289,7 +289,7 @@ function continuedFraction(x, epsilon, maxIterations, getA, getB) {
 
     if (!Number.isFinite(hN)) {
       throw new Error(
-        'Continued fraction convergents diverged to +/- infinity'
+        'Continued fraction convergents diverged to +/- infinity',
       );
     }
     if (Number.isNaN(hN)) {

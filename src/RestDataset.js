@@ -65,7 +65,7 @@ export class RestDataset {
           : Promise.resolve();
       return p.then(() => {
         const selectedIndices = Array.from(
-          getPassingFilterIndices(cachedData, q.filter)
+          getPassingFilterIndices(cachedData, q.filter),
         );
         const ids = [];
         const index = cachedData['index'];
@@ -171,14 +171,14 @@ export class RestDataset {
               if (result.values) {
                 convertSparseAndCategoricalArrays(
                   result.values,
-                  this.schema.shape[0]
+                  this.schema.shape[0],
                 );
               }
               if (result.layers) {
                 for (const layer in result.layers) {
                   convertSparseAndCategoricalArrays(
                     result.layers[layer],
-                    this.schema.shape[0]
+                    this.schema.shape[0],
                   );
                 }
               }
@@ -195,7 +195,7 @@ export class RestDataset {
         }
         if (result.selection && result.selection.distribution) {
           result.selection.distribution = reshapeDistributionResult(
-            result.selection.distribution
+            result.selection.distribution,
           );
         }
       }

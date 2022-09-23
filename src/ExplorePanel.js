@@ -255,8 +255,8 @@ function ExplorePanel(props) {
         .concat(
           values.map((item) => {
             return {id: item.id, type: FEATURE_TYPE.X};
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -267,8 +267,8 @@ function ExplorePanel(props) {
         .concat(
           values.map((item) => {
             return {id: item.id, type: FEATURE_TYPE.MODULE};
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -278,13 +278,13 @@ function ExplorePanel(props) {
         .filter(
           (token) =>
             token.type !== FEATURE_TYPE.OBS &&
-            token.type !== FEATURE_TYPE.OBS_CAT
+            token.type !== FEATURE_TYPE.OBS_CAT,
         )
         .concat(
           values.map((item) => {
             return {id: item.id, type: item.type};
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -298,8 +298,8 @@ function ExplorePanel(props) {
               id: item.id != null ? item.id : item,
               type: FEATURE_TYPE.FEATURE_SET,
             };
-          })
-        )
+          }),
+        ),
     );
   }
 
@@ -315,7 +315,7 @@ function ExplorePanel(props) {
   function onEmbeddingsChange(event, value) {
     const newValue = [];
     const embeddingKeys = dataset.embeddings.map((item) =>
-      getEmbeddingKey(item)
+      getEmbeddingKey(item),
     );
     value.forEach((val) => {
       const id = val.id !== undefined ? val.id : val;
@@ -391,12 +391,12 @@ function ExplorePanel(props) {
     const featureSetId = selectedItem.value.id;
     const values = searchTokens.filter(
       (token) =>
-        token.type === FEATURE_TYPE.FEATURE_SET && token.id !== featureSetId
+        token.type === FEATURE_TYPE.FEATURE_SET && token.id !== featureSetId,
     );
     handleSearchTokens(
       searchTokens
         .filter((token) => token.type !== FEATURE_TYPE.FEATURE_SET)
-        .concat(values)
+        .concat(values),
     );
     handleDeleteFeatureSet(featureSetId);
     setSelectedItem({});
@@ -414,7 +414,7 @@ function ExplorePanel(props) {
       searchTokens
         .filter((token) => token.type === FEATURE_TYPE.X)
         .map((item) => item.id)
-        .join('\n')
+        .join('\n'),
     );
   }
 
@@ -451,7 +451,7 @@ function ExplorePanel(props) {
   const xSearchTokens = groupedSearchTokens[FEATURE_TYPE.X] || [];
   const featureSets = getFeatureSets(
     markers,
-    groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || []
+    groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || [],
   );
   const moduleTokens = groupedSearchTokens[FEATURE_TYPE.MODULE] || [];
   const featureOptions = dataset.features;
@@ -558,7 +558,7 @@ function ExplorePanel(props) {
               getOptionSelected={(option, value) =>
                 findIndex(
                   selectedEmbeddings,
-                  (item) => item.id === option.id
+                  (item) => item.id === option.id,
                 ) !== -1
               }
               onChange={onEmbeddingsChange}
@@ -620,7 +620,7 @@ function ExplorePanel(props) {
               value={searchTokens.filter(
                 (token) =>
                   token.type === FEATURE_TYPE.OBS_CAT ||
-                  token.type === FEATURE_TYPE.OBS
+                  token.type === FEATURE_TYPE.OBS,
               )}
               onChipClick={onFeatureClick}
               getOptionSelected={(option, value) => option.id === value.id}
@@ -871,5 +871,5 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 export default withStyles(styles)(
-  connect(mapStateToProps, mapDispatchToProps)(ExplorePanel)
+  connect(mapStateToProps, mapDispatchToProps)(ExplorePanel),
 );

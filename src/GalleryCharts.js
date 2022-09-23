@@ -66,7 +66,7 @@ function GalleryCharts(props) {
       containerElementRef.current,
       window.ApplePaySession,
       false,
-      false
+      false,
     );
     const canvas = containerElementRef.current.querySelector('canvas');
 
@@ -100,7 +100,7 @@ function GalleryCharts(props) {
     .filter(
       (item) =>
         item.type === FEATURE_TYPE.OBS_CAT &&
-        embeddingLabels.indexOf(item.id) !== -1
+        embeddingLabels.indexOf(item.id) !== -1,
     )
     .map((item) => item.id);
   const SortableItem = sortableElement(({trace}) => (

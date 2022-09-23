@@ -98,7 +98,7 @@ function reshapeData(data, distributionPlotOptions, categoryOrder) {
     });
     const ndim = sorters.length;
     const categoryItems = categories.map(
-      (category) => categoryToItems[category][0]
+      (category) => categoryToItems[category][0],
     );
     categoryItems.sort((a, b) => {
       for (let i = 0; i < ndim; i++) {
@@ -239,19 +239,19 @@ class DistributionGroup extends React.PureComponent {
       const selectedMeanAndPercentRange = getMeanAndPercentRange(selectedData);
       meanRange[0] = Math.min(
         meanRange[0],
-        selectedMeanAndPercentRange.mean[0]
+        selectedMeanAndPercentRange.mean[0],
       );
       meanRange[1] = Math.max(
         meanRange[1],
-        selectedMeanAndPercentRange.mean[1]
+        selectedMeanAndPercentRange.mean[1],
       );
       percentRange[0] = Math.min(
         percentRange[0],
-        selectedMeanAndPercentRange.percent[0]
+        selectedMeanAndPercentRange.percent[0],
       );
       percentRange[1] = Math.max(
         percentRange[1],
-        selectedMeanAndPercentRange.percent[1]
+        selectedMeanAndPercentRange.percent[1],
       );
     }
 
@@ -312,14 +312,14 @@ class DistributionGroup extends React.PureComponent {
     const data2d = reshapeData(
       distributionData,
       distributionPlotOptions,
-      dataset.categoryOrder || {}
+      dataset.categoryOrder || {},
     );
     const selectedData2d =
       selectedData && selectedData.length > 0
         ? reshapeData(
             selectedData,
             distributionPlotOptions,
-            dataset.categoryOrder || {}
+            dataset.categoryOrder || {},
           )
         : null;
     if (
@@ -329,7 +329,7 @@ class DistributionGroup extends React.PureComponent {
       return null;
     }
     const features = (data2d ? data2d[0] : selectedData2d[0]).map(
-      (item) => item.feature
+      (item) => item.feature,
     );
 
     if (chartType === 'violin') {

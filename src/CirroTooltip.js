@@ -88,7 +88,7 @@ export default function CirroTooltip(props) {
       clientX,
       clientY,
       boundsCheck,
-      offset
+      offset,
     );
     setTooltipPosition(tip, position.left, position.top, transition);
   }, [html, clientX, clientY, boundsCheck, offset, transition]);

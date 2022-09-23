@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.40 `September 23, 2022`
+    * Sort clusters by percentage of selected cells within a cluster only updates when button is clicked
+    * Added option to sort clusters by number of selected cells within a cluster
+
 - 1.1.39 `September 13, 2022`
     * Fixed sorting clusters by percentage bug
 
