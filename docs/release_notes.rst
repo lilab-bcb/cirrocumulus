@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.41 `September 30, 2022`
+    * Distribution tab updates: Show selection on top. Toggle visibility of selected and non-selected distributions
+    * Added taxonomy field to new dataset dialog
+    * Added option to save categorical color scheme to file
+
 - 1.1.40 `September 23, 2022`
     * Sort clusters by percentage of selected cells within a cluster only updates when button is clicked
     * Added option to sort clusters by number of selected cells within a cluster

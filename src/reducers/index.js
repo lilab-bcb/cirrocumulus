@@ -494,6 +494,25 @@ function globalFeatureSummary(state = {}, action) {
 
 function serverInfo(state = {}, action) {
   switch (action.type) {
+    case SET_DATASET_CHOICES:
+      if (state.datasetSelectorColumns) {
+        const choices = action.payload;
+        const visibleColumns = state.datasetSelectorColumns.filter(
+          (c) => c.visible,
+        );
+
+        visibleColumns.forEach((c) => {
+          let visible = false;
+          for (let i = 0, n = Math.min(200, choices.length); i < n; i++) {
+            if (choices[i][c.field] != null) {
+              visible = true;
+              break;
+            }
+          }
+          c.visible = visible;
+        });
+      }
+      return state;
     case SET_SERVER_INFO:
       if (action.payload.ontology && action.payload.ontology.cellTypes) {
         action.payload.ontology.cellTypes.forEach(
@@ -504,6 +523,7 @@ function serverInfo(state = {}, action) {
         );
       }
       if (action.payload.datasetSelectorColumns == null) {
+        // set default
         action.payload.datasetSelectorColumns = [
           {field: 'name', label: 'Name', visible: true},
           {
@@ -515,6 +535,41 @@ function serverInfo(state = {}, action) {
             field: 'title',
             label: 'Title',
             visible: true,
+          },
+          {
+            field: 'taxonomy',
+            label: 'Taxonomy',
+            visible: true,
+          },
+          {
+            field: 'library',
+            label: 'Library',
+            visible: false,
+          },
+          {
+            field: 'experimentType',
+            label: 'Type',
+            visible: false,
+          },
+          {
+            field: 'description',
+            label: 'Summary',
+            visible: false,
+          },
+          {
+            field: 'overallDesign',
+            label: 'Design',
+            visible: false,
+          },
+          {
+            field: 'citations',
+            label: 'Citations',
+            visible: false,
+          },
+          {
+            field: 'contacts',
+            label: 'Contacts',
+            visible: false,
           },
         ];
       }
@@ -728,6 +783,7 @@ function categoricalNames(state = {}, action) {
       return state;
   }
 }
+
 // name -> array or null if no custom sort order defined
 function categoricalSortOrder(state = {}, action) {
   switch (action.type) {

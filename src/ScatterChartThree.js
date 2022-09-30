@@ -177,9 +177,10 @@ function ScatterChartThree(props) {
       chartOptions.camera = null;
     }
     chartOptions.scatterPlot = scatterPlotRef.current;
+    const wrapper = containerElementRef.current;
     return () => {
-      if (containerElementRef.current) {
-        const canvas = containerElementRef.current.querySelector('canvas');
+      if (wrapper) {
+        const canvas = wrapper.querySelector('canvas');
         canvas.removeEventListener('webglcontextlost', webglcontextlost);
         canvas.removeEventListener(
           'webglcontextrestored',

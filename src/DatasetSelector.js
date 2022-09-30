@@ -12,7 +12,6 @@ import {OPEN_DATASET_DIALOG, setDialog} from './actions';
 import {find, isArray} from 'lodash';
 import {REACT_MD_OVERRIDES} from './util';
 import CirroTable from './CirroTable';
-import InfoIcon from '@mui/icons-material/Info';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {DATASET_FIELDS} from './EditNewDatasetDialog';
@@ -45,24 +44,15 @@ export function DatasetSelector(props) {
       value = value.join(', ');
     } else if (column.format && typeof value === 'number') {
       value = column.format(value);
+    } else if (column.field === 'description') {
+      return (
+        <ReactMarkdown
+          options={{overrides: REACT_MD_OVERRIDES}}
+          children={value}
+        />
+      );
     }
-    return (
-      <>
-        {value}
-        {columnIndex === 0 &&
-          item.description != null &&
-          item.description !== '' && (
-            <IconButton
-              onClick={(e) => handleListItemDetailsClick(e, item.id)}
-              edge="end"
-              aria-label="description"
-              size="small"
-            >
-              <InfoIcon />
-            </IconButton>
-          )}
-      </>
-    );
+    return <>{value}</>;
   }
 
   function handleListItemDetailsClick(event, id) {

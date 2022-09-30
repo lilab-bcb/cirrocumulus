@@ -6,10 +6,22 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import Autocomplete, {autocompleteClasses} from '@mui/material/Autocomplete';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {sortableContainer, sortableElement} from 'react-sortable-hoc';
 import {VariableSizeList} from 'react-window';
 import Popper from '@mui/material/Popper';
 import Link from '@mui/material/Link';
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  rectSwappingStrategy,
+  SortableContext,
+  useSortable,
+} from '@dnd-kit/sortable';
 
 const LISTBOX_PADDING = 0; // px
 
@@ -204,6 +216,13 @@ const StyledPopper = styled(Popper)({
 export default function AutocompleteVirtualized(props) {
   const ref = React.createRef();
   const inputValueRef = React.createRef('');
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 1,
+      },
+    }),
+  );
   const {value, options, onChange} = props;
 
   function onDrop(event) {
@@ -360,66 +379,69 @@ export default function AutocompleteVirtualized(props) {
     }
     return exactMatches.concat(startsWithMatches).concat(containsMatches);
   };
-  const handleTagDelete = (event, index) => {
+  const handleTagDelete = (event, option) => {
+    const ids = value.map((option) => option.id);
     const newValue = value.slice();
-    newValue.splice(index, 1);
-    props.onChange(event, newValue);
-  };
-
-  const onSortEnd = (event) => {
-    const newValue = value.slice();
-    const tmp = newValue[event.newIndex];
-    newValue[event.newIndex] = newValue[event.oldIndex];
-    newValue[event.oldIndex] = tmp;
+    newValue.splice(ids.indexOf(option.id), 1);
     onChange(event, newValue);
   };
 
-  const SortableItem = sortableElement(({option, sortIndex}) => {
-    return (
-      <Chip
-        tabIndex={-1}
-        key={sortIndex}
-        style={{
-          zIndex: 1000000,
-          maxWidth: 216,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-        onDelete={(event) => handleTagDelete(event, sortIndex)}
-        onClick={onChipClick ? (event) => onChipClick(event, option) : null}
-        label={getChipText(option)}
-        title={getChipTitle(option)}
-        size="small"
-        icon={getChipIcon(option)}
-      />
-    );
-  });
+  function SortableItem(props) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+      setActivatorNodeRef,
+    } = useSortable({id: props.id});
 
-  const SortableList = sortableContainer(({items}) => {
+    const style = {
+      transform: transform
+        ? `translate(${Math.round(transform.x)}px,${Math.round(transform.y)}px)`
+        : undefined,
+      transition,
+      maxWidth: 216,
+      display: 'inline-block',
+      zIndex: isDragging ? 1000 : 0,
+      position: 'relative',
+    };
+    const {option} = props;
+
     return (
-      <ul
-        style={{
-          padding: 0,
-          marginTop: 0,
-          marginBottom: 0,
-          maxWidth: 240,
-          overflow: 'hidden',
-        }}
-      >
-        {items.map((option, index) => {
-          return (
-            <SortableItem
-              key={index}
-              option={option}
-              index={index}
-              sortIndex={index}
-            />
-          );
-        })}
-      </ul>
+      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+        <Chip
+          ref={setActivatorNodeRef}
+          tabIndex={-1}
+          key={option.id}
+          style={{
+            maxWidth: 216,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+          onDelete={(event) => handleTagDelete(event, option)}
+          onClick={onChipClick ? (event) => onChipClick(event, option) : null}
+          label={getChipText(option)}
+          title={getChipTitle(option)}
+          size="small"
+          icon={getChipIcon(option)}
+        />
+      </div>
     );
-  });
+  }
+
   const multiple = props.multiple != null ? props.multiple : true;
+
+  function dragEnd(event) {
+    const {active, over} = event;
+    if (active.id !== over.id) {
+      const ids = value.map((option) => option.id);
+      const oldIndex = ids.indexOf(active.id);
+      const newIndex = ids.indexOf(over.id);
+      onChange(event, arrayMove(value, oldIndex, newIndex));
+    }
+  }
 
   return (
     <>
@@ -475,12 +497,20 @@ export default function AutocompleteVirtualized(props) {
       />
 
       {multiple && (
-        <SortableList
-          distance={2}
-          onSortEnd={onSortEnd}
-          axis="xy"
-          items={props.value}
-        />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={dragEnd}
+        >
+          <SortableContext
+            strategy={rectSwappingStrategy}
+            items={value.map((item) => item.id)}
+          >
+            {value.map((option) => (
+              <SortableItem option={option} key={option.id} id={option.id} />
+            ))}
+          </SortableContext>
+        </DndContext>
       )}
     </>
   );

@@ -83,7 +83,7 @@ export default function CirroTable(props) {
     filteredRows.sort((item1, item2) => {
       return NATSORT(item1[orderBy], item2[orderBy]);
     });
-    if (order == 'desc') {
+    if (order === 'desc') {
       filteredRows.reverse();
     }
   }
