@@ -69,6 +69,7 @@ function EditNewDatasetDialog(props) {
 
   const [name, setName] = useState('');
   const [title, setTitle] = useState('');
+  const [taxonomy, setTaxonomy] = useState('');
   const [species, setSpecies] = useState([]);
   const [library, setLibrary] = useState([]);
   const [experimentType, setExperimentType] = useState('');
@@ -165,6 +166,9 @@ function EditNewDatasetDialog(props) {
     setUrl(dataset != null ? dataset.url : '');
     setName(dataset != null && dataset.name != null ? dataset.name : '');
     setTitle(dataset != null && dataset.title != null ? dataset.title : '');
+    setTaxonomy(
+      dataset != null && dataset.taxonomy != null ? dataset.taxonomy : '',
+    );
     setSpecies(toArray('species'));
     setLibrary(toArray('library'));
     setContacts(toArray('contacts'));
@@ -207,6 +211,7 @@ function EditNewDatasetDialog(props) {
       contacts: contacts,
       name: name.trim(),
       title: title.trim(),
+      taxonomy: taxonomy.trim(),
       species: species,
       library: library,
       experimentType: experimentType.trim(),
@@ -405,6 +410,18 @@ function EditNewDatasetDialog(props) {
                 label="Library(s)"
               />
             )}
+          />
+          <TextField
+            size={'small'}
+            disabled={loading}
+            autoComplete="off"
+            required={false}
+            value={taxonomy}
+            onChange={(event) => setTaxonomy(event.target.value)}
+            margin="dense"
+            label="Taxonomy"
+            fullWidth
+            inputProps={{maxLength: 255}}
           />
           <TextField
             size={'small'}

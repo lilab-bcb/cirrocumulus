@@ -81,6 +81,7 @@ const gallerySizeOptions = [
 
 const styles = (theme) => ({
   root: {
+    overflowX: 'clip',
     display: 'flex',
     flexDirection: 'column',
     margin: theme.spacing(0, 0.5),

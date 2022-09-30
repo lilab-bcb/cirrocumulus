@@ -580,14 +580,18 @@ function ExplorePanel(props) {
               getOptionLabel={(option) => option.text}
               helperText={'Enter or paste list'}
             />
-            <div>
+            <div
+              style={{
+                position: 'absolute',
+                right: '4px',
+                top: '44px',
+                display: xSearchTokens.length === 0 ? 'none' : '',
+              }}
+            >
               <Link
                 style={{
-                  float: 'right',
-                  marginRight: 4,
                   fontSize: '0.75rem',
-                  transform: 'translateY(-50px)',
-                  display: xSearchTokens.length === 0 ? 'none' : '',
+                  cursor: 'pointer',
                 }}
                 onClick={onFeatureCopy}
               >
@@ -678,7 +682,7 @@ function ExplorePanel(props) {
           </FormControl>
         )}
         {
-          <FormControl sx={{display: 'block'}}>
+          <FormControl sx={{display: 'block', minHeight: 62}}>
             <AutocompleteVirtualized
               label={'Sets'}
               testId={'sets-input'}
@@ -705,14 +709,19 @@ function ExplorePanel(props) {
               getOptionSelected={(option, value) => option.id === value.id}
             />
             {serverInfo.capabilities.has(SERVER_CAPABILITY_FEATURE_SETS) && (
-              <div>
+              <div
+                style={{
+                  position: 'absolute',
+                  right: '4px',
+                  top: '44px',
+                  display: xSearchTokens.length === 0 ? 'none' : '',
+                }}
+              >
                 <Tooltip title={'Save Current Genes/Features'}>
                   <Link
                     style={{
-                      float: 'right',
                       fontSize: '0.75rem',
-                      marginRight: 4,
-                      display: xSearchTokens.length === 0 ? 'none' : '',
+                      cursor: 'pointer',
                     }}
                     onClick={onSaveFeatureList}
                   >

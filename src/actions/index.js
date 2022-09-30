@@ -1829,10 +1829,10 @@ function handleSelectionResult(selectionResult, clear) {
         dispatch(setFeatureSummary(selectionSummary));
       }
       if (selectionResult.distribution) {
-        let selectedDistributionData = state.selectedDistributionData;
-        if (clear) {
-          selectedDistributionData = [];
-        }
+        let selectedDistributionData = clear
+          ? []
+          : state.selectedDistributionData.slice();
+
         const groupedSearchTokens = groupBy(state.searchTokens, 'type');
         addFeatureSetsToX(
           getFeatureSets(
@@ -2225,18 +2225,10 @@ function _updateCharts(onError, updateActiveFeature = true) {
       };
     }
 
-    // TODO update selection in new embedding space
-    if (
-      filterJson != null &&
-      (globalFeatureSummaryMeasuresCacheMiss.length > 0 ||
-        globalFeatureSummaryDimensionsCacheMiss.length > 0)
-    ) {
+    if (filterJson) {
       q.selection = {
         filter: filterJson,
-        measures:
-          globalFeatureSummaryDimensionsCacheMiss.length > 0
-            ? xValues
-            : globalFeatureSummaryMeasuresCacheMiss,
+        measures: xValues,
         dimensions: obsCatValues,
       };
     }
@@ -2258,6 +2250,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
     return Promise.all(allPromises)
       .then((values) => {
         const result = values[0];
+
         dispatch(setGlobalFeatureSummary(result.summary));
         const newEmbeddingData = getNewEmbeddingData(state, features);
         embeddingData = embeddingData.concat(newEmbeddingData);

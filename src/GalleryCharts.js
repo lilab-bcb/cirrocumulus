@@ -1,12 +1,79 @@
-import React, {useEffect, useRef, useState} from 'react';
-
+import React, {memo, useEffect, useRef, useState} from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  rectSwappingStrategy,
+  SortableContext,
+  useSortable,
+} from '@dnd-kit/sortable';
 import {connect} from 'react-redux';
-import {sortableContainer, sortableElement} from 'react-sortable-hoc';
+
 import {getTraceKey, setActiveFeature, setEmbeddingData} from './actions';
 import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
-import {findIndex} from 'lodash';
 import {FEATURE_TYPE} from './util';
+import {CSS} from '@dnd-kit/utilities';
+
+function SortableItem(props) {
+  const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
+    useSortable({id: props.id});
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    display: 'inline-block',
+    zIndex: isDragging ? 1000 : 0,
+    position: 'relative',
+  };
+  const {
+    trace,
+    obsCat,
+    cachedData,
+    markerOpacity,
+    chartOptions,
+    chartSize,
+    pointSize,
+    unselectedPointSize,
+    primaryChartSize,
+    categoricalNames,
+    unselectedMarkerOpacity,
+    selection,
+    scatterPlot,
+    containerElement,
+    onSelect,
+  } = props;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <MemoGalleryImage
+        trace={trace}
+        obsCat={obsCat}
+        cachedData={cachedData}
+        scatterPlot={scatterPlot}
+        markerOpacity={markerOpacity}
+        chartOptions={chartOptions}
+        pointSize={pointSize}
+        unselectedPointSize={unselectedPointSize}
+        primaryChartSize={primaryChartSize}
+        chartSize={chartSize}
+        categoricalNames={categoricalNames}
+        unselectedMarkerOpacity={unselectedMarkerOpacity}
+        selection={selection}
+        containerElement={containerElement}
+        onSelect={onSelect}
+        key={getTraceKey(trace)}
+      />
+    </div>
+  );
+}
+
+const MemoGalleryImage = memo(GalleryImage);
 
 function createContainer(chartSize) {
   const containerElement = document.createElement('div');
@@ -40,6 +107,14 @@ function GalleryCharts(props) {
   const containerElementRef = useRef();
   const [forceUpdate, setForceUpdate] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 1,
+      },
+    }),
+  );
+
   function onChartSelected(trace) {
     handleActiveFeature({
       name: trace.name,
@@ -47,16 +122,6 @@ function GalleryCharts(props) {
       embeddingKey: getTraceKey(trace),
     });
     window.scrollTo(0, 0);
-  }
-
-  function onSortEnd(galleryTraces, e) {
-    const oldTrace = galleryTraces[e.oldIndex];
-    const newTrace = galleryTraces[e.newIndex];
-    const oldIndex = findIndex(embeddingData, oldTrace);
-    const newIndex = findIndex(embeddingData, newTrace);
-    embeddingData.splice(oldIndex, 1);
-    embeddingData.splice(newIndex, 0, oldTrace);
-    handleEmbeddingData(embeddingData.slice());
   }
 
   useEffect(() => {
@@ -103,44 +168,50 @@ function GalleryCharts(props) {
         embeddingLabels.indexOf(item.id) !== -1,
     )
     .map((item) => item.id);
-  const SortableItem = sortableElement(({trace}) => (
-    <GalleryImage
-      trace={trace}
-      obsCat={obsCat}
-      cachedData={cachedData}
-      scatterPlot={scatterPlotRef.current}
-      markerOpacity={markerOpacity}
-      chartOptions={chartOptions}
-      pointSize={pointSize}
-      unselectedPointSize={unselectedPointSize}
-      primaryChartSize={primaryChartSize}
-      chartSize={chartSize}
-      categoricalNames={categoricalNames}
-      unselectedMarkerOpacity={unselectedMarkerOpacity}
-      selection={selection}
-      containerElement={containerElementRef.current}
-      onSelect={onChartSelected}
-      key={getTraceKey(trace)}
-    />
-  ));
 
-  const SortableList = sortableContainer(({items}) => {
-    return (
-      <ul style={{padding: 0, marginTop: 4, marginBottom: 0}}>
-        {items.map((trace, index) => (
-          <SortableItem key={getTraceKey(trace)} index={index} trace={trace} />
-        ))}
-      </ul>
-    );
-  });
+  function dragEnd(event) {
+    const {active, over} = event;
+    if (active.id !== over.id) {
+      const ids = embeddingData.map((trace) => getTraceKey(trace));
+      const oldIndex = ids.indexOf(active.id);
+      const newIndex = ids.indexOf(over.id);
+      handleEmbeddingData(arrayMove(embeddingData, oldIndex, newIndex));
+    }
+  }
 
   return (
-    <SortableList
-      distance={2}
-      axis="xy"
-      items={galleryTraces}
-      onSortEnd={(e) => onSortEnd(galleryTraces, e)}
-    />
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={dragEnd}
+    >
+      <SortableContext
+        strategy={rectSwappingStrategy}
+        items={galleryTraces.map((trace) => getTraceKey(trace))}
+      >
+        {galleryTraces.map((trace) => (
+          <SortableItem
+            key={getTraceKey(trace)}
+            id={getTraceKey(trace)}
+            trace={trace}
+            obsCat={obsCat}
+            cachedData={cachedData}
+            scatterPlot={scatterPlotRef.current}
+            markerOpacity={markerOpacity}
+            chartOptions={chartOptions}
+            pointSize={pointSize}
+            unselectedPointSize={unselectedPointSize}
+            primaryChartSize={primaryChartSize}
+            chartSize={chartSize}
+            categoricalNames={categoricalNames}
+            unselectedMarkerOpacity={unselectedMarkerOpacity}
+            selection={selection}
+            containerElement={containerElementRef.current}
+            onSelect={onChartSelected}
+          />
+        ))}
+      </SortableContext>
+    </DndContext>
   );
 }
 

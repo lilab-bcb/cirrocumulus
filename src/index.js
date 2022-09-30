@@ -1,5 +1,4 @@
 import React from 'react';
-import {render} from 'react-dom';
 import {Provider} from 'react-redux';
 import {applyMiddleware, createStore} from 'redux';
 import thunkMiddleware from 'redux-thunk';
@@ -8,6 +7,8 @@ import rootReducer from './reducers';
 import AppWrapper from './AppWrapper';
 // import * as serviceWorker from './serviceWorker';
 import mixpanel from 'mixpanel-browser';
+
+import {createRoot} from 'react-dom/client';
 
 let useMixPanel = false;
 
@@ -34,17 +35,16 @@ const store = createStore(
   rootReducer,
   applyMiddleware(thunkMiddleware, logger),
 );
+const container = document.getElementById('root');
+const root = createRoot(container);
 
 function main() {
-  render(
+  root.render(
     <Provider store={store}>
       {/*<React.StrictMode>*/}
-
       <AppWrapper />
-
       {/*</React.StrictMode>*/}
     </Provider>,
-    document.getElementById('root'),
   );
 }
 

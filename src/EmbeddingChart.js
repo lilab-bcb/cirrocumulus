@@ -26,10 +26,16 @@ import ColorSchemeLegendWrapper from './ColorSchemeLegendWrapper';
 import ImageChart from './ImageChart';
 import MetaEmbedding from './MetaEmbedding';
 import ScatterChartThree from './ScatterChartThree';
-import {FEATURE_TYPE, sortCategories, TRACE_TYPE_META_IMAGE} from './util';
+import {
+  FEATURE_TYPE,
+  getCategoryValue,
+  sortCategories,
+  TRACE_TYPE_META_IMAGE,
+} from './util';
 import memoize from 'memoize-one';
 import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
 import IconButton from '@mui/material/IconButton';
+import SaveIcon from '@mui/icons-material/Save';
 
 const getActiveEmbeddingLabels = memoize((searchTokens, embeddingLabels) => {
   return searchTokens
@@ -107,6 +113,26 @@ function EmbeddingChart(props) {
         : null;
     onCategoricalSortOrder({name: activeFeature.name, value: categories});
     setSortOrder(value);
+  }
+
+  function handleSaveColors() {
+    const name = primaryTrace.name;
+    const scale = primaryTrace.colorScale;
+    const globalDimensionSummary = globalFeatureSummary[name];
+    const categories = globalDimensionSummary.categories;
+    const renamedCategories = categoricalNames[name] || {};
+    const text = [];
+    categories.forEach((category) => {
+      const renamedCategory = getCategoryValue(renamedCategories, category);
+      text.push(renamedCategory);
+      text.push('\t');
+      text.push(scale(category));
+      text.push('\n');
+    });
+    const blob = new Blob([text.join('')], {
+      type: 'text/plain;charset=utf-8',
+    });
+    window.saveAs(blob, name + '-colors.tsv');
   }
 
   function onAddFeatures(features) {
@@ -211,6 +237,22 @@ function EmbeddingChart(props) {
                     onClick={() => handleSortOrder('size')}
                   >
                     <NumbersIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={'Save Colors'}>
+                  <IconButton
+                    edge={false}
+                    size={'small'}
+                    style={{
+                      paddingLeft: 6,
+                      paddingRight: 0,
+                      paddingTop: 0,
+                      paddingBottom: 0,
+                    }}
+                    aria-label="Save Colors"
+                    onClick={() => handleSaveColors()}
+                  >
+                    <SaveIcon />
                   </IconButton>
                 </Tooltip>
               </div>

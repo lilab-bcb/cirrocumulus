@@ -2,7 +2,6 @@ import {Tooltip} from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import React, {useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
@@ -12,8 +11,6 @@ import ViolinPlotOneFeature, {
   getViolinPlotScales,
 } from './ViolinPlotOneFeature';
 import {getDevicePixelRatio} from './util';
-
-const yaxisWidth = 30;
 
 export default function ViolinPlot(props) {
   const {categoryColorScales, colorScale, data, options, textColor} = props;
@@ -68,16 +65,15 @@ export default function ViolinPlot(props) {
       let blob = new Blob([svg], {
         type: 'text/plain;charset=utf-8',
       });
-      window.saveAs(blob, props.data[0][0].dimension + '.svg');
+      window.saveAs(blob, data[0][0].dimension + '.svg');
     } else {
       canvas.toBlob((blob) => {
-        window.saveAs(blob, props.data[0][0].dimension + '.png', true);
+        window.saveAs(blob, data[0][0].dimension + '.png', true);
       });
     }
   }
 
   function drawContext(context, size) {
-    const {categoryColorScales, colorScale, data, options, textColor} = props;
     const {violinHeight, violinWidth} = options;
     const features = data[0].map((item) => item.feature);
     const categories = data.map((array) => array[0].name);
@@ -108,13 +104,25 @@ export default function ViolinPlot(props) {
   }
 
   function getSize(context) {
-    const {data, options} = props;
     const {violinHeight, violinWidth} = options;
     const categories = data.map((array) => array[0].name);
     const features = data[0].map((item) => item.feature);
     const nameWidth = getNameWidth(data, context);
     const totalHeight = features.length * violinHeight + 4;
     const width = categories.length * violinWidth + 4;
+    let yaxisWidth = 0;
+    for (let i = 0; i < features.length; i++) {
+      const {xscale} = getViolinPlotScales(data, i, options);
+      const format = xscale.tickFormat(4);
+      const ticks = xscale.ticks(4);
+      ticks.forEach((tick) => {
+        yaxisWidth = Math.max(
+          yaxisWidth,
+          Math.ceil(context.measureText(format(tick)).width + 4),
+        );
+      });
+    }
+
     return {
       x: yaxisWidth,
       endCoordinates: nameWidth.endCoordinates,
@@ -125,7 +133,6 @@ export default function ViolinPlot(props) {
   }
 
   const features = data[0].map((item) => item.feature);
-  const dimension = data[0][0].dimension;
   const dummyCanvas = document.createElement('canvas');
   const dummyContext = dummyCanvas.getContext('2d');
   dummyContext.font = CANVAS_FONT;
@@ -134,14 +141,6 @@ export default function ViolinPlot(props) {
   return (
     <div style={{position: 'relative'}}>
       <div>
-        <Typography
-          style={{display: 'inline-block'}}
-          component={'h4'}
-          color="textPrimary"
-        >
-          {dimension}
-          {props.subtitle && <small>({props.subtitle})</small>}
-        </Typography>
         <Tooltip title={'Save Image'}>
           <IconButton
             aria-controls="save-image-menu"

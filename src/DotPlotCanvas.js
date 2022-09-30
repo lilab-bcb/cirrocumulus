@@ -2,7 +2,6 @@ import {Tooltip} from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Typography from '@mui/material/Typography';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import {cumsum} from 'd3-array';
@@ -93,10 +92,8 @@ export default function DotPlotCanvas(props) {
     categoryColorScales,
     sizeScale,
     drawCircles,
-    subtitle,
     textColor,
   } = props;
-  const dimension = data[0][0].dimension;
   const canvasRef = useRef();
   const [saveImageEl, setSaveImageEl] = useState(null);
   const [tip, setTip] = useState({html: ''});
@@ -421,14 +418,6 @@ export default function DotPlotCanvas(props) {
   return (
     <div style={{position: 'relative'}}>
       <div>
-        <Typography
-          style={{display: 'inline-block'}}
-          component={'h4'}
-          color="textPrimary"
-        >
-          {dimension}
-          {subtitle && <small>({subtitle})</small>}
-        </Typography>
         <Tooltip title={'Save Image'}>
           <IconButton
             aria-controls="save-image-menu"
