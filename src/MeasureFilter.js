@@ -1,4 +1,10 @@
-import {Checkbox, FormGroup, InputLabel, Typography} from '@mui/material';
+import {
+  Checkbox,
+  FormGroup,
+  InputLabel,
+  Switch,
+  Typography,
+} from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
@@ -80,6 +86,7 @@ export default function MeasureFilter(props) {
         return (
           <div key={index}>
             <Select
+              autoWidth
               size={'small'}
               style={{marginRight: 6}}
               value={filters.operation[index]}
@@ -95,17 +102,18 @@ export default function MeasureFilter(props) {
             </Select>
 
             <TextField
+              autoComplete={'off'}
               size={'small'}
               onChange={(event) => handleValueChange(event, index)}
               value={filters.uiValue[index]}
-              style={{maxWidth: 60}}
+              style={{width: 60}}
             />
           </div>
         );
       })}
       <div style={{alignItems: 'flex-end'}}>
         <FormControlLabel
-          control={<Checkbox size={'small'} onChange={handleInvertChange} />}
+          control={<Switch size={'small'} onChange={handleInvertChange} />}
           label="Invert Filter"
         />
       </div>
