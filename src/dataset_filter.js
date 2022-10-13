@@ -44,7 +44,6 @@ function createSingleFilterFunction(filter) {
 
 export function createFilterFunction(filter) {
   let {operation, value, invert} = filter;
-  console.log(invert);
   let applyFunction;
   if (isArray(operation)) {
     const functions = [];
