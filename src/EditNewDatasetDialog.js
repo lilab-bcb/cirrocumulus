@@ -464,7 +464,7 @@ function EditNewDatasetDialog(props) {
               margin="dense"
               fullWidth
               variant="outlined"
-              rows={8}
+              minRows={2}
               maxRows={8}
               multiline={true}
               inputProps={{maxLength: 1000}}
