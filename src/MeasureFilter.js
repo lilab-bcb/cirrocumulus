@@ -68,7 +68,7 @@ export default function MeasureFilter(props) {
   }
 
   return (
-    <div style={{display: 'flex'}}>
+    <div>
       <Typography
         gutterBottom={false}
         component={'h2'}
