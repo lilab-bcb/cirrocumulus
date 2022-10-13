@@ -699,10 +699,10 @@ function distributionData(state = {}, action) {
   }
 }
 
-function selectedDistributionData(state = {}, action) {
+function selectedDistributionData(state = [], action) {
   switch (action.type) {
     case SET_CATEGORICAL_NAME:
-      return Object.assign({}, state);
+      return state.slice();
     case SET_SELECTED_DISTRIBUTION_DATA:
       return action.payload;
     case SET_DATASET:
