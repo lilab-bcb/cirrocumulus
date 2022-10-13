@@ -1,91 +1,114 @@
-import {InputLabel} from '@mui/material';
+import {Checkbox, FormGroup, InputLabel, Typography} from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import {debounce} from 'lodash';
-import React from 'react';
+import React, {useMemo} from 'react';
+import {scaleLinear} from 'd3-scale';
+import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
-class MeasureFilter extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.handleValueUpdate = debounce(this.handleValueUpdate, 500);
+export default function MeasureFilter(props) {
+  const {handleUpdate, datasetFilter, name} = props;
+  let filters = datasetFilter[name];
+  if (filters == null) {
+    // default
+    filters = {
+      invert: false,
+      operation: ['>=', '<='],
+      value: [NaN, NaN],
+      uiValue: ['', ''],
+    };
+    datasetFilter[name] = filters;
   }
 
-  getFilter() {
-    let filter = this.props.datasetFilter[this.props.name];
-    if (filter == null) {
-      filter = {operation: '>', value: NaN, uiValue: ''};
-      this.props.datasetFilter[this.props.name] = filter;
-    }
-    return filter;
+  function handleValueUpdate(index) {
+    const priorValue = filters.value[index];
+    filters.value[index] = parseFloat(filters.uiValue[index]);
+
+    handleUpdate({
+      name: name,
+      filter: filters,
+      update: priorValue !== filters.value[index],
+    });
   }
 
-  handleValueUpdate = () => {
-    const filter = this.getFilter();
-    let value = parseFloat(filter.uiValue);
-    this.props.handleUpdate({
-      name: this.props.name,
-      value: value,
+  const handleValueUpdateDebouncedFunc = useMemo(
+    () => debounce(handleValueUpdate, 500),
+    [],
+  );
+
+  function handleOperationChanged(event, index) {
+    filters.operation[index] = event.target.value;
+    handleUpdate({
+      name: name,
+      filter: filters,
       update: true,
     });
-  };
+  }
 
-  handleOperationChanged = (event) => {
-    const operation = event.target.value;
-    this.props.handleUpdate({
-      name: this.props.name,
-      operation: operation,
-      update: true,
-    });
-  };
-
-  handleValueChange = (event) => {
-    const filter = this.getFilter();
-    filter.uiValue = event.target.value;
-    this.props.handleUpdate({
-      name: this.props.name,
-      operation: filter.operation,
-      value: filter.value,
+  function handleValueChange(event, index) {
+    filters.uiValue[index] = event.target.value;
+    handleUpdate({
+      name: name,
+      filter: filters,
       update: false,
     });
-    this.handleValueUpdate();
-  };
+    handleValueUpdateDebouncedFunc(index);
+  }
 
-  render() {
-    const {name} = this.props;
-    const filter = this.getFilter();
-    const id = name + '_filter';
+  function handleInvertChange(event) {
+    filters.invert = event.target.checked;
+    handleUpdate({
+      name: name,
+      filter: filters,
+      update: true,
+    });
+  }
 
-    return (
-      <div style={{display: 'flex'}}>
-        <InputLabel id={id + '_label'}>Filter</InputLabel>
-        <Select
-          label={'Filter'}
-          size={'small'}
-          labelId={id + '_label'}
-          id={id}
-          style={{marginRight: 6}}
-          value={filter.operation}
-          onChange={this.handleOperationChanged}
-        >
-          <MenuItem value={''}></MenuItem>
-          <MenuItem value={'>'}>{'>'}</MenuItem>
-          <MenuItem value={'<'}>{'<'}</MenuItem>
-          <MenuItem value={'='}>{'='}</MenuItem>
-          <MenuItem value={'>='}>{'>='}</MenuItem>
-          <MenuItem value={'<='}>{'<='}</MenuItem>
-          <MenuItem value={'!='}>{'!='}</MenuItem>
-        </Select>
+  return (
+    <div style={{display: 'flex'}}>
+      <Typography
+        gutterBottom={false}
+        component={'h2'}
+        style={{textTransform: 'uppercase', letterSpacing: '0.1em'}}
+      >
+        Filter
+      </Typography>
+      {[0, 1].map((index) => {
+        return (
+          <div key={index}>
+            <Select
+              size={'small'}
+              style={{marginRight: 6}}
+              value={filters.operation[index]}
+              onChange={(event) => handleOperationChanged(event, index)}
+            >
+              <MenuItem value={''}></MenuItem>
+              <MenuItem value={'>'}>{'>'}</MenuItem>
+              <MenuItem value={'<'}>{'<'}</MenuItem>
+              <MenuItem value={'='}>{'='}</MenuItem>
+              <MenuItem value={'>='}>{'>='}</MenuItem>
+              <MenuItem value={'<='}>{'<='}</MenuItem>
+              <MenuItem value={'!='}>{'!='}</MenuItem>
+            </Select>
 
-        <TextField
-          size={'small'}
-          onChange={this.handleValueChange}
-          value={filter.uiValue}
-          style={{maxWidth: 60}}
+            <TextField
+              size={'small'}
+              onChange={(event) => handleValueChange(event, index)}
+              value={filters.uiValue[index]}
+              style={{maxWidth: 60}}
+            />
+          </div>
+        );
+      })}
+      <div style={{alignItems: 'flex-end'}}>
+        <FormControlLabel
+          control={<Checkbox size={'small'} onChange={handleInvertChange} />}
+          label="Invert Filter"
         />
       </div>
-    );
-  }
+    </div>
+  );
 }
-
-export default MeasureFilter;

@@ -86,7 +86,6 @@ export const SET_DISTRIBUTION_PLOT_INTERPOLATOR =
   'SET_DISTRIBUTION_PLOT_INTERPOLATOR';
 export const SET_CHART_OPTIONS = 'SET_CHART_OPTIONS';
 export const SET_COMBINE_DATASET_FILTERS = 'SET_COMBINE_DATASET_FILTERS';
-export const SET_DATASET_FILTERS = 'SET_DATASET_FILTERS'; // saved dataset filters
 export const SET_DATASET_VIEWS = 'SET_DATASET_VIEWS'; // saved dataset views
 
 export const SET_LEGEND_SCROLL_POSITION = 'SET_LEGEND_SCROLL_POSITION';
@@ -555,42 +554,31 @@ export function removeDatasetFilter(filterKey) {
 
 function getDatasetFilterDependencies(datasetFilter) {
   let features = new Set();
-  let basis = new Set();
   for (let key in datasetFilter) {
-    // basis, path for brush filter
     const filterObject = datasetFilter[key];
     if (Array.isArray(filterObject)) {
-      // brush filter
+      // ignore brush filter as saved using indices
     } else if (filterObject.operation === 'in') {
       features.add(key);
     } else {
-      if (
-        filterObject.operation !== '' &&
-        !isNaN(filterObject.value) &&
-        filterObject.value != null
-      ) {
+      if (filterObject.value.filter((v) => !isNaN(v)).length > 0) {
         features.add(key);
       }
     }
   }
-  return {features: features, basis: basis};
+  return {features: features};
 }
 
 export function getDatasetFilterNames(datasetFilter) {
   const names = [];
   let isBrushing = false;
   for (let key in datasetFilter) {
-    const value = datasetFilter[key];
-    if (Array.isArray(value)) {
+    const filter = datasetFilter[key];
+    if (Array.isArray(filter)) {
       isBrushing = true;
-    } else if (value.operation === 'in') {
+    } else if (filter.operation === 'in') {
       names.push(key);
-    } else if (
-      value.operation != null &&
-      value.operation !== '' &&
-      !isNaN(value.value) &&
-      value.value != null
-    ) {
+    } else if (filter.value.filter((v) => !isNaN(v)).length > 0) {
       names.push(key);
     }
   }
@@ -614,23 +602,34 @@ export function getDatasetFilterArray(datasetFilter) {
     }
   }
   if (brushIndices.size > 0) {
-    filters.push(['__index', 'in', brushIndices]);
+    filters.push({field: '__index', operation: 'in', value: brushIndices});
   }
   for (let key in datasetFilter) {
-    const value = datasetFilter[key];
+    const filter = datasetFilter[key];
     let f = null;
-    if (Array.isArray(value)) {
+    if (Array.isArray(filter)) {
+      // brush filter
       continue;
     }
-    if (value.operation === 'in') {
-      f = [key, value.operation, value.value];
-    } else if (
-      value.operation != null &&
-      value.operation !== '' &&
-      !isNaN(value.value) &&
-      value.value != null
-    ) {
-      f = [key, value.operation, value.value];
+    if (filter.operation === 'in') {
+      f = {field: key, operation: filter.operation, value: filter.value};
+    } else {
+      const operation = [];
+      const value = [];
+      for (let i = 0; i < filter.value.length; i++) {
+        if (!isNaN(filter.value[i])) {
+          value.push(filter.value[i]);
+          operation.push(filter.operation[i]);
+        }
+      }
+      if (value.length > 0) {
+        f = {
+          field: key,
+          operation: operation,
+          value: value,
+          invert: filter.invert,
+        };
+      }
     }
     if (f != null) {
       filters.push(f);
@@ -912,38 +911,9 @@ export function handleBrushFilterUpdated(payload) {
 
 export function handleMeasureFilterUpdated(payload) {
   return function (dispatch, getState) {
-    const name = payload.name;
-    const operation = payload.operation;
-    const value = payload.value;
-    let update = payload.update;
-
-    let datasetFilter = getState().datasetFilter;
-    let filter = datasetFilter[name];
-
-    if (filter == null) {
-      filter = {operation: '>', value: NaN};
-      datasetFilter[name] = filter;
-    }
-    if (update) {
-      if (value != null) {
-        update = !isNaN(value)
-          ? value !== filter.value
-          : isNaN(value) !== isNaN(filter.value);
-      }
-      if (operation != null) {
-        update =
-          update || (operation !== filter.operation && !isNaN(filter.value));
-      }
-    }
-    if (operation != null) {
-      filter.operation = operation;
-    }
-    if (value != null) {
-      filter.value = value;
-    }
-
+    const datasetFilter = getState().datasetFilter;
     dispatch(setDatasetFilter(Object.assign({}, datasetFilter)));
-    if (update) {
+    if (payload.update) {
       dispatch(handleFilterUpdated());
     }
   };
@@ -1678,10 +1648,6 @@ export function setSelectedEmbedding(payload) {
 
 export function setSavedDatasetState(payload) {
   return {type: SET_SAVED_DATASET_STATE, payload: payload};
-}
-
-function setDatasetFilters(payload) {
-  return {type: SET_DATASET_FILTERS, payload: payload};
 }
 
 function setDatasetViews(payload) {
@@ -2725,7 +2691,7 @@ export function getDatasetStateJson(state) {
   for (let key in datasetFilter) {
     let filterObject = datasetFilter[key];
     if (Array.isArray(filterObject)) {
-      // brush filter
+      // brush filter or range filter
       const array = [];
       filterObject.forEach((brush) => {
         const brushJson = Object.assign({}, brush);
@@ -2739,14 +2705,20 @@ export function getDatasetStateJson(state) {
         value: filterObject.value,
       };
     } else {
-      if (
-        filterObject.operation !== '' &&
-        !isNaN(filterObject.value) &&
-        filterObject.value != null
-      ) {
+      // continuous filter
+      const operation = [];
+      const value = [];
+      for (let i = 0; i < operation.length; i++) {
+        if (!isNaN(filterObject.value[i])) {
+          value.push(filterObject.value[i]);
+          operation.push(filterObject.operation[i]);
+        }
+      }
+      if (value.length >= 0) {
         datasetFilterJson[key] = {
-          operation: filterObject.operation,
-          value: filterObject.value,
+          operation: operation,
+          value: value,
+          invert: filterObject.invert,
         };
       }
     }
