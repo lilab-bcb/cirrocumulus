@@ -139,65 +139,64 @@ function useResetCache(data) {
 }
 
 // Adapter for react-window
-const ListboxComponent = React.forwardRef(function ListboxComponent(
-  props,
-  ref,
-) {
-  const {children, ...other} = props;
-  let itemData = [];
+const ListboxComponent = React.forwardRef(
+  function ListboxComponent(props, ref) {
+    const {children, ...other} = props;
+    let itemData = [];
 
-  children.forEach((item) => {
-    itemData.push(item);
-    if (item.children) {
-      itemData = itemData.concat(item.children);
-    }
-  });
+    children.forEach((item) => {
+      itemData.push(item);
+      if (item.children) {
+        itemData = itemData.concat(item.children);
+      }
+    });
 
-  const theme = useTheme();
-  const smUp = useMediaQuery(theme.breakpoints.up('sm'), {
-    noSsr: true,
-  });
+    const theme = useTheme();
+    const smUp = useMediaQuery(theme.breakpoints.up('sm'), {
+      noSsr: true,
+    });
 
-  const itemCount = itemData.length;
-  const itemSize = smUp ? 24 : 30;
+    const itemCount = itemData.length;
+    const itemSize = smUp ? 24 : 30;
 
-  const getChildSize = (child) => {
-    if (child.hasOwnProperty('group')) {
-      return child.group === '' ? 0 : 30;
-    }
+    const getChildSize = (child) => {
+      if (child.hasOwnProperty('group')) {
+        return child.group === '' ? 0 : 30;
+      }
 
-    return itemSize;
-  };
+      return itemSize;
+    };
 
-  const getHeight = () => {
-    if (itemCount > 8) {
-      return 8 * itemSize;
-    }
-    return itemData.map(getChildSize).reduce((a, b) => a + b, 0);
-  };
+    const getHeight = () => {
+      if (itemCount > 8) {
+        return 8 * itemSize;
+      }
+      return itemData.map(getChildSize).reduce((a, b) => a + b, 0);
+    };
 
-  const gridRef = useResetCache(itemCount);
+    const gridRef = useResetCache(itemCount);
 
-  return (
-    <div ref={ref}>
-      <OuterElementContext.Provider value={other}>
-        <VariableSizeList
-          itemData={itemData}
-          height={getHeight() + 2 * LISTBOX_PADDING}
-          width="100%"
-          ref={gridRef}
-          outerElementType={OuterElementType}
-          innerElementType="ul"
-          itemSize={(index) => getChildSize(itemData[index])}
-          overscanCount={5}
-          itemCount={itemCount}
-        >
-          {renderRow}
-        </VariableSizeList>
-      </OuterElementContext.Provider>
-    </div>
-  );
-});
+    return (
+      <div ref={ref}>
+        <OuterElementContext.Provider value={other}>
+          <VariableSizeList
+            itemData={itemData}
+            height={getHeight() + 2 * LISTBOX_PADDING}
+            width="100%"
+            ref={gridRef}
+            outerElementType={OuterElementType}
+            innerElementType="ul"
+            itemSize={(index) => getChildSize(itemData[index])}
+            overscanCount={5}
+            itemCount={itemCount}
+          >
+            {renderRow}
+          </VariableSizeList>
+        </OuterElementContext.Provider>
+      </div>
+    );
+  },
+);
 
 ListboxComponent.propTypes = {
   children: PropTypes.node,
