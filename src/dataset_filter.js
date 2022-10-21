@@ -1,4 +1,4 @@
-import {isObject} from 'lodash';
+import {isArray, isObject} from 'lodash';
 
 import {getVarNameType} from './VectorUtil';
 
@@ -18,87 +18,76 @@ function getIndices(array, f) {
   return result;
 }
 
-export function createFilterFunction(filter) {
-  const op = filter[1];
-  let value = filter[2];
+function createSingleFilterFunction(filter) {
+  let {operation, value} = filter;
   let applyFunction;
-  if (op === 'in') {
+  if (operation === 'in') {
     value = new Set(value);
     applyFunction = (d) => value.has(d);
-  } else if (op === '>') {
+  } else if (operation === '>') {
     applyFunction = (d) => d > value;
-  } else if (op === '=') {
+  } else if (operation === '=') {
     applyFunction = (d) => d === value;
-  } else if (op === '<') {
+  } else if (operation === '<') {
     applyFunction = (d) => d < value;
-  } else if (op === '!=') {
+  } else if (operation === '!=') {
     applyFunction = (d) => d !== value;
-  } else if (op === '>=') {
+  } else if (operation === '>=') {
     applyFunction = (d) => d >= value;
-  } else if (op === '<=') {
+  } else if (operation === '<=') {
     applyFunction = (d) => d <= value;
   } else {
-    throw new Error('Unknown filter: ' + op);
+    throw new Error('Unknown filter: ' + operation);
   }
   return applyFunction;
 }
 
-export function getPassingFilterIndices(cachedData, data_filter) {
-  let passingIndices = null;
-  if (data_filter) {
-    let user_filters = data_filter.filters || [];
-    let combine_filters = data_filter.combine || 'and';
-    for (let i = 0; i < user_filters.length; i++) {
-      let filterObject = user_filters[i];
-      let filterField = filterObject[0];
-      let filterValue = filterObject[2];
-      let keep = null;
-
-      if (isObject(filterField)) {
-        // selection box or lasso
-        if (filterValue.indices) {
-          // Set of passing indices
-          keep = filterValue.indices;
-        } else {
-          let selection_keep;
-          let path = filterValue.path;
-          const coords = cachedData[filterField.name];
-          for (let j = 0; j < path.length; j++) {
-            let p = path[j];
-            let xKeep = getIndices(
-              cachedData[coords[0]],
-              (val) => val >= p.x && val <= p.x + p.width,
-            );
-            let yKeep = getIndices(
-              cachedData[coords[1]],
-              (val) => val >= p.y && val <= p.y + p.height,
-            );
-            selection_keep = combine(xKeep, yKeep, 'and');
-            if (p.z) {
-              // 3d
-              let zKeep = getIndices(
-                cachedData[coords[2]],
-                (val) => val >= p.z && val <= p.z + p.depth,
-              );
-              selection_keep = combine(selection_keep, zKeep, 'and');
-            }
-          }
-          keep = keep
-            ? combine(selection_keep, keep, combine_filters)
-            : selection_keep;
-        }
-      } else {
-        if (filterField === '__index') {
-          keep = new Set(filterValue); // [__index, in, indices]
-        } else {
-          const nameType = getVarNameType(filterField);
-          let series = cachedData[nameType.name];
-          keep = getIndices(series, createFilterFunction(filterObject));
+export function createFilterFunction(filter) {
+  let {operation, value, invert} = filter;
+  let applyFunction;
+  if (isArray(operation)) {
+    const functions = [];
+    for (let i = 0; i < operation.length; i++) {
+      const f = createSingleFilterFunction({
+        operation: operation[i],
+        value: value[i],
+      });
+      functions.push(f);
+    }
+    applyFunction = (d) => {
+      for (let i = 0; i < functions.length; i++) {
+        if (!functions[i](d)) {
+          return invert;
         }
       }
+      return !invert;
+    };
+  } else {
+    applyFunction = createSingleFilterFunction(filter);
+  }
+  return applyFunction;
+}
 
+export function getPassingFilterIndices(cachedData, datasetFilter) {
+  let passingIndices = null;
+  if (datasetFilter) {
+    let userFilters = datasetFilter.filters || [];
+    let combineFilters = datasetFilter.combine || 'and';
+    for (let i = 0; i < userFilters.length; i++) {
+      const filterObject = userFilters[i];
+      const {field, value} = filterObject;
+      let keep = null;
+
+      if (field === '__index') {
+        // ['__index', 'in', Array(1218)] for lasso or box filters
+        keep = new Set(value);
+      } else {
+        const nameType = getVarNameType(field);
+        const series = cachedData[nameType.name];
+        keep = getIndices(series, createFilterFunction(filterObject));
+      }
       if (passingIndices) {
-        passingIndices = combine(passingIndices, keep, combine_filters);
+        passingIndices = combine(passingIndices, keep, combineFilters);
       } else {
         passingIndices = keep;
       }

@@ -12,7 +12,7 @@ import Slider from '@mui/material/Slider';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import {debounce, find} from 'lodash';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   deleteLink,
   getTraceKey,
@@ -187,17 +187,21 @@ function SideBar(props) {
     setUnselectedOpacity(unselectedMarkerOpacity);
   }, [unselectedMarkerOpacity]);
 
+  const summary =
+    activeFeature == null ? null : globalFeatureSummary[activeFeature.name];
+  const trace =
+    activeFeature == null
+      ? null
+      : find(
+          embeddingData,
+          (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
+        );
+
   useEffect(() => {
-    const summary =
-      activeFeature == null ? null : globalFeatureSummary[activeFeature.name];
     if (activeFeature == null) {
       setMinColor('');
       setMaxColor('');
     } else {
-      const trace = find(
-        embeddingData,
-        (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
-      );
       if (trace == null) {
         setMinColor('');
         setMaxColor('');
@@ -260,11 +264,6 @@ function SideBar(props) {
   }
 
   function onMinChange(value) {
-    const summary = globalFeatureSummary[activeFeature.name];
-    const trace = find(
-      embeddingData,
-      (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
-    );
     if (trace.type !== TRACE_TYPE_META_IMAGE) {
       summary.customMin = isNaN(value) ? undefined : value;
     } else {
@@ -277,11 +276,6 @@ function SideBar(props) {
   }
 
   function onMaxChange(value) {
-    const summary = globalFeatureSummary[activeFeature.name];
-    const trace = find(
-      embeddingData,
-      (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
-    );
     if (trace.type !== TRACE_TYPE_META_IMAGE) {
       summary.customMax = isNaN(value) ? undefined : value;
     } else {
@@ -292,6 +286,19 @@ function SideBar(props) {
       summary: summary,
     });
   }
+
+  const memoizedMinChange = useCallback(
+    (value) => {
+      onMinChange(value);
+    },
+    [activeFeature],
+  );
+  const memoizedMaxChange = useCallback(
+    (value) => {
+      onMaxChange(value);
+    },
+    [activeFeature],
+  );
 
   function onMarkerOpacityChange(event, value) {
     setOpacity(value);
@@ -551,8 +558,8 @@ function SideBar(props) {
           }
           min={minColor}
           max={maxColor}
-          onMinChange={onMinChange}
-          onMaxChange={onMaxChange}
+          onMinChange={memoizedMinChange}
+          onMaxChange={memoizedMaxChange}
           onMinUIChange={onMinUIChange}
           onMaxUIChange={onMaxUIChange}
           onInterpolator={onInterpolator}

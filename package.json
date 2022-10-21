@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.41",
+  "version": "1.1.42",
   "private": true,
   "homepage": ".",
   "proxy": "http://127.0.0.1:5000",
@@ -86,7 +86,7 @@
     "jest-puppeteer": "^6.1.1",
     "prettier": "^2.7.1",
     "preval.macro": "^5.0.0",
-    "puppeteer": "^18.0.4"
+    "puppeteer": "^17.1.2"
   },
   "prettier": {
     "bracketSpacing": false,

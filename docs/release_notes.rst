@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.42 `October 21, 2022`
+    * Added range filters for features and continuous metadata fields
 
 - 1.1.41 `September 30, 2022`
     * Distribution tab updates: Show selection on top. Toggle visibility of selected and non-selected distributions

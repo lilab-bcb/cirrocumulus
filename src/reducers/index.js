@@ -26,7 +26,6 @@ import {
   SET_DATASET,
   SET_DATASET_CHOICES,
   SET_DATASET_FILTER,
-  SET_DATASET_FILTERS,
   SET_DATASET_VIEWS,
   SET_DIALOG,
   SET_DISTRIBUTION_DATA,
@@ -699,25 +698,14 @@ function distributionData(state = {}, action) {
   }
 }
 
-function selectedDistributionData(state = {}, action) {
+function selectedDistributionData(state = [], action) {
   switch (action.type) {
     case SET_CATEGORICAL_NAME:
-      return Object.assign({}, state);
+      return state.slice();
     case SET_SELECTED_DISTRIBUTION_DATA:
       return action.payload;
     case SET_DATASET:
-      return {};
-    default:
-      return state;
-  }
-}
-
-function datasetFilters(state = [], action) {
-  switch (action.type) {
-    case SET_DATASET:
       return [];
-    case SET_DATASET_FILTERS:
-      return action.payload;
     default:
       return state;
   }
@@ -741,9 +729,19 @@ function datasetFilter(state = {}, action) {
     case SET_DATASET_FILTER:
       return action.payload;
     case RESTORE_VIEW:
-      return action.payload.datasetFilter != null
-        ? action.payload.datasetFilter
-        : state;
+      if (action.payload.datasetFilter != null) {
+        const datasetFilter = action.payload.datasetFilter;
+        for (const key in datasetFilter) {
+          const filter = datasetFilter[key];
+          if (filter.operation !== 'in' && isString(filter.operation)) {
+            // convert old continuous filters to arrays
+            filter.operation = [filter.operation];
+            filter.value = [filter.value];
+            filter.invert = false;
+          }
+        }
+      }
+      return state;
     default:
       return state;
   }
@@ -991,7 +989,6 @@ export default combineReducers({
   dataset,
   datasetChoices,
   datasetFilter,
-  datasetFilters,
   datasetViews,
   dialog,
   distributionData,
