@@ -50,7 +50,7 @@ The cirrocumulus server can be deployed on a cloud VM, an on-premise machine, or
     - Google Cloud Storage: `pip install gcsfs`
     - Microsoft Azure: `pip install adlfs`
 
-- Install MongoDB_ and start the MongoDB server
+- Install MongoDB_ and start the MongoDB server. Note that MongoDB compatible databases such as DocumentDB_ can also be used.
 
 - Start the server via the command line::
 
@@ -280,3 +280,4 @@ Developer Instructions
 .. _Okta documentation: https://help.okta.com/en/prod/Content/Topics/Apps/Apps_App_Integration_Wizard.htm
 .. _Google OAuth 2.0 documentation: https://support.google.com/cloud/answer/6158849
 .. _Cloud Build API: https://console.cloud.google.com/flows/enableapi?apiid=cloudbuild.googleapis.com
+.. _DocumentDB: https://aws.amazon.com/documentdb/
