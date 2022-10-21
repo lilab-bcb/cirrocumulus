@@ -757,10 +757,6 @@ export function setDragDivider(payload) {
   return {type: SET_DRAG_DIVIDER, payload: payload};
 }
 
-export function _setActiveFeature(payload) {
-  return {type: SET_ACTIVE_FEATURE, payload: payload};
-}
-
 export function setActiveFeature(payload) {
   return {type: SET_ACTIVE_FEATURE, payload: payload};
 }
