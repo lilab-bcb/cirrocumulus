@@ -36,8 +36,14 @@ export function EditableColorScheme(props) {
     );
   }
 
-  const updateMinDebounced = useMemo(() => debounce(updateMin, 500), []);
-  const updateMaxDebounced = useMemo(() => debounce(updateMax, 500), []);
+  const updateMinDebounced = useMemo(
+    () => debounce(updateMin, 500),
+    [onMinChange],
+  );
+  const updateMaxDebounced = useMemo(
+    () => debounce(updateMax, 500),
+    [onMaxChange],
+  );
 
   useEffect(() => {
     return () => {
