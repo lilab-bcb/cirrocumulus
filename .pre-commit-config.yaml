@@ -5,7 +5,7 @@ repos:
       # - id: double-quote-string-fixer  # for single quotes: uncomment and add black config “skip-string-normalization”
       - id: trailing-whitespace
       - id: end-of-file-fixer
-  - repo: https://github.com/myint/docformatter
+  - repo: https://github.com/PyCQA/docformatter
     rev: v1.5.0
     hooks:
       - id: docformatter
