@@ -195,7 +195,7 @@ class ImageChart extends React.PureComponent {
   constructor(props) {
     super(props);
     this.id = uniqueId('cirro-image');
-    this.editSelection = false;
+    this.appendToSelection = false;
     this.state = {loading: false};
     this.tooltipElement = null;
   }
@@ -467,7 +467,8 @@ class ImageChart extends React.PureComponent {
         _this.props.chartOptions.dragmode === 'select'
       ) {
         event.preventDefaultAction = true;
-        _this.editSelection = event.metaKey || event.ctrlKey;
+        _this.appendToSelection =
+          event.originalEvent.metaKey || event.originalEvent.ctrlKey;
         const webPoint = event.position;
         const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
         const imagePoint = viewer.world
@@ -499,7 +500,7 @@ class ImageChart extends React.PureComponent {
         lassoPath.setAttribute('d', '');
         _this.props.onSelected({
           name: getEmbeddingKey(_this.props.trace.embedding),
-          clear: !_this.editSelection,
+          clear: !_this.appendToSelection,
           value: {basis: _this.props.trace.embedding, indices: indices},
         });
       } else if (_this.props.chartOptions.dragmode === 'select') {
@@ -511,7 +512,7 @@ class ImageChart extends React.PureComponent {
         rectElement.removeAttribute('height');
         _this.props.onSelected({
           name: getEmbeddingKey(_this.props.trace.embedding),
-          clear: !_this.editSelection,
+          clear: !_this.appendToSelection,
           value: {basis: _this.props.trace.embedding, indices: indices},
         });
       }
@@ -601,7 +602,6 @@ class ImageChart extends React.PureComponent {
         <div className={this.props.classes.root}>
           <ChartToolbar
             dragmode={this.props.chartOptions.dragmode}
-            // editSelection={this.props.chartOptions.editSelection}
             onGallery={this.props.onGallery}
             animating={false}
             onZoomIn={this.onZoomIn}
@@ -610,7 +610,6 @@ class ImageChart extends React.PureComponent {
             onHome={this.onHome}
             onSaveImage={this.onSaveImage}
             onDragMode={this.onDragMode}
-            // onEditSelection={this.onEditSelection}
           ></ChartToolbar>
         </div>
         <div

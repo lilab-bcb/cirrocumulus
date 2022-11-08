@@ -497,6 +497,15 @@ def handle_dataset():
             d["url"] = url
         if request.method == "POST" and url is None:  # new
             return "Must supply dataset URL", 400
+        # TODO trigger prepare job
+        # if request.method == "POST" and not d['url'].lower().endswith('.zarr'):
+        #     d['original_url'] = d['url']
+        #     adata = read_rds(d['url'])
+        #     prepare_data = PrepareData(
+        #         datasets=datasets,
+        #         output=out
+        #     )
+        #     prepare_data.execute()
         dataset_id = database_api.upsert_dataset(email=email, readers=readers, dataset=d)
         return json_response({"id": dataset_id})
     elif request.method == "DELETE":
