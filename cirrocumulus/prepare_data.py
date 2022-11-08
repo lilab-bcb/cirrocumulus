@@ -18,6 +18,32 @@ cluster_fields = ["anno", "cell_type", "celltype", "leiden", "louvain", "seurat_
 categorical_fields_convert = ["seurat_clusters"]
 
 
+def rds2h5ad(src, dest):
+    import subprocess
+
+    import pkg_resources
+
+    subprocess.check_call(
+        [
+            "Rscript",
+            pkg_resources.resource_filename("cirrocumulus", "seurat2h5ad.R"),
+            src,
+            dest,
+        ]
+    )
+
+
+def read_rds(path, spatial_directory=None):
+    import tempfile
+
+    _, h5_file = tempfile.mkstemp(suffix=".h5ad")
+    os.remove(h5_file)
+    rds2h5ad(path, h5_file)
+    adata = read_adata(h5_file, spatial_directory=spatial_directory, use_raw=True)
+    os.remove(h5_file)
+    return adata
+
+
 def read_adata(path, spatial_directory=None, use_raw=False):
     if path.lower().endswith(".loom"):
         adata = anndata.read_loom(path)
@@ -55,7 +81,7 @@ class PrepareData:
         groups=[],
         group_nfeatures=10,
         markers=[],
-        output_format="parquet",
+        output_format="zarr",
         no_auto_groups=False,
         save_whitelist=None,
     ):
@@ -339,30 +365,12 @@ def main(argsv):
         out += output_format2extension[output_format]
 
     datasets = []
-    tmp_files = []
     for input_dataset in input_datasets:
-        use_raw = False
         if input_dataset.lower().endswith(".rds"):
-            import tempfile
-            import subprocess
+            adata = read_rds(input_dataset, spatial_directory=args.spatial)
+        else:
+            adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=False)
 
-            import pkg_resources
-
-            _, h5_file = tempfile.mkstemp(suffix=".h5ad")
-            os.remove(h5_file)
-            subprocess.check_call(
-                [
-                    "Rscript",
-                    pkg_resources.resource_filename("cirrocumulus", "seurat2h5ad.R"),
-                    input_dataset,
-                    h5_file,
-                ]
-            )
-            input_dataset = h5_file
-            tmp_file = h5_file
-            use_raw = True
-            tmp_files.append(tmp_file)
-        adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=use_raw)
         datasets.append(adata)
         adata.uns["name"] = os.path.splitext(os.path.basename(input_dataset.rstrip("/")))[0]
 
@@ -378,8 +386,6 @@ def main(argsv):
         save_whitelist=save_whitelist,
     )
     prepare_data.execute()
-    for tmp_file in tmp_files:
-        os.remove(tmp_file)
 
 
 if __name__ == "__main__":

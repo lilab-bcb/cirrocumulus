@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.43 `November 8, 2022`
+    * Support multiple lasso/box selections for spatial images
+
 - 1.1.42 `October 21, 2022`
     * Added range filters for features and continuous metadata fields
 

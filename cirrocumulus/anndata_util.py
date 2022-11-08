@@ -276,12 +276,15 @@ def dataset_schema(dataset, n_features=10):
 
             color_field = key + "_colors"
             if color_field in dataset.uns:
-                colors = dataset.uns[color_field][...]
+                colors = dataset.uns[color_field][...].flatten()
+
                 if len(categories) == len(colors):
                     color_map = dict()
                     for j in range(len(categories)):
                         color_map[str(categories[j])] = colors[j]
                     field_to_value_to_color[key] = color_map
+                else:
+                    print("Invalid number of categories for {}".format(color_field))
 
     # spatial_node = adata.uns['spatial'] if 'spatial' in adata.uns else None
     #
