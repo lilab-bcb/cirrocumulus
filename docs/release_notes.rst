@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.44 `November 21, 2022`
+    * Fix bug when multiple gene features fail to update
+
 - 1.1.43 `November 8, 2022`
     * Support multiple lasso/box selections for spatial images
 

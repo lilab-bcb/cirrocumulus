@@ -1,18 +1,9 @@
-import {
-  Checkbox,
-  FormGroup,
-  InputLabel,
-  Switch,
-  Typography,
-} from '@mui/material';
+import {Switch, Typography} from '@mui/material';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import {debounce} from 'lodash';
 import React, {useMemo} from 'react';
-import {scaleLinear} from 'd3-scale';
-import Slider from '@mui/material/Slider';
-import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 export default function MeasureFilter(props) {
@@ -22,7 +13,7 @@ export default function MeasureFilter(props) {
     // default
     filters = {
       invert: false,
-      operation: ['>=', '<='],
+      operation: ['>', '<'],
       value: [NaN, NaN],
       uiValue: ['', ''],
     };
@@ -42,7 +33,7 @@ export default function MeasureFilter(props) {
 
   const handleValueUpdateDebouncedFunc = useMemo(
     () => debounce(handleValueUpdate, 500),
-    [],
+    [name],
   );
 
   function handleOperationChanged(event, index) {

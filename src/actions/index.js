@@ -1174,9 +1174,15 @@ function restoreSavedView(savedView) {
       savedView.datasetFilter = {};
     } else {
       for (let key in savedView.datasetFilter) {
-        let value = savedView.datasetFilter[key];
-        if (value.operation) {
-          value.uiValue = value.value;
+        const filters = savedView.datasetFilter[key];
+
+        if (filters.operation) {
+          filters.uiValue = filters.value.slice();
+          if (filters.operation[0] !== 'in' && filters.operation.length == 1) {
+            filters.operation.push('<');
+            filters.value.push(NaN);
+            filters.uiValue.push('');
+          }
         }
       }
     }
@@ -2632,7 +2638,6 @@ export function getDatasetStateJson(state) {
     distributionPlotInterpolator,
     embeddings,
     searchTokens,
-    datasetFilter,
     interpolator,
     jobResultId,
     markerOpacity,
@@ -2683,46 +2688,15 @@ export function getDatasetStateJson(state) {
     json.q = searchTokens;
   }
 
-  let datasetFilterJson = {};
-  for (let key in datasetFilter) {
-    let filterObject = datasetFilter[key];
-    if (Array.isArray(filterObject)) {
-      // brush filter or range filter
-      const array = [];
-      filterObject.forEach((brush) => {
-        const brushJson = Object.assign({}, brush);
-        brushJson.indices = Array.from(brush.indices);
-        array.push(brushJson);
-      });
-      datasetFilterJson[key] = array;
-    } else if (filterObject.operation === 'in') {
-      datasetFilterJson[key] = {
-        operation: filterObject.operation,
-        value: filterObject.value,
-      };
-    } else {
-      // continuous filter
-      const operation = [];
-      const value = [];
-      for (let i = 0; i < operation.length; i++) {
-        if (!isNaN(filterObject.value[i])) {
-          value.push(filterObject.value[i]);
-          operation.push(filterObject.operation[i]);
-        }
-      }
-      if (value.length >= 0) {
-        datasetFilterJson[key] = {
-          operation: operation,
-          value: value,
-          invert: filterObject.invert,
-        };
-      }
-    }
-  }
+  const datasetFilter = getFilterJson(state);
+  const datasetFilterJson = {};
+  datasetFilter.filters.forEach((f) => {
+    datasetFilterJson[f.field] = {value: f.value, operation: f.operation};
+  });
   if (Object.keys(datasetFilterJson).length > 0) {
     json.datasetFilter = datasetFilterJson;
   }
-  if (combineDatasetFilters !== 'and') {
+  if (datasetFilter.combine !== 'and') {
     json.combineDatasetFilters = combineDatasetFilters;
   }
   if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
