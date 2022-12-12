@@ -34,7 +34,7 @@ import {
   TRACE_TYPE_SCATTER,
   updateTraceColors,
 } from '../util';
-import {updateJob} from '../DotPlotJobResultsPanel';
+import {exportJobResult, updateJob} from '../DotPlotJobResultsPanel';
 import {NoAuth} from '../NoAuth';
 import {GoggleAuth} from '../GoogleAuth';
 import {OktaAuth} from '../OktaAuth';
@@ -1513,6 +1513,18 @@ export function deleteJobResult(payload) {
   };
 }
 
+export function downloadJobResult(job) {
+  return function (dispatch, getState) {
+    getState()
+      .dataset.api.getJob(job.id)
+      .then((jobResult) => {
+        jobResult = Object.assign(job, jobResult);
+        updateJob(jobResult);
+        exportJobResult(jobResult);
+      });
+  };
+}
+
 export function setJobResultId(jobId) {
   return function (dispatch, getState) {
     const existingJobResult = find(
@@ -1521,9 +1533,7 @@ export function setJobResultId(jobId) {
     );
     if (existingJobResult.data != null) {
       // data already loaded
-      if (existingJobResult.type === 'de') {
-        updateJob(existingJobResult);
-      }
+      updateJob(existingJobResult);
       return dispatch(_setJobResultId(existingJobResult.id));
     }
     const task = {name: 'Open Job'};
@@ -1551,9 +1561,9 @@ export function setJobResultId(jobId) {
             jobResults[index],
             result,
           );
-          if (jobResult.type === 'de') {
-            updateJob(jobResult);
-          }
+
+          updateJob(jobResult);
+
           let promise = Promise.resolve({});
           if (jobResult.params && jobResult.params.obs) {
             const cachedData = getState().cachedData;
@@ -2690,15 +2700,18 @@ export function getDatasetStateJson(state) {
 
   const datasetFilter = getFilterJson(state);
   const datasetFilterJson = {};
-  datasetFilter.filters.forEach((f) => {
-    datasetFilterJson[f.field] = {value: f.value, operation: f.operation};
-  });
-  if (Object.keys(datasetFilterJson).length > 0) {
-    json.datasetFilter = datasetFilterJson;
+  if (datasetFilter) {
+    datasetFilter.filters.forEach((f) => {
+      datasetFilterJson[f.field] = {value: f.value, operation: f.operation};
+    });
+    if (Object.keys(datasetFilterJson).length > 0) {
+      json.datasetFilter = datasetFilterJson;
+    }
+    if (datasetFilter.combine !== 'and') {
+      json.combineDatasetFilters = combineDatasetFilters;
+    }
   }
-  if (datasetFilter.combine !== 'and') {
-    json.combineDatasetFilters = combineDatasetFilters;
-  }
+
   if (markerOpacity !== DEFAULT_MARKER_OPACITY) {
     json.markerOpacity = markerOpacity;
   }

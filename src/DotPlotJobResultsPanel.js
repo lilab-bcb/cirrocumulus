@@ -25,23 +25,42 @@ import CirroTooltip from './CirroTooltip';
 const DEFAULT_DE_INTERPOLATOR = 'RdBu';
 const DotPlotTableMemo = React.memo(DotPlotTable);
 
-export function updateJob(jobResult) {
-  if (jobResult.options === undefined) {
-    jobResult.options = {};
+export function exportJobResult(jobResult) {
+  const output = [];
+  output.push('id');
+  jobResult.columns.forEach((columnIndex) => {
+    const group = jobResult.groups[columnIndex];
+    jobResult.fields.forEach((field) => {
+      output.push('\t');
+      output.push(group + ':' + field);
+    });
+  });
+  output.push('\n');
+  for (let i = 0; i < jobResult.data.length; i++) {
+    output.push(jobResult.data[i].index);
+    jobResult.columns.forEach((columnIndex) => {
+      const group = jobResult.groups[columnIndex];
+      jobResult.fields.forEach((field) => {
+        const fieldName = group + ':' + field;
+        const value = jobResult.data[i][fieldName];
+        output.push('\t');
+        output.push(value);
+      });
+    });
+    output.push('\n');
   }
-  if (jobResult.interpolator === undefined) {
-    jobResult.interpolator = {
-      name: DEFAULT_DE_INTERPOLATOR,
-      value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
-      reversed: true,
-      scale: INTERPOLATOR_SCALING_NONE,
-    };
-  }
-  const groups = jobResult.groups;
-  const data = jobResult.data;
+  const blob = new Blob([output.join('')], {
+    type: 'text/plain;charset=utf-8',
+  });
+  window.saveAs(blob, jobResult.name + '.tsv');
+}
 
-  if (jobResult.columns === undefined) {
-    const indices = new Array(groups.length);
+export function updateJob(jobResult) {
+  if (jobResult.type === 'de') {
+    if (jobResult.options === undefined) {
+      jobResult.options = {};
+    }
+    const indices = new Array(jobResult.groups.length);
     for (let i = 0, n = jobResult.groups.length; i < n; i++) {
       indices[i] = i;
     }
@@ -49,172 +68,182 @@ export function updateJob(jobResult) {
     jobResult.columns.sort((a, b) => {
       return NATSORT(jobResult.groups[a], jobResult.groups[b]);
     });
-  }
-
-  if (jobResult.rowFilters === undefined) {
-    const filters = [];
-    jobResult.fields.forEach((field) => {
-      const fieldLowercase = field.toLowerCase();
-      filters.push([
-        field,
-        fieldLowercase.indexOf('pval') !== -1 ||
-        fieldLowercase.indexOf('p_val') !== -1 ||
-        fieldLowercase.indexOf('qval') !== -1 ||
-        fieldLowercase.indexOf('q_val') !== -1 ||
-        field.indexOf('fdr') !== -1
-          ? '<'
-          : '>',
-        NaN,
-        '',
-      ]);
-    });
-
-    jobResult.rowFilters = filters;
-  }
-  if (jobResult.ntop === undefined) {
-    const ntop = Math.min(10, jobResult.data.length);
-    jobResult.ntop = ntop;
-    jobResult.ntopUI = ntop;
-  }
-  if (jobResult.sortedRows === undefined) {
-    const indices = new Array(data.length);
-    for (let i = 0, n = data.length; i < n; i++) {
-      indices[i] = i;
+    if (jobResult.interpolator === undefined) {
+      jobResult.interpolator = {
+        name: DEFAULT_DE_INTERPOLATOR,
+        value: getInterpolator(DEFAULT_DE_INTERPOLATOR),
+        reversed: true,
+        scale: INTERPOLATOR_SCALING_NONE,
+      };
     }
-    jobResult.sortedRows = [];
-    for (let i = 0, n = groups.length; i < n; i++) {
-      jobResult.sortedRows.push(indices);
+    const groups = jobResult.groups;
+    const data = jobResult.data;
+
+    if (jobResult.rowFilters === undefined) {
+      const filters = [];
+      jobResult.fields.forEach((field) => {
+        const fieldLowercase = field.toLowerCase();
+        filters.push([
+          field,
+          fieldLowercase.indexOf('pval') !== -1 ||
+          fieldLowercase.indexOf('p_val') !== -1 ||
+          fieldLowercase.indexOf('qval') !== -1 ||
+          fieldLowercase.indexOf('q_val') !== -1 ||
+          field.indexOf('fdr') !== -1
+            ? '<'
+            : '>',
+          NaN,
+          '',
+        ]);
+      });
+
+      jobResult.rowFilters = filters;
     }
-  }
-  if (jobResult.byAscending === undefined) {
-    jobResult.byAscending = false;
-  }
-  if (jobResult.by === undefined) {
-    jobResult.by = jobResult.fields[0];
-    for (let i = 0; i < jobResult.fields.length; i++) {
-      if (jobResult.fields[i].toLowerCase().indexOf('score') !== -1) {
-        jobResult.by = jobResult.fields[i];
-        break;
+    if (jobResult.ntop === undefined) {
+      const ntop = Math.min(10, jobResult.data.length);
+      jobResult.ntop = ntop;
+      jobResult.ntopUI = ntop;
+    }
+    if (jobResult.sortedRows === undefined) {
+      const indices = new Array(data.length);
+      for (let i = 0, n = data.length; i < n; i++) {
+        indices[i] = i;
+      }
+      jobResult.sortedRows = [];
+      for (let i = 0, n = groups.length; i < n; i++) {
+        jobResult.sortedRows.push(indices);
       }
     }
-  }
-  if (jobResult.sortByGroup === undefined) {
-    jobResult.sortByGroup = jobResult.groups[0];
-  }
-  if (jobResult.color === undefined) {
-    jobResult.color = jobResult.fields[0];
-  }
-  if (jobResult.size === undefined) {
-    jobResult.size = jobResult.fields[0];
-  }
-  if (jobResult.rowSortOrder === undefined) {
-    jobResult.rowSortOrder = [];
-  }
-  if (jobResult.rows === undefined) {
-    sortAndFilterJobResult(jobResult);
-  }
-
-  function getRange(field) {
-    let min = Number.MAX_VALUE;
-    let max = -Number.MAX_VALUE;
-    for (let i = 0, n = data.length; i < n; i++) {
-      for (let j = 0; j < groups.length; j++) {
-        const group = groups[j];
-        const fullField = group + ':' + field;
-        const value = data[i][fullField];
-        if (value != null && !isNaN(value)) {
-          min = Math.min(min, value);
-          max = Math.max(max, value);
+    if (jobResult.byAscending === undefined) {
+      jobResult.byAscending = false;
+    }
+    if (jobResult.by === undefined) {
+      jobResult.by = jobResult.fields[0];
+      for (let i = 0; i < jobResult.fields.length; i++) {
+        if (jobResult.fields[i].toLowerCase().indexOf('score') !== -1) {
+          jobResult.by = jobResult.fields[i];
+          break;
         }
       }
     }
-    return [min, max];
-  }
+    if (jobResult.sortByGroup === undefined) {
+      jobResult.sortByGroup = jobResult.groups[0];
+    }
+    if (jobResult.color === undefined) {
+      jobResult.color = jobResult.fields[0];
+    }
+    if (jobResult.size === undefined) {
+      jobResult.size = jobResult.fields[0];
+    }
+    if (jobResult.rowSortOrder === undefined) {
+      jobResult.rowSortOrder = [];
+    }
+    if (jobResult.rows === undefined) {
+      sortAndFilterJobResult(jobResult);
+    }
 
-  // color='logfoldchanges', size='pvals_adj',
-  if (jobResult.colorScale === undefined) {
-    let domain;
-    if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
-      domain = [0, 1];
-    } else {
-      domain = getRange(jobResult.color);
+    function getRange(field) {
+      let min = Number.MAX_VALUE;
+      let max = -Number.MAX_VALUE;
+      for (let i = 0, n = data.length; i < n; i++) {
+        for (let j = 0; j < groups.length; j++) {
+          const group = groups[j];
+          const fullField = group + ':' + field;
+          const value = data[i][fullField];
+          if (value != null && !isNaN(value)) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+          }
+        }
+      }
+      return [min, max];
     }
-    // if (isNaN(jobResult.options.min) && isNaN(jobResult.options.max) && domain[0] < 0 && domain[1] > 0) {
-    //     const max = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
-    //     domain[0] = -max;
-    //     domain[1] = max;
-    // }
-    if (!isNaN(jobResult.options.min)) {
-      domain[0] = jobResult.options.min;
-    }
-    if (!isNaN(jobResult.options.max)) {
-      domain[1] = jobResult.options.max;
-    }
-    jobResult.colorScale = createColorScale(jobResult.interpolator).domain(
-      domain,
-    );
 
-    if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
-      const domains = [];
-      // can scale colors globally, by row, or by column
-      if (
-        jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE
-      ) {
-        jobResult.rows.forEach((row) => {
-          let min = Number.MAX_VALUE;
-          let max = -Number.MAX_VALUE;
-          jobResult.columns.forEach((column) => {
-            const group = jobResult.groups[column];
-            const colorField = group + ':' + jobResult.color;
-            const colorValue = jobResult.data[row][colorField];
-            if (colorValue != null && !isNaN(colorValue)) {
-              min = colorValue < min ? colorValue : min;
-              max = colorValue > max ? colorValue : max;
-            }
-          });
-          domains.push([min, max]);
-        });
-      } else if (
-        jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY
-      ) {
-        jobResult.columns.forEach((column) => {
-          let min = Number.MAX_VALUE;
-          let max = -Number.MAX_VALUE;
+    // color='logfoldchanges', size='pvals_adj',
+    if (jobResult.colorScale === undefined) {
+      let domain;
+      if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
+        domain = [0, 1];
+      } else {
+        domain = getRange(jobResult.color);
+      }
+      // if (isNaN(jobResult.options.min) && isNaN(jobResult.options.max) && domain[0] < 0 && domain[1] > 0) {
+      //     const max = Math.max(Math.abs(domain[0]), Math.abs(domain[1]));
+      //     domain[0] = -max;
+      //     domain[1] = max;
+      // }
+      if (!isNaN(jobResult.options.min)) {
+        domain[0] = jobResult.options.min;
+      }
+      if (!isNaN(jobResult.options.max)) {
+        domain[1] = jobResult.options.max;
+      }
+      jobResult.colorScale = createColorScale(jobResult.interpolator).domain(
+        domain,
+      );
+
+      if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
+        const domains = [];
+        // can scale colors globally, by row, or by column
+        if (
+          jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_FEATURE
+        ) {
           jobResult.rows.forEach((row) => {
-            const group = jobResult.groups[column];
-            const colorField = group + ':' + jobResult.color;
-            const colorValue = jobResult.data[row][colorField];
-            if (colorValue != null && !isNaN(colorValue)) {
-              min = colorValue < min ? colorValue : min;
-              max = colorValue > max ? colorValue : max;
-            }
+            let min = Number.MAX_VALUE;
+            let max = -Number.MAX_VALUE;
+            jobResult.columns.forEach((column) => {
+              const group = jobResult.groups[column];
+              const colorField = group + ':' + jobResult.color;
+              const colorValue = jobResult.data[row][colorField];
+              if (colorValue != null && !isNaN(colorValue)) {
+                min = colorValue < min ? colorValue : min;
+                max = colorValue > max ? colorValue : max;
+              }
+            });
+            domains.push([min, max]);
           });
-          domains.push([min, max]);
-        });
+        } else if (
+          jobResult.interpolator.scale === INTERPOLATOR_SCALING_MIN_MAX_CATEGORY
+        ) {
+          jobResult.columns.forEach((column) => {
+            let min = Number.MAX_VALUE;
+            let max = -Number.MAX_VALUE;
+            jobResult.rows.forEach((row) => {
+              const group = jobResult.groups[column];
+              const colorField = group + ':' + jobResult.color;
+              const colorValue = jobResult.data[row][colorField];
+              if (colorValue != null && !isNaN(colorValue)) {
+                min = colorValue < min ? colorValue : min;
+                max = colorValue > max ? colorValue : max;
+              }
+            });
+            domains.push([min, max]);
+          });
+        }
+        jobResult.valueScale = scaleLinear().range([0, 1]);
+        jobResult.domains = domains;
       }
-      jobResult.valueScale = scaleLinear().range([0, 1]);
-      jobResult.domains = domains;
     }
-  }
-  if (jobResult.sizeScaleReversed === undefined) {
-    jobResult.sizeScaleReversed =
-      jobResult.size != null && jobResult.size.indexOf('pval') !== -1;
-  }
-  if (jobResult.sizeScale === undefined) {
-    if (jobResult.size !== 'none') {
-      let domain = getRange(jobResult.size);
-      if (!isNaN(jobResult.options.minSize)) {
-        domain[0] = jobResult.options.minSize;
+    if (jobResult.sizeScaleReversed === undefined) {
+      jobResult.sizeScaleReversed =
+        jobResult.size != null && jobResult.size.indexOf('pval') !== -1;
+    }
+    if (jobResult.sizeScale === undefined) {
+      if (jobResult.size !== 'none') {
+        let domain = getRange(jobResult.size);
+        if (!isNaN(jobResult.options.minSize)) {
+          domain[0] = jobResult.options.minSize;
+        }
+        if (!isNaN(jobResult.options.maxSize)) {
+          domain[1] = jobResult.options.maxSize;
+        }
+        jobResult.sizeScale = scaleLinear()
+          .domain(domain)
+          .range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18])
+          .clamp(true);
+      } else {
+        jobResult.sizeScale = scaleConstantRange(18);
       }
-      if (!isNaN(jobResult.options.maxSize)) {
-        domain[1] = jobResult.options.maxSize;
-      }
-      jobResult.sizeScale = scaleLinear()
-        .domain(domain)
-        .range(jobResult.sizeScaleReversed ? [18, 2] : [2, 18])
-        .clamp(true);
-    } else {
-      jobResult.sizeScale = scaleConstantRange(18);
     }
   }
 }
@@ -546,36 +575,6 @@ function DotPlotJobResultsPanel(props) {
     [jobResult.data, searchTokens],
   );
 
-  function exportJobResult(event) {
-    const output = [];
-    output.push('id');
-    jobResult.columns.forEach((columnIndex) => {
-      const group = jobResult.groups[columnIndex];
-      jobResult.fields.forEach((field) => {
-        output.push('\t');
-        output.push(group + ':' + field);
-      });
-    });
-    output.push('\n');
-    for (let i = 0; i < jobResult.data.length; i++) {
-      output.push(jobResult.data[i].index);
-      jobResult.columns.forEach((columnIndex) => {
-        const group = jobResult.groups[columnIndex];
-        jobResult.fields.forEach((field) => {
-          const fieldName = group + ':' + field;
-          const value = jobResult.data[i][fieldName];
-          output.push('\t');
-          output.push(value);
-        });
-      });
-      output.push('\n');
-    }
-    const blob = new Blob([output.join('')], {
-      type: 'text/plain;charset=utf-8',
-    });
-    window.saveAs(blob, jobResult.name + '.tsv');
-  }
-
   // function sortColumns() {
   //     const sortOrder = jobResult.columnSortOrder;
   //     const groups = jobResult.groups;
@@ -637,7 +636,7 @@ function DotPlotJobResultsPanel(props) {
           edge={false}
           size={'small'}
           aria-label="Export"
-          onClick={exportJobResult}
+          onClick={(e) => exportJobResult(jobResult)}
         >
           <CloudDownloadIcon />
         </IconButton>

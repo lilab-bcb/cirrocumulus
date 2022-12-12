@@ -34,12 +34,25 @@ def apply_filter(adata, data_filter):
 
 def get_filter_str(data_filter):
     user_filters = data_filter.get("filters", [])
-    # combine_filters = data_filter.get("combine", "and")
+    # example
+    # {
+    #   "filters": [
+    #     {
+    #       "field": "leiden",
+    #       "operation": "in",
+    #       "value": [
+    #         "0"
+    #       ]
+    #     }
+    #   ],
+    #   "combine": "and"
+    # }
+    #    combine_filters = data_filter.get("combine", "and")
     s = []
     for filter_obj in user_filters:
-        field = filter_obj[0]
-        op = filter_obj[1]
-        value = filter_obj[2]
+        field = filter_obj["field"]
+        op = filter_obj["operation"]
+        value = filter_obj["value"]
         if op == "in":
             op = ""
         if not isinstance(field, dict) and not field == "__index":
@@ -59,9 +72,9 @@ def get_filter_expr(adata, data_filter):
         user_filters = data_filter.get("filters", [])
         combine_filters = data_filter.get("combine", "and")
         for filter_obj in user_filters:
-            field = filter_obj[0]
-            op = filter_obj[1]
-            value = filter_obj[2]
+            field = filter_obj["field"]
+            op = filter_obj["operation"]
+            value = filter_obj["value"]
             if isinstance(field, dict):  # selection box
                 # selected_points_basis = get_basis(field['basis'], field.get('nbins'),
                 #                                   field.get('agg'), field.get('ndim', '2'),
@@ -162,10 +175,10 @@ def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measure
     )
 
 
-def get_var_name_type(key):
+def get_var_name_type(key, default_type="X"):
     index = key.find("/")
     if index == -1:
-        return key, "X"
+        return key, default_type
     else:
         key_type = key[0:index]
         name = key[index + 1 :]
@@ -421,14 +434,14 @@ def data_filter_keys(data_filter):
 
         for i in range(len(user_filters)):
             user_filter = user_filters[i]
-            key = user_filter[0]
+            key = user_filter["field"]
             if isinstance(key, dict):
                 basis_keys.add(key["name"])
             elif key == "__index":
                 continue
             else:
-                name, key_type = get_var_name_type(key)
-                user_filter[0] = name
+                name, key_type = get_var_name_type(key, default_type="obs")
+                user_filter["field"] = name
                 if key_type == "X":
                     var_keys.add(name)
                 else:

@@ -7,7 +7,7 @@ def test_dimension_filter(dataset_api, input_dataset, test_data):
     process_results = handle_selection_ids(
         dataset_api=dataset_api,
         dataset=input_dataset,
-        data_filter={"filters": [["obs/louvain", "in", ["1", "5"]]]},
+        data_filter={"filters": [{"field": "louvain", "operation": "in", "value": ["1", "5"]}]},
     )
     ids_summary = process_results["ids"]
     matched_data = test_data[test_data.obs["louvain"].isin(["5", "1"])]
@@ -18,7 +18,9 @@ def test_dimension_filter(dataset_api, input_dataset, test_data):
 
 def test_measure_filter(dataset_api, input_dataset, test_data):
     process_results = handle_selection_ids(
-        dataset_api=dataset_api, dataset=input_dataset, data_filter={"filters": [["DSCR3", ">", 2]]}
+        dataset_api=dataset_api,
+        dataset=input_dataset,
+        data_filter={"filters": [{"field": "X/DSCR3", "operation": ">", "value": 2}]},
     )
     ids_summary = process_results["ids"]
     matched_data = test_data[test_data[:, "DSCR3"].X > 2]

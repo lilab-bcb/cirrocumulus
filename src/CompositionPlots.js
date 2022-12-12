@@ -87,11 +87,7 @@ function getComposition(
         }
       }
       let category = categoryValues[dimensionIndex][i];
-      const nameMap = renamedDimensions[dimensionIndex];
-      let newCategory = nameMap[category];
-      if (newCategory !== undefined) {
-        category = newCategory;
-      }
+
       const count = valueToCounts[category] || 0;
       valueToCounts[category] = count + 1;
     }
@@ -127,12 +123,13 @@ function getComposition(
         uniqueValuesSet.add(value);
       }
     }
-
+    const nameMap = renamedDimensions[dimensionIndex];
     const uniqueValues = Array.from(uniqueValuesSet);
     uniqueValues.sort(
       createSorter(obsCat[ncategories - 1], categoryOrder, categoricalNames),
     );
     return {
+      nameMap: nameMap,
       seriesToValueToCounts: seriesToValueToCounts,
       uniqueValues: uniqueValues,
       series: series,
@@ -211,6 +208,21 @@ function CompositionPlots(props) {
   const textColor = darkMode ? 'white' : 'black';
   return (
     <>
+      {selectedComposition.current && (
+        <CompositionPlot
+          seriesToValueToCounts={
+            selectedComposition.current.seriesToValueToCounts
+          }
+          nameMap={selectedComposition.current.nameMap}
+          dimension={dimension}
+          title={title.current}
+          subtitle="selection"
+          colorScale={colorScale.current}
+          series={selectedComposition.current.series}
+          uniqueValues={selectedComposition.current.uniqueValues}
+          textColor={textColor}
+        />
+      )}
       {composition.current && (
         <CompositionPlot
           seriesToValueToCounts={composition.current.seriesToValueToCounts}
@@ -218,22 +230,8 @@ function CompositionPlots(props) {
           title={title.current}
           colorScale={colorScale.current}
           series={composition.current.series}
+          nameMap={composition.current.nameMap}
           uniqueValues={composition.current.uniqueValues}
-          textColor={textColor}
-        />
-      )}
-
-      {selectedComposition.current && (
-        <CompositionPlot
-          seriesToValueToCounts={
-            selectedComposition.current.seriesToValueToCounts
-          }
-          dimension={dimension}
-          title={title.current}
-          subtitle="selection"
-          colorScale={colorScale.current}
-          series={selectedComposition.current.series}
-          uniqueValues={selectedComposition.current.uniqueValues}
           textColor={textColor}
         />
       )}
