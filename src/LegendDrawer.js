@@ -8,7 +8,7 @@ export function getCategoricalLegendSize(context, name, categories) {
   return {width: maxWidth + 14, height: categories.length * 12 + 4};
 }
 
-export function drawCategoricalLegend(context, scale, name, categories) {
+export function drawCategoricalLegend(context, scale, categories) {
   context.font = '14px Helvetica';
   context.textAlign = 'left';
   context.textBaseline = 'bottom';

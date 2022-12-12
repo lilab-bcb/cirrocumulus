@@ -49,12 +49,7 @@ export function saveImage(trace, chartSize, draw, format) {
 
   if (!trace.continuous) {
     context.translate(chartSize.width, 2);
-    drawCategoricalLegend(
-      context,
-      trace.colorScale,
-      name,
-      trace.colorScale.domain(),
-    );
+    drawCategoricalLegend(context, trace.colorScale, trace.colorScale.domain());
   } else {
     context.translate(chartSize.width / 2 - 75, chartSize.height + 2);
     drawColorScheme(context, trace.colorScale);

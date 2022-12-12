@@ -12,11 +12,13 @@ import MenuItem from '@mui/material/MenuItem';
 import withStyles from '@mui/styles/withStyles';
 import Typography from '@mui/material/Typography';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import {scaleLinear} from 'd3-scale';
+import {scaleLinear, scaleOrdinal} from 'd3-scale';
 import React, {useEffect, useRef, useState} from 'react';
 import {CANVAS_FONT, SVG_FONT} from './ChartUtil';
 import {intFormat} from './formatters';
-import {getDevicePixelRatio} from './util';
+import {getCategoryValue, getDevicePixelRatio} from './util';
+import {drawCategoricalLegend, getCategoricalLegendSize} from './LegendDrawer';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const styles = (theme) => ({
   table: {
@@ -28,6 +30,7 @@ const styles = (theme) => ({
 
 function CompositionPlot(props) {
   const [saveImageEl, setSaveImageEl] = useState(null);
+  const [visible, setVisible] = useState(true);
 
   const canvasRef = useRef(null);
   const size = useRef({});
@@ -41,6 +44,7 @@ function CompositionPlot(props) {
     title,
     subtitle,
     uniqueValues,
+    nameMap,
   } = props;
   const barHeight = 600;
 
@@ -103,6 +107,9 @@ function CompositionPlot(props) {
   }
 
   useEffect(() => {
+    if (!visible) {
+      return;
+    }
     const canvas = canvasRef.current;
     let context = canvas.getContext('2d');
     context.font = CANVAS_FONT;
@@ -161,15 +168,32 @@ function CompositionPlot(props) {
       context = canvas.getContext('2d');
       context.font = CANVAS_FONT;
     }
-    const width = size.current.width;
-    const height = size.current.height;
+    const chartSize = Object.assign({}, size.current);
+    const totalSize = Object.assign({}, chartSize);
+    totalSize.width += 2; // left margin
+    const uniqueValuesRenamed = [];
+    const colors = [];
+    uniqueValues.forEach((value) => {
+      let textValue = getCategoryValue(nameMap, value);
+      uniqueValuesRenamed.push(textValue);
+      colors.push(colorScale(value));
+    });
+
+    const legendSize = getCategoricalLegendSize(
+      context,
+      '',
+      uniqueValuesRenamed,
+    );
+    totalSize.width += legendSize.width;
+    totalSize.height = Math.max(legendSize.height, totalSize.height);
+
     if (format === 'svg') {
-      context = new window.C2S(width, height);
+      context = new window.C2S(totalSize.width, totalSize.height);
       context.font = SVG_FONT;
     } else {
       const devicePixelRatio = getDevicePixelRatio();
-      canvas.width = width * devicePixelRatio;
-      canvas.height = height * devicePixelRatio;
+      canvas.width = totalSize.width * devicePixelRatio;
+      canvas.height = totalSize.height * devicePixelRatio;
       context = canvas.getContext('2d');
       context.scale(devicePixelRatio, devicePixelRatio);
       context.font = CANVAS_FONT;
@@ -177,9 +201,15 @@ function CompositionPlot(props) {
     const textColor = 'black';
     // const textColor = this.props.textColor;
     context.fillStyle = textColor === 'white' ? 'black' : 'white';
-    context.fillRect(0, 0, width, height);
+    context.fillRect(0, 0, totalSize.width, totalSize.height);
+    context.translate(2, 0);
     drawContext(context, size);
-
+    context.translate(chartSize.width, 2);
+    drawCategoricalLegend(
+      context,
+      scaleOrdinal(uniqueValuesRenamed, colors),
+      uniqueValuesRenamed,
+    );
     if (format === 'svg') {
       let svg = context.getSerializedSvg();
       let blob = new Blob([svg], {
@@ -214,10 +244,18 @@ function CompositionPlot(props) {
   //     pValue = result.p;
   //     stat = 'Chi-Square';
   // }
+  // const nameMap = renamedDimensions[dimensionIndex];
 
   return (
-    <>
-      <div>
+    <div>
+      <div
+        onClick={(e) => setVisible(!visible)}
+        style={{
+          cursor: 'pointer',
+          marginRight: 14,
+          display: 'inline-block',
+        }}
+      >
         <Typography
           style={{display: 'inline-block'}}
           component={'h4'}
@@ -226,81 +264,97 @@ function CompositionPlot(props) {
           {title}
           {subtitle && <small>({subtitle})</small>}
         </Typography>
-        <Tooltip title={'Save Image'}>
-          <IconButton
-            aria-controls="save-image-menu"
-            aria-haspopup="true"
-            edge={false}
-            size={'small'}
-            aria-label="Save Image"
-            onClick={handleSaveImageMenu}
-          >
-            <PhotoCameraIcon />
-          </IconButton>
-        </Tooltip>
-        <Menu
-          id="save-image-menu"
-          anchorEl={saveImageEl}
-          keepMounted
-          open={Boolean(saveImageEl)}
-          onClose={handleSaveImageMenuClose}
-        >
-          <MenuItem onClick={(e) => handleSaveImage('png')}>PNG</MenuItem>
-          <MenuItem onClick={(e) => handleSaveImage('svg')}>SVG</MenuItem>
-        </Menu>
-      </div>
-      <div style={{display: 'flex', flex: 'flex-wrap'}}>
-        <canvas ref={canvasRef}></canvas>
-        <div>
-          <Table size={'small'} className={props.classes.table}>
-            <TableHead>
-              <TableRow>
-                <TableCell></TableCell>
-                {series.map((item) => (
-                  <TableCell key={item}>{item}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {uniqueValues.map((uniqueValue, uniqueValueIndex) => {
-                const counts = countsTable[uniqueValueIndex];
-                return (
-                  <TableRow key={uniqueValue}>
-                    <TableCell style={{whiteSpace: 'nowrap'}} component={'th'}>
-                      <div
-                        style={{
-                          display: 'inline-block',
-                          width: '1em',
-                          height: '1em',
-                          marginRight: 2,
-                          verticalAlign: 'text-bottom',
-                          backgroundColor: colorScale(uniqueValue),
-                        }}
-                      ></div>
-                      {uniqueValue}
-                    </TableCell>
-                    {series.map((seriesName, seriesIndex) => {
-                      const count = counts[seriesIndex];
-                      const countFormatted = intFormat(count);
-                      return (
-                        <TableCell
-                          key={seriesName}
-                          style={{textAlign: 'center'}}
-                        >
-                          {countFormatted}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-          {/*{pValue != null &&*/}
-          {/*<Typography color="textPrimary">{stat} p-value: {numberFormat2f(pValue)}</Typography>}*/}
+        <div style={{display: 'inline-block', verticalAlign: 'bottom'}}>
+          <ExpandMoreIcon
+            fontSize={'medium'}
+            style={{transform: visible ? 'rotate(180deg)' : ''}}
+          />
         </div>
       </div>
-    </>
+
+      {visible && (
+        <div>
+          <Tooltip title={'Save Image'}>
+            <IconButton
+              aria-controls="save-image-menu"
+              aria-haspopup="true"
+              edge={false}
+              size={'small'}
+              aria-label="Save Image"
+              onClick={handleSaveImageMenu}
+            >
+              <PhotoCameraIcon />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            id="save-image-menu"
+            anchorEl={saveImageEl}
+            keepMounted
+            open={Boolean(saveImageEl)}
+            onClose={handleSaveImageMenuClose}
+          >
+            <MenuItem onClick={(e) => handleSaveImage('png')}>PNG</MenuItem>
+            <MenuItem onClick={(e) => handleSaveImage('svg')}>SVG</MenuItem>
+          </Menu>
+          <div style={{display: 'flex', flex: 'flex-wrap'}}>
+            <canvas ref={canvasRef}></canvas>
+            <div>
+              <Table size={'small'} className={props.classes.table}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell></TableCell>
+                    {series.map((item) => (
+                      <TableCell key={item}>{item}</TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {uniqueValues.map((value, uniqueValueIndex) => {
+                    let textValue = getCategoryValue(nameMap, value);
+                    let originalValue = value;
+                    const counts = countsTable[uniqueValueIndex];
+                    return (
+                      <TableRow key={originalValue}>
+                        <TableCell
+                          style={{whiteSpace: 'nowrap'}}
+                          component={'th'}
+                        >
+                          <div
+                            style={{
+                              display: 'inline-block',
+                              width: '1em',
+                              height: '1em',
+                              marginRight: 2,
+                              verticalAlign: 'text-bottom',
+                              backgroundColor: colorScale(originalValue),
+                            }}
+                          ></div>
+                          {textValue}
+                        </TableCell>
+                        {series.map((seriesName, seriesIndex) => {
+                          const count = counts[seriesIndex];
+                          const countFormatted = intFormat(count);
+                          return (
+                            <TableCell
+                              key={seriesName}
+                              style={{textAlign: 'center'}}
+                            >
+                              {countFormatted}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {/*{pValue != null &&*/}
+              {/*<Typography color="textPrimary">{stat} p-value: {numberFormat2f(pValue)}</Typography>}*/}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
