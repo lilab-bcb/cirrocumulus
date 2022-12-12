@@ -10,22 +10,30 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import React, {useState} from 'react';
-import {deleteJobResult, setJobResultId} from './actions';
+import {deleteJobResult, downloadJobResult, setJobResultId} from './actions';
 import withStyles from '@mui/styles/withStyles';
 import {connect} from 'react-redux';
 import {COMPARE_ACTIONS} from './job_config';
 import Grid from '@mui/material/Grid';
 import CancelIcon from '@mui/icons-material/Cancel';
+import {exportJobResult, updateJob} from './DotPlotJobResultsPanel';
 
 function JobResultsSelector(props) {
   const [showDialog, setShowDialog] = useState(false);
   const [browseJob, setBrowseJob] = useState(null);
-  const {email, handleJobResult, handleDeleteJob, jobResults, jobResultId} =
-    props;
+  const {
+    email,
+    handleJobResult,
+    handleDownloadJobResult,
+    handleDeleteJob,
+    jobResults,
+    jobResultId,
+  } = props;
 
   function onBrowseJobs(event) {
     setShowDialog(true);
@@ -38,6 +46,11 @@ function JobResultsSelector(props) {
   function onSelectJob(id) {
     handleJobResult(id);
     setShowDialog(false);
+  }
+
+  function onDownloadJob(event, job) {
+    event.stopPropagation();
+    handleDownloadJobResult(job);
   }
 
   function onDeleteJob(event, job) {
@@ -54,17 +67,6 @@ function JobResultsSelector(props) {
     setBrowseJob(null);
   }
 
-  function isShowJobStatus() {
-    for (let i = 0; i < jobResults.length; i++) {
-      const isPrecomputed = ('' + jobResults[i].id).startsWith('cirro-');
-      if (!isPrecomputed) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  const showJobStatus = isShowJobStatus();
   const jobTypeToName = {};
   const isShowingJob = jobResultId != null;
   COMPARE_ACTIONS.forEach(
@@ -78,7 +80,7 @@ function JobResultsSelector(props) {
           <TableRow>
             <TableCell>Name</TableCell>
             <TableCell>Type</TableCell>
-            {showJobStatus && <TableCell>Status</TableCell>}
+            <TableCell>Status</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -101,6 +103,7 @@ function JobResultsSelector(props) {
             // const date = isPrecomputed ? '' : jobResult.submitted;
             const showDelete = isJobOwner && !isPrecomputed && isComplete;
             const showCancel = isJobOwner && !isPrecomputed && !isComplete;
+            const showDownload = isComplete;
             return (
               <TableRow
                 key={jobResult.id}
@@ -115,31 +118,40 @@ function JobResultsSelector(props) {
               >
                 <TableCell>{text}</TableCell>
                 <TableCell>{jobType}</TableCell>
-                {showJobStatus && (
-                  <TableCell>
-                    {status}
-                    {showDelete && (
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={(event) => onDeleteJob(event, jobResult)}
-                        size="small"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                    {showCancel && (
-                      <IconButton
-                        edge="end"
-                        aria-label="cancel"
-                        onClick={(event) => onDeleteJob(event, jobResult)}
-                        size="small"
-                      >
-                        <CancelIcon />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                )}
+
+                <TableCell>
+                  {status}
+                  {showDownload && (
+                    <IconButton
+                      edge="end"
+                      aria-label="download"
+                      onClick={(event) => onDownloadJob(event, jobResult)}
+                      size="small"
+                    >
+                      <CloudDownloadIcon />
+                    </IconButton>
+                  )}
+                  {showDelete && (
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={(event) => onDeleteJob(event, jobResult)}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
+                  {showCancel && (
+                    <IconButton
+                      edge="end"
+                      aria-label="cancel"
+                      onClick={(event) => onDeleteJob(event, jobResult)}
+                      size="small"
+                    >
+                      <CancelIcon />
+                    </IconButton>
+                  )}
+                </TableCell>
               </TableRow>
             );
           })}
@@ -219,6 +231,9 @@ const mapDispatchToProps = (dispatch) => {
     },
     handleJobResult: (payload) => {
       dispatch(setJobResultId(payload));
+    },
+    handleDownloadJobResult: (payload) => {
+      dispatch(downloadJobResult(payload));
     },
   };
 };
