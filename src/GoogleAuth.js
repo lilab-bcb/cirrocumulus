@@ -48,6 +48,7 @@ export function GoggleAuth(props) {
             callback();
           })
           .catch((err) => {
+            delete window.localStorage[LOCAL_STORAGE_KEY];
             console.log(err);
           });
       }
@@ -74,7 +75,8 @@ export function GoggleAuth(props) {
               user = _user;
             })
             .catch((err) => {
-              console.log(err);
+              console.log('Unable to get user');
+              delete window.localStorage[LOCAL_STORAGE_KEY];
             })
             .finally(() => resolve());
         } else {
