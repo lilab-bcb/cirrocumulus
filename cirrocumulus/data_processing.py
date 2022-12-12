@@ -175,10 +175,10 @@ def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measure
     )
 
 
-def get_var_name_type(key):
+def get_var_name_type(key, default_type="X"):
     index = key.find("/")
     if index == -1:
-        return key, "X"
+        return key, default_type
     else:
         key_type = key[0:index]
         name = key[index + 1 :]
@@ -440,11 +440,10 @@ def data_filter_keys(data_filter):
             elif key == "__index":
                 continue
             else:
-                obs_keys.add(key)
-                # name, key_type = get_var_name_type(key)
-                # user_filter[0] = name
-                # if key_type == "X":
-                #     var_keys.add(name)
-                # else:
-                #     obs_keys.add(name)
+                name, key_type = get_var_name_type(key, default_type="obs")
+                user_filter["field"] = name
+                if key_type == "X":
+                    var_keys.add(name)
+                else:
+                    obs_keys.add(name)
     return list(var_keys), list(obs_keys), list(basis_keys)
