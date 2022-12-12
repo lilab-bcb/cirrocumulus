@@ -1,5 +1,12 @@
 Release Notes
 -------------
+
+- 1.1.45 `December 12, 2022`
+    * Added option to download job result without opening
+    * Show renamed category names in composition plot
+    * Show legend in saved composition plot image
+    * Fix error performing differential expression between two selected groups
+
 - 1.1.44 `November 21, 2022`
     * Fix bug when multiple gene features fail to update
 
