@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.46 `January 3, 2023`
+    * Fix error using lasso selection when performing differential expression between two selected groups
+
 - 1.1.45 `December 12, 2022`
     * Added option to download job result without opening
     * Show renamed category names in composition plot
