@@ -22,7 +22,8 @@ Prepare Data
 
 
 The `prepare_data` command is used to freeze an h5ad_, loom_, or Seurat_ file in cirrocumulus format. The cirrocumulus format allows
-efficient partial dataset retrieval over a network (e.g. Google or S3 bucket) using limited memory.
+efficient partial dataset retrieval over a network (e.g. Google or S3 bucket) using limited memory. Please note that when converting
+Seurat_ files, the `data` slot from the default assay is used.
 
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
