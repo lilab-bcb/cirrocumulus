@@ -658,13 +658,13 @@ export function datasetFilterToJson(
     for (let i = 0; i < filters.length; i++) {
       // add obs/ prefix
       const filter = filters[i];
-      if (filter[0] === '__index') {
-        filter[2] = Array.from(filter[2]); // convert Set to array
+      if (filter.field === '__index') {
+        filter.value = Array.from(filter.value); // convert Set to array
       } else if (
-        obsCat.indexOf(filter[0]) !== -1 ||
-        obs.indexOf(filter[0]) !== -1
+        obsCat.indexOf(filter.field) !== -1 ||
+        obs.indexOf(filter.field) !== -1
       ) {
-        filter[0] = 'obs/' + filter[0];
+        filter.field = 'obs/' + filter.field;
       }
     }
     return {filters: filters, combine: combineDatasetFilters};
@@ -1515,13 +1515,19 @@ export function deleteJobResult(payload) {
 
 export function downloadJobResult(job) {
   return function (dispatch, getState) {
-    getState()
-      .dataset.api.getJob(job.id)
-      .then((jobResult) => {
-        jobResult = Object.assign(job, jobResult);
-        updateJob(jobResult);
-        exportJobResult(jobResult);
-      });
+    if (job.data != null) {
+      // data already loaded
+      updateJob(job);
+      exportJobResult(job);
+    } else {
+      getState()
+        .dataset.api.getJob(job.id)
+        .then((jobResult) => {
+          jobResult = Object.assign(job, jobResult);
+          updateJob(jobResult);
+          exportJobResult(jobResult);
+        });
+    }
   };
 }
 
