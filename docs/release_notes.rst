@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.47 `January 23, 2023`
+    * Show last updated date in dataset browser
+    * Improved memory consumption for spatial datasets
+
 - 1.1.46 `January 3, 2023`
     * Fix error using lasso selection when performing differential expression between two selected groups
 

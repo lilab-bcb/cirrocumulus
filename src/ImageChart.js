@@ -40,10 +40,11 @@ export function drawEmbeddingImage(
   cachedData,
   spotRadius,
 ) {
-  if (trace.tileSource.ready) {
+  if (trace.embedding.tileSource.ready) {
     const img =
-      trace.tileSource.levels[trace.tileSource.levels.length - 1].context2D
-        .canvas;
+      trace.embedding.tileSource.levels[
+        trace.embedding.tileSource.levels.length - 1
+      ].context2D.canvas;
     if (chartSize == null) {
       chartSize = {width: img.width, height: img.height};
     }
@@ -344,9 +345,9 @@ class ImageChart extends React.PureComponent {
     //     buildPyramid: true,
     //     crossOriginPolicy: "Anonymous"
     // });
-    if (!this.props.trace.tileSource.ready) {
+    if (!this.props.trace.embedding.tileSource.ready) {
       this.setState({loading: true});
-      this.props.trace.tileSource.addOnceHandler('ready', (src) => {
+      this.props.trace.embedding.tileSource.addOnceHandler('ready', (src) => {
         this.setState({loading: false});
       });
     } else {
@@ -361,7 +362,7 @@ class ImageChart extends React.PureComponent {
       // visibilityRatio: 0.2,
       showNavigationControl: false,
       // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
-      tileSources: this.props.trace.tileSource,
+      tileSources: this.props.trace.embedding.tileSource,
     });
     const viewer = this.viewer;
     const _this = this;
