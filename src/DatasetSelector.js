@@ -44,6 +44,12 @@ export function DatasetSelector(props) {
       value = value.join(', ');
     } else if (column.format && typeof value === 'number') {
       value = column.format(value);
+    } else if (column.field === 'last_updated') {
+      value = new Date(value).toLocaleTimeString('en-us', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+      });
     } else if (column.field === 'description') {
       return (
         <ReactMarkdown

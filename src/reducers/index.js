@@ -570,6 +570,11 @@ function serverInfo(state = {}, action) {
             label: 'Contacts',
             visible: false,
           },
+          {
+            field: 'last_updated',
+            label: 'Last Updated',
+            visible: true,
+          },
         ];
       }
       return action.payload;
