@@ -138,11 +138,11 @@ export default function GalleryImage(props) {
         setLoading(false);
       }
     } else if (trace.type === 'image') {
-      if (!trace.tileSource.ready) {
+      if (!trace.embedding.tileSource.ready) {
         setUrl(null);
         setOverlayUrl(null);
         setLoading(true);
-        trace.tileSource.addOnceHandler('ready', () => {
+        trace.embedding.tileSource.addOnceHandler('ready', () => {
           setLoading(false);
           setUrl(
             getImageUrl(

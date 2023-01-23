@@ -2516,7 +2516,16 @@ function getNewEmbeddingData(state, features) {
           }
           embedding.categoryToIndices = categoryToIndices;
         }
-
+        if (traceType === TRACE_TYPE_IMAGE && embedding.tileSource == null) {
+          const url = dataset.api.getFileUrl(embedding.spatial.image);
+          embedding.tileSource = new OpenSeadragon.ImageTileSource({
+            url: url,
+            buildPyramid: true,
+            crossOriginPolicy: 'Anonymous',
+          });
+          // prevent setting canvas width/height to 0
+          embedding.tileSource._freeupCanvasMemory = function () {};
+        }
         const trace = {
           embedding: Object.assign({}, embedding),
           name: feature,
@@ -2589,16 +2598,9 @@ function getNewEmbeddingData(state, features) {
         updateTraceColors(trace);
 
         if (traceType === TRACE_TYPE_IMAGE) {
-          // TODO cache image
           trace.indices = !isCategorical
             ? indexSort(values, true)
             : randomSeq(values.length);
-          const url = dataset.api.getFileUrl(embedding.spatial.image);
-          trace.tileSource = new OpenSeadragon.ImageTileSource({
-            url: url,
-            buildPyramid: true,
-            crossOriginPolicy: 'Anonymous',
-          });
         }
 
         newEmbeddingData.push(trace);
