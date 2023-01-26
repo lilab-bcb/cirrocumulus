@@ -2,10 +2,12 @@ import os
 
 import anndata
 
+import cirrocumulus
 from cirrocumulus.anndata_dataset import AnndataDataset
 from cirrocumulus.envir import (
     CIRRO_AUTH,
     CIRRO_CELL_ONTOLOGY,
+    CIRRO_COMPRESS,
     CIRRO_DATABASE,
     CIRRO_JOB_RESULTS,
     CIRRO_JOB_TYPE,
@@ -79,7 +81,9 @@ def create_app():
 
     from cirrocumulus.api import cirro_blueprint
 
-    app = Flask(__name__, static_folder="client", static_url_path="")
+    app = Flask(
+        __name__, static_folder=os.path.join(cirrocumulus.__path__[0], "client"), static_url_path=""
+    )
     app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
     app.register_blueprint(cirro_blueprint, url_prefix="/api")
 
@@ -89,7 +93,8 @@ def create_app():
             os.path.abspath(os.path.join(app.root_path, "client")), "index.html"
         )
 
-    Compress(app)
+    if bool(os.environ.get(CIRRO_COMPRESS, "true")):
+        Compress(app)
     return app
 
 

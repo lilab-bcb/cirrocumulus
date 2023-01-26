@@ -8,12 +8,12 @@ from cirrocumulus.ids_aggregator import IdsAggregator
 from cirrocumulus.unique_aggregator import UniqueAggregator
 
 
-def get_mask(dataset_api, dataset, data_filters):
+def get_mask(dataset_api, dataset, dataset_info, data_filters):
     measures = set()
     dimensions = set()
     basis = set()
     for data_filter in data_filters:
-        _measures, _dimensions, _basis = data_filter_keys(data_filter)
+        _measures, _dimensions, _basis = data_filter_keys(data_filter, dataset_info)
         measures.update(_measures)
         dimensions.update(_dimensions)
         basis.update(_basis)
@@ -57,13 +57,26 @@ def get_filter_str(data_filter):
             op = ""
         if not isinstance(field, dict) and not field == "__index":
             if isinstance(value, list):
-                value = "_".join(value)
+                tmp = []
+                for v in value:
+                    tmp.append(str(v))
+                value = "_".join(tmp)
                 s.append(field + "-" + value)
             else:
                 return None
         else:
             return None
     return "".join(s).replace("/", "-").replace(" ", "-").replace("\\", "-")
+
+
+def _flatten_array(val):
+    if scipy.sparse.issparse(val):
+        val = val.toarray().flatten()
+    if hasattr(val, "sparse"):
+        val = val.sparse.to_dense()
+    if isinstance(val, pd.Series):
+        val = val.values
+    return val
 
 
 def get_filter_expr(adata, data_filter):
@@ -75,6 +88,7 @@ def get_filter_expr(adata, data_filter):
             field = filter_obj["field"]
             op = filter_obj["operation"]
             value = filter_obj["value"]
+            invert = filter_obj.get("invert", False)
             if isinstance(field, dict):  # selection box
                 # selected_points_basis = get_basis(field['basis'], field.get('nbins'),
                 #                                   field.get('agg'), field.get('ndim', '2'),
@@ -119,27 +133,34 @@ def get_filter_expr(adata, data_filter):
                 )
                 if op == "in":
                     keep = (series.isin(value)).values
-                elif op == ">":
-                    keep = series > value
-                elif op == "=":
-                    keep = series == value
-                elif op == "<":
-                    keep = series < value
-                elif op == "!=":
-                    keep = series != value
-                elif op == ">=":
-                    keep = series >= value
-                elif op == "<=":
-                    keep = series <= value
-                else:
-                    raise ValueError("Unknown filter")
-
-            if scipy.sparse.issparse(keep):
-                keep = keep.toarray().flatten()
-            if hasattr(keep, "sparse"):
-                keep = keep.sparse.to_dense()
-            if isinstance(keep, pd.Series):
-                keep = keep.values
+                else:  # array of operations e.g. >, <
+                    keep = None
+                    for i in range(len(op)):
+                        op_i = op[i]
+                        value_i = value[i]
+                        if op_i == ">":
+                            keep_i = series > value_i
+                        elif op_i == "=":
+                            keep_i = series == value_i
+                        elif op_i == "<":
+                            keep_i = series < value_i
+                        elif op_i == "!=":
+                            keep_i = series != value_i
+                        elif op_i == ">=":
+                            keep_i = series >= value_i
+                        elif op_i == "<=":
+                            keep_i = series <= value_i
+                        else:
+                            raise ValueError(
+                                "Unknown filter, field: {}, operation: {}, value: {}".format(
+                                    field, op, value
+                                )
+                            )
+                        keep_i = _flatten_array(keep_i)
+                        keep = keep_i & keep if keep is not None else keep_i
+            keep = _flatten_array(keep)
+            if invert:
+                keep = ~keep
             if keep_expr is not None:
                 if combine_filters == "and":
                     keep_expr = keep_expr & keep
@@ -175,9 +196,12 @@ def precomputed_embedding(dataset_api, dataset, basis, obs_measures, var_measure
     )
 
 
-def get_var_name_type(key, default_type="X"):
+def get_var_name_type(key, default_type="X", dataset_info=None):
     index = key.find("/")
     if index == -1:
+        if dataset_info is not None:
+            key_type = "X" if key in dataset_info["var"] else "obs"
+            return key, key_type
         return key, default_type
     else:
         key_type = key[0:index]
@@ -425,7 +449,7 @@ def get_selected_data(
     return df
 
 
-def data_filter_keys(data_filter):
+def data_filter_keys(data_filter, dataset_info=None):
     var_keys = set()
     obs_keys = set()
     basis_keys = set()
@@ -440,7 +464,9 @@ def data_filter_keys(data_filter):
             elif key == "__index":
                 continue
             else:
-                name, key_type = get_var_name_type(key, default_type="obs")
+                name, key_type = get_var_name_type(
+                    key, default_type="obs", dataset_info=dataset_info
+                )
                 user_filter["field"] = name
                 if key_type == "X":
                     var_keys.add(name)

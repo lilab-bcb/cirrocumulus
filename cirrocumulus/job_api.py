@@ -137,7 +137,7 @@ def get_obs(dataset_api, dataset, dataset_info, params):
         obs = pd.DataFrame(index=pd.RangeIndex(dataset_info["shape"][0]).astype(str))
         obs_field = "selection"
         obs[obs_field] = "3"
-        masks, _ = get_mask(dataset_api, dataset, filters)
+        masks, _ = get_mask(dataset_api, dataset, dataset_info, filters)
         for i in range(len(masks)):
             obs.loc[masks[i], obs_field] = filter_names[i]
         obs[obs_field] = obs[obs_field].astype("category")

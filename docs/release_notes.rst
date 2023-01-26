@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.48 `January 26, 2023`
+    * Fix error using gene filter when performing differential expression between two selected groups
+
 - 1.1.47 `January 23, 2023`
     * Show last updated date in dataset browser
     * Improved memory consumption for spatial datasets
