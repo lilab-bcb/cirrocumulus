@@ -20,7 +20,7 @@ def test_measure_filter(dataset_api, input_dataset, test_data):
     process_results = handle_selection_ids(
         dataset_api=dataset_api,
         dataset=input_dataset,
-        data_filter={"filters": [{"field": "DSCR3", "operation": [">"], "value": [2]}]},
+        data_filter={"filters": [{"field": "X/DSCR3", "operation": [">"], "value": [2]}]},
     )
     ids_summary = process_results["ids"]
     matched_data = test_data[test_data[:, "DSCR3"].X > 2]
