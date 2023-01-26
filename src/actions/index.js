@@ -617,6 +617,7 @@ export function getDatasetFilterArray(datasetFilter) {
       const operation = [];
       const value = [];
       for (let i = 0; i < filter.value.length; i++) {
+        // operation is array of ['>', '<'] with matching values
         if (!isNaN(filter.value[i])) {
           value.push(filter.value[i]);
           operation.push(filter.operation[i]);
