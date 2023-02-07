@@ -48,7 +48,6 @@ class MongoDb(AbstractDB):
         self.fs = None
 
     def category_names(self, email, dataset_id):
-
         self.get_dataset(email, dataset_id)
         collection = self.db.categories
         results = {}
@@ -194,7 +193,6 @@ class MongoDb(AbstractDB):
         self.db.jobs.delete_many(dict(dataset_id=dataset_id))
 
     def upsert_dataset(self, email, readers, dataset):
-
         if dataset.get("id") is None and not self.capabilities()[SERVER_CAPABILITY_ADD_DATASET]:
             return
         if (

@@ -109,11 +109,9 @@ class BackedSparseMatrix(_cs_matrix):
 
 class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
     def _get_intXslice(self, row: int, col: slice) -> ss.csr_matrix:
-
         return ss.csr_matrix(get_compressed_vector(self, row), shape=(1, self.shape[1]))[:, col]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csr_matrix:
-
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),
@@ -138,7 +136,6 @@ class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
         return ss.csc_matrix(get_compressed_vector(self, col), shape=(self.shape[0], 1))[row, :]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csc_matrix:
-
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),
