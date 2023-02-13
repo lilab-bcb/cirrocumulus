@@ -169,7 +169,6 @@ def get_markers(marker_paths):
 
     marker_results = []
     for marker_path in marker_paths:
-
         with open(marker_path, "rt") as f:
             marker_json = json.load(f)
             if "title" in marker_json:
