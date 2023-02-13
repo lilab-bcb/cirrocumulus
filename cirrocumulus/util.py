@@ -109,8 +109,9 @@ def load_dataset_schema(url):
 
 
 def write_top_half_gct(f, row_metadata_df, col_metadata_df, metadata_null, filler_null):
-    """Write the top half of the gct file: top-left filler values, row metadata
-    headers, and top-right column metadata.
+    """Write the top half of the gct file: top-left filler values, row metadata headers, and top-
+    right column metadata.
+
     Args:
         f (file handle): handle for output file
         row_metadata_df (pandas df)
@@ -152,6 +153,7 @@ def write_top_half_gct(f, row_metadata_df, col_metadata_df, metadata_null, fille
 
 def write_bottom_half_gct(f, row_metadata_df, data_df, data_null, data_float_format, metadata_null):
     """Write the bottom half of the gct file: row metadata and data.
+
     Args:
         f (file handle): handle for output file
         row_metadata_df (pandas df)

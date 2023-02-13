@@ -169,7 +169,6 @@ def get_markers(marker_paths):
 
     marker_results = []
     for marker_path in marker_paths:
-
         with open(marker_path, "rt") as f:
             marker_json = json.load(f)
             if "title" in marker_json:
@@ -193,7 +192,7 @@ def get_markers(marker_paths):
 
 
 def read_star_fusion_file(input_csv: str):
-    """Load data from a STAR Fusion TSV file
+    """Load data from a STAR Fusion TSV file.
 
     Parameters
     -----------

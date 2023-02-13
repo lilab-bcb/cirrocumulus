@@ -22,8 +22,7 @@ T = TypeVar("T")
 
 
 def _to_fixed_length_strings(value: np.ndarray) -> np.ndarray:
-    """\
-    Convert variable length strings to fixed length.
+    """Convert variable length strings to fixed length.
 
     Currently a workaround for
     https://github.com/zarr-developers/zarr-python/pull/422

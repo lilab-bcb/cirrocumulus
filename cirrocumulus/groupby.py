@@ -21,8 +21,7 @@ def asarray(x):
 
 
 class GroupBy:
-    """
-    Functionality for grouping and aggregating AnnData observations by key, per variable.
+    """Functionality for grouping and aggregating AnnData observations by key, per variable.
 
     There is currently support for count, sum, mean, and varience per group, and for scores
     derived from these per pair of groups.
@@ -92,8 +91,7 @@ class GroupBy:
         self._key_index = None
 
     def count_mean_var_frac(self, A, keys, dof: int = 1) -> CountMeanVarFrac:
-        """
-        Compute the count, as well as mean and variance per feature, per group of observations.
+        """Compute the count, as well as mean and variance per feature, per group of observations.
 
         The formula `Var(X) = E(X^2) - E(X)^2` suffers loss of precision when the variance is a
         very small fraction of the squared mean. In particular, when X is constant, the formula may

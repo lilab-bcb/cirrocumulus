@@ -1,0 +1,38 @@
+services:
+  cirro:
+    restart: always
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+    command: cirro serve --db_uri mongodb://${CIRRO_DATABASE_USERNAME}:${CIRRO_DATABASE_PASSWORD}@mongo:27017/${CIRRO_DATABASE} --bind 0.0.0.0:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      CIRRO_DATABASE_USER: ${CIRRO_DATABASE_USERNAME}
+      CIRRO_DATABASE_PASSWORD: ${CIRRO_DATABASE_PASSWORD}
+      CIRRO_DATABASE: ${CIRRO_DATABASE}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+  mongo-express:
+    image: mongo-express:latest
+    restart: always
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/
+volumes:
+  mongodb_data:

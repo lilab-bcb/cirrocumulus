@@ -2,13 +2,13 @@ import numpy as np
 
 
 def _ecdf(x):
-    """no frills empirical cdf used in fdrcorrection"""
+    """No frills empirical cdf used in fdrcorrection."""
     nobs = len(x)
     return np.arange(1, nobs + 1) / float(nobs)
 
 
 def fdrcorrection(pvals, alpha=0.05, method="indep", is_sorted=False):
-    """pvalue correction for false discovery rate
+    """Pvalue correction for false discovery rate.
 
     This covers Benjamini/Hochberg for independent or positively correlated and
     Benjamini/Yekutieli for general or negatively correlated tests. Both are
@@ -42,9 +42,6 @@ def fdrcorrection(pvals, alpha=0.05, method="indep", is_sorted=False):
 
     Method names can be abbreviated to first letter, 'i' or 'p' for fdr_bh and 'n' for
     fdr_by.
-
-
-
     """
     pvals = np.asarray(pvals)
 

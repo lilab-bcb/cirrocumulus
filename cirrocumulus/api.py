@@ -247,7 +247,6 @@ def handle_server():
 @cirro_blueprint.route("/category_name", methods=["GET", "PUT"])
 def handle_category_name():
     """CRUD for category name."""
-
     email = get_auth().auth()["email"]
     database_api = get_database()
     if request.method == "GET":
@@ -283,7 +282,6 @@ def handle_category_name():
 @cirro_blueprint.route("/feature_set", methods=["POST", "DELETE"])
 def handle_feature_set():
     """CRUD for a feature set."""
-
     email = get_auth().auth()["email"]
     database_api = get_database()
     # if request.method == 'GET':
