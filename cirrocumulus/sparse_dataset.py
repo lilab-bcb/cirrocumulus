@@ -1,5 +1,4 @@
-"""\
-This module implements on disk sparse datasets.
+"""This module implements on disk sparse datasets.
 
 This code is based on and uses the conventions of h5sparse_ by `Appier Inc.`_.
 See the copyright and license note in this directory source code.
@@ -33,11 +32,10 @@ class BackedFormat(NamedTuple):
 
 
 class BackedSparseMatrix(_cs_matrix):
-    """\
-    Mixin class for backed sparse matrices.
+    """Mixin class for backed sparse matrices.
 
-    Largely needed for the case `backed_sparse_csr(...)[:]`,
-    since that calls copy on `.data`, `.indices`, and `.indptr`.
+    Largely needed for the case `backed_sparse_csr(...)[:]`, since that calls copy on `.data`,
+    `.indices`, and `.indptr`.
     """
 
     def copy(self) -> ss.spmatrix:
@@ -47,11 +45,9 @@ class BackedSparseMatrix(_cs_matrix):
             return SparseDataset(self.group).to_memory()
 
     def _set_many(self, i: Iterable[int], j: Iterable[int], x):
-        """\
-        Sets value at each (i, j) to x
+        """Sets value at each (i, j) to x.
 
-        Here (i,j) index major and minor respectively,
-        and must not contain duplicate entries.
+        Here (i,j) index major and minor respectively, and must not contain duplicate entries.
         """
         # Scipy 1.3+ compat
         n_samples = 1 if np.isscalar(x) else len(x)
@@ -82,8 +78,7 @@ class BackedSparseMatrix(_cs_matrix):
             # self._insert_many(i, j, x[mask])
 
     def _zero_many(self, i: Sequence[int], j: Sequence[int]):
-        """\
-        Sets value at each (i, j) to zero, preserving sparsity structure.
+        """Sets value at each (i, j) to zero, preserving sparsity structure.
 
         Here (i,j) index major and minor respectively.
         """
@@ -109,11 +104,9 @@ class BackedSparseMatrix(_cs_matrix):
 
 class backed_csr_matrix(BackedSparseMatrix, ss.csr_matrix):
     def _get_intXslice(self, row: int, col: slice) -> ss.csr_matrix:
-
         return ss.csr_matrix(get_compressed_vector(self, row), shape=(1, self.shape[1]))[:, col]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csr_matrix:
-
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),
@@ -138,7 +131,6 @@ class backed_csc_matrix(BackedSparseMatrix, ss.csc_matrix):
         return ss.csc_matrix(get_compressed_vector(self, col), shape=(self.shape[0], 1))[row, :]
 
     def _get_sliceXslice(self, row: slice, col: slice) -> ss.csc_matrix:
-
         out_shape = (
             slice_len(row, self.shape[0]),
             slice_len(col, self.shape[1]),

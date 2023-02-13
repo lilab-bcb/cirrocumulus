@@ -18,9 +18,6 @@ def to_bool(s):
 
 
 class AbstractDB:
-    def __init__(self):
-        """Initializes the object"""
-
     def capabilities(self):  # allow everything
         c = {}
         c[SERVER_CAPABILITY_RENAME_CATEGORIES] = to_bool(
@@ -43,7 +40,7 @@ class AbstractDB:
         return c
 
     def datasets(self, email):
-        """Gets list of available datasets
+        """Gets list of available datasets.
 
         Args:
             email: User email or None
@@ -61,7 +58,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def category_names(self, email, dataset_id):
-        """Gets a dict of renamed categories for a dataset
+        """Gets a dict of renamed categories for a dataset.
 
         Args:
               email: User email or None
@@ -87,7 +84,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def user(self, email):
-        """Gets metadata about a user
+        """Gets metadata about a user.
 
         Args:
            email: User email
@@ -116,17 +113,16 @@ class AbstractDB:
         raise NotImplementedError()
 
     def delete_dataset_view(self, email, view_id):
-        """Delete a saved view
+        """Delete a saved view.
 
         Args:
             email: User email or None
             view_id: View id
-
         """
         raise NotImplementedError()
 
     def get_dataset_view(self, email, view_id):
-        """Gets detailed information for a saved dataset view
+        """Gets detailed information for a saved dataset view.
 
         Args:
             email: User email or None
@@ -140,12 +136,11 @@ class AbstractDB:
               "notes": "view notes"
               "email": "View creator email"
         """
-
         raise NotImplementedError()
 
     def upsert_dataset_view(self, email, dataset_id, view):
-        """Upserts a dataset view
-        View should have id (for update), name, value, and any other additional fields to store
+        """Upserts a dataset view View should have id (for update), name, value, and any other
+        additional fields to store.
 
         Args:
               email: User email or None
@@ -158,7 +153,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def delete_dataset(self, email, dataset_id):
-        """Deletes a dataset
+        """Deletes a dataset.
 
         Args:
             email: User email or None
@@ -180,7 +175,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def get_feature_sets(self, email, dataset_id):
-        """Gets saved feature sets
+        """Gets saved feature sets.
 
         Args:
               email: User email or None
@@ -196,7 +191,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def delete_feature_set(self, email, dataset_id, set_id):
-        """Deletes a saved feature set
+        """Deletes a saved feature set.
 
         Args:
               email: User email or None
@@ -206,7 +201,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def upsert_feature_set(self, email, dataset_id, set_id, category, name, features):
-        """Upserts a feature set
+        """Upserts a feature set.
 
         Args:
             email: User email or None
@@ -222,7 +217,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def create_job(self, email, dataset_id, job_name, job_type, params):
-        """Creates a job
+        """Creates a job.
 
         Args:
          email: User email or None
@@ -237,7 +232,7 @@ class AbstractDB:
         raise NotImplementedError()
 
     def get_job(self, email, job_id, return_type):
-        """Gets a job
+        """Gets a job.
 
         Args:
            email: User email or None

@@ -23,7 +23,7 @@ class AbstractDataset(ABC):
         return get_file_path(os.path.join("uns", result_id + ".json.gz"), path)
 
     def get_dataset_info(self, filesystem, path):
-        """Returns a dict with shape, var, modules"""
+        """Returns a dict with shape, var, modules."""
         s = self.get_schema(filesystem, path)
         d = dict()
         var = s["var"]

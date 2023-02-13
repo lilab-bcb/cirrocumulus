@@ -9,7 +9,7 @@ repos:
     rev: v1.6.0.rc1
     hooks:
       - id: docformatter
-        args: ["--wrap-summaries=100", "--wrap-descriptions=100"]
+        args: ["--in-place", "--wrap-summaries=100", "--wrap-descriptions=100", "--config=./pyproject.toml"]
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
