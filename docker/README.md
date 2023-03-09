@@ -1,5 +1,5 @@
-Example deploying cirrocumulus server, MongoDB, and [mongo-express](https://github.com/mongo-express/mongo-express) 
-using docker-compose. Datasets are stored in ./cirro_data. 
+Example deploying cirrocumulus server, MongoDB, and [mongo-express](https://github.com/mongo-express/mongo-express)
+using docker-compose. Datasets are stored in ./cirro_data.
 
 In a production environment, we recommend using [AWS DocumentDB](https://aws.amazon.com/documentdb/) or [MongoDB Atlas](https://www.mongodb.com/atlas/database) instead of hosting MongoDB (and mongo-express) yourself.
 
@@ -20,7 +20,7 @@ Example
     ```
     cirro prepare_data pbmc3k/pbmc3k.h5ad --markers pbmc3k/markers.json --out cirro_data/pbmc3k.zarr
     ```
-    
+
 - Create and start containers:
 
     ```
