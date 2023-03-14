@@ -24,8 +24,7 @@ T = TypeVar("T")
 def _to_fixed_length_strings(value: np.ndarray) -> np.ndarray:
     """Convert variable length strings to fixed length.
 
-    Currently a workaround for
-    https://github.com/zarr-developers/zarr-python/pull/422
+    Currently a workaround for https://github.com/zarr-developers/zarr-python/pull/422
     """
     new_dtype = []
     for dt_name, (dt_type, dt_offset) in value.dtype.fields.items():
