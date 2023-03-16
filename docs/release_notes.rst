@@ -1,5 +1,7 @@
 Release Notes
 -------------
+- 1.1.49 `March 16, 2023`
+    * Fix bug where heatmap custom color range had no effect
 
 - 1.1.48 `January 26, 2023`
     * Fix error using gene filter when performing differential expression between two selected groups
