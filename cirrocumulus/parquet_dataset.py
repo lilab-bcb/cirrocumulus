@@ -1,16 +1,17 @@
-import concurrent.futures
-import json
 import os
+import json
+import concurrent.futures
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import pyarrow.parquet as pq
 import scipy.sparse
+import pyarrow.parquet as pq
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY
+
 
 max_workers = min(12, pa.cpu_count())
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
@@ -58,7 +59,7 @@ def get_matrix(futures, shape=None):
 
 def read_matrix(keys, node_path, dataset_info, filesystem, shape):
     if len(keys) == 1 and isinstance(
-            keys[0], slice
+        keys[0], slice
     ):  # special case if slice specified for performance
         get_item_x = keys[0]
         keys = dataset_info["var"][get_item_x]
@@ -89,15 +90,24 @@ class ParquetDataset(AbstractDataset):
         keys.pop("module", [])
         layers = {}
         for layer_key in keys.keys():
-            X_layer, var_layer = read_matrix(keys=keys[layer_key], node_path=os.path.join(path, "layers", layer_key),
-                                             dataset_info=dataset_info,
-                                             filesystem=filesystem, shape=shape)
+            X_layer, var_layer = read_matrix(
+                keys=keys[layer_key],
+                node_path=os.path.join(path, "layers", layer_key),
+                dataset_info=dataset_info,
+                filesystem=filesystem,
+                shape=shape,
+            )
             adata_layer = AnnData(X=X_layer, var=var_layer)
             layers[layer_key] = adata_layer
 
         if len(X_keys) > 0:
-            X, var = read_matrix(keys=X_keys, node_path=os.path.join(path, "X"), dataset_info=dataset_info,
-                                 filesystem=filesystem, shape=shape)
+            X, var = read_matrix(
+                keys=X_keys,
+                node_path=os.path.join(path, "X"),
+                dataset_info=dataset_info,
+                filesystem=filesystem,
+                shape=shape,
+            )
         if len(obs_keys) > 0:
             obs = pd.DataFrame()
             node_path = os.path.join(path, "obs")
@@ -196,7 +206,7 @@ class ParquetDataset(AbstractDataset):
                         if section == "obsm" and not name.startswith("X_"):
                             section = "var"
                         if section == "obsm":  # X_fitsne_1', 'X_fitsne_2, etc
-                            basename = name[0: name.rindex("_")]
+                            basename = name[0 : name.rindex("_")]
                             count = embedding_basename_to_count.get(basename, 0)
                             embedding_basename_to_count[basename] = count + 1
                         if section == "var":

@@ -1,11 +1,12 @@
-import logging
 import os
+import logging
 
 import numpy as np
-import pandas._libs.json as ujson
 import pyarrow as pa
-import pyarrow.parquet as pq
 import scipy.sparse
+import pyarrow.parquet as pq
+import pandas._libs.json as ujson
+
 
 logger = logging.getLogger("cirro")
 
@@ -29,7 +30,7 @@ def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
     filesystem.makedirs(obs_dir, exist_ok=True)
     filesystem.makedirs(obsm_dir, exist_ok=True)
     with filesystem.open(
-            os.path.join(output_directory, "index.json.gz"), "wt", compression="gzip"
+        os.path.join(output_directory, "index.json.gz"), "wt", compression="gzip"
     ) as f:
         f.write(ujson.dumps(schema, double_precision=2, orient="values"))
         if whitelist is None or "X" in whitelist:
