@@ -1,12 +1,11 @@
-import os
 import logging
+import os
 
 import numpy as np
-import pyarrow as pa
-import scipy.sparse
-import pyarrow.parquet as pq
 import pandas._libs.json as ujson
-
+import pyarrow as pa
+import pyarrow.parquet as pq
+import scipy.sparse
 
 logger = logging.getLogger("cirro")
 
@@ -30,19 +29,23 @@ def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
     filesystem.makedirs(obs_dir, exist_ok=True)
     filesystem.makedirs(obsm_dir, exist_ok=True)
     with filesystem.open(
-        os.path.join(output_directory, "index.json.gz"), "wt", compression="gzip"
+            os.path.join(output_directory, "index.json.gz"), "wt", compression="gzip"
     ) as f:
         f.write(ujson.dumps(schema, double_precision=2, orient="values"))
         if whitelist is None or "X" in whitelist:
             save_adata_X(dataset, X_dir, filesystem)
+            for layer in dataset.layers.keys():
+                layer_dir = os.path.join(output_directory, "layers", layer)
+                filesystem.makedirs(layer_dir, exist_ok=True)
+                save_adata_X(dataset, layer_dir, filesystem, layer)
         if whitelist is None or "obs" in whitelist:
             save_data_obs(dataset, obs_dir, filesystem)
         if whitelist is None or "obsm" in whitelist:
             save_data_obsm(dataset, obsm_dir, filesystem)
 
 
-def save_adata_X(adata, X_dir, filesystem):
-    adata_X = adata.X
+def save_adata_X(adata, X_dir, filesystem, layer=None):
+    adata_X = adata.X if layer is None else adata.layers[layer]
     names = adata.var.index
     is_sparse = scipy.sparse.issparse(adata_X)
     output_dir = X_dir

@@ -1,16 +1,16 @@
-import os
-import json
 import concurrent.futures
+import json
+import os
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
-import scipy.sparse
 import pyarrow.parquet as pq
+import scipy.sparse
 from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-
+from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY
 
 max_workers = min(12, pa.cpu_count())
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
@@ -56,6 +56,19 @@ def get_matrix(futures, shape=None):
     return X
 
 
+def read_matrix(keys, node_path, dataset_info, filesystem, shape):
+    if len(keys) == 1 and isinstance(
+            keys[0], slice
+    ):  # special case if slice specified for performance
+        get_item_x = keys[0]
+        keys = dataset_info["var"][get_item_x]
+
+    paths = [node_path + "/" + key + ".parquet" for key in keys]
+    X = get_matrix(read_tables(paths, filesystem), shape)
+    var = pd.DataFrame(index=keys)
+    return X, var
+
+
 class ParquetDataset(AbstractDataset):
     def __init__(self):
         super().__init__()
@@ -73,17 +86,18 @@ class ParquetDataset(AbstractDataset):
         X_keys = keys.pop("X", [])
         obs_keys = keys.pop("obs", [])
         basis_keys = keys.pop("basis", [])
+        keys.pop("module", [])
+        layers = {}
+        for layer_key in keys.keys():
+            X_layer, var_layer = read_matrix(keys=keys[layer_key], node_path=os.path.join(path, "layers", layer_key),
+                                             dataset_info=dataset_info,
+                                             filesystem=filesystem, shape=shape)
+            adata_layer = AnnData(X=X_layer, var=var_layer)
+            layers[layer_key] = adata_layer
 
         if len(X_keys) > 0:
-            if len(X_keys) == 1 and isinstance(
-                X_keys[0], slice
-            ):  # special case if slice specified for performance
-                get_item_x = X_keys[0]
-                X_keys = dataset_info["var"][get_item_x]
-            node_path = os.path.join(path, "X")
-            paths = [node_path + "/" + key + ".parquet" for key in X_keys]
-            X = get_matrix(read_tables(paths, filesystem), shape)
-            var = pd.DataFrame(index=X_keys)
+            X, var = read_matrix(keys=X_keys, node_path=os.path.join(path, "X"), dataset_info=dataset_info,
+                                 filesystem=filesystem, shape=shape)
         if len(obs_keys) > 0:
             obs = pd.DataFrame()
             node_path = os.path.join(path, "obs")
@@ -107,10 +121,9 @@ class ParquetDataset(AbstractDataset):
                 if X is None:
                     X = scipy.sparse.coo_matrix((vals.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
-            obs = pd.DataFrame(index=pd.RangeIndex(shape[0]).astype(str))
-        if X is None and obs is None and len(obsm.keys()) == 0:
-            X = scipy.sparse.csc_matrix(tuple(shape))
+            obs = pd.DataFrame(index=pd.RangeIndex(dataset_info["shape"][0]).astype(str))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
+        adata.uns[ADATA_LAYERS_UNS_KEY] = layers
         return adata
 
     def read_data_dense(self, filesystem, path, keys=None, dataset=None):
@@ -146,6 +159,7 @@ class ParquetDataset(AbstractDataset):
         keys = keys.copy()
         if not path.endswith(".parquet"):
             return self.read_data_sparse(filesystem, path, keys, dataset)
+        # single parquet file containing everything
         return self.read_data_dense(filesystem, path, keys, dataset)
 
     def get_schema(self, filesystem, path):
@@ -182,7 +196,7 @@ class ParquetDataset(AbstractDataset):
                         if section == "obsm" and not name.startswith("X_"):
                             section = "var"
                         if section == "obsm":  # X_fitsne_1', 'X_fitsne_2, etc
-                            basename = name[0 : name.rindex("_")]
+                            basename = name[0: name.rindex("_")]
                             count = embedding_basename_to_count.get(basename, 0)
                             embedding_basename_to_count[basename] = count + 1
                         if section == "var":
