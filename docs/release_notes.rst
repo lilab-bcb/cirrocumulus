@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.50 `March 20, 2023`
+    * Support saving/loading `anndata`_ layers in parquet format
+
 - 1.1.49 `March 16, 2023`
     * Fix bug where heatmap custom color range had no effect
 

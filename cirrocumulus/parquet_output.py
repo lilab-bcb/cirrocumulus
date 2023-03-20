@@ -35,14 +35,18 @@ def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
         f.write(ujson.dumps(schema, double_precision=2, orient="values"))
         if whitelist is None or "X" in whitelist:
             save_adata_X(dataset, X_dir, filesystem)
+            for layer in dataset.layers.keys():
+                layer_dir = os.path.join(output_directory, "layers", layer)
+                filesystem.makedirs(layer_dir, exist_ok=True)
+                save_adata_X(dataset, layer_dir, filesystem, layer)
         if whitelist is None or "obs" in whitelist:
             save_data_obs(dataset, obs_dir, filesystem)
         if whitelist is None or "obsm" in whitelist:
             save_data_obsm(dataset, obsm_dir, filesystem)
 
 
-def save_adata_X(adata, X_dir, filesystem):
-    adata_X = adata.X
+def save_adata_X(adata, X_dir, filesystem, layer=None):
+    adata_X = adata.X if layer is None else adata.layers[layer]
     names = adata.var.index
     is_sparse = scipy.sparse.issparse(adata_X)
     output_dir = X_dir
