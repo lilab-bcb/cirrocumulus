@@ -69,6 +69,8 @@ def save_dataset_jsonl(dataset, schema, output_dir, base_name, filesystem):
         save_adata_X(dataset, f, index, compress)
         save_data_obs(dataset, f, index, compress)
         save_data_obsm(dataset, f, index, compress)
+        for layer in dataset.layers.keys():
+            save_adata_X(dataset, f, index, compress, layer)
         write_jsonl(schema, f, "schema", index)
 
     with filesystem.open(
@@ -79,8 +81,8 @@ def save_dataset_jsonl(dataset, schema, output_dir, base_name, filesystem):
         f.write(ujson.dumps(result, double_precision=2, orient="values"))
 
 
-def save_adata_X(adata, f, index, compress):
-    adata_X = adata.X
+def save_adata_X(adata, f, index, compress, layer=None):
+    adata_X = adata.X if layer is None else adata.layers[layer]
     names = adata.var.index
     is_sparse = scipy.sparse.issparse(adata_X)
     if is_sparse and scipy.sparse.isspmatrix_csr(adata_X):
@@ -88,15 +90,23 @@ def save_adata_X(adata, f, index, compress):
 
     for j in range(adata_X.shape[1]):
         X = adata_X[:, j]
+        name = names[j]
+        if layer:
+            name = layer + "/" + name
+
         if is_sparse:
             X = X.toarray().flatten()
             indices = np.where(X != 0)[0]
             values = X[indices]
-            write_jsonl(dict(index=indices, value=values), f, names[j], index, compress)
+            write_jsonl(dict(index=indices, value=values), f, name, index, compress)
         else:
-            write_jsonl(dict(value=X), f, names[j], index, compress)
+            write_jsonl(dict(value=X), f, name, index, compress)
         if j > 0 and (j + 1) % 1000 == 0:
-            logger.info("Wrote adata X {}/{}".format(j + 1, adata_X.shape[1]))
+            logger.info(
+                "Wrote adata {} {}/{}".format(
+                    "X" if layer is None else layer, j + 1, adata_X.shape[1]
+                )
+            )
 
 
 def save_data_obsm(adata, f, index, compress):
