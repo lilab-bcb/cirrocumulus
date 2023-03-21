@@ -5,10 +5,20 @@ import {SlicedVector} from './SlicedVector';
 import {FEATURE_TYPE, NATSORT} from './util';
 import {Vector} from './Vector';
 
-export function getVarNameType(key) {
+export function getVarNameType(
+  key,
+  defaultType = FEATURE_TYPE.X,
+  datasetInfo = null,
+) {
   let index = key.indexOf('/');
   if (index === -1) {
-    return {name: key, type: FEATURE_TYPE.X}; // default
+    let keyType = defaultType;
+    if (datasetInfo) {
+      if (datasetInfo['var'].indexOf(key) !== -1) {
+        keyType = FEATURE_TYPE.X;
+      }
+    }
+    return {name: key, type: keyType};
   } else {
     const type = key.substring(0, index);
     const name = key.substring(index + 1);
@@ -99,26 +109,7 @@ export function getTypeToMeasures(measures) {
   return typeToMeasures;
 }
 
-export function getBasis(basis, dimensions = 2, mode = null) {
-  dimensions = parseInt(dimensions);
-  let coordinate_columns = [];
-  for (let i = 0; i < dimensions; i++) {
-    coordinate_columns.push(basis + '_' + i + 1);
-  }
-  let full_name = basis + '_' + dimensions;
-  if (mode != null) {
-    full_name = full_name + '_' + mode;
-  }
-  return {
-    name: basis,
-    dimensions: dimensions,
-    coordinate_columns: coordinate_columns,
-    mode: mode,
-    full_name: full_name,
-  };
-}
-
-export function splitDataFilter(data_filter) {
+export function splitDataFilter(data_filter, datasetInfo) {
   let var_keys = new Set();
   let obs_keys = new Set();
   let basis_list = [];
@@ -126,11 +117,11 @@ export function splitDataFilter(data_filter) {
     let user_filters = data_filter.filters || [];
     for (let i = 0; i < user_filters.length; i++) {
       let user_filter = user_filters[i];
-      let key = user_filter[0];
+      let key = user_filter.field;
       if (isObject(key)) {
         basis_list.push(key);
-      } else {
-        const {name, type} = getVarNameType(key);
+      } else if (key !== '__index') {
+        const {name, type} = getVarNameType(key, 'obs', datasetInfo);
         user_filter[0] = name;
         if (type === 'X') {
           var_keys.add(name);
@@ -300,14 +291,6 @@ export function groupedStats(groupDimensionInfo, vectors) {
 
 export function toArray(v) {
   const result = new Array(v.size());
-  for (let i = 0, n = v.size(); i < n; i++) {
-    result[i] = v.get(i);
-  }
-  return result;
-}
-
-export function toFloatArray(v) {
-  const result = new Float32Array(v.size());
   for (let i = 0, n = v.size(); i < n; i++) {
     result[i] = v.get(i);
   }

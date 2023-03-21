@@ -96,7 +96,7 @@ export class DirectAccessDataset {
 
   getSelectedIdsPromise(q) {
     const dataFilter = q.filter;
-    const {basis, X, obs} = splitDataFilter(dataFilter);
+    const {basis, X, obs} = splitDataFilter(dataFilter, this.schema);
     let keys = [];
     basis.forEach((embedding) => {
       keys.push(embedding.name);
@@ -161,7 +161,7 @@ export class DirectAccessDataset {
     if (q.selection) {
       // get any embeddings that we're filtering on
       const dataFilter = q.selection.filter;
-      const {basis, X, obs} = splitDataFilter(dataFilter);
+      const {basis, X, obs} = splitDataFilter(dataFilter, this.schema);
       dimensions = dimensions.concat(obs);
       measures = measures.concat(X);
       const embeddings = q.selection.embeddings || [];
@@ -170,14 +170,17 @@ export class DirectAccessDataset {
         basisKeys.add(key);
       });
     }
-
+    let fetchKeys = dimensions
+      .concat(typeToMeasures.obs)
+      .concat(typeToMeasures.X)
+      .concat(Array.from(basisKeys));
+    for (const key in typeToMeasures) {
+      if (key !== 'obs' && key !== 'X') {
+        fetchKeys = fetchKeys.concat(typeToMeasures[key]);
+      }
+    }
     return new Promise((resolve) => {
-      this.fetchData(
-        dimensions
-          .concat(typeToMeasures.obs)
-          .concat(typeToMeasures.X)
-          .concat(Array.from(basisKeys)),
-      ).then(() => {
+      this.fetchData(fetchKeys).then(() => {
         if (q.embedding) {
           results.embeddings = [];
           q.embedding.forEach((embedding) => {
@@ -187,21 +190,21 @@ export class DirectAccessDataset {
           });
         }
         if (q.values) {
-          const dimensions = q.values.dimensions || [];
-          const measures = q.values.measures || [];
           const typeToMeasures = getTypeToMeasures(measures);
+          let keys = [];
+          for (const type in typeToMeasures) {
+            keys = keys.concat(typeToMeasures[type]);
+          }
+          keys = keys.concat(q.values.dimensions || []);
           const values = {};
-          dimensions
-            .concat(typeToMeasures.obs)
-            .concat(typeToMeasures.X)
-            .forEach((key) => {
-              if (key === '__count') {
-                values[key] = new Int8Array(this.schema.shape[0]);
-                values[key].fill(1);
-              } else {
-                values[key] = this.getVector(key).asArray();
-              }
-            });
+          keys.forEach((key) => {
+            if (key === '__count') {
+              values[key] = new Int8Array(this.schema.shape[0]);
+              values[key].fill(1);
+            } else {
+              values[key] = this.getVector(key).asArray();
+            }
+          });
           results.values = values;
         }
         cacheValues(results, cachedData);
