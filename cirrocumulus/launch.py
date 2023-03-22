@@ -1,4 +1,5 @@
 import os
+import argparse
 
 import anndata
 
@@ -98,10 +99,8 @@ def create_app():
     return app
 
 
-def main(argsv):
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run cirrocumulus")
+def create_parser(description=False):
+    parser = argparse.ArgumentParser(description="Run cirrocumulus" if description else None)
     parser.add_argument(
         "dataset",
         help="Path to dataset in h5ad, loom, Seurat, TileDB, zarr, or STAR-Fusion format. Separate multiple datasets with "
@@ -126,7 +125,11 @@ def main(argsv):
         "--results", help="URL to save user computed results (e.g. differential expression)"
     )
     parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
-    args = parser.parse_args(argsv)
+    return parser
+
+
+def main(argsv):
+    args = create_parser(True).parse_args(argsv)
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results
     else:

@@ -1,4 +1,5 @@
 import os
+import argparse
 
 from cirrocumulus.envir import (
     CIRRO_AUTH,
@@ -71,11 +72,8 @@ def configure_app(app):
     add_dataset_providers()
 
 
-def main(argsv):
-    import os
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Run cirrocumulus server")
+def create_parser(description=False):
+    parser = argparse.ArgumentParser(description="Run cirrocumulus server" if description else None)
     parser.add_argument("--db_uri", help="Database connection URI", default=DEFAULT_DB_URI)
     parser.add_argument(
         "-w", "--workers", dest="workers", help="The number of worker processes", type=int
@@ -102,7 +100,11 @@ def main(argsv):
         "--results", help="URL to save user computed results (e.g. differential expression) to"
     )
     parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
-    args = parser.parse_args(argsv)
+    return parser
+
+
+def main(argsv):
+    args = create_parser(True).parse_args(argsv)
 
     bind = args.bind if args.bind is not None else "127.0.0.1:5000"
     if args.ontology is not None:
@@ -118,8 +120,6 @@ def main(argsv):
     if args.workers is not None:
         workers = args.workers
     else:
-        import os
-
         workers = 2 * os.cpu_count()
     if args.upload is not None:
         os.environ[CIRRO_UPLOAD] = args.upload
