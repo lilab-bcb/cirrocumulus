@@ -1,5 +1,8 @@
 Release Notes
 -------------
+- 1.1.51 `March 22, 2023`
+    * Support saving default visualization state in database
+
 - 1.1.50 `March 20, 2023`
     * Support saving/loading `anndata`_ layers in parquet format
 

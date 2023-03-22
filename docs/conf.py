@@ -21,7 +21,7 @@
 
 project = "Cirrocumulus"
 copyright = (
-    "2022 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
+    "2023 The Broad Institute, Inc. and The General Hospital Corporation. All rights reserved."
 )
 author = "Joshua Gould, Bo Li, and Yiming Yang"
 
@@ -49,6 +49,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    "sphinxarg.ext",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

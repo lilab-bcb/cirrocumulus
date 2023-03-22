@@ -314,8 +314,10 @@ class PrepareData:
         return result
 
 
-def main(argsv):
-    parser = argparse.ArgumentParser(description="Prepare a dataset for cirrocumulus server.")
+def create_parser(description=False):
+    parser = argparse.ArgumentParser(
+        description="Prepare a dataset for cirrocumulus server" if description else None
+    )
     parser.add_argument("dataset", help="Path to a h5ad, loom, or Seurat file", nargs="+")
     parser.add_argument("--out", help="Path to output directory")
     parser.add_argument(
@@ -347,7 +349,11 @@ def main(argsv):
         "--group_nfeatures", help="Number of marker genes/features to include", type=int, default=10
     )
     parser.add_argument("--spatial", help=SPATIAL_HELP)
-    args = parser.parse_args(argsv)
+    return parser
+
+
+def main(argsv):
+    args = create_parser(True).parse_args(argsv)
     logger.setLevel(logging.INFO)
     logger.addHandler(logging.StreamHandler())
 

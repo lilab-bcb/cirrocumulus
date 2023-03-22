@@ -1068,14 +1068,14 @@ export function setServerInfo(payload) {
 
 function getDefaultDatasetView(dataset) {
   const embeddingNames = dataset.embeddings.map((e) => e.name);
-  let selectedEmbedding = null;
-  let obsCat = null;
+  let selectedEmbeddings = [];
+  const searchTokens = [];
   if (embeddingNames.length > 0) {
-    let embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
-    let embeddingName = null;
+    const embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
     for (
       let priorityIndex = 0;
-      priorityIndex < embeddingPriorities.length && embeddingName == null;
+      priorityIndex < embeddingPriorities.length &&
+      selectedEmbeddings.length === 0;
       priorityIndex++
     ) {
       for (let i = 0; i < embeddingNames.length; i++) {
@@ -1084,20 +1084,23 @@ function getDefaultDatasetView(dataset) {
             .toLowerCase()
             .indexOf(embeddingPriorities[priorityIndex]) !== -1
         ) {
-          embeddingName = embeddingNames[i];
+          selectedEmbeddings.push(embeddingNames[i]);
           break;
         }
       }
     }
-
-    if (embeddingName == null) {
-      embeddingName = embeddingNames[0];
+    if (selectedEmbeddings.length === 0) {
+      selectedEmbeddings.push(embeddingNames[0]);
     }
-    selectedEmbedding =
-      dataset.embeddings[
-        dataset.embeddings.map((e) => e.name).indexOf(embeddingName)
-      ];
+
+    selectedEmbeddings = selectedEmbeddings.map(
+      (selectedEmbedding) =>
+        dataset.embeddings[embeddingNames.indexOf(selectedEmbedding)],
+    );
   }
+
+  let obsCat = null;
+
   if (dataset.markers != null && dataset.markers.length > 0) {
     let category = dataset.markers[0].category;
     const suffix = ' (rank_genes_';
@@ -1136,19 +1139,30 @@ function getDefaultDatasetView(dataset) {
       }
     }
   }
+  if (obsCat != null) {
+    searchTokens.push({id: obsCat, type: FEATURE_TYPE.OBS_CAT});
+  }
 
-  return {selectedEmbedding, obsCat};
+  return {selectedEmbeddings, searchTokens};
 }
 
 function loadDefaultDatasetView() {
   return function (dispatch, getState) {
     const dataset = getState().dataset;
-    const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
-    if (obsCat != null) {
-      dispatch(setSearchTokens([{id: obsCat, type: FEATURE_TYPE.OBS_CAT}]));
-    }
-    if (selectedEmbedding != null) {
-      dispatch(setSelectedEmbedding([selectedEmbedding]));
+    if (dataset.defaultView) {
+      const savedView = isString(dataset.defaultView)
+        ? JSON.parse(dataset.defaultView)
+        : dataset.defaultView;
+
+      dispatch(restoreSavedView(savedView));
+    } else {
+      const {selectedEmbeddings, searchTokens} = getDefaultDatasetView(dataset);
+      if (searchTokens.length > 0) {
+        dispatch(setSearchTokens(searchTokens));
+      }
+      if (selectedEmbeddings.length > 0) {
+        dispatch(setSelectedEmbedding(selectedEmbeddings));
+      }
     }
   };
 }
@@ -1159,6 +1173,17 @@ function loadDefaultDataset() {
       dispatch(setDataset(getState().datasetChoices[0].id));
     }
   };
+}
+
+function getFeatureType(dataset, feature) {
+  if (findIndex(dataset['var'], (o) => o.id === feature) !== -1) {
+    return FEATURE_TYPE.X;
+  } else if (dataset.obsCat.indexOf(feature) !== -1) {
+    return FEATURE_TYPE.OBS_CAT;
+  } else if (dataset.obs.indexOf(feature) !== -1) {
+    return FEATURE_TYPE.OBS;
+  }
+  return null;
 }
 
 function restoreSavedView(savedView) {
@@ -1198,6 +1223,31 @@ function restoreSavedView(savedView) {
     datasetPromise
       .then(() => {
         let dataset = getState().dataset;
+        if (savedView.embeddings) {
+          for (let i = 0; i < savedView.embeddings.length; i++) {
+            const item = savedView.embeddings[i];
+            if (isString(item)) {
+              savedView.embeddings[i] = {name: item};
+            }
+          }
+        }
+        if (savedView.q) {
+          // add type if not provided
+          const q = [];
+          for (let i = 0; i < savedView.q.length; i++) {
+            const item = savedView.q[i];
+            if (isString(item)) {
+              const type = getFeatureType(dataset, item);
+              if (type != null) {
+                q.push({id: item, type: type});
+              }
+            } else {
+              q.push(savedView.q[i]);
+            }
+          }
+          savedView.q = q;
+        }
+
         if (savedView.embeddings && savedView.embeddings.length > 0) {
           let names = dataset.embeddings.map((e) => getEmbeddingKey(e));
           let embeddings = [];
@@ -1215,23 +1265,28 @@ function restoreSavedView(savedView) {
             savedView.chartOptions.camera = savedView.camera;
           }
         } else {
-          const {selectedEmbedding, obsCat} = getDefaultDatasetView(dataset);
-          if (selectedEmbedding) {
-            savedView.embeddings = [selectedEmbedding];
+          const {selectedEmbeddings, searchTokens} =
+            getDefaultDatasetView(dataset);
+          if (selectedEmbeddings.length > 0) {
+            savedView.embeddings = selectedEmbeddings;
             if (
               (savedView.q == null || savedView.q.length === 0) &&
-              obsCat != null
+              searchTokens.length > 0
             ) {
-              savedView.q = [{id: obsCat, type: FEATURE_TYPE.OBS_CAT}];
+              savedView.q = searchTokens;
               savedView.activeFeature = {
-                name: obsCat,
+                name: searchTokens[0].id,
                 type: FEATURE_TYPE.OBS_CAT,
-                embeddingKey: obsCat + '_' + getEmbeddingKey(selectedEmbedding),
+                embeddingKey:
+                  searchTokens[0].id +
+                  '_' +
+                  getEmbeddingKey(selectedEmbeddings[0]),
               };
             }
           }
         }
       })
+
       .then(() => dispatch(setDatasetFilter(savedView.datasetFilter)))
       .then(() => dispatch(restoreView(savedView)))
       .then(() => dispatch(_updateCharts()))
@@ -2656,6 +2711,7 @@ export function getDatasetStateJson(state) {
     distributionPlotOptions,
     distributionPlotInterpolator,
     embeddings,
+    layers,
     searchTokens,
     interpolator,
     jobResultId,
@@ -2668,6 +2724,7 @@ export function getDatasetStateJson(state) {
   let json = {
     dataset: dataset.id,
     embeddings: embeddings,
+    layers: layers,
   };
   if (jobResultId != null) {
     json.jobId = jobResultId;

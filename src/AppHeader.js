@@ -130,7 +130,7 @@ function AppHeader(props) {
       '//' +
       window.location.host +
       window.location.pathname;
-    linkText += '#q=' + encodeURIComponent(JSON.stringify(getLinkJson()));
+    linkText += '#q=' + JSON.stringify(getLinkJson());
     copyToClipboard(linkText);
     handleMessage('Link copied');
     setMoreMenuOpen(false);
@@ -484,6 +484,7 @@ const mapStateToProps = (state) => {
     interpolator: state.interpolator,
     jobResults: state.jobResults,
     jobResultId: state.jobResultId,
+    layers: state.layers,
     loading: state.loading,
     loadingApp: state.loadingApp,
     markerOpacity: state.markerOpacity,

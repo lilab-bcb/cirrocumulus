@@ -1,4 +1,4 @@
-import {isObject} from 'lodash';
+import {findIndex, isObject} from 'lodash';
 
 import {getPassingFilterIndices} from './dataset_filter';
 import {SlicedVector} from './SlicedVector';
@@ -14,7 +14,7 @@ export function getVarNameType(
   if (index === -1) {
     let keyType = defaultType;
     if (datasetInfo) {
-      if (datasetInfo['var'].indexOf(key) !== -1) {
+      if (findIndex(datasetInfo['var'], (o) => o.id === key) !== -1) {
         keyType = FEATURE_TYPE.X;
       }
     }
