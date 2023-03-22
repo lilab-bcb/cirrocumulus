@@ -1068,14 +1068,14 @@ export function setServerInfo(payload) {
 
 function getDefaultDatasetView(dataset) {
   const embeddingNames = dataset.embeddings.map((e) => e.name);
-  let selectedEmbeddings = [];
-  const searchTokens = [];
+  let defaultEmbeddings = [];
+  const defaultSearchTokens = [];
   if (embeddingNames.length > 0) {
     const embeddingPriorities = ['tissue_hires', 'fle', 'umap', 'tsne'];
     for (
       let priorityIndex = 0;
       priorityIndex < embeddingPriorities.length &&
-      selectedEmbeddings.length === 0;
+      defaultEmbeddings.length === 0;
       priorityIndex++
     ) {
       for (let i = 0; i < embeddingNames.length; i++) {
@@ -1084,16 +1084,16 @@ function getDefaultDatasetView(dataset) {
             .toLowerCase()
             .indexOf(embeddingPriorities[priorityIndex]) !== -1
         ) {
-          selectedEmbeddings.push(embeddingNames[i]);
+          defaultEmbeddings.push(embeddingNames[i]);
           break;
         }
       }
     }
-    if (selectedEmbeddings.length === 0) {
-      selectedEmbeddings.push(embeddingNames[0]);
+    if (defaultEmbeddings.length === 0) {
+      defaultEmbeddings.push(embeddingNames[0]);
     }
 
-    selectedEmbeddings = selectedEmbeddings.map(
+    defaultEmbeddings = defaultEmbeddings.map(
       (selectedEmbedding) =>
         dataset.embeddings[embeddingNames.indexOf(selectedEmbedding)],
     );
@@ -1140,10 +1140,10 @@ function getDefaultDatasetView(dataset) {
     }
   }
   if (obsCat != null) {
-    searchTokens.push({id: obsCat, type: FEATURE_TYPE.OBS_CAT});
+    defaultSearchTokens.push({id: obsCat, type: FEATURE_TYPE.OBS_CAT});
   }
 
-  return {selectedEmbeddings, searchTokens};
+  return {defaultEmbeddings, defaultSearchTokens};
 }
 
 function loadDefaultDatasetView() {
@@ -1156,12 +1156,13 @@ function loadDefaultDatasetView() {
 
       dispatch(restoreSavedView(savedView));
     } else {
-      const {selectedEmbeddings, searchTokens} = getDefaultDatasetView(dataset);
-      if (searchTokens.length > 0) {
-        dispatch(setSearchTokens(searchTokens));
+      const {defaultEmbeddings, defaultSearchTokens} =
+        getDefaultDatasetView(dataset);
+      if (defaultSearchTokens.length > 0) {
+        dispatch(setSearchTokens(defaultSearchTokens));
       }
-      if (selectedEmbeddings.length > 0) {
-        dispatch(setSelectedEmbedding(selectedEmbeddings));
+      if (defaultEmbeddings.length > 0) {
+        dispatch(setSelectedEmbedding(defaultEmbeddings));
       }
     }
   };
@@ -1248,6 +1249,13 @@ function restoreSavedView(savedView) {
           savedView.q = q;
         }
 
+        const {defaultEmbeddings, defaultSearchTokens} =
+          getDefaultDatasetView(dataset);
+
+        if (savedView.q == null || savedView.q.length === 0) {
+          savedView.q = defaultSearchTokens;
+        }
+
         if (savedView.embeddings && savedView.embeddings.length > 0) {
           let names = dataset.embeddings.map((e) => getEmbeddingKey(e));
           let embeddings = [];
@@ -1265,25 +1273,7 @@ function restoreSavedView(savedView) {
             savedView.chartOptions.camera = savedView.camera;
           }
         } else {
-          const {selectedEmbeddings, searchTokens} =
-            getDefaultDatasetView(dataset);
-          if (selectedEmbeddings.length > 0) {
-            savedView.embeddings = selectedEmbeddings;
-            if (
-              (savedView.q == null || savedView.q.length === 0) &&
-              searchTokens.length > 0
-            ) {
-              savedView.q = searchTokens;
-              savedView.activeFeature = {
-                name: searchTokens[0].id,
-                type: FEATURE_TYPE.OBS_CAT,
-                embeddingKey:
-                  searchTokens[0].id +
-                  '_' +
-                  getEmbeddingKey(selectedEmbeddings[0]),
-              };
-            }
-          }
+          savedView.embeddings = defaultEmbeddings;
         }
       })
 
