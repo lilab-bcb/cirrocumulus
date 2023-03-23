@@ -144,7 +144,7 @@ Static Website
 
 Prepare Data
 ^^^^^^^^^^^^^^
-The `prepare_data` command is used to freeze an h5ad, loom, or Seurat file in cirrocumulus format.
+The `prepare_data` command is used to freeze an h5ad, loom, or Seurat (RDS) file in cirrocumulus format.
 The cirrocumulus format allows efficient partial dataset retrieval over a network (e.g Google bucket) using limited memory.
 
 - Example::
