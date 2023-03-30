@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+import {ColorRepresentation} from 'three/src/utils';
+
 export type Color = string;
 
 export interface LabelStyles {
@@ -82,7 +84,7 @@ export interface SpritesStyles {
 }
 
 export interface Styles {
-  backgroundColor: Color;
+  backgroundColor: ColorRepresentation;
   axesVisible: boolean;
   fog: FogStyles;
   label: LabelStyles;

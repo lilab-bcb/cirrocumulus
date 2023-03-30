@@ -1,4 +1,4 @@
-import {isArray, isObject} from 'lodash';
+import {isArray} from 'lodash';
 
 import {getVarNameType} from './VectorUtil';
 
