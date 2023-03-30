@@ -15,8 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-import { Camera, Color, LinearFilter, Texture, Vector3 } from "three";
-import { Point2D, Vector } from "./types";
+import {Camera, Color, LinearFilter, Texture, Vector3} from 'three';
+import {Point2D, Vector} from './types';
+import {ColorRepresentation} from 'three/src/utils';
 
 /** Projects a 3d point into screen space */
 export function vector3DToScreenCoords(
@@ -31,7 +32,7 @@ export function vector3DToScreenCoords(
   // The screen-space origin is at the middle of the screen, with +y up.
   let coords: Point2D = [
     ((pv.x + 1) / 2) * w * dpr,
-    -(((pv.y - 1) / 2) * h) * dpr,
+    -(((pv.y - 1) / 2) * h) * dpr
   ];
   return coords;
 }
@@ -114,8 +115,8 @@ export function createTextureFromImage(
 /** Checks to see if the browser supports webgl. */
 export function hasWebGLSupport(): boolean {
   try {
-    let c = document.createElement("canvas");
-    let gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    let c = document.createElement('canvas');
+    let gl = c.getContext('webgl') || c.getContext('experimental-webgl');
     return gl != null;
   } catch (e) {
     return false;
@@ -169,9 +170,9 @@ export function packRgbIntoUint8Array(
 }
 
 export function styleRgbFromHexColor(
-  hex: number | string
+  hex: ColorRepresentation
 ): [number, number, number] {
-  const c = new Color(hex as string);
+  const c = new Color(hex);
   return [(c.r * 255) | 0, (c.g * 255) | 0, (c.b * 255) | 0];
 }
 
@@ -187,6 +188,6 @@ export function getDefaultPointInPolylineColor(
 ): Color {
   let hue = startHue + ((endHue - startHue) * index) / totalPoints;
 
-  const hsl = `hsl(${hue}, ${toPercent(saturation)}, ${toPercent(lightness)})`;
+  const hsl: ColorRepresentation = `hsl(${hue}, ${toPercent(saturation)}, ${toPercent(lightness)})`;
   return new Color(hsl);
 }

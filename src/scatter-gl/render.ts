@@ -16,6 +16,7 @@ limitations under the License.
 ==============================================================================*/
 
 import { Camera, Vector3 } from "three";
+import {ColorRepresentation} from 'three/src/utils';
 
 /**
  * LabelRenderParams describes the set of points that should have labels
@@ -56,7 +57,7 @@ export class RenderContext {
     public screenHeight: number,
     public nearestCameraSpacePointZ: number,
     public farthestCameraSpacePointZ: number,
-    public backgroundColor: string,
+    public backgroundColor: ColorRepresentation,
     public pointColors: Float32Array,
     public pointScaleFactors: Float32Array,
     public labels: LabelRenderParams | undefined,

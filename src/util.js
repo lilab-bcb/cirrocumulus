@@ -511,7 +511,7 @@ function getColorsRgba(trace) {
     }
     for (let i = 0, dst = 0; i < npoints; ++i) {
       const value = trace.values[i];
-      if (Number.isNaN(value)) {
+      if (value == null || Number.isNaN(value)) {
         colors[dst++] = unknown.r;
         colors[dst++] = unknown.g;
         colors[dst++] = unknown.b;
