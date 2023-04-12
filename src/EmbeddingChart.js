@@ -6,6 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PercentIcon from '@mui/icons-material/Percent';
 import {connect} from 'react-redux';
 import NumbersIcon from '@mui/icons-material/Numbers';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import {
   getTraceKey,
   handleBrushFilterUpdated,
@@ -115,6 +116,10 @@ function EmbeddingChart(props) {
     setSortOrder(value);
   }
 
+  function handleInvertSelection() {
+    onDimensionFilterUpdated({name: primaryTrace.name, invert: true});
+  }
+
   function handleSaveColors() {
     const name = primaryTrace.name;
     const scale = primaryTrace.colorScale;
@@ -176,6 +181,20 @@ function EmbeddingChart(props) {
   if (primaryTrace == null) {
     console.log(activeFeature.embeddingKey + ' not found');
     return null;
+  }
+  let invertDisabled = true;
+  if (!primaryTrace.continuous) {
+    let categoricalFilter = datasetFilter[primaryTrace.name];
+    if (categoricalFilter != null && categoricalFilter.value.length > 0) {
+      let categories;
+      for (let i = 0; i < embeddingData.length; i++) {
+        if (embeddingData[i].name === primaryTrace.name) {
+          categories = embeddingData[i].colorScale.domain();
+          break;
+        }
+      }
+      invertDisabled = categories.length === categoricalFilter.value.length;
+    }
   }
   const nObsSelected = selection != null ? selection.size : 0;
   const activeEmbeddingLabels = getActiveEmbeddingLabels(
@@ -239,6 +258,22 @@ function EmbeddingChart(props) {
                     <NumbersIcon />
                   </IconButton>
                 </Tooltip>
+
+                <Tooltip title={'Invert Selection'}>
+                  <span>
+                    <IconButton
+                      edge={false}
+                      size={'small'}
+                      disabled={invertDisabled}
+                      style={{padding: 0}}
+                      aria-label="Invert Selection"
+                      onClick={() => handleInvertSelection()}
+                    >
+                      <CheckBoxIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+
                 <Tooltip title={'Save Colors'}>
                   <IconButton
                     edge={false}
