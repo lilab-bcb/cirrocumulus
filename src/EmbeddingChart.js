@@ -1,7 +1,7 @@
 import {Tooltip, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
 import {find} from 'lodash';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PercentIcon from '@mui/icons-material/Percent';
 import {connect} from 'react-redux';
@@ -37,6 +37,8 @@ import memoize from 'memoize-one';
 import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
 import IconButton from '@mui/material/IconButton';
 import SaveIcon from '@mui/icons-material/Save';
+import MenuItem from '@mui/material/MenuItem';
+import Menu from '@mui/material/Menu';
 
 const getActiveEmbeddingLabels = memoize((searchTokens, embeddingLabels) => {
   return searchTokens
@@ -88,8 +90,9 @@ function EmbeddingChart(props) {
 
   const [showLegend, setShowLegend] = useState(true);
   const [sortOrder, setSortOrder] = useState('alpha'); // alpha, percent, size
-
+  const [selectionMenuOpen, setSelectionMenuOpen] = useState(false);
   const active = 'cirro-active';
+  const selectionMenuAnchorEl = useRef();
   useEffect(() => {
     window.addEventListener('resize', handleWindowSize);
     return () => {
@@ -117,7 +120,13 @@ function EmbeddingChart(props) {
   }
 
   function handleInvertSelection() {
+    setSelectionMenuOpen(false);
     onDimensionFilterUpdated({name: primaryTrace.name, invert: true});
+  }
+
+  function handleClearSelection() {
+    setSelectionMenuOpen(false);
+    onDimensionFilterUpdated({name: primaryTrace.name, clear: true});
   }
 
   function handleSaveColors() {
@@ -259,18 +268,40 @@ function EmbeddingChart(props) {
                   </IconButton>
                 </Tooltip>
 
-                <Tooltip title={'Invert Selection'}>
+                <Tooltip title={'Selection'}>
                   <span>
                     <IconButton
                       edge={false}
                       size={'small'}
+                      ref={selectionMenuAnchorEl}
                       disabled={invertDisabled}
                       style={{padding: 0}}
                       aria-label="Invert Selection"
-                      onClick={() => handleInvertSelection()}
+                      onClick={() => setSelectionMenuOpen(true)}
                     >
                       <CheckBoxIcon />
                     </IconButton>
+                    <Menu
+                      id="selection-menu"
+                      anchorEl={selectionMenuAnchorEl.current}
+                      anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                      open={selectionMenuOpen}
+                      onClose={() => setSelectionMenuOpen(false)}
+                    >
+                      <MenuItem onClick={handleClearSelection}>
+                        Clear Selection
+                      </MenuItem>
+                      <MenuItem onClick={handleInvertSelection}>
+                        Invert Selection
+                      </MenuItem>
+                    </Menu>
                   </span>
                 </Tooltip>
 

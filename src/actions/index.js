@@ -917,6 +917,7 @@ export function handleDimensionFilterUpdated(payload) {
     const shiftKey = payload.shiftKey;
     const metaKey = payload.metaKey;
     const invert = payload.invert;
+    const clear = payload.clear;
     const datasetFilter = getState().datasetFilter;
     const embeddingData = getState().embeddingData;
     let categories;
@@ -939,6 +940,8 @@ export function handleDimensionFilterUpdated(payload) {
         }
       });
       categoricalFilter.value = invertedValues;
+    } else if (clear) {
+      delete datasetFilter[name];
     } else if (shiftKey && categoricalFilter.value.length > 0) {
       // add last click to current
       let lastIndex = categories.indexOf(
