@@ -144,7 +144,7 @@ const FRAGMENT_SHADER = `
       float fogFactor = smoothstep( fogNear, fogFar, fogDepth );
       gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
     }`;
-
+const NUM_POINTS_FOG_THRESHOLD = 5000;
 /**
  * Uses GL point sprites, either generated or from a spritesheet image to
  * render the dataset.
@@ -176,7 +176,6 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
       fogColor: { type: "c" },
       fogNear: { type: "f" },
       fogFar: { type: "f" },
-      isImage: { type: "bool" },
       sizeAttenuation: { type: "bool" },
       pointSize: { type: "f" },
     };
@@ -190,10 +189,9 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
       vertexShader: VERTEX_SHADER,
       fragmentShader: FRAGMENT_SHADER,
       transparent: true,
-      // @ts-ignore
       fog: true,
-      depthTest: true,
-      depthWrite: true,
+      depthTest: false,
+      depthWrite: false,
       blending: NormalBlending,
     });
   }
@@ -245,7 +243,7 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
       "scaleFactor",
       new BufferAttribute(new Float32Array([]), INDEX_NUM_ELEMENTS)
     );
-    geometry.computeVertexNormals();
+    // geometry.computeVertexNormals();
     return geometry;
   }
 
@@ -262,7 +260,8 @@ export class ScatterPlotVisualizerSprites implements ScatterPlotVisualizer {
       // If there are fewer points we want less fog. We do this
       // by making the "far" value (that is, the distance from the camera to the
       // far edge of the fog) proportional to the number of points.
-      let multiplier = 2 - Math.min(n, threshold) / threshold;
+      let multiplier =
+        2 - Math.min(n, NUM_POINTS_FOG_THRESHOLD) / NUM_POINTS_FOG_THRESHOLD;
       this.fog.far = farthestPointZ * multiplier;
     } else {
       this.fog.near = Infinity;
