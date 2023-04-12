@@ -653,21 +653,14 @@ export function datasetFilterToJson(
   combineDatasetFilters,
 ) {
   let filters = getDatasetFilterArray(datasetFilter);
-  if (filters.length > 0) {
-    const obs = dataset.obs;
-    const obsCat = dataset.obsCat;
-    for (let i = 0; i < filters.length; i++) {
-      // add obs/ prefix
-      const filter = filters[i];
-      if (filter.field === '__index') {
-        filter.value = Array.from(filter.value); // convert Set to array
-      } else if (
-        obsCat.indexOf(filter.field) !== -1 ||
-        obs.indexOf(filter.field) !== -1
-      ) {
-        filter.field = 'obs/' + filter.field;
-      }
+
+  for (let i = 0; i < filters.length; i++) {
+    // add obs/ prefix
+    const filter = filters[i];
+    if (filter.field === '__index') {
+      filter.value = Array.from(filter.value); // convert Set to array
     }
+
     return {filters: filters, combine: combineDatasetFilters};
   }
 }
@@ -803,9 +796,10 @@ function handleFilterUpdated() {
     for (const key in groupedSearchTokens) {
       if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
         const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
-        groupedSearchTokens[key].forEach((item) =>
-          measures.push(prefix + item.id),
-        );
+
+        groupedSearchTokens[key].forEach((item) => {
+          measures.push(prefix + item.id);
+        });
       }
     }
 
@@ -918,12 +912,13 @@ export function handleMeasureFilterUpdated(payload) {
 
 export function handleDimensionFilterUpdated(payload) {
   return function (dispatch, getState) {
-    let name = payload.name;
-    let newValue = payload.value;
-    let shiftKey = payload.shiftKey;
-    let metaKey = payload.metaKey;
-    let datasetFilter = getState().datasetFilter;
-    let embeddingData = getState().embeddingData;
+    const name = payload.name; // category name, e.g. leiden
+    const newValue = payload.value;
+    const shiftKey = payload.shiftKey;
+    const metaKey = payload.metaKey;
+    const invert = payload.invert;
+    const datasetFilter = getState().datasetFilter;
+    const embeddingData = getState().embeddingData;
     let categories;
     for (let i = 0; i < embeddingData.length; i++) {
       if (embeddingData[i].name === name) {
@@ -936,8 +931,15 @@ export function handleDimensionFilterUpdated(payload) {
       categoricalFilter = {operation: 'in', value: []};
       datasetFilter[name] = categoricalFilter;
     }
-
-    if (shiftKey && categoricalFilter.value.length > 0) {
+    if (invert) {
+      const invertedValues = [];
+      categories.forEach((category) => {
+        if (categoricalFilter.value.indexOf(category) === -1) {
+          invertedValues.push(category);
+        }
+      });
+      categoricalFilter.value = invertedValues;
+    } else if (shiftKey && categoricalFilter.value.length > 0) {
       // add last click to current
       let lastIndex = categories.indexOf(
         categoricalFilter.value[categoricalFilter.value.length - 1],
@@ -1141,6 +1143,8 @@ function getDefaultDatasetView(dataset) {
   }
   if (obsCat != null) {
     defaultSearchTokens.push({id: obsCat, type: FEATURE_TYPE.OBS_CAT});
+  } else if (dataset.obs.length > 0) {
+    defaultSearchTokens.push({id: dataset.obs[0], type: FEATURE_TYPE.OBS});
   }
 
   return {defaultEmbeddings, defaultSearchTokens};
@@ -1238,9 +1242,11 @@ function restoreSavedView(savedView) {
           for (let i = 0; i < savedView.q.length; i++) {
             const item = savedView.q[i];
             if (isString(item)) {
-              const type = getFeatureType(dataset, item);
-              if (type != null) {
-                q.push({id: item, type: type});
+              if (item !== '__index') {
+                const type = getFeatureType(dataset, item);
+                if (type != null) {
+                  q.push({id: item, type: type});
+                }
               }
             } else {
               q.push(savedView.q[i]);
@@ -1561,18 +1567,25 @@ export function deleteJobResult(payload) {
 
 export function downloadJobResult(job) {
   return function (dispatch, getState) {
-    if (job.data != null) {
-      // data already loaded
-      updateJob(job);
-      exportJobResult(job);
+    if (job.jobType === 'de') {
+      if (job.data != null) {
+        // data already loaded
+        updateJob(job);
+        exportJobResult(job);
+      } else {
+        getState()
+          .dataset.api.getJob(job.id)
+          .then((jobResult) => {
+            jobResult = Object.assign(job, jobResult);
+            updateJob(jobResult);
+            exportJobResult(jobResult);
+          });
+      }
     } else {
+      // download the file
       getState()
-        .dataset.api.getJob(job.id)
-        .then((jobResult) => {
-          jobResult = Object.assign(job, jobResult);
-          updateJob(jobResult);
-          exportJobResult(jobResult);
-        });
+        .dataset.api.getJob(job.id, true)
+        .then((result) => {});
     }
   };
 }
@@ -2085,7 +2098,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
         state.datasetFilter,
       );
       filterDependencies.features.forEach((feature) => {
-        if (cachedData[feature] == null) {
+        if (cachedData[feature] == null && feature !== '__index') {
           valuesToFetch.add(feature);
         }
       });
