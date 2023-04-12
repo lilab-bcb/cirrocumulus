@@ -132,10 +132,14 @@ const FRAGMENT_SHADER = `
     uniform float fogFar;
 
     void main() {
+      if(vColor[3] == 0.0) {
+        discard;
+      }
       bool inside = point_in_unit_circle(gl_PointCoord);
       if (!inside) {
         discard;
       }
+
       gl_FragColor = vColor;
       float fogFactor = smoothstep( fogNear, fogFar, fogDepth );
       gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
