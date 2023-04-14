@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import {debounce} from 'lodash';
 import React, {useEffect, useMemo} from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';
-import {numberFormat, numberFormat2f} from './formatters';
+import {formatNumber, numberFormat, numberFormat2f} from './formatters';
 import {stripTrailingZeros} from './util';
 
 export function EditableColorScheme(props) {
@@ -66,8 +66,8 @@ export function EditableColorScheme(props) {
       colorMax = stripTrailingZeros(numberFormat(domain[1]));
     }
     if (colorMin !== '' && colorMin === colorMax) {
-      colorMin = stripTrailingZeros(numberFormat2f(domain[0]));
-      colorMax = stripTrailingZeros(numberFormat2f(domain[1]));
+      colorMin = formatNumber(domain[0]);
+      colorMax = formatNumber(domain[1]);
     }
   }
   const width = 176;

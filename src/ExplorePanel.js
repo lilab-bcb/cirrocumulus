@@ -15,7 +15,7 @@ import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FontDownloadRoundedIcon from '@mui/icons-material/FontDownloadRounded';
-import {findIndex, groupBy, isArray, isObject} from 'lodash';
+import {findIndex, find, groupBy, isArray, isObject} from 'lodash';
 import memoize from 'memoize-one';
 import React, {useState} from 'react';
 import withStyles from '@mui/styles/withStyles';
@@ -124,6 +124,28 @@ const getLayersOptions = (layers) => {
     return [];
   }
 };
+const getJobTypeToOptions = memoize((jobResults) => {
+  const jobTypeToOptions = {};
+
+  if (jobResults) {
+    jobResults.forEach((item) => {
+      let options = jobTypeToOptions[item.type];
+      if (!options) {
+        options = [];
+        jobTypeToOptions[item.type] = options;
+      }
+
+      const option = {text: item.name, id: item.id};
+      options.push(option);
+    });
+    for (let key in jobTypeToOptions) {
+      jobTypeToOptions[key].sort((item1, item2) => {
+        return NATSORT(item1.text.toLowerCase(), item2.text.toLowerCase());
+      });
+    }
+  }
+  return jobTypeToOptions;
+});
 const getModulesOptions = memoize((items) => {
   if (items) {
     const options = items.slice();
@@ -217,6 +239,7 @@ function ExplorePanel(props) {
     embeddingLabels,
     embeddings,
     embeddingData,
+    jobResults,
     layers,
     handleDialog,
     handleCombineDatasetFilters,
@@ -248,58 +271,44 @@ function ExplorePanel(props) {
     handleCombineDatasetFilters(event.target.checked ? 'or' : 'and');
   }
 
-  function onFeaturesChange(event, values) {
+  function updateSelectedFeatures(values, filterTypes, tokenType) {
     handleSearchTokens(
       searchTokens
-        .filter((token) => token.type !== FEATURE_TYPE.X)
+        .filter((token) => filterTypes.indexOf(token.type) === -1)
         .concat(
           values.map((item) => {
-            return {id: item.id, type: FEATURE_TYPE.X};
+            return {id: item.id, type: tokenType ? tokenType : item.type};
           }),
         ),
     );
+  }
+
+  function onTrajectoriesChange(event, values) {
+    updateSelectedFeatures(
+      values,
+      [FEATURE_TYPE.JOB_RESULT],
+      FEATURE_TYPE.JOB_RESULT,
+      true,
+    );
+  }
+
+  function onFeaturesChange(event, values) {
+    updateSelectedFeatures(values, [FEATURE_TYPE.X], FEATURE_TYPE.X);
   }
 
   function onModulesChange(event, values) {
-    handleSearchTokens(
-      searchTokens
-        .filter((token) => token.type !== FEATURE_TYPE.MODULE)
-        .concat(
-          values.map((item) => {
-            return {id: item.id, type: FEATURE_TYPE.MODULE};
-          }),
-        ),
-    );
+    updateSelectedFeatures(values, [FEATURE_TYPE.MODULE], FEATURE_TYPE.MODULE);
   }
 
   function onObservationsChange(event, values) {
-    handleSearchTokens(
-      searchTokens
-        .filter(
-          (token) =>
-            token.type !== FEATURE_TYPE.OBS &&
-            token.type !== FEATURE_TYPE.OBS_CAT,
-        )
-        .concat(
-          values.map((item) => {
-            return {id: item.id, type: item.type};
-          }),
-        ),
-    );
+    updateSelectedFeatures(values, [FEATURE_TYPE.OBS, FEATURE_TYPE.OBS_CAT]);
   }
 
   function onFeatureSetsChange(event, values) {
-    handleSearchTokens(
-      searchTokens
-        .filter((token) => token.type !== FEATURE_TYPE.FEATURE_SET)
-        .concat(
-          values.map((item) => {
-            return {
-              id: item.id != null ? item.id : item,
-              type: FEATURE_TYPE.FEATURE_SET,
-            };
-          }),
-        ),
+    updateSelectedFeatures(
+      values,
+      [FEATURE_TYPE.FEATURE_SET],
+      FEATURE_TYPE.FEATURE_SET,
     );
   }
 
@@ -330,37 +339,33 @@ function ExplorePanel(props) {
     handleLayers(value);
   }
 
-  function onFeatureSetClick(event, option) {
+  function onFeatureClick(event, option, options) {
     event.stopPropagation();
     const id = option.id;
     const target = event.target.closest('.MuiFormControl-root');
-    let newFeatureSet = null;
-    for (let i = 0; i < markers.length; i++) {
-      if (markers[i].id === id) {
-        newFeatureSet = markers[i];
+    let selected = null;
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].id === id) {
+        selected = options[i];
         break;
       }
     }
-    if (newFeatureSet == null) {
-      console.log(id + ' not found');
-    }
     setPopupAnchorEl(target);
-    setSelectedItem({value: newFeatureSet, type: FEATURE_TYPE.FEATURE_SET});
+    return selected;
+  }
+
+  function onFeatureSetClick(event, option) {
+    const selection = onFeatureClick(event, option, markers);
+    if (selection != null) {
+      setSelectedItem({value: selection, type: FEATURE_TYPE.FEATURE_SET});
+    }
   }
 
   function onModulesClick(event, option) {
-    event.stopPropagation();
-    const target = event.target.closest('.MuiFormControl-root');
-    const modules = dataset.modules;
-    let selectedItem;
-    for (let i = 0, n = modules.length; i < n; i++) {
-      if (modules[i].id === option.id) {
-        selectedItem = modules[i];
-        break;
-      }
+    const selection = onFeatureClick(event, option, dataset.modules);
+    if (selection != null) {
+      setSelectedItem({value: selection, type: FEATURE_TYPE.MODULE});
     }
-    setPopupAnchorEl(target);
-    setSelectedItem({value: selectedItem, type: FEATURE_TYPE.MODULE});
   }
 
   function onMenuClose(event) {
@@ -454,8 +459,12 @@ function ExplorePanel(props) {
     groupedSearchTokens[FEATURE_TYPE.FEATURE_SET] || [],
   );
   const moduleTokens = groupedSearchTokens[FEATURE_TYPE.MODULE] || [];
+  const jobResultTokens = groupedSearchTokens[FEATURE_TYPE.JOB_RESULT] || [];
   const featureOptions = dataset.features;
   const moduleOptions = getModulesOptions(dataset.modules);
+  const jobTypeToOptions = getJobTypeToOptions(jobResults);
+  const trajectoryOptions = jobTypeToOptions['ot_trajectory'];
+
   const obsCat = dataset.obsCat;
   const obs = dataset.obs;
   const annotationOptions = getAnnotationOptions(obs, obsCat);
@@ -681,6 +690,28 @@ function ExplorePanel(props) {
             />
           </FormControl>
         )}
+        {trajectoryOptions && trajectoryOptions.length > 0 && (
+          <FormControl sx={{display: 'block'}}>
+            <AutocompleteVirtualized
+              label={'Trajectories'}
+              testId={'trajectories-input'}
+              options={trajectoryOptions}
+              getOptionLabel={(option) => option.text}
+              getChipText={(option) =>
+                find(
+                  trajectoryOptions,
+                  (trajectoryOption) => trajectoryOption.id === option.id,
+                ).text
+              }
+              value={jobResultTokens}
+              getOptionSelected={(option, value) =>
+                findIndex(jobResultTokens, (item) => item.id === option.id) !==
+                -1
+              }
+              onChange={onTrajectoriesChange}
+            />
+          </FormControl>
+        )}
         {
           <FormControl sx={{display: 'block', minHeight: 62}}>
             <AutocompleteVirtualized
@@ -829,6 +860,7 @@ const mapStateToProps = (state) => {
     embeddingData: state.embeddingData,
     embeddingLabels: state.embeddingLabels,
     embeddings: state.embeddings,
+    jobResults: state.jobResults,
     layers: state.layers,
     markers: state.markers,
     savedDatasetFilter: state.savedDatasetFilter,

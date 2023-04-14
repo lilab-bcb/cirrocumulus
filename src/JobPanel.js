@@ -55,6 +55,7 @@ function JobPanel(props) {
   const [jobName, setJobName] = useState('');
   const [jobParams, setJobParams] = useState(null);
   const [compareMenu, setCompareMenu] = useState(null);
+  const [tmapMenu, setTmapMenu] = useState(null);
 
   const [compareCategories, setCompareCategories] = useState([]);
 
@@ -150,6 +151,22 @@ function JobPanel(props) {
     setJobParams(p);
   }
 
+  function onSubmitTrajectory(transportMapName) {
+    setJobName('');
+    const p = {
+      type: 'ot_trajectory',
+      params: {version: '1.0.0'},
+    };
+    p.params.filter = datasetFilterToJson(
+      dataset,
+      datasetFilter,
+      combineDatasetFilters,
+    );
+    p.params.tmap = transportMapName;
+
+    setJobParams(p);
+  }
+
   return (
     <>
       <Dialog
@@ -195,11 +212,11 @@ function JobPanel(props) {
             component={'h1'}
             style={{textTransform: 'uppercase'}}
           >
-            Compare
+            Analyze
           </Typography>
-
+          <InputLabel shrink>Differential Expression</InputLabel>
           <FormControl className={classes.formControl}>
-            <InputLabel htmlFor="comparison_select">Comparisons</InputLabel>
+            <InputLabel htmlFor="comparison_select">Compare</InputLabel>
             <Select
               label={'Comparisons'}
               labelId={'comparison_select'}
@@ -220,28 +237,37 @@ function JobPanel(props) {
           {comparisonsOption === 'selection' && (
             <ButtonGroup
               variant="outlined"
+              style={{marginRight: 6}}
               disabled={selection == null || selection.size === 0}
             >
-              <Tooltip
-                title={
-                  'Group one' +
-                  (group1Count ? ' (' + intFormat(group1Count) + ' cells)' : '')
-                }
-              >
-                <Button size={'small'} onClick={(event) => onSetGroup(1)}>
-                  1
-                </Button>
-              </Tooltip>
-              <Tooltip
-                title={
-                  'Group two' +
-                  (group2Count ? ' (' + intFormat(group2Count) + ' cells)' : '')
-                }
-              >
-                <Button size={'small'} onClick={(event) => onSetGroup(2)}>
-                  2
-                </Button>
-              </Tooltip>
+              <span>
+                <Tooltip
+                  title={
+                    'Group one' +
+                    (group1Count
+                      ? ' (' + intFormat(group1Count) + ' cells)'
+                      : '')
+                  }
+                >
+                  <Button size={'small'} onClick={(event) => onSetGroup(1)}>
+                    1
+                  </Button>
+                </Tooltip>
+              </span>
+              <span>
+                <Tooltip
+                  title={
+                    'Group two' +
+                    (group2Count
+                      ? ' (' + intFormat(group2Count) + ' cells)'
+                      : '')
+                  }
+                >
+                  <Button size={'small'} onClick={(event) => onSetGroup(2)}>
+                    2
+                  </Button>
+                </Tooltip>
+              </span>
             </ButtonGroup>
           )}
           {comparisonsOption !== 'selection' && (
@@ -260,41 +286,121 @@ function JobPanel(props) {
               />
             </FormControl>
           )}
-
-          <Button
-            size={'small'}
-            variant={'outlined'}
-            endIcon={<ArrowDropDownIcon />}
-            disabled={
-              (comparisonsOption === 'selection' &&
-                (group1 == null || group2 == null)) ||
-              (comparisonsOption !== 'selection' &&
-                compareCategories.length === 0)
-            }
-            onClick={(event) => setCompareMenu(event.currentTarget)}
-          >
-            GO
-          </Button>
-          <Menu
-            variant={'menu'}
-            id="compare-menu"
-            anchorEl={compareMenu}
-            open={Boolean(compareMenu)}
-            onClose={(event) => setCompareMenu(null)}
-          >
-            {compareActions.map((action) => (
-              <MenuItem
-                title={action.title}
-                key={action.jobType}
-                onClick={(event) => {
-                  onSubmitJob(action.jobType, action.version);
-                  setCompareMenu(null);
-                }}
+          {compareActions.length == 1 && (
+            <>
+              <Button
+                size={'small'}
+                variant={'outlined'}
+                title={compareActions[0].title}
+                disabled={
+                  (comparisonsOption === 'selection' &&
+                    (group1 == null || group2 == null)) ||
+                  (comparisonsOption !== 'selection' &&
+                    compareCategories.length === 0)
+                }
+                onClick={(event) =>
+                  onSubmitJob(
+                    compareActions[0].jobType,
+                    compareActions[0].version,
+                  )
+                }
               >
-                {action.title}
-              </MenuItem>
-            ))}
-          </Menu>
+                GO
+              </Button>
+            </>
+          )}
+          {compareActions.length > 1 && (
+            <>
+              <Button
+                size={'small'}
+                variant={'outlined'}
+                endIcon={<ArrowDropDownIcon />}
+                disabled={
+                  (comparisonsOption === 'selection' &&
+                    (group1 == null || group2 == null)) ||
+                  (comparisonsOption !== 'selection' &&
+                    compareCategories.length === 0)
+                }
+                onClick={(event) => setCompareMenu(event.currentTarget)}
+              >
+                GO
+              </Button>
+              <Menu
+                variant={'menu'}
+                id="compare-menu"
+                anchorEl={compareMenu}
+                open={Boolean(compareMenu)}
+                onClose={(event) => setCompareMenu(null)}
+              >
+                {compareActions.map((action) => (
+                  <MenuItem
+                    title={action.title}
+                    key={action.jobType}
+                    onClick={(event) => {
+                      onSubmitJob(action.jobType, action.version);
+                      setCompareMenu(null);
+                    }}
+                  >
+                    {action.title}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
+          {dataset.ot && (
+            <div style={{marginTop: 6}}>
+              <InputLabel shrink>Trajectories</InputLabel>
+              {dataset.ot.tmaps.length > 1 && (
+                <>
+                  <Button
+                    size={'small'}
+                    variant={'outlined'}
+                    title={
+                      'Generate trajectory for selected cells at the given time'
+                    }
+                    disabled={selection == null || selection.size === 0}
+                    onClick={(event) => setCompareMenu(event.currentTarget)}
+                  >
+                    GO
+                  </Button>
+                  <Menu
+                    variant={'menu'}
+                    id="tmap-menu"
+                    anchorEl={tmapMenu}
+                    open={Boolean(tmapMenu)}
+                    onClose={(event) => setTmapMenu(null)}
+                  >
+                    {dataset.ot.tmaps.map((tmap) => (
+                      <MenuItem
+                        key={tmap.name}
+                        onClick={(event) => {
+                          onSubmitTrajectory(tmap.name);
+                          setTmapMenu(null);
+                        }}
+                      >
+                        {tmap.name}
+                      </MenuItem>
+                    ))}
+                  </Menu>
+                </>
+              )}
+              {dataset.ot.tmaps.length === 1 && (
+                <Button
+                  size={'small'}
+                  variant={'outlined'}
+                  title={
+                    'Generate trajectory for selected cells at the given time'
+                  }
+                  disabled={selection == null || selection.size === 0}
+                  onClick={(event) =>
+                    onSubmitTrajectory(dataset.ot.tmaps[0].name)
+                  }
+                >
+                  GO
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>

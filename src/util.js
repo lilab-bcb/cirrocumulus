@@ -125,6 +125,7 @@ export const FEATURE_TYPE = {
   FEATURE_SET: 'featureSet',
   MODULE: 'module',
   COUNT: 'count',
+  JOB_RESULT: 'job_result',
 };
 
 export const FEATURE_TYPE_MEASURES_EXCLUDE = [

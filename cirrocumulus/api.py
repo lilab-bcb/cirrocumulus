@@ -2,6 +2,8 @@ import os
 import json
 from urllib.parse import urlparse
 
+import pandas as pd
+import anndata
 from flask import Blueprint, Response, request, stream_with_context
 
 import cirrocumulus.data_processing as data_processing
@@ -101,7 +103,7 @@ def get_file_path(file, dataset_url):
     return file_path
 
 
-def send_file(file_path):
+def send_file(file_path, as_attachment=False):
     import mimetypes
 
     mimetype, encoding = mimetypes.guess_type(file_path)
@@ -118,6 +120,8 @@ def send_file(file_path):
 
     r = Response(stream_with_context(generate()), mimetype=mimetype)
     r.headers["Content-Encoding"] = encoding
+    if as_attachment:
+        r.headers["Content-Disposition"] = f'attachment; filename="{os.path.basename(file_path)}"'
     return r
 
 
@@ -527,28 +531,26 @@ def handle_job():
         delete_job(job_id)
         return json_response("", 204)
     elif request.method == "POST":
-        if os.environ.get("GAE_APPLICATION") is None:  # TODO
-            content = request.get_json(force=True, cache=False)
-            email, dataset = get_email_and_dataset(content)
-            params = content.get("params")
-            job_type = content.get("type")
-            job_name = content.get("name")
-            return dict(
-                id=submit_job(
-                    database_api=database_api,
-                    dataset_api=dataset_api,
-                    email=email,
-                    dataset=dataset,
-                    job_name=job_name,
-                    job_type=job_type,
-                    params=params,
-                )
+        content = request.get_json(force=True, cache=False)
+        email, dataset = get_email_and_dataset(content)
+        params = content.get("params")
+        job_type = content.get("type")
+        job_name = content.get("name")
+        return dict(
+            id=submit_job(
+                database_api=database_api,
+                dataset_api=dataset_api,
+                email=email,
+                dataset=dataset,
+                job_name=job_name,
+                job_type=job_type,
+                params=params,
             )
-        else:
-            raise ValueError("Submit job not supported on GAE")
+        )
     else:
         job_id = request.args["id"]
         c = request.args["c"]
+        download = request.args.get("dl") == "1"
         is_precomputed = job_id.startswith("cirro-")
         if c == "status" or c == "params":
             if is_precomputed:
@@ -572,12 +574,14 @@ def handle_job():
             else:
                 return send_file(job_result)
         job = database_api.get_job(email=email, job_id=job_id, return_type=c)
+
         if job is None:
             return json_response("", 404)  # job deleted
-        import anndata
 
         if isinstance(job, dict) and "url" in job:
             url = job["url"]
+            if download:
+                return send_file(url, True)
             content_type = job.get("content-type")
             if content_type == "application/h5ad" or content_type == "application/zarr":
                 if content_type == "application/h5ad":
@@ -588,6 +592,13 @@ def handle_job():
                 adata_df = adata_to_df(adata)
                 return Response(
                     adata_df.to_json(double_precision=2, orient="records"),
+                    content_type="application/json",
+                )
+            elif content_type == "application/parquet":
+                df = pd.read_parquet(url)
+
+                return Response(
+                    df.to_json(double_precision=6, orient="columns"),
                     content_type="application/json",
                 )
             else:

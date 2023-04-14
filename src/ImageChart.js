@@ -8,7 +8,7 @@ import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
-import {numberFormat2f} from './formatters';
+import {formatNumber, numberFormat2f} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
 import {getCategoryLabelsPositions, getLabels} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
@@ -266,10 +266,7 @@ class ImageChart extends React.PureComponent {
         }
       }
       if (typeof value === 'number') {
-        value = numberFormat2f(value);
-        if (value.endsWith('.00')) {
-          value = value.substring(0, value.lastIndexOf('.'));
-        }
+        value = formatNumber(value);
       }
       const parentRect =
         this.tooltipElement.parentElement.getBoundingClientRect();

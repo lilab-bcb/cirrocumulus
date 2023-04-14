@@ -1,5 +1,5 @@
 import React from 'react';
-import {numberFormat, numberFormat0} from './formatters';
+import {formatNumber, numberFormat, numberFormat0} from './formatters';
 import {FEATURE_TYPE, stripTrailingZeros} from './util';
 
 function ContinuousLegend(props) {
@@ -36,12 +36,12 @@ function ContinuousLegend(props) {
         <tbody>
           <tr>
             <td style={{textAlign: 'right'}}>{'Mean'}:</td>
-            <td>{stripTrailingZeros(numberFormat(globalSummary.mean))}</td>
+            <td>{formatNumber(globalSummary.mean)}</td>
             {showSelectionStats && (
               <td>
                 {isNaN(selectionSummary.mean)
                   ? ''
-                  : stripTrailingZeros(numberFormat(selectionSummary.mean))}
+                  : formatNumber(selectionSummary.mean)}
               </td>
             )}
           </tr>
@@ -65,7 +65,7 @@ function ContinuousLegend(props) {
           {showMin && (
             <tr>
               <td style={{textAlign: 'right'}}>{'Min'}:</td>
-              <td>{stripTrailingZeros(numberFormat(globalSummary.min))}</td>
+              <td>{formatNumber(globalSummary.min)}</td>
               {showSelectionStats && (
                 <td>
                   {isNaN(selectionSummary.min)
@@ -77,12 +77,12 @@ function ContinuousLegend(props) {
           )}
           <tr>
             <td style={{textAlign: 'right'}}>{'Max'}:</td>
-            <td>{stripTrailingZeros(numberFormat(globalSummary.max))}</td>
+            <td>{formatNumber(globalSummary.max)}</td>
             {showSelectionStats && (
               <td>
                 {isNaN(selectionSummary.max)
                   ? ''
-                  : stripTrailingZeros(numberFormat(selectionSummary.max))}
+                  : formatNumber(selectionSummary.max)}
               </td>
             )}
           </tr>

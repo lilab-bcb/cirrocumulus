@@ -1986,6 +1986,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
     }
 
     const groupedSearchTokens = groupBy(state.searchTokens, 'type');
+
     Object.values(FEATURE_TYPE).forEach((key) => {
       if (!groupedSearchTokens[key]) {
         groupedSearchTokens[key] = []; // default
@@ -2000,6 +2001,9 @@ function _updateCharts(onError, updateActiveFeature = true) {
       (token) => token.id,
     );
     const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(
+      (token) => token.id,
+    );
+    const jobResultValues = groupedSearchTokens[FEATURE_TYPE.JOB_RESULT].map(
       (token) => token.id,
     );
 
@@ -2106,9 +2110,20 @@ function _updateCharts(onError, updateActiveFeature = true) {
         }
       });
     }
+    if (jobResultValues.length > 0 && cachedData['obs/index'] == null) {
+      // get obs ids
+      valuesToFetch.add('obs/index');
+    }
     features.forEach((feature) => {
       if (cachedData[feature] == null) {
         valuesToFetch.add(feature);
+      }
+    });
+
+    const jobsToFetch = new Set();
+    jobResultValues.forEach((jobResult) => {
+      if (cachedData[jobResult] == null) {
+        jobsToFetch.add(jobResult);
       }
     });
     // don't fetch "other" features but add to features so they are displayed in embeddings
@@ -2286,6 +2301,23 @@ function _updateCharts(onError, updateActiveFeature = true) {
             name: 'Update charts',
           }
         : null;
+    if (jobsToFetch.size > 0) {
+      jobsToFetch.forEach((jobId) => {
+        const p = state.dataset.api.getJob(jobId);
+        p.then((jobResult) => {
+          const jobName = Object.keys(jobResult)[0];
+          const jobValues = jobResult[jobName];
+          const values = new Float32Array(state.dataset.shape[0]);
+          values.fill(Number.NaN);
+          const index = state.cachedData['index'];
+          for (let i = 0, n = index.length; i < n; i++) {
+            values[i] = jobValues[index[i]];
+          }
+          cachedData[jobId] = values;
+        });
+        promises.push(p);
+      });
+    }
     if (task) {
       dispatch(addTask(task));
     }
@@ -2296,7 +2328,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
     return Promise.all(allPromises)
       .then((values) => {
         const result = values[0];
-
+        jobsToFetch.forEach((jobId) => features.add(jobId));
         dispatch(setGlobalFeatureSummary(result.summary));
         const newEmbeddingData = getNewEmbeddingData(state, features);
         embeddingData = embeddingData.concat(newEmbeddingData);
@@ -2467,13 +2499,17 @@ function getNewEmbeddingData(state, features) {
             let min = Number.MAX_VALUE;
             let max = -Number.MAX_VALUE;
             let sum = 0;
+            let count = 0;
             for (let i = 0, n = values.length; i < n; i++) {
               let value = values[i];
-              min = value < min ? value : min;
-              max = value > max ? value : max;
-              sum += value;
+              if (!Number.isNaN(value)) {
+                min = value < min ? value : min;
+                max = value > max ? value : max;
+                sum += value;
+                count++;
+              }
             }
-            featureSummary = {min: min, max: max, mean: sum / values.length};
+            featureSummary = {min: min, max: max, mean: sum / count};
             globalFeatureSummary[feature] = featureSummary;
           }
           let domain = [featureSummary.min, featureSummary.max];
