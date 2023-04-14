@@ -15,7 +15,7 @@ import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import FontDownloadRoundedIcon from '@mui/icons-material/FontDownloadRounded';
-import {findIndex, find, groupBy, isArray, isObject} from 'lodash';
+import {find, findIndex, groupBy, isArray, isObject} from 'lodash';
 import memoize from 'memoize-one';
 import React, {useState} from 'react';
 import withStyles from '@mui/styles/withStyles';
@@ -129,14 +129,16 @@ const getJobTypeToOptions = memoize((jobResults) => {
 
   if (jobResults) {
     jobResults.forEach((item) => {
-      let options = jobTypeToOptions[item.type];
-      if (!options) {
-        options = [];
-        jobTypeToOptions[item.type] = options;
-      }
+      if (item.status === 'complete') {
+        let options = jobTypeToOptions[item.type];
+        if (!options) {
+          options = [];
+          jobTypeToOptions[item.type] = options;
+        }
 
-      const option = {text: item.name, id: item.id};
-      options.push(option);
+        const option = {text: item.name, id: item.id};
+        options.push(option);
+      }
     });
     for (let key in jobTypeToOptions) {
       jobTypeToOptions[key].sort((item1, item2) => {
