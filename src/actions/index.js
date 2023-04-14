@@ -2139,13 +2139,15 @@ function _updateCharts(onError, updateActiveFeature = true) {
     otherSearchTokenKeys.forEach((key) => {
       groupedSearchTokens[key].forEach((item) => features.add(item.id));
     });
+
     // set active flag on cached embedding data
     embeddingData.forEach((trace) => {
       const embeddingKey = getEmbeddingKey(trace.embedding);
       const active =
-        embeddingKeys.has(embeddingKey) &&
-        (features.has(trace.name) ||
-          (features.size === 0 && trace.name === '__count'));
+        (embeddingKeys.has(embeddingKey) &&
+          (features.has(trace.name) ||
+            (features.size === 0 && trace.name === '__count'))) ||
+        jobResultValues.indexOf(trace.name) !== -1;
       if (active) {
         trace.date = new Date();
       }
@@ -2328,7 +2330,8 @@ function _updateCharts(onError, updateActiveFeature = true) {
     return Promise.all(allPromises)
       .then((values) => {
         const result = values[0];
-        jobsToFetch.forEach((jobId) => features.add(jobId));
+        jobResultValues.forEach((jobId) => features.add(jobId));
+
         dispatch(setGlobalFeatureSummary(result.summary));
         const newEmbeddingData = getNewEmbeddingData(state, features);
         embeddingData = embeddingData.concat(newEmbeddingData);
