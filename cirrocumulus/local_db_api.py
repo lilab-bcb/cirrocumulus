@@ -57,6 +57,7 @@ class LocalDbAPI(AbstractDB):
                         if "id" in d:
                             if "url" not in d:
                                 d["url"] = url
+                            d["__path__"] = url
                             self.job_id_to_job[d["id"]] = d
 
         for i in range(len(paths)):
@@ -319,10 +320,13 @@ class LocalDbAPI(AbstractDB):
         job = self.job_id_to_job.pop(job_id)
         if "url" in job and os.path.exists(job["url"]):
             os.remove(job["url"])
+        if "__path__" in job and os.path.exists(job["__path__"]):
+            os.remove(job["__path__"])
 
     def update_job(self, email, job_id, status, result):
         job = self.job_id_to_job[job_id]
         job["status"] = status
+
         if result is not None:
             if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
                 result.update(job)

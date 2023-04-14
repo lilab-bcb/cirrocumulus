@@ -165,11 +165,20 @@ def run_job(email, job_id, job_name, job_type, dataset, params, database_api, da
 def run_ot_trajectory(
     email, job_id, job_name, job_type, dataset, params, database_api, dataset_api
 ):
+    dataset_info = dataset_api.get_dataset_info(dataset)
     selected_adata = get_selected_data(
-        dataset_api, dataset, measures=["obs/index", "obs/day"], data_filter=params["filter"]
+        dataset_api,
+        dataset,
+        measures=["obs/index", "obs/day"],
+        data_filter=params["filter"],
+        dataset_info=dataset_info,
     )
+
     day = selected_adata.obs["day"].unique()
     if len(day) > 1:
+        database_api.update_job(
+            email=email, job_id=job_id, status="error", result="More than one day selected"
+        )
         raise ValueError("More than one day selected")
     tmap_name = params["tmap"]
     for tmap_item in dataset["ot"]["tmaps"]:
@@ -179,7 +188,9 @@ def run_ot_trajectory(
     tmap_model = read_transport_map_dir(tmap_item["path"])
     populations = tmap_model.population_from_ids(selected_adata.obs["index"].values, at_time=day[0])
     populations[0].name = job_name
+
     trajectory_dataset = tmap_model.trajectories(populations)
+
     # match order in dataset
     # trajectory_ds = trajectory_ds[adata.obs.index]
 
