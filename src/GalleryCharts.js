@@ -1,7 +1,7 @@
 import React, {memo, useEffect, useRef, useState} from 'react';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   PointerSensor,
   useSensor,
   useSensors,
@@ -19,6 +19,7 @@ import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {FEATURE_TYPE} from './util';
 import {CSS} from '@dnd-kit/utilities';
+import {find} from 'lodash';
 
 function SortableItem(props) {
   const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
@@ -35,6 +36,7 @@ function SortableItem(props) {
     trace,
     obsCat,
     cachedData,
+    displayName,
     markerOpacity,
     chartOptions,
     chartSize,
@@ -57,6 +59,7 @@ function SortableItem(props) {
         cachedData={cachedData}
         scatterPlot={scatterPlot}
         markerOpacity={markerOpacity}
+        displayName={displayName}
         chartOptions={chartOptions}
         pointSize={pointSize}
         unselectedPointSize={unselectedPointSize}
@@ -92,6 +95,7 @@ function GalleryCharts(props) {
     chartOptions,
     embeddingData,
     embeddingLabels,
+    jobResults,
     markerOpacity,
     pointSize,
     primaryChartSize,
@@ -179,6 +183,17 @@ function GalleryCharts(props) {
     }
   }
 
+  function getDisplayName(trace) {
+    let displayName;
+    if (trace.featureType === FEATURE_TYPE.JOB_RESULT) {
+      const val = find(jobResults, (jobResult) => jobResult.id === trace.name);
+      displayName = val ? val.name : '';
+    } else {
+      displayName = trace.name === '__count' ? '' : trace.name;
+    }
+    return displayName;
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -196,6 +211,7 @@ function GalleryCharts(props) {
             trace={trace}
             obsCat={obsCat}
             cachedData={cachedData}
+            displayName={getDisplayName(trace)}
             scatterPlot={scatterPlotRef.current}
             markerOpacity={markerOpacity}
             chartOptions={chartOptions}
@@ -223,6 +239,7 @@ const mapStateToProps = (state) => {
     chartSize: state.chartSize,
     embeddingData: state.embeddingData,
     embeddingLabels: state.embeddingLabels,
+    jobResults: state.jobResults,
     markerOpacity: state.markerOpacity,
     pointSize: state.pointSize,
     primaryChartSize: state.panel.primaryChartSize,

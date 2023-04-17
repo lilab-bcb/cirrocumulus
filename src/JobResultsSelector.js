@@ -103,6 +103,7 @@ function JobResultsSelector(props) {
             const showDelete = isJobOwner && !isPrecomputed && isComplete;
             const showCancel = isJobOwner && !isPrecomputed && !isComplete;
             const showDownload = isComplete;
+            const canOpen = isComplete && jobResult.type === 'de';
             return (
               <TableRow
                 key={jobResult.id}
@@ -110,7 +111,9 @@ function JobResultsSelector(props) {
                 selected={jobResult.id === jobResultId}
                 disabled={!isComplete}
                 onClick={
-                  isComplete ? (event) => onSelectJob(jobResult.id) : null
+                  isComplete && canOpen
+                    ? (event) => onSelectJob(jobResult.id)
+                    : null
                 }
                 role="checkbox"
                 tabIndex={-1}

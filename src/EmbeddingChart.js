@@ -67,6 +67,7 @@ function EmbeddingChart(props) {
     handleScrollPosition,
     handleSearchTokens,
     handleWindowSize,
+    jobResults,
     legendScrollPosition,
     markerOpacity,
     onCategoricalNameChange,
@@ -210,7 +211,16 @@ function EmbeddingChart(props) {
     searchTokens,
     embeddingLabels,
   );
-  const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
+  let displayName;
+  if (primaryTrace.featureType === FEATURE_TYPE.JOB_RESULT) {
+    let val = find(
+      jobResults,
+      (jobResult) => jobResult.id === primaryTrace.name,
+    );
+    displayName = val ? val.name : '';
+  } else {
+    displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
+  }
   return (
     <Box bgcolor={'inherit'} color="inherit" style={{position: 'relative'}}>
       <Box
@@ -480,6 +490,7 @@ const mapStateToProps = (state) => {
     featureSummary: state.featureSummary,
     globalFeatureSummary: state.globalFeatureSummary,
     legendScrollPosition: state.legendScrollPosition,
+    jobResults: state.jobResults,
     markerOpacity: state.markerOpacity,
     selection: state.selection,
     pointSize: state.pointSize,

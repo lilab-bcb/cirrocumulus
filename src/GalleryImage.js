@@ -12,7 +12,8 @@ import {
   POINT_VISUALIZER_ID,
   updateScatterChart,
 } from './ThreeUtil';
-import {getDevicePixelRatio} from './util';
+import {FEATURE_TYPE, getDevicePixelRatio} from './util';
+import {find} from 'lodash';
 
 function getImageUrl(
   cachedData,
@@ -69,6 +70,7 @@ export default function GalleryImage(props) {
     chartOptions,
     chartSize,
     containerElement,
+    displayName,
     primaryChartSize,
     markerOpacity,
     obsCat,
@@ -205,10 +207,6 @@ export default function GalleryImage(props) {
     unselectedPointSize,
   ]);
 
-  let name = props.trace.name;
-  if (name === '__count') {
-    name = '';
-  }
   return (
     <Box
       borderColor="text.primary"
@@ -236,7 +234,7 @@ export default function GalleryImage(props) {
               zIndex: 1000,
             }}
           >
-            {name}
+            {displayName}
           </Typography>
         </Tooltip>
         {loading && (

@@ -699,12 +699,13 @@ function ExplorePanel(props) {
               testId={'trajectories-input'}
               options={trajectoryOptions}
               getOptionLabel={(option) => option.text}
-              getChipText={(option) =>
-                find(
+              getChipText={(option) => {
+                const val = find(
                   trajectoryOptions,
                   (trajectoryOption) => trajectoryOption.id === option.id,
-                ).text
-              }
+                );
+                return val != null ? val.text : '';
+              }}
               value={jobResultTokens}
               getOptionSelected={(option, value) =>
                 findIndex(jobResultTokens, (item) => item.id === option.id) !==
