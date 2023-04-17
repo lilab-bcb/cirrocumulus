@@ -229,6 +229,7 @@ function AppHeader(props) {
           >
             <Box style={{width: 500, padding: '1em'}}>
               <Typography variant="h6">{dataset.name}</Typography>
+              <Typography variant="caption">{dataset.id}</Typography>
               {DATASET_FIELDS.filter((item) => dataset[item.fieldName]).map(
                 (item) => {
                   const itemValue = dataset[item.fieldName];
