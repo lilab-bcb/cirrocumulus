@@ -1,5 +1,12 @@
 Release Notes
 -------------
+- 1.1.52 `April 19, 2023`
+    * Added option to invert categorical filters
+    * Added search to categorical legend
+    * Compute and visualize cellular trajectories interactively
+    * Added support for `Space Ranger`_ 2.0 output
+    * Added `concat` command to concatenate spatial and non-spatial embeddings
+
 - 1.1.51 `March 22, 2023`
     * Support saving default visualization state in database
 
@@ -511,3 +518,4 @@ Release Notes
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _zarr: https://zarr.readthedocs.io/
 .. _Mixpanel: https://mixpanel.com/
+.. _Space Ranger: https://support.10xgenomics.com/spatial-gene-expression/software/pipelines/latest/what-is-space-ranger
