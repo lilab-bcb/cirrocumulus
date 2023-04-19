@@ -256,9 +256,14 @@ export default function AutocompleteVirtualized(props) {
         const textLowerCase = text.toLowerCase();
         textToOption.set(textLowerCase, option);
       }
-      results.forEach((option) => {
+      results.forEach((result) => {
         // remove existing
-        const text = option.text != null ? option.text : option;
+        const text =
+          result.text != null
+            ? result.text
+            : result.id != null
+            ? result.id
+            : result;
         textToOption.delete(text.toLowerCase());
       });
       tokens.forEach((token) => {
@@ -277,8 +282,8 @@ export default function AutocompleteVirtualized(props) {
     if (text != null && text.length > 0) {
       event.preventDefault();
       event.stopPropagation();
-      text = text.trim();
-      enterTokens(event, text.split(/[\n,\t]/));
+      const tokens = text.trim().split(/[\n,\t]/);
+      enterTokens(event, tokens);
     }
   }
 
