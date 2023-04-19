@@ -8,7 +8,7 @@ import {getEmbeddingKey} from './actions';
 import CanvasOverlayHd from './CanvasOverlayHd';
 import ChartToolbar from './ChartToolbar';
 import {saveImage} from './ChartUtil';
-import {formatNumber, numberFormat2f} from './formatters';
+import {formatNumber} from './formatters';
 import OpenseadragonSvgOverlay from './OpenseadragonSvgOverlay';
 import {getCategoryLabelsPositions, getLabels} from './ThreeUtil';
 import {arrayToSvgPath, isPointInside} from './util';
@@ -18,13 +18,17 @@ import {
   setTooltipPosition,
 } from './CirroTooltip';
 
-export function getSpotRadius(trace, pointSize) {
-  return (
-    pointSize *
-    (trace.embedding.spatial.spot_diameter
-      ? trace.embedding.spatial.spot_diameter / 2
-      : 20)
-  );
+export function getSpotRadius(trace, pointSize, index) {
+  let radius = 20;
+  const diameter = trace.embedding.spatial.spot_diameter;
+  if (diameter) {
+    if (typeof diameter == 'number') {
+      radius = diameter / 2;
+    } else {
+      radius = diameter[index] / 2;
+    }
+  }
+  return pointSize * radius;
 }
 
 export function drawEmbeddingImage(
@@ -38,7 +42,7 @@ export function drawEmbeddingImage(
   categoricalNames,
   obsCat,
   cachedData,
-  spotRadius,
+  pointSize,
 ) {
   if (trace.embedding.tileSource.ready) {
     const img =
@@ -61,7 +65,7 @@ export function drawEmbeddingImage(
       selection,
       markerOpacity,
       unselectedMarkerOpacity,
-      spotRadius,
+      pointSize,
     );
     drawLabels(
       context,
@@ -121,7 +125,7 @@ function drawSpots(
   selection,
   markerOpacity,
   unselectedMarkerOpacity,
-  spotRadius,
+  pointSize,
 ) {
   context.lineWidth = (2 * 1) / zoom;
   if (context.setLineDash) {
@@ -139,6 +143,7 @@ function drawSpots(
       if (!selection.has(index)) {
         context.fillStyle = trace.colors[index];
         context.beginPath();
+        const spotRadius = getSpotRadius(trace, pointSize, i);
         context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
         context.fill();
       }
@@ -151,6 +156,7 @@ function drawSpots(
       if (selection.has(index)) {
         context.fillStyle = trace.colors[index];
         context.beginPath();
+        const spotRadius = getSpotRadius(trace, pointSize, index);
         context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
         context.fill();
       }
@@ -163,6 +169,7 @@ function drawSpots(
       let y = trace.y[index];
       context.fillStyle = trace.colors[index];
       context.beginPath();
+      const spotRadius = getSpotRadius(trace, pointSize, index);
       context.arc(x, y, spotRadius, 0, Math.PI * 2, true);
       context.fill();
     }
@@ -215,7 +222,7 @@ class ImageChart extends React.PureComponent {
 
   findPointsInRectangle(rect) {
     const data = this.props.trace;
-    const spotRadius = getSpotRadius(data, this.props.pointSize);
+
     const indices = [];
     const x = parseFloat(rect.getAttribute('x'));
     const y = parseFloat(rect.getAttribute('y'));
@@ -224,6 +231,7 @@ class ImageChart extends React.PureComponent {
     for (let i = 0; i < data.x.length; i++) {
       const px = data.x[i];
       const py = data.y[i];
+      const spotRadius = getSpotRadius(data, this.props.pointSize, i);
       if (
         px <= x2 &&
         x <= px + spotRadius &&
@@ -238,9 +246,10 @@ class ImageChart extends React.PureComponent {
 
   findPointIndex(xpix, ypix) {
     const data = this.props.trace;
-    const spotRadius = getSpotRadius(data, this.props.pointSize);
+
     // x is spot center
     for (let i = 0; i < data.x.length; i++) {
+      const spotRadius = getSpotRadius(data, this.props.pointSize, i);
       if (
         Math.abs(data.x[i] - xpix) <= spotRadius &&
         Math.abs(data.y[i] - ypix) <= spotRadius
@@ -312,7 +321,7 @@ class ImageChart extends React.PureComponent {
     const selection = this.props.selection;
     const markerOpacity = this.props.markerOpacity;
     const unselectedMarkerOpacity = this.props.unselectedMarkerOpacity;
-    const spotRadius = getSpotRadius(trace, this.props.pointSize);
+
     drawSpots(
       context,
       opts.zoom,
@@ -320,7 +329,7 @@ class ImageChart extends React.PureComponent {
       selection,
       markerOpacity,
       unselectedMarkerOpacity,
-      spotRadius,
+      this.props.pointSize,
     );
     drawLabels(
       context,
@@ -355,10 +364,8 @@ class ImageChart extends React.PureComponent {
       gestureSettingsMouse: {dblClickToZoom: true, clickToZoom: false},
       autoResize: true,
       showFullPageControl: false,
-      collectionMode: false,
-      // visibilityRatio: 0.2,
-      showNavigationControl: false,
-      // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
+      collectionMode: false, // visibilityRatio: 0.2,
+      showNavigationControl: false, // prefixUrl: 'https://cdn.jsdelivr.net/npm/openseadragon@2.4/build/openseadragon/images/',
       tileSources: this.props.trace.embedding.tileSource,
     });
     const viewer = this.viewer;
@@ -405,7 +412,10 @@ class ImageChart extends React.PureComponent {
     tracker.setTracking(true);
 
     this.viewer.addHandler('canvas-double-click', function (event) {
-      if (_this.props.chartOptions.dragmode === 'pan') {
+      if (
+        _this.props.chartOptions.dragmode === 'pan' &&
+        !_this.props.trace.continuous
+      ) {
         const webPoint = event.position;
         const viewportPoint = viewer.viewport.pointFromPixel(webPoint);
         const imagePoint = viewer.world

@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, {useEffect, useRef, useState} from 'react';
-import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
+import {drawEmbeddingImage} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
 import {
   getCategoryLabelsPositions,
@@ -12,8 +12,7 @@ import {
   POINT_VISUALIZER_ID,
   updateScatterChart,
 } from './ThreeUtil';
-import {FEATURE_TYPE, getDevicePixelRatio} from './util';
-import {find} from 'lodash';
+import {getDevicePixelRatio} from './util';
 
 function getImageUrl(
   cachedData,
@@ -47,7 +46,7 @@ function getImageUrl(
     categoricalNames,
     obsCat,
     cachedData,
-    getSpotRadius(trace, pointSize),
+    pointSize,
   );
   return canvas.toDataURL();
 }
