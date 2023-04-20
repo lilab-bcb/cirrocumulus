@@ -55,6 +55,7 @@ class DE:
         else:
             pairs = list(itertools.combinations(series.cat.categories, 2))
         count_ = indicator_df.sum(axis=0)  # count per group
+        count_values = count_.values
         A = scipy.sparse.coo_matrix(indicator_df.astype(float).T)
         n_row = A.shape[0]
         row_sums = np.asarray(A.sum(axis=1))
@@ -74,7 +75,7 @@ class DE:
             # detects loss of precision in mean_sq - sq_mean, which suggests variance is 0
             var_[precision * var_ < sq_mean] = 0
             if dof != 0:
-                var_ *= (count_ / (count_ - dof))[:, np.newaxis]
+                var_ *= (count_values / (count_values - dof))[:, np.newaxis]
 
             frac_expressed_ = None
             if scipy.sparse.issparse(X):
