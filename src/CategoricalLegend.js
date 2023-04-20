@@ -27,6 +27,7 @@ export default function CategoricalLegend(props) {
   const [menu, setMenu] = useState(null);
   const [color, setColor] = useState(null);
   const [originalCategory, setOriginalCategory] = useState(null);
+  const [filteredCategories, setFilteredCategories] = useState([]);
   const {
     onAddFeatures,
     categoricalNames,
@@ -60,6 +61,10 @@ export default function CategoricalLegend(props) {
       }
     };
   }, [name, handleScrollPosition, legendScrollPosition]);
+
+  useEffect(() => {
+    setFilteredCategories([]);
+  }, [name]);
 
   function handleDialogClose(e) {
     setMenu(null);
@@ -154,8 +159,15 @@ export default function CategoricalLegend(props) {
     }
   }
   const globalDimensionSummary = globalFeatureSummary[name];
-  const categories =
+
+  const allCategories =
     categoricalSortOrder[name] || globalDimensionSummary.categories;
+  let categories = allCategories;
+  if (filteredCategories.length > 0) {
+    categories = categories.filter(
+      (val) => filteredCategories.indexOf(val) !== -1,
+    );
+  }
 
   const renamedCategories = categoricalNames[name] || {};
 
@@ -237,6 +249,21 @@ export default function CategoricalLegend(props) {
   return (
     <>
       <div data-testid="categorical-legend">
+        {allCategories.length > 8 && (
+          <FormControl sx={{display: 'block', width: 250}}>
+            <AutocompleteVirtualized
+              label={'Search'}
+              options={allCategories}
+              getOptionLabel={(option) => option}
+              getChipText={(option) => option}
+              value={filteredCategories}
+              getOptionSelected={(option, value) =>
+                value.indexOf(option) !== -1
+              }
+              onChange={(event, values) => setFilteredCategories(values)}
+            />
+          </FormControl>
+        )}
         <FixedSizeList
           height={height}
           width={250}

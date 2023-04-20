@@ -402,15 +402,25 @@ def handle_selection_ids(dataset_api, dataset, data_filter):
     return {"ids": IdsAggregator().execute(df)}
 
 
-def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filters=[]):
+def get_adata(
+    dataset_api,
+    dataset,
+    embeddings=[],
+    measures=[],
+    dimensions=[],
+    data_filters=[],
+    dataset_info=None,
+):
     type2measures = get_type_to_measures(measures)
     var_keys_filter = []
     obs_keys_filter = []
     selected_points_filter_basis_list = []
+
     for data_filter in data_filters:
         _var_keys_filter, _obs_keys_filter, selected_points_filter_basis_list = data_filter_keys(
-            data_filter
+            data_filter, dataset_info
         )
+
         selected_points_filter_basis_list += selected_points_filter_basis_list
         var_keys_filter += _var_keys_filter
         obs_keys_filter += _obs_keys_filter
@@ -435,7 +445,13 @@ def get_adata(dataset_api, dataset, embeddings=[], measures=[], dimensions=[], d
 
 
 def get_selected_data(
-    dataset_api, dataset, embeddings=[], measures=[], dimensions=[], data_filter=None
+    dataset_api,
+    dataset,
+    embeddings=[],
+    measures=[],
+    dimensions=[],
+    data_filter=None,
+    dataset_info=None,
 ):
     df = get_adata(
         dataset_api,
@@ -444,6 +460,7 @@ def get_selected_data(
         measures,
         dimensions,
         [data_filter] if data_filter is not None else [],
+        dataset_info=dataset_info,
     )
     df = apply_filter(df, data_filter)
     return df

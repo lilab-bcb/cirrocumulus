@@ -36,7 +36,9 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths)
         pass
     app.config[CIRRO_AUTH] = NoAuth()
     os.environ[CIRRO_JOB_TYPE + "de"] = "cirrocumulus.job_api.run_de"
+    os.environ[CIRRO_JOB_TYPE + "ot_trajectory"] = "cirrocumulus.job_api.run_ot_trajectory"
     anndata_dataset = AnndataDataset()
+    dataset_api.add(anndata_dataset)
     dataset_ids = []
     for dataset_paths in list_of_dataset_paths:
         dataset_paths = dataset_paths.split(",")
@@ -54,7 +56,6 @@ def configure_app(app, list_of_dataset_paths, spatial_directories, marker_paths)
             adata.var.index = adata.var.index.str.replace("/", "_")
             adata.var_names_make_unique()
             anndata_dataset.add_data(dataset_id, adata)
-        dataset_api.add(anndata_dataset)
 
     app.config[CIRRO_DATABASE] = LocalDbAPI(dataset_ids)
 
@@ -103,14 +104,14 @@ def create_parser(description=False):
     parser = argparse.ArgumentParser(description="Run cirrocumulus" if description else None)
     parser.add_argument(
         "dataset",
-        help="Path to dataset in h5ad, loom, Seurat, TileDB, zarr, or STAR-Fusion format. Separate multiple datasets with "
+        help="Path(s) to dataset in h5ad, loom, Seurat, TileDB, zarr, or STAR-Fusion format. Separate multiple datasets with "
         "a comma instead of a space in order to join datasets by cell id",
         nargs="+",
     )
     parser.add_argument("--spatial", help=SPATIAL_HELP, nargs="*")
     parser.add_argument(
         "--markers",
-        help='Path to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
+        help='Path(s) to JSON file that maps name to features. For example {"a":["gene1", "gene2"], "b":["gene3"]}',
         nargs="*",
     )
     parser.add_argument(
@@ -125,6 +126,9 @@ def create_parser(description=False):
         "--results", help="URL to save user computed results (e.g. differential expression)"
     )
     parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
+    parser.add_argument(
+        "--tmap", help="Path(s) to transport maps directory computed with WOT", nargs="*"
+    )
     return parser
 
 
@@ -141,6 +145,17 @@ def main(argsv):
         os.environ[CIRRO_CELL_ONTOLOGY] = args.ontology
     app = create_app()
     configure_app(app, args.dataset, args.spatial, args.markers)
+    if args.tmap is not None:
+        tmaps = []
+        unique_names = set()
+        for tmap_dir in args.tmap:
+            name = os.path.basename(tmap_dir.rstrip("/"))
+            counter = 1
+            while name in unique_names:
+                name = f"{name}-{counter}"
+                counter = counter + 1
+            tmaps.append({"path": tmap_dir, "name": name})
+        app.config[CIRRO_DATABASE].add_metadata(None, {"ot": {"tmaps": tmaps}})
     if not args.no_open:
         import webbrowser
 

@@ -4,7 +4,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
-import {numberFormat2f} from './formatters';
+import {formatNumber, numberFormat2f} from './formatters';
 import {
   createScatterPlot,
   getCategoryLabelsPositions,
@@ -283,10 +283,7 @@ function ScatterChartThree(props) {
           }
 
           if (typeof value === 'number') {
-            value = numberFormat2f(value);
-            if (value.endsWith('.00')) {
-              value = value.substring(0, value.lastIndexOf('.'));
-            }
+            value = formatNumber(value);
           }
           setTip({
             html: '' + value,

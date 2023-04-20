@@ -653,21 +653,14 @@ export function datasetFilterToJson(
   combineDatasetFilters,
 ) {
   let filters = getDatasetFilterArray(datasetFilter);
-  if (filters.length > 0) {
-    const obs = dataset.obs;
-    const obsCat = dataset.obsCat;
-    for (let i = 0; i < filters.length; i++) {
-      // add obs/ prefix
-      const filter = filters[i];
-      if (filter.field === '__index') {
-        filter.value = Array.from(filter.value); // convert Set to array
-      } else if (
-        obsCat.indexOf(filter.field) !== -1 ||
-        obs.indexOf(filter.field) !== -1
-      ) {
-        filter.field = 'obs/' + filter.field;
-      }
+
+  for (let i = 0; i < filters.length; i++) {
+    // add obs/ prefix
+    const filter = filters[i];
+    if (filter.field === '__index') {
+      filter.value = Array.from(filter.value); // convert Set to array
     }
+
     return {filters: filters, combine: combineDatasetFilters};
   }
 }
@@ -803,9 +796,10 @@ function handleFilterUpdated() {
     for (const key in groupedSearchTokens) {
       if (FEATURE_TYPE_MEASURES_EXCLUDE.indexOf(key) === -1) {
         const prefix = key === FEATURE_TYPE.X ? '' : key + '/';
-        groupedSearchTokens[key].forEach((item) =>
-          measures.push(prefix + item.id),
-        );
+
+        groupedSearchTokens[key].forEach((item) => {
+          measures.push(prefix + item.id);
+        });
       }
     }
 
@@ -918,12 +912,14 @@ export function handleMeasureFilterUpdated(payload) {
 
 export function handleDimensionFilterUpdated(payload) {
   return function (dispatch, getState) {
-    let name = payload.name;
-    let newValue = payload.value;
-    let shiftKey = payload.shiftKey;
-    let metaKey = payload.metaKey;
-    let datasetFilter = getState().datasetFilter;
-    let embeddingData = getState().embeddingData;
+    const name = payload.name; // category name, e.g. leiden
+    const newValue = payload.value;
+    const shiftKey = payload.shiftKey;
+    const metaKey = payload.metaKey;
+    const invert = payload.invert;
+    const clear = payload.clear;
+    const datasetFilter = getState().datasetFilter;
+    const embeddingData = getState().embeddingData;
     let categories;
     for (let i = 0; i < embeddingData.length; i++) {
       if (embeddingData[i].name === name) {
@@ -936,8 +932,17 @@ export function handleDimensionFilterUpdated(payload) {
       categoricalFilter = {operation: 'in', value: []};
       datasetFilter[name] = categoricalFilter;
     }
-
-    if (shiftKey && categoricalFilter.value.length > 0) {
+    if (invert) {
+      const invertedValues = [];
+      categories.forEach((category) => {
+        if (categoricalFilter.value.indexOf(category) === -1) {
+          invertedValues.push(category);
+        }
+      });
+      categoricalFilter.value = invertedValues;
+    } else if (clear) {
+      delete datasetFilter[name];
+    } else if (shiftKey && categoricalFilter.value.length > 0) {
       // add last click to current
       let lastIndex = categories.indexOf(
         categoricalFilter.value[categoricalFilter.value.length - 1],
@@ -1141,6 +1146,8 @@ function getDefaultDatasetView(dataset) {
   }
   if (obsCat != null) {
     defaultSearchTokens.push({id: obsCat, type: FEATURE_TYPE.OBS_CAT});
+  } else if (dataset.obs.length > 0) {
+    defaultSearchTokens.push({id: dataset.obs[0], type: FEATURE_TYPE.OBS});
   }
 
   return {defaultEmbeddings, defaultSearchTokens};
@@ -1238,9 +1245,11 @@ function restoreSavedView(savedView) {
           for (let i = 0; i < savedView.q.length; i++) {
             const item = savedView.q[i];
             if (isString(item)) {
-              const type = getFeatureType(dataset, item);
-              if (type != null) {
-                q.push({id: item, type: type});
+              if (item !== '__index') {
+                const type = getFeatureType(dataset, item);
+                if (type != null) {
+                  q.push({id: item, type: type});
+                }
               }
             } else {
               q.push(savedView.q[i]);
@@ -1561,18 +1570,25 @@ export function deleteJobResult(payload) {
 
 export function downloadJobResult(job) {
   return function (dispatch, getState) {
-    if (job.data != null) {
-      // data already loaded
-      updateJob(job);
-      exportJobResult(job);
+    if (job.jobType === 'de') {
+      if (job.data != null) {
+        // data already loaded
+        updateJob(job);
+        exportJobResult(job);
+      } else {
+        getState()
+          .dataset.api.getJob(job.id)
+          .then((jobResult) => {
+            jobResult = Object.assign(job, jobResult);
+            updateJob(jobResult);
+            exportJobResult(jobResult);
+          });
+      }
     } else {
+      // download the file
       getState()
-        .dataset.api.getJob(job.id)
-        .then((jobResult) => {
-          jobResult = Object.assign(job, jobResult);
-          updateJob(jobResult);
-          exportJobResult(jobResult);
-        });
+        .dataset.api.getJob(job.id, true)
+        .then((result) => {});
     }
   };
 }
@@ -1970,6 +1986,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
     }
 
     const groupedSearchTokens = groupBy(state.searchTokens, 'type');
+
     Object.values(FEATURE_TYPE).forEach((key) => {
       if (!groupedSearchTokens[key]) {
         groupedSearchTokens[key] = []; // default
@@ -1984,6 +2001,9 @@ function _updateCharts(onError, updateActiveFeature = true) {
       (token) => token.id,
     );
     const moduleValues = groupedSearchTokens[FEATURE_TYPE.MODULE].map(
+      (token) => token.id,
+    );
+    const jobResultValues = groupedSearchTokens[FEATURE_TYPE.JOB_RESULT].map(
       (token) => token.id,
     );
 
@@ -2085,14 +2105,25 @@ function _updateCharts(onError, updateActiveFeature = true) {
         state.datasetFilter,
       );
       filterDependencies.features.forEach((feature) => {
-        if (cachedData[feature] == null) {
+        if (cachedData[feature] == null && feature !== '__index') {
           valuesToFetch.add(feature);
         }
       });
     }
+    if (jobResultValues.length > 0 && cachedData['obs/index'] == null) {
+      // get obs ids
+      valuesToFetch.add('obs/index');
+    }
     features.forEach((feature) => {
       if (cachedData[feature] == null) {
         valuesToFetch.add(feature);
+      }
+    });
+
+    const jobsToFetch = new Set();
+    jobResultValues.forEach((jobResult) => {
+      if (cachedData[jobResult] == null) {
+        jobsToFetch.add(jobResult);
       }
     });
     // don't fetch "other" features but add to features so they are displayed in embeddings
@@ -2108,13 +2139,15 @@ function _updateCharts(onError, updateActiveFeature = true) {
     otherSearchTokenKeys.forEach((key) => {
       groupedSearchTokens[key].forEach((item) => features.add(item.id));
     });
+
     // set active flag on cached embedding data
     embeddingData.forEach((trace) => {
       const embeddingKey = getEmbeddingKey(trace.embedding);
       const active =
-        embeddingKeys.has(embeddingKey) &&
-        (features.has(trace.name) ||
-          (features.size === 0 && trace.name === '__count'));
+        (embeddingKeys.has(embeddingKey) &&
+          (features.has(trace.name) ||
+            (features.size === 0 && trace.name === '__count'))) ||
+        jobResultValues.indexOf(trace.name) !== -1;
       if (active) {
         trace.date = new Date();
       }
@@ -2270,6 +2303,23 @@ function _updateCharts(onError, updateActiveFeature = true) {
             name: 'Update charts',
           }
         : null;
+    if (jobsToFetch.size > 0) {
+      jobsToFetch.forEach((jobId) => {
+        const p = state.dataset.api.getJob(jobId);
+        p.then((jobResult) => {
+          const jobName = Object.keys(jobResult)[0];
+          const jobValues = jobResult[jobName];
+          const values = new Float32Array(state.dataset.shape[0]);
+          values.fill(Number.NaN);
+          const index = state.cachedData['index'];
+          for (let i = 0, n = index.length; i < n; i++) {
+            values[i] = jobValues[index[i]];
+          }
+          cachedData[jobId] = values;
+        });
+        promises.push(p);
+      });
+    }
     if (task) {
       dispatch(addTask(task));
     }
@@ -2280,6 +2330,7 @@ function _updateCharts(onError, updateActiveFeature = true) {
     return Promise.all(allPromises)
       .then((values) => {
         const result = values[0];
+        jobResultValues.forEach((jobId) => features.add(jobId));
 
         dispatch(setGlobalFeatureSummary(result.summary));
         const newEmbeddingData = getNewEmbeddingData(state, features);
@@ -2451,13 +2502,17 @@ function getNewEmbeddingData(state, features) {
             let min = Number.MAX_VALUE;
             let max = -Number.MAX_VALUE;
             let sum = 0;
+            let count = 0;
             for (let i = 0, n = values.length; i < n; i++) {
               let value = values[i];
-              min = value < min ? value : min;
-              max = value > max ? value : max;
-              sum += value;
+              if (!Number.isNaN(value)) {
+                min = value < min ? value : min;
+                max = value > max ? value : max;
+                sum += value;
+                count++;
+              }
             }
-            featureSummary = {min: min, max: max, mean: sum / values.length};
+            featureSummary = {min: min, max: max, mean: sum / count};
             globalFeatureSummary[feature] = featureSummary;
           }
           let domain = [featureSummary.min, featureSummary.max];

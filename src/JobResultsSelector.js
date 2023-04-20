@@ -21,7 +21,6 @@ import {connect} from 'react-redux';
 import {COMPARE_ACTIONS} from './job_config';
 import Grid from '@mui/material/Grid';
 import CancelIcon from '@mui/icons-material/Cancel';
-import {exportJobResult, updateJob} from './DotPlotJobResultsPanel';
 
 function JobResultsSelector(props) {
   const [showDialog, setShowDialog] = useState(false);
@@ -67,7 +66,7 @@ function JobResultsSelector(props) {
     setBrowseJob(null);
   }
 
-  const jobTypeToName = {};
+  const jobTypeToName = {ot_trajectory: 'Trajectory'};
   const isShowingJob = jobResultId != null;
   COMPARE_ACTIONS.forEach(
     (action) => (jobTypeToName[action.jobType] = action.title),
@@ -104,6 +103,7 @@ function JobResultsSelector(props) {
             const showDelete = isJobOwner && !isPrecomputed && isComplete;
             const showCancel = isJobOwner && !isPrecomputed && !isComplete;
             const showDownload = isComplete;
+            const canOpen = isComplete && jobResult.type === 'de';
             return (
               <TableRow
                 key={jobResult.id}
@@ -111,7 +111,9 @@ function JobResultsSelector(props) {
                 selected={jobResult.id === jobResultId}
                 disabled={!isComplete}
                 onClick={
-                  isComplete ? (event) => onSelectJob(jobResult.id) : null
+                  isComplete && canOpen
+                    ? (event) => onSelectJob(jobResult.id)
+                    : null
                 }
                 role="checkbox"
                 tabIndex={-1}

@@ -11,7 +11,7 @@ from cirrocumulus.envir import (
 )
 from cirrocumulus.io_util import unique_id
 from cirrocumulus.job_api import save_job_result_to_file
-from cirrocumulus.util import get_fs
+from cirrocumulus.util import get_fs, open_file
 
 
 def create_dataset_meta(path):
@@ -39,7 +39,7 @@ def write_json(json_data, json_path):
 
 
 class LocalDbAPI(AbstractDB):
-    def __init__(self, paths):
+    def __init__(self, paths: list[str]):
         super().__init__()
         self.dataset_to_info = {}  # json_data, meta, json_path
         self.job_id_to_job = {}
@@ -47,22 +47,21 @@ class LocalDbAPI(AbstractDB):
             fs = get_fs(os.environ[CIRRO_JOB_RESULTS])
             fs.makedirs(os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
             for url in fs.ls(os.environ[CIRRO_JOB_RESULTS]):
-                if url.lower().endswith(".json.gz"):
+                if url.lower().endswith(".json.gz") or url.lower().endswith(".json"):
                     import gzip
 
-                    with gzip.open(fs.open(url)) as f:
+                    with gzip.open(fs.open(url)) if url.lower().endswith(".json.gz") else fs.open(
+                        url
+                    ) as f:
                         d = json.load(f)
                         if "id" in d:
-                            d["url"] = url
-                            self.job_id_to_job[d["id"]] = d
-                elif url.lower().endswith(".json"):
-                    with fs.open(url) as f:
-                        d = json.load(f)
-                        if "id" in d:
-                            d["url"] = url
+                            if "url" not in d:
+                                d["url"] = url
+                            d["__path__"] = url
                             self.job_id_to_job[d["id"]] = d
 
-        for path in paths:
+        for i in range(len(paths)):
+            path = paths[i]
             json_data = {}
             basename = os.path.splitext(path)[0]
             old_path = basename + "_filters.json"
@@ -78,6 +77,7 @@ class LocalDbAPI(AbstractDB):
                     except:
                         print("Unable to load {}".format(json_path))
             meta = create_dataset_meta(path)
+
             if "filters" not in json_data:
                 json_data["filters"] = {}
             if "views" not in json_data:
@@ -154,6 +154,17 @@ class LocalDbAPI(AbstractDB):
             }
             results.append(result)
         return results
+
+    def add_metadata(self, dataset_id, metadata):
+        if dataset_id is None:  # update all
+            dataset_ids = self.dataset_to_info.keys()
+        else:
+            dataset_ids = [dataset_id]
+        for dataset_id in dataset_ids:
+            info = self.dataset_to_info.get(dataset_id)
+            if info is not None:
+                result = info["meta"]
+                result.update(metadata)
 
     def get_dataset(self, email, dataset_id, ensure_owner=False):
         info = self.dataset_to_info.get(dataset_id)
@@ -309,15 +320,27 @@ class LocalDbAPI(AbstractDB):
         job = self.job_id_to_job.pop(job_id)
         if "url" in job and os.path.exists(job["url"]):
             os.remove(job["url"])
+        if "__path__" in job and os.path.exists(job["__path__"]):
+            os.remove(job["__path__"])
 
     def update_job(self, email, job_id, status, result):
         job = self.job_id_to_job[job_id]
         job["status"] = status
+
         if result is not None:
             if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
                 result.update(job)
-                save_job_result_to_file(result, job_id)
-                job["result"] = result
+                if result["content-type"] == "application/json":
+                    save_job_result_to_file(result, job_id)
+                    job["result"] = result
+                else:
+                    url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + ".json.gz")
+                    # store pointer to file in JSON
+                    job["content-type"] = result["content-type"]
+                    job["url"] = save_job_result_to_file(result, job_id)["url"]
+                    with open_file(url, "wt", compression="gzip") as out:
+                        json.dump(job, out)
+
             else:
                 from cirrocumulus.util import to_json
 

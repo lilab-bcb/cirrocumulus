@@ -1,11 +1,12 @@
 import {Tooltip, Typography} from '@mui/material';
 import Box from '@mui/material/Box';
 import {find} from 'lodash';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PercentIcon from '@mui/icons-material/Percent';
 import {connect} from 'react-redux';
 import NumbersIcon from '@mui/icons-material/Numbers';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import {
   getTraceKey,
   handleBrushFilterUpdated,
@@ -36,6 +37,8 @@ import memoize from 'memoize-one';
 import SortByAlphaIcon from '@mui/icons-material/SortByAlpha';
 import IconButton from '@mui/material/IconButton';
 import SaveIcon from '@mui/icons-material/Save';
+import MenuItem from '@mui/material/MenuItem';
+import Menu from '@mui/material/Menu';
 
 const getActiveEmbeddingLabels = memoize((searchTokens, embeddingLabels) => {
   return searchTokens
@@ -64,6 +67,7 @@ function EmbeddingChart(props) {
     handleScrollPosition,
     handleSearchTokens,
     handleWindowSize,
+    jobResults,
     legendScrollPosition,
     markerOpacity,
     onCategoricalNameChange,
@@ -87,8 +91,9 @@ function EmbeddingChart(props) {
 
   const [showLegend, setShowLegend] = useState(true);
   const [sortOrder, setSortOrder] = useState('alpha'); // alpha, percent, size
-
+  const [selectionMenuOpen, setSelectionMenuOpen] = useState(false);
   const active = 'cirro-active';
+  const selectionMenuAnchorEl = useRef();
   useEffect(() => {
     window.addEventListener('resize', handleWindowSize);
     return () => {
@@ -113,6 +118,16 @@ function EmbeddingChart(props) {
         : null;
     onCategoricalSortOrder({name: activeFeature.name, value: categories});
     setSortOrder(value);
+  }
+
+  function handleInvertSelection() {
+    setSelectionMenuOpen(false);
+    onDimensionFilterUpdated({name: primaryTrace.name, invert: true});
+  }
+
+  function handleClearSelection() {
+    setSelectionMenuOpen(false);
+    onDimensionFilterUpdated({name: primaryTrace.name, clear: true});
   }
 
   function handleSaveColors() {
@@ -177,12 +192,35 @@ function EmbeddingChart(props) {
     console.log(activeFeature.embeddingKey + ' not found');
     return null;
   }
+  let invertDisabled = true;
+  if (!primaryTrace.continuous) {
+    let categoricalFilter = datasetFilter[primaryTrace.name];
+    if (categoricalFilter != null && categoricalFilter.value.length > 0) {
+      let categories;
+      for (let i = 0; i < embeddingData.length; i++) {
+        if (embeddingData[i].name === primaryTrace.name) {
+          categories = embeddingData[i].colorScale.domain();
+          break;
+        }
+      }
+      invertDisabled = categories.length === categoricalFilter.value.length;
+    }
+  }
   const nObsSelected = selection != null ? selection.size : 0;
   const activeEmbeddingLabels = getActiveEmbeddingLabels(
     searchTokens,
     embeddingLabels,
   );
-  const displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
+  let displayName;
+  if (primaryTrace.featureType === FEATURE_TYPE.JOB_RESULT) {
+    let val = find(
+      jobResults,
+      (jobResult) => jobResult.id === primaryTrace.name,
+    );
+    displayName = val ? val.name : '';
+  } else {
+    displayName = primaryTrace.name === '__count' ? '' : primaryTrace.name;
+  }
   return (
     <Box bgcolor={'inherit'} color="inherit" style={{position: 'relative'}}>
       <Box
@@ -239,6 +277,44 @@ function EmbeddingChart(props) {
                     <NumbersIcon />
                   </IconButton>
                 </Tooltip>
+
+                <Tooltip title={'Selection'}>
+                  <span>
+                    <IconButton
+                      edge={false}
+                      size={'small'}
+                      ref={selectionMenuAnchorEl}
+                      disabled={invertDisabled}
+                      style={{padding: 0}}
+                      aria-label="Invert Selection"
+                      onClick={() => setSelectionMenuOpen(true)}
+                    >
+                      <CheckBoxIcon />
+                    </IconButton>
+                    <Menu
+                      id="selection-menu"
+                      anchorEl={selectionMenuAnchorEl.current}
+                      anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                      transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                      }}
+                      open={selectionMenuOpen}
+                      onClose={() => setSelectionMenuOpen(false)}
+                    >
+                      <MenuItem onClick={handleClearSelection}>
+                        Clear Selection
+                      </MenuItem>
+                      <MenuItem onClick={handleInvertSelection}>
+                        Invert Selection
+                      </MenuItem>
+                    </Menu>
+                  </span>
+                </Tooltip>
+
                 <Tooltip title={'Save Colors'}>
                   <IconButton
                     edge={false}
@@ -414,6 +490,7 @@ const mapStateToProps = (state) => {
     featureSummary: state.featureSummary,
     globalFeatureSummary: state.globalFeatureSummary,
     legendScrollPosition: state.legendScrollPosition,
+    jobResults: state.jobResults,
     markerOpacity: state.markerOpacity,
     selection: state.selection,
     pointSize: state.pointSize,

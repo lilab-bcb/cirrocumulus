@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, {useEffect, useRef, useState} from 'react';
-import {drawEmbeddingImage, getSpotRadius} from './ImageChart';
+import {drawEmbeddingImage} from './ImageChart';
 import {drawLabels, getVisualizer} from './ScatterChartThree';
 import {
   getCategoryLabelsPositions,
@@ -46,7 +46,7 @@ function getImageUrl(
     categoricalNames,
     obsCat,
     cachedData,
-    getSpotRadius(trace, pointSize),
+    pointSize,
   );
   return canvas.toDataURL();
 }
@@ -69,6 +69,7 @@ export default function GalleryImage(props) {
     chartOptions,
     chartSize,
     containerElement,
+    displayName,
     primaryChartSize,
     markerOpacity,
     obsCat,
@@ -205,10 +206,6 @@ export default function GalleryImage(props) {
     unselectedPointSize,
   ]);
 
-  let name = props.trace.name;
-  if (name === '__count') {
-    name = '';
-  }
   return (
     <Box
       borderColor="text.primary"
@@ -236,7 +233,7 @@ export default function GalleryImage(props) {
               zIndex: 1000,
             }}
           >
-            {name}
+            {displayName}
           </Typography>
         </Tooltip>
         {loading && (

@@ -15,8 +15,9 @@ def __add_visium(adata, spatial_directory):
     scale_factors_path = os.path.join(spatial_directory, "scalefactors_json.json")
     tissue_hires_image_path = os.path.join(spatial_directory, "tissue_hires_image.png")
     tissue_positions_list_path = os.path.join(spatial_directory, "tissue_positions_list.csv")
+    tissue_positions_path = os.path.join(spatial_directory, "tissue_positions.csv")
     is_visium = True
-    for path in [scale_factors_path, tissue_hires_image_path, tissue_positions_list_path]:
+    for path in [scale_factors_path, tissue_hires_image_path]:
         if not os.path.exists(path):
             is_visium = False
             break
@@ -28,26 +29,31 @@ def __add_visium(adata, spatial_directory):
             # {"spot_diameter_fullres": 89.49502418224989, "tissue_hires_scalef": 0.17011142,
             # "fiducial_diameter_fullres": 144.56888521748058, "tissue_lowres_scalef": 0.051033426}
         # barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
-        positions = pd.read_csv(tissue_positions_list_path, header=None)
-        positions.columns = [
-            "barcode",
-            "in_tissue",
-            "array_row",
-            "array_col",
-            "pxl_col_in_fullres",
-            "pxl_row_in_fullres",
-        ]
+        if os.path.exists(tissue_positions_list_path):
+            positions = pd.read_csv(tissue_positions_list_path, header=None)
+            positions.columns = [
+                "barcode",
+                "in_tissue",
+                "array_row",
+                "array_col",
+                "pxl_col_in_fullres",
+                "pxl_row_in_fullres",
+            ]
+        elif os.path.exists(tissue_positions_path):
+            positions = pd.read_csv(tissue_positions_path)
+        else:
+            return False
         positions.index = positions["barcode"]
         positions = positions.reindex(adata.obs.index)
-        spatial_coords = positions[["pxl_row_in_fullres", "pxl_col_in_fullres"]].values
-        adata.obsm["tissue_hires"] = spatial_coords * scalefactors["tissue_hires_scalef"]
+        spatial_coords = positions[["pxl_col_in_fullres", "pxl_row_in_fullres"]].values
+        high_res_scalef = scalefactors["tissue_hires_scalef"]
+        adata.obsm["tissue_hires"] = spatial_coords * high_res_scalef
         adata.uns["images"] = [
             dict(
                 type="image",
                 name="tissue_hires",
                 image=tissue_hires_image_path,
-                spot_diameter=scalefactors["spot_diameter_fullres"]
-                * scalefactors["tissue_hires_scalef"],
+                spot_diameter=scalefactors["spot_diameter_fullres"] * high_res_scalef,
             )
         ]
         return True
@@ -133,6 +139,12 @@ def __add_generic_spatial(adata, spatial_directory):
 
 
 def add_spatial(adata, spatial_directory):
+    """Add cell coordinates and image path to anndata instance.
+
+    :param adata: Anndata instance
+    :param spatial_directory: Path to directory containing JSON and image
+    :return: Whether spatial data was added successfully
+    """
     if not __add_visium(adata, spatial_directory):
         return __add_generic_spatial(adata, spatial_directory)
     else:

@@ -98,11 +98,28 @@ export class RestDataset {
     );
   }
 
-  getJob(id) {
-    return fetch(API + '/job?c=result&id=' + id + '&ds=' + this.id, {
-      headers: {Authorization: 'Bearer ' + getIdToken()},
-    }).then((response) => {
-      return response.json();
+  getJob(id, download = false) {
+    return fetch(
+      API +
+        '/job?c=result&id=' +
+        id +
+        '&ds=' +
+        this.id +
+        (download ? '&dl=1' : ''),
+      {
+        headers: {Authorization: 'Bearer ' + getIdToken()},
+      },
+    ).then((response) => {
+      if (download) {
+        const disp = response.headers.get('content-disposition');
+        let name = disp.substring(
+          disp.indexOf('filename=') + 'filename='.length,
+        );
+        name = name.replaceAll('"', '');
+        response.blob().then((val) => window.saveAs(val, name));
+      } else {
+        return response.json();
+      }
     });
   }
 

@@ -6,8 +6,9 @@ import pandas as pd
 import pandas._libs.json as ujson
 
 from cirrocumulus.diff_exp import DE
+from cirrocumulus.ot.transport_map_model import read_transport_map_dir
 
-from .data_processing import get_filter_str, get_mask
+from .data_processing import get_filter_str, get_mask, get_selected_data
 from .envir import (
     CIRRO_DATABASE_CLASS,
     CIRRO_JOB_RESULTS,
@@ -94,6 +95,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
             run_job,
             email,
             job_id,
+            job_name,
             job_type,
             dataset,
             params,
@@ -106,6 +108,7 @@ def submit_job(database_api, dataset_api, email, dataset, job_name, job_type, pa
         run_job(
             email,
             job_id,
+            job_name,
             job_type,
             dataset,
             params,
@@ -144,7 +147,7 @@ def get_obs(dataset_api, dataset, dataset_info, params):
         return obs, obs_field
 
 
-def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api):
+def run_job(email, job_id, job_name, job_type, dataset, params, database_api, dataset_api):
     if database_api is None:
         database_api = create_instance(os.environ[CIRRO_DATABASE_CLASS])
     if dataset_api is None:
@@ -156,10 +159,47 @@ def run_job(email, job_id, job_type, dataset, params, database_api, dataset_api)
     if f is None:
         database_api.update_job(email=email, job_id=job_id, status="error", result=None)
         raise ValueError("No function to handle {}".format(job_type))
-    import_path(f)(email, job_id, job_type, dataset, params, database_api, dataset_api)
+    import_path(f)(email, job_id, job_name, job_type, dataset, params, database_api, dataset_api)
 
 
-def run_de(email, job_id, job_type, dataset, params, database_api, dataset_api):
+def run_ot_trajectory(
+    email, job_id, job_name, job_type, dataset, params, database_api, dataset_api
+):
+    dataset_info = dataset_api.get_dataset_info(dataset)
+    selected_adata = get_selected_data(
+        dataset_api,
+        dataset,
+        measures=["obs/index", "obs/day"],
+        data_filter=params["filter"],
+        dataset_info=dataset_info,
+    )
+
+    day = selected_adata.obs["day"].unique()
+    if len(day) > 1:
+        database_api.update_job(
+            email=email, job_id=job_id, status="error", result="More than one day selected"
+        )
+        raise ValueError("More than one day selected")
+    tmap_name = params["tmap"]
+    for tmap_item in dataset["ot"]["tmaps"]:
+        if tmap_item["name"] == tmap_name:
+            break
+
+    tmap_model = read_transport_map_dir(tmap_item["path"])
+    populations = tmap_model.population_from_ids(selected_adata.obs["index"].values, at_time=day[0])
+    populations[0].name = job_name
+
+    trajectory_dataset = tmap_model.trajectories(populations)
+
+    # match order in dataset
+    # trajectory_ds = trajectory_ds[adata.obs.index]
+
+    result = dict(data=trajectory_dataset.to_df())
+    result["content-type"] = "application/parquet"
+    database_api.update_job(email=email, job_id=job_id, status="complete", result=result)
+
+
+def run_de(email, job_id, job_name, job_type, dataset, params, database_api, dataset_api):
     dataset_info = dataset_api.get_dataset_info(dataset)
     var_names = dataset_info["var"]
     nfeatures = len(var_names)

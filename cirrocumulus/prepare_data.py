@@ -318,7 +318,7 @@ def create_parser(description=False):
     parser = argparse.ArgumentParser(
         description="Prepare a dataset for cirrocumulus server" if description else None
     )
-    parser.add_argument("dataset", help="Path to a h5ad, loom, or Seurat file", nargs="+")
+    parser.add_argument("dataset", help="Path to a h5ad, loom, or Seurat (rds) file", nargs="+")
     parser.add_argument("--out", help="Path to output directory")
     parser.add_argument(
         "--format", help="Output format", choices=["parquet", "jsonl", "zarr"], default="zarr"
