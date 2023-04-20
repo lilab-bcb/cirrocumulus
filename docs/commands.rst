@@ -40,7 +40,7 @@ Seurat_ files, the `data` slot from the default assay is used.
 
 Concatenate
 ^^^^^^^^^^^^^^
-The `concat` command is used to concatenate multiple datasets in a tiled layout. Spatial and non-spatial embeddings are concatenated in a tiled layout:
+The `concat` command is used to concatenate multiple datasets into a single dataset. Both spatial and non-spatial embeddings are concatenated in a tiled layout:
 
     .. image:: images/concat.png
 
