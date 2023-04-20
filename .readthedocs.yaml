@@ -10,16 +10,16 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.10"
-
+  jobs:
+    post_checkout:
+      - mkdir build
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/conf.py
 
-jobs:
-  post_checkout:
-    - mkdir build
-    
+
+
 python:
   install:
     - requirements: docs/requirements.txt
