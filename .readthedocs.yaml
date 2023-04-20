@@ -16,6 +16,10 @@ build:
 sphinx:
    configuration: docs/conf.py
 
+jobs:
+  post_checkout:
+    - mkdir build
+    
 python:
   install:
     - requirements: docs/requirements.txt
