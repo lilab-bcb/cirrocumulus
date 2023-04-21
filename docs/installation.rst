@@ -182,7 +182,9 @@ Developer Instructions
     pre-commit install
     yarn global add typescript
     yarn install
-
+    yarn build
+    pip install -e .
+    
 - Install additional optional Python dependencies::
 
     pip install s3fs
