@@ -26,8 +26,7 @@ def __add_visium(adata, spatial_directory):
 
         with open(os.path.join(spatial_directory, "scalefactors_json.json"), "rt") as f:
             scalefactors = json.load(f)
-            # {"spot_diameter_fullres": 89.49502418224989, "tissue_hires_scalef": 0.17011142,
-            # "fiducial_diameter_fullres": 144.56888521748058, "tissue_lowres_scalef": 0.051033426}
+
         # barcode, in_tissue, array_row, array_col, pxl_col_in_fullres, pxl_row_in_fullres
         if os.path.exists(tissue_positions_list_path):
             positions = pd.read_csv(tissue_positions_list_path, header=None)
@@ -36,8 +35,8 @@ def __add_visium(adata, spatial_directory):
                 "in_tissue",
                 "array_row",
                 "array_col",
-                "pxl_col_in_fullres",
                 "pxl_row_in_fullres",
+                "pxl_col_in_fullres",
             ]
         elif os.path.exists(tissue_positions_path):
             positions = pd.read_csv(tissue_positions_path)

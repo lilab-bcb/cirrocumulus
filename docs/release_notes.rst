@@ -1,5 +1,9 @@
 Release Notes
 -------------
+
+- 1.1.52.post2 `April 21, 2023`
+    * Fixed swapping row and column spot coordinates for `Space Ranger`_ output prior to version 2.0
+
 - 1.1.52.post1 `April 21, 2023`
     * Fixed error parsing command line argument in `concat` command
 
