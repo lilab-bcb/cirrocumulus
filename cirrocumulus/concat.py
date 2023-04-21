@@ -1,4 +1,5 @@
 import sys
+import math
 import os.path
 import argparse
 
@@ -15,6 +16,7 @@ def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
     images = []
     spot_diameters = []
     common_obsm_keys = None
+    unique_dataset_names = set()
     for path in paths:
         filesystem = get_fs(path)
         adata = read_adata(path, filesystem, False)
@@ -23,7 +25,11 @@ def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
         dataset_name = os.path.splitext(dataset_name)[0]
         if dataset_name.endswith("_filtered_feature_bc_matrix"):
             dataset_name = dataset_name[: -len("_filtered_feature_bc_matrix")]
-
+        counter = 1
+        while dataset_name in unique_dataset_names:
+            dataset_name = dataset_name + "-" + str(counter)
+            counter = counter + 1
+        unique_dataset_names.add(dataset_name)
         spatial_dir = os.path.join(os.path.dirname(path), "spatial")
         if os.path.exists(spatial_dir) and cirrocumulus.io_util.add_spatial(adata, spatial_dir):
             spatial = adata.uns["images"]
@@ -41,7 +47,7 @@ def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
         datasets.append(adata)
 
     ncols = min(ncols, len(datasets))
-    nrows = len(datasets) // ncols
+    nrows = int(math.ceil(len(datasets) / ncols))
     max_width = 0
     max_height = 0
     for i in range(len(images)):
@@ -63,7 +69,8 @@ def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
                     coords = datasets[i].obsm[key]
                     if coords.shape[1] in [2, 3]:
                         row_index, col_index = indices[i]
-
+                        # 0,0 is at lower left, start at upper-left
+                        row_index = nrows - row_index - 1
                         coords[:, 0] = np.interp(
                             coords[:, 0],
                             (coords[:, 0].min(), coords[:, 0].max()),
