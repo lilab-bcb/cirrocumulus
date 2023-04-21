@@ -14,7 +14,6 @@ urls.Documentation = "https://cirrocumulus.readthedocs.io/"
 
 license = { file = 'LICENSE' }
 dynamic = ['version']
-
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -32,7 +31,7 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Visualization'
 ]
 
-requires-python = '>=3.7'
+requires-python = '>=3.9'
 dependencies = [
     "anndata",
     "CacheControl",
