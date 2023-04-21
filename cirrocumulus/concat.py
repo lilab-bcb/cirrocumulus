@@ -1,3 +1,5 @@
+import sys
+import math
 import os.path
 import argparse
 
@@ -9,11 +11,12 @@ from cirrocumulus.anndata_dataset import read_adata
 from cirrocumulus.util import get_fs
 
 
-def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
+def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
     datasets = []
     images = []
     spot_diameters = []
     common_obsm_keys = None
+    unique_dataset_names = set()
     for path in paths:
         filesystem = get_fs(path)
         adata = read_adata(path, filesystem, False)
@@ -22,7 +25,11 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
         dataset_name = os.path.splitext(dataset_name)[0]
         if dataset_name.endswith("_filtered_feature_bc_matrix"):
             dataset_name = dataset_name[: -len("_filtered_feature_bc_matrix")]
-
+        counter = 1
+        while dataset_name in unique_dataset_names:
+            dataset_name = dataset_name + "-" + str(counter)
+            counter = counter + 1
+        unique_dataset_names.add(dataset_name)
         spatial_dir = os.path.join(os.path.dirname(path), "spatial")
         if os.path.exists(spatial_dir) and cirrocumulus.io_util.add_spatial(adata, spatial_dir):
             spatial = adata.uns["images"]
@@ -40,7 +47,7 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
         datasets.append(adata)
 
     ncols = min(ncols, len(datasets))
-    nrows = len(datasets) // ncols
+    nrows = int(math.ceil(len(datasets) / ncols))
     max_width = 0
     max_height = 0
     for i in range(len(images)):
@@ -62,7 +69,8 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
                     coords = datasets[i].obsm[key]
                     if coords.shape[1] in [2, 3]:
                         row_index, col_index = indices[i]
-
+                        # 0,0 is at lower left, start at upper-left
+                        row_index = nrows - row_index - 1
                         coords[:, 0] = np.interp(
                             coords[:, 0],
                             (coords[:, 0].min(), coords[:, 0].max()),
@@ -99,9 +107,15 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
     combined_adata.obs_names_make_unique()
     for key in common_obsm:
         combined_adata.obsm[key] = common_obsm[key]
+    if not output_path.lower().endswith(".h5ad"):
+        output_path = output_path + ".h5ad"
+    output_dir = os.path.dirname(output_path)
+    if output_dir == "":
+        output_dir = "."
     os.makedirs(output_dir, exist_ok=True)
     if do_concat_spatial:
         combined_adata.obsm["tissue_hires"] = np.concatenate(adata_spatial_coords)
+
         spatial_dir = os.path.join(output_dir, "spatial")
         os.makedirs(spatial_dir, exist_ok=True)
         combined_image_path = os.path.join(spatial_dir, "tissue_hires.png")
@@ -129,7 +143,7 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
             spot_diameter=spot_diameter,
         )
 
-    combined_adata.write(os.path.join(output_dir, "concat_data.h5ad"))
+    combined_adata.write(output_path)
 
 
 def create_parser(description=False):
@@ -146,8 +160,8 @@ def create_parser(description=False):
     parser.add_argument(
         "-o",
         "--output",
-        help="Output directory to write concatenated h5ad file and spatial directory if input datasets are spatial",
-        required=True,
+        help="Output path to write concatenated h5ad file. A spatial directory will be created if all input datasets are spatial",
+        default="data-concat.h5ad",
     )
     parser.add_argument(
         "-c",
@@ -161,11 +175,11 @@ def create_parser(description=False):
     return parser
 
 
-def main():
+def main(argsv):
     parser = create_parser(True)
-    args = parser.parse_args()
-    concat_spatial(args.dataset, output_dir=args.output, ncols=args.cols)
+    args = parser.parse_args(argsv)
+    concat_spatial(args.dataset, args.output, args.cols)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

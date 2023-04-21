@@ -1,6 +1,9 @@
 Release Notes
 -------------
-- 1.1.52 `April 19, 2023`
+- 1.1.52.post1 `April 21, 2023`
+    * Fixed error parsing command line argument in `concat` command
+
+- 1.1.52 `April 20, 2023`
     * Added option to invert categorical filters
     * Added search to categorical legend
     * Compute and visualize cellular trajectories interactively
