@@ -1,3 +1,4 @@
+import sys
 import os.path
 import argparse
 
@@ -9,7 +10,7 @@ from cirrocumulus.anndata_dataset import read_adata
 from cirrocumulus.util import get_fs
 
 
-def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
+def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
     datasets = []
     images = []
     spot_diameters = []
@@ -99,9 +100,15 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
     combined_adata.obs_names_make_unique()
     for key in common_obsm:
         combined_adata.obsm[key] = common_obsm[key]
+    if not output_path.lower().endswith(".h5ad"):
+        output_path = output_path + ".h5ad"
+    output_dir = os.path.dirname(output_path)
+    if output_dir == "":
+        output_dir = "."
     os.makedirs(output_dir, exist_ok=True)
     if do_concat_spatial:
         combined_adata.obsm["tissue_hires"] = np.concatenate(adata_spatial_coords)
+
         spatial_dir = os.path.join(output_dir, "spatial")
         os.makedirs(spatial_dir, exist_ok=True)
         combined_image_path = os.path.join(spatial_dir, "tissue_hires.png")
@@ -129,7 +136,7 @@ def concat_spatial(paths: list[str], output_dir: str, ncols: int = 2):
             spot_diameter=spot_diameter,
         )
 
-    combined_adata.write(os.path.join(output_dir, "concat_data.h5ad"))
+    combined_adata.write(output_path)
 
 
 def create_parser(description=False):
@@ -146,8 +153,8 @@ def create_parser(description=False):
     parser.add_argument(
         "-o",
         "--output",
-        help="Output directory to write concatenated h5ad file and spatial directory if input datasets are spatial",
-        required=True,
+        help="Output path to write concatenated h5ad file. A spatial directory will be created if all input datasets are spatial",
+        default="data-concat.h5ad",
     )
     parser.add_argument(
         "-c",
@@ -161,11 +168,11 @@ def create_parser(description=False):
     return parser
 
 
-def main():
+def main(argsv):
     parser = create_parser(True)
-    args = parser.parse_args()
-    concat_spatial(args.dataset, output_dir=args.output, ncols=args.cols)
+    args = parser.parse_args(argsv)
+    concat_spatial(args.dataset, args.output, args.cols)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
