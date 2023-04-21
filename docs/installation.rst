@@ -184,7 +184,7 @@ Developer Instructions
     yarn install
     yarn build
     pip install -e .
-    
+
 - Install additional optional Python dependencies::
 
     pip install s3fs
