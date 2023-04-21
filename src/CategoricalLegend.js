@@ -194,11 +194,13 @@ export default function CategoricalLegend(props) {
     const numSelected = selectedDimensionToCount[category] || 0;
     const numGroup = globalDimensionSummary.counts[categoryIndex];
     const title =
-      renamedCategory + selectionSummary
+      renamedCategory +
+      (selectionSummary
         ? ' (' +
           stripTrailingZeros(numberFormat2f(100 * (numSelected / numGroup))) +
           '% selected)'
-        : '';
+        : '');
+
     return (
       <ListItemButton
         disableGutters={true}
