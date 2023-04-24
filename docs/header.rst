@@ -3,9 +3,9 @@ Cirrocumulus
 
 Cirrocumulus is an interactive visualization tool for large-scale single-cell genomics data, with the following features:
 
-* Visualize datasets in h5ad_ (anndata), h5_, loom_, Seurat_, TileDB_, zarr_, or `STAR-Fusion`_  formats
+* Visualize datasets in h5ad_, `10x h5`_, loom_, Seurat_, TileDB_, or zarr_ formats
+* View MERFISH_ or other spatial transcriptomics data overlaid on an image
 * Easily deploy on a laptop, on-premise server, cloud VM, or Google App Engine
-* View spatial transcriptomics data overlaid on an image
 * Share the current visualization state in a URL
 * Share datasets securely with collaborators
 * Create dotplots, heatmaps, and violin plots to explore relationships between categorical variables and expression
@@ -63,4 +63,5 @@ Example Data
 .. _TileDB: https://tiledb.com/
 .. _zarr: https://zarr.readthedocs.io/
 .. _example ontology: http://www.obofoundry.org/ontology/cl.html
-.. _h5: https://support.10xgenomics.com/spatial-gene-expression/software/pipelines/latest/advanced/h5_matrices
+.. _10x h5: https://support.10xgenomics.com/spatial-gene-expression/software/pipelines/latest/advanced/h5_matrices
+.. _MERFISH: https://www.biorxiv.org/content/10.1101/2023.03.06.531121v1
