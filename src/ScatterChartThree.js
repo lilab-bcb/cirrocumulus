@@ -4,7 +4,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {Color, Vector3, Vector4} from 'three';
 import {getEmbeddingKey} from './actions';
 import ChartToolbar from './ChartToolbar';
-import {formatNumber, numberFormat2f} from './formatters';
+import {formatNumber} from './formatters';
 import {
   createScatterPlot,
   getCategoryLabelsPositions,
@@ -274,8 +274,11 @@ function ScatterChartThree(props) {
         setTip({html: ''});
       } else {
         const selectedIndex = getSelectedIndex(point);
+
         if (selectedIndex !== -1) {
           let value = trace.values[selectedIndex];
+
+          const isSelected = selection == null || selection.has(selectedIndex);
           let categoryObject = categoricalNames[trace.name] || {};
           let renamedValue = categoryObject[value];
           if (renamedValue != null && renamedValue.newValue != null) {
@@ -284,6 +287,10 @@ function ScatterChartThree(props) {
 
           if (typeof value === 'number') {
             value = formatNumber(value);
+          }
+
+          if (!isSelected) {
+            value = value + ' (filtered)';
           }
           setTip({
             html: '' + value,
@@ -400,7 +407,7 @@ function ScatterChartThree(props) {
       scatterPlotRef.current.boxCallback = null;
       scatterPlotRef.current.cameraCallback = null;
     };
-  }, [scatterPlotRef, categoricalNames, chartSize, trace]); // onSelected, handleClick, onCamera
+  }, [scatterPlotRef, categoricalNames, chartSize, trace, selection]); // onSelected, handleClick, onCamera
 
   useEffect(() => {
     setAxesColors(scatterPlotRef.current, darkMode);
