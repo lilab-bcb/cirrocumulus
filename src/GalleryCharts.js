@@ -33,7 +33,6 @@ function SortableItem(props) {
     position: 'relative',
   };
   const {
-    activeFeature,
     trace,
     obsCat,
     cachedData,
@@ -103,6 +102,7 @@ function GalleryCharts(props) {
     primaryChartSize,
     searchTokens,
     selection,
+    tab,
     unselectedMarkerOpacity,
     unselectedPointSize,
     handleActiveFeature,
@@ -126,6 +126,9 @@ function GalleryCharts(props) {
   }
 
   function handleKeyUp(e) {
+    if (tab !== 'embedding') {
+      return;
+    }
     const tagName = e.target.tagName;
     const isInputField =
       tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
@@ -304,6 +307,7 @@ const mapStateToProps = (state) => {
     primaryChartSize: state.panel.primaryChartSize,
     searchTokens: state.searchTokens,
     selection: state.selection,
+    tab: state.tab,
     unselectedMarkerOpacity: state.unselectedMarkerOpacity,
     unselectedPointSize: state.unselectedPointSize,
   };
