@@ -326,6 +326,7 @@ def dataset_schema(dataset, n_features=10):
     schema_dict["embeddings"] = embeddings
     schema_dict["categoryOrder"] = category_to_order
     schema_dict["layers"] = layers
+    schema_dict["timepoint_field"] = dataset.uns.get("timepoint_field", "day")
     var_df = dataset.var
     if not isinstance(var_df, pd.DataFrame):
         from anndata._io.zarr import read_attribute

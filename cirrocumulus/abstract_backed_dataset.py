@@ -59,6 +59,8 @@ class AbstractBackedDataset(AbstractDataset):
                 if pd.api.types.is_object_dtype(module_ids):
                     module_ids = module_ids.astype(str)
                 d["module"] = pd.Index(module_ids)
+            if "timepoint_field" in uns_group:
+                d["timepoint_field"] = uns_group["timepoint_field"]
         return d
 
     def get_X(self, var_ids, keys, node):
