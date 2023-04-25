@@ -3,9 +3,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import {debounce} from 'lodash';
-import React, {useEffect, useMemo} from 'react';
+import React, {useMemo} from 'react';
 import ColorSchemeSelector from './ColorSchemeSelector';
-import {formatNumber, numberFormat, numberFormat2f} from './formatters';
+import {formatNumber, numberFormat} from './formatters';
 import {stripTrailingZeros} from './util';
 
 export function EditableColorScheme(props) {
@@ -36,15 +36,14 @@ export function EditableColorScheme(props) {
     );
   }
 
-  const updateMinDebounced = useMemo(() => debounce(updateMin, 500), []);
-  const updateMaxDebounced = useMemo(() => debounce(updateMax, 500), []);
-
-  useEffect(() => {
-    return () => {
-      updateMinDebounced.cancel();
-      updateMaxDebounced.cancel();
-    };
-  }, [updateMinDebounced, updateMaxDebounced]);
+  const updateMinDebounced = useMemo(
+    () => debounce(updateMin, 500),
+    [onMinChange],
+  );
+  const updateMaxDebounced = useMemo(
+    () => debounce(updateMax, 500),
+    [onMaxChange],
+  );
 
   function handleMin(event) {
     onMinUIChange(event.target.value);

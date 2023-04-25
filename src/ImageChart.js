@@ -277,6 +277,12 @@ class ImageChart extends React.PureComponent {
       if (typeof value === 'number') {
         value = formatNumber(value);
       }
+
+      const isSelected =
+        this.props.selection == null || this.props.selection.has(point);
+      if (!isSelected) {
+        value = value + ' (filtered)';
+      }
       const parentRect =
         this.tooltipElement.parentElement.getBoundingClientRect();
       this.tooltipElement.innerHTML = '' + value;

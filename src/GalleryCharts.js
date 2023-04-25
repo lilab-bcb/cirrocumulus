@@ -19,7 +19,7 @@ import GalleryImage from './GalleryImage';
 import {createScatterPlot} from './ThreeUtil';
 import {FEATURE_TYPE} from './util';
 import {CSS} from '@dnd-kit/utilities';
-import {find} from 'lodash';
+import {find, findIndex} from 'lodash';
 
 function SortableItem(props) {
   const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
@@ -89,6 +89,7 @@ function createContainer(chartSize) {
 
 function GalleryCharts(props) {
   const {
+    activeFeature,
     cachedData,
     categoricalNames,
     chartSize,
@@ -101,6 +102,7 @@ function GalleryCharts(props) {
     primaryChartSize,
     searchTokens,
     selection,
+    tab,
     unselectedMarkerOpacity,
     unselectedPointSize,
     handleActiveFeature,
@@ -109,8 +111,68 @@ function GalleryCharts(props) {
 
   const scatterPlotRef = useRef();
   const containerElementRef = useRef();
-  const [forceUpdate, setForceUpdate] = useState(false);
+  const galleryTraces = embeddingData.filter((trace) => trace.active);
 
+  function updateActiveTrace(e, index) {
+    const trace = galleryTraces[index % galleryTraces.length];
+    handleActiveFeature({
+      name: trace.name,
+      type: trace.featureType,
+      embeddingKey: getTraceKey(trace),
+    });
+    window.scrollTo(0, 0);
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function handleKeyUp(e) {
+    if (tab !== 'embedding') {
+      return;
+    }
+    const tagName = e.target.tagName;
+    const isInputField =
+      tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA';
+    if (!isInputField && galleryTraces.length > 0) {
+      // 1-9
+      if (e.key == '[' || e.key == ']') {
+        // previous, next
+        const previous = e.key == '[';
+        let index = findIndex(
+          galleryTraces,
+          (trace) => getTraceKey(trace) === activeFeature.embeddingKey,
+        );
+        if (index < 0) {
+          console.log('not found');
+          return;
+        }
+        if (previous) {
+          index--;
+          if (index < 0) {
+            index = galleryTraces.length - 1;
+          }
+        } else {
+          index++;
+          if (index === galleryTraces.length) {
+            index = 0;
+          }
+        }
+        updateActiveTrace(e, index);
+      } else {
+        const key = parseInt(e.key);
+        if (key >= 1 && key <= 9) {
+          updateActiveTrace(e, key - 1);
+        }
+      }
+    }
+  }
+
+  const [forceUpdate, setForceUpdate] = useState(false);
+  useEffect(() => {
+    window.addEventListener('keypress', handleKeyUp);
+    return () => {
+      window.removeEventListener('keypress', handleKeyUp);
+    };
+  }, [handleKeyUp]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -164,7 +226,6 @@ function GalleryCharts(props) {
     };
   }, [chartSize, containerElementRef, scatterPlotRef]);
 
-  const galleryTraces = embeddingData.filter((trace) => trace.active);
   const obsCat = searchTokens
     .filter(
       (item) =>
@@ -233,6 +294,7 @@ function GalleryCharts(props) {
 
 const mapStateToProps = (state) => {
   return {
+    activeFeature: state.activeFeature,
     cachedData: state.cachedData,
     categoricalNames: state.categoricalNames,
     chartOptions: state.chartOptions,
@@ -245,6 +307,7 @@ const mapStateToProps = (state) => {
     primaryChartSize: state.panel.primaryChartSize,
     searchTokens: state.searchTokens,
     selection: state.selection,
+    tab: state.tab,
     unselectedMarkerOpacity: state.unselectedMarkerOpacity,
     unselectedPointSize: state.unselectedPointSize,
   };

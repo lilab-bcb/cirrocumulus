@@ -76,6 +76,15 @@ function LandingPage(props) {
         <ListItem>
           <ListItemText primary="Click chart to set primary view" />
         </ListItem>
+        <ListItem>
+          <ListItemText primary="Jump to the next chart: ]" />
+        </ListItem>
+        <ListItem>
+          <ListItemText primary="Jump to the previous chart: [" />
+        </ListItem>
+        <ListItem>
+          <ListItemText primary="Jump to a specific chart: 1 through 9" />
+        </ListItem>
       </List>
       {props.serverInfo && props.serverInfo.footer && (
         <Box>

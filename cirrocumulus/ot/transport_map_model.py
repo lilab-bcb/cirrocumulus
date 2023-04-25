@@ -60,8 +60,9 @@ class TransportMapModel:
             populations = self.push_forward(*populations, as_list=True)
             update(False, populations)
 
+        X = np.concatenate(trajectories)
         return anndata.AnnData(
-            X=np.concatenate(trajectories),
+            X=X,
             obs=self.meta.copy(),
             var=pd.DataFrame(index=population_names),
         )

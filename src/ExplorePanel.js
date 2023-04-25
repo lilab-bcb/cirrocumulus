@@ -474,6 +474,12 @@ function ExplorePanel(props) {
   const embeddingOptions = getEmbeddingOptions(dataset.embeddings);
   const selectedEmbeddings = getEmbeddingOptions(embeddings);
   const layerOptions = getLayersOptions(dataset.layers);
+
+  function getDatasetFilterLabel(key) {
+    const index = findIndex(trajectoryOptions, (option) => option.id === key);
+    return index === -1 ? key : trajectoryOptions[index].text;
+  }
+
   return (
     <>
       {'feature set view' === selectedPopupMenuItem && (
@@ -822,7 +828,7 @@ function ExplorePanel(props) {
                     size={'small'}
                     style={{marginRight: 2, verticalAlign: 'bottom'}}
                     key={key}
-                    label={key}
+                    label={getDatasetFilterLabel(key)}
                   />
                 );
               })}

@@ -112,7 +112,7 @@ function SideBar(props) {
 
   const [minColor, setMinColor] = useState('');
   const [maxColor, setMaxColor] = useState('');
-  const [selectedViewEl, ssetSelectedViewEl] = useState(null);
+  const [selectedViewEl, setSelectedViewEl] = useState(null);
   const [selectedView, setSelectedView] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedLink, setSelectedLink] = useState(null);
@@ -189,6 +189,7 @@ function SideBar(props) {
 
   const summary =
     activeFeature == null ? null : globalFeatureSummary[activeFeature.name];
+
   const trace =
     activeFeature == null
       ? null
@@ -213,7 +214,7 @@ function SideBar(props) {
         setMaxColor(summary.customZMax == null ? '' : summary.customZMax);
       }
     }
-  }, [activeFeature, embeddingData, globalFeatureSummary]);
+  }, [activeFeature]);
 
   function onLinkContextMenu(event, item) {
     event.preventDefault();
@@ -263,41 +264,36 @@ function SideBar(props) {
     setMaxColor(value);
   }
 
-  function onMinChange(value) {
-    if (trace.type !== TRACE_TYPE_META_IMAGE) {
-      summary.customMin = isNaN(value) ? undefined : value;
-    } else {
-      summary.customZMin = isNaN(value) ? undefined : value;
-    }
-    onDomain({
-      name: activeFeature.name,
-      summary: summary,
-    });
-  }
-
-  function onMaxChange(value) {
-    if (trace.type !== TRACE_TYPE_META_IMAGE) {
-      summary.customMax = isNaN(value) ? undefined : value;
-    } else {
-      summary.customZMax = isNaN(value) ? undefined : value;
-    }
-    onDomain({
-      name: activeFeature.name,
-      summary: summary,
-    });
-  }
-
   const memoizedMinChange = useCallback(
     (value) => {
-      onMinChange(value);
+      if (trace.type !== TRACE_TYPE_META_IMAGE) {
+        summary.customMin = isNaN(value) ? undefined : value;
+      } else {
+        summary.customZMin = isNaN(value) ? undefined : value;
+      }
+      onDomain({
+        name: activeFeature.name,
+        summary: summary,
+      });
     },
-    [activeFeature],
+    [activeFeature, trace, summary],
   );
+
   const memoizedMaxChange = useCallback(
     (value) => {
-      onMaxChange(value);
+      if (trace != null) {
+        if (trace.type !== TRACE_TYPE_META_IMAGE) {
+          summary.customMax = isNaN(value) ? undefined : value;
+        } else {
+          summary.customZMax = isNaN(value) ? undefined : value;
+        }
+        onDomain({
+          name: activeFeature.name,
+          summary: summary,
+        });
+      }
     },
-    [activeFeature],
+    [activeFeature, trace, summary],
   );
 
   function onMarkerOpacityChange(event, value) {
@@ -336,7 +332,7 @@ function SideBar(props) {
   function viewDetails(event, id) {
     event.stopPropagation();
     setContextMenu(null);
-    ssetSelectedViewEl(event.currentTarget);
+    setSelectedViewEl(event.currentTarget);
     setSelectedView(find(datasetViews, (item) => item.id === id));
   }
 
@@ -370,7 +366,7 @@ function SideBar(props) {
   }
 
   function handleCloseViewDetails() {
-    ssetSelectedViewEl(null);
+    setSelectedViewEl(null);
     setSelectedView(null);
   }
 
