@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 import anndata
 import scipy.sparse
@@ -5,12 +7,17 @@ from anndata import AnnData
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY, dataset_schema
-from cirrocumulus.io_util import read_star_fusion_file
+from cirrocumulus.io_util import add_spatial, read_star_fusion_file
 
 
-def read_adata(path, filesystem, backed):
+logger = logging.getLogger("cirro")
+
+CATEGORICAL_FIELDS_CONVERT = ["seurat_clusters"]
+
+
+def read_adata(path, filesystem, backed=False, spatial_directory=None, use_raw=False):
+    path = path.rstrip(filesystem.sep)
     path_lc = path.lower()
-    path_lc = path_lc.rstrip("/")
     if path_lc.endswith(".loom"):
         adata = anndata.read_loom(filesystem.open(path))
     elif path_lc.endswith(".zarr"):
@@ -20,7 +27,51 @@ def read_adata(path, filesystem, backed):
     elif path_lc.endswith(".h5"):
         import scanpy as sc
 
-        adata = sc.read_10x_h5(path)
+        adata = sc.read_10x_h5(path)  # fsspec not supported
+        sep_index = path.rfind(filesystem.sep)
+        cells_path = "cells.parquet"
+        analysis_path = "analysis"
+        if sep_index != -1:
+            cells_path = path[0:sep_index] + filesystem.sep + cells_path
+            analysis_path = path[0:sep_index] + filesystem.sep + analysis_path
+
+        if filesystem.exists(cells_path):  # xenium
+            df = pd.read_parquet(cells_path).set_index("cell_id")
+            df.index = df.index.astype(str)
+            adata.obs = adata.obs.join(df)
+            if "x_centroid" in adata.obs.columns:
+                adata.obsm["X_spatial"] = adata.obs[["x_centroid", "y_centroid"]].values
+
+                del adata.obs["x_centroid"]
+                del adata.obs["y_centroid"]
+        if filesystem.exists(analysis_path) and filesystem.isdir(analysis_path):  # xenium
+            clustering_results = filesystem.glob(
+                analysis_path + filesystem.sep + "clustering" + filesystem.sep + "**clusters.csv"
+            )
+            for clustering_result in clustering_results:
+                df = pd.read_csv(clustering_result, index_col="Barcode")
+                if len(df.columns) == 1:
+                    df.index = df.index.astype(str)
+                    df[df.columns[0]] = df[df.columns[0]].astype("category")
+                    rename = dict()
+                    # /analysis/clustering/gene_expression_graphclust/clusters.csv'
+                    rename[df.columns[0]] = clustering_result.split(filesystem.sep)[-2]
+                    df = df.rename(rename, axis=1)
+                    adata.obs = adata.obs.join(df)
+            umap_results = filesystem.glob(
+                analysis_path + filesystem.sep + "umap" + filesystem.sep + "**projection.csv"
+            )
+            for umap_result in umap_results:
+                df = pd.read_csv(umap_result, index_col="Barcode")
+                if len(df.columns) == 2 or len(df.columns) == 3:
+                    df.index = df.index.astype(str)
+                    adata.obs = adata.obs.join(df)
+                    adata.obsm["X_" + "_".join(umap_result.split(filesystem.sep)[-2:])] = adata.obs[
+                        df.columns
+                    ].values
+                    for c in df.columns:
+                        del adata.obs[c]
+
     elif path_lc.endswith(".rds"):  # Seurat, convert to h5ad
         h5_file = path + ".h5ad"
         import os
@@ -57,7 +108,31 @@ def read_adata(path, filesystem, backed):
             adata = anndata.read_h5ad(path, backed="r")
         else:
             adata = anndata.read_h5ad(filesystem.open(path))
+
+    if "module" in adata.uns:
+        adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
+            X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
+        )
+
+    if "images" in adata.uns:
+        images = adata.uns["images"]
+        if isinstance(images, dict):
+            adata.uns["images"] = [images]
+
+    if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
+        logger.info("Using adata.raw")
+        adata = anndata.AnnData(
+            X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns
+        )
     adata.var_names_make_unique()
+    if spatial_directory is not None:
+        if not add_spatial(adata, spatial_directory):
+            logger.info("No spatial data found in {}".format(spatial_directory))
+
+    for field in CATEGORICAL_FIELDS_CONVERT:
+        if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
+            logger.info("Converting {} to categorical".format(field))
+            adata.obs[field] = adata.obs[field].astype(str).astype("category")
     return adata
 
 
@@ -78,15 +153,6 @@ class AnndataDataset(AbstractDataset):
 
     def read_adata(self, filesystem, path):
         adata = read_adata(path, filesystem, self.backed)
-        if "module" in adata.uns:
-            adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
-                X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
-            )
-
-        if "images" in adata.uns:
-            images = adata.uns["images"]
-            if isinstance(images, dict):
-                adata.uns["images"] = [images]
         return adata
 
     def add_data(self, path, data):

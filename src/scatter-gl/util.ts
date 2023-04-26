@@ -17,7 +17,7 @@ limitations under the License.
 
 import {Camera, Color, LinearFilter, Texture, Vector3} from 'three';
 import {Point2D, Vector} from './types';
-import {ColorRepresentation} from 'three/src/utils';
+import {ColorRepresentation} from 'three/src/math/Color';
 
 /** Projects a 3d point into screen space */
 export function vector3DToScreenCoords(

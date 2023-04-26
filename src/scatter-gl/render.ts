@@ -16,7 +16,7 @@ limitations under the License.
 ==============================================================================*/
 
 import { Camera, Vector3 } from "three";
-import {ColorRepresentation} from 'three/src/utils';
+import {ColorRepresentation} from 'three/src/math/Color';
 
 /**
  * LabelRenderParams describes the set of points that should have labels

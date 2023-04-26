@@ -7,69 +7,15 @@ import pandas as pd
 import anndata
 import scipy.sparse
 
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, dataset_schema, get_scanpy_marker_keys
-from cirrocumulus.io_util import SPATIAL_HELP, add_spatial, filter_markers, get_markers, unique_id
+from cirrocumulus.anndata_dataset import read_adata
+from cirrocumulus.anndata_util import dataset_schema, get_scanpy_marker_keys
+from cirrocumulus.io_util import SPATIAL_HELP, filter_markers, get_markers, unique_id
 from cirrocumulus.util import get_fs, open_file, to_json
 
 
 logger = logging.getLogger("cirro")
 
-cluster_fields = ["anno", "cell_type", "celltype", "leiden", "louvain", "seurat_cluster", "cluster"]
-categorical_fields_convert = ["seurat_clusters"]
-
-
-def rds2h5ad(src, dest):
-    import subprocess
-
-    import pkg_resources
-
-    subprocess.check_call(
-        [
-            "Rscript",
-            pkg_resources.resource_filename("cirrocumulus", "seurat2h5ad.R"),
-            src,
-            dest,
-        ]
-    )
-
-
-def read_rds(path, spatial_directory=None):
-    import tempfile
-
-    _, h5_file = tempfile.mkstemp(suffix=".h5ad")
-    os.remove(h5_file)
-    rds2h5ad(path, h5_file)
-    adata = read_adata(h5_file, spatial_directory=spatial_directory, use_raw=True)
-    os.remove(h5_file)
-    return adata
-
-
-def read_adata(path, spatial_directory=None, use_raw=False):
-    if path.lower().endswith(".loom"):
-        adata = anndata.read_loom(path)
-    elif path.lower().endswith(".zarr"):
-        adata = anndata.read_zarr(path)
-    else:
-        adata = anndata.read(path)
-    if "module" in adata.uns:
-        adata.uns[ADATA_MODULE_UNS_KEY] = anndata.AnnData(
-            X=adata.uns["module"]["X"], var=adata.uns["module"]["var"]
-        )
-    if use_raw and adata.raw is not None and adata.shape[0] == adata.raw.shape[0]:
-        logger.info("Using adata.raw")
-        adata = anndata.AnnData(
-            X=adata.raw.X, var=adata.raw.var, obs=adata.obs, obsm=adata.obsm, uns=adata.uns
-        )
-
-    if spatial_directory is not None:
-        if not add_spatial(adata, spatial_directory):
-            logger.info("No spatial data found in {}".format(spatial_directory))
-
-    for field in categorical_fields_convert:
-        if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
-            logger.info("Converting {} to categorical".format(field))
-            adata.obs[field] = adata.obs[field].astype(str).astype("category")
-    return adata
+CLUSTER_FIELDS = ["anno", "cell_type", "celltype", "leiden", "louvain", "seurat_cluster", "cluster"]
 
 
 class PrepareData:
@@ -159,7 +105,7 @@ class PrepareData:
                 existing_fields.add(group_by)
             for field in dataset.obs.columns:
                 field_lc = field.lower()
-                for cluster_field in cluster_fields:
+                for cluster_field in CLUSTER_FIELDS:
                     if field_lc.find(cluster_field) != -1 and cluster_field not in existing_fields:
                         groups.append(field)
                         break
@@ -364,21 +310,19 @@ def main(argsv):
     output_format = args.format
     if out is None:
         out = os.path.splitext(os.path.basename(input_datasets[0]))[0]
-    if out.endswith("/"):
-        out = out[: len(out) - 1]
+    out = out.rstrip("/")
     output_format2extension = dict(parquet=".cpq", jsonl=".jsonl", zarr=".zarr", h5ad=".h5ad")
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
 
     datasets = []
     for input_dataset in input_datasets:
-        if input_dataset.lower().endswith(".rds"):
-            adata = read_rds(input_dataset, spatial_directory=args.spatial)
-        else:
-            adata = read_adata(input_dataset, spatial_directory=args.spatial, use_raw=False)
-
+        filesystem = get_fs(input_dataset)
+        adata = read_adata(input_dataset, filesystem, spatial_directory=args.spatial, use_raw=False)
         datasets.append(adata)
-        adata.uns["name"] = os.path.splitext(os.path.basename(input_dataset.rstrip("/")))[0]
+        adata.uns["name"] = os.path.splitext(
+            os.path.basename(input_dataset.rstrip(filesystem.sep))
+        )[0]
 
     prepare_data = PrepareData(
         datasets=datasets,

@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.54 `April 26, 2023`
+    * Read Xenium_ output
+
 - 1.1.53 `April 25, 2023`
     * Added keyboard shortcuts for selecting active chart
 
@@ -529,3 +532,4 @@ Release Notes
 .. _zarr: https://zarr.readthedocs.io/
 .. _Mixpanel: https://mixpanel.com/
 .. _Space Ranger: https://support.10xgenomics.com/spatial-gene-expression/software/pipelines/latest/what-is-space-ranger
+.. _Xenium: https://www.10xgenomics.com/support/in-situ-gene-expression/documentation/steps/onboard-analysis/at-a-glance-xenium-output-files
