@@ -50,13 +50,13 @@ Example Data
 .. image:: images/play3d.gif
 
 
-.. _3k PBMCs from a healthy donor data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/pbmc3k.zip
-.. _human lymph node spatial data: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/V1_Human_Lymph_Node.zip
+.. _3k PBMCs from a healthy donor data: https://github.com/lilab-bcb/cirrocumulus/raw/main/docs/pbmc3k.zip
+.. _human lymph node spatial data: https://github.com/lilab-bcb/cirrocumulus/raw/main/docs/V1_Human_Lymph_Node.zip
 .. _h5ad: https://anndata.readthedocs.io/
 .. _loom: https://linnarssonlab.org/loompy/format/
 .. _STAR-Fusion: https://github.com/STAR-Fusion/STAR-Fusion/wiki
 .. _Seurat: https://satijalab.org/seurat/
-.. _see example: https://github.com/klarman-cell-observatory/cirrocumulus/raw/master/docs/markers.json
+.. _see example: https://github.com/lilab-bcb/cirrocumulus/raw/main/docs/markers.json
 .. _Pegasus: http://pegasus.readthedocs.io/
 .. _Cumulus: https://cumulus.readthedocs.io/en/stable/cumulus.html
 .. _Scanpy: https://scanpy.readthedocs.io/
