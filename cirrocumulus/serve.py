@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 
 from cirrocumulus.envir import (
     CIRRO_AUTH,
@@ -19,7 +19,6 @@ from cirrocumulus.envir import (
 )
 from cirrocumulus.launch import create_app
 from cirrocumulus.util import add_dataset_providers, create_instance, get_fs
-
 
 app = None
 
@@ -41,6 +40,8 @@ def configure_app(app):
 
     os.environ[CIRRO_SERVE] = "true"
     os.environ[CIRRO_JOB_TYPE + "de"] = "cirrocumulus.job_api.run_de"
+    os.environ[CIRRO_JOB_TYPE + "ot_trajectory"] = "cirrocumulus.job_api.run_ot_trajectory"
+
     if auth_client_id is None:
         app.config[CIRRO_AUTH] = NoAuth()
     else:
@@ -97,7 +98,8 @@ def create_parser(description=False):
     parser.add_argument("--header", help="Markdown file to customize the application header")
     parser.add_argument("--upload", help="URL to allow users to upload files")
     parser.add_argument(
-        "--results", help="URL to save user computed results (e.g. differential expression) to"
+        "--results", help="URL to save user computed results (e.g. differential expression) to",
+        default='cirro-results'
     )
     parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
     return parser
