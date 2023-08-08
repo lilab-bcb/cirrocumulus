@@ -154,9 +154,8 @@ class GroupBy:
         )
 
     def sparse_aggregator(self, normalize: bool = False) -> Tuple[coo_matrix, np.ndarray]:
-        """
-        Form a coordinate-sparse matrix A such that rows of A * X
-        are weighted sums of groups of rows of X.
+        """Form a coordinate-sparse matrix A such that rows of A * X are weighted sums of groups of
+        rows of X.
 
         A[i, j] = w includes X[j,:] in group i with weight w.
 
