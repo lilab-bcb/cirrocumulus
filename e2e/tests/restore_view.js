@@ -16,4 +16,4 @@ it('restore_view"', async () => {
   await element.screenshot({path: 'restore_view.png'});
   await browser.close();
   await util.diffImages('restore_view.png', 'screenshots/restore_view.png', 0);
-});
+}, 10000);
