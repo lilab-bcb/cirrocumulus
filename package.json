@@ -1,6 +1,6 @@
 {
   "name": "cirrocumulus",
-  "version": "1.1.54",
+  "version": "1.1.55",
   "private": true,
   "homepage": ".",
   "proxy": "http://127.0.0.1:5000",
@@ -15,11 +15,11 @@
     "@mui/material": "^5.10.11",
     "@mui/styles": "^5.10.7",
     "@okta/okta-auth-js": "^7.0.0",
-    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.2.6",
     "@types/jest": "^29.1.0",
-    "@types/node": "^18.11.5",
+    "@types/node": "^20.3.2",
     "@types/react": "^18.0.22",
     "@types/react-dom": "^18.0.7",
     "@types/three": "^0.150.0",
@@ -83,10 +83,11 @@
   },
   "devDependencies": {
     "gm": "^1.25.0",
-    "jest-puppeteer": "^6.1.1",
-    "prettier": "^2.7.1",
+    "jest": "^29.6.2",
+    "jest-puppeteer": "^9.0.0",
+    "prettier": "^3.0.0",
     "preval.macro": "^5.0.0",
-    "puppeteer": "^17.1.2"
+    "puppeteer": "^20.9.0"
   },
   "prettier": {
     "bracketSpacing": false,

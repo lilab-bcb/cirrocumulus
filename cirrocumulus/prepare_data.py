@@ -2,6 +2,7 @@ import os
 import logging
 import argparse
 
+import h5py
 import numpy as np
 import pandas as pd
 import anndata
@@ -16,6 +17,53 @@ from cirrocumulus.util import get_fs, open_file, to_json
 logger = logging.getLogger("cirro")
 
 CLUSTER_FIELDS = ["anno", "cell_type", "celltype", "leiden", "louvain", "seurat_cluster", "cluster"]
+
+
+def add_obs_to_h5ad(h5ad_path: str, obs: pd.DataFrame):
+    with h5py.File(h5ad_path, "r+") as f:
+        existing_obs = anndata.experimental.read_elem(f["obs"])
+        for c in obs.columns:
+            if c in existing_obs.columns:
+                del existing_obs[c]
+        existing_obs = existing_obs.join(obs)
+        anndata.experimental.write_elem(f, "obs", existing_obs)
+
+
+def whitelist_todict(whitelist):
+    save_x = True
+    save_obs = True
+    save_obsm = True
+    x_keys = []
+    obs_keys = []
+    obsm_keys = []
+    if whitelist is not None:
+        whitelist = set(whitelist)
+        save_x = "X" in whitelist
+        save_obs = "obs" in whitelist
+        save_obsm = "obsm" in whitelist
+        [whitelist.remove(field) for field in ["X", "obs", "obsm"] if field in whitelist]
+        for key in whitelist:
+            dot_index = key.index(".")
+            prefix = key[:dot_index].lower()
+            suffix = key[dot_index + 1 :]
+            if prefix == "x":
+                x_keys.append(suffix)
+            elif prefix == "obs":
+                obs_keys.append(suffix)
+            elif prefix == "obsm":
+                obsm_keys.append(suffix)
+        save_x = save_x or len(x_keys) > 0
+        save_obs = save_obs or len(obs_keys) > 0
+        save_obsm = save_obsm or len(obsm_keys) > 0
+
+    return {
+        "x": save_x,
+        "obs": save_obs,
+        "obsm": save_obsm,
+        "x_keys": x_keys if len(x_keys) > 0 else None,
+        "obs_keys": obs_keys if len(obs_keys) > 0 else None,
+        "obsm_keys": obsm_keys if len(obsm_keys) > 0 else None,
+    }
 
 
 class PrepareData:
@@ -36,8 +84,9 @@ class PrepareData:
         self.markers = markers
         self.output_format = output_format
         self.no_auto_groups = no_auto_groups
+        if save_whitelist is None:
+            save_whitelist = whitelist_todict(None)
         self.save_whitelist = save_whitelist
-
         for dataset in datasets:
             for key in list(dataset.obsm.keys()):
                 m = dataset.obsm[key]
@@ -64,12 +113,14 @@ class PrepareData:
         self.measures = []
         self.others = []
         self.dataset = dataset
-        if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
-            dataset.X = dataset.X.tocsc()
-        for layer_name in dataset.layers.keys():
-            X = dataset.layers[layer_name]
-            if scipy.sparse.issparse(X) and not scipy.sparse.isspmatrix_csc(X):
-                dataset.layers[layer_name] = X.tocsc()
+        if save_whitelist["x"]:
+            if scipy.sparse.issparse(dataset.X) and not scipy.sparse.isspmatrix_csc(dataset.X):
+                dataset.X = dataset.X.tocsc()
+            for layer_name in dataset.layers.keys():
+                X = dataset.layers[layer_name]
+                if scipy.sparse.issparse(X) and not scipy.sparse.isspmatrix_csc(X):
+                    dataset.layers[layer_name] = X.tocsc()
+
         for i in range(len(dataset.obs.columns)):
             name = dataset.obs.columns[i]
             c = dataset.obs[name]
@@ -111,7 +162,7 @@ class PrepareData:
                         break
 
             self.groups = groups
-        if self.groups is not None and len(self.groups) > 0:
+        if self.save_whitelist["x"] and self.groups is not None and len(self.groups) > 0:
             use_pegasus = False
             use_scanpy = False
             try:
@@ -271,8 +322,7 @@ def create_parser(description=False):
     )
     parser.add_argument(
         "--whitelist",
-        help="Optional whitelist of fields to save. Only applies when output format is parquet",
-        choices=["obs", "obsm", "X"],
+        help="Optional whitelist of fields to save when output format is parquet or zarr. Use obs, obsm, or X to save all entries for these fields. Use field.name to save a specific entry (e.g. obs.leiden)",
         action="append",
     )
     parser.add_argument(
@@ -306,6 +356,7 @@ def main(argsv):
     out = args.out
     no_auto_groups = args.no_auto_groups
     save_whitelist = args.whitelist
+
     input_datasets = args.dataset  # multimodal
     output_format = args.format
     if out is None:
@@ -314,11 +365,17 @@ def main(argsv):
     output_format2extension = dict(parquet=".cpq", jsonl=".jsonl", zarr=".zarr", h5ad=".h5ad")
     if not out.lower().endswith(output_format2extension[output_format]):
         out += output_format2extension[output_format]
-
+    save_whitelist = whitelist_todict(save_whitelist)
     datasets = []
     for input_dataset in input_datasets:
         filesystem = get_fs(input_dataset)
-        adata = read_adata(input_dataset, filesystem, spatial_directory=args.spatial, use_raw=False)
+        adata = read_adata(
+            input_dataset,
+            filesystem,
+            spatial_directory=args.spatial,
+            use_raw=False,
+            backed=not save_whitelist["x"],
+        )
         datasets.append(adata)
         adata.uns["name"] = os.path.splitext(
             os.path.basename(input_dataset.rstrip(filesystem.sep))

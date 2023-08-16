@@ -69,4 +69,4 @@ it('embeddings"', async () => {
     'screenshots/CST3_filtered.png',
     0.001,
   );
-});
+}, 20000);

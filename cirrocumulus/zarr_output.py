@@ -20,16 +20,16 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     dataset.uns["cirro-schema"] = ujson.dumps(schema, double_precision=2, orient="values")
     group = zarr.open_group(filesystem.get_mapper(output_directory), mode="a")
 
-    if whitelist is None or "X" in whitelist:
+    if whitelist["x"]:
         write_attribute(group, "X", dataset.X)
         for layer in dataset.layers.keys():
             write_attribute(group, "layers/{}".format(layer), dataset.layers[layer])
         if module_dataset is not None:
             write_attribute(group, "uns/module/X", module_dataset.X)
             write_attribute(group, "uns/module/var", module_dataset.var)
-    if whitelist is None or "obs" in whitelist:
+    if whitelist["obs"]:
         write_attribute(group, "obs", dataset.obs)
-    if whitelist is None or "obsm" in whitelist:
+    if whitelist["obsm"]:
         write_attribute(group, "obsm", dataset.obsm)
 
     pg_marker_keys = get_pegasus_marker_keys(dataset)
