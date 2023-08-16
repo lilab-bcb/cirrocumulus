@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.55 `August 16, 2023`
+    * Support saving specific fields in `prepare_data` command
+
 - 1.1.54 `April 26, 2023`
     * Read Xenium_ output
 
