@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.56 `August 25, 2023`
+    * Updated display for differential expression between two groups
+
 - 1.1.55 `August 16, 2023`
     * Support saving specific fields in `prepare_data` command
 

@@ -55,6 +55,15 @@ export function exportJobResult(jobResult) {
   window.saveAs(blob, jobResult.name + '.tsv');
 }
 
+function getScoreField(fields) {
+  for (let i = 0; i < fields.length; i++) {
+    if (fields[i].toLowerCase().indexOf('score') !== -1) {
+      return fields[i];
+    }
+  }
+  return fields[0]; // default
+}
+
 export function updateJob(jobResult) {
   if (jobResult.type === 'de') {
     if (jobResult.options === undefined) {
@@ -118,19 +127,13 @@ export function updateJob(jobResult) {
       jobResult.byAscending = false;
     }
     if (jobResult.by === undefined) {
-      jobResult.by = jobResult.fields[0];
-      for (let i = 0; i < jobResult.fields.length; i++) {
-        if (jobResult.fields[i].toLowerCase().indexOf('score') !== -1) {
-          jobResult.by = jobResult.fields[i];
-          break;
-        }
-      }
+      jobResult.by = getScoreField(jobResult.fields);
     }
     if (jobResult.sortByGroup === undefined) {
       jobResult.sortByGroup = jobResult.groups[0];
     }
     if (jobResult.color === undefined) {
-      jobResult.color = jobResult.fields[0];
+      jobResult.color = getScoreField(jobResult.fields);
     }
     if (jobResult.size === undefined) {
       jobResult.size = jobResult.fields[0];
@@ -159,7 +162,6 @@ export function updateJob(jobResult) {
       return [min, max];
     }
 
-    // color='logfoldchanges', size='pvals_adj',
     if (jobResult.colorScale === undefined) {
       let domain;
       if (jobResult.interpolator.scale !== INTERPOLATOR_SCALING_NONE) {
