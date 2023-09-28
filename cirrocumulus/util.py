@@ -11,6 +11,12 @@ from flask import make_response
 from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
 
 
+try:
+    dumps = ujson.dumps
+except AttributeError:
+    dumps = ujson.ujson_dumps
+
+
 def add_dataset_providers():
     from cirrocumulus.api import dataset_api
 

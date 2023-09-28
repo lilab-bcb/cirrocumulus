@@ -5,7 +5,8 @@ import numpy as np
 import pyarrow as pa
 import scipy.sparse
 import pyarrow.parquet as pq
-import pandas._libs.json as ujson
+
+from cirrocumulus.util import dumps
 
 
 logger = logging.getLogger("cirro")
@@ -33,7 +34,7 @@ def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
     with filesystem.open(
         os.path.join(output_directory, "index.json.gz"), "wt", compression="gzip"
     ) as f:
-        f.write(ujson.dumps(schema, double_precision=2, orient="values"))
+        f.write(dumps(schema, double_precision=2, orient="values"))
         if whitelist["x"]:
             save_adata_X(dataset, X_dir, filesystem, whitelist=whitelist["x_keys"])
             for layer in dataset.layers.keys():

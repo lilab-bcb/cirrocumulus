@@ -3,7 +3,8 @@ import logging
 
 import numpy as np
 import scipy.sparse
-import pandas._libs.json as ujson
+
+from cirrocumulus.util import dumps
 
 
 logger = logging.getLogger("cirro")
@@ -12,7 +13,7 @@ logger = logging.getLogger("cirro")
 def write_json(d, output_dir, name):
     os.makedirs(output_dir, exist_ok=True)
     with open(output_dir + os.path.sep + name + ".json", "wt") as f:
-        c = ujson.dumps(d, double_precision=2, orient="values")
+        c = dumps(d, double_precision=2, orient="values")
         f.write(c)
 
 
@@ -21,7 +22,7 @@ def save_adata_json(adata, schema, output_directory):
     os.makedirs(output_directory, exist_ok=True)
     with open(os.path.join(output_directory, "schema.json"), "wt") as f:
         # json.dump(result, f)
-        f.write(ujson.dumps(schema, double_precision=2, orient="values"))
+        f.write(dumps(schema, double_precision=2, orient="values"))
 
     save_adata_X(adata, output_directory)
     save_data_obs(adata, output_directory)
