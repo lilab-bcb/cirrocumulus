@@ -1,4 +1,3 @@
-# import pandas.io.json as json
 import os
 from urllib.parse import urlparse
 
@@ -62,13 +61,13 @@ def open_file(urlpath, mode="rb", compression=None):
 
 
 def to_json(data, orient="values"):
-    return ujson.dumps(data, double_precision=2, orient=orient)
+    return dumps(data, double_precision=2, orient=orient)
 
 
 def json_response(data, response=200):
     # response = make_response(simplejson.dumps(data, check_circular=True), response)
     # response = make_response(json.dumps(data), response)
-    s = ujson.dumps(data, double_precision=2, orient="values")
+    s = dumps(data, double_precision=2, orient="values")
     # s = nujson.dumps(data, double_precision=1)
     response = make_response(s, response)
     response.headers["Content-Type"] = "application/json"
