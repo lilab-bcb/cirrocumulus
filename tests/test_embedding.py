@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.sparse
+from pandas import CategoricalDtype
 
 from cirrocumulus.data_processing import handle_data
 from cirrocumulus.embedding_aggregator import EmbeddingAggregator
@@ -80,7 +81,7 @@ def test_no_binning(
         np.testing.assert_array_equal(values, X, err_msg=key)
     for key in dimensions:
         val = results["values"][key]
-        if pd.api.types.is_categorical_dtype(test_data.obs[key]):
+        if isinstance(test_data.obs[key].dtype, CategoricalDtype):
             val = pd.Categorical.from_codes(val["values"], val["categories"])
         np.testing.assert_array_equal(
             val, test_data.obs[key].values, err_msg="obs field {}".format(key)

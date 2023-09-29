@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from pandas import CategoricalDtype
 
 
 def mean_agg(x):
@@ -142,7 +142,7 @@ class EmbeddingAggregator:
                     indices=series.values.sp_index.indices, values=series.values.sp_values
                 )
             else:
-                if pd.api.types.is_categorical_dtype(series):
+                if isinstance(series.dtype, CategoricalDtype):
                     result["values"][column] = dict(
                         values=series.values, categories=series.cat.categories.values
                     )

@@ -1,5 +1,6 @@
 import pandas as pd
 import scipy.sparse
+from pandas import CategoricalDtype
 
 from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY
 from cirrocumulus.dotplot_aggregator import DotPlotAggregator
@@ -315,7 +316,7 @@ def handle_data(
         for key in type2measures["obs"] + dimensions:
             series = adata.obs[key]
             results["values"][key] = series
-            if pd.api.types.is_categorical_dtype(series):
+            if isinstance(series.dtype, CategoricalDtype):
                 results["values"][key] = dict(
                     values=series.values.codes, categories=series.cat.categories.values
                 )

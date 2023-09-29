@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import numcodecs
 from packaging import version
-from pandas.api.types import is_categorical_dtype
+from pandas import CategoricalDtype
 from scipy import sparse
 
 
@@ -135,7 +135,7 @@ def write_series(group, key, series, dataset_kwargs=MappingProxyType({})):
             **dataset_kwargs,
         )
         group[key][:] = series.values
-    elif is_categorical_dtype(series):
+    elif isinstance(series.dtype, CategoricalDtype):
         # This should work for categorical Index and Series
         categorical: pd.Categorical = series.values
         categories: np.ndarray = categorical.categories.values
