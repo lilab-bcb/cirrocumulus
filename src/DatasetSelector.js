@@ -8,24 +8,30 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import ReactMarkdown from 'markdown-to-jsx';
 import React, {useState} from 'react';
 import {connect} from 'react-redux';
-import {OPEN_DATASET_DIALOG, setDialog} from './actions';
+import {deleteDataset, OPEN_DATASET_DIALOG, setDialog} from './actions';
 import {find, isArray} from 'lodash';
 import {REACT_MD_OVERRIDES} from './util';
 import CirroTable from './CirroTable';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import {DATASET_FIELDS} from './EditNewDatasetDialog';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
 
 export function DatasetSelector(props) {
   const [datasetDetailsEl, setDatasetDetailsEl] = useState(null);
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [searchText, setSearchText] = useState('');
+  const [clickedDataset, setClickedDataset] = useState(null);
+
   const {
     dataset,
     datasetChoices,
     datasetSelectorColumns,
     dialog,
     handleDialog,
+    handleDelete,
     onChange,
   } = props;
 
@@ -57,8 +63,37 @@ export function DatasetSelector(props) {
           children={value}
         />
       );
+    } else if (column.field === 'name' && item.owner) {
+      return (
+        <div>
+          <IconButton
+            edge="start"
+            size="small"
+            aria-label="delete"
+            onClick={(event) => onDeleteClick(event, item)}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>{' '}
+          {value}
+        </div>
+      );
     }
     return <>{value}</>;
+  }
+
+  function onDeleteDatasetClosed() {
+    setClickedDataset(null);
+  }
+
+  function onDeleteClick(event, dataset) {
+    event.preventDefault();
+    event.stopPropagation();
+    setClickedDataset(dataset);
+  }
+
+  function onDelete() {
+    handleDelete({dataset: clickedDataset, openDatasetDialog: true});
+    setClickedDataset(null);
   }
 
   function handleListItemDetailsClick(event, id) {
@@ -180,6 +215,25 @@ export function DatasetSelector(props) {
           />
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={clickedDataset != null}
+        onClose={onDeleteDatasetClosed}
+        aria-labelledby="delete-dataset-dialog-title"
+        fullWidth={true}
+        maxWidth={'sm'}
+        sx={{zIndex: 1301}}
+      >
+        <DialogTitle id="delete-dataset-dialog-title">Delete</DialogTitle>
+        <DialogContent>
+          {dataset && <h3>Are you sure you want to delete {dataset.name}?</h3>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onDeleteDatasetClosed}>Cancel</Button>
+          <Button onClick={onDelete} variant="contained" color="primary">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
@@ -196,6 +250,9 @@ const mapDispatchToProps = (dispatch) => {
   return {
     handleDialog: (value) => {
       dispatch(setDialog(value));
+    },
+    handleDelete: (value) => {
+      dispatch(deleteDataset(value));
     },
   };
 };
