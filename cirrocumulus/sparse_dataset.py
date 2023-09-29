@@ -13,7 +13,6 @@ from typing import Iterable, NamedTuple, Sequence, Tuple, Type, Union
 
 import numpy as np
 import scipy.sparse as ss
-from anndata.compat import Index1D
 from scipy.sparse import _sparsetools
 
 
@@ -23,7 +22,11 @@ try:
 except ImportError:
     _cs_matrix = ss.spmatrix
 
-from anndata._core.index import Index, _subset
+from anndata._core.index import _subset
+
+
+Index1D = Union[slice, int, str, np.int64, np.ndarray]
+Index = Union[Index1D, Tuple[Index1D, Index1D], ss.spmatrix]
 
 
 def unpack_index(index: Index) -> tuple[Index1D, Index1D]:
