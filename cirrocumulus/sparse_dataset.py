@@ -13,6 +13,7 @@ from typing import Iterable, NamedTuple, Sequence, Tuple, Type, Union
 
 import numpy as np
 import scipy.sparse as ss
+from anndata.compat import Index1D
 from scipy.sparse import _sparsetools
 
 
@@ -22,7 +23,18 @@ try:
 except ImportError:
     _cs_matrix = ss.spmatrix
 
-from anndata._core.index import Index, _subset, unpack_index
+from anndata._core.index import Index, _subset
+
+
+def unpack_index(index: Index) -> tuple[Index1D, Index1D]:
+    if not isinstance(index, tuple):
+        return index, slice(None)
+    elif len(index) == 2:
+        return index
+    elif len(index) == 1:
+        return index[0], slice(None)
+    else:
+        raise IndexError("invalid number of indices")
 
 
 class BackedFormat(NamedTuple):
@@ -272,7 +284,7 @@ class SparseDataset:
         mock_matrix[row, col] = value
 
     def _normalize_index(self, index: Union[Index, Tuple[()]]) -> Tuple[np.ndarray, np.ndarray]:
-        if index == ():
+        if isinstance(index, tuple) and len(index) == 0:
             index = slice(None)
         row, col = unpack_index(index)
         if all(isinstance(x, cabc.Iterable) for x in (row, col)):

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import anndata
 import scipy.sparse
+from pandas import CategoricalDtype
 
 from cirrocumulus.anndata_dataset import read_adata
 from cirrocumulus.anndata_util import dataset_schema, get_scanpy_marker_keys
@@ -127,7 +128,7 @@ class PrepareData:
             if pd.api.types.is_object_dtype(c):
                 dataset.obs[name] = dataset.obs[name].astype("category")
                 c = dataset.obs[name]
-            if not dimensions_supplied and pd.api.types.is_categorical_dtype(c):
+            if not dimensions_supplied and isinstance(c.dtype, CategoricalDtype):
                 if 1 < len(c.cat.categories) < 2000:
                     self.dimensions.append(name)
                     if c.isna().sum() > 0:
@@ -202,7 +203,7 @@ class PrepareData:
                             )
 
                 if field in dataset.obs:
-                    if not pd.api.types.is_categorical_dtype(dataset.obs[field]):
+                    if not isinstance(dataset.obs[field].dtype, CategoricalDtype):
                         dataset.obs[field] = dataset.obs[field].astype(str).astype("category")
                     if len(dataset.obs[field].cat.categories) > 1:
                         key_added = "rank_genes_" + str(field)

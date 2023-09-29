@@ -1,4 +1,4 @@
-import pandas as pd
+from pandas import CategoricalDtype
 
 
 class DotPlotAggregator:
@@ -34,7 +34,7 @@ class DotPlotAggregator:
                 else:
                     dimension_name = d[0]
             if (
-                pd.api.types.is_categorical_dtype(df[dimension_name])
+                isinstance(df[dimension_name].dtype, CategoricalDtype)
                 and len(df[dimension_name].dtype.categories) <= 1
             ):
                 continue

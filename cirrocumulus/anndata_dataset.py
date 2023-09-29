@@ -4,6 +4,7 @@ import pandas as pd
 import anndata
 import scipy.sparse
 from anndata import AnnData
+from pandas import CategoricalDtype
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY, dataset_schema
@@ -130,7 +131,7 @@ def read_adata(path, filesystem, backed=False, spatial_directory=None, use_raw=F
             logger.info("No spatial data found in {}".format(spatial_directory))
 
     for field in CATEGORICAL_FIELDS_CONVERT:
-        if field in adata.obs and not pd.api.types.is_categorical_dtype(adata.obs[field]):
+        if field in adata.obs and not isinstance(adata.obs[field].dtype, CategoricalDtype):
             logger.info("Converting {} to categorical".format(field))
             adata.obs[field] = adata.obs[field].astype(str).astype("category")
     return adata

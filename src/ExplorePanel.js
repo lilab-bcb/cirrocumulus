@@ -341,7 +341,7 @@ function ExplorePanel(props) {
     handleLayers(value);
   }
 
-  function onFeatureClick(event, option, options) {
+  function handleChipClicked(event, option, options) {
     event.stopPropagation();
     const id = option.id;
     const target = event.target.closest('.MuiFormControl-root');
@@ -357,14 +357,14 @@ function ExplorePanel(props) {
   }
 
   function onFeatureSetClick(event, option) {
-    const selection = onFeatureClick(event, option, markers);
+    const selection = handleChipClicked(event, option, markers);
     if (selection != null) {
       setSelectedItem({value: selection, type: FEATURE_TYPE.FEATURE_SET});
     }
   }
 
   function onModulesClick(event, option) {
-    const selection = onFeatureClick(event, option, dataset.modules);
+    const selection = handleChipClicked(event, option, dataset.modules);
     if (selection != null) {
       setSelectedItem({value: selection, type: FEATURE_TYPE.MODULE});
     }
@@ -411,7 +411,7 @@ function ExplorePanel(props) {
   }
 
   function onFilterChipClicked(event) {
-    onFeatureClick(event, event.target.innerText);
+    handleChipClicked(event, event.target.innerText);
   }
 
   function onFeatureCopy(event) {

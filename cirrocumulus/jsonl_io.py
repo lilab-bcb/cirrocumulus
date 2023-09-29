@@ -6,7 +6,9 @@ import logging
 import numpy as np
 import pandas as pd
 import scipy.sparse
-import pandas._libs.json as ujson
+from pandas import CategoricalDtype
+
+from cirrocumulus.util import dumps
 
 
 logger = logging.getLogger("cirro")
@@ -17,7 +19,7 @@ LINE_END = "\n".encode("UTF-8")
 def write_jsonl(d, f, name, index, compress=False):
     output = {}
     output[name] = d
-    c = ujson.dumps(output, double_precision=2, orient="values").encode("UTF-8")
+    c = dumps(output, double_precision=2, orient="values").encode("UTF-8")
     if compress:
         c = gzip.compress(c)
     start = f.tell()
@@ -78,7 +80,7 @@ def save_dataset_jsonl(dataset, schema, output_dir, base_name, filesystem):
     ) as f:  # save index
         # json.dump(result, f)
         result = dict(index=index, file=os.path.basename(jsonl_path))
-        f.write(ujson.dumps(result, double_precision=2, orient="values"))
+        f.write(dumps(result, double_precision=2, orient="values"))
 
 
 def save_adata_X(adata, f, index, compress, layer=None):
@@ -126,7 +128,7 @@ def save_data_obs(adata, f, index, compress):
     for name in adata.obs:
         series = adata.obs[name]
         value = series
-        if pd.api.types.is_categorical_dtype(series):
+        if isinstance(series.dtype, CategoricalDtype):
             value = dict(values=series.values.codes, categories=series.cat.categories.values)
         write_jsonl(value, f, name, index, compress)
     write_jsonl(adata.obs.index.values, f, "index", index, compress)

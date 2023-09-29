@@ -3,10 +3,10 @@ import math
 import logging
 
 import pandas as pd
-import pandas._libs.json as ujson
 
 from cirrocumulus.diff_exp import DE
 from cirrocumulus.ot.transport_map_model import read_transport_map_dir
+from cirrocumulus.util import dumps
 
 from .data_processing import get_filter_str, get_mask, get_selected_data
 from .envir import (
@@ -33,7 +33,7 @@ def save_job_result_to_file(result, job_id):
         new_result["content-encoding"] = "gzip"
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + ".json.gz")
         with open_file(url, "wt", compression="gzip") as out:
-            out.write(ujson.dumps(result, double_precision=2, orient="values"))
+            out.write(dumps(result, double_precision=2, orient="values"))
     elif new_result["content-type"] == "application/h5ad":
         url = os.path.join(os.environ[CIRRO_JOB_RESULTS], str(job_id) + ".h5ad")
         with get_fs(url).open(url, "wb") as out:
@@ -138,12 +138,14 @@ def get_obs(dataset_api, dataset, dataset_info, params):
             if filter_names[i] is None:
                 filter_names[i] = "group_" + str(i + 1)
         obs = pd.DataFrame(index=pd.RangeIndex(dataset_info["shape"][0]).astype(str))
-        obs_field = "selection"
+        obs_field = "selection"  # order of categories needs to match filter names
         # obs[obs_field] = "3"
         masks, _ = get_mask(dataset_api, dataset, dataset_info, filters)
         for i in range(2):
             obs.loc[masks[i], obs_field] = filter_names[i]
-        obs[obs_field] = obs[obs_field].astype("category")
+        obs[obs_field] = (
+            obs[obs_field].astype("category").cat.as_ordered().cat.reorder_categories(filter_names)
+        )
         return obs, obs_field
 
 

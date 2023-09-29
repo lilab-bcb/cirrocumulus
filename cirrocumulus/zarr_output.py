@@ -1,8 +1,8 @@
 import zarr
-import pandas._libs.json as ujson
 
 from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, get_pegasus_marker_keys
 from cirrocumulus.anndata_zarr import write_attribute
+from cirrocumulus.util import dumps
 
 
 def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
@@ -17,7 +17,7 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
     if module_dataset is not None:
         module_dataset.strings_to_categoricals()
 
-    dataset.uns["cirro-schema"] = ujson.dumps(schema, double_precision=2, orient="values")
+    dataset.uns["cirro-schema"] = dumps(schema, double_precision=2, orient="values")
     group = zarr.open_group(filesystem.get_mapper(output_directory), mode="a")
 
     if whitelist["x"]:

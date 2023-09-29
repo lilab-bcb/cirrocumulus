@@ -1,12 +1,11 @@
 import logging
 
-import pandas._libs.json as ujson
-
 from cirrocumulus.anndata_util import (
     ADATA_MODULE_UNS_KEY,
     get_pegasus_marker_keys,
     get_scanpy_marker_keys,
 )
+from cirrocumulus.util import dumps
 
 
 logger = logging.getLogger("cirro")
@@ -36,7 +35,7 @@ def save_datasets_h5ad(datasets, schema, output_directory, filesystem, whitelist
 
     sc_marker_keys = get_scanpy_marker_keys(adata)
     uns_whitelist = set(["modules", "cirro-schema"])
-    adata.uns["cirro-schema"] = ujson.dumps(schema, double_precision=2, orient="values")
+    adata.uns["cirro-schema"] = dumps(schema, double_precision=2, orient="values")
     for key in list(adata.uns.keys()):
         if key in uns_whitelist:
             continue

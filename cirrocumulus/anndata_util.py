@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import anndata
+from pandas import CategoricalDtype
 
 
 DATA_TYPE_MODULE = "module"
@@ -262,14 +263,14 @@ def dataset_schema(dataset, n_features=10):
             val = pd.Categorical.from_codes(val[...], categories, ordered=ordered)
 
         if (
-            pd.api.types.is_categorical_dtype(val)
+            isinstance(val.dtype, CategoricalDtype)
             or pd.api.types.is_bool_dtype(val)
             or pd.api.types.is_object_dtype(val)
         ):
             obs_cat.append(key)
         else:
             obs.append(key)
-        if pd.api.types.is_categorical_dtype(val):
+        if isinstance(val.dtype, CategoricalDtype):
             categories = val.cat.categories
             if len(categories) < 100:  # preserve order
                 category_to_order[key] = dataset.obs[key].cat.categories

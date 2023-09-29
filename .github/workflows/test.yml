@@ -35,6 +35,7 @@ jobs:
           CI: false
       - name: Test with pytest
         run: |
+          pip freeze
           pytest
         env:
           CI: true

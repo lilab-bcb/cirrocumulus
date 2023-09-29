@@ -1,12 +1,11 @@
 import os
 import datetime
 
-import pandas._libs.json as ujson
 from bson import ObjectId
 from pymongo import MongoClient
 
 from cirrocumulus.abstract_db import AbstractDB
-from cirrocumulus.util import get_email_domain, get_fs
+from cirrocumulus.util import dumps, get_email_domain, get_fs
 
 from .envir import (
     CIRRO_AUTH_CLIENT_ID,
@@ -349,7 +348,7 @@ class MongoDb(AbstractDB):
             if os.environ.get(CIRRO_JOB_RESULTS) is not None:  # save to directory
                 result = save_job_result_to_file(result, job_id)
             else:
-                result = ujson.dumps(result, double_precision=2, orient="values")
+                result = dumps(result, double_precision=2, orient="values")
                 result = str(self.get_gridfs().put(result, encoding="ascii"))
 
         collection.update_one(

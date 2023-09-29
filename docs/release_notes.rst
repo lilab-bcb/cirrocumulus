@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+- 1.1.57 `September 29, 2023`
+    * Ensure group order is persisted when performing differential expression between two groups
+    * Fixed drop-down arrow click for gene sets
+    * Show delete dataset from open dataset dialog
+
 - 1.1.56 `August 25, 2023`
     * Updated display for differential expression between two groups
 
