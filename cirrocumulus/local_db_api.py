@@ -50,8 +50,10 @@ class LocalDbAPI(AbstractDB):
                 if url.lower().endswith(".json.gz") or url.lower().endswith(".json"):
                     import gzip
 
-                    with gzip.open(fs.open(url)) if url.lower().endswith(".json.gz") else fs.open(
-                        url
+                    with (
+                        gzip.open(fs.open(url))
+                        if url.lower().endswith(".json.gz")
+                        else fs.open(url)
                     ) as f:
                         d = json.load(f)
                         if "id" in d:

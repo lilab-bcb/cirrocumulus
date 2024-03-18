@@ -148,9 +148,11 @@ def concat_spatial(paths: list[str], output_path: str, ncols: int = 2):
 
 def create_parser(description=False):
     parser = argparse.ArgumentParser(
-        description="Concatenate datasets in a grid layout. If all the datasets are spatial datasets, then tissue images are concatenated."
-        if description
-        else None
+        description=(
+            "Concatenate datasets in a grid layout. If all the datasets are spatial datasets, then tissue images are concatenated."
+            if description
+            else None
+        )
     )
     parser.add_argument(
         "dataset",

@@ -262,8 +262,8 @@ export default function AutocompleteVirtualized(props) {
           result.text != null
             ? result.text
             : result.id != null
-            ? result.id
-            : result;
+              ? result.id
+              : result;
         textToOption.delete(text.toLowerCase());
       });
       tokens.forEach((token) => {

@@ -137,11 +137,15 @@ class DE:
                 scores=scores,
                 pvals=pvals,
                 logfoldchanges=foldchanges,
-                frac_expressed1=frac_expressed_df.loc[group_one].values
-                if frac_expressed_df is not None
-                else None,
-                frac_expressed2=frac_expressed_df.loc[group_two].values
-                if frac_expressed_df is not None
-                else None,
+                frac_expressed1=(
+                    frac_expressed_df.loc[group_one].values
+                    if frac_expressed_df is not None
+                    else None
+                ),
+                frac_expressed2=(
+                    frac_expressed_df.loc[group_two].values
+                    if frac_expressed_df is not None
+                    else None
+                ),
             )
         self.pair2results = pair2results
