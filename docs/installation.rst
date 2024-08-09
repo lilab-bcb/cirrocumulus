@@ -183,7 +183,7 @@ Developer Instructions
     yarn global add typescript
     yarn install
     yarn build
-    pip install -e .
+
 
 - Install additional optional Python dependencies::
 
@@ -219,6 +219,10 @@ Developer Instructions
 - Build JavaScript front-end for deployment::
 
     yarn build
+
+ - Build python package::
+
+    python3 -m build
 
 
 

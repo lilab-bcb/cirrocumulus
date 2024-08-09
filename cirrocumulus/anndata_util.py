@@ -272,8 +272,8 @@ def dataset_schema(dataset, n_features=10):
             obs.append(key)
         if isinstance(val.dtype, CategoricalDtype):
             categories = val.cat.categories
-            if len(categories) < 100:  # preserve order
-                category_to_order[key] = dataset.obs[key].cat.categories
+            # if len(categories) < 100:  # preserve order
+            #     category_to_order[key] = dataset.obs[key].cat.categories
 
             color_field = key + "_colors"
             if color_field in dataset.uns:

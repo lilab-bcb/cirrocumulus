@@ -58,21 +58,13 @@ test = [
 ]
 
 
-[tool.hatch.build.force-include]
+
+[tool.hatch.build]
+packages = ["cirrocumulus"]
+
+[tool.hatch.build.targets.sdist.force-include]
 "build" = "cirrocumulus/client"
 
-[tool.hatch.build.targets.sdist]
-exclude = [
-    "/.github",
-    "/docs",
-    "/test-data",
-    "/e2e",
-    "/src",
-    "/Dockerfile",
-    "tests"
-]
-
-[tool.hatch.build.targets.wheel]
 
 [tool.hatch.version]
 source = 'vcs'
