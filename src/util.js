@@ -680,10 +680,10 @@ export function rankdata(values) {
     return a.value < b.value
       ? -1
       : a.value === b.value
-      ? a.position < b.position
-        ? -1
-        : 1
-      : 1;
+        ? a.position < b.position
+          ? -1
+          : 1
+        : 1;
   });
 
   // Walk the sorted array, filling output array using sorted positions,
@@ -722,20 +722,20 @@ function indexSortPairs(ranks, ascending) {
       return a.value < b.value
         ? -1
         : a.value === b.value
-        ? a.position < b.position
-          ? -1
-          : 1
-        : 1;
+          ? a.position < b.position
+            ? -1
+            : 1
+          : 1;
     });
   } else {
     ranks.sort(function (a, b) {
       return a.value < b.value
         ? 1
         : a.value === b.value
-        ? a.position < b.position
-          ? 1
-          : -1
-        : -1;
+          ? a.position < b.position
+            ? 1
+            : -1
+          : -1;
     });
   }
 

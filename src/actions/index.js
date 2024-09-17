@@ -2425,8 +2425,8 @@ function getNewEmbeddingData(state, features) {
       embedding.spatial != null
         ? embedding.spatial.type
         : embedding.type
-        ? embedding.type
-        : TRACE_TYPE_SCATTER;
+          ? embedding.type
+          : TRACE_TYPE_SCATTER;
     let coordinates =
       traceType !== TRACE_TYPE_META_IMAGE ? cachedData[embeddingKey] : null;
     if (coordinates == null && embedding.mode != null) {
