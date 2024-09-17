@@ -3,10 +3,10 @@ from abc import abstractmethod
 import pandas as pd
 import scipy.sparse
 from anndata import AnnData
+from anndata._core.sparse_dataset import sparse_dataset
 
 from cirrocumulus.abstract_dataset import AbstractDataset
 from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY
-from cirrocumulus.sparse_dataset import SparseDataset
 
 
 # string_dtype = h5py.check_string_dtype(dataset.dtype)
@@ -73,8 +73,8 @@ class AbstractBackedDataset(AbstractDataset):
             get_item = var_ids.get_indexer_for(keys)
 
         if self.is_group(node):
-            sparse_dataset = SparseDataset(node)  # sparse
-            X = sparse_dataset[:, get_item]
+            ds = sparse_dataset(node)  # sparse
+            X = ds[:, get_item]
         else:  # dense
             X = self.slice_dense_array(node, get_item)
         var = pd.DataFrame(index=keys)
