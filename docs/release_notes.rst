@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+- 1.1.58 `September 17, 2024`
+    * Sort categories using natural sort order
+    * Compatibility with anndata 0.10.9
+
 - 1.1.57 `September 29, 2023`
     * Ensure group order is persisted when performing differential expression between two groups
     * Fixed drop-down arrow click for gene sets

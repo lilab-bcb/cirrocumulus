@@ -13,6 +13,7 @@ from typing import Iterable, NamedTuple, Sequence, Tuple, Type, Union
 
 import numpy as np
 import scipy.sparse as ss
+from anndata._core.index import _subset
 from scipy.sparse import _sparsetools
 
 
@@ -21,9 +22,6 @@ try:
     from scipy.sparse.compressed import _cs_matrix
 except ImportError:
     _cs_matrix = ss.spmatrix
-
-from anndata._core.index import _subset
-
 
 Index1D = Union[slice, int, str, np.int64, np.ndarray]
 Index = Union[Index1D, Tuple[Index1D, Index1D], ss.spmatrix]
