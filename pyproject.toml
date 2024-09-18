@@ -21,8 +21,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -57,20 +55,8 @@ test = [
     'mongomock',
 ]
 
-
-[tool.hatch.build.force-include]
-"build" = "cirrocumulus/client"
-
 [tool.hatch.build.targets.sdist]
-exclude = [
-    "/.github",
-    "/docs",
-    "/test-data",
-    "/e2e",
-    "/src",
-    "/Dockerfile",
-    "tests"
-]
+only-include = ["cirrocumulus", "build"]
 
 [tool.hatch.build.targets.wheel]
 
