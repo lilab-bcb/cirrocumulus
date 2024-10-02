@@ -27,6 +27,7 @@ from .envir import (
     CIRRO_SPECIES,
     CIRRO_STATIC_DIR,
     CIRRO_UPLOAD,
+    CIRRO_SERVER_DATA_DIR,
 )
 from .invalid_usage import InvalidUsage
 from .job_api import delete_job, submit_job
@@ -166,6 +167,13 @@ def handle_server():
         favorite=["Homo sapiens", "Mus musculus"],
         other=["Gallus gallus", "Macaca fascicularis", "Macaca mulatta", "Rattus norvegicus"],
     )
+
+    # browse server-side data files to allow user to select the desired dataset instead of necessarily typing the URL
+    d["server_files"] = []
+    if CIRRO_SERVER_DATA_DIR in os.environ and os.environ[CIRRO_SERVER_DATA_DIR]:
+        for root, dirs, files in os.walk(os.environ[CIRRO_SERVER_DATA_DIR]):
+            for file in dirs + files:
+                d["server_files"] += [os.path.join(root, file)]
 
     # from https://www.ebi.ac.uk/ols/ontologies/efo/terms?iri=http%3A%2F%2Fwww.ebi.ac.uk%2Fefo%2FEFO_0010183&viewMode=All&siblings=false
     d["library"] = load_json(CIRRO_LIBRARY) or [
