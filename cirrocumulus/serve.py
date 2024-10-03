@@ -15,8 +15,8 @@ from cirrocumulus.envir import (
     CIRRO_JOB_RESULTS,
     CIRRO_JOB_TYPE,
     CIRRO_SERVE,
-    CIRRO_UPLOAD,
     CIRRO_SERVER_DATA_DIR,
+    CIRRO_UPLOAD,
 )
 from cirrocumulus.launch import create_app
 from cirrocumulus.util import add_dataset_providers, create_instance, get_fs

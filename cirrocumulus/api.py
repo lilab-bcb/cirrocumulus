@@ -24,10 +24,10 @@ from .envir import (
     CIRRO_LIBRARY,
     CIRRO_MIXPANEL,
     CIRRO_SERVE,
+    CIRRO_SERVER_DATA_DIR,
     CIRRO_SPECIES,
     CIRRO_STATIC_DIR,
     CIRRO_UPLOAD,
-    CIRRO_SERVER_DATA_DIR,
 )
 from .invalid_usage import InvalidUsage
 from .job_api import delete_job, submit_job
