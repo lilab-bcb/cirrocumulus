@@ -81,8 +81,11 @@ function EditNewDatasetDialog(props) {
   const otherSpecies = serverInfo.species.other;
   const libraryOptions = serverInfo.library;
 
+  const dataFiles = serverInfo.server_files;
+
   const canUpload = serverInfo.upload;
   const isNew = dataset == null;
+  const mustBrowse = dataFiles.length > 0;
   let saveEnabled = !loading && name.trim() !== '';
   const isAuthEnabled = serverInfo.auth.clientId !== '';
 
@@ -340,7 +343,7 @@ function EditNewDatasetDialog(props) {
           </div>
           <TextField
             size={'small'}
-            style={{display: isNew && canUpload ? 'none' : ''}}
+            style={{display: isNew && (canUpload || mustBrowse) ? 'none' : ''}}
             required={true}
             disabled={loading || !isNew}
             autoComplete="off"
@@ -357,6 +360,22 @@ function EditNewDatasetDialog(props) {
             label={'URL'}
             fullWidth
           />
+          <Select
+            size={'small'}
+            style={{display: isNew && mustBrowse && !canUpload ? '' : 'none'}}
+            required={true}
+            disabled={loading || !isNew}
+            onChange={(event) => setUrl(event.target.value)}
+            margin="dense"
+            label={'Browse server'}
+            fullWidth
+          >
+            {dataFiles.map((file) => (
+              <MenuItem key={file} value={file}>
+                {file}
+              </MenuItem>
+            ))}
+          </Select>
           <TextField
             size={'small'}
             disabled={loading}

@@ -15,6 +15,7 @@ from cirrocumulus.envir import (
     CIRRO_JOB_RESULTS,
     CIRRO_JOB_TYPE,
     CIRRO_SERVE,
+    CIRRO_SERVER_DATA_DIR,
     CIRRO_UPLOAD,
 )
 from cirrocumulus.launch import create_app
@@ -100,6 +101,10 @@ def create_parser(description=False):
         "--results", help="URL to save user computed results (e.g. differential expression) to"
     )
     parser.add_argument("--ontology", help="Path to ontology in OBO format for annotation")
+    parser.add_argument(
+        "--datadir",
+        help='Path to directory in the server where the user can select its dataset from with no need to type the full URL in the "New Dataset" window.',
+    )
     return parser
 
 
@@ -126,6 +131,11 @@ def main(argsv):
     if args.results is not None:
         os.environ[CIRRO_JOB_RESULTS] = args.results
         get_fs(os.environ[CIRRO_JOB_RESULTS]).makedirs(os.environ[CIRRO_JOB_RESULTS], exist_ok=True)
+
+    if args.datadir is not None:
+        if not os.path.isdir(args.datadir):
+            raise ValueError("--datadir is not a valid path to a directory")
+        os.environ[CIRRO_SERVER_DATA_DIR] = args.datadir
 
     run_args = [
         "gunicorn",
