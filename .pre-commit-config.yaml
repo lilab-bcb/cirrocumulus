@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       # - id: double-quote-string-fixer  # for single quotes: uncomment and add black config “skip-string-normalization”
       - id: trailing-whitespace
@@ -11,7 +11,7 @@ repos:
       - id: docformatter
         args: ["--in-place", "--wrap-summaries=100", "--wrap-descriptions=100", "--config=./pyproject.toml"]
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 24.10.0
     hooks:
       - id: black
   - repo: https://github.com/pycqa/isort
