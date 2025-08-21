@@ -233,11 +233,9 @@ class AnndataDataset(AbstractDataset):
             for key in basis_keys:
                 embedding_data = adata.obsm[key]
                 obsm[key] = embedding_data
-            if X is None:  # anndata requires empty X
-                X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
+
         if X is None and obs is None and len(obsm.keys()) == 0:
             obs = pd.DataFrame(index=pd.RangeIndex(adata.shape[0]).astype(str))
-
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
         if adata_modules is not None:
             adata.uns[ADATA_MODULE_UNS_KEY] = adata_modules
