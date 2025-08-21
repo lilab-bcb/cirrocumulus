@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.59 `August 21, 2025`
+    * Compatibility with anndata 0.12.2
+
 - 1.1.58 `September 17, 2024`
     * Sort categories using natural sort order
     * Compatibility with anndata 0.10.9
