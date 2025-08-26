@@ -5,10 +5,9 @@ Flask-Compress==1.18
 fsspec==2025.7.0
 gunicorn==23.0.0
 h5py==3.14.0
-loompy==3.0.7
 numpy==2.3.2
 pandas==2.3.2
 pymongo==4.14.1
 requests==2.32.5
 scipy==1.16.1
-zarr==3.1.1
+zarr==2.18.7
