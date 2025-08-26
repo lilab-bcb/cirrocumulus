@@ -42,7 +42,7 @@ dependencies = [
     "pymongo",
     "requests",
     "scipy",
-    "zarr"
+    "zarr<3"
 ]
 
 [project.optional-dependencies]
