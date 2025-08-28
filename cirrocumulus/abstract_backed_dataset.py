@@ -1,7 +1,6 @@
 from abc import abstractmethod
 
 import pandas as pd
-import scipy.sparse
 from anndata import AnnData
 from anndata._core.sparse_dataset import sparse_dataset
 
@@ -134,8 +133,6 @@ class AbstractBackedDataset(AbstractDataset):
             for key in basis_keys:
                 embedding_data = group[key][...]
                 obsm[key] = embedding_data
-                if X is None:
-                    X = scipy.sparse.coo_matrix(([], ([], [])), shape=(embedding_data.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
             if dataset_info is None:
                 dataset_info = self.get_dataset_info(filesystem, path)

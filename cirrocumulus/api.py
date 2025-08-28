@@ -586,7 +586,7 @@ def handle_job():
             if content_type == "application/h5ad" or content_type == "application/zarr":
                 if content_type == "application/h5ad":
                     with get_fs(url).open(url, mode="rb") as f:
-                        adata = anndata.read(f)
+                        adata = anndata.read_h5ad(f)
                 else:
                     adata = anndata.read_zarr(get_fs(url).get_mapper(url))
                 adata_df = adata_to_df(adata)

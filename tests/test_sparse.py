@@ -8,7 +8,7 @@ from anndata.tests.helpers import (
     array_bool_subset,
     array_int_subset,
     assert_equal,
-    slice_subset,
+    slice_int_subset,
     subset_func,
 )
 from scipy import sparse
@@ -54,7 +54,7 @@ def ondisk_equivalent_adata_zarr(tmp_path):
     return csr_mem, csr_disk, csc_disk
 
 
-@pytest.fixture(params=[slice_subset, array_int_subset, array_bool_subset])
+@pytest.fixture(params=[slice_int_subset, array_int_subset, array_bool_subset])
 def subset_func_zarr(request):
     return request.param
 

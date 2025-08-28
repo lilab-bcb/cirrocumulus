@@ -1,6 +1,9 @@
 Release Notes
 -------------
 
+- 1.1.60 `August 28, 2025`
+    * Compatibility with anndata 0.12.2 for `cirro serve`
+
 - 1.1.59.post1 `August 26, 2025`
     * Compatibility with zarr<3 only
 

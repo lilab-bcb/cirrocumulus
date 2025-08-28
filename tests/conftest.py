@@ -10,7 +10,7 @@ from cirrocumulus.dataset_api import DatasetAPI
 
 @pytest.fixture(scope="module", autouse=True, params=[True, False])
 def test_data(request):
-    adata = anndata.read("test-data/pbmc3k_no_raw.h5ad")
+    adata = anndata.read_h5ad("test-data/pbmc3k_no_raw.h5ad")
     if request.param:
         adata.X = scipy.sparse.csr_matrix(adata.X)
     return adata
@@ -21,7 +21,7 @@ def measures(request):
     return (
         ["DSCR3", "TNFRSF4", "SUMO3"]
         if request.param == "small"
-        else list(anndata.read("test-data/pbmc3k_no_raw.h5ad").var.index[0:50])
+        else list(anndata.read_h5ad("test-data/pbmc3k_no_raw.h5ad").var.index[0:50])
     )
 
 

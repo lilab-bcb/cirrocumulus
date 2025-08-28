@@ -106,7 +106,7 @@ class TransportMapModel:
             if type(ds_or_path) is anndata.AnnData:
                 return ds_or_path
             with fsspec.open(ds_or_path) as f:
-                ds = anndata.read(f)
+                ds = anndata.read_h5ad(f)
             if self.cache:
                 self.tmaps[key] = ds
             return ds

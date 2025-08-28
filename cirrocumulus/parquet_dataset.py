@@ -49,8 +49,6 @@ def get_matrix(futures, shape=None):
         data = np.concatenate(data)
         row = np.concatenate(row)
         col = np.concatenate(col)
-        # X = scipy.sparse.coo_matrix((data, (row, col)), shape=(shape[0], len(keys))).to_csc()
-        # X = scipy.sparse.csr_matrix((data, (row, col)), shape=(shape[0], len(var_keys)))
         X = scipy.sparse.csc_matrix((data, (row, col)), shape=(shape[0], len(futures)))
     else:
         X = np.array(data).T
@@ -128,8 +126,6 @@ class ParquetDataset(AbstractDataset):
                     vals.append(table.column(c))
                 vals = np.array(vals).T
                 obsm[basis_keys[i]] = vals
-                if X is None:
-                    X = scipy.sparse.coo_matrix((vals.shape[0], 0))
         if X is None and obs is None and len(obsm.keys()) == 0:
             obs = pd.DataFrame(index=pd.RangeIndex(dataset_info["shape"][0]).astype(str))
         adata = AnnData(X=X, obs=obs, var=var, obsm=obsm)
