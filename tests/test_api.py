@@ -27,7 +27,7 @@ def app_conf(request, tmpdir_factory):
             # insert dataset
             output_dir = str(tmpdir_factory.mktemp("data").join("test.zarr"))
             PrepareData(
-                datasets=[anndata.read(dataset_path)],
+                datasets=[anndata.read_h5ad(dataset_path)],
                 output=output_dir,
                 output_format="zarr",
                 no_auto_groups=True,

@@ -35,25 +35,31 @@ class DE:
         mean_df = None
         variance_df = None
         frac_expressed_df = None
+
         indicator_df = pd.get_dummies(series)
+        indicator_df.columns = indicator_df.columns.astype(int)
+
         if one_vs_rest:
             pairs = []
             rest_indicator_df = pd.DataFrame()
-            for c in indicator_df:
+            for c in indicator_df.columns:
                 rest_name = str(c) + "_rest"
-                if rest_name in indicator_df:
+                if rest_name in indicator_df.columns:
                     counter = 1
                     rest_name = str(c) + "_rest-{}".format(counter)
-                    while rest_name in indicator_df:
+                    while rest_name in indicator_df.columns:
                         counter = counter + 1
                         rest_name = str(c) + "_rest-{}".format(counter)
                 pairs.append((c, rest_name))
                 rest_indicator_series = indicator_df[c].astype(bool)
                 rest_indicator_series = ~rest_indicator_series
                 rest_indicator_df[rest_name] = rest_indicator_series.astype(int)
+
             indicator_df = indicator_df.join(rest_indicator_df)
+
         else:
             pairs = list(itertools.combinations(series.cat.categories, 2))
+
         count_ = indicator_df.sum(axis=0)  # count per group
         count_values = count_.values
         A = scipy.sparse.coo_matrix(indicator_df.astype(float).T)
