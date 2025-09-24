@@ -134,18 +134,19 @@ def get_obs(dataset_api, dataset, dataset_info, params):
     else:
         filters = [params["filter"], params["filter2"]]
         filter_names = [get_filter_str(params["filter"]), get_filter_str(params["filter2"])]
+
         for i in range(len(filter_names)):
             if filter_names[i] is None:
                 filter_names[i] = "group_" + str(i + 1)
+        if filter_names[1] == filter_names[0]:
+            filter_names[1] = f"{filter_names[1]}_2"
         obs = pd.DataFrame(index=pd.RangeIndex(dataset_info["shape"][0]).astype(str))
         obs_field = "selection"  # order of categories needs to match filter names
         # obs[obs_field] = "3"
         masks, _ = get_mask(dataset_api, dataset, dataset_info, filters)
         for i in range(2):
             obs.loc[masks[i], obs_field] = filter_names[i]
-        obs[obs_field] = (
-            obs[obs_field].astype("category").cat.as_ordered().cat.reorder_categories(filter_names)
-        )
+        obs[obs_field] = obs[obs_field].astype(pd.Categorical(filter_names, ordered=True).dtype)
         return obs, obs_field
 
 
