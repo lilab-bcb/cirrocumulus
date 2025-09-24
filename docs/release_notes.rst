@@ -1,6 +1,10 @@
 Release Notes
 -------------
 
+
+- 1.1.61 `September 24, 2025`
+    * Fixed differential expression when creating groups based on gene expression levels
+
 - 1.1.60 `August 28, 2025`
     * Compatibility with anndata 0.12.2 for `cirro serve`
 

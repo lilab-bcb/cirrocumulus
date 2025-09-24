@@ -37,11 +37,13 @@ class DE:
         frac_expressed_df = None
 
         indicator_df = pd.get_dummies(series)
-        indicator_df.columns = indicator_df.columns.astype(int)
+        # pandas.errors.InvalidIndexError: slice(None, None, None) if don't convert to string when joining
+        indicator_df.columns = indicator_df.columns.astype(str)
 
         if one_vs_rest:
             pairs = []
             rest_indicator_df = pd.DataFrame()
+
             for c in indicator_df.columns:
                 rest_name = str(c) + "_rest"
                 if rest_name in indicator_df.columns:
@@ -55,7 +57,7 @@ class DE:
                 rest_indicator_series = ~rest_indicator_series
                 rest_indicator_df[rest_name] = rest_indicator_series.astype(int)
 
-            indicator_df = indicator_df.join(rest_indicator_df)
+            indicator_df = rest_indicator_df.join(indicator_df)
 
         else:
             pairs = list(itertools.combinations(series.cat.categories, 2))
