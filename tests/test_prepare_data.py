@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import scipy.sparse
 
+from cirrocumulus.anndata_util import layer_names
 from cirrocumulus.parquet_dataset import ParquetDataset
 from cirrocumulus.prepare_data import PrepareData
 from cirrocumulus.zarr_dataset import ZarrDataset
@@ -134,3 +135,12 @@ def test_prepare_jsonl(
         output_format="jsonl",
     )
     prepare_data.execute()
+
+
+def test_layer_names_skips_the_x_alias(test_data):
+    # anndata >= 0.13 exposes None in layers as an alias for X; a writer that iterates the
+    # mapping directly writes a layer called "None" that duplicates X
+    adata = test_data.copy()
+    adata.layers["counts"] = adata.X
+    assert None in adata.layers.keys()
+    assert layer_names(adata) == ["counts"]

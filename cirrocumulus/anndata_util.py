@@ -9,6 +9,15 @@ ADATA_MODULE_UNS_KEY = "anndata_module"
 ADATA_LAYERS_UNS_KEY = "anndata_layers"
 
 
+def layer_names(dataset):
+    """List the real layers of an AnnData or a backed store.
+
+    anndata >= 0.13 exposes ``None`` in ``layers`` as an alias for ``X``, so iterating the
+    mapping directly yields a layer that is not one.
+    """
+    return [key for key in dataset.layers.keys() if key is not None]
+
+
 def get_base(adata):
     base = None
     if "log1p" in adata.uns and adata.uns["log1p"]["base"] is not None:
@@ -18,7 +27,7 @@ def get_base(adata):
 
 def adata_to_df(adata):
     df = pd.DataFrame(adata.X, index=adata.obs.index, columns=adata.var.index)
-    for key in adata.layers.keys():
+    for key in layer_names(adata):
         df2 = pd.DataFrame(
             adata.layers[key],
             index=adata.obs.index.astype(str) + "-{}".format(key),
@@ -303,7 +312,7 @@ def dataset_schema(dataset, n_features=10):
     layers = []
     try:
         dataset.layers  # dataset can be AnnData or zarr group
-        layers = list(dataset.layers.keys())
+        layers = layer_names(dataset)
     except AttributeError:
         pass
 

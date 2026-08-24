@@ -1,6 +1,6 @@
 import zarr
 
-from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, get_pegasus_marker_keys
+from cirrocumulus.anndata_util import ADATA_MODULE_UNS_KEY, get_pegasus_marker_keys, layer_names
 from cirrocumulus.anndata_zarr import write_attribute
 from cirrocumulus.util import dumps
 
@@ -22,7 +22,7 @@ def save_dataset_zarr(dataset, schema, output_directory, filesystem, whitelist):
 
     if whitelist["x"]:
         write_attribute(group, "X", dataset.X)
-        for layer in dataset.layers.keys():
+        for layer in layer_names(dataset):
             write_attribute(group, "layers/{}".format(layer), dataset.layers[layer])
         if module_dataset is not None:
             write_attribute(group, "uns/module/X", module_dataset.X)

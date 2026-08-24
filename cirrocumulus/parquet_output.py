@@ -6,6 +6,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import scipy.sparse
 
+from cirrocumulus.anndata_util import layer_names
 from cirrocumulus.util import dumps
 
 logger = logging.getLogger("cirro")
@@ -38,7 +39,7 @@ def save_dataset_pq(dataset, schema, output_directory, filesystem, whitelist):
         f.write(dumps(schema, double_precision=2, orient="values"))
         if whitelist["x"]:
             save_adata_X(dataset, X_dir, filesystem, whitelist=whitelist["x_keys"])
-            for layer in dataset.layers.keys():
+            for layer in layer_names(dataset):
                 layer_dir = os.path.join(output_directory, "layers", layer)
                 filesystem.makedirs(layer_dir, exist_ok=True)
                 save_adata_X(
