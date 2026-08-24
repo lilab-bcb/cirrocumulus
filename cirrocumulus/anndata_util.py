@@ -1,6 +1,7 @@
 import anndata
 import numpy as np
 import pandas as pd
+import scipy.sparse
 from pandas import CategoricalDtype
 
 DATA_TYPE_MODULE = "module"
@@ -80,17 +81,28 @@ def obs_stats(adata, columns):
 
 
 def X_stats(adata):
+    """Compute per-variable statistics over ``adata.X``."""
     X = adata.X
-    return pd.DataFrame(
-        data={
-            "min": X.min(axis=0).toarray().flatten(),
-            "max": X.max(axis=0).toarray().flatten(),
-            "sum": X.sum(axis=0).flatten(),
-            "numExpressed": X.getnnz(axis=0),
+    if scipy.sparse.issparse(X):
+        # sum/mean over a sparse axis return np.matrix, which stays 2-D under .flatten();
+        # np.asarray(...).ravel() is what actually produces the 1-D column DataFrame wants
+        data = {
+            "min": np.asarray(X.min(axis=0).todense()).ravel(),
+            "max": np.asarray(X.max(axis=0).todense()).ravel(),
+            "sum": np.asarray(X.sum(axis=0)).ravel(),
+            "numExpressed": np.asarray(X.getnnz(axis=0)).ravel(),
+            "mean": np.asarray(X.mean(axis=0)).ravel(),
+        }
+    else:
+        X = np.asarray(X)
+        data = {
+            "min": X.min(axis=0),
+            "max": X.max(axis=0),
+            "sum": X.sum(axis=0),
+            "numExpressed": np.count_nonzero(X, axis=0),
             "mean": X.mean(axis=0),
-        },
-        index=adata.var.index,
-    )
+        }
+    return pd.DataFrame(data=data, index=adata.var.index)
 
 
 def dataset_schema(dataset, n_features=10):
