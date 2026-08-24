@@ -1,5 +1,6 @@
 import os
 
+import anndata
 import fsspec
 import numpy as np
 import pandas as pd
@@ -134,3 +135,51 @@ def test_prepare_jsonl(
         output_format="jsonl",
     )
     prepare_data.execute()
+
+
+def test_read_anndata_zarr(test_data, measures, dimensions, continuous_obs, basis, tmp_path):
+    # a zarr store written by anndata itself, not by PrepareData: anndata >= 0.8 encodes a
+    # categorical obs column as a group (codes + categories), not as an array
+    path = str(tmp_path / "test.zarr")
+    test_data = test_data[:, measures].copy()
+    test_data.obs = test_data.obs[dimensions + continuous_obs]
+    test_data.write_zarr(path)
+
+    reader = ZarrDataset()
+    schema = reader.get_schema(fsspec.filesystem("file"), path)
+    assert schema["obsCat"] == dimensions
+    assert schema["obs"] == continuous_obs
+    assert list(schema["shape"]) == list(test_data.shape)
+    assert schema["categoryOrder"][dimensions[0]].tolist() == list(
+        test_data.obs[dimensions[0]].cat.categories
+    )
+    read_and_diff(reader, path, test_data, measures, dimensions, continuous_obs, basis)
+
+
+def test_read_anndata_zarr_group_encoded_elements(test_data, measures, dimensions, tmp_path):
+    """Elements anndata writes as groups rather than arrays must still be readable.
+
+    A nullable string index and a DataFrame-valued ``obsm`` both used to raise, because the
+    readers assumed every node answers ``node[...]`` and every ``obsm`` member has a ``.shape``.
+    """
+    anndata.settings.allow_write_nullable_strings = True
+    path = str(tmp_path / "test.zarr")
+    test_data = test_data[:, measures].copy()
+    test_data.obs = test_data.obs[dimensions]
+    test_data.var.index = pd.array(list(test_data.var.index), dtype="string")
+    test_data.obsm["frame"] = pd.DataFrame(
+        {"a": np.arange(test_data.shape[0])}, index=test_data.obs.index
+    )
+    test_data.write_zarr(path)
+
+    reader = ZarrDataset()
+    fs = fsspec.filesystem("file")
+    schema = reader.get_schema(fs, path)
+    assert "frame" not in [e["name"] for e in schema["embeddings"]]
+    assert list(schema["shape"]) == list(test_data.shape)
+
+    adata = reader.read_dataset(
+        filesystem=fs, path=path, dataset=dict(id=""), keys=dict(X=measures, obs=dimensions)
+    )
+    assert list(adata.var.index) == list(test_data.var.index)
+    assert list(adata.obs.columns) == dimensions

@@ -3,9 +3,14 @@ from abc import abstractmethod
 import pandas as pd
 from anndata import AnnData
 from anndata._core.sparse_dataset import sparse_dataset
+from anndata.io import read_elem
 
 from cirrocumulus.abstract_dataset import AbstractDataset
-from cirrocumulus.anndata_util import ADATA_LAYERS_UNS_KEY, ADATA_MODULE_UNS_KEY
+from cirrocumulus.anndata_util import (
+    ADATA_LAYERS_UNS_KEY,
+    ADATA_MODULE_UNS_KEY,
+    is_encoded_element,
+)
 
 # string_dtype = h5py.check_string_dtype(dataset.dtype)
 # if (string_dtype is not None) and (string_dtype.encoding == "utf-8"):
@@ -40,7 +45,7 @@ class AbstractBackedDataset(AbstractDataset):
         root = self.open_group(filesystem, path)
         var_group = root["var"]
         var_group_index_field = var_group.attrs["_index"]
-        var_ids = var_group[var_group_index_field][...]
+        var_ids = read_elem(var_group[var_group_index_field])
         if pd.api.types.is_object_dtype(var_ids):
             var_ids = var_ids.astype(str)
         d["var"] = pd.Index(var_ids)
@@ -109,12 +114,15 @@ class AbstractBackedDataset(AbstractDataset):
             for key in obs_keys:
                 if key == "index":
                     index_field = group.attrs["_index"]
-                    values = group[index_field][...]
+                    values = read_elem(group[index_field])
                     if pd.api.types.is_object_dtype(values):
                         values = values.astype(str)
                 else:
                     dataset = group[key]
-                    values = dataset[...]
+                    if is_encoded_element(dataset):
+                        values = read_elem(dataset)
+                    else:
+                        values = dataset[...]
                     if "categories" in dataset.attrs:
                         categories = dataset.attrs["categories"]
                         categories_dset = group[categories]
