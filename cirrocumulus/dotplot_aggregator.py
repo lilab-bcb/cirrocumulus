@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+import scipy.sparse
 from pandas import CategoricalDtype
 
 
@@ -6,13 +9,35 @@ class DotPlotAggregator:
         self.var_measures = var_measures
         self.dimensions = dimensions
 
-    def execute(self, df):
+    def _to_frame(self, adata):
+        """Collect the requested dimensions and measures into one DataFrame."""
+        names = []
+        for d in self.dimensions:
+            names.extend(d if isinstance(d, list) else [d])
+
+        columns = {name: adata.obs[name] for name in dict.fromkeys(names) if name in adata.obs}
+
+        var_index = list(adata.var.index)
+        for measure in self.var_measures:
+            name = measure.split("/", 1)[-1]
+            if name in var_index:
+                values = adata.X[:, var_index.index(name)]
+                if scipy.sparse.issparse(values):
+                    values = values.todense()
+                columns[measure] = np.asarray(values).ravel()
+            elif name in adata.obs:
+                columns[measure] = adata.obs[name]
+        return pd.DataFrame(columns, index=adata.obs.index)
+
+    def execute(self, adata):
         results = []
         # {categories:[], name:'', values:[{name:'', percentExpressed:0, mean:0}]}
         var_measures = self.var_measures
         dimensions = self.dimensions
         if len(var_measures) == 0 or len(dimensions) == 0:
             return results
+
+        df = self._to_frame(adata)
 
         def mean(x):
             return x.mean()
@@ -38,7 +63,9 @@ class DotPlotAggregator:
                 and len(df[dimension_name].dtype.categories) <= 1
             ):
                 continue
-            agg_result = df.groupby(dimension_name, observed=True).agg(
+            # aggregate only the measures: with several dimensions the frame also holds
+            # the individual categorical columns, which have no mean
+            agg_result = df.groupby(dimension_name, observed=True)[list(var_measures)].agg(
                 [mean, percent_expressed]
             )
 
