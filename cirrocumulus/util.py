@@ -10,9 +10,29 @@ from flask import make_response
 from cirrocumulus.envir import CIRRO_DATASET_PROVIDERS
 
 try:
-    dumps = ujson.dumps
+    _dumps = ujson.dumps
 except AttributeError:
-    dumps = ujson.ujson_dumps
+    _dumps = ujson.ujson_dumps
+
+
+def to_json_array(values):
+    """Coerce a pandas array to something the JSON encoder can walk.
+
+    pandas 3 backs string columns with ``ArrowStringArray`` by default, which the encoder
+    recurses into until it raises ``OverflowError: Maximum recursion level reached``.
+    """
+    if isinstance(values, pd.api.extensions.ExtensionArray):
+        return np.asarray(values, dtype=object)
+    return values
+
+
+def dumps(data, **kwargs):
+    """``ujson.dumps``, with pandas extension arrays coerced first."""
+    if isinstance(data, dict):
+        data = {k: to_json_array(v) for k, v in data.items()}
+    else:
+        data = to_json_array(data)
+    return _dumps(data, **kwargs)
 
 
 def add_dataset_providers():

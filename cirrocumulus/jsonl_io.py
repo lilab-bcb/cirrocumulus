@@ -8,7 +8,7 @@ import pandas as pd
 import scipy.sparse
 from pandas import CategoricalDtype
 
-from cirrocumulus.util import dumps
+from cirrocumulus.util import dumps, to_json_array
 
 logger = logging.getLogger("cirro")
 
@@ -129,7 +129,8 @@ def save_data_obs(adata, f, index, compress):
         value = series
         if isinstance(series.dtype, CategoricalDtype):
             value = dict(
-                values=series.values.codes, categories=series.cat.categories.values
+                values=series.values.codes,
+                categories=to_json_array(series.cat.categories.values),
             )
         write_jsonl(value, f, name, index, compress)
     write_jsonl(adata.obs.index.values, f, "index", index, compress)

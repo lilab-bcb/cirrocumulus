@@ -7,6 +7,7 @@ from cirrocumulus.dotplot_aggregator import DotPlotAggregator
 from cirrocumulus.feature_aggregator import FeatureAggregator
 from cirrocumulus.ids_aggregator import IdsAggregator
 from cirrocumulus.unique_aggregator import UniqueAggregator
+from cirrocumulus.util import to_json_array
 
 
 def get_mask(dataset_api, dataset, dataset_info, data_filters):
@@ -322,7 +323,8 @@ def handle_data(
             results["values"][key] = series
             if isinstance(series.dtype, CategoricalDtype):
                 results["values"][key] = dict(
-                    values=series.values.codes, categories=series.cat.categories.values
+                    values=series.values.codes,
+                    categories=to_json_array(series.cat.categories.values),
                 )
             else:
                 results["values"][key] = series

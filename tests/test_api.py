@@ -51,3 +51,17 @@ def test_schema(app_conf):
     assert isinstance(r["embeddings"], list)
     assert len(r["obsCat"]) == 1 and r["obsCat"][0] == "louvain"
     assert r["shape"][0] == 2638 and r["shape"][1] == 1838
+
+
+def test_data_categorical_obs(app_conf):
+    """pandas 3 backs string categories with ``ArrowStringArray``, which the JSON encoder
+    recurses into until it overflows -- a 500 on every categorical colour-by."""
+    client, dataset_id = app_conf
+    r = client.post(
+        "/api/data",
+        json=dict(id=dataset_id, values=dict(dimensions=["louvain"], measures=[])),
+    )
+    assert r.status_code == 200, r.status_code
+    louvain = r.json["values"]["louvain"]
+    assert len(louvain["values"]) == 2638
+    assert all(isinstance(c, str) for c in louvain["categories"])
